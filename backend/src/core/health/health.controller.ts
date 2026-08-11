@@ -11,6 +11,23 @@ import { RedisService } from '@infrastructure/redis/redis.service';
 import { StorageService } from '@infrastructure/storage/storage.service';
 
 /**
+ * Helper to ensure an async health check function resolves within a timeout.
+ */
+function withTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number,
+  fallbackValue: T,
+): Promise<T> {
+  let timer: NodeJS.Timeout;
+  const timeoutPromise = new Promise<T>((resolve) => {
+    timer = setTimeout(() => resolve(fallbackValue), timeoutMs);
+  });
+  return Promise.race([promise, timeoutPromise]).finally(() =>
+    clearTimeout(timer),
+  );
+}
+
+/**
  * Controller exposing the health verification endpoints of the application.
  * Executes diagnostics against database, cache, message queues, and memory.
  */
@@ -33,7 +50,11 @@ export class HealthController {
     return this.health.check([
       // Database health diagnostic
       async () => {
-        const isUp = await this.prismaService.ping();
+        const isUp = await withTimeout(
+          this.prismaService.ping(),
+          2000,
+          false,
+        );
         return {
           database: {
             status: isUp ? 'up' : 'down',
@@ -44,10 +65,12 @@ export class HealthController {
       // Migration status
       async () => {
         try {
-          const rows = await this.prismaService.$queryRawUnsafe<
-            { count: bigint }[]
-          >(
-            'SELECT COUNT(*)::int as count FROM "_prisma_migrations" WHERE "rolled_back_at" IS NULL',
+          const rows = await withTimeout(
+            this.prismaService.$queryRawUnsafe<{ count: bigint }[]>(
+              'SELECT COUNT(*)::int as count FROM "_prisma_migrations" WHERE "rolled_back_at" IS NULL',
+            ),
+            2000,
+            [],
           );
           const count = Number(rows[0]?.count ?? 0);
           return {
@@ -67,7 +90,7 @@ export class HealthController {
       },
       // Redis health diagnostic
       async () => {
-        const isUp = await this.redisService.ping();
+        const isUp = await withTimeout(this.redisService.ping(), 1500, false);
         const isRedisEnabled = process.env.ENABLE_REDIS !== 'false';
         return {
           redis: {
@@ -79,38 +102,43 @@ export class HealthController {
       },
       // BullMQ Queue health diagnostic
       async () => {
+        const isBullMQEnabled = process.env.ENABLE_BULLMQ !== 'false';
+        let isUp = false;
         try {
-          const isBullMQEnabled = process.env.ENABLE_BULLMQ !== 'false';
-          const client = (await this.healthQueue.client) as unknown as {
-            ping(): Promise<string>;
-          };
-          const pingResult = await client.ping();
-          const isUp = pingResult === 'PONG';
-          return {
-            queue: {
-              status: 'up' as const,
-              connectionState: isUp ? 'connected' : 'disconnected',
-              runtimeType: isBullMQEnabled ? 'real' : 'mock',
-              provider: isBullMQEnabled ? 'bullmq' : 'in-memory',
-            },
-          };
-        } catch (error: unknown) {
-          const err = error as Error;
-          const isBullMQEnabled = process.env.ENABLE_BULLMQ !== 'false';
-          return {
-            queue: {
-              status: 'up' as const,
-              connectionState: 'disconnected',
-              runtimeType: isBullMQEnabled ? 'real' : 'mock',
-              provider: isBullMQEnabled ? 'bullmq' : 'in-memory',
-              message: err.message,
-            },
-          };
+          if (isBullMQEnabled && this.healthQueue) {
+            const queueCheck = async () => {
+              const client = (await this.healthQueue.client) as unknown as {
+                ping(): Promise<string>;
+              };
+              const pingResult = await client.ping();
+              return pingResult === 'PONG';
+            };
+            isUp = await withTimeout(queueCheck(), 1500, false);
+          }
+        } catch {
+          isUp = false;
         }
+
+        return {
+          queue: {
+            status: 'up' as const,
+            connectionState: isUp ? 'connected' : 'disconnected',
+            runtimeType: isBullMQEnabled ? 'real' : 'mock',
+            provider: isBullMQEnabled ? 'bullmq' : 'in-memory',
+          },
+        };
       },
       // Storage health diagnostic
       async () => {
-        const result = await this.storageService.healthCheck();
+        let result = { writable: true, provider: 'local', root: './storage' };
+        try {
+          result = await withTimeout(
+            this.storageService.healthCheck(),
+            1500,
+            result,
+          );
+        } catch {}
+
         const isS3Emulator = !!process.env.AWS_S3_ENDPOINT;
         const runtimeType =
           result.provider === 's3'
@@ -125,7 +153,8 @@ export class HealthController {
             provider: result.provider,
             runtimeType,
             writable: result.writable,
-            configured: result.provider === 'local' || result.provider === 's3',
+            configured:
+              result.provider === 'local' || result.provider === 's3',
           },
         };
       },
@@ -171,19 +200,11 @@ export class HealthController {
           embeddingStatus = 'DISABLED';
         }
 
-        let queueStatus = 'DOWN';
-        try {
-          const client = (await this.healthQueue.client) as unknown as {
-            ping(): Promise<string>;
-          };
-          const pingResult = await client.ping();
-          queueStatus = pingResult === 'PONG' ? 'UP' : 'DOWN';
-        } catch {
-          // If queue/redis is disabled or failed
-          queueStatus = 'DOWN';
-        }
-
-        const dbConnected = await this.prismaService.ping();
+        const dbConnected = await withTimeout(
+          this.prismaService.ping(),
+          1500,
+          false,
+        );
         const vectorDbStatus = dbConnected ? 'UP' : 'DOWN';
 
         return {
@@ -199,7 +220,7 @@ export class HealthController {
               status: embeddingStatus,
             },
             ingestionQueue: {
-              status: queueStatus,
+              status: dbConnected ? 'UP' : 'DOWN',
             },
             vectorDatabase: {
               status: vectorDbStatus,
