@@ -28,7 +28,7 @@ COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
 COPY --from=builder /usr/src/app/prisma.config.ts ./prisma.config.ts
 
-RUN chown -R appuser:appgroup /usr/src/app
+RUN mkdir -p /usr/src/app/storage && chown -R appuser:appgroup /usr/src/app
 
 USER appuser
 

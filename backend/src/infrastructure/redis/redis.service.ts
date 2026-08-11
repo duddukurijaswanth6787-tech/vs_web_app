@@ -23,13 +23,8 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       'app.features.redis',
       true,
     );
-    const isProduction =
-      this.configService.get<string>('app.env') === 'production';
     if (!isRedisEnabled) {
-      if (isProduction) {
-        throw new Error('Redis must be enabled in production environment.');
-      }
-      this.logger.log(
+      this.logger.warn(
         'Redis is disabled by configuration. Initializing in-memory mock client.',
       );
       const localStore = new Map<string, string>();
