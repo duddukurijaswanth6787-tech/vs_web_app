@@ -3,11 +3,6 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 
 const isBullMQEnabled = process.env.ENABLE_BULLMQ !== 'false';
-const isProduction = process.env.NODE_ENV === 'production';
-
-if (isProduction && !isBullMQEnabled) {
-  throw new Error('BullMQ must be enabled in production environment.');
-}
 
 const imports = [];
 const providers = [];

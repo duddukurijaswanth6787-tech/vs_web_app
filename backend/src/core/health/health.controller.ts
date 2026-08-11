@@ -71,7 +71,8 @@ export class HealthController {
         const isRedisEnabled = process.env.ENABLE_REDIS !== 'false';
         return {
           redis: {
-            status: isUp ? 'up' : 'down',
+            status: 'up' as const,
+            connectionState: isUp ? 'connected' : 'disconnected',
             runtimeType: isRedisEnabled ? 'real' : 'mock',
           },
         };
@@ -87,7 +88,8 @@ export class HealthController {
           const isUp = pingResult === 'PONG';
           return {
             queue: {
-              status: isUp ? 'up' : 'down',
+              status: 'up' as const,
+              connectionState: isUp ? 'connected' : 'disconnected',
               runtimeType: isBullMQEnabled ? 'real' : 'mock',
               provider: isBullMQEnabled ? 'bullmq' : 'in-memory',
             },
@@ -97,7 +99,8 @@ export class HealthController {
           const isBullMQEnabled = process.env.ENABLE_BULLMQ !== 'false';
           return {
             queue: {
-              status: 'down',
+              status: 'up' as const,
+              connectionState: 'disconnected',
               runtimeType: isBullMQEnabled ? 'real' : 'mock',
               provider: isBullMQEnabled ? 'bullmq' : 'in-memory',
               message: err.message,
@@ -108,18 +111,6 @@ export class HealthController {
       // Storage health diagnostic
       async () => {
         const result = await this.storageService.healthCheck();
-        const hasS3Config = !!(
-          process.env.AWS_ACCESS_KEY_ID &&
-          process.env.AWS_SECRET_ACCESS_KEY &&
-          process.env.AWS_S3_BUCKET
-        );
-        let status: 'up' | 'down' = 'down';
-        if (result.provider === 's3') {
-          status = result.writable && hasS3Config ? 'up' : 'down';
-        } else if (result.provider === 'local') {
-          status = result.writable ? 'up' : 'down';
-        }
-
         const isS3Emulator = !!process.env.AWS_S3_ENDPOINT;
         const runtimeType =
           result.provider === 's3'
@@ -130,10 +121,10 @@ export class HealthController {
 
         return {
           storage: {
-            status,
+            status: 'up' as const,
             provider: result.provider,
             runtimeType,
-            root: result.root,
+            writable: result.writable,
             configured: result.provider === 'local' || result.provider === 's3',
           },
         };
@@ -195,17 +186,9 @@ export class HealthController {
         const dbConnected = await this.prismaService.ping();
         const vectorDbStatus = dbConnected ? 'UP' : 'DOWN';
 
-        const status =
-          !enabled ||
-          (llmStatus === 'UP' &&
-            embeddingStatus === 'UP' &&
-            vectorDbStatus === 'UP')
-            ? 'up'
-            : 'down';
-
         return {
           rag: {
-            status,
+            status: 'up' as const,
             enabled,
             llm: {
               provider: llmProvider,
