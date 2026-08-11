@@ -15,7 +15,7 @@ async function bootstrap() {
   const startTime = Date.now();
 
   const app = await NestFactory.create(AppModule, {
-    bufferLogs: true,
+    bufferLogs: false,
     bodyParser: false,
   });
 
