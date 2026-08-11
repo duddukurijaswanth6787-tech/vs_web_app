@@ -33,11 +33,10 @@ RUN mkdir -p /usr/src/app/storage && chown -R appuser:appgroup /usr/src/app
 USER appuser
 
 ENV NODE_ENV=production
-ENV PORT=4000
 
-EXPOSE 4000
+EXPOSE 8080
 
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT}/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8080}/health || exit 1
 
 CMD ["node", "dist/src/main"]
