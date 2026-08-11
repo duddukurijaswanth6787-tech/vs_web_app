@@ -1,0 +1,32 @@
+node_modules
+.claude
+# Keep environment variables out of version control
+.env
+.env.local
+.env.*.local
+
+/generated/prisma
+
+# Build output
+backend/dist
+frontend/.next
+frontend/out
+coverage
+*.tsbuildinfo
+
+# Local runtime data
+backend/storage
+*.log
+
+# Editor/OS
+.DS_Store
+
+# Deployment CLIs
+.vercel
+.railway
+
+# Backups / scratch / generated reports (not needed in repo)
+package-lock.json.backup.*
+lint-*.txt
+lint-*.json
+*_output.txt

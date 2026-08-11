@@ -1,0 +1,142 @@
+import { Injectable } from '@nestjs/common';
+import { PrismaService } from '@database/prisma.service';
+import { CacheService } from '@infrastructure/redis';
+import { BusinessException } from '@common/exceptions';
+import { NewsletterSubscribeDto } from './storefront.types';
+
+@Injectable()
+export class StorefrontPublicService {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
+
+  async getPublicSettings() {
+    return this.cache.getOrSet(
+      'storefront:settings',
+      async () => {
+        const settings = await this.prisma.websiteSetting.findFirst({
+          where: { deletedAt: null },
+        });
+        if (!settings)
+          throw new BusinessException('Website settings not found', 'STF_001');
+        const [
+          autoplaySetting,
+          enabledSetting,
+          mobileAnnouncementSetting,
+          announcementTextSetting,
+        ] = await Promise.all([
+          this.prisma.appSetting.findUnique({
+            where: { key: 'banner_autoplay_interval' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'banner_autoplay_enabled' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_mobile_enabled' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_text' },
+          }),
+        ]);
+        return {
+          ...settings,
+          bannerAutoplayInterval: autoplaySetting
+            ? parseInt(autoplaySetting.value, 10)
+            : 5,
+          bannerAutoplayEnabled: enabledSetting
+            ? enabledSetting.value === 'true'
+            : true,
+          announcementBarMobileEnabled: mobileAnnouncementSetting
+            ? mobileAnnouncementSetting.value === 'true'
+            : true,
+          announcementBarText: announcementTextSetting
+            ? announcementTextSetting.value
+            : 'Festive Sale is Live! Get up to 30% OFF',
+        };
+      },
+      300,
+    );
+  }
+
+  async getHomepage() {
+    return this.cache.getOrSet(
+      'storefront:homepage',
+      async () => {
+        const [sections, categories] = await Promise.all([
+          this.prisma.homepageSection.findMany({
+            where: { deletedAt: null, enabled: true },
+            orderBy: { displayOrder: 'asc' },
+          }),
+          this.prisma.homepageCategory.findMany({
+            orderBy: { displayOrder: 'asc' },
+            include: { category: true },
+          }),
+        ]);
+        return { sections, categories };
+      },
+      120,
+    );
+  }
+
+  async getFooter() {
+    return this.cache.getOrSet(
+      'storefront:footer',
+      async () =>
+        this.prisma.footerSection.findMany({
+          where: { enabled: true },
+          orderBy: { displayOrder: 'asc' },
+          include: {
+            links: {
+              where: { enabled: true },
+              orderBy: { displayOrder: 'asc' },
+            },
+          },
+        }),
+      300,
+    );
+  }
+
+  async getSocialLinks() {
+    return this.cache.getOrSet(
+      'storefront:social-links',
+      async () =>
+        this.prisma.socialLink.findMany({
+          where: { enabled: true },
+          orderBy: { displayOrder: 'asc' },
+        }),
+      300,
+    );
+  }
+
+  async getFeatures() {
+    return this.cache.getOrSet(
+      'storefront:features',
+      async () =>
+        this.prisma.featureToggle.findMany({ orderBy: { category: 'asc' } }),
+      300,
+    );
+  }
+
+  async subscribeToNewsletter(dto: NewsletterSubscribeDto) {
+    const existing = await this.prisma.newsletterSubscription.findUnique({
+      where: { email: dto.email },
+    });
+    if (existing) {
+      if (existing.status === 'SUBSCRIBED')
+        throw new BusinessException('Email already subscribed', 'STF_010');
+      return this.prisma.newsletterSubscription.update({
+        where: { email: dto.email },
+        data: {
+          status: 'SUBSCRIBED',
+          subscribedAt: new Date(),
+          unsubscribedAt: null,
+          source: dto.source ?? existing.source,
+        },
+      });
+    }
+    return this.prisma.newsletterSubscription.create({
+      data: { email: dto.email, source: dto.source },
+    });
+  }
+}

@@ -1,0 +1,8 @@
+▲ Next.js 16.2.10 (Turbopack)
+- Local:         http://localhost:3001
+- Network:       http://192.168.144.1:3001
+- Environments: .env.local
+✓ Ready in 527ms
+
+ GET / 200 in 3.5s (next.js: 3.1s, application-code: 377ms)
+ GET /admin/catalog/media 200 in 1121ms (next.js: 925ms, application-code: 196ms)

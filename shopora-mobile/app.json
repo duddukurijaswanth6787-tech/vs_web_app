@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Shopora Mobile POS",
+    "slug": "shopora-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "scheme": "shopora",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": false,
+    "splash": {
+      "backgroundColor": "#800020"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.vasanthi.shopora"
+    },
+    "android": {
+      "backgroundColor": "#800020",
+      "package": "com.vasanthi.shopora"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-asset",
+      "expo-font",
+      "expo-status-bar",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow Shopora to access your camera to scan barcodes."
+        }
+       ],
+       [
+        "expo-image-picker",
+        {
+          "photosPermission": "The app accesses your photos to scan barcodes from images."
+        }
+      ]
+    ]
+  }
+}

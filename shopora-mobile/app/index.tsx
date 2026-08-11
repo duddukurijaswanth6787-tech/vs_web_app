@@ -1,0 +1,314 @@
+import React from 'react';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
+import { useRouter } from 'expo-router';
+import {
+  ShoppingBag,
+  PlusCircle,
+  PackagePlus,
+  Barcode,
+  AlertTriangle,
+  ChevronRight,
+} from 'lucide-react-native';
+
+export default function ShoporaHomeScreen() {
+  const router = useRouter();
+
+  return (
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Top Banner / Store Header Card */}
+      <View style={styles.headerCard}>
+        <View style={styles.headerRow}>
+          <View style={styles.logoBadge}>
+            <Text style={styles.logoSymbol}>❖</Text>
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.storeName}>Vasanthi's Signature</Text>
+            <Text style={styles.storeTagline}>Shopora Retail & Inventory System</Text>
+          </View>
+        </View>
+
+        <View style={styles.statsRow}>
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Today's Sales</Text>
+            <Text style={styles.statValue}>₹24,580</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statBox}>
+            <Text style={styles.statLabel}>Items Sold</Text>
+            <Text style={styles.statValue}>47 Pcs</Text>
+          </View>
+        </View>
+      </View>
+
+      {/* Main 4 Action Cards Grid */}
+      <Text style={styles.sectionTitle}>Quick Actions</Text>
+
+      <View style={styles.grid}>
+        {/* 1. SALE PRODUCT (Mobile POS) */}
+        <TouchableOpacity
+          style={[styles.actionCard, { backgroundColor: '#0284c7', borderColor: '#0284c7' }]}
+          onPress={() => router.push('/sale')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.iconCircleLight}>
+            <ShoppingBag size={24} color="#0284c7" />
+          </View>
+          <Text style={styles.actionCardTitleLight}>Sale Product</Text>
+          <Text style={styles.actionCardSubLight}>Scan barcode & checkout</Text>
+        </TouchableOpacity>
+
+        {/* 2. + ADD PRODUCT (Wizard) */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/add-product')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#e0f2fe' }]}>
+            <PlusCircle size={24} color="#0284c7" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>+ Add Product</Text>
+          <Text style={styles.actionCardSubDark}>Single or multi-variant</Text>
+        </TouchableOpacity>
+
+        {/* 3. + ADD STOCK (Replenishment & Labels) */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/add-stock')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#fefce8' }]}>
+            <PackagePlus size={24} color="#ca8a04" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>+ Add Stock</Text>
+          <Text style={styles.actionCardSubDark}>Receive & print labels</Text>
+        </TouchableOpacity>
+
+        {/* 4. SCAN / INSPECT PRODUCT */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/view-product')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#f0fdf4' }]}>
+            <Barcode size={24} color="#16a34a" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>Inspect Product</Text>
+          <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
+        </TouchableOpacity>
+      </View>
+
+      {/* Stock Alerts Widget */}
+      <Text style={styles.sectionTitle}>Stock Alerts</Text>
+
+      <TouchableOpacity
+        style={styles.alertCard}
+        onPress={() => router.push('/add-stock')}
+        activeOpacity={0.85}
+      >
+        <View style={styles.alertIconCircle}>
+          <AlertTriangle size={20} color="#0284c7" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.alertTitle}>12 Products Low on Stock</Text>
+          <Text style={styles.alertSub}>Tap to replenish inventory & print labels</Text>
+        </View>
+        <ChevronRight size={18} color="#94a3b8" />
+      </TouchableOpacity>
+    </ScrollView>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#f0f9ff',
+  },
+  content: {
+    padding: 16,
+    paddingBottom: 32,
+  },
+  headerCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 18,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    marginBottom: 20,
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 14,
+  },
+  logoBadge: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  logoSymbol: {
+    fontSize: 20,
+    color: '#ffffff',
+    fontWeight: 'bold',
+  },
+  storeName: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    fontFamily: 'serif',
+    color: '#0369a1',
+  },
+  storeTagline: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  statsRow: {
+    flexDirection: 'row',
+    backgroundColor: '#f0f9ff',
+    borderRadius: 14,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  statBox: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  statDivider: {
+    width: 1,
+    height: 26,
+    backgroundColor: '#bae6fd',
+  },
+  statLabel: {
+    fontSize: 10,
+    color: '#0369a1',
+    fontWeight: 'bold',
+    textTransform: 'uppercase',
+  },
+  statValue: {
+    fontSize: 17,
+    fontWeight: 'bold',
+    color: '#0284c7',
+    marginTop: 2,
+  },
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0369a1',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    marginTop: 4,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  actionCard: {
+    width: '48%',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    justifyContent: 'space-between',
+    minHeight: 124,
+    elevation: 2,
+  },
+  actionCardWhite: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    marginBottom: 12,
+    justifyContent: 'space-between',
+    minHeight: 124,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 4,
+    elevation: 1,
+  },
+  iconCircleLight: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  iconCircleDark: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 10,
+  },
+  actionCardTitleLight: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  actionCardSubLight: {
+    fontSize: 10,
+    color: '#e0f2fe',
+    marginTop: 2,
+  },
+  actionCardTitleDark: {
+    fontSize: 15,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  actionCardSubDark: {
+    fontSize: 10,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  alertCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  alertIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  alertTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  alertSub: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 1,
+  },
+});

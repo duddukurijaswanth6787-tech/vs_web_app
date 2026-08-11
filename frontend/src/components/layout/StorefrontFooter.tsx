@@ -1,0 +1,181 @@
+'use client';
+
+import React, { useState } from 'react';
+import Link from 'next/link';
+import {
+  Mail,
+  Camera,
+  Globe,
+  MapPin,
+  Play,
+  MessageCircle,
+  Smartphone,
+  QrCode,
+  Lock,
+  Truck,
+  Headphones,
+} from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+
+export function StorefrontFooter() {
+  const { isAuthenticated } = useAuth();
+  return (
+    <footer className="w-full font-sans">
+      {/* Main Footer Content */}
+
+      {/* 2. Main Footer Content (Tight Vertical Spacing on Mobile) */}
+      <div className="bg-[#2D0812] text-rose-100/90 pt-5 sm:pt-12 pb-20 lg:pb-10 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-[1440px] mx-auto space-y-4">
+          
+          {/* Top Row: Brand & Social Icons */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
+            <div>
+              <h3 className="text-lg font-bold font-serif text-white tracking-tight">
+                Vasanthi's Signature
+              </h3>
+              <p className="text-[11px] text-rose-200/70 hidden sm:block mt-0.5">
+                Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
+              </p>
+            </div>
+
+            {/* Social Icons */}
+            <div className="flex items-center gap-2 text-rose-200">
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+                <Camera className="w-3.5 h-3.5" />
+              </a>
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+                <Globe className="w-3.5 h-3.5" />
+              </a>
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+                <MapPin className="w-3.5 h-3.5" />
+              </a>
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+                <Play className="w-3.5 h-3.5 fill-rose-200" />
+              </a>
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+                <MessageCircle className="w-3.5 h-3.5" />
+              </a>
+            </div>
+          </div>
+
+          {/* Links Grid: Tight 2-Column on Mobile */}
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4 sm:gap-8 pt-1">
+            
+            {/* Column 1: Shop */}
+            <div className="space-y-1.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Shop</h4>
+              <ul className="space-y-1 text-[11px] text-rose-200/70">
+                <li><Link href="/categories/sarees" className="hover:text-white transition-colors">Sarees</Link></li>
+                <li><Link href="/categories/lehengas" className="hover:text-white transition-colors">Lehengas</Link></li>
+                <li><Link href="/categories/kurtis" className="hover:text-white transition-colors">Kurtis & Suits</Link></li>
+                <li><Link href="/categories/dresses" className="hover:text-white transition-colors">Dresses</Link></li>
+                <li><Link href="/offers" className="hover:text-white transition-colors">Sale</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 2: Customer Care */}
+            <div className="space-y-1.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Customer Care</h4>
+              <ul className="space-y-1 text-[11px] text-rose-200/70">
+                <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link href="/track-order" className="hover:text-white transition-colors">Track Order</Link></li>
+                <li><Link href="/returns" className="hover:text-white transition-colors">Returns & Refunds</Link></li>
+                <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping Info</Link></li>
+                <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs & Size Guide</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 3: About (Desktop/Tablet) */}
+            <div className="hidden sm:block space-y-1.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">About</h4>
+              <ul className="space-y-1 text-[11px] text-rose-200/70">
+                <li><Link href="/about" className="hover:text-white transition-colors">Our Story</Link></li>
+                <li><Link href="/stores" className="hover:text-white transition-colors">Store Locator</Link></li>
+                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
+                <li><Link href="/press" className="hover:text-white transition-colors">Press</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 4: My Account (Desktop/Tablet) */}
+            <div className="hidden sm:block space-y-1.5">
+              <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">My Account</h4>
+              <ul className="space-y-1 text-[11px] text-rose-200/70">
+                <li><Link href={isAuthenticated ? '/profile' : '/login'} className="hover:text-white transition-colors">{isAuthenticated ? 'My Account' : 'Login'}</Link></li>
+                <li><Link href="/orders" className="hover:text-white transition-colors">Orders</Link></li>
+                <li><Link href="/wishlist" className="hover:text-white transition-colors">Wishlist</Link></li>
+                <li><Link href="/profile/addresses" className="hover:text-white transition-colors">Addresses</Link></li>
+              </ul>
+            </div>
+
+            {/* Column 5: Download App (Desktop) */}
+            <div className="hidden lg:block space-y-2 col-span-2 lg:col-span-1">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-white">Download App</h4>
+              <div className="space-y-2">
+                <a
+                  href="#"
+                  className="flex items-center gap-2.5 bg-[#42101F] hover:bg-[#541629] border border-rose-900/50 p-2 rounded-xl text-white transition-all group"
+                >
+                  <Smartphone className="w-4 h-4 text-rose-300 group-hover:scale-110 transition-transform shrink-0" />
+                  <div>
+                    <span className="text-[8px] uppercase tracking-wider text-rose-300/80 block leading-none">GET IT ON</span>
+                    <span className="text-[11px] font-bold">Google Play</span>
+                  </div>
+                </a>
+
+                <a
+                  href="#"
+                  className="flex items-center gap-2.5 bg-[#42101F] hover:bg-[#541629] border border-rose-900/50 p-2 rounded-xl text-white transition-all group"
+                >
+                  <Smartphone className="w-4 h-4 text-rose-300 group-hover:scale-110 transition-transform shrink-0" />
+                  <div>
+                    <span className="text-[8px] uppercase tracking-wider text-rose-300/80 block leading-none">DOWNLOAD ON THE</span>
+                    <span className="text-[11px] font-bold">App Store</span>
+                  </div>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+      </div>
+
+      {/* 3. Secure Payments & Support Bar */}
+      <div className="bg-[#1C030A] border-t border-rose-950/60 py-2.5 px-4 sm:px-6 lg:px-8 text-rose-200/80 text-[10px]">
+        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+          
+          <div className="flex items-center gap-2 justify-center">
+            <Lock className="w-3 h-3 text-rose-400" />
+            <span className="font-bold text-white uppercase tracking-wide text-[9px]">SECURE PAYMENTS</span>
+            <div className="flex items-center gap-1 ml-1">
+              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">VISA</span>
+              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">Mastercard</span>
+              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">RuPay</span>
+              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">UPI</span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5 justify-center">
+            <Headphones className="w-3 h-3 text-rose-400" />
+            <span className="font-bold text-white uppercase tracking-wide text-[9px]">24/7 SUPPORT</span>
+            <span className="font-bold text-amber-300">+91 98765 43210</span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* 4. Bottom Legal Bar */}
+      <div className="bg-[#150207] border-t border-rose-950/80 py-2.5 px-4 sm:px-6 lg:px-8 text-rose-300/60 text-[10px]">
+        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
+          <span>© 2026 Vasanthi's Signature. All rights reserved.</span>
+
+          <div className="flex items-center gap-2.5 justify-center text-[9px]">
+            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <span>•</span>
+            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}
