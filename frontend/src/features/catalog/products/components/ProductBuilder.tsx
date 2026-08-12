@@ -7,6 +7,10 @@ import Image from 'next/image';
 import { isLocalOrPlaceholder } from '@/lib/media-url';
 import { productSchema, ProductFormValues, ProductResponse } from '../product.types';
 import { productService } from '../product.service';
+import { variantService } from '@/features/catalog/variants/variant.service';
+import { inventoryService } from '@/features/inventory/inventory.service';
+import { attributeService } from '@/features/catalog/attributes/attribute.service';
+import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useFeaturedCategories } from '@/features/customer/hooks';
 import {
@@ -48,6 +52,54 @@ const COLOR_PRESETS = [
 
 const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
+/** A variant the backend created on save, with the barcode it assigned. */
+interface IssuedVariant {
+  sku: string;
+  barcode?: string;
+  title: string;
+  stock: number;
+}
+
+const findAttributeBySlug = (attributes: AttributeResponse[], slug: string) =>
+  attributes.find((a) => a.slug === slug || a.name.toLowerCase() === slug);
+
+const findOption = (attribute: AttributeResponse | undefined, value: string) =>
+  attribute?.options?.find(
+    (o) => o.value.toLowerCase().trim() === value.toLowerCase().trim(),
+  );
+
+/** The AttributeOption id a color group must be keyed by, when one exists. */
+const findColorOptionId = (attributes: AttributeResponse[], colorName: string) =>
+  findOption(findAttributeBySlug(attributes, 'color'), colorName)?.id;
+
+/**
+ * Tag a variant with its Color and Size. A color or size that is not in the
+ * attribute registry is sent as free text, and a missing attribute is skipped —
+ * an untagged variant still carries its own SKU, barcode and stock.
+ */
+const buildVariantAttributeValues = (
+  attributes: AttributeResponse[],
+  color: string,
+  size: string,
+) => {
+  const entries: { attributeId: string; attributeOptionId?: string; value?: string }[] = [];
+
+  const push = (slug: string, value: string) => {
+    const attribute = findAttributeBySlug(attributes, slug);
+    if (!attribute) return;
+    const option = findOption(attribute, value);
+    entries.push(
+      option
+        ? { attributeId: attribute.id, attributeOptionId: option.id }
+        : { attributeId: attribute.id, value },
+    );
+  };
+
+  if (color) push('color', color);
+  if (size) push('size', size);
+  return entries;
+};
+
 const DEFAULT_SAMPLE_IMAGE =
   'http://localhost:4000/api/v1/storage/products/50890861-0fb4-4b93-91b2-231422e0fa49/images/7027e0e8-0450-4a09-84a0-e76f84c88935.png';
 
@@ -59,6 +111,7 @@ export default function ProductBuilder({
   const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'colors' | 'sizes' | 'seo'>('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
+  const [issuedVariants, setIssuedVariants] = useState<IssuedVariant[]>([]);
 
   // Load Brands
   const { data: brandsData } = useBrands({ limit: 100 });
@@ -348,16 +401,20 @@ export default function ProductBuilder({
   const handleSubmitForm = async (values: ProductFormValues) => {
     setIsSubmitting(true);
     setSaveMessage(null);
+    setIssuedVariants([]);
     try {
       const created = productId
         ? await productService.update(productId, values as any)
         : await productService.create(values as any);
 
       // Flatten every staged image across all color groups into one gallery,
-      // upload real files, and attach them as product media.
+      // upload real files, and attach them as product media. Media ids are kept
+      // per color group so they can be bound to that group further down.
       let displayOrder = 0;
       let primarySet = false;
+      const mediaIdsByGroup: Record<string, string[]> = {};
       for (const group of colorGroups) {
+        mediaIdsByGroup[group.id] = [];
         const groupImages = [group.swatchImage, ...group.images].filter(Boolean) as string[];
         for (const img of groupImages) {
           let url = img;
@@ -366,20 +423,107 @@ export default function ProductBuilder({
             const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
             url = uploaded.url;
           }
-          await productService.addMedia({
+          const media = await productService.addMedia({
             productId: created.id,
             url,
             isPrimary: !primarySet,
             displayOrder: displayOrder++,
             color: group.name,
           });
+          if (media?.id) mediaIdsByGroup[group.id].push(media.id);
           primarySet = true;
         }
       }
 
-      setSaveMessage('✓ Product saved successfully!');
+      // Persist the color/size matrix as real variants. The backend assigns the
+      // SKU and barcode on POST /variants, so nothing here is sellable or
+      // scannable until this runs.
+      const [attributeList, existingVariants] = await Promise.all([
+        attributeService
+          .findAllAttributes({ limit: 100 })
+          .catch(() => ({ data: [] as AttributeResponse[] })),
+        variantService
+          .findAll({ productId: created.id, limit: 200 })
+          .catch(() => null),
+      ]);
+      const attributes = attributeList?.data ?? [];
+
+      // Saving twice must not duplicate variants, so skip pairs already stored.
+      const existingTitles = new Set(
+        (existingVariants?.data ?? [])
+          .map((v) => String(v.title ?? '').toLowerCase().trim())
+          .filter(Boolean),
+      );
+
+      const issued: IssuedVariant[] = [];
+      const variantIdsByGroup: Record<string, string[]> = {};
+      let variantOrder = 0;
+
+      for (const group of colorGroups) {
+        variantIdsByGroup[group.id] = [];
+        for (const sizeRow of group.sizes) {
+          if (!sizeRow.available) continue;
+          const title = `${group.name} / ${sizeRow.size}`;
+          if (existingTitles.has(title.toLowerCase())) continue;
+
+          const variant = await variantService.create({
+            productId: created.id,
+            title,
+            sku: sizeRow.sku || undefined,
+            priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
+            costPrice: values.costPrice ? Number(values.costPrice) : undefined,
+            displayOrder: variantOrder,
+            isDefault: variantOrder === 0 && existingTitles.size === 0,
+            attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
+          });
+          variantOrder++;
+
+          if (!variant?.id) continue;
+          variantIdsByGroup[group.id].push(variant.id);
+
+          // Opening stock for the new variant.
+          if (sizeRow.stock > 0) {
+            await inventoryService
+              .create({ variantId: variant.id, availableQuantity: sizeRow.stock })
+              .catch(() => null);
+          }
+
+          issued.push({
+            sku: variant.sku,
+            barcode: variant.barcode,
+            title,
+            stock: sizeRow.stock,
+          });
+        }
+      }
+
+      // Bind the new variants and media to their color group so the storefront
+      // can group images and sizes by color.
+      const syncPayload = colorGroups.flatMap((group) => {
+        const optionId = findColorOptionId(attributes, group.name);
+        if (!optionId) return [];
+        return [
+          {
+            colorAttributeOptionId: optionId,
+            label: group.name,
+            variantIds: variantIdsByGroup[group.id] ?? [],
+            mediaIds: mediaIdsByGroup[group.id] ?? [],
+          },
+        ];
+      });
+
+      if (syncPayload.length > 0) {
+        await productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch(() => null);
+      }
+
+      setIssuedVariants(issued);
+      setSaveMessage(
+        issued.length > 0
+          ? `✓ Product saved — ${issued.length} variant${issued.length === 1 ? '' : 's'} created with barcodes.`
+          : '✓ Product saved successfully!',
+      );
       if (onSaveSuccess) onSaveSuccess(created.id);
-      setTimeout(() => setSaveMessage(null), 3000);
+      if (issued.length === 0) setTimeout(() => setSaveMessage(null), 3000);
     } catch (err: any) {
       setSaveMessage('✕ ' + (err?.response?.data?.message || err?.message || 'Failed to save product'));
     } finally {
@@ -429,6 +573,57 @@ export default function ProductBuilder({
             </button>
           </div>
         </div>
+
+        {/* ISSUED BARCODES — shown after a save that created variants */}
+        {issuedVariants.length > 0 && (
+          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h3 className="text-sm font-bold text-neutral-900">
+                  Barcodes issued ({issuedVariants.length})
+                </h3>
+                <p className="text-xs text-neutral-400 mt-0.5">
+                  Assigned by the server when each variant was created. These are scannable in POS.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIssuedVariants([])}
+                className="text-xs font-semibold text-neutral-400 hover:text-neutral-600"
+              >
+                Dismiss
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {issuedVariants.map((variant) => (
+                <div
+                  key={variant.sku}
+                  className="border border-neutral-200 rounded-2xl p-4 flex flex-col items-center text-center"
+                >
+                  <span className="text-xs font-bold text-neutral-700">{variant.title}</span>
+                  {variant.barcode ? (
+                    <>
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
+                        alt={`Barcode ${variant.barcode}`}
+                        className="h-14 my-2 object-contain"
+                      />
+                      <span className="text-xs font-mono tracking-widest text-neutral-900">
+                        {variant.barcode}
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-xs text-neutral-400 my-4">No barcode returned</span>
+                  )}
+                  <span className="text-[10px] text-neutral-400 mt-1">SKU: {variant.sku}</span>
+                  <span className="text-[10px] text-neutral-400">Stock: {variant.stock}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* SECTION NAVIGATION TABS */}
         <div className="flex border-b border-neutral-200 bg-white rounded-2xl p-1.5 border shadow-2xs gap-1 overflow-x-auto scrollbar-none">
