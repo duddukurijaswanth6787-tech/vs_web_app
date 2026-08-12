@@ -24,6 +24,10 @@ export class AuthService {
     private readonly loggerService: LoggerService,
   ) {}
 
+  async seedAdmin() {
+    return this.authRepository.seedAdmin();
+  }
+
   async register(
     dto: RegisterDto,
     ip?: string,

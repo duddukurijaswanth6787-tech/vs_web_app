@@ -46,6 +46,69 @@ export class AuthRepository {
     });
   }
 
+  async seedAdmin() {
+    const SYSTEM_ROLES = [
+      { name: 'super_admin', displayName: 'Super Admin', description: 'Full system access', scope: 'GLOBAL' as const, hierarchy: 100, isSystem: true },
+      { name: 'admin', displayName: 'Admin', description: 'Administrative access', scope: 'GLOBAL' as const, hierarchy: 80, isSystem: true },
+      { name: 'staff', displayName: 'Staff', description: 'Staff member access', scope: 'DOMAIN' as const, hierarchy: 50, isSystem: true },
+      { name: 'customer', displayName: 'Customer', description: 'Customer access', scope: 'CUSTOM' as const, hierarchy: 10, isSystem: true },
+    ];
+
+    for (const role of SYSTEM_ROLES) {
+      await this.prisma.role.upsert({
+        where: { name: role.name },
+        update: {},
+        create: role,
+      });
+    }
+
+    const superAdminRole = await this.prisma.role.findUnique({
+      where: { name: 'super_admin' },
+    });
+
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vasanthi.com').toLowerCase().trim();
+    const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
+    const passwordHash = await require('argon2').hash(adminPassword);
+
+    const adminUser = await this.prisma.user.upsert({
+      where: { email: adminEmail },
+      update: {
+        passwordHash,
+        userType: 'ADMIN',
+        accountStatus: 'ACTIVE',
+        isEmailVerified: true,
+        loginAttempts: 0,
+        lockoutUntil: null,
+      },
+      create: {
+        email: adminEmail,
+        passwordHash,
+        firstName: 'Admin',
+        lastName: 'User',
+        userType: 'ADMIN',
+        accountStatus: 'ACTIVE',
+        isEmailVerified: true,
+        loginAttempts: 0,
+      },
+    });
+
+    if (superAdminRole) {
+      const existingRoleLink = await this.prisma.userRole.findFirst({
+        where: { userId: adminUser.id, roleId: superAdminRole.id },
+      });
+      if (!existingRoleLink) {
+        await this.prisma.userRole.create({
+          data: { userId: adminUser.id, roleId: superAdminRole.id },
+        });
+      }
+    }
+
+    return {
+      email: adminEmail,
+      seeded: true,
+    };
+  }
+
   // ponytail: lightweight lookup — no roles/permissions, for auth checks that only need user fields
   async findByEmailBasic(email: string) {
     return this.prisma.user.findUnique({
