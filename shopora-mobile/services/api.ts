@@ -280,6 +280,8 @@ export const catalogService = {
     isPrimary?: boolean;
     displayOrder?: number;
     color?: string;
+    /** Shot type — Front, Back, Detail … */
+    title?: string;
   }) {
     const res = await posApiClient.post('/media', dto);
     return unwrap<any>(res);
