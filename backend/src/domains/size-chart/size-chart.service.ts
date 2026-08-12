@@ -9,14 +9,31 @@ import {
   SizeChartTemplateResponse,
 } from './size-chart.types';
 
+type SizeChartTemplateWithRows = {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string | null;
+  garmentType?: string | null;
+  unit: string;
+  status: string;
+  rows?: Array<{
+    id: string;
+    size: string;
+    measurements?: unknown;
+    displayOrder?: number;
+  }>;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 @Injectable()
 export class SizeChartService {
   constructor(
     private readonly repository: SizeChartRepository,
     private readonly auditService: AuditService,
   ) {}
-
-  private toResponse(t: any): SizeChartTemplateResponse {
+  private toResponse(t: SizeChartTemplateWithRows): SizeChartTemplateResponse {
     return {
       id: t.id,
       name: t.name,
@@ -25,11 +42,11 @@ export class SizeChartService {
       garmentType: t.garmentType ?? undefined,
       unit: t.unit,
       status: t.status,
-      rows: (t.rows ?? []).map((row: any) => ({
+      rows: (t.rows ?? []).map((row) => ({
         id: row.id,
         size: row.size,
         measurements: (row.measurements ?? {}) as Record<string, number | string>,
-        displayOrder: row.displayOrder,
+        displayOrder: row.displayOrder ?? 0,
       })),
       createdAt: t.createdAt,
       updatedAt: t.updatedAt,
@@ -147,6 +164,9 @@ export class SizeChartService {
       newValue: { name: dto.name, rows: dto.rows?.length },
     });
 
+    if (!template) {
+      throw new BusinessException('Size chart not found', 'SIZE_CHART_001');
+    }
     return this.toResponse(template);
   }
 

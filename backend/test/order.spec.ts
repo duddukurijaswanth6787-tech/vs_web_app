@@ -1,6 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
-import request from 'supertest';
+// import request from 'supertest';
 import { AppModule } from '@core/app.module';
 import { PrismaService } from '@database/prisma.service';
 
@@ -27,7 +27,7 @@ describe('Order Transaction Flow (e2e)', () => {
     const brand = await prisma.brand.create({
       data: { name: 'Test Brand', slug: 'test-brand' },
     });
-    const product = await prisma.product.create({
+    await prisma.product.create({
       data: {
         name: 'Test Product',
         slug: 'test-product',

@@ -68,7 +68,10 @@ describe('ProductsService', () => {
   it('should list products', async () => {
     jest
       .spyOn(repository, 'findAll')
-      .mockResolvedValue({ data: [], meta: { total: 0 } });
+      .mockResolvedValue({
+        data: [],
+        meta: { page: 1, limit: 20, total: 0, totalPages: 0, hasNext: false, hasPrevious: false },
+      });
     const result = await service.findAll({});
     expect(result.data).toEqual([]);
     expect(repository.findAll).toHaveBeenCalled();

@@ -8,8 +8,6 @@ import { CreateCategoryDto } from './categories.types';
 describe('CategoriesService', () => {
   let service: CategoriesService;
   let repository: CategoriesRepository;
-  let auditService: AuditService;
-  let loggerService: LoggerService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -37,8 +35,6 @@ describe('CategoriesService', () => {
 
     service = module.get<CategoriesService>(CategoriesService);
     repository = module.get<CategoriesRepository>(CategoriesRepository);
-    auditService = module.get<AuditService>(AuditService);
-    loggerService = module.get<LoggerService>(LoggerService);
   });
 
   it('should be defined', () => {
@@ -53,14 +49,14 @@ describe('CategoriesService', () => {
       icon: 'test-icon',
       image: 'test-image',
       bannerImage: 'test-banner',
-      parentId: null,
+      parentId: undefined,
       displayOrder: 0,
       isFeatured: true,
       isVisible: true,
       isMenuVisible: true,
-      seoTitle: null,
-      seoDescription: null,
-      seoKeywords: null,
+      seoTitle: undefined,
+      seoDescription: undefined,
+      seoKeywords: undefined,
       status: 'ACTIVE',
     };
     const userId = 'user-1';

@@ -8,8 +8,6 @@ import { CreateBrandDto } from './brands.types';
 describe('BrandsService', () => {
   let service: BrandsService;
   let repository: BrandsRepository;
-  let auditService: AuditService;
-  let loggerService: LoggerService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -38,8 +36,6 @@ describe('BrandsService', () => {
 
     service = module.get<BrandsService>(BrandsService);
     repository = module.get<BrandsRepository>(BrandsRepository);
-    auditService = module.get<AuditService>(AuditService);
-    loggerService = module.get<LoggerService>(LoggerService);
   });
 
   it('should be defined', () => {

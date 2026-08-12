@@ -1,6 +1,7 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { CheckoutService } from './checkout.service';
 import { CartService } from '@domains/cart/cart.service';
+import { CouponService } from '@domains/coupon/coupon.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
@@ -15,6 +16,10 @@ describe('CheckoutService', () => {
         {
           provide: CartService,
           useValue: { getCartByUser: jest.fn() },
+        },
+        {
+          provide: CouponService,
+          useValue: { validate: jest.fn() },
         },
         {
           provide: OrderWorkflowService,
