@@ -263,6 +263,31 @@ export default function AddProductScreen() {
     );
   };
 
+  const setSizeThreshold = (
+    groupId: string,
+    size: string,
+    field: 'minStock' | 'reorderLevel',
+    raw: string,
+  ) => {
+    const parsed = Math.max(0, parseInt(raw.replace(/[^0-9]/g, ''), 10) || 0);
+    setColorGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, sizes: g.sizes.map((s) => (s.size === size ? { ...s, [field]: parsed } : s)) }
+          : g,
+      ),
+    );
+  };
+
+  /** Stock status shown next to each size, mirroring the web builder. */
+  const stockStatus = (stock: number, minStock?: number) => {
+    if (stock <= 0) return { label: 'OUT', color: '#b91c1c', bg: '#fef2f2' };
+    if (minStock != null && minStock > 0 && stock <= minStock) {
+      return { label: 'LOW', color: '#b45309', bg: '#fffbeb' };
+    }
+    return { label: 'IN STOCK', color: '#15803d', bg: '#f0fdf4' };
+  };
+
   const setSizeStock = (groupId: string, size: string, raw: string) => {
     const parsed = Math.max(0, parseInt(raw.replace(/[^0-9]/g, ''), 10) || 0);
     setColorGroups((prev) =>
@@ -469,7 +494,10 @@ export default function AddProductScreen() {
           if (sizeRow.stock > 0) {
             setProgress(`Adding stock for ${group.name} / ${sizeRow.size}…`);
             await inventoryService
-              .stockIn(variant.id, sizeRow.stock, 'Opening stock from POS mobile')
+              .stockIn(variant.id, sizeRow.stock, 'Opening stock from POS mobile', {
+                ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+                ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+              })
               .catch(() => null);
           }
 
@@ -908,6 +936,12 @@ export default function AddProductScreen() {
                     <View style={[styles.swatch, { backgroundColor: group.hex }]} />
                     <Text style={styles.cardTitle}>{group.name}</Text>
                   </View>
+                  <View style={styles.sizeHeaderRow}>
+                    <Text style={styles.sizeHeaderCell}>SIZE</Text>
+                    <Text style={styles.sizeHeaderCell}>STOCK</Text>
+                    <Text style={styles.sizeHeaderCellSmall}>MIN</Text>
+                    <Text style={styles.sizeHeaderCellSmall}>REORDER</Text>
+                  </View>
                   {group.sizes.map((row) => (
                     <View key={row.size} style={styles.sizeRow}>
                       <TouchableOpacity
@@ -930,7 +964,35 @@ export default function AddProductScreen() {
                         placeholder="0"
                         placeholderTextColor="#9ca3af"
                       />
-                      <Text style={styles.sizeHint}>units</Text>
+                      <TextInput
+                        style={[styles.thresholdInput, !row.available && styles.stockInputDisabled]}
+                        value={row.minStock ? String(row.minStock) : ''}
+                        onChangeText={(t) => setSizeThreshold(group.id, row.size, 'minStock', t)}
+                        keyboardType="numeric"
+                        editable={row.available}
+                        placeholder="min"
+                        placeholderTextColor="#9ca3af"
+                      />
+                      <TextInput
+                        style={[styles.thresholdInput, !row.available && styles.stockInputDisabled]}
+                        value={row.reorderLevel ? String(row.reorderLevel) : ''}
+                        onChangeText={(t) => setSizeThreshold(group.id, row.size, 'reorderLevel', t)}
+                        keyboardType="numeric"
+                        editable={row.available}
+                        placeholder="re"
+                        placeholderTextColor="#9ca3af"
+                      />
+                      {row.available &&
+                        (() => {
+                          const status = stockStatus(row.stock, row.minStock);
+                          return (
+                            <View style={[styles.statusPill, { backgroundColor: status.bg }]}>
+                              <Text style={[styles.statusPillText, { color: status.color }]}>
+                                {status.label}
+                              </Text>
+                            </View>
+                          );
+                        })()}
                     </View>
                   ))}
                 </View>
@@ -1490,6 +1552,23 @@ const styles = StyleSheet.create({
   },
   stockInputDisabled: { backgroundColor: '#f8fafc', color: '#9ca3af' },
   sizeHint: { fontSize: 11, color: '#9ca3af' },
+  thresholdInput: {
+    width: 52,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    paddingHorizontal: 6,
+    paddingVertical: 9,
+    backgroundColor: '#ffffff',
+    fontSize: 12,
+    color: '#111827',
+    textAlign: 'center',
+  },
+  statusPill: { paddingHorizontal: 7, paddingVertical: 4, borderRadius: 8 },
+  statusPillText: { fontSize: 9, fontWeight: '800', letterSpacing: 0.3 },
+  sizeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
+  sizeHeaderCell: { width: 74, fontSize: 9, fontWeight: '800', color: '#9ca3af' },
+  sizeHeaderCellSmall: { width: 52, fontSize: 9, fontWeight: '800', color: '#9ca3af' },
 
   summaryCard: {
     marginTop: 22,

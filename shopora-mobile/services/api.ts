@@ -133,6 +133,10 @@ export interface SizeRowDraft {
   size: string;
   stock: number;
   available: boolean;
+  /** Low-stock warning threshold for this variant. */
+  minStock?: number;
+  /** Level at which the variant should be reordered. */
+  reorderLevel?: number;
 }
 
 /** One created variant, with the barcode the backend assigned to it. */
@@ -393,6 +397,7 @@ export const inventoryService = {
     variantId: string;
     availableQuantity?: number;
     minimumStock?: number;
+    maximumStock?: number;
     reorderLevel?: number;
   }) {
     const res = await posApiClient.post('/inventory', dto);
@@ -413,10 +418,15 @@ export const inventoryService = {
    * variant has none. Replaces the old `POST /inventory/stock-in` call, which
    * was never an endpoint on this API.
    */
-  async stockIn(variantId: string, quantity: number, reason?: string) {
+  async stockIn(
+    variantId: string,
+    quantity: number,
+    reason?: string,
+    thresholds?: { minimumStock?: number; reorderLevel?: number },
+  ) {
     const existing = await this.findByVariant(variantId);
     if (!existing?.id) {
-      return this.create({ variantId, availableQuantity: quantity });
+      return this.create({ variantId, availableQuantity: quantity, ...thresholds });
     }
     if (quantity <= 0) return existing;
     return this.increase(existing.id, quantity, reason);

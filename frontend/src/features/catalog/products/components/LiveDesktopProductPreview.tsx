@@ -31,6 +31,10 @@ export interface ColorVariantGroup {
     price?: number;
     sku?: string;
     available: boolean;
+    /** Low-stock warning threshold for this variant. */
+    minStock?: number;
+    /** Level at which the variant should be reordered. */
+    reorderLevel?: number;
   }>;
 }
 
