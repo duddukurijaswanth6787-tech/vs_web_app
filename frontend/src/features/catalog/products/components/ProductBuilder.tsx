@@ -12,7 +12,7 @@ import { inventoryService } from '@/features/inventory/inventory.service';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
-import { useFeaturedCategories } from '@/features/customer/hooks';
+import { useCategories } from '@/features/catalog/categories/category.hooks';
 import {
   LiveDesktopProductPreview,
   ColorVariantGroup,
@@ -31,6 +31,9 @@ import {
   Sparkles,
   Save,
   Upload,
+  FolderTree,
+  X,
+  AlertTriangle,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -108,7 +111,9 @@ export default function ProductBuilder({
   initialData,
   onSaveSuccess,
 }: ProductBuilderProps) {
-  const [activeTab, setActiveTab] = useState<'basic' | 'pricing' | 'colors' | 'sizes' | 'seo'>('basic');
+  const [activeTab, setActiveTab] = useState<
+    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'seo'
+  >('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [issuedVariants, setIssuedVariants] = useState<IssuedVariant[]>([]);
@@ -117,9 +122,17 @@ export default function ProductBuilder({
   const { data: brandsData } = useBrands({ limit: 100 });
   const brands = useMemo(() => (Array.isArray(brandsData) ? brandsData : (brandsData as any)?.data || []), [brandsData]);
 
-  // Load Categories
-  const { data: categoriesData } = useFeaturedCategories();
-  const categories = useMemo(() => (Array.isArray(categoriesData) ? categoriesData : (categoriesData as any)?.data || []), [categoriesData]);
+  // Load the full category tree so a primary category and its sub-category can
+  // both be picked. useFeaturedCategories only returned the featured subset.
+  const { data: categoriesData } = useCategories({ limit: 200 });
+  const categories = useMemo(
+    () => (Array.isArray(categoriesData) ? categoriesData : categoriesData?.data || []),
+    [categoriesData],
+  );
+  const rootCategories = useMemo(
+    () => categories.filter((c) => !c.parentId),
+    [categories],
+  );
 
   // Form Setup
   const methods = useForm<ProductFormValues>({
@@ -146,6 +159,45 @@ export default function ProductBuilder({
       isPublished: initialData?.isPublished ?? true,
     },
   });
+
+  // ── Category & organisation state ────────────────────────────────────────
+  const [primaryCategoryId, setPrimaryCategoryId] = useState(
+    initialData?.categories?.[0]?.categoryId ?? '',
+  );
+  const [subCategoryId, setSubCategoryId] = useState(
+    initialData?.categories?.[1]?.categoryId ?? '',
+  );
+  const [collections, setCollections] = useState<string[]>(initialData?.collections ?? []);
+  const [tags, setTags] = useState<string[]>(initialData?.tags ?? []);
+  const [occasion, setOccasion] = useState(initialData?.occasion ?? '');
+  const [tagInput, setTagInput] = useState('');
+  const [collectionInput, setCollectionInput] = useState('');
+
+  // Sub-categories are the children of whichever primary category is selected.
+  const subCategories = useMemo(
+    () => categories.filter((c) => c.parentId === primaryCategoryId),
+    [categories, primaryCategoryId],
+  );
+
+  const addTag = () => {
+    const value = tagInput.trim();
+    if (!value || tags.includes(value)) {
+      setTagInput('');
+      return;
+    }
+    setTags((prev) => [...prev, value]);
+    setTagInput('');
+  };
+
+  const addCollection = () => {
+    const value = collectionInput.trim();
+    if (!value || collections.includes(value)) {
+      setCollectionInput('');
+      return;
+    }
+    setCollections((prev) => [...prev, value]);
+    setCollectionInput('');
+  };
 
   // Color Groups State (with Images & Sizes per Color)
   const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(
@@ -370,6 +422,62 @@ export default function ProductBuilder({
   const selectedBrandName = selectedBrandObj?.name || 'Vasanthi Designers';
 
   // Construct Live Preview Data Object
+  /**
+   * Pre-save validation gate. These are cross-field rules the zod schema cannot
+   * express (it only sees the form values, not the color groups), and they are
+   * what stops a half-configured product from reaching the storefront.
+   */
+  const validationIssues = useMemo(() => {
+    const issues: string[] = [];
+
+    if (!watchedValues.name || watchedValues.name.trim().length < 3) {
+      issues.push('Product name is missing (minimum 3 characters).');
+    }
+    if (!watchedValues.brandId) issues.push('No brand selected.');
+    if (!primaryCategoryId) {
+      issues.push('No category selected — the product will not appear anywhere on the storefront.');
+    }
+
+    const base = Number(watchedValues.basePrice) || 0;
+    const sale = Number(watchedValues.salePrice) || 0;
+    if (base <= 0) issues.push('MRP / base price must be greater than 0.');
+    if (sale > 0 && sale > base) issues.push('Selling price is higher than the MRP.');
+
+    if (colorGroups.length === 0) {
+      issues.push('No colour added — barcodes are issued per colour and size.');
+    }
+
+    const seenColors = new Set<string>();
+    const seenSkus = new Set<string>();
+    for (const group of colorGroups) {
+      const key = group.name.trim().toLowerCase();
+      if (seenColors.has(key)) issues.push(`Duplicate colour: ${group.name}.`);
+      seenColors.add(key);
+
+      const hasImage = Boolean(group.swatchImage) || group.images.length > 0;
+      if (!hasImage) issues.push(`${group.name} has no image.`);
+
+      const availableSizes = group.sizes.filter((s) => s.available);
+      if (availableSizes.length === 0) {
+        issues.push(`${group.name} has no size selected.`);
+      }
+      for (const sizeRow of availableSizes) {
+        if (!sizeRow.stock || sizeRow.stock <= 0) {
+          issues.push(`${group.name} / ${sizeRow.size} has no stock configured.`);
+        }
+        const sku = (sizeRow.sku || '').trim().toLowerCase();
+        if (sku) {
+          if (seenSkus.has(sku)) issues.push(`Duplicate SKU: ${sizeRow.sku}.`);
+          seenSkus.add(sku);
+        }
+      }
+    }
+
+    return issues;
+  }, [watchedValues, colorGroups, primaryCategoryId]);
+
+  const canPublish = validationIssues.length === 0;
+
   const livePreviewData: LivePreviewData = useMemo(() => {
     return {
       name: watchedValues.name || 'Women\'s Ethnic Wear',
@@ -399,13 +507,35 @@ export default function ProductBuilder({
   };
 
   const handleSubmitForm = async (values: ProductFormValues) => {
+    // Saving a draft is always allowed so partial work is never lost, but a
+    // product with outstanding issues must not reach the storefront.
+    if (values.isPublished && validationIssues.length > 0) {
+      setActiveTab('seo');
+      setSaveMessage(
+        `✕ Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'} to fix.`,
+      );
+      return;
+    }
+
     setIsSubmitting(true);
     setSaveMessage(null);
     setIssuedVariants([]);
     try {
+      // Organisation lives outside the react-hook-form schema, so merge it in.
+      // CreateProductDto accepts categoryIds, tags, collections and occasion
+      // directly, and the API rejects unknown properties outright.
+      const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
+      const payload = {
+        ...values,
+        ...(categoryIds.length > 0 ? { categoryIds } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
+        ...(collections.length > 0 ? { collections } : {}),
+        ...(occasion ? { occasion } : {}),
+      };
+
       const created = productId
-        ? await productService.update(productId, values as any)
-        : await productService.create(values as any);
+        ? await productService.update(productId, payload as any)
+        : await productService.create(payload as any);
 
       // Flatten every staged image across all color groups into one gallery,
       // upload real files, and attach them as product media. Media ids are kept
@@ -563,13 +693,32 @@ export default function ProductBuilder({
               </span>
             )}
 
+            {!canPublish && (
+              <button
+                type="button"
+                onClick={() => setActiveTab('seo')}
+                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors"
+              >
+                <AlertTriangle className="w-3.5 h-3.5" />
+                <span>
+                  {validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'}
+                </span>
+              </button>
+            )}
+
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2"
+              className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100"
             >
               <Save className="w-4 h-4" />
-              <span>{isSubmitting ? 'Saving...' : 'Save Product'}</span>
+              <span>
+                {isSubmitting
+                  ? 'Saving...'
+                  : methods.watch('isPublished')
+                    ? 'Save & Publish'
+                    : 'Save as Draft'}
+              </span>
             </button>
           </div>
         </div>
@@ -642,6 +791,19 @@ export default function ProductBuilder({
 
           <button
             type="button"
+            onClick={() => setActiveTab('organisation')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeTab === 'organisation'
+                ? 'bg-[#800020] text-white shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <FolderTree className="w-4 h-4" />
+            <span>2. Category &amp; Organisation</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('pricing')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'pricing'
@@ -650,7 +812,7 @@ export default function ProductBuilder({
             }`}
           >
             <DollarSign className="w-4 h-4" />
-            <span>2. Pricing & Taxes</span>
+            <span>3. Pricing &amp; Taxes</span>
           </button>
 
           <button
@@ -663,7 +825,7 @@ export default function ProductBuilder({
             }`}
           >
             <Palette className="w-4 h-4" />
-            <span>3. Color Groups & Media ({colorGroups.length})</span>
+            <span>4. Color Groups &amp; Media ({colorGroups.length})</span>
           </button>
 
           <button
@@ -676,7 +838,7 @@ export default function ProductBuilder({
             }`}
           >
             <Ruler className="w-4 h-4" />
-            <span>4. Color-Wise Sizes & Stock</span>
+            <span>5. Color-Wise Sizes &amp; Stock</span>
           </button>
 
           <button
@@ -689,7 +851,7 @@ export default function ProductBuilder({
             }`}
           >
             <Tag className="w-4 h-4" />
-            <span>5. Badges & SEO</span>
+            <span>6. Badges, SEO &amp; Publish</span>
           </button>
         </div>
 
@@ -798,7 +960,184 @@ export default function ProductBuilder({
           </div>
         )}
 
-        {/* TAB 2: PRICING & TAXES */}
+        {/* TAB 2: CATEGORY & ORGANISATION */}
+        {activeTab === 'organisation' && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
+            <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+              <FolderTree className="w-5 h-5 text-[#800020]" />
+              <span>Category &amp; Organisation</span>
+            </h3>
+            <p className="text-[11px] text-neutral-500 -mt-4">
+              A product with no category cannot be browsed on the storefront.
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Primary category */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">
+                  Primary Category <span className="text-rose-600">*</span>
+                </label>
+                <select
+                  value={primaryCategoryId}
+                  onChange={(e) => {
+                    setPrimaryCategoryId(e.target.value);
+                    setSubCategoryId('');
+                  }}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                >
+                  <option value="">Select a category</option>
+                  {rootCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+                {rootCategories.length === 0 && (
+                  <p className="text-[11px] font-semibold text-amber-600">
+                    No categories found. Create them under Catalog → Categories first.
+                  </p>
+                )}
+              </div>
+
+              {/* Sub category */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Sub Category</label>
+                <select
+                  value={subCategoryId}
+                  onChange={(e) => setSubCategoryId(e.target.value)}
+                  disabled={!primaryCategoryId || subCategories.length === 0}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20 disabled:opacity-50"
+                >
+                  <option value="">
+                    {!primaryCategoryId
+                      ? 'Select a primary category first'
+                      : subCategories.length === 0
+                        ? 'No sub-categories'
+                        : 'Optional'}
+                  </option>
+                  {subCategories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Occasion */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Occasion</label>
+                <select
+                  value={occasion}
+                  onChange={(e) => setOccasion(e.target.value)}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                >
+                  <option value="">Not specified</option>
+                  {['Festive', 'Wedding', 'Party', 'Casual', 'Office', 'Daily Wear'].map((o) => (
+                    <option key={o} value={o}>
+                      {o}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Season */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Season / Collection Year</label>
+                <input
+                  type="text"
+                  {...methods.register('season')}
+                  placeholder="e.g. Festive 2026"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+              </div>
+
+              {/* Collections */}
+              <div className="md:col-span-2 space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Collections</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={collectionInput}
+                    onChange={(e) => setCollectionInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addCollection();
+                      }
+                    }}
+                    placeholder="e.g. Festive Collection — press Enter to add"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={addCollection}
+                    className="px-4 py-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {collections.map((collection) => (
+                    <span
+                      key={collection}
+                      className="inline-flex items-center gap-1.5 bg-rose-50 text-[#800020] border border-rose-100 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                    >
+                      {collection}
+                      <button
+                        type="button"
+                        onClick={() => setCollections((prev) => prev.filter((c) => c !== collection))}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              {/* Tags */}
+              <div className="md:col-span-2 space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Tags</label>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        addTag();
+                      }
+                    }}
+                    placeholder="e.g. Floral, Rayon, Anarkali — press Enter to add"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  />
+                  <button
+                    type="button"
+                    onClick={addTag}
+                    className="px-4 py-3 rounded-xl bg-neutral-100 hover:bg-neutral-200 text-neutral-700 transition-colors"
+                  >
+                    <Plus className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-2">
+                  {tags.map((tag) => (
+                    <span
+                      key={tag}
+                      className="inline-flex items-center gap-1.5 bg-neutral-100 text-neutral-700 border border-neutral-200 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                    >
+                      {tag}
+                      <button type="button" onClick={() => setTags((prev) => prev.filter((t) => t !== tag))}>
+                        <X className="w-3 h-3" />
+                      </button>
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 3: PRICING & TAXES */}
         {activeTab === 'pricing' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
@@ -1324,8 +1663,39 @@ export default function ProductBuilder({
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
               <Tag className="w-5 h-5 text-[#800020]" />
-              <span>Badges, Homepage Display & SEO</span>
+              <span>Badges, Homepage Display &amp; SEO</span>
             </h3>
+
+            {/* PRE-PUBLISH VALIDATION */}
+            {validationIssues.length > 0 ? (
+              <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+                <div className="flex items-center gap-2 mb-3">
+                  <AlertTriangle className="w-4 h-4 text-amber-600" />
+                  <h4 className="text-xs font-bold text-amber-800 uppercase tracking-wide">
+                    Product cannot be published — {validationIssues.length} issue
+                    {validationIssues.length === 1 ? '' : 's'} found
+                  </h4>
+                </div>
+                <ul className="space-y-1.5">
+                  {validationIssues.map((issue) => (
+                    <li key={issue} className="text-[11px] font-semibold text-amber-800 flex gap-2">
+                      <span className="text-amber-500">✕</span>
+                      <span>{issue}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-[11px] text-amber-700 mt-3">
+                  You can still save this as a draft — untick &ldquo;Published&rdquo; below.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-4 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span className="text-xs font-bold text-emerald-800">
+                  All checks passed — ready to publish.
+                </span>
+              </div>
+            )}
 
             {/* Badges Toggles */}
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 p-5 bg-neutral-50 rounded-2xl border border-neutral-200">
