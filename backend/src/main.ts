@@ -134,7 +134,7 @@ async function bootstrap() {
 
   setupSwagger(app, configService);
 
-  const port = configService.get<number>('app.port', 4000);
+  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : (configService.get<number>('app.port', 4000) || 4000);
 
   console.log(`[BOOTSTRAP] Attempting to listen on 0.0.0.0:${port}...`);
   await app.listen(port, '0.0.0.0');
