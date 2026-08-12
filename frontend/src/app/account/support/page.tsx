@@ -5,13 +5,14 @@ import Link from 'next/link';
 import { useSupportTickets } from '@/features/customer/hooks';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { Plus } from 'lucide-react';
+import type { SupportTicketResponse } from '@/features/support/support.types';
 
 export default function SupportTicketsPage() {
   const { data, isLoading } = useSupportTickets();
-  const tickets = useMemo(() => {
+  const tickets: SupportTicketResponse[] = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray((data as any).data)) return (data as any).data;
+    if (typeof data === 'object' && data !== null && 'data' in data && Array.isArray((data as { data?: unknown }).data)) return (data as { data: SupportTicketResponse[] }).data;
     return [];
   }, [data]);
 
@@ -33,7 +34,7 @@ export default function SupportTicketsPage() {
             {tickets?.length === 0 ? (
               <p>No tickets found.</p>
             ) : (
-              tickets?.map((ticket: any) => (
+              tickets?.map((ticket) => (
                 <div key={ticket.id} className="border-b p-4 last:border-0 flex justify-between">
                   <div>
                     <h3 className="font-bold">{ticket.subject}</h3>

@@ -2,34 +2,70 @@ import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 import type { ProductResponse } from '@/features/catalog/products/product.types';
 
+export interface PublicSettingsDto {
+  storeName?: string;
+  storeLogo?: string;
+  supportEmail?: string;
+  supportPhone?: string;
+  currency?: string;
+  [key: string]: unknown;
+}
+
+export interface HomepageDataDto {
+  sections?: Array<Record<string, unknown>>;
+  banners?: Array<Record<string, unknown>>;
+  featuredCategories?: Array<Record<string, unknown>>;
+  [key: string]: unknown;
+}
+
+export interface BannerDto {
+  id: string;
+  title: string;
+  imageUrl: string;
+  linkUrl?: string;
+  position?: string;
+  [key: string]: unknown;
+}
+
+export interface CmsPageDto {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  body?: string;
+  metaTitle?: string;
+  metaDescription?: string;
+  [key: string]: unknown;
+}
+
 export const customerStorefrontService = {
-  getPublicSettings: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/settings/public');
+  getPublicSettings: async (): Promise<PublicSettingsDto> => {
+    const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/settings/public');
     return res.data.data!;
   },
 
-  getHomepage: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/homepage');
+  getHomepage: async (): Promise<HomepageDataDto> => {
+    const res = await apiClient.get<StandardResponse<HomepageDataDto>>('/homepage');
     return res.data.data!;
   },
 
-  getFooter: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/footer');
+  getFooter: async (): Promise<Record<string, unknown>> => {
+    const res = await apiClient.get<StandardResponse<Record<string, unknown>>>('/footer');
     return res.data.data!;
   },
 
-  getSocialLinks: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/social');
+  getSocialLinks: async (): Promise<Array<{ platform: string; url: string; title?: string }>> => {
+    const res = await apiClient.get<StandardResponse<Array<{ platform: string; url: string; title?: string }>>>('/social');
     return res.data.data!;
   },
 
-  getFeatures: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/features');
+  getFeatures: async (): Promise<Record<string, boolean>> => {
+    const res = await apiClient.get<StandardResponse<Record<string, boolean>>>('/features');
     return res.data.data!;
   },
 
-  subscribeNewsletter: async (email: string, source = 'storefront') => {
-    const res = await apiClient.post<StandardResponse<any>>('/newsletter/subscribe', {
+  subscribeNewsletter: async (email: string, source = 'storefront'): Promise<{ subscribed: boolean; message?: string }> => {
+    const res = await apiClient.post<StandardResponse<{ subscribed: boolean; message?: string }>>('/newsletter/subscribe', {
       email,
       source,
     });
@@ -41,28 +77,28 @@ export const customerStorefrontService = {
     return res.data.data!;
   },
 
-  getBanners: async (params: Record<string, string | number | boolean> = {}) => {
-    const res = await apiClient.get<StandardResponse<any>>('/cms/banners', { params });
+  getBanners: async (params: Record<string, string | number | boolean> = {}): Promise<BannerDto[]> => {
+    const res = await apiClient.get<StandardResponse<BannerDto[]>>('/cms/banners', { params });
     return res.data.data!;
   },
 
-  getCmsPage: async (slug: string) => {
-    const res = await apiClient.get<StandardResponse<any>>(`/cms/pages/${slug}`);
+  getCmsPage: async (slug: string): Promise<CmsPageDto> => {
+    const res = await apiClient.get<StandardResponse<CmsPageDto>>(`/cms/pages/${slug}`);
     return res.data.data!;
   },
 
-  getActiveOffers: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/offers/active');
+  getActiveOffers: async (): Promise<Array<Record<string, unknown>>> => {
+    const res = await apiClient.get<StandardResponse<Array<Record<string, unknown>>>>('/offers/active');
     return res.data.data!;
   },
 
-  getActiveCoupons: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/coupons/active');
+  getActiveCoupons: async (): Promise<Array<Record<string, unknown>>> => {
+    const res = await apiClient.get<StandardResponse<Array<Record<string, unknown>>>>('/coupons/active');
     return res.data.data!;
   },
 
-  getPaymentMethods: async () => {
-    const res = await apiClient.get<StandardResponse<any[]>>('/payment-methods');
+  getPaymentMethods: async (): Promise<Array<Record<string, unknown>>> => {
+    const res = await apiClient.get<StandardResponse<Array<Record<string, unknown>>>>('/payment-methods');
     return res.data.data!;
   },
 };

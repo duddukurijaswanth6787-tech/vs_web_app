@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Truck, Plus, RefreshCw, ShieldCheck, Search } from 'lucide-react';
 import { adminOpsApi } from '@/features/admin-ops/admin-ops.api';
+import type { DtdcShipmentDto } from '@/features/admin-ops/admin-ops.api';
 import { orderService } from '@/features/orders/order.service';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -13,9 +14,9 @@ export default function DtdcShippingAdminPage() {
   const [weight, setWeight] = useState('1.5');
   const [serviceType, setServiceType] = useState('STANDARD');
   const [loading, setLoading] = useState(false);
-  const [shipment, setShipment] = useState<any>(null);
+  const [shipment, setShipment] = useState<DtdcShipmentDto | null>(null);
   const [trackAwb, setTrackAwb] = useState('');
-  const [tracking, setTracking] = useState<any>(null);
+  const [tracking, setTracking] = useState<Record<string, unknown> | null>(null);
 
   const resolveOrderId = async (ref: string) => {
     const value = ref.trim();
@@ -62,7 +63,7 @@ export default function DtdcShippingAdminPage() {
     try {
       const result = await adminOpsApi.trackDtdc(trackAwb.trim());
       setTracking(result);
-      toast('success', 'Tracking loaded', result?.status || 'OK');
+      toast('success', 'Tracking loaded', String(result?.status || 'OK'));
     } catch (err) {
       toast('error', 'Track failed', getApiErrorMessage(err));
     } finally {

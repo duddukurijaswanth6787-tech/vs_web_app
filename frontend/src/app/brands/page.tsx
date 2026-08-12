@@ -1,12 +1,14 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useCustomerBrands } from '@/features/customer/hooks';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
+import type { BrandResponse } from '@/features/catalog/brands/brand.types';
 
 export default function BrandsPage() {
   const { data, isLoading, error } = useCustomerBrands({ limit: 100 });
@@ -25,16 +27,18 @@ export default function BrandsPage() {
         {isLoading && <p className="text-sm text-neutral-500">Loading brands…</p>}
         {error && <p className="text-sm text-red-600">Failed to load brands</p>}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
-          {brands.map((brand: any) => (
+          {brands.map((brand: BrandResponse) => (
             <Link
               key={brand.id}
               href={`/brands/${brand.slug}`}
               className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md"
             >
               <div className="aspect-[4/3] bg-neutral-50 flex items-center justify-center p-4">
-                <img
+                <Image
                   src={brand.logo || brand.bannerImage || PLACEHOLDER_IMAGE}
                   alt={brand.name}
+                  width={400}
+                  height={300}
                   className="max-h-full max-w-full object-contain"
                 />
               </div>

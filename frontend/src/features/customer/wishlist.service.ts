@@ -1,14 +1,32 @@
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
+import axios from 'axios';
 
 const GUEST_WISHLIST_KEY = 'vd_guest_wishlist';
+
+export interface WishlistItemDto {
+  id: string;
+  productId: string;
+  variantId?: string | null;
+  product?: Record<string, unknown>;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface WishlistDto {
+  id?: string;
+  items: WishlistItemDto[];
+  data?: WishlistItemDto[];
+  total?: number;
+  [key: string]: unknown;
+}
 
 const hasToken = () => {
   if (typeof window === 'undefined') return false;
   return !!localStorage.getItem('vd_access_token');
 };
 
-const getGuestWishlist = (): any[] => {
+const getGuestWishlist = (): WishlistItemDto[] => {
   if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(GUEST_WISHLIST_KEY);
@@ -18,7 +36,7 @@ const getGuestWishlist = (): any[] => {
   }
 };
 
-const saveGuestWishlist = (items: any[]) => {
+const saveGuestWishlist = (items: WishlistItemDto[]) => {
   if (typeof window === 'undefined') return;
   try {
     localStorage.setItem(GUEST_WISHLIST_KEY, JSON.stringify(items));
@@ -27,30 +45,41 @@ const saveGuestWishlist = (items: any[]) => {
   }
 };
 
+const getErrorStatus = (err: unknown): number | undefined => {
+  if (axios.isAxiosError(err)) {
+    return err.response?.status;
+  }
+  return (err as { response?: { status?: number } })?.response?.status;
+};
+
 export const customerWishlistService = {
-  getWishlist: async () => {
+  getWishlist: async (): Promise<WishlistDto> => {
     if (!hasToken()) return { items: getGuestWishlist() };
     try {
-      const res = await apiClient.get<StandardResponse<any>>('/wishlist');
+      const res = await apiClient.get<StandardResponse<WishlistDto>>('/wishlist');
       return res.data.data || { items: [] };
-    } catch (err: any) {
-      if (err?.response?.status === 401) return { items: getGuestWishlist() };
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) return { items: getGuestWishlist() };
       throw err;
     }
   },
 
-  getItems: async (page = 1, limit = 50) => {
+  getItems: async (page = 1, limit = 50): Promise<{ items: WishlistItemDto[]; total: number }> => {
     if (!hasToken()) {
       const items = getGuestWishlist();
       return { items, total: items.length };
     }
     try {
-      const res = await apiClient.get<StandardResponse<any>>('/wishlist/items', {
+      const res = await apiClient.get<StandardResponse<{ items: WishlistItemDto[]; total?: number }>>('/wishlist/items', {
         params: { page, limit },
       });
-      return res.data.data || { items: [] };
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+      const data = res.data.data;
+      return {
+        items: data?.items || [],
+        total: data?.total ?? (data?.items?.length || 0),
+      };
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) {
         const items = getGuestWishlist();
         return { items, total: items.length };
       }
@@ -58,18 +87,18 @@ export const customerWishlistService = {
     }
   },
 
-  getCount: async () => {
+  getCount: async (): Promise<{ count: number }> => {
     if (!hasToken()) return { count: getGuestWishlist().length };
     try {
       const res = await apiClient.get<StandardResponse<{ count: number }>>('/wishlist/count');
       return res.data.data || { count: 0 };
-    } catch (err: any) {
-      if (err?.response?.status === 401) return { count: getGuestWishlist().length };
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) return { count: getGuestWishlist().length };
       return { count: 0 };
     }
   },
 
-  isInWishlist: async (productId: string) => {
+  isInWishlist: async (productId: string): Promise<{ inWishlist: boolean }> => {
     if (!hasToken()) {
       const items = getGuestWishlist();
       return { inWishlist: items.some((item) => item.productId === productId || item.id === productId) };
@@ -79,8 +108,8 @@ export const customerWishlistService = {
         `/wishlist/check/${productId}`,
       );
       return res.data.data!;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) {
         const items = getGuestWishlist();
         return { inWishlist: items.some((item) => item.productId === productId || item.id === productId) };
       }
@@ -88,12 +117,12 @@ export const customerWishlistService = {
     }
   },
 
-  addItem: async (productId: string, variantId?: string) => {
+  addItem: async (productId: string, variantId?: string): Promise<WishlistItemDto> => {
     if (!hasToken()) {
       const items = getGuestWishlist();
-      const exists = items.some((item) => item.productId === productId);
+      const exists = items.find((item) => item.productId === productId);
       if (!exists) {
-        const newItem = {
+        const newItem: WishlistItemDto = {
           id: `guest-${productId}`,
           productId,
           variantId: variantId || null,
@@ -103,20 +132,20 @@ export const customerWishlistService = {
         saveGuestWishlist(items);
         return newItem;
       }
-      return items.find((item) => item.productId === productId);
+      return exists;
     }
     try {
-      const res = await apiClient.post<StandardResponse<any>>('/wishlist/items', {
+      const res = await apiClient.post<StandardResponse<WishlistItemDto>>('/wishlist/items', {
         productId,
         variantId,
       });
       return res.data.data!;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) {
         const items = getGuestWishlist();
-        const exists = items.some((item) => item.productId === productId);
+        const exists = items.find((item) => item.productId === productId);
         if (!exists) {
-          const newItem = {
+          const newItem: WishlistItemDto = {
             id: `guest-${productId}`,
             productId,
             variantId: variantId || null,
@@ -126,13 +155,13 @@ export const customerWishlistService = {
           saveGuestWishlist(items);
           return newItem;
         }
-        return items.find((item) => item.productId === productId);
+        return exists;
       }
       throw err;
     }
   },
 
-  removeItem: async (productId: string) => {
+  removeItem: async (productId: string): Promise<void> => {
     if (!hasToken()) {
       const items = getGuestWishlist().filter((item) => item.productId !== productId && item.id !== productId);
       saveGuestWishlist(items);
@@ -140,8 +169,8 @@ export const customerWishlistService = {
     }
     try {
       await apiClient.delete(`/wishlist/items/${productId}`);
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) {
         const items = getGuestWishlist().filter((item) => item.productId !== productId && item.id !== productId);
         saveGuestWishlist(items);
         return;
@@ -150,19 +179,19 @@ export const customerWishlistService = {
     }
   },
 
-  moveToCart: async (productId: string) => {
+  moveToCart: async (productId: string): Promise<{ success: boolean }> => {
     if (!hasToken()) {
       const items = getGuestWishlist().filter((item) => item.productId !== productId && item.id !== productId);
       saveGuestWishlist(items);
       return { success: true };
     }
     try {
-      const res = await apiClient.post<StandardResponse<any>>(
+      const res = await apiClient.post<StandardResponse<{ success: boolean }>>(
         `/wishlist/items/${productId}/move-to-cart`,
       );
       return res.data.data!;
-    } catch (err: any) {
-      if (err?.response?.status === 401) {
+    } catch (err: unknown) {
+      if (getErrorStatus(err) === 401) {
         const items = getGuestWishlist().filter((item) => item.productId !== productId && item.id !== productId);
         saveGuestWishlist(items);
         return { success: true };
@@ -171,7 +200,7 @@ export const customerWishlistService = {
     }
   },
 
-  syncGuestWishlist: async () => {
+  syncGuestWishlist: async (): Promise<void> => {
     if (!hasToken()) return;
     const items = getGuestWishlist();
     if (items.length === 0) return;

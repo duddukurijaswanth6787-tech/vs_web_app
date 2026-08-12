@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import { useFooter, useAddFooterLink, useUpdateFooterLink, useDeleteFooterLink } from '@/features/storefront/storefront.hooks';
-import type { FooterSection, FooterLink } from '@/features/storefront/storefront.types';
+import type { FooterLink } from '@/features/storefront/storefront.types';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { Plus, Trash2, Edit3, X } from 'lucide-react';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function FooterPage() {
-  const { data: footer, isLoading, refetch } = useFooter();
+  const { data: footer, isLoading } = useFooter();
   const addMut = useAddFooterLink();
   const updateMut = useUpdateFooterLink();
   const deleteMut = useDeleteFooterLink();

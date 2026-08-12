@@ -10,14 +10,16 @@ import { getApiErrorMessage } from '@/utils/api-error';
 export default function MaintenancePage() {
   const { data: settings, isLoading, error } = usePublicSettings();
 
-  const storeName = settings?.storeName || 'Vasanthi Designers';
-  const message =
+  const storeName = String(settings?.storeName || 'Vasanthi Designers');
+  const message = String(
+    settings?.maintenanceMessage ||
     settings?.storeDescription ||
     settings?.metaDescription ||
-    'We are currently updating our boutique storefront. Please check back shortly.';
-  const phone = settings?.supportPhone || settings?.whatsappNumber;
-  const email = settings?.supportEmail;
-  const hours = settings?.supportHours;
+    'We are currently updating our boutique storefront. Please check back shortly.'
+  );
+  const phone = settings?.supportPhone || settings?.whatsappNumber ? String(settings.supportPhone || settings.whatsappNumber) : '';
+  const email = settings?.supportEmail ? String(settings.supportEmail) : '';
+  const hours = settings?.supportHours ? String(settings.supportHours) : '';
   const inMaintenance = settings?.maintenanceMode !== false;
 
   return (

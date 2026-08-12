@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client';
-import { StandardResponse, PaginatedResponse } from '@/types/api.types';
+import { StandardResponse } from '@/types/api.types';
 import axios from 'axios';
 import { LibraryMedia, MediaFolder, LibraryMediaListResponse, UploadUrlResponse } from './library.types';
 

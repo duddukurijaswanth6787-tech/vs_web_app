@@ -1,11 +1,12 @@
 'use client';
 
 import React, { useState, useMemo, useDeferredValue } from 'react';
-import { useForm, FormProvider } from 'react-hook-form';
+import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { isLocalOrPlaceholder } from '@/lib/media-url';
-import { productSchema, ProductFormValues, ProductResponse, AttributeType } from '../product.types';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { productSchema, ProductFormValues, ProductResponse, AttributeType, CreateProductDto, UpdateProductDto } from '../product.types';
 import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
 import { inventoryService } from '@/features/inventory/inventory.service';
@@ -17,8 +18,8 @@ import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import {
   LiveDesktopProductPreview,
-  ColorVariantGroup,
-  LivePreviewData,
+  type ColorVariantGroup,
+  type LivePreviewData,
 } from './LiveDesktopProductPreview';
 import {
   Package,
@@ -28,9 +29,7 @@ import {
   Tag,
   Plus,
   Trash2,
-  Image as ImageIcon,
   CheckCircle2,
-  Sparkles,
   Save,
   Upload,
   FolderTree,
@@ -111,9 +110,6 @@ const buildVariantAttributeValues = (
   return entries;
 };
 
-const DEFAULT_SAMPLE_IMAGE =
-  'http://localhost:4000/api/v1/storage/products/50890861-0fb4-4b93-91b2-231422e0fa49/images/7027e0e8-0450-4a09-84a0-e76f84c88935.png';
-
 export default function ProductBuilder({
   productId,
   initialData,
@@ -128,7 +124,7 @@ export default function ProductBuilder({
 
   // Load Brands
   const { data: brandsData } = useBrands({ limit: 100 });
-  const brands = useMemo(() => (Array.isArray(brandsData) ? brandsData : (brandsData as any)?.data || []), [brandsData]);
+  const brands = useMemo(() => (Array.isArray(brandsData) ? brandsData : (brandsData as { data?: Array<{ id: string; name: string }> })?.data || []), [brandsData]);
 
   // Load the full category tree so a primary category and its sub-category can
   // both be picked. useFeaturedCategories only returned the featured subset.
@@ -152,7 +148,7 @@ export default function ProductBuilder({
 
   // Form Setup
   const methods = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema) as any,
+    resolver: zodResolver(productSchema) as never,
     defaultValues: {
       name: initialData?.name || '',
       brandId: initialData?.brandId || '',
@@ -247,7 +243,7 @@ export default function ProductBuilder({
 
   // Color Groups State (with Images & Sizes per Color)
   const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(
-    (initialData as any)?.colorGroups || []
+    ((initialData as unknown as Record<string, unknown>)?.colorGroups as ColorVariantGroup[]) || []
   );
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
@@ -265,7 +261,7 @@ export default function ProductBuilder({
     const cSwatch = swatch !== undefined ? swatch : newColorSwatch;
     const cImages = initialImgs && initialImgs.length > 0 ? initialImgs : newColorImages;
 
-    const newId = `col-${Date.now()}`;
+    const newId = `col-${colorGroups.length + 1}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     const newGroup: ColorVariantGroup = {
       id: newId,
       name: cName,
@@ -424,7 +420,6 @@ export default function ProductBuilder({
 
   // Add custom size to active color group
   const [newSizeInput, setNewSizeInput] = useState('');
-  const [newSizeStock, setNewSizeStock] = useState(10);
 
   const addSizeToColorGroup = (colorGroupId: string) => {
     if (!newSizeInput.trim()) return;
@@ -439,7 +434,7 @@ export default function ProductBuilder({
               ...group.sizes,
               {
                 size: newSizeInput.trim().toUpperCase(),
-                stock: newSizeStock,
+                stock: 10,
                 available: true,
                 sku: `${group.name.substring(0, 3).toUpperCase()}-${newSizeInput.trim().toUpperCase()}`,
               },
@@ -524,10 +519,11 @@ export default function ProductBuilder({
     );
   };
 
-  const watchedValues = methods.watch();
+  const rawWatchedValues = useWatch({ control: methods.control });
+  const watchedValues = useMemo(() => rawWatchedValues || {}, [rawWatchedValues]);
 
   // Selected Brand Name for Live Preview
-  const selectedBrandObj = brands.find((b: any) => b.id === watchedValues.brandId);
+  const selectedBrandObj = brands.find((b: { id: string; name?: string }) => b.id === watchedValues.brandId);
   const selectedBrandName = selectedBrandObj?.name || 'Vasanthi Designers';
 
   // Construct Live Preview Data Object
@@ -650,8 +646,8 @@ export default function ProductBuilder({
       };
 
       const created = productId
-        ? await productService.update(productId, payload as any)
-        : await productService.create(payload as any);
+        ? await productService.update(productId, payload as UpdateProductDto)
+        : await productService.create(payload as CreateProductDto);
 
       // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;
       // blank values are dropped so an unset attribute is not stored as "".
@@ -689,7 +685,7 @@ export default function ProductBuilder({
             color: group.name,
             ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
           });
-          if (media?.id) mediaIdsByGroup[group.id].push(media.id);
+          if (media?.id) mediaIdsByGroup[group.id].push(String(media.id));
           primarySet = true;
         }
       }
@@ -788,8 +784,8 @@ export default function ProductBuilder({
       );
       if (onSaveSuccess) onSaveSuccess(created.id);
       if (issued.length === 0) setTimeout(() => setSaveMessage(null), 3000);
-    } catch (err: any) {
-      setSaveMessage('✕ ' + (err?.response?.data?.message || err?.message || 'Failed to save product'));
+    } catch (err) {
+      setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to save product'));
     } finally {
       setIsSubmitting(false);
     }
@@ -797,7 +793,7 @@ export default function ProductBuilder({
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(handleSubmitForm)} className="space-y-8">
+      <form onSubmit={methods.handleSubmit(handleSubmitForm as never)} className="space-y-8">
         
         {/* TOP STATUS BAR & HEADER */}
         <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
@@ -849,7 +845,7 @@ export default function ProductBuilder({
               <span>
                 {isSubmitting
                   ? 'Saving...'
-                  : methods.watch('isPublished')
+                  : watchedValues?.isPublished
                     ? 'Save & Publish'
                     : 'Save as Draft'}
               </span>
@@ -1037,7 +1033,7 @@ export default function ProductBuilder({
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
                 >
                   <option value="">Select Brand (or default Vasanthi Designers)</option>
-                  {brands.map((b: any) => (
+                  {brands.map((b: { id: string; name: string }) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
                     </option>
@@ -1333,12 +1329,12 @@ export default function ProductBuilder({
                 <div className="space-y-0.5">
                   <h4 className="text-xs font-bold text-[#800020]">Calculated Customer Discount</h4>
                   <p className="text-[11px] text-neutral-600">
-                    MRP: ₹{methods.watch('basePrice') || 0} → Selling Price: ₹{methods.watch('salePrice') || methods.watch('basePrice') || 0}
+                    MRP: ₹{watchedValues?.basePrice || 0} → Selling Price: ₹{watchedValues?.salePrice || watchedValues?.basePrice || 0}
                   </p>
                 </div>
-                {methods.watch('basePrice') > 0 && methods.watch('salePrice') && methods.watch('salePrice')! < methods.watch('basePrice') ? (
+                {Boolean(watchedValues?.basePrice && Number(watchedValues.basePrice) > 0 && watchedValues?.salePrice && Number(watchedValues.salePrice) < Number(watchedValues.basePrice)) ? (
                   <span className="text-xs font-bold text-rose-700 bg-rose-100 px-3.5 py-1.5 rounded-full border border-rose-200">
-                    {Math.round(((methods.watch('basePrice') - methods.watch('salePrice')!) / methods.watch('basePrice')) * 100)}% OFF
+                    {Math.round(((Number(watchedValues.basePrice) - Number(watchedValues.salePrice)) / Number(watchedValues.basePrice)) * 100)}% OFF
                   </span>
                 ) : (
                   <span className="text-xs font-semibold text-neutral-400">No discount applied</span>
@@ -1490,7 +1486,7 @@ export default function ProductBuilder({
               <div className="flex items-center justify-between pt-1">
                 <div className="text-[11px] text-neutral-500 font-medium">
                   {newColorName.trim() ? (
-                    <span className="text-emerald-700 font-bold">Ready to create color: "{newColorName}"</span>
+                    <span className="text-emerald-700 font-bold">Ready to create color: &quot;{newColorName}&quot;</span>
                   ) : (
                     <span>Type a color name to proceed to product images upload</span>
                   )}
@@ -1563,7 +1559,7 @@ export default function ProductBuilder({
                                 <span className="w-4 h-4 rounded-full border border-neutral-300 shrink-0" style={{ backgroundColor: cur.hex }} />
                               )}
                               <h4 className="text-sm font-bold text-neutral-900">
-                                Product Images for "{cur.name}" ({cur.images.length} uploaded)
+                                Product Images for &quot;{cur.name}&quot; ({cur.images.length} uploaded)
                               </h4>
                             </div>
                             <button
@@ -1648,7 +1644,7 @@ export default function ProductBuilder({
                             </div>
                             <div>
                               <h5 className="text-xs font-bold text-neutral-800">
-                                Upload Product Images for "{cur.name}"
+                                Upload Product Images for &quot;{cur.name}&quot;
                               </h5>
                               <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
                                 Drag & drop image files here, or <span className="text-[#800020] font-bold underline">browse local files</span>
@@ -1842,7 +1838,7 @@ export default function ProductBuilder({
                     <div className="flex items-center gap-2">
                       <span className="w-4 h-4 rounded-full border border-neutral-300" style={{ backgroundColor: group.hex }} />
                       <h4 className="text-sm font-bold text-neutral-900">
-                        Sizes for "{group.name}"
+                        Sizes for &quot;{group.name}&quot;
                       </h4>
                     </div>
 

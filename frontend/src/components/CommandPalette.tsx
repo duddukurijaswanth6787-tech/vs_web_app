@@ -10,7 +10,6 @@ import { adminNavigation } from '@/config/navigation';
 import {
   Search,
   X,
-  ArrowRight,
   ArrowUp,
   ArrowDown,
   CornerDownLeft,
@@ -137,14 +136,21 @@ export default function CommandPalette() {
   const inputRef = useRef<HTMLInputElement>(null);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // Load recent searches on open
-  useEffect(() => {
+  const [prevOpen, setPrevOpen] = useState(commandPaletteOpen);
+  if (commandPaletteOpen !== prevOpen) {
+    setPrevOpen(commandPaletteOpen);
     if (commandPaletteOpen) {
       setRecentSearches(getRecentSearches());
       setQuery('');
       setSelectedIndex(0);
-      // Focus input on next tick
-      setTimeout(() => inputRef.current?.focus(), 50);
+    }
+  }
+
+  // Focus input when opened
+  useEffect(() => {
+    if (commandPaletteOpen) {
+      const timer = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(timer);
     }
   }, [commandPaletteOpen]);
 
@@ -319,11 +325,9 @@ export default function CommandPalette() {
   }, [query, searchResults, recentSearches]);
 
   // Clamp selected index when items change
-  useEffect(() => {
-    if (selectedIndex >= items.length) {
-      setSelectedIndex(Math.max(0, items.length - 1));
-    }
-  }, [items.length, selectedIndex]);
+  if (selectedIndex >= items.length && items.length > 0) {
+    setSelectedIndex(items.length - 1);
+  }
 
   // Scroll selected item into view
   useEffect(() => {
@@ -474,7 +478,6 @@ export default function CommandPalette() {
                     className={`flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors ${
                       isSelected ? 'bg-neutral-100' : 'hover:bg-neutral-50'
                     }`}
-                    aria-selected={isSelected}
                   >
                     <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 ${colorClass}`}>
                       <Icon className="h-4 w-4" />

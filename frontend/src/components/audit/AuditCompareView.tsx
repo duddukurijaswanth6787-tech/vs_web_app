@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import { ArrowRight, X } from 'lucide-react';
+import { X } from 'lucide-react';
 import { useCompareVersions } from '@/features/audit/audit.hooks';
 
 interface AuditCompareViewProps {

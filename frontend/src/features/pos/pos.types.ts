@@ -77,6 +77,29 @@ export interface PosSaleResult {
   printReady: boolean;
 }
 
+export interface PosCustomerLookupResult extends PosCustomerInfo {
+  found?: boolean;
+  ordersCount?: number;
+  totalSpent?: number;
+  recentOrders?: PosCustomerOrderSummary[];
+}
+
+export interface PosCustomerOrderSummary {
+  orderId: string;
+  orderNumber: string;
+  grandTotal: number;
+  paymentMethod?: string;
+  status: string;
+  createdAt: string;
+  items?: PosCustomerOrderItem[];
+}
+
+export interface PosCustomerOrderItem {
+  productName: string;
+  quantity: number;
+  unitPrice: number;
+}
+
 export interface BatchStickersPayload {
   productName: string;
   variantTitle?: string;

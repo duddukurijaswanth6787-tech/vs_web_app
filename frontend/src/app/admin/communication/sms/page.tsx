@@ -1,10 +1,21 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { PhoneCall, Send, RefreshCw, ShieldCheck } from 'lucide-react';
 import { adminOpsApi } from '@/features/admin-ops/admin-ops.api';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
+
+const toLogList = (result: unknown): Array<Record<string, unknown>> => {
+  if (Array.isArray(result)) return result as Array<Record<string, unknown>>;
+  if (result && typeof result === 'object') {
+    const r = result as { logs?: unknown; data?: unknown };
+    if (Array.isArray(r.logs)) return r.logs as Array<Record<string, unknown>>;
+    if (Array.isArray(r.data)) return r.data as Array<Record<string, unknown>>;
+  }
+  return [];
+};
 
 export default function SmsGatewayAdminPage() {
   const { toast } = useToast();
@@ -12,21 +23,12 @@ export default function SmsGatewayAdminPage() {
   const [template, setTemplate] = useState('CUSTOM');
   const [message, setMessage] = useState('Your order has been updated. - Vasanthi Designers');
   const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
 
-  const loadLogs = useCallback(async () => {
-    try {
-      const result = await adminOpsApi.smsLogs(1, 30);
-      const list = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
-      setLogs(list);
-    } catch (err) {
-      toast('error', 'Failed to load SMS logs', getApiErrorMessage(err));
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    loadLogs();
-  }, [loadLogs]);
+  const { data: smsLogData, refetch: reloadLogs } = useQuery({
+    queryKey: ['admin', 'sms', 'logs'],
+    queryFn: () => adminOpsApi.smsLogs(1, 30),
+  });
+  const logs = toLogList(smsLogData);
 
   const normalizedPhone = useMemo(
     () => mobileNumber.replace(/\D/g, '').slice(-10),
@@ -52,7 +54,7 @@ export default function SmsGatewayAdminPage() {
         `Status: ${result?.status || 'queued'} · +91 ${normalizedPhone}`,
       );
       setMobileNumber('');
-      await loadLogs();
+      await reloadLogs();
     } catch (err) {
       toast('error', 'SMS failed', getApiErrorMessage(err));
     } finally {
@@ -75,7 +77,7 @@ export default function SmsGatewayAdminPage() {
 
         <button
           type="button"
-          onClick={loadLogs}
+          onClick={() => void reloadLogs()}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <RefreshCw className="w-4 h-4 text-neutral-500" />
@@ -173,14 +175,14 @@ export default function SmsGatewayAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-t border-neutral-100">
-                    <td className="px-3 py-2 font-mono">{log.phone}</td>
-                    <td className="px-3 py-2">{log.template}</td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{log.status}</td>
-                    <td className="px-3 py-2 text-neutral-600 line-clamp-1 max-w-xs">{log.message}</td>
+                {logs.map((log, idx) => (
+                  <tr key={String(log.id || idx)} className="border-t border-neutral-100">
+                    <td className="px-3 py-2 font-mono">{String(log.phone || '')}</td>
+                    <td className="px-3 py-2">{String(log.template || '')}</td>
+                    <td className="px-3 py-2 font-bold text-[#800020]">{String(log.status || '')}</td>
+                    <td className="px-3 py-2 text-neutral-600 line-clamp-1 max-w-xs">{String(log.message || '')}</td>
                     <td className="px-3 py-2 text-neutral-500">
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}
+                      {log.createdAt ? new Date(String(log.createdAt)).toLocaleString() : '—'}
                     </td>
                   </tr>
                 ))}

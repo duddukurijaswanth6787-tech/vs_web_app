@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useProducts, useDeleteProduct, useRestoreProduct } from '@/features/catalog/products/product.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
@@ -11,7 +12,6 @@ import Link from 'next/link';
 import { Plus, Search, Eye, Edit3, Trash2, RefreshCw, Archive } from 'lucide-react';
 import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
-import { categorizeApiError } from '@/lib/api-error-handler';
 import { resolveMediaUrl } from '@/lib/media-url';
 
 export default function ProductsPage() {
@@ -38,7 +38,7 @@ export default function ProductsPage() {
 
   const updateQuery = useCallback((key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.set('page', '1');
     router.push(`/admin/catalog/products?${params}`);
   }, [searchParams, router]);
@@ -58,9 +58,11 @@ export default function ProductsPage() {
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-lg bg-neutral-100 border flex items-center justify-center overflow-hidden relative shrink-0">
             {p.primaryImageUrl ? (
-              <img
+              <Image
                 src={resolveMediaUrl(p.primaryImageUrl)}
                 alt={p.name}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover"
               />
             ) : (
@@ -80,7 +82,6 @@ export default function ProductsPage() {
     }},
     { key: 'featured', label: 'Featured', render: (p) => <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${p.isFeatured ? 'bg-amber-50 text-amber-700 border border-amber-100' : 'bg-neutral-50 text-neutral-400'}`}>{p.isFeatured ? 'Yes' : 'No'}</span> },
     { key: 'actions', label: 'Actions', render: (p) => {
-      const isSuper = false; // ponytail: check perms from auth context if needed
       return <div className="flex gap-1 justify-end">
         <Link href={`/admin/catalog/products/${p.id}`} className="p-1.5 hover:bg-neutral-100 rounded text-neutral-600"><Eye className="w-4 h-4" /></Link>
         <Link href={`/admin/catalog/products/${p.id}/edit`} className="p-1.5 hover:bg-neutral-100 rounded text-neutral-600"><Edit3 className="w-4 h-4" /></Link>
@@ -119,7 +120,7 @@ export default function ProductsPage() {
             </select>
             <select value={categoryId} onChange={(e) => updateQuery('categoryId', e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs">
               <option value="">All Categories</option>
-              {categoryList?.data?.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              {categoryList?.data?.map((cat) => <option key={cat.id} value={cat.id}>{cat.name}</option>)}
             </select>
             <select value={brandId} onChange={(e) => updateQuery('brandId', e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs">
               <option value="">All Brands</option>
@@ -139,7 +140,7 @@ export default function ProductsPage() {
         error={isError}
         onRetry={refetch}
         onPageChange={(p) => updateQuery('page', String(p))}
-        onSort={(key) => { /* ponytail: add sort params if backend supports them */ }}
+        onSort={() => { /* ponytail: add sort params if backend supports them */ }}
         selectedIds={selectedIds}
         onSelectionChange={setSelectedIds}
         rowKey={(p) => p.id}

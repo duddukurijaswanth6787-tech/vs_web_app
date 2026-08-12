@@ -47,7 +47,7 @@ export function isLocalOrPlaceholder(url?: string | null): boolean {
   return url.startsWith('/') || url.startsWith('data:') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('placehold.co') || url.includes('unsplash.com');
 }
 
-const VARIANT_SIZES = { thumb: 150, medium: 600, large: 1200 } as const;
+export const VARIANT_SIZES = { thumb: 150, medium: 600, large: 1200 } as const;
 export type ImageVariant = keyof typeof VARIANT_SIZES;
 
 /**

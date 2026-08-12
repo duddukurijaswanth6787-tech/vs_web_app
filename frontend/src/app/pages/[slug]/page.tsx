@@ -27,15 +27,22 @@ export default function CmsPage() {
       <main className="max-w-3xl mx-auto w-full px-4 py-8 flex-1 prose prose-sm">
         {isLoading && <p className="text-sm text-neutral-500">Loading page…</p>}
         {error && <p className="text-sm text-red-600">{getApiErrorMessage(error, 'Page not found')}</p>}
-        {data?.content && (
-          <div
-            className="text-sm text-neutral-700 leading-relaxed"
-            dangerouslySetInnerHTML={{ __html: data.content }}
-          />
-        )}
-        {!isLoading && !error && !data?.content && data?.body && (
-          <div className="text-sm text-neutral-700 whitespace-pre-wrap">{data.body}</div>
-        )}
+        {(() => {
+          const pageData = data as { content?: string; body?: string } | undefined;
+          return (
+            <>
+              {pageData?.content && (
+                <div
+                  className="text-sm text-neutral-700 leading-relaxed"
+                  dangerouslySetInnerHTML={{ __html: pageData.content }}
+                />
+              )}
+              {!isLoading && !error && !pageData?.content && pageData?.body && (
+                <div className="text-sm text-neutral-700 whitespace-pre-wrap">{pageData.body}</div>
+              )}
+            </>
+          );
+        })()}
       </main>
       <StorefrontFooter />
     </div>

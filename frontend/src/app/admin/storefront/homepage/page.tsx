@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useHomepage, useUpdateHomepage, useReorderHomepage } from '@/features/storefront/storefront.hooks';
+import { useHomepage, useUpdateHomepage } from '@/features/storefront/storefront.hooks';
 import type { HomepageSection } from '@/features/storefront/storefront.types';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { Save, Eye, EyeOff, GripVertical } from 'lucide-react';
@@ -10,7 +10,6 @@ import { getApiErrorMessage } from '@/utils/api-error';
 export default function HomepagePage() {
   const { data: sections, isLoading } = useHomepage();
   const updateMut = useUpdateHomepage();
-  const reorderMut = useReorderHomepage();
   const [editState, setEditState] = useState<Record<string, HomepageSection>>({});
   const [error, setError] = useState<string | null>(null);
 

@@ -27,7 +27,8 @@ export default function ReturnsPage() {
   const returns = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray((data as any).data)) return (data as any).data;
+    const typed = data as { data?: unknown[] };
+    if (Array.isArray(typed?.data)) return typed.data as never[];
     return [];
   }, [data]);
 
@@ -76,37 +77,45 @@ export default function ReturnsPage() {
           </div>
         )}
 
-        {returns.map((ret: any) => (
-          <div key={ret.id} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">
+        {returns.map((retItem) => {
+          const ret = retItem as Record<string, unknown>;
+          const retId = String(ret.id || '');
+          const retNum = String(ret.returnNumber || retId || '');
+          const orderNum = String(ret.orderNumber || '');
+          const statusStr = String(ret.status || '');
+          const createdAtStr = ret.createdAt ? new Date(String(ret.createdAt)).toLocaleDateString() : '';
+          return (
+            <div key={retId} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">Return #{ret.returnNumber}</p>
+                <p className="text-sm font-bold">Return #{retNum}</p>
                 <p className="text-[11px] text-neutral-500">
-                  Order #{ret.orderNumber} · {ret.createdAt ? new Date(ret.createdAt).toLocaleDateString() : ''}
+                  Order #{orderNum} · {createdAtStr}
                 </p>
               </div>
-              <span className={`text-[11px] font-bold uppercase px-2 py-1 rounded-lg ${STATUS_STYLES[ret.status] || 'bg-neutral-100 text-neutral-600'}`}>
-                {ret.status}
+              <span className={`text-[11px] font-bold uppercase px-2 py-1 rounded-lg ${STATUS_STYLES[statusStr] || 'bg-neutral-100 text-neutral-600'}`}>
+                {statusStr}
               </span>
             </div>
-            <p className="text-xs text-neutral-600">{ret.reason}</p>
+            <p className="text-xs text-neutral-600">{String(ret.reason || '')}</p>
             <div className="flex flex-wrap gap-3 text-xs font-semibold pt-1">
-              {['REQUESTED', 'APPROVED'].includes(ret.status) && (
+              {['REQUESTED', 'APPROVED'].includes(statusStr) && (
                 <button
                   type="button"
-                  disabled={cancellingId === ret.id}
-                  onClick={() => onCancel(ret.id)}
+                  disabled={cancellingId === retId}
+                  onClick={() => onCancel(retId)}
                   className="text-rose-700 disabled:opacity-50"
                 >
-                  {cancellingId === ret.id ? 'Cancelling…' : 'Cancel Return'}
+                  {cancellingId === retId ? 'Cancelling…' : 'Cancel Return'}
                 </button>
               )}
-              <Link href={`/orders/details/${ret.orderNumber}`} className="text-neutral-600">
+              <Link href={`/orders/details/${orderNum}`} className="text-neutral-600">
                 View Order
               </Link>
             </div>
           </div>
-        ))}
+        );
+      })}
       </main>
 
       <StorefrontFooter />

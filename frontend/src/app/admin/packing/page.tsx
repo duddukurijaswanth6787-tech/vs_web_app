@@ -1,38 +1,20 @@
 'use client';
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { Package, Printer, RefreshCw } from 'lucide-react';
-import { customerPackingService } from '@/features/customer/extra.service';
+import { customerPackingService, PackingJobDto } from '@/features/customer/extra.service';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function WarehousePackingAdminPage() {
   const { toast } = useToast();
-  const [jobs, setJobs] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
 
-  const loadQueue = useCallback(async () => {
-    setLoading(true);
-    try {
-      const result = await customerPackingService.getQueue({ limit: 50 });
-      const list = Array.isArray(result?.data)
-        ? result.data
-        : Array.isArray(result?.jobs)
-          ? result.jobs
-          : Array.isArray(result)
-            ? result
-            : [];
-      setJobs(list);
-    } catch (err) {
-      toast('error', 'Failed to load packing queue', getApiErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [toast]);
-
-  useEffect(() => {
-    loadQueue();
-  }, [loadQueue]);
+  const { data: queueData, isFetching, refetch } = useQuery({
+    queryKey: ['admin', 'packing', 'queue'],
+    queryFn: () => customerPackingService.getQueue({ limit: 50 }),
+  });
+  const jobs = useMemo(() => queueData?.jobs ?? queueData?.data ?? [], [queueData]);
 
   const stats = useMemo(() => {
     const pending = jobs.filter((j) => ['QUEUED', 'PENDING', 'ASSIGNED'].includes(String(j.status || '').toUpperCase())).length;
@@ -41,11 +23,11 @@ export default function WarehousePackingAdminPage() {
     return { pending, inProgress, completed, total: jobs.length };
   }, [jobs]);
 
-  const printLabel = async (job: any) => {
+  const printLabel = async (job: PackingJobDto) => {
     try {
       const result = await customerPackingService.generateLabel(job.id);
       toast('success', 'Label generated', result?.labelUrl || `Job ${job.id.slice(0, 8)} ready to print`);
-      await loadQueue();
+      await refetch();
     } catch (err) {
       toast('error', 'Label failed', getApiErrorMessage(err));
     }
@@ -66,12 +48,12 @@ export default function WarehousePackingAdminPage() {
 
         <button
           type="button"
-          onClick={loadQueue}
-          disabled={loading}
+          onClick={() => void refetch()}
+          disabled={isFetching}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <RefreshCw className="w-4 h-4 text-neutral-500" />
-          <span>{loading ? 'Loading…' : 'Refresh Queue'}</span>
+          <span>{isFetching ? 'Loading…' : 'Refresh Queue'}</span>
         </button>
       </div>
 
@@ -116,7 +98,7 @@ export default function WarehousePackingAdminPage() {
               {jobs.length === 0 && (
                 <tr>
                   <td colSpan={4} className="p-6 text-center text-neutral-500">
-                    {loading ? 'Loading queue…' : 'No packing jobs in queue'}
+                    {isFetching ? 'Loading queue…' : 'No packing jobs in queue'}
                   </td>
                 </tr>
               )}
@@ -134,7 +116,7 @@ export default function WarehousePackingAdminPage() {
                     </span>
                   </td>
                   <td className="p-3 font-bold text-neutral-900">
-                    {job.assignedToName || job.assignedTo || job.packerId || 'Unassigned'}
+                    {String(job.assignedToName || job.assignedTo || job.packerId || 'Unassigned')}
                   </td>
                   <td className="p-3">
                     <button

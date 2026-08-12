@@ -10,6 +10,7 @@ import { useCustomerAddresses, customerKeys } from '@/features/customer/hooks';
 import { customerMeService } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { getApiErrorMessage } from '@/utils/api-error';
+import type { AddressDto } from '@/features/customer/me.service';
 
 export default function AddressListPage() {
   const { isAuthenticated, isInitializing } = useAuth();
@@ -20,7 +21,8 @@ export default function AddressListPage() {
   const addresses = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
+    const typed = data as { data?: unknown[] };
+    if (Array.isArray(typed?.data)) return typed.data as never[];
     return [];
   }, [data]);
 
@@ -65,11 +67,11 @@ export default function AddressListPage() {
         {!isLoading && addresses.length === 0 && (
           <p className="text-sm text-neutral-500 text-center py-10">No saved addresses</p>
         )}
-        {addresses.map((addr: any) => (
+        {addresses.map((addr: AddressDto) => (
           <div key={addr.id} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">{addr.fullName || addr.name}</p>
+                <p className="text-sm font-bold">{addr.fullName || String(addr.name || '')}</p>
                 <p className="text-xs text-neutral-600 mt-1">
                   {[addr.addressLine1, addr.addressLine2, addr.city, addr.state, addr.postalCode]
                     .filter(Boolean)

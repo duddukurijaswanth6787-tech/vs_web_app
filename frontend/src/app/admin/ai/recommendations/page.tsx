@@ -28,7 +28,7 @@ export default function AiRecommendationsAdminPage() {
     }
   });
   const [loading, setLoading] = useState(false);
-  const [items, setItems] = useState<any[]>([]);
+  const [items, setItems] = useState<Array<Record<string, unknown>>>([]);
 
   const handleGenerate = async () => {
     if (!customerUserId.trim()) {
@@ -38,7 +38,8 @@ export default function AiRecommendationsAdminPage() {
     setLoading(true);
     try {
       const result = await adminOpsApi.generateRecommendations(customerUserId.trim());
-      const list = Array.isArray(result) ? result : result?.data || [];
+      const typed = result as { recommendedProducts?: Array<Record<string, unknown>>; data?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>;
+      const list = Array.isArray(typed) ? typed : Array.isArray(typed?.recommendedProducts) ? typed.recommendedProducts! : Array.isArray(typed?.data) ? typed.data! : [];
       setItems(list);
       toast('success', 'Recommendations generated', `${list.length} items computed for this customer.`);
     } catch (err) {
@@ -56,7 +57,8 @@ export default function AiRecommendationsAdminPage() {
     setLoading(true);
     try {
       const result = await adminOpsApi.listRecommendations(customerUserId.trim(), { limit: 50 });
-      const list = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
+      const typed = result as { data?: Array<Record<string, unknown>> } | Array<Record<string, unknown>>;
+      const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: Array<Record<string, unknown>> })?.data) ? (typed as { data?: Array<Record<string, unknown>> }).data! : [];
       setItems(list);
       toast('success', 'Loaded recommendations', `${list.length} items`);
     } catch (err) {
@@ -192,12 +194,12 @@ export default function AiRecommendationsAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {items.map((row) => (
-                  <tr key={row.id || `${row.productId}-${row.type}`} className="border-t border-neutral-100">
-                    <td className="px-3 py-2 font-mono">{row.productId}</td>
-                    <td className="px-3 py-2">{row.type}</td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{row.score}</td>
-                    <td className="px-3 py-2 text-neutral-600">{row.reason || '—'}</td>
+                {items.map((row, idx) => (
+                  <tr key={String(row.id || row.productId || idx)} className="border-t border-neutral-100">
+                    <td className="px-3 py-2 font-mono">{String(row.productId || '')}</td>
+                    <td className="px-3 py-2">{String(row.type || '')}</td>
+                    <td className="px-3 py-2 font-bold text-[#800020]">{String(row.score || '')}</td>
+                    <td className="px-3 py-2 text-neutral-600">{String(row.reason || '—')}</td>
                   </tr>
                 ))}
               </tbody>

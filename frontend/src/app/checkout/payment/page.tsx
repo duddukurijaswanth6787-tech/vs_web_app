@@ -10,6 +10,12 @@ import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useAuth } from '@/hooks/useAuth';
 
+interface PaymentMethod {
+  code: string;
+  title: string;
+  description?: string;
+}
+
 const COUPON_STORAGE_KEY = 'vd_coupon_code';
 
 function CheckoutPaymentPageContent() {
@@ -100,7 +106,7 @@ function CheckoutPaymentPageContent() {
         )}
 
         {isLoading && <p className="text-sm text-neutral-500">Loading payment methods…</p>}
-        {(methods || []).map((m: any) => (
+        {((methods || []) as unknown as PaymentMethod[]).map((m) => (
           <button
             key={m.code}
             type="button"

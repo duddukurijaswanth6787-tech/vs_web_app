@@ -9,6 +9,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { useOrderTracking } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
+interface TrackingEntry {
+  status?: string;
+  time?: string;
+  timestamp?: string;
+  location?: string;
+}
+
 export default function OrderTrackPage() {
   const params = useParams();
   const orderNumber = String(params.id || '');
@@ -41,16 +48,16 @@ export default function OrderTrackPage() {
           <>
             <div className="bg-white border border-neutral-200 rounded-2xl p-4">
               <p className="text-xs text-neutral-500">Current status</p>
-              <p className="text-sm font-bold text-[#800020] mt-1">{data.currentStatus || data.status}</p>
+              <p className="text-sm font-bold text-[#800020] mt-1">{String(data.currentStatus || data.status || '')}</p>
               {data.trackingNumber && (
-                <p className="text-xs text-neutral-600 mt-2">AWB: {data.trackingNumber}</p>
+                <p className="text-xs text-neutral-600 mt-2">AWB: {String(data.trackingNumber)}</p>
               )}
             </div>
             <div className="space-y-2">
-              {(data.timeline || []).map((t: any, i: number) => (
+              {(Array.isArray(data.timeline) ? data.timeline : Array.isArray(data.history) ? data.history : []).map((t: TrackingEntry, i: number) => (
                 <div key={i} className="bg-white border border-neutral-200 rounded-xl px-4 py-3">
-                  <p className="text-sm font-bold">{t.status}</p>
-                  <p className="text-[11px] text-neutral-500">{t.time}</p>
+                  <p className="text-sm font-bold">{String(t.status || '')}</p>
+                  <p className="text-[11px] text-neutral-500">{String(t.time || t.timestamp || '')}</p>
                 </div>
               ))}
             </div>

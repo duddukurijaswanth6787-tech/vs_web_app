@@ -32,7 +32,7 @@ interface DataTableProps<T> {
   bulkActions?: React.ReactNode;
 }
 
-export default function DataTable<T extends Record<string, any>>({
+export default function DataTable<T>({
   columns, data, total, page, pageSize, sortBy, sortOrder,
   loading, error, onRetry, onPageChange, onSort,
   selectedIds, onSelectionChange, onRowClick,
@@ -50,7 +50,11 @@ export default function DataTable<T extends Record<string, any>>({
   const toggleOne = (id: string) => {
     if (!onSelectionChange) return;
     const next = new Set(selectedIds);
-    next.has(id) ? next.delete(id) : next.add(id);
+    if (next.has(id)) {
+      next.delete(id);
+    } else {
+      next.add(id);
+    }
     onSelectionChange(next);
   };
 

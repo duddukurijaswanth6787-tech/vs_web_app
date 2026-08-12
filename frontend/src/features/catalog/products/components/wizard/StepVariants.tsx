@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { useFormContext, useFieldArray } from 'react-hook-form';
 import { ProductFormValues } from '../../product.types';
-import { Plus, Trash2, Image as ImageIcon } from 'lucide-react';
+import { Plus, Trash2 } from 'lucide-react';
 
 export const StepVariants = () => {
-  const { control, register } = useFormContext<ProductFormValues>();
+  const { control } = useFormContext<ProductFormValues>();
   const { fields, append, remove } = useFieldArray({
-    control: control as any,
-    name: 'variants' as any,
+    control,
+    name: 'variants' as never,
   });
 
   const [color, setColor] = useState('');
@@ -47,9 +47,9 @@ export const StepVariants = () => {
 
       {/* Added Variants List */}
       <div className="space-y-2">
-        {fields.map((field: any, index) => (
-          <div key={field.id} className="flex items-center justify-between p-3 border rounded-lg">
-            <span>{field.color} / {field.size} - ₹{field.price} (Stock: {field.stock})</span>
+        {fields.map((field: Record<string, unknown>, index) => (
+          <div key={field.id as string} className="flex items-center justify-between p-3 border rounded-lg">
+            <span>{String(field.color ?? '')} / {String(field.size ?? '')} - ₹{String(field.price ?? '')} (Stock: {String(field.stock ?? '')})</span>
             <button type="button" onClick={() => remove(index)} className="text-red-500">
               <Trash2 className="w-4 h-4" />
             </button>

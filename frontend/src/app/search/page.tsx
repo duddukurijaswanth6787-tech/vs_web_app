@@ -18,10 +18,11 @@ function SearchPageContent() {
   const productsFallback = useCustomerProducts({ search: q, limit: 48 });
 
   const products = useMemo(() => {
-    const fromSearch = search.data;
+    const fromSearch = search.data as Record<string, unknown>;
     const list =
-      fromSearch?.products?.data ||
-      fromSearch?.data?.products ||
+      (fromSearch?.products as { data?: unknown[] })?.data ||
+      (fromSearch?.data as { products?: unknown[] })?.products ||
+      fromSearch?.products ||
       fromSearch?.data ||
       [];
     if (Array.isArray(list) && list.length && list[0]?.name) {

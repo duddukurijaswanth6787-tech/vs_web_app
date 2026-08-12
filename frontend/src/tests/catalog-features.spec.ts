@@ -1,5 +1,6 @@
 import { generateVariantMatrix } from '@/features/catalog/variants/utils';
 import { hasRole, canAccessRoute } from '@/lib/permissions/rules';
+import type { UserProfile } from '@/types/auth.types';
 
 describe('Catalog Features & UI Utilities', () => {
   // Test 1: Cartesian matrix generator
@@ -96,9 +97,9 @@ describe('Catalog Features & UI Utilities', () => {
 
   // Test 6: Catalog RBAC constraints
   test('6. RBAC correctly protects catalog administration roles', () => {
-    const superAdmin: any = { id: 'u-1', email: 'sa@example.com', firstName: 'Super', userType: 'STAFF', accountStatus: 'ACTIVE', roles: ['super_admin'], permissions: [] };
-    const admin: any = { id: 'u-2', email: 'admin@example.com', firstName: 'Admin', userType: 'STAFF', accountStatus: 'ACTIVE', roles: ['admin'], permissions: [] };
-    const customer: any = { id: 'u-3', email: 'cust@example.com', firstName: 'Customer', userType: 'CUSTOMER', accountStatus: 'ACTIVE', roles: ['customer'], permissions: [] };
+    const superAdmin: UserProfile = { id: 'u-1', email: 'sa@example.com', firstName: 'Super', userType: 'STAFF', accountStatus: 'ACTIVE', roles: ['super_admin'], permissions: [] };
+    const admin: UserProfile = { id: 'u-2', email: 'admin@example.com', firstName: 'Admin', userType: 'STAFF', accountStatus: 'ACTIVE', roles: ['admin'], permissions: [] };
+    const customer: UserProfile = { id: 'u-3', email: 'cust@example.com', firstName: 'Customer', userType: 'CUSTOMER', accountStatus: 'ACTIVE', roles: ['customer'], permissions: [] };
 
     expect(hasRole(superAdmin, 'super_admin')).toBe(true);
     expect(canAccessRoute(admin, { roles: ['admin', 'super_admin'] })).toBe(true);

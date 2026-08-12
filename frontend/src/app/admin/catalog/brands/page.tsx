@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useBrands, useCreateBrand, useUpdateBrand, useDeleteBrand, useRestoreBrand } from '@/features/catalog/brands/brand.hooks';
 import { CreateBrandDto, BrandResponse } from '@/features/catalog/brands/brand.types';
 import { useAuth } from '@/hooks/useAuth';
@@ -354,7 +355,7 @@ export default function BrandsPage() {
               <label className="block text-xs font-bold text-neutral-400 mb-1.5 uppercase">Brand Logo</label>
               {logo ? (
                 <div className="relative border border-neutral-200 rounded-xl overflow-hidden mb-2 bg-neutral-50 p-2 flex items-center gap-3">
-                  <img src={logo} alt="logo preview" className="w-12 h-12 object-contain rounded" />
+                  <Image src={logo} alt="logo preview" width={48} height={48} className="w-12 h-12 object-contain rounded" />
                   <span className="text-[10px] text-neutral-400 truncate flex-1">{logo}</span>
                   <button type="button" onClick={clearLogo} className="text-red-500 hover:text-red-700 p-1"><X className="w-4 h-4" /></button>
                 </div>

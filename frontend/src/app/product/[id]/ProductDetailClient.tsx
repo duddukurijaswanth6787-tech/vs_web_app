@@ -1,13 +1,10 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import { productService } from '@/features/catalog/products/product.service';
+import React, { useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { 
-  ArrowLeft, 
   Heart, 
   Minus, 
   Plus, 
@@ -15,19 +12,12 @@ import {
   Star, 
   Share2, 
   Truck, 
-  Calendar, 
-  Info, 
   Award, 
   ShieldCheck, 
-  HelpCircle, 
   CheckCircle,
-  Clock,
-  X,
   Sparkles,
   RefreshCw,
-  Copy,
   ChevronDown,
-  ChevronUp,
   ChevronRight,
   Maximize2,
   Ruler,
@@ -51,7 +41,6 @@ const ImageOverlayModal = dynamic(() => import('./ImageOverlayModal').then(mod =
 const SizeChartModal = dynamic(() => import('./SizeChartModal').then(mod => mod.SizeChartModal), { ssr: false });
 const ProductImageZoom = dynamic(() => import('./ProductImageZoom').then(mod => mod.ProductImageZoom), { ssr: false });
 const ShareModal = dynamic(() => import('./ShareModal').then(mod => mod.ShareModal), { ssr: false });
-const ReviewModal = dynamic(() => import('./ReviewModal').then(mod => mod.ReviewModal), { ssr: false });
 import { useAuth } from '@/hooks/useAuth';
 import {
   discountLabel,
@@ -68,13 +57,8 @@ export function ProductDetailClient() {
   const { isAuthenticated } = useAuth();
   const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idOrSlug);
   const { data: product, isLoading, error } = useCustomerProduct(idOrSlug);
-  const { data: fullProduct, isLoading: isFullLoading } = useQuery({
-    queryKey: ['customer', 'product-full', idOrSlug],
-    queryFn: () => productService.findById(idOrSlug), // Assuming existing full fetch
-    enabled: !!product, // Only fetch full details after basic is loaded
-  });
 
-  // Replace uses of `product` with `fullProduct` for rendering
+  // Extract unique colors and sizes from variants
   const { data: variantsData } = useVariants({ productId: looksLikeUuid ? idOrSlug : product?.id, limit: 100 });
   const { data: reviewsData } = useProductReviews(product?.id || '', !!product?.id);
   const reviews = reviewsData?.data || [];
@@ -93,11 +77,6 @@ export function ProductDetailClient() {
   const [pinCode, setPinCode] = useState('');
   const [deliveryStatus, setDeliveryStatus] = useState<'idle' | 'checking' | 'available' | 'invalid'>('idle');
   const [activeTab, setActiveTab] = useState<'overview' | 'care' | 'shipping' | 'reviews'>('overview');
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  
-  // Frequently bought together bundle
-  const [includeDupatta, setIncludeDupatta] = useState(true);
-  const [includeHeels, setIncludeHeels] = useState(false);
   
   // Wishlist toggle
   const [isSaved, setIsSaved] = useState(false);
@@ -117,16 +96,16 @@ export function ProductDetailClient() {
   }, [relatedData, product]);
 
   const images = useMemo<string[]>(() => {
-    const list: string[] = (product?.images?.map((i: any) => i.url).filter((u: any) => Boolean(u)) as string[]) || [];
+    const list: string[] = product?.images?.map((i) => i.url).filter((u): u is string => Boolean(u)) || [];
     if (product?.primaryImageUrl) list.unshift(product.primaryImageUrl);
     return Array.from(new Set(list.length ? list : [PLACEHOLDER_IMAGE]));
   }, [product]);
 
   const visibleImages = useMemo<string[]>(() => {
     if (selectedColor) {
-      const colorSpecific: string[] = (product?.images
-        ?.filter((img: any) => img.color && img.color.toLowerCase() === selectedColor.toLowerCase())
-        ?.map((img: any) => img.url) as string[]) || [];
+      const colorSpecific: string[] = product?.images
+        ?.filter((img) => img.color && img.color.toLowerCase() === selectedColor.toLowerCase())
+        ?.map((img) => img.url) || [];
       if (colorSpecific.length > 0) {
         return Array.from(new Set(colorSpecific));
       }
@@ -135,10 +114,11 @@ export function ProductDetailClient() {
   }, [product, selectedColor, images]);
 
   const [activeImage, setActiveImage] = useState(0);
-
-  useEffect(() => {
+  const [prevSelectedColor, setPrevSelectedColor] = useState(selectedColor);
+  if (selectedColor !== prevSelectedColor) {
+    setPrevSelectedColor(selectedColor);
     setActiveImage(0);
-  }, [selectedColor]);
+  }
 
   // Extract unique colors and sizes from variants
   const availableColors = useMemo(() => {
@@ -168,14 +148,12 @@ export function ProductDetailClient() {
   }, [variantsData]);
 
   // Set default selections once loaded
-  useEffect(() => {
-    if (availableColors.length && !selectedColor) {
-      setSelectedColor(availableColors[0]);
-    }
-    if (availableSizes.length && !selectedSize) {
-      setSelectedSize(availableSizes[0]);
-    }
-  }, [availableColors, availableSizes, selectedColor, selectedSize]);
+  if (availableColors.length > 0 && !selectedColor) {
+    setSelectedColor(availableColors[0]);
+  }
+  if (availableSizes.length > 0 && !selectedSize) {
+    setSelectedSize(availableSizes[0]);
+  }
 
   // Find matching variant based on selections
   const matchingVariant = useMemo(() => {
@@ -263,13 +241,6 @@ export function ProductDetailClient() {
     setTimeout(() => {
       setDeliveryStatus('available');
     }, 800);
-  };
-
-  const [copied, setCopied] = useState(false);
-  const copyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
   };
 
   // Full-size image modal state
@@ -368,7 +339,7 @@ export function ProductDetailClient() {
                 {/* Desktop Vertical Thumbnail Slider */}
                 <div className="hidden md:flex flex-col gap-2.5 w-20 shrink-0">
                   <div className="flex flex-col gap-2.5 overflow-y-auto max-h-[460px] scrollbar-none pr-1">
-                    {visibleImages.map((src: any, i: number) => (
+                    {visibleImages.map((src, i) => (
                       <button
                         key={src + i}
                         type="button"
@@ -470,7 +441,7 @@ export function ProductDetailClient() {
 
                   {/* Mobile horizontal scroll thumbnail strip */}
                   <div className="flex gap-2 overflow-x-auto pb-1 md:hidden scrollbar-none">
-                    {visibleImages.map((src: any, i: number) => (
+                    {visibleImages.map((src, i) => (
                       <button
                         key={src + i}
                         type="button"
@@ -947,7 +918,7 @@ export function ProductDetailClient() {
                   <span className="w-1/3 text-neutral-400 font-bold uppercase">Category</span>
                   <span className="w-2/3 text-neutral-800 font-semibold">{product.categories?.[0]?.categoryName || 'Ethnic Wear'}</span>
                 </div>
-                {product.attributes?.map((attr: any) => (
+                {product.attributes?.map((attr) => (
                   <div key={attr.attributeId} className="flex py-2.5">
                     <span className="w-1/3 text-neutral-400 font-bold uppercase">{attr.attributeName}</span>
                     <span className="w-2/3 text-neutral-800 font-semibold">{attr.value || 'N/A'}</span>
@@ -1008,7 +979,7 @@ export function ProductDetailClient() {
               <Award className="w-6 h-6 text-[#800020] shrink-0" />
               <div className="text-left space-y-0.5">
                 <p className="text-xs font-black text-neutral-800 uppercase tracking-wider">100% Original Products</p>
-                <p className="text-[10px] text-neutral-500 font-semibold">Quality you can trust, style you'll love.</p>
+                <p className="text-[10px] text-neutral-500 font-semibold">Quality you can trust, style you&apos;ll love.</p>
               </div>
             </div>
 

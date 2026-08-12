@@ -2,39 +2,29 @@
 
 import { useToast } from '@/components/toast/ToastProvider';
 
-import React, { useState, useEffect } from 'react';
-import { Share2, Plus, Search, Filter, RefreshCw, Gift, Users } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Share2, RefreshCw } from 'lucide-react';
 import { referralApi } from '@/features/referral/api/referral.api';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function ReferralAdminPage() {
   const { toast } = useToast();
-  const [referrals, setReferrals] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [rewardAmount, setRewardAmount] = useState<number>(250);
+  const [rewardAmount] = useState<number>(250);
 
-  const fetchReferrals = async () => {
-    setIsLoading(true);
-    try {
-      const data = await referralApi.adminList(1, 20);
-      setReferrals(data || []);
-    } catch (e: any) {
-      console.warn('Backend API connection live fallback');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchReferrals();
-  }, []);
+  const { data: referralsData, refetch: fetchReferrals } = useQuery({
+    queryKey: ['referral', 'admin-list'],
+    queryFn: () => referralApi.adminList(1, 20),
+  });
+  const referrals = Array.isArray(referralsData) ? referralsData : [];
 
   const handleUpdateReward = async (id: string) => {
     try {
       await referralApi.adminUpdate(id, { rewardAmount });
       toast('success', 'Referral updated', 'Reward updated successfully');
       fetchReferrals();
-    } catch (e: any) {
-      toast('error', 'Update failed', e.message || 'Server error');
+    } catch (err) {
+      toast('error', 'Update failed', getApiErrorMessage(err, 'Server error'));
     }
   };
 
@@ -54,7 +44,7 @@ export default function ReferralAdminPage() {
         </div>
 
         <button
-          onClick={fetchReferrals}
+          onClick={() => void fetchReferrals()}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <RefreshCw className="w-4 h-4 text-neutral-500" />

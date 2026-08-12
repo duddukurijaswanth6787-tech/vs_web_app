@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
+import Image from 'next/image';
 import {
   Search,
   Barcode,
   ShoppingBag,
-  User,
   Plus,
   Minus,
   Trash2,
@@ -18,12 +18,8 @@ import {
   CheckCircle2,
   RefreshCw,
   X,
-  FileText,
   History,
   UserCheck,
-  PackageCheck,
-  Calendar,
-  Clock,
 } from 'lucide-react';
 import {
   useScanBarcode,
@@ -37,6 +33,7 @@ import {
   PosCustomerInfo,
   PosPaymentMethod,
   CheckoutSessionData,
+  PosCustomerLookupResult,
 } from '@/features/pos/pos.types';
 
 export default function DesktopPosPage() {
@@ -58,7 +55,7 @@ export default function DesktopPosPage() {
   const [completedOrder, setCompletedOrder] = useState<Record<string, unknown> | null>(null);
 
   // Customer Lookup & Order History state
-  const [customerLookupResult, setCustomerLookupResult] = useState<any>(null);
+  const [customerLookupResult, setCustomerLookupResult] = useState<PosCustomerLookupResult | null>(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
@@ -340,7 +337,7 @@ export default function DesktopPosPage() {
                     <div className="flex items-center gap-3 min-w-0 flex-1">
                       <div className="w-11 h-11 rounded-xl bg-neutral-100 overflow-hidden border border-neutral-200 shrink-0">
                         {item.primaryImage ? (
-                          <img src={item.primaryImage} alt={item.productName} className="w-full h-full object-cover" />
+                          <Image src={item.primaryImage} alt={item.productName} width={44} height={44} className="w-full h-full object-cover" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center text-neutral-400 text-xs font-bold">👗</div>
                         )}
@@ -579,7 +576,7 @@ export default function DesktopPosPage() {
             </div>
 
             <p className="text-xs text-neutral-600 leading-relaxed">
-              Enter the 6-digit session PIN shown on the cashier's phone (e.g. <b>582-194</b>) to transfer the cart to desktop.
+              Enter the 6-digit session PIN shown on the cashier&apos;s phone (e.g. <b>582-194</b>) to transfer the cart to desktop.
             </p>
 
             <form onSubmit={handleAdoptHandoff} className="space-y-3">
@@ -681,7 +678,7 @@ export default function DesktopPosPage() {
                   No past orders found for this customer.
                 </div>
               ) : (
-                customerLookupResult.recentOrders?.map((ord: any) => (
+                customerLookupResult.recentOrders?.map((ord) => (
                   <div key={ord.orderId} className="bg-neutral-50 p-3.5 rounded-xl border border-neutral-200 space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-neutral-900">
                       <span className="text-[#800020]">{ord.orderNumber}</span>
@@ -693,7 +690,7 @@ export default function DesktopPosPage() {
                     </div>
                     {/* Items list */}
                     <div className="border-t border-neutral-200/60 pt-2 space-y-1">
-                      {ord.items?.map((it: any, i: number) => (
+                      {ord.items?.map((it, i) => (
                         <div key={i} className="flex justify-between text-[11px] text-neutral-700">
                           <span className="truncate max-w-[260px]">{it.productName} x {it.quantity}</span>
                           <span className="font-semibold">₹{it.unitPrice * it.quantity}</span>

@@ -119,7 +119,7 @@ export default function AttributesPage() {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setOptSwatchUrl(res.data.data.url);
-    } catch (err) {
+    } catch {
       alert('Failed to upload swatch image');
     } finally {
       setUploadingSwatch(false);

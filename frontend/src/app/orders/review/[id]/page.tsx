@@ -24,9 +24,11 @@ export default function OrderReviewPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  React.useEffect(() => {
+  const [prevItems, setPrevItems] = useState(items);
+  if (items !== prevItems) {
+    setPrevItems(items);
     if (items[0]?.productId) setProductId(items[0].productId);
-  }, [items]);
+  }
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -78,7 +80,7 @@ export default function OrderReviewPage() {
               onChange={(e) => setProductId(e.target.value)}
               className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm"
             >
-              {items.map((i: any) => (
+              {items.map((i) => (
                 <option key={i.id} value={i.productId}>
                   {i.productName || i.productId}
                 </option>

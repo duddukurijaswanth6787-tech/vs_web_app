@@ -126,7 +126,7 @@ export const storefrontService = {
       featuresTotal: features?.length ?? 0,
       footerLinks: footer?.reduce((acc, s) => acc + s.links.length, 0) ?? 0,
       socialLinks: social?.length ?? 0,
-      newsletterSubscribers: (newsletter as any)?.meta?.total ?? 0,
+      newsletterSubscribers: (newsletter as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0,
       maintenanceMode: settings?.maintenanceMode ?? false,
     };
   },

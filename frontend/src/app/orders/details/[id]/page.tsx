@@ -3,10 +3,11 @@
 import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft, Package } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { useCustomerOrder } from '@/features/customer/hooks';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
+import type { OrderItemDto } from '@/features/customer/orders.service';
 
 export default function OrderDetailsPage() {
   const params = useParams();
@@ -27,7 +28,7 @@ export default function OrderDetailsPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 space-y-4 shadow-xs">
         <h2 className="font-bold border-b pb-2">Items</h2>
-        {order.items?.map((item: any) => (
+        {order.items?.map((item: OrderItemDto) => (
           <div key={item.id} className="flex justify-between items-center text-sm">
             <span>{item.productName} x {item.quantity}</span>
             <span className="font-bold">{formatInr(Number(item.totalPrice))}</span>

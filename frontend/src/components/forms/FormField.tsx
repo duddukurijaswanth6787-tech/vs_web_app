@@ -53,6 +53,26 @@ export function Textarea({ className = '', ...props }: TextareaHTMLAttributes<HT
   );
 }
 
+export function LabeledField({ label, value, onChange, type = 'text', placeholder, textarea = false }: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  placeholder?: string;
+  textarea?: boolean;
+}) {
+  return (
+    <div>
+      <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">{label}</label>
+      {textarea ? (
+        <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} rows={3} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" />
+      ) : (
+        <input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" />
+      )}
+    </div>
+  );
+}
+
 export function Button({ className = '', variant = 'primary', children, ...props }: React.ButtonHTMLAttributes<HTMLButtonElement> & { variant?: 'primary' | 'secondary' | 'ghost' | 'danger' }) {
   const variants = {
     primary: 'bg-neutral-950 text-white hover:bg-neutral-800 border-neutral-950',
