@@ -1,6 +1,7 @@
 import { io, Socket } from 'socket.io-client';
+import { API_ORIGIN } from './api';
 
-const SOCKET_URL = 'http://192.168.1.23:4000/pos-events';
+const SOCKET_URL = `${API_ORIGIN}/pos-events`;
 
 let socket: Socket | null = null;
 
