@@ -40,32 +40,27 @@ async function bootstrap() {
       requestOrigin: string | undefined,
       callback: (err: Error | null, origin?: any) => void,
     ) => {
-      if (
-        !requestOrigin ||
-        corsOrigin === '*' ||
-        !isProd ||
-        corsOrigin.includes(requestOrigin) ||
-        requestOrigin.includes('vercel.app')
-      ) {
-        callback(null, requestOrigin || true);
-      } else {
-        callback(null, requestOrigin || true);
-      }
+      callback(null, requestOrigin || true);
     },
-    methods: corsMethods.split(',').map((s) => s.trim()),
-    allowedHeaders:
-      corsHeaders === '*'
-        ? [
-            'Content-Type',
-            'Accept',
-            'Authorization',
-            'x-correlation-id',
-            'x-request-id',
-            'x-requested-with',
-            'Origin',
-            'X-Requested-With',
-          ]
-        : corsHeaders.split(',').map((s) => s.trim()),
+    methods: [
+      'GET',
+      'HEAD',
+      'PUT',
+      'PATCH',
+      'POST',
+      'DELETE',
+      'OPTIONS',
+    ],
+    allowedHeaders: [
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'x-correlation-id',
+      'x-request-id',
+      'x-requested-with',
+      'Origin',
+      'X-Requested-With',
+    ],
     credentials: true,
     optionsSuccessStatus: 204,
   });
