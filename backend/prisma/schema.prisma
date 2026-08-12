@@ -446,10 +446,12 @@ model Product {
   isTrending              Boolean                  @default(false)
   taxInclusive            Boolean                  @default(true)
   hsnCode                 String?
+  sizeChartTemplateId     String?
   isLimitedStock          Boolean                  @default(false)
   isFestivePick           Boolean                  @default(false)
   isExclusive             Boolean                  @default(false)
   isOnlineOnly            Boolean                  @default(false)
+  sizeChartTemplate       SizeChartTemplate?       @relation(fields: [sizeChartTemplateId], references: [id])
   customerRecommendations CustomerRecommendation[]
   orderItems              OrderItem[]
   prescriptionMedicines   PrescriptionMedicine[]
@@ -2898,4 +2900,46 @@ enum PosPaymentMethod {
   SPLIT
 
   @@map("pos_payment_method")
+}
+
+/// A reusable set of body measurements per size, attached to many products so
+/// the numbers are entered once per garment shape rather than per product.
+model SizeChartTemplate {
+  id          String           @id @default(uuid())
+  name        String
+  slug        String           @unique
+  description String?
+  /// Kurta, Saree Blouse, Lehenga … — what shape this chart describes.
+  garmentType String?
+  /// Measurement unit the rows are expressed in.
+  unit        String           @default("inch")
+  status      String           @default("ACTIVE")
+  createdBy   String?
+  updatedBy   String?
+  deletedAt   DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+  rows        SizeChartRow[]
+  products    Product[]
+
+  @@index([status])
+  @@map("size_chart_templates")
+}
+
+/// One size within a template, e.g. M -> { bust: 38, waist: 34, hip: 40 }.
+model SizeChartRow {
+  id           String            @id @default(uuid())
+  templateId   String
+  size         String
+  /// Measurement name -> value, so different garment shapes can carry
+  /// different fields without a schema change.
+  measurements Json
+  displayOrder Int               @default(0)
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
+  template     SizeChartTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([templateId, size])
+  @@index([templateId])
+  @@map("size_chart_rows")
 }

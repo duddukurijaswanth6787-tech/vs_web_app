@@ -93,6 +93,7 @@ export interface CreateProductDto {
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
   hsnCode?: string;
+  sizeChartTemplateId?: string;
   isPublished?: boolean;
   displayOrder?: number;
   seoTitle?: string;
@@ -132,6 +133,7 @@ export interface ProductQueryDto {
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
   hsnCode?: string;
+  sizeChartTemplateId?: string;
   isPublished?: boolean;
   minPrice?: number;
   maxPrice?: number;
@@ -198,6 +200,7 @@ export interface ProductResponse {
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
   hsnCode?: string;
+  sizeChartTemplateId?: string;
   isPublished: boolean;
   publishedAt?: string;
   displayOrder: number;

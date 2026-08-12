@@ -11,6 +11,7 @@ import { variantService } from '@/features/catalog/variants/variant.service';
 import { inventoryService } from '@/features/inventory/inventory.service';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
+import { useSizeCharts } from '@/features/catalog/size-charts/size-chart.hooks';
 import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
@@ -205,6 +206,18 @@ export default function ProductBuilder({
 
   const setAttributeValue = (attributeId: string, value: string) =>
     setAttributeValues((prev) => ({ ...prev, [attributeId]: value }));
+
+  // Reusable size charts — measurements are entered once per garment shape and
+  // attached here, rather than retyped on every product.
+  const { data: sizeChartData } = useSizeCharts({ limit: 100, status: 'ACTIVE' });
+  const sizeCharts = useMemo(() => sizeChartData?.data ?? [], [sizeChartData]);
+  const [sizeChartTemplateId, setSizeChartTemplateId] = useState(
+    initialData?.sizeChartTemplateId ?? '',
+  );
+  const selectedSizeChart = useMemo(
+    () => sizeCharts.find((chart) => chart.id === sizeChartTemplateId),
+    [sizeCharts, sizeChartTemplateId],
+  );
 
   // Sub-categories are the children of whichever primary category is selected.
   const subCategories = useMemo(
@@ -633,6 +646,7 @@ export default function ProductBuilder({
         ...(tags.length > 0 ? { tags } : {}),
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
+        ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
       };
 
       const created = productId
@@ -1759,6 +1773,64 @@ export default function ProductBuilder({
               <p className="text-xs text-neutral-500 font-medium mt-0.5">
                 Configure size availability and inventory per color group
               </p>
+            </div>
+
+            {/* Size chart template */}
+            <div className="rounded-2xl border border-neutral-200 bg-neutral-50/60 p-5 space-y-3">
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                <div>
+                  <label className="text-xs font-bold text-neutral-800">Size Chart</label>
+                  <p className="text-[11px] text-neutral-500">
+                    Measurements are defined once per garment shape and reused. Manage them under
+                    Catalog &rarr; Size Charts.
+                  </p>
+                </div>
+                <select
+                  value={sizeChartTemplateId}
+                  onChange={(e) => setSizeChartTemplateId(e.target.value)}
+                  className="w-full sm:w-72 bg-white border border-neutral-200 rounded-xl px-4 py-2.5 text-xs text-neutral-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                >
+                  <option value="">No size chart</option>
+                  {sizeCharts.map((chart) => (
+                    <option key={chart.id} value={chart.id}>
+                      {chart.name}
+                      {chart.garmentType ? ` — ${chart.garmentType}` : ''}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {selectedSizeChart && selectedSizeChart.rows.length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-[11px] border-collapse">
+                    <thead>
+                      <tr className="text-left text-neutral-500">
+                        <th className="py-1.5 pr-4 font-bold">SIZE</th>
+                        {Object.keys(selectedSizeChart.rows[0].measurements).map((key) => (
+                          <th key={key} className="py-1.5 pr-4 font-bold whitespace-nowrap">
+                            {key.toUpperCase()}
+                          </th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {selectedSizeChart.rows.map((row) => (
+                        <tr key={row.size} className="border-t border-neutral-200">
+                          <td className="py-1.5 pr-4 font-bold text-neutral-800">{row.size}</td>
+                          {Object.keys(selectedSizeChart.rows[0].measurements).map((key) => (
+                            <td key={key} className="py-1.5 pr-4 text-neutral-600">
+                              {row.measurements[key] ?? '—'}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <p className="text-[10px] text-neutral-400 mt-2">
+                    All measurements in {selectedSizeChart.unit}.
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Size Management per Color */}

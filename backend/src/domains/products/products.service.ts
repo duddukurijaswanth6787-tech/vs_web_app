@@ -71,6 +71,7 @@ export class ProductsService {
       isExclusive: p.isExclusive ?? false,
       isOnlineOnly: p.isOnlineOnly ?? false,
       hsnCode: p.hsnCode ?? undefined,
+      sizeChartTemplateId: p.sizeChartTemplateId ?? undefined,
       taxInclusive: p.taxInclusive ?? true,
       isPublished: p.isPublished,
       publishedAt: p.publishedAt ?? undefined,

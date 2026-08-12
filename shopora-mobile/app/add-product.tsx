@@ -41,6 +41,7 @@ import {
   isAuthenticated,
   type BrandOption,
   type CategoryOption,
+  type SizeChartOption,
   type ColorGroupDraft,
   type CreatedVariant,
   type AttributeDefinition,
@@ -148,6 +149,8 @@ export default function AddProductScreen() {
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [categories, setCategories] = useState<CategoryOption[]>([]);
   const [attributes, setAttributes] = useState<AttributeDefinition[]>([]);
+  const [sizeCharts, setSizeCharts] = useState<SizeChartOption[]>([]);
+  const [sizeChartTemplateId, setSizeChartTemplateId] = useState('');
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [refsError, setRefsError] = useState('');
 
@@ -167,15 +170,17 @@ export default function AddProductScreen() {
       setLoadingRefs(true);
       setRefsError('');
       try {
-        const [brandRows, categoryRows, attributeRows] = await Promise.all([
+        const [brandRows, categoryRows, attributeRows, sizeChartRows] = await Promise.all([
           catalogService.listBrands(),
           catalogService.listCategories(),
           attributeService.list().catch(() => [] as AttributeDefinition[]),
+          catalogService.listSizeCharts().catch(() => [] as SizeChartOption[]),
         ]);
         if (cancelled) return;
         setBrands(brandRows);
         setCategories(categoryRows);
         setAttributes(attributeRows);
+        setSizeCharts(sizeChartRows);
         // A product cannot be created without a real brand id, so preselect one.
         if (brandRows.length > 0) {
           setBrandId(brandRows[0].id);
@@ -478,6 +483,7 @@ export default function AddProductScreen() {
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
         ...(tags.length > 0 ? { tags } : {}),
         ...(occasion ? { occasion } : {}),
+        ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
       });
 
       const productId: string = created?.id;
@@ -1033,6 +1039,41 @@ export default function AddProductScreen() {
         {step === 'sizes' && (
           <View>
             <Text style={styles.sectionTitle}>Sizes &amp; opening stock</Text>
+
+            <Text style={styles.label}>Size chart</Text>
+            <Text style={styles.helpText}>
+              Measurements are defined once per garment shape in the admin panel and reused here.
+            </Text>
+            {sizeCharts.length === 0 ? (
+              <Text style={styles.emptyHint}>
+                No size charts yet. Create them under Catalog → Size Charts.
+              </Text>
+            ) : (
+              <View style={styles.pillRow}>
+                <TouchableOpacity
+                  style={[styles.pill, !sizeChartTemplateId && styles.pillActive]}
+                  onPress={() => setSizeChartTemplateId('')}
+                >
+                  <Text style={[styles.pillText, !sizeChartTemplateId && styles.pillTextActive]}>
+                    None
+                  </Text>
+                </TouchableOpacity>
+                {sizeCharts.map((chart) => {
+                  const selected = sizeChartTemplateId === chart.id;
+                  return (
+                    <TouchableOpacity
+                      key={chart.id}
+                      style={[styles.pill, selected && styles.pillActive]}
+                      onPress={() => setSizeChartTemplateId(chart.id)}
+                    >
+                      <Text style={[styles.pillText, selected && styles.pillTextActive]}>
+                        {chart.name}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            )}
             {colorGroups.length === 0 ? (
               <Text style={styles.emptyHint}>Add a colour first — sizes hang off each colour.</Text>
             ) : (
@@ -1238,6 +1279,10 @@ export default function AddProductScreen() {
               <SummaryRow label="Sub category" value={subCategoryName || '—'} />
               <SummaryRow label="Occasion" value={occasion || '—'} />
               <SummaryRow label="Tags" value={tags.length > 0 ? tags.join(', ') : '—'} />
+              <SummaryRow
+                label="Size chart"
+                value={sizeCharts.find((c) => c.id === sizeChartTemplateId)?.name || 'None'}
+              />
               <SummaryRow label="Price" value={basePrice ? `₹${basePrice}` : '—'} />
               <SummaryRow label="Photos to upload" value={String(totalImages)} />
               <SummaryRow
