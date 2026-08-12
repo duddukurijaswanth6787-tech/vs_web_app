@@ -423,6 +423,36 @@ export default function ProductBuilder({
     );
   };
 
+  /** Update any numeric field on one size row (min stock, reorder level …). */
+  const updateSizeField = (
+    colorGroupId: string,
+    sizeName: string,
+    field: 'minStock' | 'reorderLevel',
+    value: number,
+  ) => {
+    setColorGroups((prev) =>
+      prev.map((group) =>
+        group.id === colorGroupId
+          ? {
+              ...group,
+              sizes: group.sizes.map((s) =>
+                s.size === sizeName ? { ...s, [field]: value } : s,
+              ),
+            }
+          : group,
+      ),
+    );
+  };
+
+  /** Stock status shown next to each size, mirroring the inventory screen. */
+  const stockStatus = (stock: number, minStock?: number) => {
+    if (stock <= 0) return { label: 'OUT', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+    if (minStock != null && minStock > 0 && stock <= minStock) {
+      return { label: 'LOW', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+    }
+    return { label: 'IN STOCK', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+  };
+
   const removeSizeFromColorGroup = (colorGroupId: string, sizeName: string) => {
     setColorGroups((prev) =>
       prev.map((group) => {
@@ -654,7 +684,12 @@ export default function ProductBuilder({
           // Opening stock for the new variant.
           if (sizeRow.stock > 0) {
             await inventoryService
-              .create({ variantId: variant.id, availableQuantity: sizeRow.stock })
+              .create({
+                variantId: variant.id,
+                availableQuantity: sizeRow.stock,
+                ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+                ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+              })
               .catch(() => null);
           }
 
@@ -1661,7 +1696,7 @@ export default function ProductBuilder({
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 flex-wrap">
                           <div className="flex items-center gap-2">
                             <span className="text-xs font-bold text-neutral-600">Stock:</span>
                             <input
@@ -1671,6 +1706,43 @@ export default function ProductBuilder({
                               className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
                             />
                           </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-neutral-600">Min:</span>
+                            <input
+                              type="number"
+                              value={sz.minStock ?? ''}
+                              placeholder="0"
+                              onChange={(e) =>
+                                updateSizeField(group.id, sz.size, 'minStock', Number(e.target.value))
+                              }
+                              className="w-16 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
+                            />
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-neutral-600">Reorder:</span>
+                            <input
+                              type="number"
+                              value={sz.reorderLevel ?? ''}
+                              placeholder="0"
+                              onChange={(e) =>
+                                updateSizeField(group.id, sz.size, 'reorderLevel', Number(e.target.value))
+                              }
+                              className="w-16 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
+                            />
+                          </div>
+
+                          {(() => {
+                            const status = stockStatus(sz.stock, sz.minStock);
+                            return (
+                              <span
+                                className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg border ${status.className}`}
+                              >
+                                {status.label}
+                              </span>
+                            );
+                          })()}
 
                           <button
                             type="button"
