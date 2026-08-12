@@ -1,3 +1,5 @@
+console.log('[STARTUP] Executing main.ts module script...');
+
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
