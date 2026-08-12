@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
-import { getGuestId } from './guest';
+import { getGuestId, getStoredGuestId, clearGuestId } from './guest';
 
 export interface CartItemDto {
   id: string;
@@ -95,9 +95,22 @@ export const customerCartService = {
   },
 
   merge: async () => {
-    const guestId = getGuestId();
+    const guestId = getStoredGuestId();
     if (!guestId) return null;
+
+    try {
+      const summary = await customerCartService.getSummary();
+      if (!summary || summary.itemCount === 0) {
+        clearGuestId();
+        return null;
+      }
+    } catch {
+      clearGuestId();
+      return null;
+    }
+
     const res = await apiClient.post<StandardResponse<CartDto>>('/cart/merge', { guestId });
+    clearGuestId();
     return res.data.data!;
   },
 };
