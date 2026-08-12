@@ -8,7 +8,7 @@ import axios from 'axios';
  * change. The fallback is only a development convenience.
  */
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.23:4000/api/v1';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.7:4000/api/v1';
 
 /** Origin without the `/api/v1` suffix — used by the websocket namespace. */
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');

@@ -5,6 +5,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     '192.168.1.23',
     '192.168.1.23:3005',
+    '192.168.1.7',
+    '192.168.1.7:3005',
     'localhost:3005',
     '0.0.0.0:3005',
   ],
@@ -30,6 +32,12 @@ const nextConfig: NextConfig = {
       {
         protocol: "http",
         hostname: "192.168.1.23",
+        port: "4000",
+        pathname: "/**",
+      },
+      {
+        protocol: "http",
+        hostname: "192.168.1.7",
         port: "4000",
         pathname: "/**",
       },

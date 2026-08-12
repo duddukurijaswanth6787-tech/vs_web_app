@@ -6,7 +6,6 @@ import { PrismaService } from '@database/prisma.service';
 
 describe('InvoiceService', () => {
   let service: InvoiceService;
-  let repository: InvoiceRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,7 +29,6 @@ describe('InvoiceService', () => {
     }).compile();
 
     service = module.get<InvoiceService>(InvoiceService);
-    repository = module.get<InvoiceRepository>(InvoiceRepository);
   });
 
   it('should be defined', () => {

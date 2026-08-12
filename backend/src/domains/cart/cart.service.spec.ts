@@ -6,7 +6,6 @@ import { PrismaService } from '@database/prisma.service';
 
 describe('CartService', () => {
   let service: CartService;
-  let repository: CartRepository;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
@@ -30,7 +29,6 @@ describe('CartService', () => {
     }).compile();
 
     service = module.get<CartService>(CartService);
-    repository = module.get<CartRepository>(CartRepository);
   });
 
   it('should be defined', () => {

@@ -13,7 +13,7 @@
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "free-port": "node scripts/free-port.js",
-    "prestart:dev": "node scripts/free-port.js",
+    "prestart:dev": "prisma generate && node scripts/free-port.js",
     "start:dev": "nodemon",
     "start:dev:nest-cli": "nest start --watch",
     "prestart:debug": "node scripts/free-port.js",
