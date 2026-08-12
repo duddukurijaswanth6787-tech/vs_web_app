@@ -165,6 +165,26 @@ export class CreateProductDto {
   @IsOptional()
   @IsBoolean()
   isTrending?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isLimitedStock?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isFestivePick?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isExclusive?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  isOnlineOnly?: boolean;
+  @ApiPropertyOptional({ description: 'HSN code used on GST invoices' })
+  @IsOptional()
+  @IsString()
+  hsnCode?: string;
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
@@ -337,6 +357,11 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isNewArrival?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isBestSeller?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isTrending?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isLimitedStock?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isFestivePick?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isExclusive?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnlineOnly?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() hsnCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() taxInclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isPublished?: boolean;
   @ApiPropertyOptional()
@@ -553,6 +578,11 @@ export class ProductResponse {
   @ApiProperty() isNewArrival!: boolean;
   @ApiProperty() isBestSeller!: boolean;
   @ApiProperty() isTrending!: boolean;
+  @ApiProperty() isLimitedStock!: boolean;
+  @ApiProperty() isFestivePick!: boolean;
+  @ApiProperty() isExclusive!: boolean;
+  @ApiProperty() isOnlineOnly!: boolean;
+  @ApiPropertyOptional() hsnCode?: string;
   @ApiProperty() taxInclusive!: boolean;
   @ApiProperty() isPublished!: boolean;
   @ApiPropertyOptional() publishedAt?: Date;
