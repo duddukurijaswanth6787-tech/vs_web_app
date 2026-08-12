@@ -115,6 +115,8 @@ export interface BrandOption {
 export interface CategoryOption {
   id: string;
   name: string;
+  /** Absent for a top-level category. */
+  parentId?: string;
 }
 
 /** A colour, its gallery, and the per-size stock the user typed. */
@@ -230,14 +232,14 @@ export const catalogService = {
       .map((b: any) => ({ id: b.id, name: b.name }));
   },
 
-  /** GET /categories */
+  /** GET /categories — parentId is kept so sub-categories can be filtered. */
   async listCategories(): Promise<CategoryOption[]> {
-    const res = await posApiClient.get('/categories', { params: { limit: 100 } });
+    const res = await posApiClient.get('/categories', { params: { limit: 200 } });
     const payload = unwrap<any>(res);
     const rows = Array.isArray(payload) ? payload : (payload?.data ?? []);
     return rows
       .filter((c: any) => c?.id && c?.name)
-      .map((c: any) => ({ id: c.id, name: c.name }));
+      .map((c: any) => ({ id: c.id, name: c.name, parentId: c.parentId ?? undefined }));
   },
 
   /** POST /products */
@@ -246,11 +248,6 @@ export const catalogService = {
     return unwrap<any>(res);
   },
 
-  /** POST /products/:id/categories */
-  async assignCategory(productId: string, categoryId: string) {
-    const res = await posApiClient.post(`/products/${productId}/categories`, { categoryId });
-    return unwrap<any>(res);
-  },
 
   /**
    * POST /storage/upload — multipart upload of a local photo.

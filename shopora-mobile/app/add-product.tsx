@@ -29,6 +29,7 @@ import {
   ArrowRight,
   Image as ImageIcon,
   AlertCircle,
+  FolderTree,
 } from 'lucide-react-native';
 import {
   catalogService,
@@ -49,13 +50,15 @@ import { setLastCreatedProduct } from '../services/product-draft';
  * Mobile mirror of the admin ProductBuilder
  * (frontend/src/features/catalog/products/components/ProductBuilder.tsx).
  *
- * Same five steps, same endpoints, in the same order:
- *   1. POST /products
- *   2. POST /products/:id/categories        (when a category was chosen)
- *   3. POST /storage/upload + POST /media   (per staged photo)
- *   4. POST /variants                       (per colour x size — assigns the barcode)
- *   5. POST /inventory                      (opening stock per variant)
- * then hands off to the label screen to print what step 4 generated.
+ * Same steps, same endpoints, in the same order:
+ *   1. POST /products                       (incl. categoryIds, tags, occasion)
+ *   2. POST /storage/upload + POST /media   (per staged photo)
+ *   3. POST /variants                       (per colour x size — assigns the barcode)
+ *   4. POST /inventory                      (opening stock per variant)
+ * then hands off to the label screen to print what step 3 generated.
+ *
+ * Publishing is gated on the same validation rules as the web builder; saving
+ * an unpublished draft is always allowed.
  */
 
 const COLOR_PRESETS = [
@@ -73,6 +76,7 @@ const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
 const STEPS = [
   { key: 'basic', label: 'Basic', Icon: Package },
+  { key: 'organisation', label: 'Category', Icon: FolderTree },
   { key: 'pricing', label: 'Pricing', Icon: IndianRupee },
   { key: 'colors', label: 'Colours', Icon: Palette },
   { key: 'sizes', label: 'Sizes', Icon: Ruler },
@@ -98,6 +102,11 @@ export default function AddProductScreen() {
   const [brandName, setBrandName] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categoryName, setCategoryName] = useState('');
+  const [subCategoryId, setSubCategoryId] = useState('');
+  const [subCategoryName, setSubCategoryName] = useState('');
+  const [occasion, setOccasion] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
 
   // ── Step 2: pricing ────────────────────────────────────────────────────────
   const [basePrice, setBasePrice] = useState('');
@@ -127,6 +136,7 @@ export default function AddProductScreen() {
 
   const [showBrandModal, setShowBrandModal] = useState(false);
   const [showCategoryModal, setShowCategoryModal] = useState(false);
+  const [showSubCategoryModal, setShowSubCategoryModal] = useState(false);
   const [pickerQuery, setPickerQuery] = useState('');
 
   useEffect(() => {
@@ -260,6 +270,21 @@ export default function AddProductScreen() {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
+  const subCategories = useMemo(
+    () => categories.filter((c) => c.parentId === categoryId),
+    [categories, categoryId],
+  );
+
+  const addTag = () => {
+    const value = tagInput.trim();
+    if (!value || tags.includes(value)) {
+      setTagInput('');
+      return;
+    }
+    setTags((prev) => [...prev, value]);
+    setTagInput('');
+  };
+
   const plannedVariants = useMemo(
     () =>
       colorGroups.flatMap((g) =>
@@ -275,33 +300,67 @@ export default function AddProductScreen() {
 
   const activeGroup = colorGroups.find((g) => g.id === activeColorId) ?? colorGroups[0];
 
-  const validate = (): string => {
-    if (name.trim().length < 3) return 'Product name must be at least 3 characters.';
-    if (!brandId) return 'Select a brand — the API requires a valid brand.';
-    if (!basePrice || Number(basePrice) <= 0) return 'Enter an MRP / base price greater than 0.';
-    if (salePrice && Number(salePrice) > Number(basePrice)) {
-      return 'Sale price cannot be higher than the base price.';
+  /**
+   * Same pre-publish rules as the web builder. Publishing is blocked while any
+   * of these fail; saving an unpublished draft is always allowed.
+   */
+  const validationIssues = useMemo(() => {
+    const issues: string[] = [];
+
+    if (name.trim().length < 3) issues.push('Product name is missing (minimum 3 characters).');
+    if (!brandId) issues.push('No brand selected.');
+    if (!categoryId) {
+      issues.push('No category selected — the product will not appear on the storefront.');
     }
-    if (plannedVariants.length === 0) {
-      return 'Add at least one colour and tick at least one size — barcodes are issued per variant.';
+
+    const base = Number(basePrice) || 0;
+    const sale = Number(salePrice) || 0;
+    if (base <= 0) issues.push('MRP / base price must be greater than 0.');
+    if (sale > 0 && sale > base) issues.push('Selling price is higher than the MRP.');
+
+    if (colorGroups.length === 0) {
+      issues.push('No colour added — barcodes are issued per colour and size.');
     }
-    return '';
-  };
+
+    for (const group of colorGroups) {
+      if (group.images.length === 0) issues.push(`${group.name} has no photo.`);
+      const available = group.sizes.filter((row) => row.available);
+      if (available.length === 0) issues.push(`${group.name} has no size selected.`);
+      for (const row of available) {
+        if (row.stock <= 0) issues.push(`${group.name} / ${row.size} has no stock.`);
+      }
+    }
+
+    return issues;
+  }, [name, brandId, categoryId, basePrice, salePrice, colorGroups]);
+
+  const canPublish = validationIssues.length === 0;
 
   // ── Submit: the admin sequence, end to end ─────────────────────────────────
 
   const handleSubmit = async () => {
-    const validationError = validate();
-    if (validationError) {
-      setError(validationError);
-      Alert.alert('Check the form', validationError);
+    if (isPublished && validationIssues.length > 0) {
+      setError(validationIssues.join('\n'));
+      Alert.alert(
+        `Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'}`,
+        `${validationIssues.slice(0, 6).join('\n')}\n\nTurn off "Publish immediately" to save as a draft.`,
+      );
+      return;
+    }
+
+    // A draft still needs enough to create the product row itself.
+    if (name.trim().length < 3 || !brandId || Number(basePrice) <= 0) {
+      const message = 'A name, brand and base price are required even for a draft.';
+      setError(message);
+      Alert.alert('Check the form', message);
       return;
     }
 
     setSubmitting(true);
     setError('');
     try {
-      // 1. POST /products
+      // 1. POST /products — categories travel with the create payload.
+      const categoryIds = [categoryId, subCategoryId].filter(Boolean);
       setProgress('Creating product…');
       const created = await catalogService.createProduct({
         name: name.trim(),
@@ -321,18 +380,16 @@ export default function AddProductScreen() {
         status: 'ACTIVE',
         isPublished,
         isNewArrival,
+        // CreateProductDto takes these directly; the API rejects unknown keys.
+        ...(categoryIds.length > 0 ? { categoryIds } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
+        ...(occasion ? { occasion } : {}),
       });
 
       const productId: string = created?.id;
       if (!productId) throw new Error('The API did not return a product id.');
 
-      // 2. POST /products/:id/categories
-      if (categoryId) {
-        setProgress('Assigning category…');
-        await catalogService.assignCategory(productId, categoryId).catch(() => null);
-      }
-
-      // 3. POST /storage/upload -> POST /media, flattened across colour groups
+      // 2. POST /storage/upload -> POST /media, flattened across colour groups
       let displayOrder = 0;
       let primarySet = false;
       for (const group of colorGroups) {
@@ -352,7 +409,7 @@ export default function AddProductScreen() {
         }
       }
 
-      // 4 + 5. POST /variants then POST /inventory, per colour x size
+      // 3 + 4. POST /variants then POST /inventory, per colour x size
       const createdVariants: CreatedVariant[] = [];
       let variantIndex = 0;
       for (const group of colorGroups) {
@@ -398,7 +455,7 @@ export default function AddProductScreen() {
         throw new Error('The product was created but no variants were issued, so there is nothing to label.');
       }
 
-      // 6. Hand the issued barcodes to the label screen.
+      // 5. Hand the issued barcodes to the label screen.
       setLastCreatedProduct({
         productId,
         name: name.trim(),
@@ -433,9 +490,9 @@ export default function AddProductScreen() {
   const filteredBrands = brands.filter((b) =>
     b.name.toLowerCase().includes(pickerQuery.toLowerCase()),
   );
-  const filteredCategories = categories.filter((c) =>
-    c.name.toLowerCase().includes(pickerQuery.toLowerCase()),
-  );
+  const filteredCategories = categories
+    .filter((c) => !c.parentId)
+    .filter((c) => c.name.toLowerCase().includes(pickerQuery.toLowerCase()));
 
   // ── Render ─────────────────────────────────────────────────────────────────
 
@@ -558,6 +615,89 @@ export default function AddProductScreen() {
         )}
 
         {/* ── STEP 2: PRICING ── */}
+        {/* ── STEP 2: ORGANISATION ── */}
+        {step === 'organisation' && (
+          <View>
+            <Text style={styles.sectionTitle}>Category &amp; organisation</Text>
+            <Text style={styles.helpText}>
+              A product with no category cannot be browsed on the storefront.
+            </Text>
+
+            <Text style={styles.label}>Primary category *</Text>
+            <TouchableOpacity
+              style={styles.select}
+              onPress={() => {
+                setPickerQuery('');
+                setShowCategoryModal(true);
+              }}
+            >
+              <Text style={[styles.selectText, !categoryName && styles.selectPlaceholder]}>
+                {categoryName || 'Select a category'}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.label}>Sub category</Text>
+            <TouchableOpacity
+              style={[styles.select, subCategories.length === 0 && styles.selectDisabled]}
+              disabled={subCategories.length === 0}
+              onPress={() => {
+                setPickerQuery('');
+                setShowSubCategoryModal(true);
+              }}
+            >
+              <Text style={[styles.selectText, !subCategoryName && styles.selectPlaceholder]}>
+                {subCategoryName ||
+                  (!categoryId
+                    ? 'Select a primary category first'
+                    : subCategories.length === 0
+                      ? 'No sub-categories'
+                      : 'Optional')}
+              </Text>
+            </TouchableOpacity>
+
+            <Text style={styles.label}>Occasion</Text>
+            <View style={styles.pillRow}>
+              {['Festive', 'Wedding', 'Party', 'Casual', 'Office'].map((o) => (
+                <TouchableOpacity
+                  key={o}
+                  style={[styles.pill, occasion === o && styles.pillActive]}
+                  onPress={() => setOccasion(occasion === o ? '' : o)}
+                >
+                  <Text style={[styles.pillText, occasion === o && styles.pillTextActive]}>{o}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Tags</Text>
+            <View style={styles.inlineRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginTop: 0 }]}
+                value={tagInput}
+                onChangeText={setTagInput}
+                onSubmitEditing={addTag}
+                placeholder="e.g. Floral, Rayon"
+                placeholderTextColor="#9ca3af"
+                returnKeyType="done"
+              />
+              <TouchableOpacity style={styles.addBtn} onPress={addTag}>
+                <Plus size={18} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.tagWrap}>
+              {tags.map((tag) => (
+                <TouchableOpacity
+                  key={tag}
+                  style={styles.tagChip}
+                  onPress={() => setTags((prev) => prev.filter((t) => t !== tag))}
+                >
+                  <Text style={styles.tagChipText}>{tag}</Text>
+                  <X size={12} color="#6b7280" />
+                </TouchableOpacity>
+              ))}
+            </View>
+          </View>
+        )}
+
         {step === 'pricing' && (
           <View>
             <Text style={styles.sectionTitle}>Pricing</Text>
@@ -810,6 +950,9 @@ export default function AddProductScreen() {
               <SummaryRow label="Product" value={name || '—'} />
               <SummaryRow label="Brand" value={brandName || '—'} />
               <SummaryRow label="Category" value={categoryName || 'Not assigned'} />
+              <SummaryRow label="Sub category" value={subCategoryName || '—'} />
+              <SummaryRow label="Occasion" value={occasion || '—'} />
+              <SummaryRow label="Tags" value={tags.length > 0 ? tags.join(', ') : '—'} />
               <SummaryRow label="Price" value={basePrice ? `₹${basePrice}` : '—'} />
               <SummaryRow label="Photos to upload" value={String(totalImages)} />
               <SummaryRow
@@ -823,7 +966,32 @@ export default function AddProductScreen() {
               />
             </View>
 
-            {error !== '' && (
+            {validationIssues.length > 0 ? (
+              <View style={styles.warnPanel}>
+                <View style={styles.warnHeader}>
+                  <AlertCircle size={15} color="#b45309" style={{ marginRight: 8 }} />
+                  <Text style={styles.warnTitle}>
+                    Cannot publish — {validationIssues.length} issue
+                    {validationIssues.length === 1 ? '' : 's'}
+                  </Text>
+                </View>
+                {validationIssues.map((issue) => (
+                  <Text key={issue} style={styles.warnItem}>
+                    ✕ {issue}
+                  </Text>
+                ))}
+                <Text style={styles.warnFooter}>
+                  Turn off &ldquo;Publish immediately&rdquo; above to save as a draft.
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.okPanel}>
+                <Check size={15} color="#15803d" style={{ marginRight: 8 }} />
+                <Text style={styles.okText}>All checks passed — ready to publish.</Text>
+              </View>
+            )}
+
+            {error !== '' && validationIssues.length === 0 && (
               <View style={styles.errorBox}>
                 <AlertCircle size={15} color="#b91c1c" style={{ marginRight: 8 }} />
                 <Text style={styles.errorText}>{error}</Text>
@@ -843,7 +1011,9 @@ export default function AddProductScreen() {
               ) : (
                 <>
                   <Check size={18} color="#ffffff" style={{ marginRight: 8 }} />
-                  <Text style={styles.primaryBtnText}>CREATE &amp; GENERATE BARCODES</Text>
+                  <Text style={styles.primaryBtnText}>
+                    {isPublished ? 'CREATE & GENERATE BARCODES' : 'SAVE AS DRAFT'}
+                  </Text>
                 </>
               )}
             </TouchableOpacity>
@@ -912,9 +1082,30 @@ export default function AddProductScreen() {
         onSelect={(row) => {
           setCategoryId(row.id);
           setCategoryName(row.name);
+          setSubCategoryId('');
+          setSubCategoryName('');
           setShowCategoryModal(false);
         }}
         onClose={() => setShowCategoryModal(false)}
+      />
+
+      {/* Sub-category picker */}
+      <PickerModal
+        visible={showSubCategoryModal}
+        title="Select sub category"
+        query={pickerQuery}
+        onQueryChange={setPickerQuery}
+        rows={subCategories.filter((c) =>
+          c.name.toLowerCase().includes(pickerQuery.toLowerCase()),
+        )}
+        selectedId={subCategoryId}
+        emptyText="This category has no sub-categories."
+        onSelect={(row) => {
+          setSubCategoryId(row.id);
+          setSubCategoryName(row.name);
+          setShowSubCategoryModal(false);
+        }}
+        onClose={() => setShowSubCategoryModal(false)}
       />
     </View>
   );
@@ -1262,6 +1453,47 @@ const styles = StyleSheet.create({
   footerCount: { fontSize: 11, color: '#9ca3af', fontWeight: '600' },
 
   emptyHint: { fontSize: 12, color: '#9ca3af', marginTop: 14, lineHeight: 18 },
+  helpText: { fontSize: 11, color: '#9ca3af', marginTop: 4, lineHeight: 16 },
+  selectDisabled: { backgroundColor: '#f8fafc' },
+
+  tagWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  tagChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 999,
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
+  tagChipText: { fontSize: 11, color: '#374151', fontWeight: '600' },
+
+  warnPanel: {
+    marginTop: 20,
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    borderRadius: 14,
+    padding: 14,
+  },
+  warnHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: 8 },
+  warnTitle: { fontSize: 12, fontWeight: '800', color: '#b45309' },
+  warnItem: { fontSize: 11, color: '#b45309', lineHeight: 18 },
+  warnFooter: { fontSize: 10, color: '#a16207', marginTop: 8, fontStyle: 'italic' },
+
+  okPanel: {
+    marginTop: 20,
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    borderRadius: 14,
+    padding: 14,
+  },
+  okText: { fontSize: 12, fontWeight: '700', color: '#15803d' },
 
   modalBackdrop: { flex: 1, backgroundColor: 'rgba(15,23,42,0.45)', justifyContent: 'flex-end' },
   modalCard: {
