@@ -21,6 +21,7 @@ export const metadata: Metadata = {
   title: "Vasanthi's Signature | Luxury Ethnic Wear & Sarees",
   description: "Official Online Store for Vasanthi's Signature - Premium Sarees, Lehengas & Designer Wear",
 };
+// Trigger Vercel Production Build - 2026-08-13
 
 export default async function RootLayout({
   children,
