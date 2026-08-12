@@ -36,6 +36,8 @@ import {
   X,
   AlertTriangle,
   ListChecks,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -55,7 +57,10 @@ const COLOR_PRESETS = [
   { name: 'Mustard Yellow', hex: '#D4AC0D' },
 ];
 
-const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
+/** Shot types offered per image, stored as the media title. */
+const IMAGE_TYPES = ['Front', 'Back', 'Side', 'Detail', 'Fabric', 'Model', 'Size/Fit', 'Lifestyle'];
+
+const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', 'Free Size'];
 
 /** A variant the backend created on save, with the barcode it assigned. */
 interface IssuedVariant {
@@ -166,6 +171,12 @@ export default function ProductBuilder({
       isBestSeller: initialData?.isBestSeller ?? false,
       isFeatured: initialData?.isFeatured ?? false,
       isTrending: initialData?.isTrending ?? false,
+      isLimitedStock: initialData?.isLimitedStock ?? false,
+      isFestivePick: initialData?.isFestivePick ?? false,
+      isExclusive: initialData?.isExclusive ?? false,
+      isOnlineOnly: initialData?.isOnlineOnly ?? false,
+      hsnCode: initialData?.hsnCode || '',
+      seoKeywords: initialData?.seoKeywords || '',
       isPublished: initialData?.isPublished ?? true,
     },
   });
@@ -348,6 +359,39 @@ export default function ProductBuilder({
         }
         return group;
       })
+    );
+  };
+
+  /**
+   * Shot type per image, keyed by URL. Kept beside the gallery rather than in
+   * ColorVariantGroup so the shared preview type stays a plain string[]; it is
+   * sent as the media title on save.
+   */
+  const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
+
+  /** Move an image within its color group — position 0 is that color's primary. */
+  const moveImage = (colorGroupId: string, imgIdx: number, direction: -1 | 1) => {
+    setColorGroups((prev) =>
+      prev.map((group) => {
+        if (group.id !== colorGroupId) return group;
+        const target = imgIdx + direction;
+        if (target < 0 || target >= group.images.length) return group;
+        const images = [...group.images];
+        [images[imgIdx], images[target]] = [images[target], images[imgIdx]];
+        return { ...group, images };
+      }),
+    );
+  };
+
+  /** Promote an image to position 0, which is what makes it the primary. */
+  const setPrimaryImage = (colorGroupId: string, imgIdx: number) => {
+    setColorGroups((prev) =>
+      prev.map((group) => {
+        if (group.id !== colorGroupId || imgIdx === 0) return group;
+        const images = [...group.images];
+        const [picked] = images.splice(imgIdx, 1);
+        return { ...group, images: [picked, ...images] };
+      }),
     );
   };
 
@@ -629,6 +673,7 @@ export default function ProductBuilder({
             isPrimary: !primarySet,
             displayOrder: displayOrder++,
             color: group.name,
+            ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
           });
           if (media?.id) mediaIdsByGroup[group.id].push(media.id);
           primarySet = true;
@@ -1387,6 +1432,46 @@ export default function ProductBuilder({
                 </div>
               </div>
 
+              {/* GST % */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">GST %</label>
+                <select
+                  {...methods.register('taxPercentage')}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                >
+                  {[0, 3, 5, 12, 18, 28].map((rate) => (
+                    <option key={rate} value={rate}>
+                      {rate}%
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* HSN code */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">HSN Code</label>
+                <input
+                  type="text"
+                  {...methods.register('hsnCode')}
+                  placeholder="e.g. 6204"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+                <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
+              </div>
+
+              {/* Tax inclusive */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
+                <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+                  <input
+                    type="checkbox"
+                    {...methods.register('taxInclusive')}
+                    className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  />
+                  <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
+                </label>
+              </div>
+
               {/* Submit Button */}
               <div className="flex items-center justify-between pt-1">
                 <div className="text-[11px] text-neutral-500 font-medium">
@@ -1594,14 +1679,62 @@ export default function ProductBuilder({
                                   type="button"
                                   onClick={() => removeImageFromColorGroup(cur.id, idx)}
                                   className="absolute top-2 right-2 w-7 h-7 rounded-full bg-black/70 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  title="Remove"
                                 >
                                   <Trash2 className="w-3.5 h-3.5" />
                                 </button>
-                                {idx === 0 && (
-                                  <span className="absolute bottom-2 left-2 bg-[#800020] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+
+                                {/* Reorder — position 0 is the primary */}
+                                <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                  <button
+                                    type="button"
+                                    onClick={() => moveImage(cur.id, idx, -1)}
+                                    disabled={idx === 0}
+                                    className="w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center disabled:opacity-30"
+                                    title="Move earlier"
+                                  >
+                                    <ChevronLeft className="w-3 h-3" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => moveImage(cur.id, idx, 1)}
+                                    disabled={idx === cur.images.length - 1}
+                                    className="w-6 h-6 rounded-full bg-black/70 text-white flex items-center justify-center disabled:opacity-30"
+                                    title="Move later"
+                                  >
+                                    <ChevronRight className="w-3 h-3" />
+                                  </button>
+                                </div>
+
+                                {idx === 0 ? (
+                                  <span className="absolute bottom-9 left-2 bg-[#800020] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
                                     PRIMARY
                                   </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPrimaryImage(cur.id, idx)}
+                                    className="absolute bottom-9 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    SET PRIMARY
+                                  </button>
                                 )}
+
+                                {/* Shot type */}
+                                <select
+                                  value={imageLabels[img] ?? ''}
+                                  onChange={(e) =>
+                                    setImageLabels((prev) => ({ ...prev, [img]: e.target.value }))
+                                  }
+                                  className="absolute bottom-0 inset-x-0 bg-white/95 border-t border-neutral-200 text-[9px] font-bold text-neutral-700 px-1.5 py-1 focus:outline-none"
+                                >
+                                  <option value="">Type…</option>
+                                  {IMAGE_TYPES.map((label) => (
+                                    <option key={label} value={label}>
+                                      {label}
+                                    </option>
+                                  ))}
+                                </select>
                               </div>
                             ))}
                           </div>
@@ -1917,6 +2050,42 @@ export default function ProductBuilder({
                 />
                 <span className="text-xs font-bold text-neutral-800">Trending Section</span>
               </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...methods.register('isLimitedStock')}
+                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                />
+                <span className="text-xs font-bold text-neutral-800">Limited Stock</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...methods.register('isFestivePick')}
+                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                />
+                <span className="text-xs font-bold text-neutral-800">Festive Pick</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...methods.register('isExclusive')}
+                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                />
+                <span className="text-xs font-bold text-neutral-800">Exclusive</span>
+              </label>
+
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  {...methods.register('isOnlineOnly')}
+                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                />
+                <span className="text-xs font-bold text-neutral-800">Online Only</span>
+              </label>
             </div>
 
             {/* SEO Inputs */}
@@ -1939,6 +2108,17 @@ export default function ProductBuilder({
                   placeholder="Shop exclusive luxury ethnic wear with fast shipping..."
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-900 font-medium focus:outline-none"
                 />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">SEO Keywords</label>
+                <input
+                  type="text"
+                  {...methods.register('seoKeywords')}
+                  placeholder="anarkali, kurta set, women's ethnic wear, floral kurta"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+                <p className="text-[10px] text-neutral-400">Comma separated.</p>
               </div>
             </div>
           </div>

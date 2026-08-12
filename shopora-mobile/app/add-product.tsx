@@ -74,7 +74,10 @@ const COLOR_PRESETS = [
   { name: 'Mustard Yellow', hex: '#D4AC0D' },
 ];
 
-const STANDARD_SIZES = ['S', 'M', 'L', 'XL', 'XXL', '3XL'];
+/** Shot types offered per image, stored as the media title. */
+const IMAGE_TYPES = ['Front', 'Back', 'Side', 'Detail', 'Fabric', 'Model', 'Size/Fit', 'Lifestyle'];
+
+const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', 'Free Size'];
 
 const STEPS = [
   { key: 'basic', label: 'Basic', Icon: Package },
@@ -120,18 +123,26 @@ export default function AddProductScreen() {
   const [costPrice, setCostPrice] = useState('');
   const [taxPercentage, setTaxPercentage] = useState('5');
   const [taxInclusive, setTaxInclusive] = useState(true);
+  const [hsnCode, setHsnCode] = useState('');
 
   // ── Step 3/4: colours and their per-size stock ─────────────────────────────
   const [colorGroups, setColorGroups] = useState<ColorGroupDraft[]>([]);
   const [activeColorId, setActiveColorId] = useState('');
   const [newColorName, setNewColorName] = useState('');
   const [newColorHex, setNewColorHex] = useState('#800020');
+  /** Shot type per image, keyed by URI; sent as the media title on save. */
+  const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
 
   // ── Step 5: seo / publish ──────────────────────────────────────────────────
   const [seoTitle, setSeoTitle] = useState('');
   const [seoDescription, setSeoDescription] = useState('');
+  const [seoKeywords, setSeoKeywords] = useState('');
   const [isPublished, setIsPublished] = useState(true);
   const [isNewArrival, setIsNewArrival] = useState(false);
+  const [isLimitedStock, setIsLimitedStock] = useState(false);
+  const [isFestivePick, setIsFestivePick] = useState(false);
+  const [isExclusive, setIsExclusive] = useState(false);
+  const [isOnlineOnly, setIsOnlineOnly] = useState(false);
 
   // ── Reference data ─────────────────────────────────────────────────────────
   const [brands, setBrands] = useState<BrandOption[]>([]);
@@ -237,6 +248,32 @@ export default function AddProductScreen() {
       prev.map((g) =>
         g.id === groupId ? { ...g, images: [...g.images, result.assets[0].uri] } : g,
       ),
+    );
+  };
+
+  /** Move an image within its colour — position 0 is that colour's primary. */
+  const moveImage = (groupId: string, index: number, direction: -1 | 1) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId) return g;
+        const target = index + direction;
+        if (target < 0 || target >= g.images.length) return g;
+        const images = [...g.images];
+        [images[index], images[target]] = [images[target], images[index]];
+        return { ...g, images };
+      }),
+    );
+  };
+
+  /** Promote an image to position 0, which is what makes it the primary. */
+  const setPrimaryImage = (groupId: string, index: number) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id !== groupId || index === 0) return g;
+        const images = [...g.images];
+        const [picked] = images.splice(index, 1);
+        return { ...g, images: [picked, ...images] };
+      }),
     );
   };
 
@@ -428,9 +465,15 @@ export default function AddProductScreen() {
         taxInclusive,
         seoTitle: seoTitle.trim() || undefined,
         seoDescription: seoDescription.trim() || undefined,
+        seoKeywords: seoKeywords.trim() || undefined,
+        hsnCode: hsnCode.trim() || undefined,
         status: 'ACTIVE',
         isPublished,
         isNewArrival,
+        isLimitedStock,
+        isFestivePick,
+        isExclusive,
+        isOnlineOnly,
         // CreateProductDto takes these directly; the API rejects unknown keys.
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
         ...(tags.length > 0 ? { tags } : {}),
@@ -464,6 +507,7 @@ export default function AddProductScreen() {
             isPrimary: !primarySet,
             displayOrder: displayOrder++,
             color: group.name,
+            ...(imageLabels[localUri] ? { title: imageLabels[localUri] } : {}),
           });
           primarySet = true;
         }
@@ -795,14 +839,28 @@ export default function AddProductScreen() {
               keyboardType="numeric"
             />
 
-            <Text style={styles.label}>Tax %</Text>
+            <Text style={styles.label}>GST %</Text>
+            <View style={styles.pillRow}>
+              {['0', '3', '5', '12', '18', '28'].map((rate) => (
+                <TouchableOpacity
+                  key={rate}
+                  style={[styles.pill, taxPercentage === rate && styles.pillActive]}
+                  onPress={() => setTaxPercentage(rate)}
+                >
+                  <Text style={[styles.pillText, taxPercentage === rate && styles.pillTextActive]}>
+                    {rate}%
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>HSN code</Text>
             <TextInput
               style={styles.input}
-              value={taxPercentage}
-              onChangeText={setTaxPercentage}
-              placeholder="5"
+              value={hsnCode}
+              onChangeText={setHsnCode}
+              placeholder="e.g. 6204 — printed on GST invoices"
               placeholderTextColor="#9ca3af"
-              keyboardType="numeric"
             />
 
             <View style={styles.switchRow}>
@@ -901,7 +959,7 @@ export default function AddProductScreen() {
                     </View>
 
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
-                      {activeGroup.images.map((uri) => (
+                      {activeGroup.images.map((uri, index) => (
                         <View key={uri} style={styles.thumbWrap}>
                           <Image source={{ uri }} style={styles.thumb} />
                           <TouchableOpacity
@@ -909,6 +967,54 @@ export default function AddProductScreen() {
                             onPress={() => removeImage(activeGroup.id, uri)}
                           >
                             <X size={12} color="#ffffff" />
+                          </TouchableOpacity>
+
+                          {index === 0 ? (
+                            <View style={styles.primaryTag}>
+                              <Text style={styles.primaryTagText}>PRIMARY</Text>
+                            </View>
+                          ) : (
+                            <TouchableOpacity
+                              style={styles.setPrimaryBtn}
+                              onPress={() => setPrimaryImage(activeGroup.id, index)}
+                            >
+                              <Text style={styles.setPrimaryText}>SET PRIMARY</Text>
+                            </TouchableOpacity>
+                          )}
+
+                          <View style={styles.reorderRow}>
+                            <TouchableOpacity
+                              style={styles.reorderBtn}
+                              disabled={index === 0}
+                              onPress={() => moveImage(activeGroup.id, index, -1)}
+                            >
+                              <ArrowLeft size={11} color={index === 0 ? '#d1d5db' : '#374151'} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
+                              style={styles.reorderBtn}
+                              disabled={index === activeGroup.images.length - 1}
+                              onPress={() => moveImage(activeGroup.id, index, 1)}
+                            >
+                              <ArrowRight
+                                size={11}
+                                color={
+                                  index === activeGroup.images.length - 1 ? '#d1d5db' : '#374151'
+                                }
+                              />
+                            </TouchableOpacity>
+                          </View>
+
+                          <TouchableOpacity
+                            style={styles.shotTypeBtn}
+                            onPress={() => {
+                              const current = imageLabels[uri] ?? '';
+                              const next =
+                                IMAGE_TYPES[(IMAGE_TYPES.indexOf(current) + 1) % (IMAGE_TYPES.length + 1)] ??
+                                '';
+                              setImageLabels((prev) => ({ ...prev, [uri]: next }));
+                            }}
+                          >
+                            <Text style={styles.shotTypeText}>{imageLabels[uri] || 'Type…'}</Text>
                           </TouchableOpacity>
                         </View>
                       ))}
@@ -1088,6 +1194,34 @@ export default function AddProductScreen() {
               multiline
             />
 
+            <Text style={styles.label}>SEO keywords</Text>
+            <TextInput
+              style={styles.input}
+              value={seoKeywords}
+              onChangeText={setSeoKeywords}
+              placeholder="anarkali, kurta set, ethnic wear"
+              placeholderTextColor="#9ca3af"
+            />
+
+            <Text style={styles.label}>Badges</Text>
+            <View style={styles.pillRow}>
+              {([
+                ['New Arrival', isNewArrival, setIsNewArrival],
+                ['Limited Stock', isLimitedStock, setIsLimitedStock],
+                ['Festive Pick', isFestivePick, setIsFestivePick],
+                ['Exclusive', isExclusive, setIsExclusive],
+                ['Online Only', isOnlineOnly, setIsOnlineOnly],
+              ] as [string, boolean, (v: boolean) => void][]).map(([label, value, setValue]) => (
+                <TouchableOpacity
+                  key={label}
+                  style={[styles.pill, value && styles.pillActive]}
+                  onPress={() => setValue(!value)}
+                >
+                  <Text style={[styles.pillText, value && styles.pillTextActive]}>{label}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
             <View style={styles.switchRow}>
               <Text style={styles.switchLabel}>Publish immediately</Text>
               <Switch
@@ -1096,15 +1230,6 @@ export default function AddProductScreen() {
                 trackColor={{ true: '#800020', false: '#d1d5db' }}
               />
             </View>
-            <View style={styles.switchRow}>
-              <Text style={styles.switchLabel}>Mark as new arrival</Text>
-              <Switch
-                value={isNewArrival}
-                onValueChange={setIsNewArrival}
-                trackColor={{ true: '#800020', false: '#d1d5db' }}
-              />
-            </View>
-
             <View style={styles.summaryCard}>
               <Text style={styles.summaryTitle}>What will be created</Text>
               <SummaryRow label="Product" value={name || '—'} />
@@ -1508,8 +1633,46 @@ const styles = StyleSheet.create({
   },
   secondaryBtnText: { fontSize: 12, fontWeight: '700', color: '#800020' },
 
-  thumbWrap: { marginRight: 10, position: 'relative' },
-  thumb: { width: 76, height: 96, borderRadius: 10, backgroundColor: '#f1f5f9' },
+  thumbWrap: { marginRight: 10, position: 'relative', width: 84 },
+  thumb: { width: 84, height: 104, borderRadius: 10, backgroundColor: '#f1f5f9' },
+  primaryTag: {
+    position: 'absolute',
+    bottom: 34,
+    left: 4,
+    backgroundColor: '#800020',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  primaryTagText: { color: '#ffffff', fontSize: 7, fontWeight: '800' },
+  setPrimaryBtn: {
+    position: 'absolute',
+    bottom: 34,
+    left: 4,
+    backgroundColor: 'rgba(0,0,0,0.65)',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 5,
+  },
+  setPrimaryText: { color: '#ffffff', fontSize: 7, fontWeight: '800' },
+  reorderRow: { flexDirection: 'row', justifyContent: 'center', gap: 6, marginTop: 4 },
+  reorderBtn: {
+    width: 24,
+    height: 20,
+    borderRadius: 6,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  shotTypeBtn: {
+    marginTop: 4,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 6,
+    paddingVertical: 3,
+    alignItems: 'center',
+  },
+  shotTypeText: { fontSize: 8, fontWeight: '700', color: '#6b7280' },
   thumbRemove: {
     position: 'absolute',
     top: -6,

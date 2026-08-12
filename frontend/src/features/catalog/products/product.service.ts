@@ -28,6 +28,8 @@ export const productService = {
     isPrimary?: boolean;
     displayOrder?: number;
     color?: string;
+    /** Shot type — Front, Back, Detail … */
+    title?: string;
   }): Promise<any> => {
     const response = await apiClient.post<StandardResponse<any>>('/media', {
       mediaType: 'IMAGE',
