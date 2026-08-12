@@ -76,7 +76,9 @@ export class AutoSeedService implements OnModuleInit {
       return;
     }
 
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vasanthi.com').toLowerCase().trim();
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vasanthi.com')
+      .toLowerCase()
+      .trim();
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
     const passwordHash = await argon2.hash(adminPassword);
 

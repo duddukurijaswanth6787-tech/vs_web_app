@@ -172,7 +172,7 @@ export class WishlistService {
             productId,
           });
         }
-      } catch (e) {
+      } catch {
         // Continue loop on individual item error
       }
     }

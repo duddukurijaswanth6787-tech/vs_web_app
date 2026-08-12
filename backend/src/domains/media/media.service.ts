@@ -39,9 +39,7 @@ export class MediaService {
     if (mediaType === 'VIDEO') contentType = 'video/mp4';
     else if (mediaType === 'DOCUMENT') contentType = 'application/pdf';
     else if (extension === 'png') contentType = 'image/png';
-    else if (extension === 'webp') contentType = 'image/webp';
     else if (extension === 'avif') contentType = 'image/avif';
-    else if (extension === 'webp') contentType = 'image/webp';
 
     const signedUrl = await this.storageService.getSignedUploadUrl(
       filePath,

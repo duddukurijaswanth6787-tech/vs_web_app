@@ -90,7 +90,7 @@ export class CmsService {
   }
 
   async createBanner(dto: CreateBannerDto, userId: string) {
-    const { mobileImageUrl, ...bannerInput } = dto as any;
+    const bannerInput = dto as any;
     const banner = await this.cmsRepository.createBanner({
       title: bannerInput.title,
       description: bannerInput.description,

@@ -45,7 +45,10 @@ export class SizeChartService {
       rows: (t.rows ?? []).map((row) => ({
         id: row.id,
         size: row.size,
-        measurements: (row.measurements ?? {}) as Record<string, number | string>,
+        measurements: (row.measurements ?? {}) as Record<
+          string,
+          number | string
+        >,
         displayOrder: row.displayOrder ?? 0,
       })),
       createdAt: t.createdAt,
@@ -146,8 +149,12 @@ export class SizeChartService {
       id,
       {
         ...(dto.name !== undefined ? { name: dto.name } : {}),
-        ...(dto.description !== undefined ? { description: dto.description } : {}),
-        ...(dto.garmentType !== undefined ? { garmentType: dto.garmentType } : {}),
+        ...(dto.description !== undefined
+          ? { description: dto.description }
+          : {}),
+        ...(dto.garmentType !== undefined
+          ? { garmentType: dto.garmentType }
+          : {}),
         ...(dto.unit !== undefined ? { unit: dto.unit } : {}),
         ...(dto.status !== undefined ? { status: dto.status } : {}),
         updatedBy: userId,

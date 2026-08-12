@@ -185,7 +185,9 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   hsnCode?: string;
-  @ApiPropertyOptional({ description: 'Reusable size chart to show on the PDP' })
+  @ApiPropertyOptional({
+    description: 'Reusable size chart to show on the PDP',
+  })
   @IsOptional()
   @IsUUID()
   sizeChartTemplateId?: string;

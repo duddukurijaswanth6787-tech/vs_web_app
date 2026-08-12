@@ -28,13 +28,6 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const isProd = configService.get<string>('app.env') === 'production';
 
-  const corsOrigin = configService.get<string>('app.cors.origin', '*');
-  const corsMethods = configService.get<string>(
-    'app.cors.methods',
-    'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-  );
-  const corsHeaders = configService.get<string>('app.cors.allowedHeaders', '*');
-
   app.enableCors({
     origin: (
       requestOrigin: string | undefined,
@@ -42,15 +35,7 @@ async function bootstrap() {
     ) => {
       callback(null, requestOrigin || true);
     },
-    methods: [
-      'GET',
-      'HEAD',
-      'PUT',
-      'PATCH',
-      'POST',
-      'DELETE',
-      'OPTIONS',
-    ],
+    methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [
       'Content-Type',
       'Accept',
@@ -134,11 +119,15 @@ async function bootstrap() {
 
   setupSwagger(app, configService);
 
-  const port = process.env.PORT ? parseInt(process.env.PORT, 10) : (configService.get<number>('app.port', 4000) || 4000);
+  const port = process.env.PORT
+    ? parseInt(process.env.PORT, 10)
+    : configService.get<number>('app.port', 4000) || 4000;
 
   console.log(`[BOOTSTRAP] Attempting to listen on 0.0.0.0:${port}...`);
   await app.listen(port, '0.0.0.0');
-  console.log(`[BOOTSTRAP] Server successfully listening on http://0.0.0.0:${port}`);
+  console.log(
+    `[BOOTSTRAP] Server successfully listening on http://0.0.0.0:${port}`,
+  );
 
   const startupDashboardService = app.get(StartupDashboardService);
   await startupDashboardService.printDashboard(startTime);

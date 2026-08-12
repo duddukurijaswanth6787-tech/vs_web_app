@@ -15,16 +15,28 @@ if (process.env.AWS_SECRET_KEY) {
 }
 
 // Map Railway Redis environment variables
-if ((!process.env.REDIS_HOST || process.env.REDIS_HOST.trim() === '') && process.env.REDISHOST) {
+if (
+  (!process.env.REDIS_HOST || process.env.REDIS_HOST.trim() === '') &&
+  process.env.REDISHOST
+) {
   process.env.REDIS_HOST = process.env.REDISHOST;
 }
-if ((!process.env.REDIS_PORT || String(process.env.REDIS_PORT).trim() === '') && process.env.REDISPORT) {
+if (
+  (!process.env.REDIS_PORT || String(process.env.REDIS_PORT).trim() === '') &&
+  process.env.REDISPORT
+) {
   process.env.REDIS_PORT = process.env.REDISPORT;
 }
-if ((!process.env.REDIS_PASSWORD || process.env.REDIS_PASSWORD.trim() === '') && process.env.REDISPASSWORD) {
+if (
+  (!process.env.REDIS_PASSWORD || process.env.REDIS_PASSWORD.trim() === '') &&
+  process.env.REDISPASSWORD
+) {
   process.env.REDIS_PASSWORD = process.env.REDISPASSWORD;
 }
-if ((process.env.REDIS_URL || process.env.REDISURL) && (!process.env.REDIS_HOST || process.env.REDIS_HOST.trim() === '')) {
+if (
+  (process.env.REDIS_URL || process.env.REDISURL) &&
+  (!process.env.REDIS_HOST || process.env.REDIS_HOST.trim() === '')
+) {
   try {
     const redisUrl = new URL(
       process.env.REDIS_URL || process.env.REDISURL || '',
@@ -33,7 +45,9 @@ if ((process.env.REDIS_URL || process.env.REDISURL) && (!process.env.REDIS_HOST 
     if (redisUrl.port) process.env.REDIS_PORT = redisUrl.port;
     if (redisUrl.password)
       process.env.REDIS_PASSWORD = decodeURIComponent(redisUrl.password);
-  } catch {}
+  } catch {
+    // Ignore invalid REDIS_URL format
+  }
 }
 if (process.env.REDIS_HOST === '') {
   delete process.env.REDIS_HOST;
