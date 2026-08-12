@@ -40,12 +40,16 @@ async function bootstrap() {
       requestOrigin: string | undefined,
       callback: (err: Error | null, origin?: any) => void,
     ) => {
-      if (!requestOrigin || corsOrigin === '*' || !isProd) {
+      if (
+        !requestOrigin ||
+        corsOrigin === '*' ||
+        !isProd ||
+        corsOrigin.includes(requestOrigin) ||
+        requestOrigin.includes('vercel.app')
+      ) {
         callback(null, requestOrigin || true);
-      } else if (corsOrigin.includes(requestOrigin)) {
-        callback(null, true);
       } else {
-        callback(null, false);
+        callback(null, requestOrigin || true);
       }
     },
     methods: corsMethods.split(',').map((s) => s.trim()),
