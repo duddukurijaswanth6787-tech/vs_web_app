@@ -88,6 +88,11 @@ export interface CreateProductDto {
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   isTrending?: boolean;
+  isLimitedStock?: boolean;
+  isFestivePick?: boolean;
+  isExclusive?: boolean;
+  isOnlineOnly?: boolean;
+  hsnCode?: string;
   isPublished?: boolean;
   displayOrder?: number;
   seoTitle?: string;
@@ -122,6 +127,11 @@ export interface ProductQueryDto {
   isNewArrival?: boolean;
   isBestSeller?: boolean;
   isTrending?: boolean;
+  isLimitedStock?: boolean;
+  isFestivePick?: boolean;
+  isExclusive?: boolean;
+  isOnlineOnly?: boolean;
+  hsnCode?: string;
   isPublished?: boolean;
   minPrice?: number;
   maxPrice?: number;
@@ -183,6 +193,11 @@ export interface ProductResponse {
   isNewArrival: boolean;
   isBestSeller: boolean;
   isTrending?: boolean;
+  isLimitedStock?: boolean;
+  isFestivePick?: boolean;
+  isExclusive?: boolean;
+  isOnlineOnly?: boolean;
+  hsnCode?: string;
   isPublished: boolean;
   publishedAt?: string;
   displayOrder: number;
@@ -293,6 +308,12 @@ export const productSchema = z.object({
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   isTrending: z.boolean().default(false),
+  isLimitedStock: z.boolean().default(false),
+  isFestivePick: z.boolean().default(false),
+  isExclusive: z.boolean().default(false),
+  isOnlineOnly: z.boolean().default(false),
+  hsnCode: z.string().optional(),
+  seoKeywords: z.string().optional(),
   isPublished: z.boolean().default(false),
   collections: z.string().optional(),
 });

@@ -445,6 +445,11 @@ model Product {
   highlights              String[]
   isTrending              Boolean                  @default(false)
   taxInclusive            Boolean                  @default(true)
+  hsnCode                 String?
+  isLimitedStock          Boolean                  @default(false)
+  isFestivePick           Boolean                  @default(false)
+  isExclusive             Boolean                  @default(false)
+  isOnlineOnly            Boolean                  @default(false)
   customerRecommendations CustomerRecommendation[]
   orderItems              OrderItem[]
   prescriptionMedicines   PrescriptionMedicine[]
