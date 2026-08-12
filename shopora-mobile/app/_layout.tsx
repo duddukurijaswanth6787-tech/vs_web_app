@@ -60,9 +60,23 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="login"
+          options={{
+            title: "Staff Sign In",
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="add-product"
           options={{
             title: "+ Add Product",
+          }}
+        />
+        <Stack.Screen
+          name="label-preview"
+          options={{
+            title: "Barcode Labels",
+            headerBackVisible: false,
           }}
         />
         <Stack.Screen

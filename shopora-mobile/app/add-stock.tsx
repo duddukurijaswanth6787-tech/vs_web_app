@@ -8,10 +8,16 @@ import {
   StyleSheet,
   Alert,
   ActivityIndicator,
+  Share,
 } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { Barcode, Search, Plus, Printer, Check, Camera as CameraIcon } from 'lucide-react-native';
-import { posMobileService } from '../services/api';
+import {
+  posMobileService,
+  inventoryService,
+  barcodeService,
+  getApiErrorMessage,
+} from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 
 const SAMPLE_BARCODES = [
@@ -69,6 +75,14 @@ export default function MobileAddStockScreen() {
       return;
     }
 
+    if (!selectedVariant.variantId) {
+      Alert.alert(
+        'No Variant On This Product',
+        'Stock is tracked per variant. Add a colour/size variant to this product before stocking it in.',
+      );
+      return;
+    }
+
     const qty = Number(quantityReceived);
     if (qty <= 0) {
       Alert.alert('Invalid Quantity', 'Please enter a valid stock quantity.');
@@ -77,17 +91,32 @@ export default function MobileAddStockScreen() {
 
     try {
       setLoading(true);
-      await posMobileService.addStock({
-        variantId: selectedVariant.variantId,
-        quantity: qty,
-        location: 'Main Store',
-        supplier,
-        notes: 'Mobile App Stock Replenishment',
-      });
+      // Opens an inventory record when the variant has none, otherwise raises the
+      // existing one. Replaces the old POST /inventory/stock-in call, which was
+      // never an endpoint on this API and always answered 404.
+      await inventoryService.stockIn(
+        selectedVariant.variantId,
+        qty,
+        supplier ? `Stock-in from ${supplier}` : 'Mobile App Stock Replenishment',
+      );
+
+      if (printLabels) {
+        await barcodeService
+          .batchStickers({
+            productName: selectedVariant.productName,
+            variantTitle: selectedVariant.variantTitle,
+            sku: selectedVariant.sku,
+            barcode: selectedVariant.barcode ?? barcodeInput.trim(),
+            price: Number(selectedVariant.price ?? 0),
+            quantity: qty,
+          })
+          .then((label) => Share.share({ title: `Labels — ${selectedVariant.sku}`, message: label.tspl || label.html }))
+          .catch(() => null);
+      }
 
       Alert.alert(
         'Stock Updated! ✓',
-        `Successfully added +${qty} pieces to ${selectedVariant.productName}. ${printLabels ? `${qty} barcode sticker labels sent to printer.` : ''}`,
+        `Successfully added +${qty} pieces to ${selectedVariant.productName}.`,
         [
           {
             text: 'OK',
@@ -96,8 +125,8 @@ export default function MobileAddStockScreen() {
         ],
       );
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Error', `Could not update stock: ${errorMessage}`);
+      const errorMessage = getApiErrorMessage(err, 'Could not update stock');
+      Alert.alert('Error', errorMessage);
     } finally {
       setLoading(false);
     }
