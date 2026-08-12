@@ -36,7 +36,6 @@ import {
   History,
   Activity,
   Store,
-  Globe,
   Newspaper,
   Wrench,
   Layout,

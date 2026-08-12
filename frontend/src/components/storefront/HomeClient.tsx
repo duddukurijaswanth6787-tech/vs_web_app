@@ -36,9 +36,9 @@ export function HomeClient() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const newItems = (newArrivals as any)?.items?.length
-    ? (newArrivals as any).items
-    : (featured as any)?.items || [];
+  const newArrivalsList = Array.isArray(newArrivals) ? newArrivals : Array.isArray((newArrivals as { items?: unknown[] })?.items) ? (newArrivals as { items?: unknown[] }).items! : [];
+  const featuredList = Array.isArray(featured) ? featured : Array.isArray((featured as { items?: unknown[] })?.items) ? (featured as { items?: unknown[] }).items! : [];
+  const newItems = newArrivalsList.length ? newArrivalsList : featuredList;
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 selection:bg-rose-100 selection:text-[#800020]">
@@ -64,7 +64,21 @@ export function HomeClient() {
               ? 'Loading latest styles…'
               : 'Handpicked latest styles for you'
           }
-          products={newItems}
+          products={newItems.map((pItem) => {
+            const p = pItem as Record<string, unknown>;
+            return {
+              id: String(p.id || ''),
+              brand: String(p.brand || 'Vasanthi Designers'),
+              title: String(p.title || p.name || ''),
+              price: Number(p.price || p.salePrice || 0),
+              originalPrice: Number(p.originalPrice || p.basePrice || 0),
+              discount: String(p.discount || ''),
+              rating: Number(p.rating || 5),
+              reviewsCount: Number(p.reviewsCount || 0),
+              image: String(p.image || p.primaryImageUrl || ''),
+              isNew: true,
+            };
+          })}
           viewAllHref="/categories/new-arrivals"
         />
 
@@ -81,11 +95,22 @@ export function HomeClient() {
         <ProductGridSection
           title="Best Sellers"
           subtitle="Top rated customer favorites"
-          products={(((featured as any)?.items && (featured as any).items.length > 0 ? (featured as any).items : newItems) as any[]).map((p: any) => ({
-            ...p,
-            isBestSeller: true,
-            isNew: false,
-          }))}
+          products={(featuredList.length > 0 ? featuredList : newItems).map((pItem) => {
+            const p = pItem as Record<string, unknown>;
+            return {
+              id: String(p.id || ''),
+              brand: String(p.brand || 'Vasanthi Designers'),
+              title: String(p.title || p.name || ''),
+              price: Number(p.price || p.salePrice || 0),
+              originalPrice: Number(p.originalPrice || p.basePrice || 0),
+              discount: String(p.discount || ''),
+              rating: Number(p.rating || 5),
+              reviewsCount: Number(p.reviewsCount || 0),
+              image: String(p.image || p.primaryImageUrl || ''),
+              isBestSeller: true,
+              isNew: false,
+            };
+          })}
           viewAllHref="/categories/best-sellers"
         />
 

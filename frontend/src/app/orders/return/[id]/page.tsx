@@ -4,18 +4,18 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
-import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerOrder } from '@/features/customer/hooks';
 import { customerOrdersService } from '@/features/customer/orders.service';
 import { getApiErrorMessage } from '@/utils/api-error';
+import type { OrderItemDto } from '@/features/customer/orders.service';
 
 export default function OrderReturnPage() {
   const params = useParams();
   const orderNumber = String(params.id || '');
   const router = useRouter();
   const { isAuthenticated, isInitializing } = useAuth();
-  const { data: order, isLoading } = useCustomerOrder(orderNumber, isAuthenticated);
+  const { data: order } = useCustomerOrder(orderNumber, isAuthenticated);
   const [reason, setReason] = useState('Size issue');
   const [description, setDescription] = useState('');
   const [error, setError] = useState('');
@@ -33,7 +33,7 @@ export default function OrderReturnPage() {
         orderId: order.id,
         reason,
         description,
-        items: items.map((i: any) => ({
+        items: items.map((i: OrderItemDto) => ({
           orderItemId: i.id,
           quantity: i.quantity,
           reason,

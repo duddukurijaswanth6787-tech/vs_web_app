@@ -5,13 +5,14 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useCreateSupportTicket } from '@/features/customer/hooks';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
+import type { CreateSupportTicketDto } from '@/features/support/support.types';
 
 export default function NewTicketPage() {
-  const { register, handleSubmit } = useForm();
+  const { register, handleSubmit } = useForm<CreateSupportTicketDto>();
   const createTicket = useCreateSupportTicket();
   const router = useRouter();
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: CreateSupportTicketDto) => {
     await createTicket.mutateAsync(data);
     router.push('/account/support');
   };

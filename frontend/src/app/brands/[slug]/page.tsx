@@ -9,6 +9,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ProductGridSection } from '@/components/storefront/ProductGridSection';
 import { useBrandBySlug, useBrandProducts } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { mapProductToItem } from '@/features/customer/mappers';
 
 export default function BrandSlugPage() {
   const params = useParams();
@@ -39,7 +40,7 @@ export default function BrandSlugPage() {
         <ProductGridSection
           title={brand.data?.name || 'Brand'}
           subtitle={brand.data?.description || `${products.data?.meta?.total ?? products.data?.data?.length ?? 0} products`}
-          products={(products.data?.data as any) || []}
+          products={(products.data?.data || []).map(mapProductToItem)}
           viewAllHref="/brands"
         />
       </main>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FormProvider, useForm } from 'react-hook-form';
+import { FormProvider, useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { productSchema, ProductFormValues } from '../../product.types';
 
@@ -10,13 +10,13 @@ interface WizardStep {
 
 interface ProductWizardProps {
   steps: WizardStep[];
-  initialData?: any;
+  initialData?: Partial<ProductFormValues>;
   onSave: (data: ProductFormValues) => void;
 }
 
 export const ProductWizard = ({ steps, initialData, onSave }: ProductWizardProps) => {
   const methods = useForm<ProductFormValues>({
-    resolver: zodResolver(productSchema) as any,
+    resolver: zodResolver(productSchema) as never,
     defaultValues: initialData || {
       name: '',
       basePrice: 0,
@@ -26,19 +26,20 @@ export const ProductWizard = ({ steps, initialData, onSave }: ProductWizardProps
 
   const [activeStep, setActiveStep] = useState(0);
 
+  const watchedValues = useWatch({ control: methods.control });
+
   // Auto-save to localStorage
   useEffect(() => {
-    const subscription = methods.watch((value) => {
-      localStorage.setItem('product_draft', JSON.stringify(value));
-    });
-    return () => subscription.unsubscribe();
-  }, [methods.watch]);
+    if (watchedValues) {
+      localStorage.setItem('product_draft', JSON.stringify(watchedValues));
+    }
+  }, [watchedValues]);
 
   const ActiveStepComponent = steps[activeStep].component;
 
   return (
     <FormProvider {...methods}>
-      <form onSubmit={methods.handleSubmit(onSave)} className="space-y-6">
+      <form onSubmit={methods.handleSubmit(onSave as never)} className="space-y-6">
         {/* Wizard Navigation */}
         <div className="flex justify-between items-center bg-white p-4 rounded-lg border">
           <button 

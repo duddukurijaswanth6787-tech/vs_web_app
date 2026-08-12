@@ -9,6 +9,14 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ProductGridSection } from '@/components/storefront/ProductGridSection';
 import { useCategoryBySlug, useCategoryProducts, useCustomerProducts } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { mapProductToItem } from '@/features/customer/mappers';
+import type { ProductResponse, ProductListResponse } from '@/features/catalog/products/product.types';
+
+function extractProducts(data: ProductListResponse | ProductResponse[] | undefined): ProductResponse[] {
+  if (!data) return [];
+  if (Array.isArray(data)) return data;
+  return data.data ?? [];
+}
 
 export default function CategorySlugPage() {
   const params = useParams();
@@ -32,9 +40,9 @@ export default function CategorySlugPage() {
     : category.data?.name || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
   const fetched = special
-    ? ((specialProducts.data as any)?.items || (specialProducts.data as any)?.data || (Array.isArray(specialProducts.data) ? specialProducts.data : []))
-    : ((categoryProducts.data as any)?.items || (categoryProducts.data as any)?.data || (Array.isArray(categoryProducts.data) ? categoryProducts.data : []));
-  const fallback = (fallbackProducts.data as any)?.items || (fallbackProducts.data as any)?.data || (Array.isArray(fallbackProducts.data) ? fallbackProducts.data : []);
+    ? extractProducts(specialProducts.data)
+    : extractProducts(categoryProducts.data);
+  const fallback = extractProducts(fallbackProducts.data);
   const products = (fetched && fetched.length > 0) ? fetched : fallback;
   const loading = special ? specialProducts.isLoading : (categoryProducts.isLoading && fallbackProducts.isLoading);
   const error = special ? specialProducts.error : categoryProducts.error || category.error;
@@ -57,7 +65,7 @@ export default function CategorySlugPage() {
           <ProductGridSection
             title={title}
             subtitle={`${products.length} products`}
-            products={products}
+            products={products.map(mapProductToItem)}
             viewAllHref="/categories"
           />
         )}

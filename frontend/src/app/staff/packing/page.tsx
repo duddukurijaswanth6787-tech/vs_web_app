@@ -17,20 +17,23 @@ export default function StaffPackingPortalPage() {
   const jobs = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.jobs)) return data.jobs;
+    const typed = data as { data?: unknown[]; jobs?: unknown[] };
+    if (Array.isArray(typed?.data)) return typed.data as never[];
+    if (Array.isArray(typed?.jobs)) return typed.jobs as never[];
     return [];
   }, [data]);
 
-  const active = jobs.find((j: any) => j.id === activeId) || jobs[0];
+  const active = (jobs as Array<Record<string, unknown>>).find((j) => j.id === activeId) || (jobs[0] as Record<string, unknown> | undefined);
+
+  const activeIdStr = String(active?.id || '');
 
   const run = async (action: 'start' | 'label' | 'complete') => {
-    if (!active?.id) return;
+    if (!activeIdStr) return;
     setMessage('');
     try {
-      if (action === 'start') await customerPackingService.start(active.id);
-      if (action === 'label') await customerPackingService.generateLabel(active.id);
-      if (action === 'complete') await customerPackingService.complete(active.id);
+      if (action === 'start') await customerPackingService.start(activeIdStr);
+      if (action === 'label') await customerPackingService.generateLabel(activeIdStr);
+      if (action === 'complete') await customerPackingService.complete(activeIdStr);
       setMessage(`Job ${action} successful`);
       refetch();
     } catch (err) {
@@ -63,7 +66,7 @@ export default function StaffPackingPortalPage() {
               Warehouse Staff Packing Station
             </h1>
             <span className="text-[10px] text-neutral-400">
-              {active ? `Job ${active.id.slice(0, 8)} • ${active.status || 'QUEUED'}` : 'No active job'}
+              {activeIdStr ? `Job ${activeIdStr.slice(0, 8)} • ${String(active?.status || 'QUEUED')}` : 'No active job'}
             </span>
           </div>
         </div>
@@ -78,19 +81,19 @@ export default function StaffPackingPortalPage() {
         {message && <p className="text-sm text-emerald-400">{message}</p>}
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {jobs.map((job: any) => (
+          {(jobs as Array<Record<string, unknown>>).map((job) => (
             <button
-              key={job.id}
+              key={String(job.id)}
               type="button"
-              onClick={() => setActiveId(job.id)}
+              onClick={() => setActiveId(String(job.id))}
               className={`text-left p-3 rounded-2xl border ${
-                (active?.id || '') === job.id
+                String(active?.id || '') === String(job.id)
                   ? 'border-rose-500 bg-rose-950/30'
                   : 'border-neutral-700 bg-neutral-800'
               }`}
             >
-              <p className="text-xs font-bold">{job.orderNumber || job.orderId || job.id}</p>
-              <p className="text-[10px] text-neutral-400 mt-1">{job.status}</p>
+              <p className="text-xs font-bold">{String(job.orderNumber || job.orderId || job.id)}</p>
+              <p className="text-[10px] text-neutral-400 mt-1">{String(job.status || '')}</p>
             </button>
           ))}
         </div>
@@ -110,16 +113,16 @@ export default function StaffPackingPortalPage() {
             </button>
           </div>
 
-          {(active?.items || active?.orderItems || []).length ? (
+          {((active?.items || active?.orderItems || []) as Array<Record<string, unknown>>).length ? (
             <div className="space-y-3">
-              {(active.items || active.orderItems).map((item: any) => (
+              {((active?.items || active?.orderItems || []) as Array<Record<string, unknown>>).map((item) => (
                 <div
-                  key={item.id || item.sku}
+                  key={String(item.id || item.sku || '')}
                   className="p-4 rounded-2xl border border-neutral-700 bg-neutral-900/80"
                 >
-                  <h3 className="text-xs font-bold">{item.productName || item.name}</h3>
+                  <h3 className="text-xs font-bold">{String(item.productName || item.name || '')}</h3>
                   <span className="text-[10px] text-neutral-400 font-mono">
-                    {item.sku || item.barcode || item.id}
+                    {String(item.sku || item.barcode || item.id || '')}
                   </span>
                 </div>
               ))}

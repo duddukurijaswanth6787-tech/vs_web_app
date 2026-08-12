@@ -26,7 +26,7 @@ import {
   HelpCircle,
   MessageCircle,
 } from 'lucide-react';
-import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import Image from 'next/image';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ReviewPromptBanner } from '@/components/storefront/ReviewPromptBanner';
 import { useAuth } from '@/hooks/useAuth';
@@ -38,14 +38,15 @@ import {
   useCustomerAddresses,
   useCustomerOrders,
 } from '@/features/customer/hooks';
+import type { CartDto } from '@/features/customer/cart.service';
 
 function GuestAccountView() {
   const { data: wishlistData } = useCustomerWishlist();
   const wishlistCount = Array.isArray(wishlistData)
     ? wishlistData.length
-    : (wishlistData as any)?.items?.length ?? (wishlistData as any)?.length ?? 0;
+    : wishlistData?.items?.length ?? 0;
   const { data: cartData } = useCustomerCart();
-  const cartCount = (cartData as any)?.items?.length ?? (cartData as any)?.itemCount ?? 0;
+  const cartCount = (cartData as CartDto | undefined)?.items?.length ?? (cartData as CartDto | undefined)?.itemCount ?? 0;
 
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20">
@@ -100,10 +101,12 @@ function GuestAccountView() {
 
           {/* Decorative Model Image */}
           <div className="absolute right-0 top-0 bottom-0 w-28 sm:w-36 pointer-events-none">
-            <img
+            <Image
               src={PLACEHOLDER_IMAGE}
               alt="Vasanthi Model"
-              className="w-full h-full object-cover object-top"
+              fill
+              sizes="144px"
+              className="object-cover object-top"
               style={{ maskImage: 'linear-gradient(to right, transparent 0%, black 50%)', WebkitMaskImage: 'linear-gradient(to right, transparent 0%, black 50%)' }}
             />
           </div>
@@ -252,26 +255,33 @@ function AuthenticatedAccountView() {
 
   const name = profile?.firstName ? `${profile.firstName} ${profile.lastName || ''}`.trim() : user?.firstName || 'Anjali';
   const email = profile?.email || user?.email || 'anjali@email.com';
-  const phone = (profile as any)?.phone || (user as any)?.phone || '+91 98765 43210';
-  const points = (profile as any)?.loyaltyPoints ?? 1250;
-  const tier = (profile as any)?.tier || 'Silver Member';
+  const profRec = (profile || {}) as Record<string, unknown>;
+  const userRec = (user || {}) as Record<string, unknown>;
+  const phone = String(profRec.phone || userRec.phone || '+91 98765 43210');
+  const points = Number(profRec.loyaltyPoints ?? 1250);
+  const tier = String(profRec.tier || 'Silver Member');
   const avatarUrl = profile?.avatarUrl || PLACEHOLDER_IMAGE;
 
+  const wishlistRec = (wishlistData || {}) as Record<string, unknown>;
   const wishlistCount = Array.isArray(wishlistData)
     ? wishlistData.length
-    : (wishlistData as any)?.items?.length ?? (wishlistData as any)?.length ?? 23;
+    : Array.isArray(wishlistRec.items) ? (wishlistRec.items as unknown[]).length : Number(wishlistRec.length ?? 23);
   
-  const cartCount = (cartData as any)?.items?.length ?? (cartData as any)?.itemCount ?? 0;
+  const cartRec = (cartData || {}) as Record<string, unknown>;
+  const cartCount = Array.isArray(cartRec.items) ? (cartRec.items as unknown[]).length : Number(cartRec.itemCount ?? 0);
 
+  const addressRec = (addressesData || {}) as Record<string, unknown>;
   const addressesCount = Array.isArray(addressesData)
     ? addressesData.length
-    : (addressesData as any)?.items?.length ?? (addressesData as any)?.length ?? 3;
+    : Array.isArray(addressRec.items) ? (addressRec.items as unknown[]).length : Number(addressRec.length ?? 3);
 
   const ordersList = useMemo(() => {
     if (!ordersData) return [];
     if (Array.isArray(ordersData)) return ordersData;
-    if (Array.isArray(ordersData.data)) return ordersData.data;
-    if (Array.isArray(ordersData.items)) return ordersData.items;
+    const typed = ordersData as { orders?: unknown[]; data?: unknown[]; items?: unknown[] };
+    if (Array.isArray(typed?.orders)) return typed.orders as never[];
+    if (Array.isArray(typed?.data)) return typed.data as never[];
+    if (Array.isArray(typed?.items)) return typed.items as never[];
     return [];
   }, [ordersData]);
 
@@ -285,7 +295,8 @@ function AuthenticatedAccountView() {
     let delivered = 0;
     let returns = 0;
 
-    ordersList.forEach((o: any) => {
+    ordersList.forEach((oItem) => {
+      const o = oItem as Record<string, unknown>;
       const st = String(o.status || '').toUpperCase();
       if (st.includes('PENDING')) pending++;
       else if (st.includes('CONFIRM') || st.includes('PROCESS')) confirmed++;
@@ -345,7 +356,7 @@ function AuthenticatedAccountView() {
             {/* User Profile Summary */}
             <div className="flex items-center gap-3">
               <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-amber-300/80 shadow-md shrink-0">
-                <img src={avatarUrl} alt={name} className="w-full h-full object-cover" />
+                <Image src={avatarUrl} alt={name} width={56} height={56} className="w-full h-full object-cover" />
               </div>
               <div className="space-y-0.5">
                 <h2 className="text-lg font-bold font-serif flex items-center gap-1.5">

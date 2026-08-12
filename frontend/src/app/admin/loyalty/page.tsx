@@ -3,17 +3,17 @@
 import { useToast } from '@/components/toast/ToastProvider';
 
 import React, { useState } from 'react';
-import { Award, Plus, Search, Filter, ShieldCheck, Gift, Users, RefreshCw } from 'lucide-react';
+import { Award, Gift, RefreshCw } from 'lucide-react';
 import { loyaltyApi } from '@/features/loyalty/api/loyalty.api';
+import type { LoyaltyBalance } from '@/features/loyalty/api/loyalty.api';
 
 export default function LoyaltyAdminPage() {
   const { toast } = useToast();
   const [customerId, setCustomerId] = useState('');
   const [points, setPoints] = useState<number>(100);
   const [reason, setReason] = useState('Festive Reward Bonus');
-  const [searchQuery, setSearchQuery] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [customerBalance, setCustomerBalance] = useState<any>(null);
+  const [customerBalance, setCustomerBalance] = useState<LoyaltyBalance | null>(null);
 
   const handleLookup = async () => {
     if (!customerId) return;
@@ -21,8 +21,9 @@ export default function LoyaltyAdminPage() {
     try {
       const res = await loyaltyApi.getCustomerBalance(customerId);
       setCustomerBalance(res);
-    } catch (e: any) {
-      toast('error', 'Lookup failed', e.message || 'Customer not found');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Customer not found';
+      toast('error', 'Lookup failed', message);
     } finally {
       setIsLoading(false);
     }
@@ -36,8 +37,9 @@ export default function LoyaltyAdminPage() {
       await loyaltyApi.earnPoints({ customerId, points, reason });
       toast('success', 'Points credited', `Successfully credited ${points} points to customer #${customerId}`);
       setPoints(100);
-    } catch (e: any) {
-      toast('error', 'Credit failed', e.message || 'Server error');
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Server error';
+      toast('error', 'Credit failed', message);
     } finally {
       setIsLoading(false);
     }

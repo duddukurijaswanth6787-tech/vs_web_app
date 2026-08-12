@@ -11,6 +11,7 @@ import {
   BatchStickersResponse,
   PreviewReceiptPayload,
   PreviewReceiptResponse,
+  PosCustomerLookupResult,
 } from './pos.types';
 
 export const posService = {
@@ -73,8 +74,8 @@ export const posService = {
   /**
    * Lookup Customer & Order History by Phone
    */
-  async lookupCustomer(phone: string) {
-    const res = await apiClient.get<StandardResponse<any>>('/pos/customers/lookup', {
+  async lookupCustomer(phone: string): Promise<PosCustomerLookupResult> {
+    const res = await apiClient.get<StandardResponse<PosCustomerLookupResult>>('/pos/customers/lookup', {
       params: { phone },
     });
     return res.data.data!;

@@ -25,13 +25,12 @@ const STAFF_ROLES = ['admin', 'super_admin', 'staff', 'pos_operator', 'pos_staff
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const [hasToken, setHasToken] = useState<boolean | undefined>(undefined);
-
-  React.useEffect(() => {
+  const [hasToken, setHasToken] = useState<boolean | undefined>(() => {
     if (typeof window !== 'undefined') {
-      setHasToken(!!localStorage.getItem('vd_refresh_token'));
+      return !!localStorage.getItem('vd_refresh_token');
     }
-  }, []);
+    return undefined;
+  });
 
   const {
     data: user = null,

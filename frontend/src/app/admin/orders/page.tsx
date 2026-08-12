@@ -31,7 +31,7 @@ export default function OrdersPage() {
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.set('page', '1');
     router.push(`/admin/orders?${params}`);
   };

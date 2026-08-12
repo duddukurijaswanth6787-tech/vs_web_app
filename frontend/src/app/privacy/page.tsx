@@ -29,7 +29,7 @@ export default function PrivacyPolicyPage() {
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Privacy Policy</h1>
             <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
-              At <strong className="text-amber-300">Vasanthi's Signature</strong> (accessible from <a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>), protecting your personal information and transparent data management is our highest commitment.
+              At <strong className="text-amber-300">Vasanthi&apos;s Signature</strong> (accessible from <a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>), protecting your personal information and transparent data management is our highest commitment.
             </p>
             <div className="pt-2 text-[11px] text-rose-200/70 font-mono">
               Last Updated: August 9, 2026 • Compliant with Indian IT Act 2000 & GDPR Standards
@@ -46,7 +46,7 @@ export default function PrivacyPolicyPage() {
               <Lock className="w-5 h-5 text-[#800020]" /> Google OAuth 2.0 & Social Sign-In Data Commitment
             </div>
             <p className="text-xs text-neutral-700 leading-relaxed">
-              When you use <strong>"Continue with Google"</strong> to log into <strong>Vasanthi's Signature</strong>, we only access basic account identity details (your primary email address, full name, and avatar image). We <strong>never</strong> store your Google passwords, access your private Gmail messages, or sell Google user data to third-party advertisers.
+              When you use <strong>&quot;Continue with Google&quot;</strong> to log into <strong>Vasanthi&apos;s Signature</strong>, we only access basic account identity details (your primary email address, full name, and avatar image). We <strong>never</strong> store your Google passwords, access your private Gmail messages, or sell Google user data to third-party advertisers.
             </p>
           </div>
 
@@ -77,7 +77,7 @@ export default function PrivacyPolicyPage() {
             <div className="space-y-2 text-xs sm:text-sm pl-2">
               <p><strong>Specifically, Google OAuth data is used ONLY to:</strong></p>
               <ul className="list-disc list-inside space-y-1 pl-4 text-neutral-800">
-                <li>Create and manage your customer account on Vasanthi's Signature.</li>
+                <li>Create and manage your customer account on Vasanthi&apos;s Signature.</li>
                 <li>Send order receipts, shipment notifications, and customer support communications.</li>
                 <li>Provide personalized wishlist and loyalty reward tracking.</li>
               </ul>
@@ -96,7 +96,7 @@ export default function PrivacyPolicyPage() {
               All online payment transactions (Credit Cards, Debit Cards, NetBanking, and UPI) are processed through PCI-DSS Level 1 compliant payment gateways (Razorpay). 
             </p>
             <p className="text-xs sm:text-sm">
-              <strong>Vasanthi's Signature does NOT store or record card numbers, CVVs, or NetBanking passwords on our servers.</strong> All credit card details are encrypted using 256-bit SSL encryption provided by our payment gateway partners.
+              <strong>Vasanthi&apos;s Signature does NOT store or record card numbers, CVVs, or NetBanking passwords on our servers.</strong> All credit card details are encrypted using 256-bit SSL encryption provided by our payment gateway partners.
             </p>
           </section>
 
@@ -132,7 +132,7 @@ export default function PrivacyPolicyPage() {
               If you have any questions, concerns, or inquiries regarding this Privacy Policy or our Google OAuth compliance, feel free to reach out to us:
             </p>
             <div className="text-xs font-semibold text-neutral-800 space-y-1 pt-1">
-              <div>Brand: Vasanthi's Signature</div>
+              <div>Brand: Vasanthi&apos;s Signature</div>
               <div>Website: <a href="https://vasanthissignature.in" className="text-[#800020] underline">https://vasanthissignature.in</a></div>
               <div>Email: <a href="mailto:support@vasanthissignature.in" className="text-[#800020] underline">support@vasanthissignature.in</a></div>
               <div>Phone Support: +91 98765 43210</div>

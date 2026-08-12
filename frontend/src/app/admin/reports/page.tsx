@@ -8,7 +8,7 @@ import type { ReportType } from '@/features/reports/reports.types';
 import {
   ShoppingBag, Users, Package, ShoppingCart, RefreshCw, CheckCircle2,
   Tag, RotateCcw, CreditCard, Percent, Truck, Layers, Star, FileText,
-  ArrowLeft, Download, Search, X,
+  ArrowLeft, Download,
 } from 'lucide-react';
 import { SectionLoader, PageError, EmptyState } from '@/components/feedback/FeedbackStates';
 
@@ -35,6 +35,10 @@ const groups = [...new Set(reportTypes.map((r) => r.group))];
 
 const PAGE_SIZE = 50;
 
+type ReportItem = { id?: string; [key: string]: string | number | boolean | null | undefined | Record<string, unknown> | Array<Record<string, unknown>> };
+
+type ReportColumn = { key: string; label: string; render: (item: ReportItem) => React.ReactNode };
+
 const periodPresets = [
   { label: 'Today', days: 0 },
   { label: 'Yesterday', days: 1 },
@@ -44,63 +48,63 @@ const periodPresets = [
 ];
 
 // ponytail: shared column config; add more columns per type as needed
-function getColumns(type: string): { key: string; label: string; render: (item: any) => React.ReactNode }[] {
-  const cols: Record<string, { key: string; label: string; render: (item: any) => React.ReactNode }[]> = {
+function getColumns(type: string): ReportColumn[] {
+  const cols: Record<string, ReportColumn[]> = {
     PRODUCTS: [
-      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{i.name}</span> },
-      { key: 'sku', label: 'SKU', render: (i) => i.sku },
+      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{String(i.name ?? '')}</span> },
+      { key: 'sku', label: 'SKU', render: (i) => String(i.sku ?? '') },
       { key: 'basePrice', label: 'Price', render: (i) => formatCurrency(Number(i.basePrice || 0)) },
-      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100">{i.status}</span> },
-      { key: 'variants', label: 'Variants', render: (i) => i._count?.variants ?? '-' },
+      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-neutral-100">{String(i.status ?? '')}</span> },
+      { key: 'variants', label: 'Variants', render: (i) => String((i._count as Record<string, unknown>)?.variants ?? '-') },
     ],
     COUPONS: [
-      { key: 'code', label: 'Code', render: (i) => <span className="font-mono font-medium">{i.code}</span> },
-      { key: 'name', label: 'Name', render: (i) => i.name },
-      { key: 'type', label: 'Type', render: (i) => i.type },
+      { key: 'code', label: 'Code', render: (i) => <span className="font-mono font-medium">{String(i.code ?? '')}</span> },
+      { key: 'name', label: 'Name', render: (i) => String(i.name ?? '') },
+      { key: 'type', label: 'Type', render: (i) => String(i.type ?? '') },
       { key: 'value', label: 'Value', render: (i) => `${i.type === 'PERCENTAGE' ? i.value + '%' : formatCurrency(Number(i.value))}` },
       { key: 'isActive', label: 'Active', render: (i) => i.isActive ? '✓' : '✗' },
-      { key: 'usedCount', label: 'Used', render: (i) => i.usedCount },
+      { key: 'usedCount', label: 'Used', render: (i) => String(i.usedCount ?? '') },
     ],
     RETURNS: [
-      { key: 'returnNumber', label: 'Return #', render: (i) => i.returnNumber },
-      { key: 'order', label: 'Order', render: (i) => i.order?.orderNumber ?? '-' },
-      { key: 'reason', label: 'Reason', render: (i) => <span className="max-w-[200px] truncate block">{i.reason}</span> },
-      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700">{i.status}</span> },
+      { key: 'returnNumber', label: 'Return #', render: (i) => String(i.returnNumber ?? '') },
+      { key: 'order', label: 'Order', render: (i) => String((i.order as Record<string, unknown>)?.orderNumber ?? '-') },
+      { key: 'reason', label: 'Reason', render: (i) => <span className="max-w-[200px] truncate block">{String(i.reason ?? '')}</span> },
+      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-orange-50 text-orange-700">{String(i.status ?? '')}</span> },
     ],
     PAYMENTS: [
-      { key: 'paymentNumber', label: 'Payment #', render: (i) => i.paymentNumber },
-      { key: 'order', label: 'Order', render: (i) => i.order?.orderNumber ?? '-' },
-      { key: 'method', label: 'Method', render: (i) => i.method },
+      { key: 'paymentNumber', label: 'Payment #', render: (i) => String(i.paymentNumber ?? '') },
+      { key: 'order', label: 'Order', render: (i) => String((i.order as Record<string, unknown>)?.orderNumber ?? '-') },
+      { key: 'method', label: 'Method', render: (i) => String(i.method ?? '') },
       { key: 'amount', label: 'Amount', render: (i) => formatCurrency(Number(i.amount)) },
-      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{i.status}</span> },
+      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-blue-50 text-blue-700">{String(i.status ?? '')}</span> },
     ],
     TAX: [
-      { key: 'orderNumber', label: 'Order', render: (i) => i.orderNumber },
+      { key: 'orderNumber', label: 'Order', render: (i) => String(i.orderNumber ?? '') },
       { key: 'taxTotal', label: 'Tax', render: (i) => formatCurrency(Number(i.taxTotal || 0)) },
       { key: 'grandTotal', label: 'Total', render: (i) => formatCurrency(Number(i.grandTotal)) },
-      { key: 'status', label: 'Status', render: (i) => i.status },
+      { key: 'status', label: 'Status', render: (i) => String(i.status ?? '') },
     ],
     SHIPPING: [
-      { key: 'orderNumber', label: 'Order', render: (i) => i.orderNumber },
+      { key: 'orderNumber', label: 'Order', render: (i) => String(i.orderNumber ?? '') },
       { key: 'shippingCharge', label: 'Shipping', render: (i) => formatCurrency(Number(i.shippingCharge || 0)) },
       { key: 'grandTotal', label: 'Total', render: (i) => formatCurrency(Number(i.grandTotal)) },
-      { key: 'status', label: 'Status', render: (i) => i.status },
+      { key: 'status', label: 'Status', render: (i) => String(i.status ?? '') },
     ],
     CATEGORIES: [
-      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{i.name}</span> },
-      { key: 'status', label: 'Status', render: (i) => i.status },
-      { key: 'products', label: 'Products', render: (i) => i._count?.productMappings ?? '-' },
+      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{String(i.name ?? '')}</span> },
+      { key: 'status', label: 'Status', render: (i) => String(i.status ?? '') },
+      { key: 'products', label: 'Products', render: (i) => String((i._count as Record<string, unknown>)?.productMappings ?? '-') },
     ],
     BRANDS: [
-      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{i.name}</span> },
-      { key: 'status', label: 'Status', render: (i) => i.status },
-      { key: 'products', label: 'Products', render: (i) => i._count?.products ?? '-' },
+      { key: 'name', label: 'Name', render: (i) => <span className="font-medium">{String(i.name ?? '')}</span> },
+      { key: 'status', label: 'Status', render: (i) => String(i.status ?? '') },
+      { key: 'products', label: 'Products', render: (i) => String((i._count as Record<string, unknown>)?.products ?? '-') },
     ],
     REVIEWS: [
-      { key: 'product', label: 'Product', render: (i) => i.product?.name ?? '-' },
-      { key: 'rating', label: 'Rating', render: (i) => '★'.repeat(i.rating) + '☆'.repeat(5 - i.rating) },
-      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700">{i.status}</span> },
-      { key: 'comment', label: 'Comment', render: (i) => <span className="max-w-[250px] truncate block">{i.comment || '-'}</span> },
+      { key: 'product', label: 'Product', render: (i) => String((i.product as Record<string, unknown>)?.name ?? '-') },
+      { key: 'rating', label: 'Rating', render: (i) => '★'.repeat(Number(i.rating || 0)) + '☆'.repeat(5 - Number(i.rating || 0)) },
+      { key: 'status', label: 'Status', render: (i) => <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-50 text-yellow-700">{String(i.status ?? '')}</span> },
+      { key: 'comment', label: 'Comment', render: (i) => <span className="max-w-[250px] truncate block">{String(i.comment || '-')}</span> },
     ],
   };
   return cols[type] || [];
@@ -140,7 +144,7 @@ function ReportView({ type, onBack }: { type: string; onBack: () => void }) {
   };
 
   const columns = getColumns(type);
-  const listData = data?.data as any;
+  const listData = data?.data as { items?: ReportItem[]; total?: number } | undefined;
   const items = listData?.items ?? [];
   const total = listData?.total ?? 0;
   const totalPages = Math.ceil(total / PAGE_SIZE) || 1;
@@ -187,7 +191,7 @@ function ReportView({ type, onBack }: { type: string; onBack: () => void }) {
               <tr>{columns.map((c) => <th key={c.key} className="text-left px-4 py-3 font-bold text-neutral-500">{c.label}</th>)}</tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
-              {items.map((item: any, i: number) => (
+              {items.map((item, i) => (
                 <tr key={item.id ?? i} className="hover:bg-neutral-50">
                   {columns.map((c) => <td key={c.key} className="px-4 py-3 text-neutral-700">{c.render(item)}</td>)}
                 </tr>

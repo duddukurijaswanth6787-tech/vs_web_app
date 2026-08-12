@@ -44,7 +44,7 @@ export default function AdminSidebar() {
         <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-100">
           {!sidebarCollapsed ? (
             <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase">
-              Vasanthi's Signature Admin
+              Vasanthi&apos;s Signature Admin
             </span>
           ) : (
             <span className="text-xs font-black tracking-tighter text-neutral-900">

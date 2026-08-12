@@ -32,15 +32,18 @@ export default function ProfilePaymentsPage() {
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-3">
         {isLoading && <p className="text-sm text-neutral-500">Loading…</p>}
-        {(data || []).map((m: any) => (
-          <div key={m.code} className="bg-white border border-neutral-200 rounded-2xl p-4 flex gap-3">
-            <CreditCard className="w-5 h-5 text-[#800020] shrink-0" />
-            <div>
-              <p className="text-sm font-bold">{m.title}</p>
-              <p className="text-xs text-neutral-500 mt-1">{m.description}</p>
+        {(Array.isArray(data) ? data : []).map((mItem) => {
+          const m = mItem as Record<string, unknown>;
+          return (
+            <div key={String(m.code || '')} className="bg-white border border-neutral-200 rounded-2xl p-4 flex gap-3">
+              <CreditCard className="w-5 h-5 text-[#800020] shrink-0" />
+              <div>
+                <p className="text-sm font-bold">{String(m.title || '')}</p>
+                <p className="text-xs text-neutral-500 mt-1">{String(m.description || '')}</p>
+              </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
         <p className="text-[11px] text-neutral-400">
           Saved cards/UPI are managed securely at checkout via payment gateway.
         </p>

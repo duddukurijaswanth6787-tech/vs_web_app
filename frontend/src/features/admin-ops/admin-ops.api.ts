@@ -1,17 +1,52 @@
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 
+export interface AiRecommendationDto {
+  id: string;
+  customerUserId: string;
+  recommendedProducts: Array<Record<string, unknown>>;
+  createdAt: string;
+  [key: string]: unknown;
+}
+
+export interface SmsResultDto {
+  success: boolean;
+  messageId?: string;
+  status: string;
+}
+
+export interface PushResultDto {
+  success: boolean;
+  status?: string;
+  targetCount?: number;
+  successCount?: number;
+  notificationId?: string;
+  recipientCount?: number;
+  [key: string]: unknown;
+}
+
+export interface DtdcShipmentDto {
+  id: string;
+  orderId: string;
+  awbNumber: string;
+  status: string;
+  serviceType?: string;
+  labelUrl?: string;
+  trackingUrl?: string;
+  [key: string]: unknown;
+}
+
 export const adminOpsApi = {
   // ── AI Recommendations ─────────────────────────────────
-  generateRecommendations: async (customerUserId: string) => {
-    const res = await apiClient.post<StandardResponse<any>>('/ai/recommendations/admin/generate', {
+  generateRecommendations: async (customerUserId: string): Promise<AiRecommendationDto> => {
+    const res = await apiClient.post<StandardResponse<AiRecommendationDto>>('/ai/recommendations/admin/generate', {
       customerUserId,
     });
     return res.data.data!;
   },
 
-  listRecommendations: async (customerUserId: string, params: Record<string, string | number> = {}) => {
-    const res = await apiClient.get<StandardResponse<any>>(
+  listRecommendations: async (customerUserId: string, params: Record<string, string | number> = {}): Promise<AiRecommendationDto[]> => {
+    const res = await apiClient.get<StandardResponse<AiRecommendationDto[]>>(
       `/ai/recommendations/admin/${customerUserId}`,
       { params },
     );
@@ -19,18 +54,18 @@ export const adminOpsApi = {
   },
 
   // ── SMS ───────────────────────────────────────────────
-  sendSms: async (dto: { phone: string; template: string; message: string; userId?: string }) => {
-    const res = await apiClient.post<StandardResponse<any>>('/sms/send', dto);
+  sendSms: async (dto: { phone: string; template: string; message: string; userId?: string }): Promise<SmsResultDto> => {
+    const res = await apiClient.post<StandardResponse<SmsResultDto>>('/sms/send', dto);
     return res.data.data!;
   },
 
-  sendOrderSms: async (dto: { orderId: string; template?: string }) => {
-    const res = await apiClient.post<StandardResponse<any>>('/sms/order', dto);
+  sendOrderSms: async (dto: { orderId: string; template?: string }): Promise<SmsResultDto> => {
+    const res = await apiClient.post<StandardResponse<SmsResultDto>>('/sms/order', dto);
     return res.data.data!;
   },
 
-  smsLogs: async (page = 1, limit = 20) => {
-    const res = await apiClient.get<StandardResponse<any>>('/sms/logs', {
+  smsLogs: async (page = 1, limit = 20): Promise<{ logs: Array<Record<string, unknown>>; total: number }> => {
+    const res = await apiClient.get<StandardResponse<{ logs: Array<Record<string, unknown>>; total: number }>>('/sms/logs', {
       params: { page, limit },
     });
     return res.data.data!;
@@ -42,13 +77,13 @@ export const adminOpsApi = {
     body: string;
     userId?: string;
     data?: Record<string, unknown>;
-  }) => {
-    const res = await apiClient.post<StandardResponse<any>>('/push/send', dto);
+  }): Promise<PushResultDto> => {
+    const res = await apiClient.post<StandardResponse<PushResultDto>>('/push/send', dto);
     return res.data.data!;
   },
 
-  pushLogs: async (page = 1, limit = 20) => {
-    const res = await apiClient.get<StandardResponse<any>>('/push/logs', {
+  pushLogs: async (page = 1, limit = 20): Promise<{ logs: Array<Record<string, unknown>>; total: number }> => {
+    const res = await apiClient.get<StandardResponse<{ logs: Array<Record<string, unknown>>; total: number }>>('/push/logs', {
       params: { page, limit },
     });
     return res.data.data!;
@@ -60,27 +95,27 @@ export const adminOpsApi = {
     serviceType?: string;
     weightKg?: number;
     pieces?: number;
-  }) => {
-    const res = await apiClient.post<StandardResponse<any>>('/shipping/dtdc/shipments', dto);
+  }): Promise<DtdcShipmentDto> => {
+    const res = await apiClient.post<StandardResponse<DtdcShipmentDto>>('/shipping/dtdc/shipments', dto);
     return res.data.data!;
   },
 
-  trackDtdc: async (awbOrId: string) => {
-    const res = await apiClient.get<StandardResponse<any>>(
+  trackDtdc: async (awbOrId: string): Promise<Record<string, unknown>> => {
+    const res = await apiClient.get<StandardResponse<Record<string, unknown>>>(
       `/shipping/dtdc/shipments/${awbOrId}/track`,
     );
     return res.data.data!;
   },
 
-  dtdcLabel: async (awbOrId: string) => {
-    const res = await apiClient.get<StandardResponse<any>>(
+  dtdcLabel: async (awbOrId: string): Promise<{ labelUrl: string }> => {
+    const res = await apiClient.get<StandardResponse<{ labelUrl: string }>>(
       `/shipping/dtdc/shipments/${awbOrId}/label`,
     );
     return res.data.data!;
   },
 
-  dtdcByOrder: async (orderId: string) => {
-    const res = await apiClient.get<StandardResponse<any>>(
+  dtdcByOrder: async (orderId: string): Promise<DtdcShipmentDto> => {
+    const res = await apiClient.get<StandardResponse<DtdcShipmentDto>>(
       `/shipping/dtdc/shipments/order/${orderId}`,
     );
     return res.data.data!;

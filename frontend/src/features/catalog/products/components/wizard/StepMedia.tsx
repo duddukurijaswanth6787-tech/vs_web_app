@@ -1,6 +1,4 @@
 import React from 'react';
-import { useFormContext } from 'react-hook-form';
-import { ProductFormValues } from '../../product.types';
 
 export const StepMedia = () => {
   // Media handling is complex (requires access to media hooks).

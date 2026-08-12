@@ -1,11 +1,14 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useLibraryMedia, useCreateLibraryMedia } from '@/features/catalog/media/library.hooks';
 import { libraryService } from '@/features/catalog/media/library.service';
 import type { LibraryMedia } from '@/features/catalog/media/library.types';
 import { resolveMediaUrl } from '@/lib/media-url';
-import { X, Search, Image, Check, Upload, AlertCircle } from 'lucide-react';
+import { X, Search, Image as ImageIcon, Check, Upload, AlertCircle } from 'lucide-react';
+
+import { getApiErrorMessage } from '@/utils/api-error';
 
 interface MediaPickerModalProps {
   open: boolean;
@@ -87,9 +90,8 @@ export function MediaPickerModal({ open, onClose, onSelect, multiple, mimeFilter
 
       onSelect(newMedia);
       onClose();
-    } catch (err: any) {
-      const errMsg = err?.response?.data?.message || err?.message || 'Failed to upload file';
-      setUploadError(errMsg);
+    } catch (err) {
+      setUploadError(getApiErrorMessage(err, 'Failed to upload file'));
     } finally {
       setUploading(false);
       setUploadFile(null);
@@ -177,7 +179,7 @@ export function MediaPickerModal({ open, onClose, onSelect, multiple, mimeFilter
                 <div className="flex items-center justify-center h-48 text-xs text-neutral-400">Loading...</div>
               ) : !data?.data?.length ? (
                 <div className="flex flex-col items-center justify-center h-48 text-neutral-400">
-                  <Image className="w-10 h-10 mb-2" />
+                  <ImageIcon className="w-10 h-10 mb-2" />
                   <p className="text-xs">No media found</p>
                 </div>
               ) : (
@@ -187,10 +189,10 @@ export function MediaPickerModal({ open, onClose, onSelect, multiple, mimeFilter
                     return (
                       <button key={m.id} onClick={() => toggleSelect(m)} className={`relative aspect-square rounded-xl border-2 overflow-hidden bg-neutral-50 transition-all ${isSelected ? 'border-neutral-900 ring-2 ring-neutral-900/20' : 'border-transparent hover:border-neutral-300'}`}>
                         {isImage(m.mimeType) ? (
-                          <img src={getThumbUrl(m)} alt="" className="w-full h-full object-cover" loading="lazy" />
+                          <Image src={getThumbUrl(m)} alt={m.filename || m.originalFilename || 'Media item'} width={200} height={200} className="w-full h-full object-cover" loading="lazy" />
                         ) : (
                           <div className="w-full h-full flex items-center justify-center">
-                            <Image className="w-6 h-6 text-neutral-300" />
+                            <ImageIcon className="w-6 h-6 text-neutral-300" />
                           </div>
                         )}
                         {isSelected && (

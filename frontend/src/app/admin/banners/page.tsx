@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useSettings, useCreateSetting, useUpdateSetting } from '@/features/settings/settings.hooks';
 import { useBanners, useCreateBanner, useUpdateBanner, useDeleteBanner } from '@/features/banners/banner.hooks';
@@ -63,7 +63,9 @@ export default function BannersPage() {
   const mobileAnnouncementSetting = settingsList.find(s => s.key === 'announcement_bar_mobile_enabled');
   const announcementTextSetting = settingsList.find(s => s.key === 'announcement_bar_text');
 
-  useEffect(() => {
+  const [prevSettings, setPrevSettings] = useState(allSettingsData);
+  if (allSettingsData !== prevSettings) {
+    setPrevSettings(allSettingsData);
     if (enabledSetting) {
       setAutoplayEnabled(enabledSetting.value === 'true');
     }
@@ -76,75 +78,38 @@ export default function BannersPage() {
     if (announcementTextSetting) {
       setAnnouncementBarText(announcementTextSetting.value || 'Festive Sale is Live! Get up to 30% OFF');
     }
-  }, [enabledSetting, intervalSetting, mobileAnnouncementSetting, announcementTextSetting]);
+  }
 
   const handleSaveAutoplaySettings = async () => {
     setIsSavingSettings(true);
     try {
       if (enabledSetting) {
-        await updateSettingMut.mutateAsync({
-          id: enabledSetting.id,
-          dto: { value: String(autoplayEnabled) }
-        });
+        await updateSettingMut.mutateAsync({ id: enabledSetting.id, dto: { value: String(autoplayEnabled) } });
       } else {
-        await createSettingMut.mutateAsync({
-          key: 'banner_autoplay_enabled',
-          value: String(autoplayEnabled),
-          type: 'BOOLEAN',
-          group: 'BANNER_SETTINGS',
-          description: 'Enable or disable storefront banner autoplay'
-        });
+        await createSettingMut.mutateAsync({ key: 'banner_autoplay_enabled', value: String(autoplayEnabled) });
       }
 
       if (intervalSetting) {
-        await updateSettingMut.mutateAsync({
-          id: intervalSetting.id,
-          dto: { value: String(autoplayInterval) }
-        });
+        await updateSettingMut.mutateAsync({ id: intervalSetting.id, dto: { value: String(autoplayInterval) } });
       } else {
-        await createSettingMut.mutateAsync({
-          key: 'banner_autoplay_interval',
-          value: String(autoplayInterval),
-          type: 'NUMBER',
-          group: 'BANNER_SETTINGS',
-          description: 'Interval in seconds for storefront banner autoplay'
-        });
+        await createSettingMut.mutateAsync({ key: 'banner_autoplay_interval', value: String(autoplayInterval) });
       }
 
       if (mobileAnnouncementSetting) {
-        await updateSettingMut.mutateAsync({
-          id: mobileAnnouncementSetting.id,
-          dto: { value: String(mobileAnnouncementEnabled) }
-        });
+        await updateSettingMut.mutateAsync({ id: mobileAnnouncementSetting.id, dto: { value: String(mobileAnnouncementEnabled) } });
       } else {
-        await createSettingMut.mutateAsync({
-          key: 'announcement_bar_mobile_enabled',
-          value: String(mobileAnnouncementEnabled),
-          type: 'BOOLEAN',
-          group: 'BANNER_SETTINGS',
-          description: 'Enable or disable top announcement bar on mobile view'
-        });
+        await createSettingMut.mutateAsync({ key: 'announcement_bar_mobile_enabled', value: String(mobileAnnouncementEnabled) });
       }
 
       if (announcementTextSetting) {
-        await updateSettingMut.mutateAsync({
-          id: announcementTextSetting.id,
-          dto: { value: announcementBarText }
-        });
+        await updateSettingMut.mutateAsync({ id: announcementTextSetting.id, dto: { value: announcementBarText } });
       } else {
-        await createSettingMut.mutateAsync({
-          key: 'announcement_bar_text',
-          value: announcementBarText,
-          type: 'STRING',
-          group: 'BANNER_SETTINGS',
-          description: 'Text message for storefront announcement bar'
-        });
+        await createSettingMut.mutateAsync({ key: 'announcement_bar_text', value: announcementBarText });
       }
 
-      alert('Storefront & Banner settings saved successfully!');
-      refetchSettings();
-    } catch (err) {
-      console.error(err);
+      await refetchSettings();
+      alert('Settings saved successfully!');
+    } catch {
       alert('Failed to save settings');
     } finally {
       setIsSavingSettings(false);
@@ -156,7 +121,11 @@ export default function BannersPage() {
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
     params.set('page', '1');
     router.push(`/admin/banners?${params}`);
   };

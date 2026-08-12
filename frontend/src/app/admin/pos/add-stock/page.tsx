@@ -1,17 +1,14 @@
 'use client';
 
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import {
   Barcode,
   Search,
   Plus,
-  Package,
   Printer,
   CheckCircle2,
   RefreshCw,
-  Tag,
-  Boxes,
-  Truck,
 } from 'lucide-react';
 import { useScanBarcode, useBatchStickers } from '@/features/pos/pos.hooks';
 import { ScanBarcodeResult } from '@/features/pos/pos.types';
@@ -25,14 +22,12 @@ export default function AddStockPage() {
   const [location, setLocation] = useState('Main Store');
   const [supplier, setSupplier] = useState('ABC Textiles');
   const [invoiceNumber, setInvoiceNumber] = useState('INV-45892');
-  const [purchaseCost, setPurchaseCost] = useState(420);
   const [notes, setNotes] = useState('New shipment received');
   const [printLabels, setPrintLabels] = useState(true);
 
   // Sticker Preview Modal
   const [stickerHtml, setStickerHtml] = useState('');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
-  const [stockSaved, setStockSaved] = useState(false);
 
   const scanMutation = useScanBarcode();
   const batchStickersMutation = useBatchStickers();
@@ -46,7 +41,7 @@ export default function AddStockPage() {
       onSuccess: (data) => {
         setSelectedVariant(data);
         if (data.costPrice) {
-          setPurchaseCost(data.costPrice);
+          // costPrice available from scan result
         }
       },
     });
@@ -71,13 +66,12 @@ export default function AddStockPage() {
         {
           onSuccess: (res) => {
             setStickerHtml(res.html);
-            setStockSaved(true);
             setPreviewModalOpen(true);
           },
         },
       );
     } else {
-      setStockSaved(true);
+      // Stock saved without labels
     }
   };
 
@@ -152,7 +146,7 @@ export default function AddStockPage() {
               <div className="flex items-start gap-4">
                 <div className="w-16 h-16 rounded-xl bg-neutral-100 border border-neutral-200 overflow-hidden shrink-0">
                   {selectedVariant.primaryImage ? (
-                    <img src={selectedVariant.primaryImage} alt={selectedVariant.productName} className="w-full h-full object-cover" />
+                    <Image src={selectedVariant.primaryImage} alt={selectedVariant.productName} width={64} height={64} className="w-full h-full object-cover" />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center text-lg">👗</div>
                   )}

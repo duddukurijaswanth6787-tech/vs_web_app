@@ -9,9 +9,10 @@ import { useCustomerWishlist } from '@/features/customer/hooks';
 export function MobileBottomNav() {
   const pathname = usePathname();
   const { data: wishlistData } = useCustomerWishlist();
+  const typedWishlist = wishlistData as { items?: unknown[]; length?: number } | undefined;
   const wishlistCount = Array.isArray(wishlistData)
     ? wishlistData.length
-    : (wishlistData as any)?.items?.length ?? (wishlistData as any)?.length ?? 0;
+    : typedWishlist?.items?.length ?? typedWishlist?.length ?? 0;
 
   const isHome = pathname === '/';
   const isCategories = pathname === '/categories';

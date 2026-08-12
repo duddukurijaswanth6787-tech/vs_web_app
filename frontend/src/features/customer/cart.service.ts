@@ -14,6 +14,12 @@ export interface CartItemDto {
   savedForLater: boolean;
   createdAt: string;
   imageUrl?: string;
+  color?: string;
+  size?: string;
+  product?: {
+    primaryImageUrl?: string;
+    images?: Array<{ url?: string }>;
+  };
 }
 
 export interface CartDto {
@@ -26,6 +32,14 @@ export interface CartDto {
   subtotal: number;
   totalSavings: number;
   createdAt: string;
+}
+
+export interface CartSummaryDto {
+  itemCount: number;
+  subtotal: number;
+  totalSavings: number;
+  shippingTotal?: number;
+  grandTotal?: number;
 }
 
 function guestParams() {
@@ -41,15 +55,14 @@ export const customerCartService = {
     return res.data.data!;
   },
 
-  getSummary: async () => {
-    const res = await apiClient.get<StandardResponse<any>>('/cart/summary', {
+  getSummary: async (): Promise<CartSummaryDto> => {
+    const res = await apiClient.get<StandardResponse<CartSummaryDto>>('/cart/summary', {
       params: guestParams(),
     });
     return res.data.data!;
   },
 
   addItem: async (dto: { productId: string; variantId?: string; quantity?: number }) => {
-    const guestId = getGuestId();
     const res = await apiClient.post<StandardResponse<CartDto>>(
       '/cart/items',
       dto,

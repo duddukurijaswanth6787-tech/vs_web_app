@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
@@ -18,7 +18,10 @@ export default function ProfileEditPage() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  useEffect(() => {
+  const [prevData, setPrevData] = useState(data);
+
+  if (data !== prevData) {
+    setPrevData(data);
     if (data) {
       setForm({
         firstName: data.firstName || '',
@@ -26,7 +29,7 @@ export default function ProfileEditPage() {
         phone: data.phone || '',
       });
     }
-  }, [data]);
+  }
 
   if (!isInitializing && !isAuthenticated) {
     return (

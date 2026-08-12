@@ -1,35 +1,44 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSettings, useUpdateSettings } from '@/features/storefront/storefront.hooks';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { Button } from '@/components/forms/FormField';
+import { Button, LabeledField } from '@/components/forms/FormField';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { Save } from 'lucide-react';
+import type { WebsiteSettings } from '@/features/storefront/storefront.types';
+
+const formDefaults = {
+  metaTitle: '', metaDescription: '', metaKeywords: '', ogImage: '',
+  robots: '', canonicalUrl: '', googleAnalyticsId: '', googleTagManagerId: '', facebookPixelId: '',
+};
+
+type SeoForm = typeof formDefaults;
+
+const fromSettings = (s: WebsiteSettings): SeoForm => ({
+  metaTitle: s.metaTitle ?? '',
+  metaDescription: s.metaDescription ?? '',
+  metaKeywords: s.metaKeywords ?? '',
+  ogImage: s.ogImage ?? '',
+  robots: s.robots ?? '',
+  canonicalUrl: s.canonicalUrl ?? '',
+  googleAnalyticsId: s.googleAnalyticsId ?? '',
+  googleTagManagerId: s.googleTagManagerId ?? '',
+  facebookPixelId: s.facebookPixelId ?? '',
+});
 
 export default function SeoPage() {
   const { data, isLoading } = useSettings();
   const updateMut = useUpdateSettings();
-  const [form, setForm] = useState({
-    metaTitle: '', metaDescription: '', metaKeywords: '', ogImage: '',
-    robots: '', canonicalUrl: '', googleAnalyticsId: '', googleTagManagerId: '', facebookPixelId: '',
-  });
+  const [form, setForm] = useState<SeoForm>(formDefaults);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (data) setForm({
-      metaTitle: data.metaTitle ?? '',
-      metaDescription: data.metaDescription ?? '',
-      metaKeywords: data.metaKeywords ?? '',
-      ogImage: data.ogImage ?? '',
-      robots: data.robots ?? '',
-      canonicalUrl: data.canonicalUrl ?? '',
-      googleAnalyticsId: data.googleAnalyticsId ?? '',
-      googleTagManagerId: data.googleTagManagerId ?? '',
-      facebookPixelId: data.facebookPixelId ?? '',
-    });
-  }, [data]);
+  const [prevSettings, setPrevSettings] = useState(data);
+  if (data && data !== prevSettings) {
+    setPrevSettings(data);
+    setForm(fromSettings(data));
+  }
 
   if (isLoading) return <PageLoader />;
 
@@ -42,16 +51,7 @@ export default function SeoPage() {
     } catch (err) { setError(getApiErrorMessage(err, 'Failed to save SEO settings')); }
   };
 
-  const Field = ({ label, field, type = 'text', placeholder }: { label: string; field: keyof typeof form; type?: string; placeholder?: string }) => (
-    <div>
-      <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">{label}</label>
-      {type === 'textarea' ? (
-        <textarea value={form[field] as string} onChange={(e) => setForm(p => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" rows={3} />
-      ) : (
-        <input type={type} value={form[field] as string} onChange={(e) => setForm(p => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" />
-      )}
-    </div>
-  );
+  const update = (field: keyof SeoForm) => (value: string) => setForm(p => ({ ...p, [field]: value }));
 
   return (
     <div className="space-y-6">
@@ -66,30 +66,30 @@ export default function SeoPage() {
 
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Meta Tags</h3>
-          <Field label="Meta Title" field="metaTitle" placeholder="Vasanthi Designers — Premium Fashion" />
-          <Field label="Meta Description" field="metaDescription" type="textarea" placeholder="Discover the latest trends in fashion..." />
-          <Field label="Meta Keywords" field="metaKeywords" placeholder="fashion, clothing, designer wear, ethnic wear" />
+          <LabeledField label="Meta Title" value={form.metaTitle} onChange={update('metaTitle')} placeholder="Vasanthi Designers — Premium Fashion" />
+          <LabeledField label="Meta Description" value={form.metaDescription} onChange={update('metaDescription')} textarea placeholder="Discover the latest trends in fashion..." />
+          <LabeledField label="Meta Keywords" value={form.metaKeywords} onChange={update('metaKeywords')} placeholder="fashion, clothing, designer wear, ethnic wear" />
         </div>
 
         <div className="border-t border-neutral-100 pt-4 space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Open Graph</h3>
-          <Field label="OG Image URL" field="ogImage" placeholder="https://..." />
+          <LabeledField label="OG Image URL" value={form.ogImage} onChange={update('ogImage')} placeholder="https://..." />
         </div>
 
         <div className="border-t border-neutral-100 pt-4 space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Crawling & Indexing</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Robots" field="robots" placeholder="index, follow" />
-            <Field label="Canonical URL" field="canonicalUrl" placeholder="https://vasanthi.com" />
+            <LabeledField label="Robots" value={form.robots} onChange={update('robots')} placeholder="index, follow" />
+            <LabeledField label="Canonical URL" value={form.canonicalUrl} onChange={update('canonicalUrl')} placeholder="https://vasanthi.com" />
           </div>
         </div>
 
         <div className="border-t border-neutral-100 pt-4 space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Analytics & Tracking</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Google Analytics ID" field="googleAnalyticsId" placeholder="G-XXXXXXXXXX" />
-            <Field label="Google Tag Manager" field="googleTagManagerId" placeholder="GTM-XXXXXXX" />
-            <Field label="Facebook Pixel ID" field="facebookPixelId" placeholder="1234567890" />
+            <LabeledField label="Google Analytics ID" value={form.googleAnalyticsId} onChange={update('googleAnalyticsId')} placeholder="G-XXXXXXXXXX" />
+            <LabeledField label="Google Tag Manager" value={form.googleTagManagerId} onChange={update('googleTagManagerId')} placeholder="GTM-XXXXXXX" />
+            <LabeledField label="Facebook Pixel ID" value={form.facebookPixelId} onChange={update('facebookPixelId')} placeholder="1234567890" />
           </div>
         </div>
 

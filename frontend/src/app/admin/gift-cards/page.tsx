@@ -2,31 +2,21 @@
 
 import { useToast } from '@/components/toast/ToastProvider';
 
-import React, { useState, useEffect } from 'react';
-import { Gift, Plus, Search, Filter, RefreshCw, CheckCircle2 } from 'lucide-react';
+import React, { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { Gift, Plus, RefreshCw } from 'lucide-react';
 import { giftCardApi } from '@/features/gift-card/api/gift-card.api';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function GiftCardsAdminPage() {
   const { toast } = useToast();
-  const [giftCards, setGiftCards] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [initialBalance, setInitialBalance] = useState<number>(1000);
 
-  const fetchGiftCards = async () => {
-    setIsLoading(true);
-    try {
-      const data = await giftCardApi.adminList(1, 20);
-      setGiftCards(data || []);
-    } catch (e: any) {
-      console.warn('Backend API connection live fallback');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchGiftCards();
-  }, []);
+  const { data: giftCardsData, refetch: fetchGiftCards } = useQuery({
+    queryKey: ['gift-cards', 'admin-list'],
+    queryFn: () => giftCardApi.adminList(1, 20),
+  });
+  const giftCards = Array.isArray(giftCardsData) ? giftCardsData : [];
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,8 +24,8 @@ export default function GiftCardsAdminPage() {
       await giftCardApi.adminCreate({ initialBalance });
       toast('success', 'Gift card created', `E-Gift card with ₹${initialBalance} initial balance generated`);
       fetchGiftCards();
-    } catch (e: any) {
-      toast('error', 'Create failed', e.message || 'Server error');
+    } catch (err) {
+      toast('error', 'Create failed', getApiErrorMessage(err, 'Server error'));
     }
   };
 
@@ -55,7 +45,7 @@ export default function GiftCardsAdminPage() {
         </div>
 
         <button
-          onClick={fetchGiftCards}
+          onClick={() => void fetchGiftCards()}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <RefreshCw className="w-4 h-4 text-neutral-500" />

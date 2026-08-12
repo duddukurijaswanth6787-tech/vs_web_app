@@ -8,7 +8,7 @@ import { useProducts } from '@/features/catalog/products/product.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { Search, Plus, Edit3, X, Sparkles, Check } from 'lucide-react';
+import { Search, Plus, Edit3, X, Sparkles } from 'lucide-react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -52,7 +52,7 @@ export default function OffersPage() {
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.set('page', '1');
     router.push(`/admin/offers?${params}`);
   };
@@ -192,7 +192,7 @@ function OfferDialog({ offer, onClose, onSuccess }: { offer: OfferResponse | nul
               <p className="text-neutral-400 text-2xs">Applies to all products — use coupon or checkout rules for fine control.</p>
             ) : (
               <div className="max-h-32 overflow-y-auto border border-neutral-200 rounded-lg p-2 space-y-1">
-                {applicableOptions?.map((opt: any) => (
+                {applicableOptions?.map((opt) => (
                   <label key={opt.id} className="flex items-center gap-2 text-xs cursor-pointer hover:bg-neutral-50 p-1 rounded">
                     <input type="checkbox" checked={selectedApplicableIds?.includes(opt.id)} onChange={() => toggleId(opt.id)} className="rounded border-neutral-300" />
                     {opt.name}

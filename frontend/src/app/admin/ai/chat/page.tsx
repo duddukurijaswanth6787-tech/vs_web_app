@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Bot, Send, User, Sparkles, MessageSquare, ThumbsUp, Plus, RefreshCw } from 'lucide-react';
-import { aiChatApi } from '@/features/ai-chat/api/ai-chat.api';
+import { Bot, Send, User, Sparkles, Plus } from 'lucide-react';
 
 interface Message {
   id: string;
@@ -51,7 +50,7 @@ export default function AdminAiChatPage() {
         setMessages((prev) => [...prev, aiReply]);
         setIsLoading(false);
       }, 700);
-    } catch (e: any) {
+    } catch {
       setIsLoading(false);
     }
   };

@@ -56,7 +56,7 @@ function CustomerLoginForm() {
         code: otp,
         rememberMe: true,
       });
-      const profileResult = await completeTokenLogin() as any;
+      const profileResult = await completeTokenLogin() as { data?: { roles?: string[] } | null };
       const profile = profileResult?.data;
 
       const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
@@ -83,7 +83,7 @@ function CustomerLoginForm() {
     setIsLoading(true);
     try {
       await login({ email, password });
-      const profileResult = await refetchUser() as any;
+      const profileResult = await refetchUser() as { data?: { roles?: string[] } | null };
       const profile = profileResult?.data;
       const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
       const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
@@ -109,7 +109,7 @@ function CustomerLoginForm() {
         <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold font-serif text-[#800020] tracking-tight">Vasanthi's Signature</h1>
+        <h1 className="text-xl font-bold font-serif text-[#800020] tracking-tight">Vasanthi&apos;s Signature</h1>
         <div className="w-6" />
       </header>
 

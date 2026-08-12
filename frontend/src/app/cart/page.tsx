@@ -18,7 +18,6 @@ import {
   Heart,
   X,
   ChevronRight,
-  ArrowRight,
 } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -28,12 +27,12 @@ import {
   useCustomerCart,
   useCartMutations,
   useWishlistMutations,
-  useCustomerProducts,
 } from '@/features/customer/hooks';
 import { formatInr, PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { withVariant, resolveMediaUrl } from '@/lib/media-url';
 import { customerCheckoutService } from '@/features/customer/checkout.service';
+import type { CartItemDto } from '@/features/customer/cart.service';
 
 const COUPON_STORAGE_KEY = 'vd_coupon_code';
 
@@ -42,7 +41,6 @@ export default function CartPage() {
   const { data: cart, isLoading, error, refetch } = useCustomerCart();
   const { updateQuantity, removeItem } = useCartMutations();
   const { add: addToWishlist } = useWishlistMutations();
-  const { data: recommendedData } = useCustomerProducts({ limit: 6 });
 
   const [couponCode, setCouponCode] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(() => {
@@ -56,11 +54,6 @@ export default function CartPage() {
   const items = useMemo(
     () => (cart?.items || []).filter((i) => !i.savedForLater),
     [cart],
-  );
-
-  const recommendedProducts = useMemo(
-    () => recommendedData?.data?.slice(0, 4) || (Array.isArray(recommendedData) ? recommendedData.slice(0, 4) : []),
-    [recommendedData],
   );
 
   const subtotal = cart?.subtotal ?? items.reduce((s, i) => s + Number(i.totalPrice || 0), 0);
@@ -116,7 +109,7 @@ export default function CartPage() {
     if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
   };
 
-  const handleSaveForLater = async (item: any) => {
+  const handleSaveForLater = async (item: CartItemDto) => {
     try {
       await addToWishlist.mutateAsync(item.productId);
       await removeItem.mutateAsync(item.id);
@@ -226,7 +219,7 @@ export default function CartPage() {
                 </div>
 
                 <div className="divide-y divide-neutral-100">
-                  {items.map((item: any) => {
+                  {items.map((item) => {
                     const rawImage = item.imageUrl || item.product?.primaryImageUrl || item.product?.images?.[0]?.url;
                     const imageSrc = resolveMediaUrl(rawImage) || PLACEHOLDER_IMAGE;
                     const itemUnitPrice = Number(item.unitPrice || 0);
@@ -379,7 +372,7 @@ export default function CartPage() {
                   {couponApplied ? (
                     <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 rounded-xl px-3.5 py-2.5">
                       <p className="text-[11px] font-semibold text-emerald-700">
-                        ✓ "{couponApplied.code}" applied
+                        ✓ &quot;{couponApplied.code}&quot; applied
                         {couponApplied.discountAmount > 0 && ` — you saved ${formatInr(couponApplied.discountAmount)}`}
                       </p>
                       <button

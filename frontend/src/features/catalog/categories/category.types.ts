@@ -47,6 +47,8 @@ export interface CategoryResponse {
   description?: string;
   icon?: string;
   image?: string;
+  imageUrl?: string;
+  primaryImageUrl?: string;
   bannerImage?: string;
   parentId?: string;
   level: number;
