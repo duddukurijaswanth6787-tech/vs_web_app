@@ -27,6 +27,15 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Post('seed-admin')
+  @Get('seed-admin')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Seed or reset initial admin credentials' })
+  async seedAdmin() {
+    const result = await this.authService.seedAdmin();
+    return ResponseBuilder.success(result, 'Admin user seeded successfully');
+  }
+
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
   async register(@Body() dto: RegisterDto, @Req() req: Request) {
