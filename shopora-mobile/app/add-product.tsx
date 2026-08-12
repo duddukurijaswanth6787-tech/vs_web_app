@@ -30,6 +30,7 @@ import {
   Image as ImageIcon,
   AlertCircle,
   FolderTree,
+  ListChecks,
 } from 'lucide-react-native';
 import {
   catalogService,
@@ -52,10 +53,11 @@ import { setLastCreatedProduct } from '../services/product-draft';
  *
  * Same steps, same endpoints, in the same order:
  *   1. POST /products                       (incl. categoryIds, tags, occasion)
- *   2. POST /storage/upload + POST /media   (per staged photo)
- *   3. POST /variants                       (per colour x size — assigns the barcode)
- *   4. POST /inventory                      (opening stock per variant)
- * then hands off to the label screen to print what step 3 generated.
+ *   2. POST /products/:id/attributes        (dynamic registry values)
+ *   3. POST /storage/upload + POST /media   (per staged photo)
+ *   4. POST /variants                       (per colour x size — assigns the barcode)
+ *   5. POST /inventory                      (opening stock per variant)
+ * then hands off to the label screen to print what step 4 generated.
  *
  * Publishing is gated on the same validation rules as the web builder; saving
  * an unpublished draft is always allowed.
@@ -80,6 +82,7 @@ const STEPS = [
   { key: 'pricing', label: 'Pricing', Icon: IndianRupee },
   { key: 'colors', label: 'Colours', Icon: Palette },
   { key: 'sizes', label: 'Sizes', Icon: Ruler },
+  { key: 'attributes', label: 'Details', Icon: ListChecks },
   { key: 'seo', label: 'Review', Icon: Tag },
 ] as const;
 
@@ -107,6 +110,9 @@ export default function AddProductScreen() {
   const [occasion, setOccasion] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+
+  // attributeId -> chosen value, for the dynamic attribute registry.
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
 
   // ── Step 2: pricing ────────────────────────────────────────────────────────
   const [basePrice, setBasePrice] = useState('');
@@ -270,6 +276,11 @@ export default function AddProductScreen() {
 
   // ── Derived ────────────────────────────────────────────────────────────────
 
+  const productAttributes = useMemo(
+    () => attributes.filter((a) => a.slug !== 'color' && a.slug !== 'size'),
+    [attributes],
+  );
+
   const subCategories = useMemo(
     () => categories.filter((c) => c.parentId === categoryId),
     [categories, categoryId],
@@ -331,8 +342,23 @@ export default function AddProductScreen() {
       }
     }
 
+    for (const attribute of productAttributes) {
+      if (attribute.isRequired && !(attributeValues[attribute.id] ?? '').trim()) {
+        issues.push(`Required detail missing: ${attribute.name}.`);
+      }
+    }
+
     return issues;
-  }, [name, brandId, categoryId, basePrice, salePrice, colorGroups]);
+  }, [
+    name,
+    brandId,
+    categoryId,
+    basePrice,
+    salePrice,
+    colorGroups,
+    productAttributes,
+    attributeValues,
+  ]);
 
   const canPublish = validationIssues.length === 0;
 
@@ -389,7 +415,16 @@ export default function AddProductScreen() {
       const productId: string = created?.id;
       if (!productId) throw new Error('The API did not return a product id.');
 
-      // 2. POST /storage/upload -> POST /media, flattened across colour groups
+      // 2. POST /products/:id/attributes — dynamic registry values.
+      const attributeEntries = Object.entries(attributeValues)
+        .filter(([, value]) => value.trim() !== '')
+        .map(([attributeId, value]) => ({ attributeId, value: value.trim() }));
+      if (attributeEntries.length > 0) {
+        setProgress('Saving attributes…');
+        await catalogService.assignAttributes(productId, attributeEntries).catch(() => null);
+      }
+
+      // 3. POST /storage/upload -> POST /media, flattened across colour groups
       let displayOrder = 0;
       let primarySet = false;
       for (const group of colorGroups) {
@@ -409,7 +444,7 @@ export default function AddProductScreen() {
         }
       }
 
-      // 3 + 4. POST /variants then POST /inventory, per colour x size
+      // 4 + 5. POST /variants then POST /inventory, per colour x size
       const createdVariants: CreatedVariant[] = [];
       let variantIndex = 0;
       for (const group of colorGroups) {
@@ -455,7 +490,7 @@ export default function AddProductScreen() {
         throw new Error('The product was created but no variants were issued, so there is nothing to label.');
       }
 
-      // 5. Hand the issued barcodes to the label screen.
+      // 6. Hand the issued barcodes to the label screen.
       setLastCreatedProduct({
         productId,
         name: name.trim(),
@@ -900,6 +935,69 @@ export default function AddProductScreen() {
                   ))}
                 </View>
               ))
+            )}
+          </View>
+        )}
+
+        {/* ── STEP 6: ATTRIBUTES ── */}
+        {step === 'attributes' && (
+          <View>
+            <Text style={styles.sectionTitle}>Product details</Text>
+            <Text style={styles.helpText}>
+              Fabric, pattern, neck and the rest — these drive the storefront filters.
+            </Text>
+
+            {productAttributes.length === 0 ? (
+              <Text style={styles.emptyHint}>
+                No attributes defined yet. Add them under Catalog → Attributes in the admin panel.
+              </Text>
+            ) : (
+              productAttributes.map((attribute) => {
+                const value = attributeValues[attribute.id] ?? '';
+                const hasOptions = attribute.options.length > 0;
+                return (
+                  <View key={attribute.id}>
+                    <Text style={styles.label}>
+                      {attribute.name}
+                      {attribute.isRequired ? ' *' : ''}
+                    </Text>
+
+                    {hasOptions ? (
+                      <View style={styles.pillRow}>
+                        {attribute.options.map((option) => {
+                          const selected = value === option.value;
+                          return (
+                            <TouchableOpacity
+                              key={option.id}
+                              style={[styles.pill, selected && styles.pillActive]}
+                              onPress={() =>
+                                setAttributeValues((prev) => ({
+                                  ...prev,
+                                  [attribute.id]: selected ? '' : option.value,
+                                }))
+                              }
+                            >
+                              <Text style={[styles.pillText, selected && styles.pillTextActive]}>
+                                {option.label || option.value}
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </View>
+                    ) : (
+                      <TextInput
+                        style={styles.input}
+                        value={value}
+                        onChangeText={(text) =>
+                          setAttributeValues((prev) => ({ ...prev, [attribute.id]: text }))
+                        }
+                        placeholder={`e.g. ${attribute.name}`}
+                        placeholderTextColor="#9ca3af"
+                      />
+                    )}
+                  </View>
+                );
+              })
             )}
           </View>
         )}

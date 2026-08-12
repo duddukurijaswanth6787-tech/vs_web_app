@@ -281,6 +281,15 @@ export const catalogService = {
     return unwrap<any>(res);
   },
 
+  /** POST /products/:id/attributes — the dynamic registry values. */
+  async assignAttributes(
+    productId: string,
+    attributes: { attributeId: string; value: string }[],
+  ) {
+    const res = await posApiClient.post(`/products/${productId}/attributes`, { attributes });
+    return unwrap<any>(res);
+  },
+
   /**
    * POST /variants — the backend assigns a unique SKU (when omitted) and always
    * assigns the barcode itself, so the label can only be printed after this call.
@@ -307,11 +316,15 @@ export interface AttributeDefinition {
   id: string;
   name: string;
   slug: string;
-  options: { id: string; value: string }[];
+  isRequired?: boolean;
+  options: { id: string; value: string; label?: string }[];
 }
 
 export const attributeService = {
-  /** GET /attributes — used to resolve the Size and Colour attribute ids. */
+  /**
+   * GET /attributes — resolves the Size and Colour ids for variant tagging, and
+   * supplies the dynamic registry (fabric, pattern, neck …) for the product.
+   */
   async list(): Promise<AttributeDefinition[]> {
     const res = await posApiClient.get('/attributes', { params: { limit: 100 } });
     const payload = unwrap<any>(res);
@@ -320,7 +333,12 @@ export const attributeService = {
       id: a.id,
       name: a.name,
       slug: a.slug,
-      options: (a.options ?? []).map((o: any) => ({ id: o.id, value: o.value })),
+      isRequired: Boolean(a.isRequired),
+      options: (a.options ?? []).map((o: any) => ({
+        id: o.id,
+        value: o.value,
+        label: o.label,
+      })),
     }));
   },
 };
