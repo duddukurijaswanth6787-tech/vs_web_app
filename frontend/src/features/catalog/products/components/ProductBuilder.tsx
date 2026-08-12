@@ -5,11 +5,12 @@ import { useForm, FormProvider } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { isLocalOrPlaceholder } from '@/lib/media-url';
-import { productSchema, ProductFormValues, ProductResponse } from '../product.types';
+import { productSchema, ProductFormValues, ProductResponse, AttributeType } from '../product.types';
 import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
 import { inventoryService } from '@/features/inventory/inventory.service';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
+import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
 import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
@@ -34,6 +35,7 @@ import {
   FolderTree,
   X,
   AlertTriangle,
+  ListChecks,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -112,7 +114,7 @@ export default function ProductBuilder({
   onSaveSuccess,
 }: ProductBuilderProps) {
   const [activeTab, setActiveTab] = useState<
-    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'seo'
+    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo'
   >('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -133,6 +135,14 @@ export default function ProductBuilder({
     () => categories.filter((c) => !c.parentId),
     [categories],
   );
+
+  // Dynamic attribute registry. Colour and Size drive the variant matrix, so
+  // they are configured on the Colours/Sizes tabs and hidden from this list.
+  const { data: attributeData } = useAttributes({ limit: 100 });
+  const productAttributes = useMemo(() => {
+    const rows = attributeData?.data ?? [];
+    return rows.filter((a) => a.slug !== 'color' && a.slug !== 'size');
+  }, [attributeData]);
 
   // Form Setup
   const methods = useForm<ProductFormValues>({
@@ -172,6 +182,18 @@ export default function ProductBuilder({
   const [occasion, setOccasion] = useState(initialData?.occasion ?? '');
   const [tagInput, setTagInput] = useState('');
   const [collectionInput, setCollectionInput] = useState('');
+
+  // attributeId -> chosen value, for the dynamic attribute registry.
+  const [attributeValues, setAttributeValues] = useState<Record<string, string>>(() => {
+    const initial: Record<string, string> = {};
+    for (const entry of initialData?.attributes ?? []) {
+      if (entry.value) initial[entry.attributeId] = entry.value;
+    }
+    return initial;
+  });
+
+  const setAttributeValue = (attributeId: string, value: string) =>
+    setAttributeValues((prev) => ({ ...prev, [attributeId]: value }));
 
   // Sub-categories are the children of whichever primary category is selected.
   const subCategories = useMemo(
@@ -473,8 +495,14 @@ export default function ProductBuilder({
       }
     }
 
+    for (const attribute of productAttributes) {
+      if (attribute.isRequired && !(attributeValues[attribute.id] ?? '').trim()) {
+        issues.push(`Required attribute missing: ${attribute.name}.`);
+      }
+    }
+
     return issues;
-  }, [watchedValues, colorGroups, primaryCategoryId]);
+  }, [watchedValues, colorGroups, primaryCategoryId, productAttributes, attributeValues]);
 
   const canPublish = validationIssues.length === 0;
 
@@ -536,6 +564,18 @@ export default function ProductBuilder({
       const created = productId
         ? await productService.update(productId, payload as any)
         : await productService.create(payload as any);
+
+      // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;
+      // blank values are dropped so an unset attribute is not stored as "".
+      const attributeEntries = Object.entries(attributeValues)
+        .filter(([, value]) => value.trim() !== '')
+        .map(([attributeId, value]) => ({ attributeId, value: value.trim() }));
+
+      if (attributeEntries.length > 0) {
+        await productService
+          .assignAttributes(created.id, { attributes: attributeEntries })
+          .catch(() => null);
+      }
 
       // Flatten every staged image across all color groups into one gallery,
       // upload real files, and attach them as product media. Media ids are kept
@@ -843,6 +883,19 @@ export default function ProductBuilder({
 
           <button
             type="button"
+            onClick={() => setActiveTab('attributes')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeTab === 'attributes'
+                ? 'bg-[#800020] text-white shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <ListChecks className="w-4 h-4" />
+            <span>6. Attributes</span>
+          </button>
+
+          <button
+            type="button"
             onClick={() => setActiveTab('seo')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'seo'
@@ -851,7 +904,7 @@ export default function ProductBuilder({
             }`}
           >
             <Tag className="w-4 h-4" />
-            <span>6. Badges, SEO &amp; Publish</span>
+            <span>7. Badges, SEO &amp; Publish</span>
           </button>
         </div>
 
@@ -1659,6 +1712,64 @@ export default function ProductBuilder({
         )}
 
         {/* TAB 5: BADGES & SEO */}
+        {/* TAB 6: DYNAMIC ATTRIBUTES */}
+        {activeTab === 'attributes' && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
+            <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+              <ListChecks className="w-5 h-5 text-[#800020]" />
+              <span>Product Attributes</span>
+            </h3>
+            <p className="text-[11px] text-neutral-500 -mt-4">
+              These drive the storefront filters. Managed under Catalog &rarr; Attributes — no
+              developer needed to add a new one. Colour and size are configured on their own tabs.
+            </p>
+
+            {productAttributes.length === 0 ? (
+              <p className="text-xs font-semibold text-amber-600 bg-amber-50 border border-amber-200 rounded-2xl p-4">
+                No attributes defined yet. Add them under Catalog &rarr; Attributes.
+              </p>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {productAttributes.map((attribute) => {
+                  const value = attributeValues[attribute.id] ?? '';
+                  const hasOptions = (attribute.options?.length ?? 0) > 0;
+                  return (
+                    <div key={attribute.id} className="space-y-1.5">
+                      <label className="text-xs font-bold text-neutral-800">
+                        {attribute.name}
+                        {attribute.isRequired && <span className="text-rose-600"> *</span>}
+                      </label>
+
+                      {hasOptions ? (
+                        <select
+                          value={value}
+                          onChange={(e) => setAttributeValue(attribute.id, e.target.value)}
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                        >
+                          <option value="">Not specified</option>
+                          {attribute.options?.map((option) => (
+                            <option key={option.id} value={option.value}>
+                              {option.label || option.value}
+                            </option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type={attribute.type === AttributeType.NUMBER ? 'number' : 'text'}
+                          value={value}
+                          onChange={(e) => setAttributeValue(attribute.id, e.target.value)}
+                          placeholder={attribute.description || `e.g. ${attribute.name}`}
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === 'seo' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
