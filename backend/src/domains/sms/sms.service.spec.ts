@@ -41,7 +41,11 @@ describe('SmsService', () => {
   });
 
   it('should log SMS even if disabled', async () => {
-    await service.send({ phone: '1234567890', message: 'Hello', template: 'TEST' });
+    await service.send({
+      phone: '1234567890',
+      message: 'Hello',
+      template: 'TEST',
+    });
     expect(prisma.smsLog.create).toHaveBeenCalled();
     expect(prisma.smsLog.update).toHaveBeenCalled();
   });

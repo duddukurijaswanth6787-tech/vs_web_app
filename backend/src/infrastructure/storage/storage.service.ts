@@ -157,7 +157,7 @@ export class StorageService {
       );
     } catch (err) {
       this.loggerService.warn(
-        `Failed to cache variant ${variantKey}: ${err}`,
+        `Failed to cache variant ${variantKey}: ${String(err)}`,
         'StorageService',
       );
     }

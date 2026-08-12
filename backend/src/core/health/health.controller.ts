@@ -50,11 +50,7 @@ export class HealthController {
     return this.health.check([
       // Database health diagnostic
       async () => {
-        const isUp = await withTimeout(
-          this.prismaService.ping(),
-          2000,
-          false,
-        );
+        const isUp = await withTimeout(this.prismaService.ping(), 2000, false);
         return {
           database: {
             status: isUp ? 'up' : 'down',
@@ -137,7 +133,9 @@ export class HealthController {
             1500,
             result,
           );
-        } catch {}
+        } catch {
+          // Ignore storage health check fallback error
+        }
 
         const isS3Emulator = !!process.env.AWS_S3_ENDPOINT;
         const runtimeType =
@@ -153,8 +151,7 @@ export class HealthController {
             provider: result.provider,
             runtimeType,
             writable: result.writable,
-            configured:
-              result.provider === 'local' || result.provider === 's3',
+            configured: result.provider === 'local' || result.provider === 's3',
           },
         };
       },

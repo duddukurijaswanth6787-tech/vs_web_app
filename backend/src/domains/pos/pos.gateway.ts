@@ -37,7 +37,7 @@ export class PosGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     if (payload?.sessionId) {
       const roomName = `session:${payload.sessionId}`;
-      client.join(roomName);
+      void client.join(roomName);
       this.logger.log(`Client ${client.id} joined room ${roomName}`);
       return { event: 'joined_room', room: roomName };
     }
@@ -51,7 +51,7 @@ export class PosGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ) {
     if (payload?.terminalId) {
       const roomName = `terminal:${payload.terminalId}`;
-      client.join(roomName);
+      void client.join(roomName);
       this.logger.log(`Client ${client.id} joined terminal room ${roomName}`);
       return { event: 'joined_terminal_room', room: roomName };
     }

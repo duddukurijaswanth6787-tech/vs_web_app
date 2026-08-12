@@ -86,7 +86,7 @@ export class SizeChartRepository {
         rows: {
           create: rows.map((row, index) => ({
             size: row.size,
-            measurements: row.measurements as Prisma.InputJsonValue,
+            measurements: row.measurements,
             displayOrder: row.displayOrder ?? index,
           })),
         },
@@ -114,7 +114,7 @@ export class SizeChartRepository {
             data: rows.map((row, index) => ({
               templateId: id,
               size: row.size,
-              measurements: row.measurements as Prisma.InputJsonValue,
+              measurements: row.measurements,
               displayOrder: row.displayOrder ?? index,
             })),
           });

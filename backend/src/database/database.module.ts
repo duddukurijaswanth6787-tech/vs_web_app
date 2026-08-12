@@ -13,5 +13,7 @@ import { AutoSeedService } from './auto-seed.service';
   exports: [PrismaService, TransactionManager, AutoSeedService],
 })
 export class DatabaseModule {
-  constructor(private readonly autoSeedService: AutoSeedService) {}
+  constructor(autoSeedService: AutoSeedService) {
+    void autoSeedService;
+  }
 }
