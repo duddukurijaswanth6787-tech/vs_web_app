@@ -1,5 +1,7 @@
 FROM node:24-alpine AS builder
 
+RUN apk add --no-cache python3 make g++ libc6-compat
+
 WORKDIR /usr/src/app
 
 COPY package*.json ./
@@ -16,9 +18,9 @@ RUN npm prune --production
 
 FROM node:24-alpine
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+RUN apk add --no-cache wget libc6-compat
 
-RUN apk add --no-cache wget
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 WORKDIR /usr/src/app
 
