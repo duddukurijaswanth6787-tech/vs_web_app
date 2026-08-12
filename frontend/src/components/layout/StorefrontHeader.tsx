@@ -11,7 +11,6 @@ import {
   ChevronDown,
   Menu,
   X,
-  Camera,
   Home,
   ChevronRight,
   Package,
@@ -57,14 +56,18 @@ export function StorefrontHeader() {
     };
   }, [mobileMenuOpen]);
 
-  const cartCount = (cartData as any)?.items?.length ?? (cartData as any)?.itemCount ?? 0;
+  const typedCart = cartData as { items?: unknown[]; itemCount?: number } | undefined;
+  const cartCount = typedCart?.items?.length ?? typedCart?.itemCount ?? 0;
+
+  const typedWishlist = wishlistData as { items?: unknown[]; data?: unknown[]; length?: number } | undefined;
   const wishlistCount = Array.isArray(wishlistData)
     ? wishlistData.length
-    : (wishlistData as any)?.data?.length ?? (wishlistData as any)?.items?.length ?? (wishlistData as any)?.length ?? 0;
+    : typedWishlist?.data?.length ?? typedWishlist?.items?.length ?? typedWishlist?.length ?? 0;
 
   const { data: settings } = usePublicSettings();
-  const mobileAnnouncementEnabled = (settings as any)?.announcementBarMobileEnabled ?? true;
-  const announcementText = (settings as any)?.announcementBarText || 'Festive Sale is Live! Get up to 30% OFF';
+  const typedSettings = settings as Record<string, unknown> | undefined;
+  const mobileAnnouncementEnabled = (typedSettings?.announcementBarMobileEnabled as boolean | undefined) ?? true;
+  const announcementText = (typedSettings?.announcementBarText as string | undefined) || 'Festive Sale is Live! Get up to 30% OFF';
 
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 shadow-xs">
@@ -97,7 +100,7 @@ export function StorefrontHeader() {
               </div>
               <div className="flex flex-col justify-center">
                 <span className="text-base sm:text-2xl font-bold font-serif tracking-tight text-[#800020] leading-none whitespace-nowrap">
-                  Vasanthi's Signature
+                  Vasanthi&apos;s Signature
                 </span>
               </div>
             </Link>
@@ -109,7 +112,7 @@ export function StorefrontHeader() {
               Home
             </Link>
             {navCategories && navCategories.length > 0 ? (
-              navCategories.slice(0, 6).map((cat: any) => (
+              navCategories.slice(0, 6).map((cat: { id?: string; slug?: string; name?: string }) => (
                 <Link
                   key={cat.id || cat.slug}
                   href={`/categories/${cat.slug}`}
@@ -198,10 +201,10 @@ export function StorefrontHeader() {
                   </div>
                   <div className="flex flex-col">
                     <span className="text-base font-bold font-serif text-[#800020] leading-none">
-                      Vasanthi's Signature
+                      Vasanthi&apos;s Signature
                     </span>
                     <span className="text-[10px] font-semibold text-rose-800 uppercase tracking-widest mt-0.5">
-                      Women's Boutique
+                      Women&apos;s Boutique
                     </span>
                   </div>
                 </div>

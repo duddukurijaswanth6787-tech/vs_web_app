@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { Heart, Star, ArrowRight } from 'lucide-react';
+import { Heart, ArrowRight } from 'lucide-react';
 import Image from 'next/image';
 import { isLocalOrPlaceholder, withVariant } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
@@ -41,11 +41,12 @@ function ProductCardItem({
   isWishlisted: boolean;
   onToggleWishlist: (id: string) => void;
 }) {
-  const rawImage = product.image || (product as any).primaryImageUrl || (product as any).images?.[0]?.url || PLACEHOLDER_IMAGE;
+  const p = product as unknown as Record<string, unknown>;
+  const rawImage = product.image || String(p.primaryImageUrl || '') || (Array.isArray(p.images) ? String((p.images[0] as Record<string, unknown>)?.url || '') : '') || PLACEHOLDER_IMAGE;
   const imageSrc = withVariant(rawImage, 'medium') || PLACEHOLDER_IMAGE;
-  const cardTitle = product.title || (product as any).name || 'Product';
-  const priceVal = Number(product.price ?? (product as any).salePrice ?? (product as any).basePrice ?? 0);
-  const origVal = Number(product.originalPrice ?? (product as any).compareAtPrice ?? (product as any).basePrice ?? 0);
+  const cardTitle = product.title || String(p.name || '') || 'Product';
+  const priceVal = Number(product.price ?? p.salePrice ?? p.basePrice ?? 0);
+  const origVal = Number(product.originalPrice ?? p.compareAtPrice ?? p.basePrice ?? 0);
 
   return (
     <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-white rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300">

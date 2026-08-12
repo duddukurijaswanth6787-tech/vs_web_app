@@ -73,7 +73,7 @@ export default function RegisterPage() {
                 <input
                   type={field.type || 'text'}
                   required={field.required}
-                  value={(form as any)[field.key]}
+                  value={form[field.key as keyof typeof form] || ''}
                   onChange={(e) => onChange(field.key, e.target.value)}
                   className="flex-1 text-sm outline-none"
                 />

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Printer, CheckCircle2, QrCode, Sparkles, Sliders, ShieldCheck } from 'lucide-react';
+import { Printer, CheckCircle2, QrCode } from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
 
 export default function PrintersConfigPage() {

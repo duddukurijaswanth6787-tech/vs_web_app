@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/ui.store';
@@ -16,10 +16,8 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const pathname = usePathname();
   const { user, isStaffUser, isInitializing } = useAuth();
   const { toggleCommandPalette } = useUIStore();
-  const [mounted, setMounted] = useState(false);
+  const mounted = useSyncExternalStore(() => () => undefined, () => true, () => false);
   const [isOffline, setIsOffline] = useState(false);
-
-  useEffect(() => setMounted(true), []);
 
   // ponytail: Ctrl+K / Cmd+K keyboard shortcut for command palette
   useEffect(() => {

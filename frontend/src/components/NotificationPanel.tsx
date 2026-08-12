@@ -5,7 +5,7 @@ import { X, Bell, CheckCheck, Trash2, Loader2, Filter } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { useNotifications, useUnreadNotificationCount, useMarkNotificationRead, useMarkAllNotificationsRead, useDeleteNotification, useDeleteAllReadNotifications } from '@/features/notifications/notifications.hooks';
 import NotificationCard from './NotificationCard';
-import { NOTIFICATION_GROUPS } from '@/features/notifications/notifications.types';
+import { NOTIFICATION_GROUPS, Notification } from '@/features/notifications/notifications.types';
 
 interface NotificationPanelProps {
   open: boolean;
@@ -25,14 +25,14 @@ export default function NotificationPanel({ open, onClose }: NotificationPanelPr
   const [activeTab, setActiveTab] = useState('all');
   const [showFilters, setShowFilters] = useState(false);
 
-  const queryParams: any = { limit: 20 };
+  const queryParams: Record<string, string | number | boolean> = { limit: 20 };
   if (activeTab === 'unread') queryParams.isRead = false;
   if (activeTab !== 'all' && activeTab !== 'unread') {
     const types = NOTIFICATION_GROUPS[activeTab as keyof typeof NOTIFICATION_GROUPS];
     if (types) queryParams.type = types[0];
   }
 
-  const { data: notificationsData, isLoading, refetch } = useNotifications(queryParams);
+  const { data: notificationsData, isLoading } = useNotifications(queryParams);
   const { data: unreadCount } = useUnreadNotificationCount();
   const markRead = useMarkNotificationRead();
   const markAllRead = useMarkAllNotificationsRead();
@@ -156,7 +156,7 @@ export default function NotificationPanel({ open, onClose }: NotificationPanelPr
               No notifications yet
             </div>
           ) : (
-            notifications.map((notif: any) => (
+            notifications.map((notif: Notification) => (
               <NotificationCard
                 key={notif.id}
                 notification={notif}

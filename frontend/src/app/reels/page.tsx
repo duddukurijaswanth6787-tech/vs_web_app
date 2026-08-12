@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, Heart, MessageCircle, ChevronUp, ChevronDown } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -15,17 +16,19 @@ export default function ReelsFeedPage() {
 
   const reels = useMemo(() => {
     const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-    return list.map((post: any, index: number) => {
-      const media = post.media?.[0] || {};
-      const product = post.products?.[0] || post.taggedProducts?.[0];
+    return list.map((post: unknown, index: number) => {
+      const p = post as Record<string, unknown>;
+      const media = (Array.isArray(p.media) ? (p.media[0] as Record<string, unknown>) : {}) || {};
+      const productList = Array.isArray(p.products) ? p.products : Array.isArray(p.taggedProducts) ? p.taggedProducts : [];
+      const product = (productList[0] as Record<string, unknown>) || {};
       return {
-        id: post.id || `r-${index}`,
-        title: post.title || post.caption || 'Reel',
-        price: Number(product?.salePrice ?? product?.basePrice ?? product?.price ?? 0),
-        image: media.thumbnailUrl || media.url || post.thumbnailUrl || PLACEHOLDER_IMAGE,
-        likes: post.likeCount ?? 0,
-        comments: post.commentCount ?? 0,
-        productId: product?.id || product?.productId,
+        id: String(p.id || `r-${index}`),
+        title: String(p.title || p.caption || 'Reel'),
+        price: Number(product.salePrice ?? product.basePrice ?? product.price ?? 0),
+        image: String(media.thumbnailUrl || media.url || p.thumbnailUrl || PLACEHOLDER_IMAGE),
+        likes: Number(p.likeCount ?? p.likes ?? 0),
+        comments: Number(p.commentCount ?? p.comments ?? 0),
+        productId: String(product.id || product.productId || ''),
       };
     });
   }, [data]);
@@ -51,7 +54,7 @@ export default function ReelsFeedPage() {
         )}
         {activeReel && (
           <div className="relative w-full aspect-9/16 bg-neutral-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            <img src={withVariant(activeReel.image, 'large')} alt={activeReel.title} className="w-full h-full object-cover" />
+            <Image src={withVariant(activeReel.image, 'large')} alt={activeReel.title} fill sizes="100vw" className="object-cover" />
             <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30" />
             <div className="absolute right-3 bottom-28 flex flex-col gap-4 items-center">
               <div className="flex flex-col items-center gap-1">

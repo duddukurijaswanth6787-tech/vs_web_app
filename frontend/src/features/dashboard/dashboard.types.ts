@@ -66,16 +66,34 @@ export interface PaymentAnalytics {
   failedPayments: number;
 }
 
-export interface RecentActivityItem {
+export interface RecentActivityOrder {
   id: string;
+  orderNumber: string;
+  grandTotal: number;
+  status?: string;
+  createdAt?: string;
+  [key: string]: unknown;
+}
+
+export interface RecentActivityProduct {
+  id: string;
+  name: string;
+  slug?: string;
+  [key: string]: unknown;
+}
+
+export interface RecentActivityReview {
+  id: string;
+  rating: number;
+  comment?: string;
   [key: string]: unknown;
 }
 
 export interface RecentActivity {
-  orders: RecentActivityItem[];
-  products: RecentActivityItem[];
-  customers: RecentActivityItem[];
-  reviews: RecentActivityItem[];
+  orders: RecentActivityOrder[];
+  products: RecentActivityProduct[];
+  customers: RecentActivityOrder[];
+  reviews: RecentActivityReview[];
 }
 
 export interface SalesChartData {

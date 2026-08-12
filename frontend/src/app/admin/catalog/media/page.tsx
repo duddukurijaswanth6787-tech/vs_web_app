@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useCallback, useRef } from 'react';
+import Image from 'next/image';
 import {
   useLibraryMedia, useLibraryMediaDetail, useCreateLibraryMedia, useUpdateLibraryMedia, useDeleteLibraryMedia,
   useLibraryFolders, useCreateFolder, useDeleteFolder,
@@ -13,8 +14,8 @@ import { categorizeApiError } from '@/lib/api-error-handler';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 import {
-  Upload, Image, FolderPlus, Trash2, Search, X, Grid3X3, List, FileType, FolderOpen, Folder, ChevronRight,
-  Edit3, Check, AlertCircle, RefreshCw, Download, ArrowUpDown, Copy, ExternalLink, FileVideo, FileText,
+  Upload, Image as ImageIcon, FolderPlus, Trash2, Search, X, Grid3X3, List, FileType, FolderOpen, Folder,
+  Edit3, Check, AlertCircle, Download, ArrowUpDown, Copy,
   CheckSquare, Square,
 } from 'lucide-react';
 
@@ -30,7 +31,6 @@ function getThumbUrl(m: LibraryMedia) {
 
 function isImage(mime: string) { return mime.startsWith('image/'); }
 function isVideo(mime: string) { return mime.startsWith('video/'); }
-function isDocument(mime: string) { return !isImage(mime) && !isVideo(mime); }
 
 interface UploadModalProps {
   folderId?: string;
@@ -66,7 +66,6 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
 
         let width: number | undefined;
         let height: number | undefined;
-        let checksum: string | undefined;
 
         if (isImage(file.type)) {
           const bmp = await createImageBitmap(file);
@@ -78,7 +77,7 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
         const buf = await file.arrayBuffer();
         const hashBuf = await crypto.subtle.digest('SHA-256', buf);
         const hashArr = Array.from(new Uint8Array(hashBuf));
-        checksum = hashArr.map((b) => b.toString(16).padStart(2, '0')).join('');
+        const checksum = hashArr.map((b) => b.toString(16).padStart(2, '0')).join('');
 
         await createMedia.mutateAsync({
           filename: storageKey.split('/').pop() || file.name,
@@ -218,7 +217,6 @@ function DetailPanel({ media, onClose, onUpdated, onDeleted }: DetailPanelProps)
 
       let width: number | undefined;
       let height: number | undefined;
-      let checksum: string | undefined;
 
       if (isImage(file.type)) {
         const bmp = await createImageBitmap(file);
@@ -230,7 +228,7 @@ function DetailPanel({ media, onClose, onUpdated, onDeleted }: DetailPanelProps)
       const buf = await file.arrayBuffer();
       const hashBuf = await crypto.subtle.digest('SHA-256', buf);
       const hashArr = Array.from(new Uint8Array(hashBuf));
-      checksum = hashArr.map((b) => b.toString(16).padStart(2, '0')).join('');
+      const checksum = hashArr.map((b) => b.toString(16).padStart(2, '0')).join('');
 
       await replaceMedia.mutateAsync({
         id: media.id,
@@ -265,7 +263,9 @@ function DetailPanel({ media, onClose, onUpdated, onDeleted }: DetailPanelProps)
         </div>
 
         {isImage(media.mimeType) ? (
-          <img src={resolveMediaUrl(media.publicUrl)} alt={media.originalFilename} className="w-full h-48 object-contain rounded-xl bg-neutral-50 mb-4" />
+          <div className="relative w-full h-48 mb-4">
+            <Image src={resolveMediaUrl(media.publicUrl)} alt={media.originalFilename} fill sizes="100vw" className="object-contain rounded-xl bg-neutral-50" />
+          </div>
         ) : isVideo(media.mimeType) ? (
           <video src={resolveMediaUrl(media.publicUrl)} controls className="w-full h-48 object-contain rounded-xl bg-neutral-50 mb-4" />
         ) : media.mimeType === 'application/pdf' ? (
@@ -343,7 +343,6 @@ export default function MediaLibraryPage() {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [mimeFilter, setMimeFilter] = useState('');
-  const [extFilter, setExtFilter] = useState('');
   const [sortBy, setSortBy] = useState('createdAt');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [page, setPage] = useState(1);
@@ -367,8 +366,6 @@ export default function MediaLibraryPage() {
     sortOrder,
   });
 
-  const renameMedia = useRenameLibraryMedia();
-  const replaceMedia = useReplaceLibraryMedia();
   const bulkDelete = useBulkDeleteLibraryMedia();
   const bulkMove = useBulkMoveLibraryMedia();
 
@@ -468,7 +465,7 @@ export default function MediaLibraryPage() {
               <input value={search} onChange={(e) => handleSearch(e.target.value)} placeholder="Search files by name..." className="w-full bg-white border border-neutral-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-neutral-400" />
               {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400"><X className="w-4 h-4" /></button>}
             </div>
-            <select value={mimeFilter} onChange={(e) => { setMimeFilter(e.target.value); setPage(1); setExtFilter(''); }} className="bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
+              <select value={mimeFilter} onChange={(e) => { setMimeFilter(e.target.value); setPage(1); }} className="bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
               <option value="">All Types</option>
               <option value="image/">Images</option>
               <option value="video/">Videos</option>
@@ -510,7 +507,7 @@ export default function MediaLibraryPage() {
             <PageError title="Loading Failure" message="Could not fetch media library." retry={refetch} />
           ) : !data?.data?.length ? (
             <div className="bg-white rounded-2xl border border-neutral-200 p-12 text-center shadow-sm">
-              <Image className="w-12 h-12 text-neutral-200 mx-auto mb-3" />
+              <ImageIcon className="w-12 h-12 text-neutral-200 mx-auto mb-3" aria-hidden="true" />
               <p className="text-sm text-neutral-500">No media files found</p>
               {canUpload && <button onClick={() => setShowUpload(true)} className="mt-3 bg-neutral-900 text-white rounded-xl px-4 py-2 text-xs font-bold">Upload Now</button>}
             </div>
@@ -523,7 +520,7 @@ export default function MediaLibraryPage() {
                     <button onClick={() => setDetailId(m.id)} className="w-full text-left">
                       <div className="aspect-square bg-neutral-50 relative overflow-hidden">
                         {isImage(m.mimeType) ? (
-                          <img src={getThumbUrl(m)} alt={m.originalFilename} className="w-full h-full object-cover group-hover:scale-105 transition-transform" loading="lazy" />
+                          <Image src={getThumbUrl(m)} alt={m.originalFilename} fill sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 20vw" className="object-cover group-hover:scale-105 transition-transform" loading="lazy" />
                         ) : isVideo(m.mimeType) ? (
                           <div className="w-full h-full flex items-center justify-center">
                             <video src={resolveMediaUrl(m.publicUrl)} className="w-full h-full object-cover" />
@@ -544,7 +541,7 @@ export default function MediaLibraryPage() {
                     </button>
                     <button onClick={() => {
                       const next = new Set(selectedIds);
-                      checked ? next.delete(m.id) : next.add(m.id);
+                      if (checked) { next.delete(m.id); } else { next.add(m.id); }
                       setSelectedIds(next);
                     }} className="absolute top-2 left-2 bg-white/90 rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
                       {checked ? <CheckSquare className="w-4 h-4 text-blue-600" /> : <Square className="w-4 h-4 text-neutral-500" />}
@@ -570,7 +567,7 @@ export default function MediaLibraryPage() {
                     <tr key={m.id} onClick={() => setDetailId(m.id)} className="hover:bg-neutral-50 cursor-pointer">
                       <td className="px-4 py-3">
                         {isImage(m.mimeType) ? (
-                          <img src={getThumbUrl(m)} alt="" className="w-10 h-10 object-cover rounded-lg" loading="lazy" />
+                          <Image src={getThumbUrl(m)} alt="" width={40} height={40} className="w-10 h-10 object-cover rounded-lg" loading="lazy" />
                         ) : (
                           <div className="w-10 h-10 flex items-center justify-center bg-neutral-100 rounded-lg"><FileType className="w-5 h-5 text-neutral-400" /></div>
                         )}

@@ -8,9 +8,17 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useContactSupport } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
+interface ContactForm {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+}
+
 export default function ContactPage() {
   const contact = useContactSupport();
-  const [form, setForm] = useState({
+  const [form, setForm] = useState<ContactForm>({
     name: '',
     email: '',
     phone: '',
@@ -25,7 +33,7 @@ export default function ContactPage() {
     setError('');
     setDone(false);
     try {
-      await contact.mutateAsync(form);
+      await contact.mutateAsync({ name: form.name, email: form.email, subject: form.subject, message: form.message });
       setDone(true);
       setForm({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (err) {
@@ -64,7 +72,7 @@ export default function ContactPage() {
                 <input
                   type={field.type || 'text'}
                   required={field.required}
-                  value={(form as any)[field.key]}
+                  value={form[field.key as keyof ContactForm]}
                   onChange={(e) => setForm((f) => ({ ...f, [field.key]: e.target.value }))}
                   className="flex-1 text-sm outline-none"
                 />

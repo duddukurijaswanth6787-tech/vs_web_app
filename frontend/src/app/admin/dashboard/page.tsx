@@ -7,9 +7,9 @@ import {
 } from '@/features/dashboard';
 import Link from 'next/link';
 import {
-  TrendingUp, ShoppingBag, Users, Package, Clock, AlertTriangle, Calendar,
-  DollarSign, CreditCard, RotateCcw, Ban, Tag, Layers, Star, Percent, ArrowLeftRight,
-  PlusCircle, FileText, Image, Gift, Eye, Activity,
+  TrendingUp, ShoppingBag, Users, Package, Clock, AlertTriangle,
+  DollarSign, RotateCcw, Ban, Tag, Layers, Star, ArrowLeftRight,
+  PlusCircle, Image, Gift, Eye,
 } from 'lucide-react';
 import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
@@ -92,7 +92,6 @@ export default function DashboardPage() {
   const recentOrders = recent?.orders ?? [];
   const recentProducts = recent?.products ?? [];
   const recentReviews = recent?.reviews ?? [];
-  const recentCustomers = recent?.customers ?? [];
 
   return (
     <div className="space-y-6" role="main" aria-label="Dashboard">
@@ -144,7 +143,7 @@ export default function DashboardPage() {
               <h2 className="text-sm font-bold text-neutral-900">Revenue Trend</h2>
               <p className="text-[11px] text-neutral-500">Period sales performance</p>
             </div>
-            <select value={period} onChange={(e) => setPeriod(e.target.value as any)}
+            <select value={period} onChange={(e) => setPeriod(e.target.value as 'weekly' | 'monthly' | 'yearly')}
               className="text-xs border border-neutral-200 rounded-lg px-2.5 py-1.5 bg-white">
               <option value="weekly">7 Days</option>
               <option value="monthly">This Month</option>
@@ -217,7 +216,7 @@ export default function DashboardPage() {
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
-                  <Pie data={payMethods} dataKey="revenue" nameKey="method" cx="50%" cy="50%" innerRadius={40} outerRadius={70} label={({ payload }: any) => `${payload.method}: ${formatCurrency(payload.revenue)}`}>
+                  <Pie data={payMethods} dataKey="revenue" nameKey="method" cx="50%" cy="50%" innerRadius={40} outerRadius={70} label={({ payload }: { payload?: { method: string; revenue: number } }) => payload ? `${payload.method}: ${formatCurrency(payload.revenue)}` : ''}>
                     {payMethods.map((e, i) => <Cell key={e.method} fill={i === 0 ? '#3b82f6' : '#22c55e'} />)}
                   </Pie>
                   <Legend />
@@ -233,7 +232,7 @@ export default function DashboardPage() {
           <div className="space-y-3 text-xs">
             <div>
               <p className="text-[10px] text-neutral-400 uppercase font-semibold mb-1">Latest Orders</p>
-              {recentOrders.length > 0 ? recentOrders.slice(0, 3).map((o: any) => (
+              {recentOrders.length > 0 ? recentOrders.slice(0, 3).map((o) => (
                 <div key={o.id} className="flex justify-between py-1.5 border-b border-neutral-50 last:border-0">
                   <span className="font-medium text-neutral-800">#{o.orderNumber}</span>
                   <span className="text-neutral-500">{formatCurrency(o.grandTotal)}</span>
@@ -242,7 +241,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[10px] text-neutral-400 uppercase font-semibold mb-1">Latest Products</p>
-              {recentProducts.length > 0 ? recentProducts.slice(0, 3).map((p: any) => (
+              {recentProducts.length > 0 ? recentProducts.slice(0, 3).map((p) => (
                 <div key={p.id} className="py-1.5 border-b border-neutral-50 last:border-0">
                   <span className="text-neutral-800">{p.name}</span>
                 </div>
@@ -250,7 +249,7 @@ export default function DashboardPage() {
             </div>
             <div>
               <p className="text-[10px] text-neutral-400 uppercase font-semibold mb-1">Pending Reviews</p>
-              {recentReviews.length > 0 ? recentReviews.slice(0, 3).map((r: any) => (
+              {recentReviews.length > 0 ? recentReviews.slice(0, 3).map((r) => (
                 <div key={r.id} className="py-1.5 border-b border-neutral-50 last:border-0">
                   <span className="text-neutral-500">{'★'.repeat(r.rating)}{'☆'.repeat(5 - r.rating)}</span>
                   <span className="text-neutral-400 ml-2">{r.comment?.slice(0, 60) || 'No comment'}</span>
@@ -272,7 +271,7 @@ export default function DashboardPage() {
                   <th className="py-2">Order No</th><th className="py-2">Amount</th><th className="py-2">Status</th><th className="py-2">Date</th>
                 </tr></thead>
                 <tbody className="divide-y divide-neutral-50 text-neutral-700">
-                  {summary.recentOrders.map((order: any) => (
+                  {summary.recentOrders.map((order) => (
                     <tr key={order.id}>
                       <td className="py-2.5 font-medium text-neutral-900">{order.orderNumber}</td>
                       <td className="py-2.5">{formatCurrency(order.grandTotal)}</td>
@@ -297,7 +296,7 @@ export default function DashboardPage() {
                   <th className="py-2">Product Name</th><th className="py-2">Sales</th><th className="py-2">Value</th>
                 </tr></thead>
                 <tbody className="divide-y divide-neutral-50 text-neutral-700">
-                  {summary.topProducts.map((item: any) => (
+                  {summary.topProducts.map((item) => (
                     <tr key={item.productId}>
                       <td className="py-2.5 font-medium text-neutral-900 truncate max-w-[180px]">{item.product?.name || 'Unknown'}</td>
                       <td className="py-2.5">{item._sum.quantity || 0} units</td>

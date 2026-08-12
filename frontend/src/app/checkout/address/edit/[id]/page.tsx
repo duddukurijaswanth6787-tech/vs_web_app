@@ -1,16 +1,38 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerAddresses } from '@/features/customer/hooks';
-import { customerMeService } from '@/features/customer/me.service';
+import { customerMeService, AddressDto } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+
+interface EditAddressForm {
+  fullName: string;
+  phone: string;
+  addressLine1: string;
+  addressLine2: string;
+  city: string;
+  state: string;
+  postalCode: string;
+  country?: string;
+}
+
+const toForm = (a: AddressDto): EditAddressForm => ({
+  fullName: a.fullName,
+  phone: a.phone,
+  addressLine1: typeof a.addressLine1 === 'string' ? a.addressLine1 : '',
+  addressLine2: typeof a.addressLine2 === 'string' ? a.addressLine2 : '',
+  city: a.city,
+  state: a.state,
+  postalCode: a.postalCode,
+  country: typeof a.country === 'string' ? a.country : '',
+});
 
 export default function EditAddressPage() {
   const params = useParams();
@@ -19,21 +41,26 @@ export default function EditAddressPage() {
   const { isAuthenticated, isInitializing } = useAuth();
   const { data } = useCustomerAddresses(isAuthenticated);
   const qc = useQueryClient();
-  const [form, setForm] = useState<any>(null);
+  const [form, setForm] = useState<EditAddressForm | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   const addresses = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
+    const typed = data as { data?: AddressDto[] };
+    if (Array.isArray(typed?.data)) return typed.data;
     return [];
   }, [data]);
 
-  useEffect(() => {
-    const found = addresses.find((a: any) => a.id === id);
-    if (found) setForm({ ...found });
-  }, [addresses, id]);
+  const [prevLoadedId, setPrevLoadedId] = useState<string | null>(null);
+  if (addresses.length > 0 && prevLoadedId !== id) {
+    const found = addresses.find((a) => a.id === id);
+    if (found) {
+      setPrevLoadedId(id);
+      setForm(toForm(found));
+    }
+  }
 
   if (!isInitializing && !isAuthenticated) {
     return (
@@ -85,13 +112,13 @@ export default function EditAddressPage() {
         ) : (
           <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-3">
             {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
-            {['fullName', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode'].map((key) => (
+            {(['fullName', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode'] as const).map((key) => (
               <label key={key} className="block space-y-1">
                 <span className="text-xs font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                 <input
                   required={key !== 'addressLine2'}
                   value={form[key] || ''}
-                  onChange={(e) => setForm((f: any) => ({ ...f, [key]: e.target.value }))}
+                  onChange={(e) => setForm((f) => (f ? { ...f, [key]: e.target.value } : f))}
                   className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"
                 />
               </label>

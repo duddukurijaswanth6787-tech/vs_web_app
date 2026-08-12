@@ -30,7 +30,7 @@ function CheckoutSuccessPageContent() {
             Total paid: {formatInr(Number(order.grandTotal))}
           </p>
         )}
-        <p className="text-xs text-neutral-500">Thank you for shopping with Vasanthi's Signature.</p>
+        <p className="text-xs text-neutral-500">Thank you for shopping with Vasanthi&apos;s Signature.</p>
         <div className="flex flex-col gap-2 pt-4">
           {orderNumber && (
             <Link

@@ -1,15 +1,14 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { resolveMediaUrl } from '@/lib/media-url';
-import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import {
   X,
   ArrowLeft,
   Search,
   ShoppingBag,
-  MoreVertical,
   Heart,
   MessageCircle,
   Share2,
@@ -62,15 +61,17 @@ export function ReelViewerModal({
   isOpen,
   onClose,
 }: ReelViewerModalProps) {
+  const [prevInitialIndex, setPrevInitialIndex] = useState(initialReelIndex);
   const [currentIndex, setCurrentIndex] = useState(initialReelIndex);
   const [likedReels, setLikedReels] = useState<Record<string, boolean>>({});
   const [cartCount, setCartCount] = useState(2);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
 
-  useEffect(() => {
+  if (initialReelIndex !== prevInitialIndex) {
+    setPrevInitialIndex(initialReelIndex);
     setCurrentIndex(initialReelIndex);
-  }, [initialReelIndex]);
+  }
 
   if (!isOpen || !reels || reels.length === 0) return null;
 
@@ -187,12 +188,11 @@ export function ReelViewerModal({
                   controls
                 />
               ) : (
-                <img
+                <Image
                   src={resolveMediaUrl(currentReel.posterImage)}
                   alt={currentReel.title}
-                  onError={(e) => {
-                    e.currentTarget.src = PLACEHOLDER_IMAGE;
-                  }}
+                  width={1080}
+                  height={1920}
                   className="w-full h-full object-cover select-none"
                 />
               )}
@@ -271,12 +271,11 @@ export function ReelViewerModal({
               {currentReel.taggedProducts.map((prod) => (
                 <div key={prod.id} className="flex items-center justify-between gap-3 p-2 rounded-2xl border border-neutral-100 bg-neutral-50/70">
                   <div className="flex items-center gap-2.5">
-                    <img
+                    <Image
                       src={resolveMediaUrl(prod.image)}
                       alt={prod.name}
-                      onError={(e) => {
-                        e.currentTarget.src = PLACEHOLDER_IMAGE;
-                      }}
+                      width={44}
+                      height={48}
                       className="w-11 h-12 object-cover rounded-xl shrink-0"
                     />
                     <div>
@@ -314,7 +313,7 @@ export function ReelViewerModal({
                     {currentReel.accountName}
                   </h3>
                   <span className="text-[11px] text-neutral-500">
-                    Vasanthi's Signature Official
+                    Vasanthi&apos;s Signature Official
                   </span>
                 </div>
               </div>
@@ -362,12 +361,11 @@ export function ReelViewerModal({
                 className="p-3.5 rounded-2xl border border-neutral-200/80 bg-white hover:border-[#800020]/40 transition-all duration-300 shadow-2xs hover:shadow-xs flex items-center justify-between gap-4 group"
               >
                 <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                  <img
+                  <Image
                     src={resolveMediaUrl(prod.image)}
                     alt={prod.name}
-                    onError={(e) => {
-                      e.currentTarget.src = PLACEHOLDER_IMAGE;
-                    }}
+                    width={64}
+                    height={80}
                     className="w-16 h-20 object-cover rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="space-y-1 flex-1 min-w-0">

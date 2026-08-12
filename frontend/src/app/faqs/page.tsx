@@ -8,9 +8,15 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useCustomerFaqs } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
+interface FaqItem {
+  id: string;
+  question: string;
+  answer: string;
+}
+
 export default function FaqsPage() {
   const { data, isLoading, error } = useCustomerFaqs();
-  const faqs = useMemo(() => data?.data || [], [data]);
+  const faqs: FaqItem[] = useMemo(() => (data?.data || []) as FaqItem[], [data]);
 
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
@@ -30,7 +36,7 @@ export default function FaqsPage() {
             No FAQs published yet
           </div>
         )}
-        {faqs.map((faq: any) => (
+        {faqs.map((faq) => (
           <details
             key={faq.id}
             className="bg-white border border-neutral-200 rounded-2xl p-4 group open:shadow-xs"

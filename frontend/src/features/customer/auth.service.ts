@@ -13,7 +13,7 @@ export const customerAuthService = {
   },
 
   verifyOtp: async (phone: string, code: string, purpose = 'LOGIN') => {
-    const res = await apiClient.post<StandardResponse<any>>('/auth/otp/verify', {
+    const res = await apiClient.post<StandardResponse<{ verified: boolean; purpose?: string }>>('/auth/otp/verify', {
       phone,
       code,
       purpose,
@@ -43,12 +43,12 @@ export const customerAuthService = {
   },
 
   forgotPassword: async (email: string) => {
-    const res = await apiClient.post<StandardResponse<any>>('/password/forgot', { email });
+    const res = await apiClient.post<StandardResponse<{ sent: boolean; message?: string }>>('/password/forgot', { email });
     return res.data.data!;
   },
 
   resetPassword: async (dto: { token: string; newPassword: string }) => {
-    const res = await apiClient.post<StandardResponse<any>>('/password/reset', dto);
+    const res = await apiClient.post<StandardResponse<{ success: boolean; message?: string }>>('/password/reset', dto);
     return res.data.data!;
   },
 };

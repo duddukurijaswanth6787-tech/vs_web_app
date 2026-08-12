@@ -29,7 +29,7 @@ export default function TermsOfServicePage() {
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Terms of Service</h1>
             <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
-              Welcome to <strong className="text-amber-300">Vasanthi's Signature</strong> (<a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>). By accessing our website, making a purchase, or creating an account, you agree to comply with the following Terms & Conditions.
+              Welcome to <strong className="text-amber-300">Vasanthi&apos;s Signature</strong> (<a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>). By accessing our website, making a purchase, or creating an account, you agree to comply with the following Terms & Conditions.
             </p>
             <div className="pt-2 text-[11px] text-rose-200/70 font-mono">
               Effective Date: August 9, 2026 • Governed by the Laws of India
@@ -51,7 +51,7 @@ export default function TermsOfServicePage() {
             <ul className="list-disc list-inside space-y-2 text-xs sm:text-sm pl-2 text-neutral-800">
               <li>You are responsible for maintaining the confidentiality of your account login credentials.</li>
               <li>When signing in via Google OAuth 2.0, you warrant that the Google Account belongs to you and is active.</li>
-              <li>Vasanthi's Signature reserves the right to terminate accounts that violate security protocols or participate in fraudulent activity.</li>
+              <li>Vasanthi&apos;s Signature reserves the right to terminate accounts that violate security protocols or participate in fraudulent activity.</li>
             </ul>
           </section>
 
@@ -103,7 +103,7 @@ export default function TermsOfServicePage() {
               <FileText className="w-5 h-5 text-[#800020]" /> 5. Intellectual Property Rights
             </h2>
             <p>
-              All trademarks, product designs, brand logos, high-resolution imagery, and website content displayed on <strong>Vasanthi's Signature</strong> are the exclusive property of Vasanthi's Signature. Reproduction or unauthorized commercial use is strictly prohibited.
+              All trademarks, product designs, brand logos, high-resolution imagery, and website content displayed on <strong>Vasanthi&apos;s Signature</strong> are the exclusive property of Vasanthi&apos;s Signature. Reproduction or unauthorized commercial use is strictly prohibited.
             </p>
           </section>
 
@@ -126,7 +126,7 @@ export default function TermsOfServicePage() {
               For any queries regarding our legal terms or store policies, reach out to our legal & compliance team:
             </p>
             <div className="text-xs font-semibold text-neutral-800 space-y-1 pt-1">
-              <div>Store: Vasanthi's Signature</div>
+              <div>Store: Vasanthi&apos;s Signature</div>
               <div>Domain: <a href="https://vasanthissignature.in" className="text-[#800020] underline">https://vasanthissignature.in</a></div>
               <div>Support Email: <a href="mailto:support@vasanthissignature.in" className="text-[#800020] underline">support@vasanthissignature.in</a></div>
             </div>

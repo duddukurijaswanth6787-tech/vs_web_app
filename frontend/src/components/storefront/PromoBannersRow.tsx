@@ -13,19 +13,20 @@ export function PromoBannersRow() {
   const categories = useFeaturedCategories();
 
   const coupon = useMemo(() => {
-    const list = Array.isArray(coupons.data?.data)
-      ? coupons.data.data
-      : Array.isArray(coupons.data)
-        ? coupons.data
+    const typedCoupons = coupons.data as { data?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | undefined;
+    const list = Array.isArray((typedCoupons as { data?: Array<Record<string, unknown>> })?.data)
+      ? (typedCoupons as { data?: Array<Record<string, unknown>> }).data!
+      : Array.isArray(typedCoupons)
+        ? typedCoupons
         : [];
     return list[0];
   }, [coupons.data]);
 
   const cards = useMemo(() => {
-    const list = Array.isArray(categories.data) ? categories.data : [];
-    return list.slice(0, 4).map((c: any) => ({
-      name: c.name,
-      image: c.image || c.bannerImage || PLACEHOLDER_IMAGE,
+    const list = Array.isArray(categories.data) ? (categories.data as unknown as Array<Record<string, unknown>>) : [];
+    return list.slice(0, 4).map((c) => ({
+      name: String(c.name || ''),
+      image: String(c.image || c.bannerImage || PLACEHOLDER_IMAGE),
       href: `/categories/${c.slug}`,
     }));
   }, [categories.data]);
@@ -40,15 +41,15 @@ export function PromoBannersRow() {
             </div>
             <div>
               <h4 className="text-sm font-bold text-[#800020] leading-tight">
-                {coupon.name || 'Special Offer'}
+                {String(coupon.name || 'Special Offer')}
               </h4>
               <p className="text-xs font-medium text-neutral-700">
-                {coupon.description || 'Use this coupon at checkout'}
+                {String(coupon.description || 'Use this coupon at checkout')}
               </p>
             </div>
           </div>
           <div className="w-full sm:w-auto bg-white border border-dashed border-[#800020] text-[#800020] px-4 py-2 rounded-xl text-xs font-bold text-center tracking-wider shadow-xs">
-            Use Code: <span className="font-extrabold uppercase">{coupon.code}</span>
+            Use Code: <span className="font-extrabold uppercase">{String(coupon.code || '')}</span>
           </div>
         </div>
       )}

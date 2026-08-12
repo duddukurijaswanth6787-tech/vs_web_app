@@ -12,21 +12,34 @@ export default function PushNotificationsAdminPage() {
   const [body, setBody] = useState('Flat 25% OFF on pure Kanjivaram silk sarees today only!');
   const [targetUserId, setTargetUserId] = useState('');
   const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState<any[]>([]);
+  const [logs, setLogs] = useState<Array<Record<string, unknown>>>([]);
 
   const loadLogs = useCallback(async () => {
     try {
       const result = await adminOpsApi.pushLogs(1, 30);
-      const list = Array.isArray(result?.data) ? result.data : Array.isArray(result) ? result : [];
-      setLogs(list);
+      const list = Array.isArray(result?.logs) ? result.logs : Array.isArray(result) ? result : [];
+      setLogs(list as Array<Record<string, unknown>>);
     } catch (err) {
       toast('error', 'Failed to load push logs', getApiErrorMessage(err));
     }
   }, [toast]);
 
   useEffect(() => {
-    loadLogs();
-  }, [loadLogs]);
+    let active = true;
+    adminOpsApi.pushLogs(1, 30).then((result) => {
+      if (active) {
+        const list = Array.isArray(result?.logs) ? result.logs : Array.isArray(result) ? result : [];
+        setLogs(list as Array<Record<string, unknown>>);
+      }
+    }).catch((err) => {
+      if (active) {
+        toast('error', 'Failed to load push logs', getApiErrorMessage(err));
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [toast]);
 
   const handleSendPush = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -143,16 +156,16 @@ export default function PushNotificationsAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {logs.map((log) => (
-                  <tr key={log.id} className="border-t border-neutral-100">
+                {logs.map((log, idx) => (
+                  <tr key={String(log.id || idx)} className="border-t border-neutral-100">
                     <td className="px-3 py-2">
-                      <p className="font-bold">{log.title}</p>
-                      <p className="text-neutral-500 line-clamp-1">{log.body}</p>
+                      <p className="font-bold">{String(log.title || '')}</p>
+                      <p className="text-neutral-500 line-clamp-1">{String(log.body || '')}</p>
                     </td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{log.status}</td>
-                    <td className="px-3 py-2">{log.targetCount ?? log.successCount ?? 0}</td>
+                    <td className="px-3 py-2 font-bold text-[#800020]">{String(log.status || '')}</td>
+                    <td className="px-3 py-2">{String(log.targetCount ?? log.successCount ?? 0)}</td>
                     <td className="px-3 py-2 text-neutral-500">
-                      {log.createdAt ? new Date(log.createdAt).toLocaleString() : '—'}
+                      {log.createdAt ? new Date(String(log.createdAt)).toLocaleString() : '—'}
                     </td>
                   </tr>
                 ))}

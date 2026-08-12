@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Search, Sparkles, TrendingUp, RefreshCw, BarChart2 } from 'lucide-react';
+import { Search, Sparkles, RefreshCw } from 'lucide-react';
 import { aiSearchApi } from '@/features/ai-search/api/ai-search.api';
 
 export default function AdminAiSearchPage() {
@@ -16,7 +16,7 @@ export default function AdminAiSearchPage() {
     try {
       const res = await aiSearchApi.getSuggestions(testQuery);
       setSuggestions(res || ['Banarasi Silk Sarees', 'Kanjivaram Handloom', 'Bridal Lehengas']);
-    } catch (e: any) {
+    } catch {
       setSuggestions(['Banarasi Silk Sarees', 'Kanjivaram Handloom', 'Bridal Lehengas']);
     } finally {
       setIsLoading(false);
@@ -51,7 +51,7 @@ export default function AdminAiSearchPage() {
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
           <span className="text-xs font-bold text-neutral-500 block">Top Trending Query</span>
-          <span className="text-xl font-bold text-[#800020]">"Banarasi Silk Saree Maroon"</span>
+          <span className="text-xl font-bold text-[#800020]">&quot;Banarasi Silk Saree Maroon&quot;</span>
           <span className="text-[10px] text-emerald-600 font-bold block">1,420 searches today</span>
         </div>
 

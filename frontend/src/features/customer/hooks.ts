@@ -2,7 +2,7 @@
 
 import { customerSupportService } from './support.service';
 import { CreateSupportTicketDto } from '@/features/support/support.types';
-import { useQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '@/features/catalog/products/product.service';
 import { customerCartService } from '@/features/customer/cart.service';
 import { customerWishlistService } from '@/features/customer/wishlist.service';
@@ -11,7 +11,6 @@ import { customerOrdersService } from '@/features/customer/orders.service';
 import { customerCheckoutService } from '@/features/customer/checkout.service';
 import { customerStorefrontService } from '@/features/customer/storefront.service';
 import { customerReviewsService, CreateReviewPayload } from '@/features/customer/reviews.service';
-import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { brandService } from '@/features/catalog/brands/brand.service';
 import { ProductQueryDto } from '@/features/catalog/products/product.types';
@@ -109,7 +108,7 @@ export async function apiGetCategoryProducts(slug: string, query: ProductQueryDt
 export function useCustomerBrands(query = {}) {
   return useQuery({
     queryKey: ['customer', 'brands'],
-    queryFn: () => brandService.findAll(query as any),
+    queryFn: () => brandService.findAll(query),
   });
 }
 
@@ -140,11 +139,12 @@ export function useCustomerCart() {
 export function useCartMutations() {
   const queryClient = useQueryClient();
   const addItem = useMutation({
-    mutationFn: (dto: any) => customerCartService.addItem(dto),
+    mutationFn: (dto: { productId: string; variantId?: string; quantity?: number }) => customerCartService.addItem(dto),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
   });
   const updateQuantity = useMutation({
-    mutationFn: (dto: any) => customerCartService.updateQuantity(dto.itemId || dto.id, dto.quantity),
+    mutationFn: (dto: { itemId?: string; id?: string; quantity: number }) =>
+      customerCartService.updateQuantity(dto.itemId || dto.id || '', dto.quantity),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
   });
   const removeItem = useMutation({
@@ -254,7 +254,7 @@ export function useCancelReturn() {
 export function useCustomerFaqs() {
   return useQuery({
     queryKey: ['customer', 'faqs'],
-    queryFn: async (): Promise<any> => ({ data: [] }),
+    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
   });
 }
 
@@ -275,7 +275,7 @@ export function useActiveCoupons() {
 export function useCustomerSearch(q: string) {
   return useQuery({
     queryKey: ['customer', 'search', q],
-    queryFn: (): Promise<any> => productService.findAll({ search: q }).catch(() => ({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } })),
+    queryFn: () => productService.findAll({ search: q }).catch(() => ({ data: [], meta: { page: 1, limit: 10, total: 0, totalPages: 0 } })),
     enabled: q.length > 2,
   });
 }
@@ -283,14 +283,14 @@ export function useCustomerSearch(q: string) {
 export function useCustomerReels() {
   return useQuery({
     queryKey: ['customer', 'reels'],
-    queryFn: async (): Promise<any> => ({ data: [] }),
+    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
   });
 }
 
 export function useCustomerNotifications(enabled = true) {
   return useQuery({
     queryKey: ['customer', 'notifications'],
-    queryFn: async (): Promise<any> => ({ data: [] }),
+    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
     enabled,
   });
 }
@@ -298,7 +298,7 @@ export function useCustomerNotifications(enabled = true) {
 export function useCustomerReferral(enabled = true) {
   return useQuery({
     queryKey: ['customer', 'referral'],
-    queryFn: async (): Promise<any> => null,
+    queryFn: async (): Promise<unknown> => null,
     enabled,
   });
 }
@@ -306,7 +306,7 @@ export function useCustomerReferral(enabled = true) {
 export function usePackingQueue(enabled = true) {
   return useQuery({
     queryKey: ['customer', 'packing'],
-    queryFn: async (): Promise<any> => ({ data: [] }),
+    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
     enabled,
   });
 }
@@ -321,7 +321,7 @@ export function usePaymentMethods() {
 export function useCmsPage(slug: string) {
   return useQuery({
     queryKey: ['customer', 'cms', slug],
-    queryFn: async (): Promise<any> => ({ title: slug, content: '' }),
+    queryFn: async (): Promise<{ title: string; content: string }> => ({ title: slug, content: '' }),
   });
 }
 
@@ -340,7 +340,7 @@ export function useCheckoutPreview(addressId?: string, couponCode?: string) {
 export function usePlaceOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto: any) => customerCheckoutService.placeOrder(dto),
+    mutationFn: (dto: { addressId: string; shippingMethod?: string; notes?: string; couponCode?: string }) => customerCheckoutService.placeOrder(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.cart() });
       queryClient.invalidateQueries({ queryKey: customerKeys.orders() });
@@ -350,7 +350,7 @@ export function usePlaceOrder() {
 
 export function useContactSupport() {
   return useMutation({
-    mutationFn: async (dto: any) => ({ success: true }),
+    mutationFn: async (_dto: { name: string; email: string; subject: string; message: string }) => { void _dto; return { success: true }; },
   });
 }
 

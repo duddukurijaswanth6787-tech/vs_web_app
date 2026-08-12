@@ -72,7 +72,7 @@ export interface CustomerReportData {
   customers: CustomerReportRow[];
 }
 
-export interface ListReportResponse<T = any> {
+export interface ListReportResponse<T = unknown> {
   type: string;
   data: {
     items: T[];

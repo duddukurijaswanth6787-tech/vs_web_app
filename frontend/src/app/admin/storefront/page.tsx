@@ -1,7 +1,7 @@
 'use client';
 
 import { useDashboard } from '@/features/storefront/storefront.hooks';
-import { PageLoader, SectionLoader } from '@/components/feedback/FeedbackStates';
+import { PageLoader } from '@/components/feedback/FeedbackStates';
 import { Store, Layout, ToggleLeft, Link2, Share2, Newspaper, Wrench, Eye, Settings, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 

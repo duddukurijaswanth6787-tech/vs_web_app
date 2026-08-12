@@ -11,15 +11,25 @@ import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
+interface NotificationItem {
+  id: string;
+  title?: string;
+  subject?: string;
+  message?: string;
+  body?: string;
+  isRead?: boolean;
+  read?: boolean;
+}
+
 export default function NotificationsPage() {
   const { isAuthenticated, isInitializing } = useAuth();
   const { data, isLoading, error } = useCustomerNotifications(isAuthenticated);
   const qc = useQueryClient();
 
-  const items = useMemo(() => {
+  const items: NotificationItem[] = useMemo(() => {
     if (!data) return [];
-    if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
+    if (Array.isArray(data)) return data as NotificationItem[];
+    if (Array.isArray(data.data)) return data.data as NotificationItem[];
     return [];
   }, [data]);
 
@@ -60,7 +70,7 @@ export default function NotificationsPage() {
         {!isLoading && items.length === 0 && (
           <p className="text-sm text-neutral-500 text-center py-10">No notifications</p>
         )}
-        {items.map((n: any) => (
+        {items.map((n) => (
           <button
             key={n.id}
             type="button"

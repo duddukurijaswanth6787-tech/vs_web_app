@@ -31,7 +31,7 @@ export default function InventoryPage() {
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) { params.set(key, value); } else { params.delete(key); }
     params.set('page', '1');
     router.push(`/admin/inventory?${params}`);
   };
@@ -49,12 +49,12 @@ export default function InventoryPage() {
     { key: 'minmax', label: 'Min/Max', render: (i) => <span className="text-neutral-500 text-center block">{i.minimumStock} <span className="text-neutral-300">/</span> {i.maximumStock}</span> },
     { key: 'reorderLevel', label: 'Reorder', render: (i) => <span className="font-medium text-center block">{i.reorderLevel}</span> },
     { key: 'stockStatus', label: 'Status', render: (i) => <StockStatusBadge status={i.stockStatus} /> },
-    ...(isEditor ? [{ key: 'actions' as string, label: 'Actions' as string, render: (i: InventoryResponse) => (
+    ...(isEditor ? [{ key: 'actions' as const, label: 'Actions' as const, render: (i: InventoryResponse) => (
       <div className="flex justify-end gap-2">
         <button onClick={() => setActionItem(i)} className="px-2 py-1 bg-neutral-900 text-white rounded text-[10px] font-bold hover:bg-neutral-800">Transact</button>
         <button onClick={() => setSettingsItem(i)} className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-neutral-950"><Sliders className="w-3.5 h-3.5" /></button>
       </div>
-    )}] : [] as any),
+    )}] : [] as Column<InventoryResponse>[]),
   ];
 
   return (

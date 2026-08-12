@@ -1,10 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { Star, X, CheckCircle2, Gift, Loader2 } from 'lucide-react';
 import { useCreateReview } from '@/features/customer/hooks';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 interface ReviewFormModalProps {
   isOpen: boolean;
@@ -50,8 +52,8 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
         setIsSuccess(false);
         onClose();
       }, 1800);
-    } catch (err: any) {
-      setError(err?.response?.data?.message || err?.message || 'Failed to submit review');
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Failed to submit review'));
     }
   };
 
@@ -82,9 +84,11 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="flex items-center gap-3 pb-2 border-b border-neutral-100">
-              <img
+              <Image
                 src={imageUrl}
                 alt={product.productTitle}
+                width={56}
+                height={56}
                 className="w-14 h-14 object-cover rounded-xl border border-neutral-200 shrink-0"
               />
               <div className="overflow-hidden">

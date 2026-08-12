@@ -3,7 +3,7 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowLeft, Heart, ShoppingBag, Trash2 } from 'lucide-react';
+import { ArrowLeft, Heart, ShoppingBag, Trash2, RefreshCw } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
@@ -13,38 +13,41 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { isLocalOrPlaceholder, withVariant } from '@/lib/media-url';
 
 export default function WishlistPage() {
-  const { isAuthenticated, isInitializing } = useAuth();
+  useAuth();
   const { data, isLoading, error, refetch } = useCustomerWishlist(true);
   const { remove, moveToCart } = useWishlistMutations();
 
   const items = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
-    if (Array.isArray(data.items)) return data.items;
+    const typed = data as { data?: unknown[]; items?: unknown[] };
+    if (Array.isArray(typed?.data)) return typed.data as never[];
+    if (Array.isArray(typed?.items)) return typed.items as never[];
     return [];
   }, [data]);
 
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
-        <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Wishlist</h1>
-        <span className="text-xs font-semibold text-neutral-500">{items.length}</span>
+        <div className="flex items-center gap-3">
+          <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <h1 className="text-lg font-bold font-serif text-[#800020]">My Wishlist</h1>
+        </div>
+        <button
+          onClick={() => refetch()}
+          className="p-2 text-neutral-500 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
+          title="Refresh Wishlist"
+        >
+          <RefreshCw className="w-4 h-4" />
+        </button>
       </header>
 
-      <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1 space-y-3">
+      <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-4">
         {isLoading && <p className="text-sm text-neutral-500">Loading wishlist…</p>}
-        {error && (
-          <p className="text-sm text-red-600">
-            {getApiErrorMessage(error)}{' '}
-            <button onClick={() => refetch()} className="underline">
-              Retry
-            </button>
-          </p>
-        )}
+        {error && <p className="text-sm text-red-600">{getApiErrorMessage(error)}</p>}
+
         {!isLoading && items.length === 0 && (
           <div className="text-center py-16 space-y-3">
             <Heart className="w-10 h-10 mx-auto text-neutral-300" />
@@ -55,14 +58,17 @@ export default function WishlistPage() {
           </div>
         )}
 
-        {items.map((item: any) => {
-          const product = item.product || item;
-          const productId = item.productId || product.id;
-          const name = product.name || item.productName || 'Product';
-          const image = product.primaryImageUrl || product.images?.[0]?.url || PLACEHOLDER_IMAGE;
-          const price = product.salePrice ?? product.basePrice ?? item.unitPrice ?? 0;
+        {items.map((item, idx) => {
+          const pItem = item as Record<string, unknown>;
+          const product = (pItem.product || pItem) as Record<string, unknown>;
+          const productId = String(pItem.productId || product.id || idx);
+          const name = String(product.name || pItem.productName || 'Product');
+          const images = Array.isArray(product.images) ? product.images : [];
+          const firstImage = images[0] as Record<string, unknown> | undefined;
+          const image = String(product.primaryImageUrl || firstImage?.url || PLACEHOLDER_IMAGE);
+          const price = Number(product.salePrice ?? product.basePrice ?? pItem.unitPrice ?? 0);
           return (
-            <div key={item.id || productId} className="bg-white border border-neutral-200 rounded-2xl p-4 flex gap-3">
+            <div key={String(pItem.id || productId)} className="bg-white border border-neutral-200 rounded-2xl p-4 flex gap-3">
               <Link href={`/product/${product.slug || productId}`}>
                 <Image 
                   src={withVariant(image, 'medium')} 
