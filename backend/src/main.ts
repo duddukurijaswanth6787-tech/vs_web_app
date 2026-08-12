@@ -12,6 +12,7 @@ import { ValidationException } from '@common/exceptions';
 import { SECURITY_CONSTANTS } from '@common/security';
 
 async function bootstrap() {
+  console.log('[BOOTSTRAP] Starting NestJS Application...');
   const startTime = Date.now();
 
   const app = await NestFactory.create(AppModule, {
@@ -134,7 +135,9 @@ async function bootstrap() {
 
   const port = configService.get<number>('app.port', 4000);
 
+  console.log(`[BOOTSTRAP] Attempting to listen on 0.0.0.0:${port}...`);
   await app.listen(port, '0.0.0.0');
+  console.log(`[BOOTSTRAP] Server successfully listening on http://0.0.0.0:${port}`);
 
   const startupDashboardService = app.get(StartupDashboardService);
   await startupDashboardService.printDashboard(startTime);
