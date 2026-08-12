@@ -112,6 +112,14 @@ export interface BrandOption {
   name: string;
 }
 
+export interface SizeChartOption {
+  id: string;
+  name: string;
+  garmentType?: string;
+  unit: string;
+  rows: { size: string; measurements: Record<string, number | string> }[];
+}
+
 export interface CategoryOption {
   id: string;
   name: string;
@@ -285,6 +293,22 @@ export const catalogService = {
   }) {
     const res = await posApiClient.post('/media', dto);
     return unwrap<any>(res);
+  },
+
+  /** GET /size-charts — reusable measurement charts to attach to a product. */
+  async listSizeCharts(): Promise<SizeChartOption[]> {
+    const res = await posApiClient.get('/size-charts', {
+      params: { limit: 100, status: 'ACTIVE' },
+    });
+    const payload = unwrap<any>(res);
+    const rows = Array.isArray(payload) ? payload : (payload?.data ?? []);
+    return rows.map((c: any) => ({
+      id: c.id,
+      name: c.name,
+      garmentType: c.garmentType ?? undefined,
+      unit: c.unit ?? 'inch',
+      rows: c.rows ?? [],
+    }));
   },
 
   /** POST /products/:id/attributes — the dynamic registry values. */

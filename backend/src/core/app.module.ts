@@ -62,6 +62,7 @@ import { SupportModule } from '@domains/support/support.module';
 import { FaqModule } from '@domains/faq/faq.module';
 import { CampaignModule } from '@domains/campaign/campaign.module';
 import { AiChatModule } from '@domains/ai-chat/ai-chat.module';
+import { SizeChartModule } from '@domains/size-chart/size-chart.module';
 import { PrescriptionModule } from '@domains/prescription/prescription.module';
 import { DrugInteractionModule } from '@domains/drug-interaction/drug-interaction.module';
 import { AiSearchModule } from '@domains/ai-search/ai-search.module';
@@ -198,6 +199,7 @@ import { PosModule } from '@domains/pos/pos.module';
 
     // AI Platform (Phase 7.0)
     AiChatModule,
+    SizeChartModule,
     PrescriptionModule,
     DrugInteractionModule,
     AiSearchModule,

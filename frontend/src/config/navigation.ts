@@ -1,4 +1,5 @@
 import {
+  Ruler,
   LayoutDashboard,
   ShoppingBag,
   FolderOpen,
@@ -186,6 +187,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'Attributes',
         href: '/admin/catalog/attributes',
         icon: Sliders,
+        implemented: true,
+      },
+      {
+        id: 'size-charts',
+        title: 'Size Charts',
+        href: '/admin/catalog/size-charts',
+        icon: Ruler,
         implemented: true,
       },
       {

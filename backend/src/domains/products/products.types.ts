@@ -185,6 +185,10 @@ export class CreateProductDto {
   @IsOptional()
   @IsString()
   hsnCode?: string;
+  @ApiPropertyOptional({ description: 'Reusable size chart to show on the PDP' })
+  @IsOptional()
+  @IsUUID()
+  sizeChartTemplateId?: string;
   @ApiPropertyOptional({ default: true })
   @IsOptional()
   @IsBoolean()
@@ -362,6 +366,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isExclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnlineOnly?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsString() hsnCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsUUID() sizeChartTemplateId?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() taxInclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isPublished?: boolean;
   @ApiPropertyOptional()
@@ -583,6 +588,7 @@ export class ProductResponse {
   @ApiProperty() isExclusive!: boolean;
   @ApiProperty() isOnlineOnly!: boolean;
   @ApiPropertyOptional() hsnCode?: string;
+  @ApiPropertyOptional() sizeChartTemplateId?: string;
   @ApiProperty() taxInclusive!: boolean;
   @ApiProperty() isPublished!: boolean;
   @ApiPropertyOptional() publishedAt?: Date;
