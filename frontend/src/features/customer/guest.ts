@@ -13,6 +13,16 @@ export function getGuestId(): string {
   return id;
 }
 
+export function getStoredGuestId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return localStorage.getItem(GUEST_ID_KEY);
+}
+
+export function hasStoredGuestId(): boolean {
+  if (typeof window === 'undefined') return false;
+  return !!localStorage.getItem(GUEST_ID_KEY);
+}
+
 export function clearGuestId(): void {
   if (typeof window !== 'undefined') {
     localStorage.removeItem(GUEST_ID_KEY);
