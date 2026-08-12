@@ -76,7 +76,7 @@ export class AutoSeedService implements OnModuleInit {
       return;
     }
 
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@vasanthi.com';
+    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vasanthi.com').toLowerCase().trim();
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
     const passwordHash = await argon2.hash(adminPassword);
 
@@ -87,6 +87,8 @@ export class AutoSeedService implements OnModuleInit {
         userType: 'ADMIN',
         accountStatus: 'ACTIVE',
         isEmailVerified: true,
+        loginAttempts: 0,
+        lockoutUntil: null,
       },
       create: {
         email: adminEmail,
@@ -96,6 +98,7 @@ export class AutoSeedService implements OnModuleInit {
         userType: 'ADMIN',
         accountStatus: 'ACTIVE',
         isEmailVerified: true,
+        loginAttempts: 0,
       },
     });
 
