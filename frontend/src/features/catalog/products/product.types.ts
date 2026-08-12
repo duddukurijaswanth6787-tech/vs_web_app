@@ -248,8 +248,8 @@ export interface ProductColorGroupResponse {
     label: string;
     swatchImageUrl?: string;
   };
-  variants?: any[];
-  media?: any[];
+  variants?: Array<Record<string, unknown>>;
+  media?: Array<Record<string, unknown>>;
 }
 
 export interface ProductListResponse {

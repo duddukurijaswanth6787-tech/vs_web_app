@@ -1,8 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useSocialLinks, useUpdateSocialLink } from '@/features/storefront/storefront.hooks';
-import type { SocialLink } from '@/features/storefront/storefront.types';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { Save, ExternalLink, X, Globe } from 'lucide-react';
@@ -33,17 +32,17 @@ export default function SocialLinksPage() {
   const [saving, setSaving] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (links) {
-      const init: Record<string, { url: string; enabled: boolean }> = {};
-      for (const l of links) init[l.platform] = { url: l.url ?? '', enabled: l.enabled };
-      setEditState(prev => {
-        const merged = { ...init };
-        for (const k of Object.keys(prev)) if (init[k]) merged[k] = prev[k];
-        return merged;
-      });
-    }
-  }, [links]);
+  const [prevLinks, setPrevLinks] = useState(links);
+  if (links && links !== prevLinks) {
+    const init: Record<string, { url: string; enabled: boolean }> = {};
+    for (const l of links) init[l.platform] = { url: l.url ?? '', enabled: l.enabled };
+    setPrevLinks(links);
+    setEditState(prev => {
+      const merged = { ...init };
+      for (const k of Object.keys(prev)) if (init[k]) merged[k] = prev[k];
+      return merged;
+    });
+  }
 
   const handleSave = async (platform: string) => {
     setSaving(platform); setError(null);

@@ -19,8 +19,8 @@ export const customerSupportService = {
     const response = await apiClient.post<StandardResponse<SupportTicketResponse>>('/support/tickets', dto);
     return response.data.data!;
   },
-  addReply: async (id: string, dto: CreateSupportReplyDto): Promise<any> => {
-    const response = await apiClient.post(`/support/tickets/${id}/replies`, dto);
-    return response.data;
+  addReply: async (id: string, dto: CreateSupportReplyDto): Promise<SupportTicketResponse> => {
+    const response = await apiClient.post<StandardResponse<SupportTicketResponse>>(`/support/tickets/${id}/replies`, dto);
+    return response.data.data!;
   },
 };

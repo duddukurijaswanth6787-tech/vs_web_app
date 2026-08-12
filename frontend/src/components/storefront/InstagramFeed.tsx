@@ -1,9 +1,9 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { ReelViewerModal, ReelData } from './ReelViewerModal';
 import { usePublicReels } from '@/features/social/social.hooks';
-import { SocialPostStatus } from '@/features/social/social.types';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 
@@ -131,13 +131,12 @@ export function InstagramFeed() {
                   }}
                 />
               ) : (
-                <img
+                <Image
                   src={reel.posterImage}
                   alt={reel.title}
-                  onError={(e) => {
-                    e.currentTarget.src = fallbackImg;
-                  }}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                  fill
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
                 />
               )}
 

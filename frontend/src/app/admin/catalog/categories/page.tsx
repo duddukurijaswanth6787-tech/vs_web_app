@@ -3,6 +3,7 @@
 import { useToast } from '@/components/toast/ToastProvider';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { 
   useCategoryTree, 
   useCreateCategory, 
@@ -380,7 +381,7 @@ export default function CategoriesPage() {
                     <div key={field}>
                       {val ? (
                         <div className="flex items-center gap-3 border border-neutral-200 rounded-xl p-2 bg-neutral-50">
-                          <img src={resolveMediaUrl(val)} alt={label} className="w-12 h-12 object-contain rounded" />
+                          <Image src={resolveMediaUrl(val)} alt={label} width={48} height={48} className="w-12 h-12 object-contain rounded" />
                           <span className="text-[10px] text-neutral-400 truncate flex-1">{val}</span>
                           <button type="button" onClick={() => setter('')} className="text-red-500 hover:text-red-700 p-1"><X className="w-4 h-4" /></button>
                         </div>

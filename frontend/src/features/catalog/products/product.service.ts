@@ -8,6 +8,7 @@ import {
   ProductListResponse,
   AssignCategoriesDto,
   AssignAttributesDto,
+  ProductColorGroupResponse,
 } from './product.types';
 
 export const productService = {
@@ -30,8 +31,8 @@ export const productService = {
     color?: string;
     /** Shot type — Front, Back, Detail … */
     title?: string;
-  }): Promise<any> => {
-    const response = await apiClient.post<StandardResponse<any>>('/media', {
+  }): Promise<Record<string, unknown>> => {
+    const response = await apiClient.post<StandardResponse<Record<string, unknown>>>('/media', {
       mediaType: 'IMAGE',
       ...dto,
     });
@@ -125,13 +126,13 @@ export const productService = {
     return response.data.data!;
   },
 
-  createColorGroup: async (id: string, dto: { colorAttributeOptionId: string; label?: string }): Promise<any> => {
-    const response = await apiClient.post<StandardResponse<any>>(`/products/${id}/color-groups`, dto);
+  createColorGroup: async (id: string, dto: { colorAttributeOptionId: string; label?: string }): Promise<ProductColorGroupResponse> => {
+    const response = await apiClient.post<StandardResponse<ProductColorGroupResponse>>(`/products/${id}/color-groups`, dto);
     return response.data.data!;
   },
 
-  getColorGroups: async (id: string): Promise<any[]> => {
-    const response = await apiClient.get<StandardResponse<any[]>>(`/products/${id}/color-groups`);
+  getColorGroups: async (id: string): Promise<ProductColorGroupResponse[]> => {
+    const response = await apiClient.get<StandardResponse<ProductColorGroupResponse[]>>(`/products/${id}/color-groups`);
     return response.data.data!;
   },
 
@@ -139,8 +140,8 @@ export const productService = {
     await apiClient.delete(`/products/${productId}/color-groups/${groupId}`);
   },
 
-  syncColorGroups: async (id: string, dto: { colorGroups: any[] }): Promise<any[]> => {
-    const response = await apiClient.post<StandardResponse<any[]>>(`/products/${id}/color-groups/sync`, dto);
+  syncColorGroups: async (id: string, dto: { colorGroups: Array<Record<string, unknown>> }): Promise<ProductColorGroupResponse[]> => {
+    const response = await apiClient.post<StandardResponse<ProductColorGroupResponse[]>>(`/products/${id}/color-groups/sync`, dto);
     return response.data.data!;
   },
 

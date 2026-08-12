@@ -32,18 +32,25 @@ export function CategoryCircles() {
   const { data: catData, isLoading } = useFeaturedCategories();
 
   const categories: CategoryItem[] = useMemo(() => {
-    const list = Array.isArray(catData) ? catData : (catData as any)?.data || [];
+    const typed = catData as { data?: unknown[] } | unknown[];
+    const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: unknown[] })?.data) ? (typed as { data?: unknown[] }).data! : [];
     
     // Filter to only show main categories
-    const mainCategories = list.filter((cat: any) => !cat.parentId);
+    const mainCategories = list.filter((cat) => {
+      const c = cat as Record<string, unknown>;
+      return !c.parentId;
+    });
 
     if (mainCategories.length > 0) {
-      return mainCategories.map((c: any) => ({
-        id: c.id,
-        name: c.name,
-        slug: c.slug,
-        imageUrl: c.image || c.imageUrl || c.primaryImageUrl || PLACEHOLDER_IMAGE,
-      }));
+      return mainCategories.map((cat) => {
+        const c = cat as Record<string, unknown>;
+        return {
+          id: String(c.id || ''),
+          name: String(c.name || ''),
+          slug: String(c.slug || ''),
+          imageUrl: String(c.image || c.imageUrl || c.primaryImageUrl || PLACEHOLDER_IMAGE),
+        };
+      });
     }
     return DEFAULT_CATEGORIES;
   }, [catData]);

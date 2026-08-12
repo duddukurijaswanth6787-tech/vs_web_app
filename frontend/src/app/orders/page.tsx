@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useCustomerOrders } from '@/features/customer/hooks';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
+import type { OrderDto } from '@/features/customer/orders.service';
 
 export default function OrdersPage() {
   const { isAuthenticated, isInitializing } = useAuth();
@@ -17,7 +18,9 @@ export default function OrdersPage() {
   const orders = useMemo(() => {
     if (!data) return [];
     if (Array.isArray(data)) return data;
-    if (Array.isArray(data.data)) return data.data;
+    const typed = data as { orders?: unknown[]; data?: unknown[] };
+    if (Array.isArray(typed?.orders)) return typed.orders as never[];
+    if (Array.isArray(typed?.data)) return typed.data as never[];
     return [];
   }, [data]);
 
@@ -48,7 +51,7 @@ export default function OrdersPage() {
         {!isLoading && orders.length === 0 && (
           <p className="text-sm text-neutral-500 text-center py-12">No orders yet</p>
         )}
-        {orders.map((order: any) => (
+        {orders.map((order: OrderDto) => (
           <div key={order.id || order.orderNumber} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-center justify-between gap-3">
               <div>

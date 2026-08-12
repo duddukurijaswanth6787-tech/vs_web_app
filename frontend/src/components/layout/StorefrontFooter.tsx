@@ -1,18 +1,15 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import {
-  Mail,
   Camera,
   Globe,
   MapPin,
   Play,
   MessageCircle,
   Smartphone,
-  QrCode,
   Lock,
-  Truck,
   Headphones,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,7 +28,7 @@ export function StorefrontFooter() {
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div>
               <h3 className="text-lg font-bold font-serif text-white tracking-tight">
-                Vasanthi's Signature
+                Vasanthi&apos;s Signature
               </h3>
               <p className="text-[11px] text-rose-200/70 hidden sm:block mt-0.5">
                 Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
@@ -167,7 +164,7 @@ export function StorefrontFooter() {
       {/* 4. Bottom Legal Bar */}
       <div className="bg-[#150207] border-t border-rose-950/80 py-2.5 px-4 sm:px-6 lg:px-8 text-rose-300/60 text-[10px]">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
-          <span>© 2026 Vasanthi's Signature. All rights reserved.</span>
+          <span>© 2026 Vasanthi&apos;s Signature. All rights reserved.</span>
 
           <div className="flex items-center gap-2.5 justify-center text-[9px]">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>

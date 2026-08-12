@@ -4,11 +4,12 @@ import { QueryClient } from '@tanstack/react-query';
 import { productService } from '@/features/catalog/products/product.service';
 import { mapProductToItem } from '@/features/customer/mappers';
 import { HomeClient } from '@/components/storefront/HomeClient';
+import type { ProductQueryDto } from '@/features/catalog/products/product.types';
 
 export default async function Home() {
   const queryClient = new QueryClient();
 
-  const fetchProducts = async (query: any) => {
+  const fetchProducts = async (query: ProductQueryDto) => {
     try {
       const result = await productService.findAll({
         isPublished: true,

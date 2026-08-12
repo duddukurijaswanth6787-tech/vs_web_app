@@ -9,13 +9,11 @@ import {
   Truck,
   RotateCcw,
   ShieldCheck,
-  CheckCircle2,
   Eye,
   Monitor,
   LayoutGrid,
   ChevronRight,
   Sparkles,
-  Award,
 } from 'lucide-react';
 import { isLocalOrPlaceholder, withVariant } from '@/lib/media-url';
 

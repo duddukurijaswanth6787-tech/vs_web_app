@@ -21,29 +21,33 @@ export function ShoppableReelsSection() {
 
   const reels: ReelData[] = useMemo(() => {
     const list = Array.isArray(data?.data) ? data.data : Array.isArray(data) ? data : [];
-    return list.map((post: any, index: number) => {
-      const media = post.media?.[0] || post.medias?.[0] || {};
-      const products = post.products || post.taggedProducts || [];
+    return list.map((post: unknown, index: number) => {
+      const pPost = post as Record<string, unknown>;
+      const media = (Array.isArray(pPost.media) ? (pPost.media[0] as Record<string, unknown>) : (Array.isArray(pPost.medias) ? (pPost.medias[0] as Record<string, unknown>) : {})) || {};
+      const products = Array.isArray(pPost.products) ? pPost.products : Array.isArray(pPost.taggedProducts) ? pPost.taggedProducts : [];
       return {
-        id: post.id || `reel-${index}`,
-        title: post.title || post.caption || 'Shoppable Reel',
-        posterImage: media.thumbnailUrl || media.url || post.thumbnailUrl || post.coverUrl || PLACEHOLDER_IMAGE,
-        accountName: post.authorName || 'vasanthi.designers',
+        id: String(pPost.id || `reel-${index}`),
+        title: String(pPost.title || pPost.caption || 'Shoppable Reel'),
+        posterImage: String((media as Record<string, unknown>).thumbnailUrl || (media as Record<string, unknown>).url || pPost.thumbnailUrl || pPost.coverUrl || PLACEHOLDER_IMAGE),
+        accountName: String(pPost.authorName || 'vasanthi.designers'),
         accountAvatar: 'VD',
-        caption: post.caption || post.title || '',
-        audioTrack: post.audioTrack || 'Original audio',
-        likes: String(post.likeCount ?? post.likes ?? 0),
-        comments: String(post.commentCount ?? post.comments ?? 0),
-        shares: String(post.shareCount ?? post.shares ?? 0),
-        taggedProducts: products.slice(0, 3).map((p: any, i: number) => ({
-          id: p.id || p.productId || `tp-${i}`,
-          name: p.name || p.productName || 'Product',
+        caption: String(pPost.caption || pPost.title || ''),
+        audioTrack: String(pPost.audioTrack || 'Original audio'),
+        likes: String(pPost.likeCount ?? pPost.likes ?? 0),
+        comments: String(pPost.commentCount ?? pPost.comments ?? 0),
+        shares: String(pPost.shareCount ?? pPost.shares ?? 0),
+        taggedProducts: products.slice(0, 3).map((pItem: unknown, i: number) => {
+          const p = pItem as Record<string, unknown>;
+          return {
+            id: String(p.id || p.productId || `tp-${i}`),
+            name: String(p.name || p.productName || 'Product'),
           price: Number(p.salePrice ?? p.basePrice ?? p.price ?? 0),
           originalPrice: Number(p.basePrice ?? p.originalPrice ?? p.price ?? 0),
           discount: '',
-          image: p.primaryImageUrl || p.image || PLACEHOLDER_IMAGE,
-          position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
-        })),
+            image: String(p.primaryImageUrl || p.image || PLACEHOLDER_IMAGE),
+            position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
+          };
+        }),
       } as ReelData;
     });
   }, [data]);

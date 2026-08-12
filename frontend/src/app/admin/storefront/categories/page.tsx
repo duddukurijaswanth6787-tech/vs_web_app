@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { useHomepageCategories, useAddHomepageCategory, useRemoveHomepageCategory, useReorderHomepageCategories } from '@/features/storefront/storefront.hooks';
+import Image from 'next/image';
+import { useHomepageCategories, useAddHomepageCategory, useRemoveHomepageCategory } from '@/features/storefront/storefront.hooks';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
@@ -11,10 +12,9 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { X } from 'lucide-react';
 
 export default function HomepageCategoriesPage() {
-  const { data, isLoading, refetch } = useHomepageCategories();
+  const { data, isLoading } = useHomepageCategories();
   const addMut = useAddHomepageCategory();
   const removeMut = useRemoveHomepageCategory();
-  const reorderMut = useReorderHomepageCategories();
   const [showAdd, setShowAdd] = useState(false);
   const [categoryId, setCategoryId] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -36,9 +36,9 @@ export default function HomepageCategoriesPage() {
   };
 
   const columns: Column<HomepageCategory>[] = [
-    { key: 'order', label: 'Order', render: (c) => <GripVertical className="w-4 h-4 text-neutral-300 cursor-grab" /> },
+    { key: 'order', label: 'Order', render: () => <GripVertical className="w-4 h-4 text-neutral-300 cursor-grab" /> },
     { key: 'name', label: 'Category', render: (c) => <span className="font-semibold text-neutral-900">{c.category.name}</span> },
-    { key: 'image', label: 'Image', render: (c) => c.image ? <img src={c.image} alt="" className="w-12 h-8 object-cover rounded border border-neutral-200" /> : <div className="w-12 h-8 bg-neutral-100 rounded border" /> },
+    { key: 'image', label: 'Image', render: (c) => c.image ? <Image src={c.image} alt="" width={48} height={32} className="w-12 h-8 object-cover rounded border border-neutral-200" /> : <div className="w-12 h-8 bg-neutral-100 rounded border" /> },
     { key: 'displayOrder', label: 'Display Order', render: (c) => <span className="text-center block">{c.displayOrder}</span> },
     { key: 'actions', label: '', render: (c) => (
       <button onClick={() => handleRemove(c.id)} className="p-1.5 hover:bg-red-50 rounded text-red-500"><Trash2 className="w-4 h-4" /></button>

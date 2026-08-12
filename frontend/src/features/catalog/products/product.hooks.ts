@@ -127,7 +127,7 @@ export function useDeleteColorGroup() {
 export function useSyncColorGroups() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, dto }: { id: string; dto: { colorGroups: any[] } }) =>
+    mutationFn: ({ id, dto }: { id: string; dto: { colorGroups: Array<Record<string, unknown>> } }) =>
       productService.syncColorGroups(id, dto),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.id) });

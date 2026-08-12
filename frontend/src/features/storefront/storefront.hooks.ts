@@ -42,7 +42,7 @@ export function useHomepage() {
 export function useUpdateHomepage() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (sections: { key: string; data: Partial<any> }[]) => storefrontService.updateHomepage(sections),
+    mutationFn: (sections: { key: string; data: Partial<Record<string, unknown>> }[]) => storefrontService.updateHomepage(sections),
     onSuccess: () => { qc.invalidateQueries({ queryKey: storefrontKeys.homepage() }); qc.invalidateQueries({ queryKey: storefrontKeys.dashboard() }); },
   });
 }

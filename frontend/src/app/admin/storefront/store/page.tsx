@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSettings, useUpdateSettings } from '@/features/storefront/storefront.hooks';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { Button } from '@/components/forms/FormField';
+import { Button, LabeledField } from '@/components/forms/FormField';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { Save, RotateCcw } from 'lucide-react';
-import { categorizeApiError } from '@/lib/api-error-handler';
+import type { WebsiteSettings } from '@/features/storefront/storefront.types';
 
 const defaultValues = {
   storeName: '', storeDescription: '', logo: '', favicon: '', supportPhone: '', supportEmail: '',
@@ -14,30 +14,36 @@ const defaultValues = {
   language: 'en', copyrightText: '',
 };
 
+type StoreForm = typeof defaultValues;
+
+const fromSettings = (s: WebsiteSettings): StoreForm => ({
+  storeName: s.storeName ?? '',
+  storeDescription: s.storeDescription ?? '',
+  logo: s.logo ?? '',
+  favicon: s.favicon ?? '',
+  supportPhone: s.supportPhone ?? '',
+  supportEmail: s.supportEmail ?? '',
+  whatsappNumber: s.whatsappNumber ?? '',
+  supportHours: s.supportHours ?? '',
+  companyAddress: s.companyAddress ?? '',
+  currency: s.currency ?? 'INR',
+  timezone: s.timezone ?? 'Asia/Kolkata',
+  language: s.language ?? 'en',
+  copyrightText: s.copyrightText ?? '',
+});
+
 export default function StoreInformationPage() {
   const { data, isLoading } = useSettings();
   const updateMut = useUpdateSettings();
-  const [form, setForm] = useState(defaultValues);
+  const [form, setForm] = useState<StoreForm>(defaultValues);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (data) setForm({
-      storeName: data.storeName ?? '',
-      storeDescription: data.storeDescription ?? '',
-      logo: data.logo ?? '',
-      favicon: data.favicon ?? '',
-      supportPhone: data.supportPhone ?? '',
-      supportEmail: data.supportEmail ?? '',
-      whatsappNumber: data.whatsappNumber ?? '',
-      supportHours: data.supportHours ?? '',
-      companyAddress: data.companyAddress ?? '',
-      currency: data.currency ?? 'INR',
-      timezone: data.timezone ?? 'Asia/Kolkata',
-      language: data.language ?? 'en',
-      copyrightText: data.copyrightText ?? '',
-    });
-  }, [data]);
+  const [prevSettings, setPrevSettings] = useState(data);
+  if (data && data !== prevSettings) {
+    setPrevSettings(data);
+    setForm(fromSettings(data));
+  }
 
   if (isLoading) return <PageLoader />;
 
@@ -52,16 +58,7 @@ export default function StoreInformationPage() {
 
   const reset = () => { if (data) setForm({ ...defaultValues, ...data }); };
 
-  const Field = ({ label, field, type = 'text', placeholder }: { label: string; field: keyof typeof form; type?: string; placeholder?: string }) => (
-    <div>
-      <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">{label}</label>
-      {type === 'textarea' ? (
-        <textarea value={form[field] as string} onChange={(e) => setForm(p => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" rows={3} />
-      ) : (
-        <input type={type} value={form[field] as string} onChange={(e) => setForm(p => ({ ...p, [field]: e.target.value }))} placeholder={placeholder} className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-sm" />
-      )}
-    </div>
-  );
+  const update = (field: keyof StoreForm) => (value: string) => setForm(p => ({ ...p, [field]: value }));
 
   return (
     <div className="space-y-6">
@@ -79,31 +76,31 @@ export default function StoreInformationPage() {
         <div className="space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Branding</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Store Name" field="storeName" placeholder="Vasanthi Designers" />
-            <Field label="Language" field="language" />
-            <Field label="Logo URL" field="logo" placeholder="https://..." />
-            <Field label="Favicon URL" field="favicon" placeholder="https://..." />
+            <LabeledField label="Store Name" value={form.storeName} onChange={update('storeName')} placeholder="Vasanthi Designers" />
+            <LabeledField label="Language" value={form.language} onChange={update('language')} />
+            <LabeledField label="Logo URL" value={form.logo} onChange={update('logo')} placeholder="https://..." />
+            <LabeledField label="Favicon URL" value={form.favicon} onChange={update('favicon')} placeholder="https://..." />
           </div>
-          <Field label="Store Description" field="storeDescription" type="textarea" placeholder="Brief description of your store" />
+          <LabeledField label="Store Description" value={form.storeDescription} onChange={update('storeDescription')} textarea placeholder="Brief description of your store" />
         </div>
 
         <div className="border-t border-neutral-100 pt-4 space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Contact</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <Field label="Phone" field="supportPhone" placeholder="+91 98765 43210" />
-            <Field label="Email" field="supportEmail" type="email" placeholder="support@vasanthi.com" />
-            <Field label="WhatsApp Number" field="whatsappNumber" placeholder="+91 98765 43210" />
-            <Field label="Support Hours" field="supportHours" placeholder="Mon-Sat, 10 AM - 7 PM" />
+            <LabeledField label="Phone" value={form.supportPhone} onChange={update('supportPhone')} placeholder="+91 98765 43210" />
+            <LabeledField label="Email" value={form.supportEmail} onChange={update('supportEmail')} type="email" placeholder="support@vasanthi.com" />
+            <LabeledField label="WhatsApp Number" value={form.whatsappNumber} onChange={update('whatsappNumber')} placeholder="+91 98765 43210" />
+            <LabeledField label="Support Hours" value={form.supportHours} onChange={update('supportHours')} placeholder="Mon-Sat, 10 AM - 7 PM" />
           </div>
-          <Field label="Company Address" field="companyAddress" type="textarea" />
+          <LabeledField label="Company Address" value={form.companyAddress} onChange={update('companyAddress')} textarea />
         </div>
 
         <div className="border-t border-neutral-100 pt-4 space-y-4">
           <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Regional</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <Field label="Currency" field="currency" placeholder="INR" />
-            <Field label="Timezone" field="timezone" placeholder="Asia/Kolkata" />
-            <Field label="Copyright Text" field="copyrightText" placeholder="© 2026 Vasanthi Designers" />
+            <LabeledField label="Currency" value={form.currency} onChange={update('currency')} placeholder="INR" />
+            <LabeledField label="Timezone" value={form.timezone} onChange={update('timezone')} placeholder="Asia/Kolkata" />
+            <LabeledField label="Copyright Text" value={form.copyrightText} onChange={update('copyrightText')} placeholder="© 2026 Vasanthi Designers" />
           </div>
         </div>
 

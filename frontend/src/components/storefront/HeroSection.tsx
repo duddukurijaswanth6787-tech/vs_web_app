@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronLeft, ChevronRight, Sparkles, Award, Heart, Truck } from 'lucide-react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useStorefrontBanners, usePublicSettings } from '@/features/customer/hooks';
 import { isLocalOrPlaceholder, withVariant, resolveMediaUrl } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
@@ -43,16 +43,22 @@ const DEFAULT_SLIDES = [
 export function HeroSection() {
   const { data } = useStorefrontBanners();
   const banners: Banner[] = useMemo(() => {
-    const list = Array.isArray(data) ? data : data?.data || [];
+    const typedData = data as { data?: Array<Record<string, unknown>> } | Array<Record<string, unknown>> | undefined;
+    const list = Array.isArray(typedData) ? typedData : typedData?.data || [];
     if (list.length > 0) {
-      return list.map((b: any, index: number) => {
-        const rawImg = b.imageUrl || b.mobileImageUrl;
+      return list.map((b: Record<string, unknown>) => {
+        const rawImg = (b.imageUrl as string) || (b.mobileImageUrl as string);
         const resolved = rawImg ? resolveMediaUrl(rawImg) : '';
         const isValid = resolved && !resolved.includes('placehold.co');
         return {
-          ...b,
+          id: String(b.id || ''),
+          title: String(b.title || ''),
+          subtitle: String(b.description || b.subtitle || ''),
+          ctaText: String(b.ctaText || 'Shop Collection'),
+          ctaLink: String(b.ctaLink || b.linkUrl || '/catalog'),
           imageUrl: isValid ? resolved : PLACEHOLDER_IMAGE,
-          subtitle: b.description || b.subtitle,
+          badge: String(b.badge || 'New Collection'),
+          color: String(b.color || '#800020'),
         };
       });
     }
@@ -61,8 +67,9 @@ export function HeroSection() {
 
   const [index, setIndex] = useState(0);
   const { data: settings } = usePublicSettings();
-  const autoplayEnabled = settings?.bannerAutoplayEnabled ?? true;
-  const autoplayInterval = settings?.bannerAutoplayInterval ?? 6;
+  const typedSettings = settings as Record<string, unknown> | undefined;
+  const autoplayEnabled = (typedSettings?.bannerAutoplayEnabled as boolean | undefined) ?? true;
+  const autoplayInterval = Number(typedSettings?.bannerAutoplayInterval) || 6;
 
   useEffect(() => {
     let mounted = true;

@@ -1,10 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import {
   useSocialPosts,
-  useCreateSocialPost,
   useUpdatePostStatus,
   useAttachMedia,
   useTagProducts,
@@ -41,27 +41,13 @@ import {
   Video,
   Image as ImageIcon,
 } from 'lucide-react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { formatDate } from '@/utils/format';
+import { mediaService } from '@/features/catalog/media/media.service';
 import { useAuth } from '@/hooks/useAuth';
 import { categorizeApiError } from '@/lib/api-error-handler';
 import { socialService } from '@/features/social/social.service';
 import { RemoteImage } from '@/components/media/RemoteImage';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
-import { mediaService } from '@/features/catalog/media/media.service';
-
-// Form schemas
-const postSchema = z.object({
-  contentType: z.enum([SocialPostContentType.POST, SocialPostContentType.REEL]),
-  caption: z.string().max(300).optional(),
-  hashtags: z.string().optional(),
-  visibility: z.enum([SocialPostVisibility.PUBLIC, SocialPostVisibility.HIDDEN]),
-  allowComments: z.boolean(),
-});
-
-type PostFormValues = z.infer<typeof postSchema>;
+import { formatDate } from '@/utils/format';
 
 export default function SocialDashboardPage() {
   const router = useRouter();
@@ -86,7 +72,6 @@ export default function SocialDashboardPage() {
   });
 
   // Actions
-  const createPostMut = useCreateSocialPost();
   const deletePostMut = useDeleteSocialPost();
   const restorePostMut = useRestoreSocialPost();
   const updateStatusMut = useUpdatePostStatus();
@@ -103,22 +88,6 @@ export default function SocialDashboardPage() {
     const params = new URLSearchParams(searchParams.toString());
     params.set(key, value);
     router.push(`/admin/social?${params.toString()}`);
-  };
-
-  const handleCreateSubmit = async (values: PostFormValues) => {
-    try {
-      const hashtags = values.hashtags
-        ? values.hashtags.split(' ').map((h) => h.trim()).filter((h) => h.startsWith('#'))
-        : [];
-      await createPostMut.mutateAsync({
-        ...values,
-        hashtags,
-      });
-      setIsCreateOpen(false);
-      refetchPosts();
-    } catch (err) {
-      console.error(categorizeApiError(err));
-    }
   };
 
   const handleStatusChange = async (postId: string, action: 'PUBLISH' | 'HIDE' | 'ARCHIVE' | 'RESTORE') => {
@@ -531,8 +500,8 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   const [contentType, setContentType] = useState<SocialPostContentType>(SocialPostContentType.REEL);
   const [caption, setCaption] = useState('');
   const [hashtags, setHashtags] = useState('#vasanthissignature #ethnicwear #festive');
-  const [visibility, setVisibility] = useState<SocialPostVisibility>(SocialPostVisibility.PUBLIC);
-  const [allowComments, setAllowComments] = useState(true);
+  const [visibility] = useState<SocialPostVisibility>(SocialPostVisibility.PUBLIC);
+  const [allowComments] = useState(true);
 
   // Media state
   const [mediaFile, setMediaFile] = useState<File | null>(null);
@@ -788,7 +757,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               <div className="flex items-center justify-between">
                 <label className="block text-[11px] font-extrabold text-[#800020] uppercase tracking-wider flex items-center gap-1.5">
                   <Tag className="w-3.5 h-3.5" />
-                  <span>Attach Catalog Products ("Shop the Look")</span>
+                  <span>Attach Catalog Products (&quot;Shop the Look&quot;)</span>
                 </label>
                 <span className="text-[10px] bg-rose-100 text-[#800020] px-2 py-0.5 rounded-full font-bold">
                   {taggedProducts.length} attached
@@ -814,7 +783,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5">
                     {searchProductData.data.map((prod) => {
                       const isTagged = taggedProducts.some((p) => p.id === prod.id);
-                      const imgUrl = prod.images?.[0]?.url || (prod as any).thumbnailUrl || '';
+                      const imgUrl = prod.images?.[0]?.thumbnailUrl || prod.images?.[0]?.url || prod.primaryImageUrl || '';
                       const price = prod.salePrice || prod.basePrice || 0;
 
                       return (
@@ -855,7 +824,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                   </div>
                 ) : (
                   <div className="p-4 text-center text-neutral-400 text-xs italic">
-                    No products found matching "{productSearch}".
+                    No products found matching &quot;{productSearch}&quot;.
                   </div>
                 )}
               </div>
@@ -863,7 +832,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               {/* Tagged items count notice */}
               {taggedProducts.length > 0 && (
                 <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200/80 text-emerald-900 px-3 py-1.5 rounded-xl text-[10px] font-bold">
-                  <span>✓ {taggedProducts.length} Product(s) attached & ready for "Shop the Look"</span>
+                  <span>✓ {taggedProducts.length} Product(s) attached & ready for &quot;Shop the Look&quot;</span>
                   <button type="button" onClick={() => setTaggedProducts([])} className="text-emerald-700 hover:underline text-[9px]">Clear All</button>
                 </div>
               )}
@@ -883,7 +852,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 contentType === SocialPostContentType.REEL && mediaFile?.type?.includes('video') ? (
                   <video src={mediaPreviewUrl} className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline />
                 ) : (
-                  <img src={mediaPreviewUrl} alt="Preview" className="absolute inset-0 w-full h-full object-cover" />
+                  <Image src={mediaPreviewUrl} alt="Preview" fill sizes="220px" className="object-cover" />
                 )
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-neutral-800 text-neutral-500">
@@ -898,7 +867,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                   <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
                   Reels
                 </span>
-                <span className="text-neutral-300">Vasanthi's Signature</span>
+                <span className="text-neutral-300">Vasanthi&apos;s Signature</span>
               </div>
 
               {/* Overlay Bottom Content */}
@@ -914,7 +883,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 {taggedProducts.length > 0 && (
                   <div className="bg-white/95 text-neutral-900 rounded-xl p-1.5 shadow-md flex items-center justify-between gap-1 mt-1">
                     <div className="flex items-center gap-1">
-                      <RemoteImage src={taggedProducts[0].images?.[0]?.url || (taggedProducts[0] as any).thumbnailUrl || ''} alt="" width={20} height={20} className="w-5 h-5 object-cover rounded-md" />
+                      <RemoteImage src={taggedProducts[0].images?.[0]?.thumbnailUrl || taggedProducts[0].images?.[0]?.url || taggedProducts[0].primaryImageUrl || ''} alt="" width={20} height={20} className="w-5 h-5 object-cover rounded-md" />
                       <span className="text-[8px] font-extrabold line-clamp-1">{taggedProducts[0].name}</span>
                     </div>
                     <span className="text-[8px] font-bold text-[#800020] bg-rose-100 px-1.5 py-0.5 rounded-md shrink-0">Shop</span>

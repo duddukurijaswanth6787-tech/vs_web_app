@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { useFeatures, useUpdateFeature, useBulkUpdateFeatures } from '@/features/storefront/storefront.hooks';
+import { useFeatures, useBulkUpdateFeatures } from '@/features/storefront/storefront.hooks';
 import type { FeatureToggle } from '@/features/storefront/storefront.types';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -11,7 +11,6 @@ const groupOrder = ['CUSTOMER', 'PRODUCT', 'CHECKOUT', 'SEARCH', 'MARKETING', 'A
 
 export default function FeaturesPage() {
   const { data: features, isLoading } = useFeatures();
-  const updateMut = useUpdateFeature();
   const bulkMut = useBulkUpdateFeatures();
   const [changed, setChanged] = useState<Record<string, boolean>>({});
   const [error, setError] = useState<string | null>(null);

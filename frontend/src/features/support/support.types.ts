@@ -10,6 +10,15 @@ export interface CreateSupportReplyDto {
   attachments?: string[];
 }
 
+export interface SupportReplyResponse {
+  id: string;
+  ticketId: string;
+  message: string;
+  attachments?: string[];
+  senderType?: string;
+  createdAt: string;
+}
+
 export interface SupportTicketResponse {
   id: string;
   orderNumber?: string;
@@ -19,5 +28,5 @@ export interface SupportTicketResponse {
   priority: string;
   createdAt: string;
   updatedAt: string;
-  replies: any[];
+  replies: SupportReplyResponse[];
 }

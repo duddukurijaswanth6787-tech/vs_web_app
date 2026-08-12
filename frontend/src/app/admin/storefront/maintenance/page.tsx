@@ -1,28 +1,37 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { useSettings, useUpdateSettings } from '@/features/storefront/storefront.hooks';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { Button } from '@/components/forms/FormField';
 import { getApiErrorMessage } from '@/utils/api-error';
-import { Save, Eye } from 'lucide-react';
+import { Save } from 'lucide-react';
+import type { WebsiteSettings } from '@/features/storefront/storefront.types';
+
+const formDefaults = { maintenanceMode: false, maintenanceMessage: '', maintenanceStartTime: '', maintenanceEndTime: '', whitelistedIps: '' };
+
+type MaintenanceForm = typeof formDefaults;
+
+const fromSettings = (s: WebsiteSettings): MaintenanceForm => ({
+  maintenanceMode: s.maintenanceMode ?? false,
+  maintenanceMessage: s.maintenanceMessage ?? '',
+  maintenanceStartTime: s.maintenanceStartTime ?? '',
+  maintenanceEndTime: s.maintenanceEndTime ?? '',
+  whitelistedIps: s.whitelistedIps ?? '',
+});
 
 export default function MaintenancePage() {
   const { data, isLoading } = useSettings();
   const updateMut = useUpdateSettings();
-  const [form, setForm] = useState({ maintenanceMode: false, maintenanceMessage: '', maintenanceStartTime: '', maintenanceEndTime: '', whitelistedIps: '' });
+  const [form, setForm] = useState<MaintenanceForm>(formDefaults);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
 
-  useEffect(() => {
-    if (data) setForm({
-      maintenanceMode: data.maintenanceMode ?? false,
-      maintenanceMessage: data.maintenanceMessage ?? '',
-      maintenanceStartTime: data.maintenanceStartTime ?? '',
-      maintenanceEndTime: data.maintenanceEndTime ?? '',
-      whitelistedIps: data.whitelistedIps ?? '',
-    });
-  }, [data]);
+  const [prevSettings, setPrevSettings] = useState(data);
+  if (data && data !== prevSettings) {
+    setPrevSettings(data);
+    setForm(fromSettings(data));
+  }
 
   if (isLoading) return <PageLoader />;
 

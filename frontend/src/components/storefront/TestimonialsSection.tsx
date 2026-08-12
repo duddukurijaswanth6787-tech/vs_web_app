@@ -36,7 +36,7 @@ const REVIEWS = [
 ];
 
 export function TestimonialsSection() {
-  const [index, setIndex] = useState(0);
+  const [, setIndex] = useState(0);
 
   const prev = () => setIndex((i) => (i - 1 + REVIEWS.length) % REVIEWS.length);
   const next = () => setIndex((i) => (i + 1) % REVIEWS.length);
@@ -98,7 +98,7 @@ export function TestimonialsSection() {
 
               {/* Comment */}
               <p className="text-xs sm:text-sm text-neutral-700 font-medium italic leading-relaxed">
-                "{item.comment}"
+                &quot;{item.comment}&quot;
               </p>
             </div>
 

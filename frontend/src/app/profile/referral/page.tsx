@@ -22,7 +22,8 @@ export default function ReferralPage() {
     );
   }
 
-  const code = data?.code?.code || data?.code?.referralCode || data?.code || '';
+  const typed = data as { code?: { code?: string; referralCode?: string } | string; rewards?: unknown } | undefined;
+  const code = typed?.code && typeof typed.code === 'object' ? typed.code.code || typed.code.referralCode || '' : typed?.code || '';
 
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
@@ -52,7 +53,7 @@ export default function ReferralPage() {
         <div className="bg-white border border-neutral-200 rounded-3xl p-4">
           <h2 className="text-sm font-bold mb-2">Rewards</h2>
           <pre className="text-[11px] text-neutral-600 whitespace-pre-wrap overflow-auto">
-            {JSON.stringify(data?.rewards || {}, null, 2)}
+            {JSON.stringify(typed?.rewards || {}, null, 2)}
           </pre>
         </div>
       </main>

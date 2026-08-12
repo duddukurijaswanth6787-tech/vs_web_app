@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo } from 'react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -54,7 +55,7 @@ export default function CollectionsPage() {
               href={`/collections/${col.slug}`}
               className="relative rounded-3xl overflow-hidden min-h-[220px] group"
             >
-              <img src={withVariant(col.image, 'large')} alt={col.title} className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+              <Image src={withVariant(col.image, 'large')} alt={col.title} fill sizes="(max-width: 768px) 100vw, 33vw" className="object-cover group-hover:scale-105 transition-transform duration-500" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
               <div className="relative z-10 p-5 text-white mt-28">
                 <h2 className="text-lg font-bold font-serif">{col.title}</h2>
