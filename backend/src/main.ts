@@ -95,7 +95,7 @@ async function bootstrap() {
   app.use(compression());
 
   app.setGlobalPrefix('api/v1', {
-    exclude: ['health', 'api/docs'],
+    exclude: ['/', 'health', 'api/docs'],
   });
 
   app.enableShutdownHooks();
