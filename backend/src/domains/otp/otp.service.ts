@@ -101,12 +101,14 @@ export class OtpService {
       newValue: { purpose, phone },
     });
 
-    const isDev = this.configService.get<string>('app.env') !== 'production';
+    const isDev =
+      this.configService.get<string>('app.env') !== 'production' &&
+      process.env.NODE_ENV !== 'production';
     return {
       phone,
       expiresInSeconds: expiryMinutes * 60,
       purpose,
-      ...(isDev || !smsEnabled ? { devCode: code } : {}),
+      ...(isDev ? { devCode: code } : {}),
     };
   }
 

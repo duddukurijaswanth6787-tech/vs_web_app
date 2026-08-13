@@ -27,13 +27,20 @@ export default function RegisterPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+
+    const cleanPhone = form.phone.replace(/\D/g, '');
+    if (!form.phone || cleanPhone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+
     setLoading(true);
     try {
       await customerAuthService.register({
         firstName: form.firstName,
         lastName: form.lastName || undefined,
         email: form.email,
-        phone: form.phone || undefined,
+        phone: cleanPhone,
         password: form.password,
       });
       await completeTokenLogin();
@@ -63,7 +70,7 @@ export default function RegisterPage() {
             { key: 'firstName', label: 'First name', icon: User, required: true },
             { key: 'lastName', label: 'Last name', icon: User },
             { key: 'email', label: 'Email', icon: Mail, type: 'email', required: true },
-            { key: 'phone', label: 'Phone', icon: Phone },
+            { key: 'phone', label: '10-digit Mobile Number', icon: Phone, required: true },
             { key: 'password', label: 'Password', icon: Lock, type: 'password', required: true },
           ].map((field) => (
             <label key={field.key} className="block space-y-1.5">

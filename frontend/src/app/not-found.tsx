@@ -16,7 +16,7 @@ export default function StorefrontNotFound() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-xl font-bold font-serif text-[#800020] tracking-tight">
-          Vasanthi Designers
+          Vasanthi&apos;s Signature
         </h1>
         <div className="w-6" />
       </header>

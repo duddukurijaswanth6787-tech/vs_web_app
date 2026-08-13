@@ -41,10 +41,29 @@ export default function AddAddressPage() {
     );
   }
 
+  const validateField = (key: string, val: string) => {
+    if (key === 'addressLine2') return '';
+    if (!val || !val.trim()) return 'This field is required';
+    if (key === 'phone' && val.replace(/\D/g, '').length !== 10) return '10-digit phone required';
+    if (key === 'postalCode' && val.replace(/\D/g, '').length !== 6) return '6-digit PIN required';
+    return '';
+  };
+
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    let hasErr = false;
+    (Object.keys(empty) as Array<keyof typeof empty>).forEach((k) => {
+      if (validateField(k, String(form[k] || ''))) hasErr = true;
+    });
+
+    if (hasErr) {
+      setError('Please fill in all required address fields correctly.');
+      return;
+    }
+
+    setLoading(true);
     try {
       await customerMeService.createAddress(form);
       qc.invalidateQueries({ queryKey: customerKeys.address() });

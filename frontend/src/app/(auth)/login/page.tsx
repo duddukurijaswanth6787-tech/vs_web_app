@@ -38,7 +38,9 @@ function CustomerLoginForm() {
     try {
       const result = await customerAuthService.sendOtp(normalizedPhone, 'LOGIN');
       setOtpSent(true);
-      if (result.devCode) setDevHint(`Dev OTP: ${result.devCode}`);
+      if (result.devCode && process.env.NODE_ENV !== 'production') {
+        setDevHint(`Dev OTP: ${result.devCode}`);
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to send OTP'));
     } finally {

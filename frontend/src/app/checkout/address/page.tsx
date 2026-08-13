@@ -71,7 +71,7 @@ export default function AddressListPage() {
           <div key={addr.id} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-bold">{addr.fullName || String(addr.name || '')}</p>
+                <p className="text-sm font-bold">{addr.fullName}</p>
                 <p className="text-xs text-neutral-600 mt-1">
                   {[addr.addressLine1, addr.addressLine2, addr.city, addr.state, addr.postalCode]
                     .filter(Boolean)
