@@ -241,7 +241,7 @@ export class GlobalExceptionMapper {
       if (status === HttpStatus.NOT_FOUND) {
         return new DatabaseException(
           message,
-          'DATABASE_RECORD_NOT_FOUND',
+          'RESOURCE_NOT_FOUND',
           HttpStatus.NOT_FOUND,
           metadata,
         );

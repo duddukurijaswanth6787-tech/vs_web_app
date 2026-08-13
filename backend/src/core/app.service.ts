@@ -8,7 +8,14 @@ export class AppService {
   /**
    * Returns a standard greeting message.
    */
-  getHello(): string {
-    return 'Hello World!';
+  getHello() {
+    return {
+      status: 'online',
+      name: "Vasanthi's Signature API",
+      version: '1.0.0',
+      health: '/health',
+      docs: '/api/docs',
+      apiVersion: 'api/v1',
+    };
   }
 }
