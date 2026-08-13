@@ -24,14 +24,14 @@ interface EditAddressForm {
 }
 
 const toForm = (a: AddressDto): EditAddressForm => ({
-  fullName: a.fullName,
-  phone: a.phone,
-  addressLine1: typeof a.addressLine1 === 'string' ? a.addressLine1 : '',
+  fullName: a.fullName || '',
+  phone: a.phone || '',
+  addressLine1: typeof a.addressLine1 === 'string' ? a.addressLine1 : (a.streetAddress || ''),
   addressLine2: typeof a.addressLine2 === 'string' ? a.addressLine2 : '',
-  city: a.city,
-  state: a.state,
-  postalCode: a.postalCode,
-  country: typeof a.country === 'string' ? a.country : '',
+  city: a.city || '',
+  state: a.state || '',
+  postalCode: a.postalCode || '',
+  country: typeof a.country === 'string' ? a.country : 'India',
 });
 
 export default function EditAddressPage() {

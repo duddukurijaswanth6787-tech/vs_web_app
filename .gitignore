@@ -30,3 +30,4 @@ package-lock.json.backup.*
 lint-*.txt
 lint-*.json
 *_output.txt
+.env*

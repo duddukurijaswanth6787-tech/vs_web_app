@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 
@@ -194,21 +195,27 @@ async function main() {
   // ---------------------------------------------------------------------------
   // Women's ethnic wear catalog – clean + seed attributes / categories / brand
   // ---------------------------------------------------------------------------
-  console.log('Cleaning demo catalog products & attributes...');
-  await prisma.variantAttributeValue.deleteMany({});
-  await prisma.inventoryMovement.deleteMany({});
-  await prisma.inventory.deleteMany({});
+  await prisma.orderTimeline.deleteMany({}).catch(() => undefined);
+  await prisma.orderItem.deleteMany({}).catch(() => undefined);
+  await prisma.order.deleteMany({}).catch(() => undefined);
+  await prisma.shoppingCartItem.deleteMany({}).catch(() => undefined);
+  await prisma.shoppingCart.deleteMany({}).catch(() => undefined);
+  await prisma.wishlistItem.deleteMany({}).catch(() => undefined);
+  await prisma.wishlist.deleteMany({}).catch(() => undefined);
+  await prisma.review.deleteMany({}).catch(() => undefined);
+  await prisma.inventoryMovement.deleteMany({}).catch(() => undefined);
+  await prisma.inventory.deleteMany({}).catch(() => undefined);
   await prisma.variantWarehouseInventory.deleteMany({}).catch(() => undefined);
-  await prisma.productMedia.deleteMany({});
-  await prisma.productAttribute.deleteMany({});
-  await prisma.productCategory.deleteMany({});
-  await prisma.productRelatedProduct.deleteMany({});
-  await prisma.productVariant.deleteMany({});
-  await prisma.product.deleteMany({});
-  await prisma.categoryAttribute.deleteMany({});
-  await prisma.attributeOption.deleteMany({});
-  await prisma.attribute.deleteMany({});
-  await prisma.attributeGroup.deleteMany({});
+  await prisma.productMedia.deleteMany({}).catch(() => undefined);
+  await prisma.productAttribute.deleteMany({}).catch(() => undefined);
+  await prisma.productCategory.deleteMany({}).catch(() => undefined);
+  await prisma.productRelatedProduct.deleteMany({}).catch(() => undefined);
+  await prisma.productVariant.deleteMany({}).catch(() => undefined);
+  await prisma.product.deleteMany({}).catch(() => undefined);
+  await prisma.categoryAttribute.deleteMany({}).catch(() => undefined);
+  await prisma.attributeOption.deleteMany({}).catch(() => undefined);
+  await prisma.attribute.deleteMany({}).catch(() => undefined);
+  await prisma.attributeGroup.deleteMany({}).catch(() => undefined);
 
   console.log("Seeding brand Vasanthi's Signature...");
   const brand = await prisma.brand.upsert({

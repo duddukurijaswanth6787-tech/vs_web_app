@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowLeft, Heart, ShoppingBag, Trash2, RefreshCw } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerWishlist, useWishlistMutations } from '@/features/customer/hooks';
@@ -28,21 +29,7 @@ export default function WishlistPage() {
 
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <h1 className="text-lg font-bold font-serif text-[#800020]">My Wishlist</h1>
-        </div>
-        <button
-          onClick={() => refetch()}
-          className="p-2 text-neutral-500 hover:text-neutral-900 rounded-lg hover:bg-neutral-100 transition-colors"
-          title="Refresh Wishlist"
-        >
-          <RefreshCw className="w-4 h-4" />
-        </button>
-      </header>
+      <StorefrontHeader />
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-4">
         {isLoading && <p className="text-sm text-neutral-500">Loading wishlist…</p>}

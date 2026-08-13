@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ProductGridSection } from '@/components/storefront/ProductGridSection';
 import { useCategoryBySlug, useCategoryProducts, useCustomerProducts } from '@/features/customer/hooks';
@@ -49,12 +50,7 @@ export default function CategorySlugPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900">
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
-        <Link href="/categories" className="p-1 rounded-lg hover:bg-neutral-100">
-          <ArrowLeft className="w-5 h-5" />
-        </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">{title}</h1>
-      </header>
+      <StorefrontHeader />
 
       <main className="flex-1">
         {loading && <p className="px-4 py-6 text-sm text-neutral-500">Loading products…</p>}

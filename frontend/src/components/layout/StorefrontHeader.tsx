@@ -138,7 +138,9 @@ export function StorefrontHeader() {
             <div className="hidden lg:block relative w-56 xl:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
+                id="desktop-search-input"
                 type="text"
+                aria-label="Search for sarees, kurtis, lehengas"
                 placeholder="Search for sarees, kurtis, lehengas..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -170,7 +172,9 @@ export function StorefrontHeader() {
         <div className="mt-2.5 relative w-full lg:hidden">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input
+            id="mobile-search-input"
             type="text"
+            aria-label="Search products on mobile"
             placeholder="Search for sarees, kurtis, lehengas..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

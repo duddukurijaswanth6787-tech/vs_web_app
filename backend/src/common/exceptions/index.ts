@@ -198,8 +198,13 @@ export class GlobalExceptionMapper {
           );
         }
         default: {
+          const cleanMsg =
+            process.env.NODE_ENV === 'production' ||
+            process.env.APP_ENV === 'production'
+              ? 'Database operation failed. Please try again later.'
+              : `Database operation failed: ${err.message}`;
           return new DatabaseException(
-            `Database operation failed: ${err.message}`,
+            cleanMsg,
             'DATABASE_CONNECTION',
             HttpStatus.BAD_REQUEST,
           );
@@ -246,7 +251,12 @@ export class GlobalExceptionMapper {
     }
 
     if (exception instanceof Error) {
-      return new BusinessException(exception.message, 'SYSTEM_001');
+      const cleanMsg =
+        process.env.NODE_ENV === 'production' ||
+        process.env.APP_ENV === 'production'
+          ? 'An unexpected error occurred.'
+          : exception.message;
+      return new BusinessException(cleanMsg, 'SYSTEM_001');
     }
 
     return new BusinessException('An unexpected error occurred', 'SYSTEM_001');

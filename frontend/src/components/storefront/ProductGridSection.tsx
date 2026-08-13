@@ -140,31 +140,42 @@ export function ProductGridSection({
         </Link>
       </div>
 
-      {/* Mobile Scroll Section */}
-      <div className="flex lg:hidden overflow-x-auto gap-3.5 px-4 pb-2.5 pt-1 snap-x snap-mandatory scrollbar-none">
-        {displayProducts.map((product, idx) => (
-          <ProductCardItem
-            key={product.id}
-            product={product}
-            idx={idx}
-            isWishlisted={!!wishlist[product.id]}
-            onToggleWishlist={toggleWishlist}
-          />
-        ))}
-      </div>
+      {displayProducts.length === 0 ? (
+        <div className="py-8 text-center px-4 bg-rose-50/30 border border-rose-100/60 rounded-2xl mx-4 sm:mx-8 lg:mx-0">
+          <p className="text-xs font-semibold text-neutral-600">New products arriving soon for {title}.</p>
+          <Link href="/categories" className="text-xs font-bold text-[#800020] hover:underline mt-1 inline-block">
+            Explore All Categories →
+          </Link>
+        </div>
+      ) : (
+        <>
+          {/* Mobile Scroll Section */}
+          <div className="flex lg:hidden overflow-x-auto gap-3.5 px-4 pb-2.5 pt-1 snap-x snap-mandatory scrollbar-none">
+            {displayProducts.map((product, idx) => (
+              <ProductCardItem
+                key={product.id}
+                product={product}
+                idx={idx}
+                isWishlisted={!!wishlist[product.id]}
+                onToggleWishlist={toggleWishlist}
+              />
+            ))}
+          </div>
 
-      {/* Desktop Grid Section */}
-      <div className="hidden lg:grid lg:grid-cols-6 lg:gap-5 px-12">
-        {displayProducts.map((product, idx) => (
-          <ProductCardItem
-            key={product.id}
-            product={product}
-            idx={idx}
-            isWishlisted={!!wishlist[product.id]}
-            onToggleWishlist={toggleWishlist}
-          />
-        ))}
-      </div>
+          {/* Desktop Grid Section */}
+          <div className="hidden lg:grid lg:grid-cols-6 lg:gap-5 px-12">
+            {displayProducts.map((product, idx) => (
+              <ProductCardItem
+                key={product.id}
+                product={product}
+                idx={idx}
+                isWishlisted={!!wishlist[product.id]}
+                onToggleWishlist={toggleWishlist}
+              />
+            ))}
+          </div>
+        </>
+      )}
     </section>
   );
 }

@@ -43,7 +43,7 @@ export function WhyChooseUs() {
       {/* Section Header */}
       <div className="text-center space-y-1 mb-5 sm:mb-8">
         <h2 className="text-lg sm:text-3xl font-bold font-serif text-neutral-900 tracking-tight">
-          Why Choose Vasanthi Designers?
+          Why Choose Vasanthi&apos;s Signature?
         </h2>
         <p className="text-xs sm:text-sm text-neutral-500 font-medium max-w-lg mx-auto">
           Our commitment to quality, authenticity, and heritage luxury

@@ -3,16 +3,19 @@ import { StandardResponse } from '@/types/api.types';
 
 export interface AddressDto {
   id: string;
-  fullName: string;
-  phone: string;
-  streetAddress: string;
-  city: string;
-  state: string;
-  postalCode: string;
-  country: string;
-  isDefault: boolean;
+  fullName?: string;
+  phone?: string;
+  addressLine1?: string;
+  addressLine2?: string;
+  streetAddress?: string;
+  city?: string;
+  state?: string;
+  postalCode?: string;
+  country?: string;
+  label?: string;
+  isDefault?: boolean;
+  isDefaultShipping?: boolean;
   data?: AddressDto[];
-  [key: string]: unknown;
 }
 
 export interface CustomerProfileDto {

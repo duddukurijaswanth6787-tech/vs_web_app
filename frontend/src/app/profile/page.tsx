@@ -61,7 +61,7 @@ function GuestAccountView() {
               ❖
             </div>
             <span className="text-lg font-bold font-serif text-[#800020] tracking-tight">
-              Vasanthi Designers
+              Vasanthi&apos;s Signature
             </span>
           </Link>
         </div>
@@ -92,7 +92,7 @@ function GuestAccountView() {
           <div className="relative z-10 pr-24 sm:pr-32 space-y-1">
             <p className="text-xs font-bold text-neutral-800 tracking-wide">Welcome to</p>
             <h2 className="text-2xl font-bold font-serif text-[#800020] tracking-tight leading-tight">
-              Vasanthi Designers
+              Vasanthi&apos;s Signature
             </h2>
             <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
               Sign in to access the best shopping experience
@@ -253,27 +253,41 @@ function AuthenticatedAccountView() {
   const { data: addressesData } = useCustomerAddresses();
   const { data: ordersData } = useCustomerOrders();
 
-  const name = profile?.firstName ? `${profile.firstName} ${profile.lastName || ''}`.trim() : user?.firstName || 'Anjali';
-  const email = profile?.email || user?.email || 'anjali@email.com';
   const profRec = (profile || {}) as Record<string, unknown>;
   const userRec = (user || {}) as Record<string, unknown>;
-  const phone = String(profRec.phone || userRec.phone || '+91 98765 43210');
-  const points = Number(profRec.loyaltyPoints ?? 1250);
-  const tier = String(profRec.tier || 'Silver Member');
-  const avatarUrl = profile?.avatarUrl || PLACEHOLDER_IMAGE;
+  const name =
+    profile?.firstName || user?.firstName
+      ? `${profile?.firstName || user?.firstName || ''} ${profile?.lastName || user?.lastName || ''}`.trim()
+      : profile?.email?.split('@')[0] || user?.email?.split('@')[0] || String(userRec.phone || '') || 'Customer';
+  const email = profile?.email || user?.email || '';
+  const rawPhone = String(profRec.phone || userRec.phone || '');
+  const phone = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91 ${rawPhone}`) : '';
+  const points = Number(profRec.loyaltyPoints ?? userRec.loyaltyPoints ?? 0);
+  const tier = String(profRec.tier || userRec.tier || 'Member');
+  const avatarUrl = profile?.avatarUrl || String(userRec.avatarUrl || '') || PLACEHOLDER_IMAGE;
 
   const wishlistRec = (wishlistData || {}) as Record<string, unknown>;
   const wishlistCount = Array.isArray(wishlistData)
     ? wishlistData.length
-    : Array.isArray(wishlistRec.items) ? (wishlistRec.items as unknown[]).length : Number(wishlistRec.length ?? 23);
-  
+    : Array.isArray(wishlistRec.items)
+      ? (wishlistRec.items as unknown[]).length
+      : Array.isArray(wishlistRec.data)
+        ? (wishlistRec.data as unknown[]).length
+        : 0;
+
   const cartRec = (cartData || {}) as Record<string, unknown>;
-  const cartCount = Array.isArray(cartRec.items) ? (cartRec.items as unknown[]).length : Number(cartRec.itemCount ?? 0);
+  const cartCount = Array.isArray(cartRec.items)
+    ? (cartRec.items as unknown[]).length
+    : Number(cartRec.itemCount ?? 0);
 
   const addressRec = (addressesData || {}) as Record<string, unknown>;
   const addressesCount = Array.isArray(addressesData)
     ? addressesData.length
-    : Array.isArray(addressRec.items) ? (addressRec.items as unknown[]).length : Number(addressRec.length ?? 3);
+    : Array.isArray(addressRec.items)
+      ? (addressRec.items as unknown[]).length
+      : Array.isArray(addressRec.data)
+        ? (addressRec.data as unknown[]).length
+        : 0;
 
   const ordersList = useMemo(() => {
     if (!ordersData) return [];
@@ -285,7 +299,7 @@ function AuthenticatedAccountView() {
     return [];
   }, [ordersData]);
 
-  const totalOrdersCount = ordersList.length || 12;
+  const totalOrdersCount = ordersList.length;
 
   // Order status counts breakdown
   const orderCounts = useMemo(() => {
@@ -321,7 +335,7 @@ function AuthenticatedAccountView() {
               ❖
             </div>
             <span className="text-lg font-bold font-serif text-[#800020] tracking-tight">
-              Vasanthi Designers
+              Vasanthi&apos;s Signature
             </span>
           </Link>
         </div>
@@ -411,7 +425,7 @@ function AuthenticatedAccountView() {
               <span className="text-xs font-extrabold text-white">5</span>
             </Link>
 
-            <Link href="/checkout/address" className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
+            <Link href="/profile/addresses" className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
               <MapPin className="w-4 h-4 text-rose-200" />
               <span className="text-[10px] text-rose-200">Addresses</span>
               <span className="text-xs font-extrabold text-white">{addressesCount}</span>
@@ -486,7 +500,7 @@ function AuthenticatedAccountView() {
               <ChevronRight className="w-4 h-4 text-neutral-400" />
             </Link>
 
-            <Link href="/checkout/address" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <Link href="/profile/addresses" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
               <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
                 <MapPin className="w-4 h-4 text-[#800020]" />
                 <span>Address Book</span>
@@ -518,7 +532,7 @@ function AuthenticatedAccountView() {
               <ChevronRight className="w-4 h-4 text-neutral-400" />
             </Link>
 
-            <Link href="/profile/privacy" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <Link href="/privacy" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
               <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
                 <ShieldCheck className="w-4 h-4 text-[#800020]" />
                 <span>Privacy Settings</span>
