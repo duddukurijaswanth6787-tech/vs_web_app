@@ -80,6 +80,10 @@ export default function RoleDetailPage() {
   const permissions = allPermissions || [];
 
   const handleTogglePermission = async (permissionId: string, permissionCode: string, checked: boolean) => {
+    if (role.name === 'super_admin') {
+      toast('warning', 'Protected role', 'System super_admin permissions cannot be altered.');
+      return;
+    }
     try {
       if (checked) {
         // Add permission
@@ -185,7 +189,7 @@ export default function RoleDetailPage() {
                       <input
                         type="checkbox"
                         checked={isChecked}
-                        disabled={role.isSystem}
+                        disabled={role.name === 'super_admin'}
                         onChange={(e) => handleTogglePermission(perm.id, perm.code, e.target.checked)}
                         className="mt-1 h-3.5 w-3.5 accent-purple-600 border-neutral-300 rounded disabled:opacity-50"
                       />
