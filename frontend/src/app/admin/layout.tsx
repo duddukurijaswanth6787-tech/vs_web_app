@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/ui.store';
 import AdminSidebar from '@/components/layout/AdminSidebar';
@@ -10,9 +10,12 @@ import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { ToastProvider } from '@/components/toast/ToastProvider';
 import { PageLoader } from '@/components/feedback/FeedbackStates';
+import { findNavItemForPath } from '@/config/navigation';
+import { canAccessRoute } from '@/lib/permissions/rules';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
+  const pathname = usePathname();
   const { user, isStaffUser, isInitializing } = useAuth();
   const { toggleCommandPalette } = useUIStore();
   const mounted = useSyncExternalStore(() => () => undefined, () => true, () => false);
@@ -60,9 +63,20 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
 
       if (isPosOnlyRole && !isAdminOrSuperAdmin) {
         router.push('/pos');
+        return;
+      }
+
+      // A page hidden from the sidebar (role/permission mismatch) is also
+      // blocked from direct URL access — hiding a link is meaningless if
+      // typing the address still gets you in. Pages with no matching nav
+      // entry (dynamic sub-routes, etc.) are left unguarded rather than
+      // guessed at.
+      const navItem = findNavItemForPath(pathname);
+      if (navItem && !canAccessRoute(user, navItem)) {
+        router.push('/admin/dashboard');
       }
     }
-  }, [isInitializing, isStaffUser, user, router]);
+  }, [isInitializing, isStaffUser, user, router, pathname]);
 
   // ponytail: mounted guard ensures server & client render the same thing
   if (!mounted || isInitializing) {
