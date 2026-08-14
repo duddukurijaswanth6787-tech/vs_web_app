@@ -23,6 +23,7 @@ import { StaffResponse } from '@/features/staff/staff.types';
 import { RoleResponse } from '@/features/access/access.types';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useToast } from '@/components/toast/ToastProvider';
+import { useAuth } from '@/hooks/useAuth';
 
 export default function StaffDetailPage() {
   const { toast } = useToast();
@@ -147,6 +148,8 @@ function StaffDetailContent({
 }: StaffDetailContentProps) {
   // Fetch full User details (which includes roles and permissions array!) using the staff's userId
   const { data: userDetails, isLoading: userLoading } = useCustomer(staff.userId);
+  const { user: currentUser } = useAuth();
+  const isSuperAdmin = !!currentUser?.roles?.includes('super_admin');
 
   if (userLoading) {
     return <SectionLoader message="Loading operator access privileges..." />;
@@ -288,7 +291,7 @@ function StaffDetailContent({
                         <span className="text-xs font-bold text-neutral-800">{role.displayName}</span>
                         <p className="text-[10px] text-neutral-400 mt-1">{role.description || 'No description'}</p>
                       </div>
-                      {!role.isSystem && (
+                      {!role.isSystem && isSuperAdmin && (
                         <button
                           onClick={() => handleRemoveRole(role.id)}
                           className="rounded p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 border border-transparent transition-all"
@@ -305,39 +308,46 @@ function StaffDetailContent({
             </div>
           </div>
 
-          {/* Assign Role form */}
+          {/* Assign Role form — super_admin only; changing what a staff member
+              can access is a grant of trust, not routine account upkeep. */}
           <div className="md:col-span-1 rounded-xl border border-neutral-200 bg-white p-5 shadow-sm space-y-4 h-fit">
             <h3 className="text-xs font-bold text-neutral-900 uppercase border-b border-neutral-50 pb-2">
               Assign new role
             </h3>
-            <form onSubmit={handleAssignRole} className="space-y-3">
-              <div className="space-y-1">
-                <label className="text-[10px] font-bold text-neutral-500 uppercase">Available Roles</label>
-                <select
-                  required
-                  value={selectedRoleId}
-                  onChange={(e) => setSelectedRoleId(e.target.value)}
-                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none bg-white"
-                >
-                  <option value="">Select Role...</option>
-                  {allRoles
-                    .filter((r) => !assignedRoleNames.includes(r.name) && r.isActive)
-                    .map((r) => (
-                      <option key={r.id} value={r.id}>
-                        {r.displayName}
-                      </option>
-                    ))}
-                </select>
-              </div>
+            {isSuperAdmin ? (
+              <form onSubmit={handleAssignRole} className="space-y-3">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase">Available Roles</label>
+                  <select
+                    required
+                    value={selectedRoleId}
+                    onChange={(e) => setSelectedRoleId(e.target.value)}
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none bg-white"
+                  >
+                    <option value="">Select Role...</option>
+                    {allRoles
+                      .filter((r) => !assignedRoleNames.includes(r.name) && r.isActive)
+                      .map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.displayName}
+                        </option>
+                      ))}
+                  </select>
+                </div>
 
-              <button
-                type="submit"
-                disabled={isAssigning || !selectedRoleId}
-                className="w-full rounded-lg bg-neutral-900 hover:bg-neutral-800 py-2 text-xs font-semibold text-white disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
-              >
-                <Plus className="h-4 w-4" /> Assign Role
-              </button>
-            </form>
+                <button
+                  type="submit"
+                  disabled={isAssigning || !selectedRoleId}
+                  className="w-full rounded-lg bg-neutral-900 hover:bg-neutral-800 py-2 text-xs font-semibold text-white disabled:opacity-50 inline-flex items-center justify-center gap-1.5"
+                >
+                  <Plus className="h-4 w-4" /> Assign Role
+                </button>
+              </form>
+            ) : (
+              <p className="text-[11px] text-neutral-400 leading-relaxed">
+                Only a Super Admin can grant or remove roles. Ask a Super Admin if this operator needs different access.
+              </p>
+            )}
           </div>
         </div>
       )}
