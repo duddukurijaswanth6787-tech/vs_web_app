@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Logger } from '@nestjs/common';
 import { InjectQueue } from '@nestjs/bullmq';
 import {
   HealthCheck,
@@ -33,6 +33,8 @@ function withTimeout<T>(
  */
 @Controller('health')
 export class HealthController {
+  private readonly logger = new Logger(HealthController.name);
+
   constructor(
     private readonly health: HealthCheckService,
     private readonly prismaService: PrismaService,
@@ -111,7 +113,10 @@ export class HealthController {
             };
             isUp = await withTimeout(queueCheck(), 1500, false);
           }
-        } catch {
+        } catch (error) {
+          this.logger.error(
+            `BullMQ health check failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
           isUp = false;
         }
 
@@ -133,8 +138,10 @@ export class HealthController {
             1500,
             result,
           );
-        } catch {
-          // Ignore storage health check fallback error
+        } catch (error) {
+          this.logger.error(
+            `Storage health check failed: ${error instanceof Error ? error.message : String(error)}`,
+          );
         }
 
         const isS3Emulator = !!process.env.AWS_S3_ENDPOINT;
