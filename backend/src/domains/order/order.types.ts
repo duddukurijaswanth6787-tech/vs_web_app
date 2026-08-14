@@ -85,6 +85,18 @@ export class OrderResponse {
   @ApiProperty() grandTotal!: number;
   @ApiProperty() currency!: string;
   @ApiPropertyOptional() notes?: string;
+  @ApiPropertyOptional({
+    description: 'Admin-only: sales channel. Omitted from customer-facing responses.',
+  })
+  channel?: string;
+  @ApiPropertyOptional({
+    description: 'Admin-only: POS payment method. Omitted from customer-facing responses.',
+  })
+  paymentMethod?: string;
+  @ApiPropertyOptional({
+    description: 'Admin-only: POS terminal ID. Omitted from customer-facing responses.',
+  })
+  terminalId?: string;
   @ApiPropertyOptional({ type: [OrderItemResponse] })
   items?: OrderItemResponse[];
   @ApiPropertyOptional({ type: [OrderAddressResponse] })

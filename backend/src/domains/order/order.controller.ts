@@ -32,7 +32,9 @@ export class OrderController {
       ['super_admin', 'admin'].includes(r),
     );
     const q = isAdmin ? query : { ...query, customerId: user.sub };
-    return ResponseBuilder.success(await this.orderService.findAll(q));
+    return ResponseBuilder.success(
+      await this.orderService.findAll(q, isAdmin),
+    );
   }
 
   @Get('number/:orderNumber')
@@ -48,10 +50,10 @@ export class OrderController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    const order = await this.orderService.findById(id);
     const isAdmin = user.roles?.some((r: string) =>
       ['super_admin', 'admin'].includes(r),
     );
+    const order = await this.orderService.findById(id, isAdmin);
     if (!isAdmin && order.customerId !== user.sub) {
       return ResponseBuilder.success(null, 'Order not found');
     }

@@ -26,7 +26,9 @@ export class ReturnRequestRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
-        include: { items: true },
+        include: {
+          items: { include: { images: { orderBy: { displayOrder: 'asc' } } } },
+        },
       }),
       this.prisma.returnRequest.count({ where }),
     ]);
@@ -46,7 +48,9 @@ export class ReturnRequestRepository {
   async findById(id: string) {
     return this.prisma.returnRequest.findUnique({
       where: { id },
-      include: { items: true },
+      include: {
+        items: { include: { images: { orderBy: { displayOrder: 'asc' } } } },
+      },
     });
   }
 
