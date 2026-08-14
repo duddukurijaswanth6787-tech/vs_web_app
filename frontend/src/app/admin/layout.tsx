@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, useSyncExternalStore } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/ui.store';
 import AdminSidebar from '@/components/layout/AdminSidebar';
@@ -13,7 +13,6 @@ import { PageLoader } from '@/components/feedback/FeedbackStates';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { user, isStaffUser, isInitializing } = useAuth();
   const { toggleCommandPalette } = useUIStore();
   const mounted = useSyncExternalStore(() => () => undefined, () => true, () => false);
@@ -49,6 +48,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
+      // POS-only staff never see the admin console at all — Shopora POS is
+      // its own standalone shell at /pos (see app/pos/layout.tsx), not a
+      // page nested inside this one.
       const isPosOnlyRole =
         user?.roles?.includes('pos_operator') ||
         user?.roles?.includes('pos_staff');
@@ -56,11 +58,11 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         user?.roles?.includes('super_admin') ||
         user?.roles?.includes('admin');
 
-      if (isPosOnlyRole && !isAdminOrSuperAdmin && !pathname.startsWith('/admin/pos')) {
-        router.push('/admin/pos');
+      if (isPosOnlyRole && !isAdminOrSuperAdmin) {
+        router.push('/pos');
       }
     }
-  }, [isInitializing, isStaffUser, user, pathname, router]);
+  }, [isInitializing, isStaffUser, user, router]);
 
   // ponytail: mounted guard ensures server & client render the same thing
   if (!mounted || isInitializing) {
