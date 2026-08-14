@@ -123,6 +123,9 @@ export function useAttributeOptions(query: AttributeOptionQueryDto = {}) {
   return useQuery({
     queryKey: attributeKeys.optionList(query),
     queryFn: () => attributeService.findAllOptions(query),
+    // attributeId is required by the backend (GET /attribute-options 400s without it);
+    // don't fire until the caller has actually selected an attribute.
+    enabled: !!query.attributeId,
   });
 }
 
