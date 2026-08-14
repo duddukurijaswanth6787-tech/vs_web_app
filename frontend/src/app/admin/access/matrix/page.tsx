@@ -110,7 +110,7 @@ export default function AccessMatrixPage() {
                           onClick={() =>
                             handleCellClick(role.id, role.name, perm.id, perm.code, isChecked)
                           }
-                          disabled={role.isSystem || isToggling}
+                          disabled={role.name === 'super_admin' || isToggling}
                           className={`mx-auto h-6 w-6 rounded border flex items-center justify-center transition-all disabled:opacity-50
                             ${
                               isChecked
