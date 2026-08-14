@@ -46,7 +46,7 @@ export function HomeClient() {
       {/* 01 HEADER */}
       <StorefrontHeader />
 
-      <main className="flex-1 space-y-2 sm:space-y-4">
+      <main className="flex-1 space-y-6 sm:space-y-10">
         {/* 02 HERO SECTION */}
         <HeroSection />
 

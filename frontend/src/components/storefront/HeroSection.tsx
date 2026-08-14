@@ -91,7 +91,7 @@ export function HeroSection() {
   const next = () => setIndex((i) => (banners.length ? (i + 1) % banners.length : 0));
 
   return (
-    <section className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-1.5 sm:py-6">
+    <section className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
@@ -137,7 +137,7 @@ export function HeroSection() {
           <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-1.5 sm:space-y-3.5 pb-1 sm:pb-0">
 
             {/* Main Headline */}
-            <h1 className="text-base sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-snug sm:leading-[1.15] tracking-tight line-clamp-2">
+            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-tight sm:leading-[1.15] tracking-tight line-clamp-2">
               {main.title && !main.title.includes('COLLECTION') ? main.title : 'FRESH STYLES — TIMELESS YOU'}
             </h1>
 

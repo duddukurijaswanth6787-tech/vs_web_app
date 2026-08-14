@@ -19,7 +19,7 @@ export function NewsletterSection() {
   };
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-8">
+    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#600018] via-[#800020] to-[#500014] text-white p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-rose-900/40 min-h-[180px]">
         
         {/* Left Content */}
