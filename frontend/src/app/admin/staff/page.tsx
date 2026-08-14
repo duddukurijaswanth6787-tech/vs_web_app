@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader } from '@/components/feedback/FeedbackStates';
+import { useToast } from '@/components/toast/ToastProvider';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const DEPARTMENTS: StaffDepartment[] = [
   'MANAGEMENT',
@@ -68,6 +70,7 @@ export default function StaffPage() {
     jobTitle: '',
   });
 
+  const { toast } = useToast();
   const createMutation = useCreateStaff();
   const activateMutation = useActivateStaff();
   const deactivateMutation = useDeactivateStaff();
@@ -75,20 +78,27 @@ export default function StaffPage() {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createMutation.mutateAsync(formData);
-    setIsCreateOpen(false);
-    setFormData({
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      department: 'SALES',
-      designation: 'ASSOCIATE',
-      employeeId: '',
-      jobTitle: '',
-    });
-    refetch();
+    try {
+      await createMutation.mutateAsync(formData);
+      toast('success', 'Staff operator created', `${formData.firstName} ${formData.lastName} can now sign in.`);
+      setIsCreateOpen(false);
+      setFormData({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        department: 'SALES',
+        designation: 'ASSOCIATE',
+        employeeId: '',
+        jobTitle: '',
+      });
+      refetch();
+    } catch (err) {
+      // Keep the dialog open with the entered data so the field that failed
+      // (e.g. a duplicate email or employee ID) can be fixed and resubmitted.
+      toast('error', 'Could not create staff operator', getApiErrorMessage(err, 'Please check the form and try again.'));
+    }
   };
 
   const handleToggleStatus = async (staff: StaffResponse) => {
@@ -436,9 +446,10 @@ export default function StaffPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                  disabled={createMutation.isPending}
+                  className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
                 >
-                  Add Operator
+                  {createMutation.isPending ? 'Adding…' : 'Add Operator'}
                 </button>
               </div>
             </form>
