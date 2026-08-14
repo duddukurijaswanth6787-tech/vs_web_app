@@ -46,6 +46,10 @@ export interface OrderResponse {
   grandTotal: number;
   currency: string;
   notes?: string;
+  /** Admin-only: present only in admin API responses, not shown to customers. */
+  channel?: string;
+  paymentMethod?: string;
+  terminalId?: string;
   items?: OrderItemResponse[];
   addresses?: OrderAddressResponse[];
   timeline?: OrderTimelineResponse[];

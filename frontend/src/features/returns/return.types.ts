@@ -22,11 +22,18 @@ export interface UpdateReturnStatusDto {
   adminNotes?: string;
 }
 
+export interface ReturnItemImageResponse {
+  id: string;
+  url: string;
+  displayOrder: number;
+}
+
 export interface ReturnItemResponse {
   id: string;
   orderItemId: string;
   quantity: number;
   reason?: string;
+  images?: ReturnItemImageResponse[];
 }
 
 export interface ReturnRequestResponse {
@@ -35,6 +42,7 @@ export interface ReturnRequestResponse {
   returnNumber: string;
   reason: string;
   status: ReturnStatus;
+  refundPreference?: string;
   adminNotes?: string;
   items?: ReturnItemResponse[];
   createdAt: string;

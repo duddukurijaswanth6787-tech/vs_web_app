@@ -7,7 +7,7 @@ import { useOrderPayments } from '@/features/payments/payment.hooks';
 import { useOrderRefunds } from '@/features/refunds/refund.hooks';
 import { useOrderInvoices, useCreateInvoice } from '@/features/invoices/invoice.hooks';
 import { useCancellationDetail } from '@/features/cancellations/cancellation.hooks';
-import { OrderStatusBadge, PaymentStatusBadge, RefundStatusBadge } from '@/components/feedback/StatusBadges';
+import { OrderStatusBadge, PaymentStatusBadge, RefundStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
 import { SectionLoader, PageError, ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { ArrowLeft, User, Clock, CheckCircle2, ChevronRight, Ban, FileText, Plus } from 'lucide-react';
 import Link from 'next/link';
@@ -119,8 +119,18 @@ export default function OrderDetailPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Order Ref: {order.orderNumber}</h1>
               <OrderStatusBadge status={order.status} />
+              <ChannelBadge channel={order.channel} />
             </div>
-            <p className="text-xs text-neutral-400 mt-1">Placed on: {formatDateTime(order.createdAt)}</p>
+            <p className="text-xs text-neutral-400 mt-1">
+              Placed on: {formatDateTime(order.createdAt)}
+              {order.channel === 'POS_SHOPORA' && (
+                <>
+                  {' · '}
+                  {order.paymentMethod && <span>Payment: {order.paymentMethod}</span>}
+                  {order.terminalId && <span> · Terminal: {order.terminalId}</span>}
+                </>
+              )}
+            </p>
           </div>
         </div>
         

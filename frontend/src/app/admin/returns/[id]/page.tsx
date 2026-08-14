@@ -101,12 +101,28 @@ export default function ReturnDetailPage() {
             
             <div className="divide-y divide-neutral-100">
               {returnData.items?.map((item) => (
-                <div key={item.id} className="py-3 flex justify-between items-center text-xs">
+                <div key={item.id} className="py-3 flex justify-between items-start text-xs">
                   <div>
                     <span className="font-bold text-neutral-800 block">Item UUID: {item.orderItemId}</span>
                     {item.reason && <span className="text-[10px] text-neutral-400 block mt-0.5">Item Reason: {item.reason}</span>}
+                    {!!item.images?.length && (
+                      <div className="flex gap-2 mt-2">
+                        {item.images.map((img) => (
+                          <a
+                            key={img.id}
+                            href={img.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="block w-14 h-14 rounded-lg overflow-hidden border border-neutral-200 hover:border-neutral-400 transition"
+                          >
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={img.url} alt="Return evidence" className="w-full h-full object-cover" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <span className="text-xs font-bold text-neutral-900 block">Qty: {item.quantity}</span>
                   </div>
                 </div>
@@ -126,6 +142,14 @@ export default function ReturnDetailPage() {
                   {returnData.reason}
                 </p>
               </div>
+              {returnData.refundPreference && (
+                <div>
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Refund Preference:</span>
+                  <p className="text-neutral-700 mt-1 bg-neutral-50 p-3 rounded-lg border border-neutral-100 font-medium">
+                    {returnData.refundPreference}
+                  </p>
+                </div>
+              )}
               {returnData.adminNotes && (
                 <div className="pt-2">
                   <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Admin Notes:</span>
