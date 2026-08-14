@@ -291,7 +291,7 @@ function StaffDetailContent({
                         <span className="text-xs font-bold text-neutral-800">{role.displayName}</span>
                         <p className="text-[10px] text-neutral-400 mt-1">{role.description || 'No description'}</p>
                       </div>
-                      {!role.isSystem && isSuperAdmin && (
+                      {isSuperAdmin && !(role.name === 'super_admin' && staff.userId === currentUser?.id) && (
                         <button
                           onClick={() => handleRemoveRole(role.id)}
                           className="rounded p-1.5 text-neutral-400 hover:text-red-600 hover:bg-red-50 hover:border-red-200 border border-transparent transition-all"
