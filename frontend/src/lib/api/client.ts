@@ -23,6 +23,15 @@ export const apiClient = axios.create({
   },
 });
 
+// The backend's /health endpoint is explicitly excluded from its `api/v1`
+// global prefix (backend/src/main.ts), so it lives at the origin root, not
+// under /api/v1/. This helper strips the trailing `/api/v1` from whatever
+// the axios base URL resolves to for the current environment.
+export const getUnprefixedBaseUrl = (): string => {
+  const base = getApiBaseUrl();
+  return base.replace(/\/api\/v1\/?$/, '');
+};
+
 // Memory token cache to avoid scattered localStorage reads
 let currentAccessToken: string | null = null;
 let currentRefreshToken: string | null = null;
