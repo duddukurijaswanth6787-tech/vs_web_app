@@ -74,11 +74,19 @@ export default function SettingsPage() {
 
   // Parse health checks safely
   const dbHealth = healthData?.info?.database?.status || 'UP';
-  const redisStatus = healthData?.info?.redis?.status || 'UP';
+  // redis.status is hardcoded 'up' by the backend regardless of the real ping
+  // result — connectionState carries the actual up/down signal.
+  const redisStatus = healthData?.info?.redis?.connectionState === 'connected' ? 'UP' : 'DOWN';
+  // storage.writable comes from a real S3 PUT+DELETE health check, unlike
+  // rag.vectorDatabase below which is just a Postgres ping under a
+  // misleading name.
+  const s3Status = healthData?.info?.storage?.writable ? 'UP' : 'DOWN';
   const ragHealth = healthData?.info?.rag ?? { status: 'down' as const };
-  const s3Status = ragHealth.vectorDatabase?.status === 'UP' ? 'UP' : 'DOWN';
   const geminiStatus = ragHealth.llm?.status || 'UP';
-  const bullStatus = ragHealth.ingestionQueue?.status || 'UP';
+  // queue.connectionState is a real BullMQ ping — rag.ingestionQueue is the
+  // same disguised Postgres ping as rag.vectorDatabase, not an actual queue
+  // check.
+  const bullStatus = healthData?.info?.queue?.connectionState === 'connected' ? 'UP' : 'DOWN';
 
   const renderHealthRow = (service: string, status: string, desc: string) => {
     const isUp = status.toUpperCase() === 'UP' || status.toUpperCase() === 'HEALTHY' || status.toUpperCase() === 'OK';
