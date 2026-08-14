@@ -8,6 +8,7 @@ import {
   useDeactivateStaff,
   useSuspendStaff,
 } from '@/features/staff/staff.hooks';
+import { useRoles } from '@/features/access/access.hooks';
 import { StaffResponse, StaffDepartment, StaffDesignation } from '@/features/staff/staff.types';
 import {
   User,
@@ -66,6 +67,7 @@ export default function StaffPage() {
     phone: '',
     department: 'SALES' as StaffDepartment,
     designation: 'ASSOCIATE' as StaffDesignation,
+    roleId: '',
     jobTitle: '',
   });
 
@@ -74,15 +76,20 @@ export default function StaffPage() {
   const activateMutation = useActivateStaff();
   const deactivateMutation = useDeactivateStaff();
   const suspendMutation = useSuspendStaff();
+  const { data: allRoles } = useRoles();
+  // Granting super_admin is a deliberate, separate action (Staff → Roles tab),
+  // not something to hand out from a routine add-staff dialog.
+  const assignableRoles = (allRoles || []).filter((r) => r.isActive && r.name !== 'super_admin');
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
       const created = await createMutation.mutateAsync(formData);
+      const roleLabel = assignableRoles.find((r) => r.id === formData.roleId)?.displayName;
       toast(
         'success',
         'Staff operator created',
-        `${formData.firstName} ${formData.lastName} can now sign in — Employee ID ${created.employeeId}.`,
+        `${formData.firstName} ${formData.lastName} can now sign in as ${roleLabel || 'Staff'} — Employee ID ${created.employeeId}.`,
       );
       setIsCreateOpen(false);
       setFormData({
@@ -93,6 +100,7 @@ export default function StaffPage() {
         phone: '',
         department: 'SALES',
         designation: 'ASSOCIATE',
+        roleId: '',
         jobTitle: '',
       });
       refetch();
@@ -420,6 +428,26 @@ export default function StaffPage() {
                     ))}
                   </select>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase">Role</label>
+                <select
+                  required
+                  value={formData.roleId}
+                  onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none bg-white"
+                >
+                  <option value="">Select role…</option>
+                  {assignableRoles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.displayName}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-neutral-400">
+                  Controls what this operator can access — e.g. POS Operator is confined to the billing screen.
+                </p>
               </div>
 
               <div className="space-y-1.5">

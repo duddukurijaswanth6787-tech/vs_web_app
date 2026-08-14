@@ -32,6 +32,10 @@ export class CreateStaffDto {
   @IsOptional()
   @IsString()
   employeeId?: string;
+  @ApiPropertyOptional({ description: 'Role to grant on creation; defaults to the base "staff" role when omitted' })
+  @IsOptional()
+  @IsString()
+  roleId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() jobTitle?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() reportingManagerId?: string;
   @ApiPropertyOptional() @IsOptional() emergencyContact?: string;

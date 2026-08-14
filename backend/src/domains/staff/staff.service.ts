@@ -79,6 +79,14 @@ export class StaffService {
       employeeId = await this.staffRepository.generateEmployeeId();
     }
 
+    const role = dto.roleId
+      ? await this.prisma.role.findUnique({ where: { id: dto.roleId } })
+      : await this.prisma.role.findUnique({
+          where: { name: IDENTITY_CONSTANTS.DEFAULT_STAFF_ROLE },
+        });
+    if (dto.roleId && !role)
+      throw new BusinessException('Role not found', 'ROLE_001');
+
     const passwordHash = await this.passwordService.hash(dto.password);
     // ponytail: create user + staff profile in one prisma nested create
     const user = await this.prisma.user.create({
@@ -105,9 +113,6 @@ export class StaffService {
       include: { staffProfile: true },
     });
 
-    const role = await this.prisma.role.findUnique({
-      where: { name: IDENTITY_CONSTANTS.DEFAULT_STAFF_ROLE },
-    });
     if (role)
       await this.prisma.userRole.create({
         data: { userId: user.id, roleId: role.id },
