@@ -66,7 +66,6 @@ export default function StaffPage() {
     phone: '',
     department: 'SALES' as StaffDepartment,
     designation: 'ASSOCIATE' as StaffDesignation,
-    employeeId: '',
     jobTitle: '',
   });
 
@@ -79,8 +78,12 @@ export default function StaffPage() {
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await createMutation.mutateAsync(formData);
-      toast('success', 'Staff operator created', `${formData.firstName} ${formData.lastName} can now sign in.`);
+      const created = await createMutation.mutateAsync(formData);
+      toast(
+        'success',
+        'Staff operator created',
+        `${formData.firstName} ${formData.lastName} can now sign in — Employee ID ${created.employeeId}.`,
+      );
       setIsCreateOpen(false);
       setFormData({
         email: '',
@@ -90,7 +93,6 @@ export default function StaffPage() {
         phone: '',
         department: 'SALES',
         designation: 'ASSOCIATE',
-        employeeId: '',
         jobTitle: '',
       });
       refetch();
@@ -374,14 +376,9 @@ export default function StaffPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Employee ID</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none"
-                    placeholder="EMP-1002"
-                  />
+                  <div className="w-full rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-400">
+                    Assigned automatically (EMP-0001, EMP-0002, …)
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Phone Number</label>
