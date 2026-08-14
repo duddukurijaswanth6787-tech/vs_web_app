@@ -70,11 +70,14 @@ export class StaffService {
   }
 
   async create(dto: CreateStaffDto, createdBy: string) {
-    const existingEmp = await this.staffRepository.findByEmployeeId(
-      dto.employeeId,
-    );
-    if (existingEmp)
-      throw new BusinessException('Employee ID already exists', 'STAFF_002');
+    let employeeId = dto.employeeId?.trim();
+    if (employeeId) {
+      const existingEmp = await this.staffRepository.findByEmployeeId(employeeId);
+      if (existingEmp)
+        throw new BusinessException('Employee ID already exists', 'STAFF_002');
+    } else {
+      employeeId = await this.staffRepository.generateEmployeeId();
+    }
 
     const passwordHash = await this.passwordService.hash(dto.password);
     // ponytail: create user + staff profile in one prisma nested create
@@ -90,7 +93,7 @@ export class StaffService {
           create: {
             department: dto.department as any,
             designation: dto.designation as any,
-            employeeId: dto.employeeId,
+            employeeId,
             jobTitle: dto.jobTitle,
             reportingManagerId: dto.reportingManagerId,
             emergencyContact: dto.emergencyContact,
@@ -115,7 +118,7 @@ export class StaffService {
       {
         action: 'staff_created',
         staffId: createdProfile?.id,
-        employeeId: dto.employeeId,
+        employeeId,
       },
       'StaffService',
     );
