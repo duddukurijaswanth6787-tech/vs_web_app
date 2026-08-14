@@ -28,6 +28,14 @@ const SYSTEM_ROLES = [
     isSystem: true,
   },
   {
+    name: 'pos_operator',
+    displayName: 'POS Operator',
+    description: 'Billing counter access only — confined to the standalone Shopora POS screen, no admin console',
+    scope: 'DOMAIN' as const,
+    hierarchy: 40,
+    isSystem: true,
+  },
+  {
     name: 'customer',
     displayName: 'Customer',
     description: 'Customer access',

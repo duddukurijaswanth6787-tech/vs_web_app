@@ -63,10 +63,13 @@ function CustomerLoginForm() {
 
       const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
       const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
-      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || profile?.roles?.includes('staff');
+      const isPlainStaff = profile?.roles?.includes('staff');
+      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
 
       if (profile && isStaffUser) {
-        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/admin/pos';
+        // Billing-only staff land straight on the standalone POS screen, not
+        // the admin console — see app/pos/layout.tsx.
+        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
         if (redirectTo !== '/') destination = redirectTo;
         router.push(destination);
       } else {
@@ -89,10 +92,13 @@ function CustomerLoginForm() {
       const profile = profileResult?.data;
       const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
       const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
-      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || profile?.roles?.includes('staff');
+      const isPlainStaff = profile?.roles?.includes('staff');
+      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
 
       if (profile && isStaffUser) {
-        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/admin/pos';
+        // Billing-only staff land straight on the standalone POS screen, not
+        // the admin console — see app/pos/layout.tsx.
+        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
         if (redirectTo !== '/') destination = redirectTo;
         router.push(destination);
       } else {

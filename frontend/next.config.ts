@@ -84,6 +84,16 @@ const nextConfig: NextConfig = {
       },
     ],
   },
+  async redirects() {
+    // Shopora POS moved out from under /admin into its own standalone shell
+    // at /pos (see app/pos/layout.tsx) so a billing-only login never renders
+    // the admin console. Keep old bookmarks and any hardcoded links working.
+    return [
+      { source: '/admin/pos', destination: '/pos', permanent: true },
+      { source: '/admin/pos/add-stock', destination: '/pos/add-stock', permanent: true },
+      { source: '/admin/pos/printers', destination: '/pos/printers', permanent: true },
+    ];
+  },
   async rewrites() {
     // Only used for local dev when NEXT_PUBLIC_API_BASE_URL is unset (see
     // frontend/src/lib/api/client.ts). In UAT/production the API base URL is
