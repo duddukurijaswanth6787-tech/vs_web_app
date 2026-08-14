@@ -208,5 +208,120 @@ export class AutoSeedService implements OnModuleInit {
     this.logger.log(
       'Essential catalog categories verified/seeded successfully.',
     );
+
+    // 5. Seed Essential Coupons & Offers
+    const now = new Date();
+    const nextYear = new Date(now.getFullYear() + 1, 11, 31);
+
+    const ESSENTIAL_COUPONS = [
+      {
+        code: 'WELCOME10',
+        name: 'Welcome Offer',
+        description: 'Get 10% OFF on your first purchase above ₹1,000.',
+        type: 'PERCENTAGE',
+        value: 10,
+        minOrderAmount: 1000,
+        maxDiscountAmount: 500,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+      {
+        code: 'FESTIVE20',
+        name: 'Festive Season Special',
+        description: '20% OFF on all Festive Anarkali and Ethnic Kurta Sets.',
+        type: 'PERCENTAGE',
+        value: 20,
+        minOrderAmount: 2500,
+        maxDiscountAmount: 1000,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+      {
+        code: 'FLAT500',
+        name: 'Flat ₹500 Savings',
+        description: 'Flat ₹500 discount on orders over ₹4,000.',
+        type: 'FIXED',
+        value: 500,
+        minOrderAmount: 4000,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+      {
+        code: 'VASANTHI15',
+        name: "Vasanthi's Signature Special",
+        description: '15% OFF on Kanjeevaram Silk Sarees & Bridal Lehengas.',
+        type: 'PERCENTAGE',
+        value: 15,
+        minOrderAmount: 3000,
+        maxDiscountAmount: 2000,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+    ];
+
+    for (const c of ESSENTIAL_COUPONS) {
+      await this.prisma.coupon.upsert({
+        where: { code: c.code },
+        update: {
+          name: c.name,
+          description: c.description,
+          type: c.type,
+          value: c.value,
+          minOrderAmount: c.minOrderAmount,
+          maxDiscountAmount: c.maxDiscountAmount ?? null,
+          startDate: c.startDate,
+          endDate: c.endDate,
+          isActive: true,
+        },
+        create: {
+          code: c.code,
+          name: c.name,
+          description: c.description,
+          type: c.type,
+          value: c.value,
+          minOrderAmount: c.minOrderAmount,
+          maxDiscountAmount: c.maxDiscountAmount ?? null,
+          startDate: c.startDate,
+          endDate: c.endDate,
+          isActive: true,
+        },
+      });
+    }
+
+    const ESSENTIAL_OFFERS = [
+      {
+        name: 'Festive Celebration Sale',
+        description: 'Enjoy up to 30% OFF on handloomed silk sarees and designer kurta sets.',
+        type: 'PERCENTAGE',
+        value: 30,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+      {
+        name: 'Bridal Season Special',
+        description: 'Complimentary matching dupatta & flat ₹2,000 OFF on all bridal lehengas.',
+        type: 'FIXED',
+        value: 2000,
+        startDate: now,
+        endDate: nextYear,
+        isActive: true,
+      },
+    ];
+
+    for (const off of ESSENTIAL_OFFERS) {
+      const existing = await this.prisma.offer.findFirst({ where: { name: off.name } });
+      if (!existing) {
+        await this.prisma.offer.create({ data: off });
+      }
+    }
+
+    this.logger.log(
+      'Essential coupons & offers verified/seeded successfully.',
+    );
   }
 }
