@@ -12,6 +12,9 @@ import {
 } from 'lucide-react';
 import { useScanBarcode, useBatchStickers } from '@/features/pos/pos.hooks';
 import { ScanBarcodeResult } from '@/features/pos/pos.types';
+import { useStockIn } from '@/features/inventory/inventory.hooks';
+import { useToast } from '@/components/toast/ToastProvider';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function AddStockPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -31,6 +34,8 @@ export default function AddStockPage() {
 
   const scanMutation = useScanBarcode();
   const batchStickersMutation = useBatchStickers();
+  const stockInMutation = useStockIn();
+  const { toast } = useToast();
 
   const handleScanSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -49,30 +54,54 @@ export default function AddStockPage() {
 
   const handleSaveStock = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedVariant || quantityReceived <= 0) return;
+    if (!selectedVariant?.variantId || quantityReceived <= 0) return;
 
-    // 1. Generate Batch Stickers if checked
-    if (printLabels && selectedVariant.barcode) {
-      batchStickersMutation.mutate(
-        {
-          productName: selectedVariant.productName,
-          variantTitle: selectedVariant.variantTitle,
-          sku: selectedVariant.sku || 'SKU-CODE',
-          barcode: selectedVariant.barcode,
-          price: selectedVariant.price,
-          quantity: quantityReceived,
-          storeName: 'VASANTHI DESIGNERS',
+    // 1. Persist the stock increase first — everything below (labels) is
+    //    secondary and must not run if this fails.
+    stockInMutation.mutate(
+      {
+        variantId: selectedVariant.variantId,
+        quantity: quantityReceived,
+        reason: supplier ? `Stock-in from ${supplier}` : 'Web POS stock replenishment',
+      },
+      {
+        onSuccess: (updated) => {
+          toast(
+            'success',
+            'Stock updated',
+            `Added +${quantityReceived} pcs to ${selectedVariant.productName} (now ${updated.availableQuantity} pcs available).`,
+          );
+
+          // 2. Generate batch stickers only after the stock is actually saved.
+          if (printLabels && selectedVariant.barcode) {
+            batchStickersMutation.mutate(
+              {
+                productName: selectedVariant.productName,
+                variantTitle: selectedVariant.variantTitle,
+                sku: selectedVariant.sku || 'SKU-CODE',
+                barcode: selectedVariant.barcode,
+                price: selectedVariant.price,
+                quantity: quantityReceived,
+                storeName: 'VASANTHI DESIGNERS',
+              },
+              {
+                onSuccess: (res) => {
+                  setStickerHtml(res.html);
+                  setPreviewModalOpen(true);
+                },
+              },
+            );
+          } else {
+            // No labels requested — clear the form so the next scan can start.
+            setSelectedVariant(null);
+            setBarcodeInput('');
+          }
         },
-        {
-          onSuccess: (res) => {
-            setStickerHtml(res.html);
-            setPreviewModalOpen(true);
-          },
+        onError: (err) => {
+          toast('error', 'Could not update stock', getApiErrorMessage(err, 'Stock was not saved.'));
         },
-      );
-    } else {
-      // Stock saved without labels
-    }
+      },
+    );
   };
 
   const triggerLabelPrint = () => {
@@ -86,6 +115,12 @@ export default function AddStockPage() {
         printWindow.close();
       }, 250);
     }
+  };
+
+  const closeLabelModal = () => {
+    setPreviewModalOpen(false);
+    setSelectedVariant(null);
+    setBarcodeInput('');
   };
 
   return (
@@ -277,15 +312,21 @@ export default function AddStockPage() {
 
             <button
               type="submit"
-              disabled={!selectedVariant || batchStickersMutation.isPending}
+              disabled={!selectedVariant || stockInMutation.isPending || batchStickersMutation.isPending}
               className="w-full bg-[#800020] hover:bg-[#600018] text-white py-3.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
             >
-              {batchStickersMutation.isPending ? (
+              {stockInMutation.isPending || batchStickersMutation.isPending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : (
                 <Plus className="w-4 h-4" />
               )}
-              <span>Save Stock (+{quantityReceived} Pcs) & Generate Labels</span>
+              <span>
+                {stockInMutation.isPending
+                  ? 'Saving stock…'
+                  : batchStickersMutation.isPending
+                    ? 'Generating labels…'
+                    : `Save Stock (+${quantityReceived} Pcs)${printLabels ? ' & Generate Labels' : ''}`}
+              </span>
             </button>
           </form>
         </div>
@@ -301,7 +342,7 @@ export default function AddStockPage() {
                 <CheckCircle2 className="w-5 h-5" />
                 <span>Labels Ready ({quantityReceived} Stickers)</span>
               </div>
-              <button onClick={() => setPreviewModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
+              <button onClick={closeLabelModal} className="text-neutral-400 hover:text-neutral-700">
                 ✕
               </button>
             </div>
@@ -327,7 +368,7 @@ export default function AddStockPage() {
                 <span>Print All {quantityReceived} Sticker Labels</span>
               </button>
               <button
-                onClick={() => setPreviewModalOpen(false)}
+                onClick={closeLabelModal}
                 className="px-4 py-3 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl text-xs font-bold transition-colors"
               >
                 Done

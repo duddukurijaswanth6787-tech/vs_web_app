@@ -89,6 +89,30 @@ export function useIncreaseStock() {
   });
 }
 
+export function useStockIn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      variantId,
+      quantity,
+      reason,
+      thresholds,
+    }: {
+      variantId: string;
+      quantity: number;
+      reason?: string;
+      thresholds?: { minimumStock?: number; reorderLevel?: number };
+    }) => inventoryService.stockIn(variantId, quantity, reason, thresholds),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.detailByVariant(data.variantId) });
+      queryClient.invalidateQueries({ queryKey: inventoryKeys.summary() });
+      queryClient.invalidateQueries({ queryKey: ['inventory', 'movements'] });
+    },
+  });
+}
+
 export function useDecreaseStock() {
   const queryClient = useQueryClient();
   return useMutation({
