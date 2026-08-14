@@ -86,16 +86,16 @@ function ProductCardItem({
       </Link>
       <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5">
         <Link href={`/product/${product.slug || product.id}`}>
-          <h3 className="text-xs font-semibold text-neutral-900 line-clamp-1 hover:text-[#800020] transition-colors">
+          <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1 hover:text-[#800020] transition-colors">
             {cardTitle}
           </h3>
         </Link>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-xs font-extrabold text-neutral-900">
+          <span className="text-sm font-extrabold text-neutral-900">
             ₹{priceVal.toLocaleString('en-IN')}
           </span>
           {origVal > priceVal && (
-            <span className="text-[10px] text-neutral-400 line-through">
+            <span className="text-xs text-neutral-400 line-through">
               ₹{origVal.toLocaleString('en-IN')}
             </span>
           )}
@@ -124,7 +124,7 @@ export function ProductGridSection({
   const displayProducts = products && products.length > 0 ? products : FALLBACK_PRODUCTS;
 
   return (
-    <section className="w-full max-w-[1440px] mx-auto px-0 lg:px-12 py-2.5 sm:py-8">
+    <section className="w-full max-w-[1440px] mx-auto px-0 lg:px-12 py-4 sm:py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-2 sm:mb-4 px-4 sm:px-8 lg:px-0">
         <div>
