@@ -121,8 +121,8 @@ export class UsersController {
   }
 
   @Post(':id/roles')
-  @Roles('super_admin', 'admin')
-  @ApiOperation({ summary: 'Assign role to user' })
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Assign role to user (super_admin only — grants access, not day-to-day account management)' })
   async assignRole(@Param('id') id: string, @Body() dto: AssignRoleDto) {
     return ResponseBuilder.success(
       await this.usersService.assignRole(id, dto),
@@ -131,8 +131,8 @@ export class UsersController {
   }
 
   @Delete(':id/roles/:roleId')
-  @Roles('super_admin', 'admin')
-  @ApiOperation({ summary: 'Remove role from user' })
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Remove role from user (super_admin only)' })
   async removeRole(@Param('id') id: string, @Param('roleId') roleId: string) {
     return ResponseBuilder.success(
       await this.usersService.removeRole(id, roleId),
