@@ -17,6 +17,8 @@ type Banner = {
   linkUrl?: string;
   buttonText?: string;
   position?: string;
+  ctaEnabled?: boolean;
+  ctaStyle?: 'solid' | 'transparent';
 };
 
 const DEFAULT_SLIDES = [
@@ -54,11 +56,13 @@ export function HeroSection() {
           id: String(b.id || ''),
           title: String(b.title || ''),
           subtitle: String(b.description || b.subtitle || ''),
-          ctaText: String(b.ctaText || 'Shop Collection'),
-          ctaLink: String(b.ctaLink || b.linkUrl || '/catalog'),
+          buttonText: String(b.ctaText || 'SHOP NOW'),
+          linkUrl: String(b.ctaLink || b.linkUrl || '/catalog'),
           imageUrl: isValid ? resolved : PLACEHOLDER_IMAGE,
           badge: String(b.badge || 'New Collection'),
           color: String(b.color || '#800020'),
+          ctaEnabled: b.ctaEnabled !== false,
+          ctaStyle: b.ctaStyle === 'transparent' ? 'transparent' as const : 'solid' as const,
         };
       });
     }
@@ -134,26 +138,32 @@ export function HeroSection() {
           )}
 
           {/* Hero Content Overlay (Bottom-Left Aligned) */}
-          <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-2.5 sm:space-y-3.5 pb-2 sm:pb-0">
+          <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-0.5 sm:space-y-3.5 pb-1 sm:pb-0">
 
             {/* Main Headline */}
-            <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.25] sm:leading-[1.15] tracking-tight line-clamp-3">
+            <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.15] tracking-tight line-clamp-3">
               {main.title && !main.title.includes('COLLECTION') ? main.title : 'FRESH STYLES — TIMELESS YOU'}
             </h1>
 
-            <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed line-clamp-2 max-w-[90%] sm:max-w-md">
+            <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-snug line-clamp-2 max-w-[90%] sm:max-w-md">
               {main.subtitle || 'Discover handloomed sarees, designer lehengas, and Anarkali suits crafted for timeless sophistication.'}
             </p>
 
             {/* Primary CTA Button (Small sleek on mobile, bottom left) */}
-            <div className="pt-2 sm:pt-2 flex justify-start">
-              <Link
-                href={main.linkUrl || '/categories'}
-                className="inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105"
-              >
-                {main.buttonText || 'SHOP NOW'}
-              </Link>
-            </div>
+            {main.ctaEnabled !== false && (
+              <div className="pt-0.5 sm:pt-2 flex justify-start">
+                <Link
+                  href={main.linkUrl || '/categories'}
+                  className={
+                    main.ctaStyle === 'transparent'
+                      ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
+                      : 'inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
+                  }
+                >
+                  {main.buttonText || 'SHOP NOW'}
+                </Link>
+              </div>
+            )}
           </div>
 
           {/* Dot Pagination Indicators */}

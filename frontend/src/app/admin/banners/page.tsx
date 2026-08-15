@@ -29,6 +29,8 @@ const bannerSchema = z.object({
   placement: z.string().min(2, 'Placement key is required'),
   displayOrder: z.number().int().min(0),
   isActive: z.boolean(),
+  ctaEnabled: z.boolean(),
+  ctaStyle: z.enum(['solid', 'transparent']),
   startDate: z.string().optional().or(z.literal('')),
   endDate: z.string().optional().or(z.literal('')),
 });
@@ -274,6 +276,7 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
       mobileImageUrl: banner?.mobileImageUrl || '',
       linkUrl: banner?.linkUrl || '', placement: banner?.placement || 'HOMEPAGE_HERO',
       displayOrder: banner?.displayOrder || 0, isActive: banner?.isActive ?? true,
+      ctaEnabled: banner?.ctaEnabled ?? true, ctaStyle: banner?.ctaStyle || 'solid',
       startDate: banner?.startDate ? new Date(banner.startDate).toISOString().split('T')[0] : '',
       endDate: banner?.endDate ? new Date(banner.endDate).toISOString().split('T')[0] : '',
     },
@@ -282,6 +285,7 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
   const watchedImageUrl = useWatch({ control, name: 'imageUrl' });
   const watchedMobileImageUrl = useWatch({ control, name: 'mobileImageUrl' });
   const watchedPlacement = useWatch({ control, name: 'placement' });
+  const watchedCtaEnabled = useWatch({ control, name: 'ctaEnabled' });
 
   const getDesktopRecommendation = () => {
     switch (watchedPlacement) {
@@ -405,6 +409,19 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
           <div className="grid grid-cols-2 gap-3 pt-2 border-t border-neutral-100">
             <div><label className="block text-[9px] font-bold text-neutral-500 uppercase">Start Date</label><input type="date" {...register('startDate')} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1" /></div>
             <div><label className="block text-[9px] font-bold text-neutral-500 uppercase">End Date</label><input type="date" {...register('endDate')} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1" /></div>
+          </div>
+          <div className="space-y-2 pt-2 border-t border-neutral-100">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="checkbox" {...register('ctaEnabled')} className="h-4 w-4 rounded border-neutral-300 text-neutral-900" />
+              <span className="text-2xs font-bold text-neutral-500 uppercase">Show &quot;Shop Now&quot; Button</span>
+            </label>
+            <div className={`flex items-center gap-3 ${!watchedCtaEnabled ? 'opacity-40 pointer-events-none' : ''}`}>
+              <label className="text-[10px] font-bold text-neutral-500 uppercase shrink-0">Button Style</label>
+              <select {...register('ctaStyle')} disabled={!watchedCtaEnabled} className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5">
+                <option value="solid">Solid</option>
+                <option value="transparent">Transparent</option>
+              </select>
+            </div>
           </div>
           <div className="flex items-center pt-2 border-t border-neutral-100"><input type="checkbox" {...register('isActive')} className="h-4 w-4 rounded border-neutral-300 text-neutral-900" /><label className="ml-2 text-2xs font-bold text-neutral-500 uppercase">Active</label></div>
           <div className="flex justify-end gap-3 pt-3 border-t border-neutral-100">
