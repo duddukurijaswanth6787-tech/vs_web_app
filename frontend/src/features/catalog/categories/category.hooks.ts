@@ -54,8 +54,18 @@ export function useCategoryTree() {
       // Fallback: fetch all categories as a flat list and build the tree
       // client-side. Keeps admin's view honest when /categories/tree is empty
       // or misbehaving, so admin always sees whatever's really in the DB.
-      const flat = await categoryService.findAll({ page: 1, limit: 500 });
-      return buildTreeFromFlat(flat.data || []);
+      // CategoryQueryDto caps limit at 100 (@Max(100)) — page through
+      // everything instead of requesting more than the backend allows.
+      const allCategories: CategoryResponse[] = [];
+      let page = 1;
+      let hasNext = true;
+      while (hasNext) {
+        const flat = await categoryService.findAll({ page, limit: 100 });
+        allCategories.push(...(flat.data || []));
+        hasNext = !!flat.meta?.hasNext;
+        page += 1;
+      }
+      return buildTreeFromFlat(allCategories);
     },
   });
 }
