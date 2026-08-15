@@ -32,9 +32,7 @@ export class OrderController {
       ['super_admin', 'admin'].includes(r),
     );
     const q = isAdmin ? query : { ...query, customerId: user.sub };
-    return ResponseBuilder.success(
-      await this.orderService.findAll(q, isAdmin),
-    );
+    return ResponseBuilder.success(await this.orderService.findAll(q, isAdmin));
   }
 
   @Get('number/:orderNumber')

@@ -147,7 +147,12 @@ export class AuthRepository {
 
     const ethnicWear = await this.prisma.category.upsert({
       where: { slug: 'ethnic-wear' },
-      update: { name: 'Ethnic Wear', isVisible: true, status: 'ACTIVE', level: 0 },
+      update: {
+        name: 'Ethnic Wear',
+        isVisible: true,
+        status: 'ACTIVE',
+        level: 0,
+      },
       create: {
         name: 'Ethnic Wear',
         slug: 'ethnic-wear',
@@ -163,11 +168,36 @@ export class AuthRepository {
     });
 
     const ESSENTIAL_SUBCATEGORIES = [
-      { name: 'Kurta Sets', slug: 'kurta-sets', path: 'ethnic-wear/kurta-sets', displayOrder: 1 },
-      { name: 'Sarees', slug: 'sarees', path: 'ethnic-wear/sarees', displayOrder: 2 },
-      { name: 'Lehengas', slug: 'lehengas', path: 'ethnic-wear/lehengas', displayOrder: 3 },
-      { name: 'Kurtis & Suits', slug: 'kurtis-suits', path: 'ethnic-wear/kurtis-suits', displayOrder: 4 },
-      { name: 'Dresses', slug: 'dresses', path: 'ethnic-wear/dresses', displayOrder: 5 },
+      {
+        name: 'Kurta Sets',
+        slug: 'kurta-sets',
+        path: 'ethnic-wear/kurta-sets',
+        displayOrder: 1,
+      },
+      {
+        name: 'Sarees',
+        slug: 'sarees',
+        path: 'ethnic-wear/sarees',
+        displayOrder: 2,
+      },
+      {
+        name: 'Lehengas',
+        slug: 'lehengas',
+        path: 'ethnic-wear/lehengas',
+        displayOrder: 3,
+      },
+      {
+        name: 'Kurtis & Suits',
+        slug: 'kurtis-suits',
+        path: 'ethnic-wear/kurtis-suits',
+        displayOrder: 4,
+      },
+      {
+        name: 'Dresses',
+        slug: 'dresses',
+        path: 'ethnic-wear/dresses',
+        displayOrder: 5,
+      },
       { name: 'Sale', slug: 'sale', path: 'ethnic-wear/sale', displayOrder: 6 },
     ];
 

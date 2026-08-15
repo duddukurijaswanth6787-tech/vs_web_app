@@ -30,7 +30,8 @@ const SYSTEM_ROLES = [
   {
     name: 'pos_operator',
     displayName: 'POS Operator',
-    description: 'Billing counter access only — confined to the standalone Shopora POS screen, no admin console',
+    description:
+      'Billing counter access only — confined to the standalone Shopora POS screen, no admin console',
     scope: 'DOMAIN' as const,
     hierarchy: 40,
     isSystem: true,
@@ -344,7 +345,8 @@ export class AutoSeedService implements OnModuleInit {
     const ESSENTIAL_OFFERS = [
       {
         name: 'Festive Celebration Sale',
-        description: 'Enjoy up to 30% OFF on handloomed silk sarees and designer kurta sets.',
+        description:
+          'Enjoy up to 30% OFF on handloomed silk sarees and designer kurta sets.',
         type: 'PERCENTAGE',
         value: 30,
         startDate: now,
@@ -353,7 +355,8 @@ export class AutoSeedService implements OnModuleInit {
       },
       {
         name: 'Bridal Season Special',
-        description: 'Complimentary matching dupatta & flat ₹2,000 OFF on all bridal lehengas.',
+        description:
+          'Complimentary matching dupatta & flat ₹2,000 OFF on all bridal lehengas.',
         type: 'FIXED',
         value: 2000,
         startDate: now,
@@ -363,22 +366,28 @@ export class AutoSeedService implements OnModuleInit {
     ];
 
     for (const off of ESSENTIAL_OFFERS) {
-      const existing = await this.prisma.offer.findFirst({ where: { name: off.name } });
+      const existing = await this.prisma.offer.findFirst({
+        where: { name: off.name },
+      });
       if (!existing) {
         await this.prisma.offer.create({ data: off });
       }
     }
 
-    this.logger.log(
-      'Essential coupons & offers verified/seeded successfully.',
-    );
+    this.logger.log('Essential coupons & offers verified/seeded successfully.');
 
     // 6. Seed Essential Products if catalog is empty
     const productCount = await this.prisma.product.count();
     if (productCount === 0) {
       this.logger.log('Catalog empty. Auto-seeding essential products...');
 
-      function createFashionSvg(title: string, subtitle: string, bg1: string, bg2: string, accentColor = '#D4AF37') {
+      function createFashionSvg(
+        title: string,
+        subtitle: string,
+        bg1: string,
+        bg2: string,
+        accentColor = '#D4AF37',
+      ) {
         const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
           <defs>
             <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -398,7 +407,11 @@ export class AutoSeedService implements OnModuleInit {
 
       const brand = await this.prisma.brand.upsert({
         where: { slug: 'vasanthis-signature' },
-        update: { name: "Vasanthi's Signature", isVisible: true, status: 'ACTIVE' },
+        update: {
+          name: "Vasanthi's Signature",
+          isVisible: true,
+          status: 'ACTIVE',
+        },
         create: {
           name: "Vasanthi's Signature",
           slug: 'vasanthis-signature',
@@ -407,10 +420,18 @@ export class AutoSeedService implements OnModuleInit {
         },
       });
 
-      const catEthnic = await this.prisma.category.findUnique({ where: { slug: 'ethnic-wear' } });
-      const catKurta = await this.prisma.category.findUnique({ where: { slug: 'kurta-sets' } });
-      const catSarees = await this.prisma.category.findUnique({ where: { slug: 'sarees' } });
-      const catLehengas = await this.prisma.category.findUnique({ where: { slug: 'lehengas' } });
+      const catEthnic = await this.prisma.category.findUnique({
+        where: { slug: 'ethnic-wear' },
+      });
+      const catKurta = await this.prisma.category.findUnique({
+        where: { slug: 'kurta-sets' },
+      });
+      const catSarees = await this.prisma.category.findUnique({
+        where: { slug: 'sarees' },
+      });
+      const catLehengas = await this.prisma.category.findUnique({
+        where: { slug: 'lehengas' },
+      });
 
       const PRODUCTS_TO_SEED = [
         {
@@ -464,7 +485,12 @@ export class AutoSeedService implements OnModuleInit {
       ];
 
       for (const item of PRODUCTS_TO_SEED) {
-        const svgUrl = createFashionSvg(item.name.split(' ')[0], "VASANTHI'S SIGNATURE", item.bg1, item.bg2);
+        const svgUrl = createFashionSvg(
+          item.name.split(' ')[0],
+          "VASANTHI'S SIGNATURE",
+          item.bg1,
+          item.bg2,
+        );
         const prod = await this.prisma.product.create({
           data: {
             sku: item.sku,
