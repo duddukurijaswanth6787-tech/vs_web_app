@@ -59,11 +59,13 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       return;
     }
 
-    this.logger.log('Initializing Redis client...');
     const host = this.configService.get<string>('app.redis.host', 'localhost');
     const port = this.configService.get<number>('app.redis.port', 6379);
     const password = this.configService.get<string>('app.redis.password', '');
     const db = this.configService.get<number>('app.redis.db', 0);
+    this.logger.log(
+      `Initializing Redis client... host=${host} port=${port} db=${db} passwordSet=${!!password}`,
+    );
 
     // ponytail: configure standard Redis client with proper settings
     this.client = new Redis({

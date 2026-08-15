@@ -45,7 +45,7 @@ function CollectionCard({ item }: { item: typeof COLLECTIONS[0] }) {
 export function FeaturedCollections() {
 
   return (
-    <section className="w-full max-w-[1440px] mx-auto py-2.5 sm:py-8">
+    <section className="w-full max-w-[1440px] mx-auto py-4 sm:py-8">
       {/* Header (Hidden on Mobile, Visible on Desktop/Tablet) */}
       <div className="hidden sm:flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 px-4 sm:px-8 lg:px-12">
         <div className="space-y-1">

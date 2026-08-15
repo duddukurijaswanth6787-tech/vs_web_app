@@ -249,8 +249,14 @@ function ReportCenterContent() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {reportTypes.filter((r) => r.group === group).map((rep) => {
               const Icon = rep.icon;
-              const hasDedicatedPage = ['SALES', 'ORDER', 'INVENTORY', 'CUSTOMER'].includes(rep.id);
-              const href = hasDedicatedPage ? `/admin/reports/${rep.id.toLowerCase()}` : `/admin/reports?type=${rep.id}`;
+              const dedicatedPageSlugs: Partial<Record<ReportType, string>> = {
+                SALES: 'sales',
+                ORDER: 'orders',
+                INVENTORY: 'inventory',
+                CUSTOMER: 'customers',
+              };
+              const dedicatedSlug = dedicatedPageSlugs[rep.id];
+              const href = dedicatedSlug ? `/admin/reports/${dedicatedSlug}` : `/admin/reports?type=${rep.id}`;
               return (
                 <div key={rep.id} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm hover:shadow-md transition flex items-center gap-4">
                   <div className={`rounded-lg border p-2 ${rep.color}`}><Icon className="h-5 w-5" /></div>

@@ -108,6 +108,21 @@ export class StaffRepository {
     return this.prisma.staffProfile.findUnique({ where: { employeeId } });
   }
 
+  /**
+   * EMP-0001, EMP-0002, … based on how many staff profiles have ever
+   * existed (soft-deleted ones included, so an ID is never reused). Retries
+   * on the rare chance of a collision from a concurrent create.
+   */
+  async generateEmployeeId(): Promise<string> {
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const count = await this.prisma.staffProfile.count();
+      const candidate = `EMP-${String(count + 1 + attempt).padStart(4, '0')}`;
+      const existing = await this.findByEmployeeId(candidate);
+      if (!existing) return candidate;
+    }
+    return `EMP-${Date.now()}`;
+  }
+
   async create(data: {
     userId: string;
     department: string;

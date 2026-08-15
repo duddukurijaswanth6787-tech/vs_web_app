@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
@@ -13,6 +13,7 @@ import type { StorageProvider, FileMetadata } from './storage.types';
 
 @Injectable()
 export class S3StorageProvider implements StorageProvider {
+  private readonly logger = new Logger(S3StorageProvider.name);
   private readonly client: S3Client;
   private readonly bucket: string;
   private readonly publicUrl: string;
@@ -27,6 +28,13 @@ export class S3StorageProvider implements StorageProvider {
     const forcePathStyle = this.configService.get<boolean>(
       'app.storage.s3.forcePathStyle',
       false,
+    );
+    const accessKeyId = this.configService.get<string>(
+      'app.storage.s3.accessKeyId',
+      '',
+    );
+    this.logger.log(
+      `Initializing S3 client... region=${region} bucket=${this.configService.get<string>('app.storage.s3.bucket', '')} endpoint=${endpoint || '(default AWS)'} accessKeySet=${!!accessKeyId} forcePathStyle=${forcePathStyle}`,
     );
 
     this.client = new S3Client({
@@ -174,7 +182,10 @@ export class S3StorageProvider implements StorageProvider {
         new DeleteObjectCommand({ Bucket: this.bucket, Key: testKey }),
       );
       return { writable: true, provider: 's3', root: this.bucket };
-    } catch {
+    } catch (error) {
+      this.logger.error(
+        `S3 health check failed for bucket "${this.bucket}": ${error instanceof Error ? error.message : String(error)}`,
+      );
       return { writable: false, provider: 's3', root: this.bucket };
     }
   }

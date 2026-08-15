@@ -10,6 +10,8 @@ import CommandPalette from '@/components/CommandPalette';
 import ErrorBoundary from '@/components/common/ErrorBoundary';
 import { ToastProvider } from '@/components/toast/ToastProvider';
 import { PageLoader } from '@/components/feedback/FeedbackStates';
+import { findNavItemForPath } from '@/config/navigation';
+import { canAccessRoute } from '@/lib/permissions/rules';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -49,6 +51,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         return;
       }
 
+      // POS-only staff never see the admin console at all — Shopora POS is
+      // its own standalone shell at /pos (see app/pos/layout.tsx), not a
+      // page nested inside this one.
       const isPosOnlyRole =
         user?.roles?.includes('pos_operator') ||
         user?.roles?.includes('pos_staff');
@@ -56,11 +61,22 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         user?.roles?.includes('super_admin') ||
         user?.roles?.includes('admin');
 
-      if (isPosOnlyRole && !isAdminOrSuperAdmin && !pathname.startsWith('/admin/pos')) {
-        router.push('/admin/pos');
+      if (isPosOnlyRole && !isAdminOrSuperAdmin) {
+        router.push('/pos');
+        return;
+      }
+
+      // A page hidden from the sidebar (role/permission mismatch) is also
+      // blocked from direct URL access — hiding a link is meaningless if
+      // typing the address still gets you in. Pages with no matching nav
+      // entry (dynamic sub-routes, etc.) are left unguarded rather than
+      // guessed at.
+      const navItem = findNavItemForPath(pathname);
+      if (navItem && !canAccessRoute(user, navItem)) {
+        router.push('/admin/dashboard');
       }
     }
-  }, [isInitializing, isStaffUser, user, pathname, router]);
+  }, [isInitializing, isStaffUser, user, router, pathname]);
 
   // ponytail: mounted guard ensures server & client render the same thing
   if (!mounted || isInitializing) {

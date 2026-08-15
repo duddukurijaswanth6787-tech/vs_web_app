@@ -42,6 +42,11 @@ export class ReturnRequestService {
         orderItemId: i.orderItemId,
         quantity: i.quantity,
         reason: i.reason ?? undefined,
+        images: i.images?.map((img: any) => ({
+          id: img.id,
+          url: img.url,
+          displayOrder: img.displayOrder,
+        })),
       })),
       createdAt: r.createdAt,
     };

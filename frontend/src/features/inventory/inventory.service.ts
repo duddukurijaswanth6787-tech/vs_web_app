@@ -85,4 +85,34 @@ export const inventoryService = {
     const response = await apiClient.post<StandardResponse<InventoryResponse>>(`/inventory/${id}/damage`, dto);
     return response.data.data!;
   },
+
+  /**
+   * Set stock for a variant by variantId, opening an inventory record when the
+   * variant has none yet, otherwise raising the existing one. There is no POST
+   * /inventory/stock-in endpoint on the API, only /inventory (create) and
+   * /inventory/:id/increase, so this resolves which one applies first.
+   *
+   * "Not found" here is HTTP 422, not 404 — GET /inventory/variant/:variantId
+   * throws BusinessException('Inventory not found for variant', 'INVENTORY_001'),
+   * and BusinessException is mapped to 422 Unprocessable Entity, not 404.
+   */
+  stockIn: async (
+    variantId: string,
+    quantity: number,
+    reason?: string,
+    thresholds?: { minimumStock?: number; reorderLevel?: number },
+  ): Promise<InventoryResponse> => {
+    let existing: InventoryResponse | null = null;
+    try {
+      existing = await inventoryService.findByVariantId(variantId);
+    } catch (err: unknown) {
+      const status = (err as { response?: { status?: number } })?.response?.status;
+      if (status !== 422 && status !== 404) throw err;
+    }
+    if (!existing?.id) {
+      return inventoryService.create({ variantId, availableQuantity: quantity, ...thresholds });
+    }
+    if (quantity <= 0) return existing;
+    return inventoryService.increaseStock(existing.id, { quantity, reason });
+  },
 };

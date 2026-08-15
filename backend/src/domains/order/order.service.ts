@@ -11,7 +11,11 @@ export class OrderService {
     private readonly workflow: OrderWorkflowService,
   ) {}
 
-  private toResponse(o: any, includeRelations = false): OrderResponse {
+  private toResponse(
+    o: any,
+    includeRelations = false,
+    includeAdminFields = false,
+  ): OrderResponse {
     return {
       id: o.id,
       orderNumber: o.orderNumber,
@@ -24,6 +28,13 @@ export class OrderService {
       grandTotal: Number(o.grandTotal),
       currency: o.currency,
       notes: o.notes ?? undefined,
+      ...(includeAdminFields
+        ? {
+            channel: o.channel,
+            paymentMethod: o.paymentMethod ?? undefined,
+            terminalId: o.terminalId ?? undefined,
+          }
+        : {}),
       items:
         includeRelations && o.items
           ? o.items.map((i: any) => ({
@@ -71,7 +82,7 @@ export class OrderService {
     };
   }
 
-  async findAll(query: OrderQueryDto) {
+  async findAll(query: OrderQueryDto, includeAdminFields = false) {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 100);
     const result = await this.orderRepository.findAll({
@@ -86,15 +97,15 @@ export class OrderService {
       sortOrder: query.sortOrder ?? 'desc',
     });
     return {
-      data: result.data.map((o) => this.toResponse(o)),
+      data: result.data.map((o) => this.toResponse(o, false, includeAdminFields)),
       meta: result.meta,
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, includeAdminFields = false) {
     const order = await this.orderRepository.findById(id);
     if (!order) throw new BusinessException('Order not found', 'ORDER_001');
-    return this.toResponse(order, true);
+    return this.toResponse(order, true, includeAdminFields);
   }
 
   async findByOrderNumber(orderNumber: string) {
