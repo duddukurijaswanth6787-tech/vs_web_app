@@ -49,16 +49,22 @@ export function HeroSection() {
     const list = Array.isArray(typedData) ? typedData : typedData?.data || [];
     if (list.length > 0) {
       return list.map((b: Record<string, unknown>) => {
-        const rawImg = (b.imageUrl as string) || (b.mobileImageUrl as string);
-        const resolved = rawImg ? resolveMediaUrl(rawImg) : '';
-        const isValid = resolved && !resolved.includes('placehold.co');
+        const rawDesktopImg = (b.imageUrl as string) || '';
+        const resolvedDesktop = rawDesktopImg ? resolveMediaUrl(rawDesktopImg) : '';
+        const isDesktopValid = resolvedDesktop && !resolvedDesktop.includes('placehold.co');
+
+        const rawMobileImg = (b.mobileImageUrl as string) || '';
+        const resolvedMobile = rawMobileImg ? resolveMediaUrl(rawMobileImg) : '';
+        const isMobileValid = resolvedMobile && !resolvedMobile.includes('placehold.co');
+
         return {
           id: String(b.id || ''),
           title: String(b.title || ''),
           subtitle: String(b.description || b.subtitle || ''),
           buttonText: String(b.ctaText || 'SHOP NOW'),
           linkUrl: String(b.ctaLink || b.linkUrl || '/catalog'),
-          imageUrl: isValid ? resolved : PLACEHOLDER_IMAGE,
+          imageUrl: isDesktopValid ? resolvedDesktop : PLACEHOLDER_IMAGE,
+          mobileImageUrl: isMobileValid ? resolvedMobile : undefined,
           badge: String(b.badge || 'New Collection'),
           color: String(b.color || '#800020'),
           ctaEnabled: b.ctaEnabled !== false,
@@ -103,6 +109,17 @@ export function HeroSection() {
           
           {/* Background Image & Gradient Overlay */}
           <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">
+            {/* Mobile: prefers a dedicated mobile banner image; falls back to the desktop
+                image right-anchored so a subject placed off-center isn't cropped out. */}
+            <Image
+              src={withVariant(main.mobileImageUrl || main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
+              alt={main.title || 'Hero Banner'}
+              fill
+              priority
+              sizes="100vw"
+              unoptimized={isLocalOrPlaceholder(main.mobileImageUrl || main.imageUrl)}
+              className={`block sm:hidden object-cover ${main.mobileImageUrl ? 'object-center' : 'object-right'} group-hover:scale-103 transition-transform duration-700 opacity-90`}
+            />
             <Image
               src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
               alt={main.title || 'Hero Banner'}
@@ -110,7 +127,7 @@ export function HeroSection() {
               priority
               sizes="(max-width: 1024px) 100vw, 66vw"
               unoptimized={isLocalOrPlaceholder(main.imageUrl)}
-              className="object-cover object-center group-hover:scale-103 transition-transform duration-700 opacity-90"
+              className="hidden sm:block object-cover object-center group-hover:scale-103 transition-transform duration-700 opacity-90"
             />
             <div className="absolute inset-0 bg-gradient-to-t from-[#FAF3F3] via-[#FAF3F3]/80 to-transparent sm:bg-gradient-to-r sm:from-[#FAF3F3]/95 sm:via-[#FAF3F3]/70 sm:to-transparent z-10" />
           </Link>
