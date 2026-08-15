@@ -53,7 +53,12 @@ export function CategoryCircles() {
 
     return mainCategories.map((cat) => {
       const c = cat as Record<string, unknown>;
-      const rawImg = String(c.image || c.imageUrl || c.primaryImageUrl || '');
+      // Prefer `icon` first — the admin has two separate upload slots
+      // (Icon 128×128, Image 800×800), and Icon is the one sized exactly
+      // right for this 100px circular display. Full-size `image` and other
+      // legacy field names remain as fallbacks so nothing that used to work
+      // stops working.
+      const rawImg = String(c.icon || c.image || c.imageUrl || c.primaryImageUrl || '');
       const slug = String(c.slug || '');
       const fallbackImg = CATEGORY_DEFAULT_IMAGES[slug] || PLACEHOLDER_IMAGE;
       const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : rawImg;
