@@ -256,10 +256,11 @@ export default function CategoriesPage() {
                           <span className="text-[9px] font-mono text-neutral-400">/{node.slug}</span>
                         </div>
 
-                        <div className="opacity-0 group-hover:opacity-100 transition-opacity flex gap-1.5">
+                        <div className="flex items-center gap-1.5">
                           <button
                             onClick={() => selectCategoryForEdit(node)}
-                            className="p-1 hover:bg-neutral-100 rounded text-neutral-600 hover:text-neutral-900"
+                            className="p-1 hover:bg-neutral-200/60 rounded text-neutral-600 hover:text-neutral-900 transition-colors"
+                            title="Edit Category"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
                           </button>
@@ -267,18 +268,18 @@ export default function CategoriesPage() {
                             isSuperAdmin && (
                               <button
                                 onClick={() => handleRestore(node.id)}
-                                className="p-1 hover:bg-green-50 rounded text-green-600"
-                                title="Restore"
+                                className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors"
+                                title="Restore Category"
                               >
                                 <RefreshCw className="w-3.5 h-3.5" />
                               </button>
                             )
                           ) : (
-                            isSuperAdmin && !hasChildren && (
+                            isSuperAdmin && (
                               <button
                                 onClick={() => handleDelete(node.id, node.name)}
-                                className="p-1 hover:bg-red-50 rounded text-red-600"
-                                title="Archive"
+                                className="p-1 hover:bg-red-100 rounded text-red-600 transition-colors"
+                                title="Delete / Archive Category"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />
                               </button>
