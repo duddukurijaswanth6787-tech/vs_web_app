@@ -41,27 +41,27 @@ export default function AdminHeader() {
   const healthIndicator = getHealthIndicator();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-4">
+    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-3 sm:px-4">
       {/* Left section: mobile trigger and breadcrumbs */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
         <button
           onClick={toggleMobileSidebar}
-          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden"
+          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="flex items-center gap-1 text-sm font-medium text-neutral-500">
-          <span>Admin Console</span>
-          <span className="text-neutral-300">/</span>
-          <span className="text-neutral-800 font-semibold capitalize">
+        <div className="flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 truncate">
+          <span className="hidden sm:inline">Admin Console</span>
+          <span className="hidden sm:inline text-neutral-300">/</span>
+          <span className="text-neutral-900 font-bold capitalize truncate max-w-[120px] sm:max-w-none">
             {pathname?.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
           </span>
         </div>
       </div>
 
       {/* Right section: Search, System health indicator and profile dropdown */}
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         {/* Command Palette Trigger */}
         <button
           onClick={openCommandPalette}
