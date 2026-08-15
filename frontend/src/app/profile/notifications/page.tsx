@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerNotifications } from '@/features/customer/hooks';
 import { customerNotificationService } from '@/features/customer/extra.service';
@@ -92,6 +93,7 @@ export default function NotificationsPage() {
         ))}
       </main>
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }

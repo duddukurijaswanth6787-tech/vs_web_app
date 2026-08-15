@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
 import { useCreateSupportTicket } from '@/features/customer/hooks';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import type { CreateSupportTicketDto } from '@/features/support/support.types';
 
 export default function NewTicketPage() {
@@ -28,6 +29,7 @@ export default function NewTicketPage() {
           <button type="submit" className="bg-[#800020] text-white px-6 py-2 rounded-lg">Submit</button>
         </form>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

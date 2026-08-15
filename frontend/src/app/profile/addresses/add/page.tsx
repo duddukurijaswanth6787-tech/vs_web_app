@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { ArrowLeft, Check, Home, Briefcase, MapPin } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { customerMeService } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
@@ -292,6 +293,7 @@ export default function ProfileAddAddressPage() {
         </form>
       </main>
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }
