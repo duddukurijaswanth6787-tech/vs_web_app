@@ -76,52 +76,57 @@ export class AutoSeedService implements OnModuleInit {
       return;
     }
 
-    const adminEmail = (process.env.ADMIN_EMAIL || 'admin@vasanthi.com')
-      .toLowerCase()
-      .trim();
+    const ADMIN_EMAILS = Array.from(
+      new Set([
+        'admin@vasanthi.com',
+        'admin@vasanthidesigners.com',
+        (process.env.ADMIN_EMAIL || '').toLowerCase().trim(),
+      ]),
+    ).filter(Boolean);
+
     const adminPassword = process.env.ADMIN_PASSWORD || 'Admin@123';
     const passwordHash = await argon2.hash(adminPassword);
 
-    const adminUser = await this.prisma.user.upsert({
-      where: { email: adminEmail },
-      update: {
-        passwordHash,
-        userType: 'ADMIN',
-        accountStatus: 'ACTIVE',
-        isEmailVerified: true,
-        loginAttempts: 0,
-        lockoutUntil: null,
-      },
-      create: {
-        email: adminEmail,
-        passwordHash,
-        firstName: 'Admin',
-        lastName: 'User',
-        userType: 'ADMIN',
-        accountStatus: 'ACTIVE',
-        isEmailVerified: true,
-        loginAttempts: 0,
-      },
-    });
-
-    // 3. Ensure role link exists
-    const existingRoleLink = await this.prisma.userRole.findFirst({
-      where: { userId: adminUser.id, roleId: superAdminRole.id },
-    });
-
-    if (!existingRoleLink) {
-      await this.prisma.userRole.create({
-        data: {
-          userId: adminUser.id,
-          roleId: superAdminRole.id,
+    for (const email of ADMIN_EMAILS) {
+      const adminUser = await this.prisma.user.upsert({
+        where: { email },
+        update: {
+          passwordHash,
+          userType: 'ADMIN',
+          accountStatus: 'ACTIVE',
+          isEmailVerified: true,
+          loginAttempts: 0,
+          lockoutUntil: null,
+        },
+        create: {
+          email,
+          passwordHash,
+          firstName: 'Admin',
+          lastName: 'User',
+          userType: 'ADMIN',
+          accountStatus: 'ACTIVE',
+          isEmailVerified: true,
+          loginAttempts: 0,
         },
       });
+
+      const existingRoleLink = await this.prisma.userRole.findFirst({
+        where: { userId: adminUser.id, roleId: superAdminRole.id },
+      });
+
+      if (!existingRoleLink) {
+        await this.prisma.userRole.create({
+          data: {
+            userId: adminUser.id,
+            roleId: superAdminRole.id,
+          },
+        });
+      }
+
+      this.logger.log(
+        `Essential admin user verified/seeded successfully: ${email}`,
+      );
     }
-
-    this.logger.log(
-      `Essential admin user verified/seeded successfully: ${adminEmail}`,
-    );
-
     // 4. Seed Essential Categories
     const ethnicWear = await this.prisma.category.upsert({
       where: { slug: 'ethnic-wear' },
