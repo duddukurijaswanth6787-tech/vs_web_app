@@ -88,6 +88,7 @@ export function CategoryCircles() {
         </div>
         <Link
           href="/categories"
+          prefetch={false}
           className="text-xs sm:text-sm font-bold text-[#800020] hover:underline inline-flex items-center gap-1 shrink-0"
         >
           <span>View All Categories</span>
@@ -115,6 +116,7 @@ export function CategoryCircles() {
               <Link
                 key={cat.id || cat.slug}
                 href={`/categories/${cat.slug}`}
+                prefetch={false}
                 className="flex flex-col items-center gap-2 shrink-0 snap-start group w-[85px] sm:w-[100px] text-center"
               >
                 {/* Circle Container (100px diameter with border & shadow) */}

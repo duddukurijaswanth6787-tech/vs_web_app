@@ -75,7 +75,7 @@ export function StorefrontHeader() {
       <div className={mobileAnnouncementEnabled ? "bg-[#800020] text-white py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5" : "hidden sm:flex bg-[#800020] text-white py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"}>
         <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
         <span className="truncate">{announcementText}</span>
-        <Link href="/offers" className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
+        <Link href="/offers" prefetch={false} className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
           Shop Now →
         </Link>
       </div>
@@ -116,6 +116,7 @@ export function StorefrontHeader() {
                 <Link
                   key={cat.id || cat.slug}
                   href={`/categories/${cat.slug}`}
+                  prefetch={false}
                   className="hover:text-[#800020] transition-colors whitespace-nowrap font-medium text-neutral-700"
                 >
                   {cat.name}
@@ -123,10 +124,10 @@ export function StorefrontHeader() {
               ))
             ) : (
               <>
-                <Link href="/categories/new-arrivals" className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/new-arrivals" prefetch={false} className="hover:text-[#800020] transition-colors whitespace-nowrap">
                   New Arrivals
                 </Link>
-                <Link href="/categories/collections" className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/collections" prefetch={false} className="hover:text-[#800020] transition-colors whitespace-nowrap">
                   Collections
                 </Link>
               </>
