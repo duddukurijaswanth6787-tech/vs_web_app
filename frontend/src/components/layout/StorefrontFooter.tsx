@@ -62,11 +62,11 @@ export function StorefrontFooter() {
             <div className="space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Shop</h4>
               <ul className="space-y-1 text-[11px] text-rose-200/70">
-                <li><Link href="/categories/sarees" className="hover:text-white transition-colors">Sarees</Link></li>
-                <li><Link href="/categories/lehengas" className="hover:text-white transition-colors">Lehengas</Link></li>
-                <li><Link href="/categories/kurtis" className="hover:text-white transition-colors">Kurtis & Suits</Link></li>
-                <li><Link href="/categories/dresses" className="hover:text-white transition-colors">Dresses</Link></li>
-                <li><Link href="/offers" className="hover:text-white transition-colors">Sale</Link></li>
+                <li><Link href="/categories/sarees" prefetch={false} className="hover:text-white transition-colors">Sarees</Link></li>
+                <li><Link href="/categories/lehengas" prefetch={false} className="hover:text-white transition-colors">Lehengas</Link></li>
+                <li><Link href="/categories/kurtis" prefetch={false} className="hover:text-white transition-colors">Kurtis & Suits</Link></li>
+                <li><Link href="/categories/dresses" prefetch={false} className="hover:text-white transition-colors">Dresses</Link></li>
+                <li><Link href="/offers" prefetch={false} className="hover:text-white transition-colors">Sale</Link></li>
               </ul>
             </div>
 
@@ -74,11 +74,11 @@ export function StorefrontFooter() {
             <div className="space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Customer Care</h4>
               <ul className="space-y-1 text-[11px] text-rose-200/70">
-                <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
-                <li><Link href="/track-order" className="hover:text-white transition-colors">Track Order</Link></li>
-                <li><Link href="/returns" className="hover:text-white transition-colors">Returns & Refunds</Link></li>
-                <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping Info</Link></li>
-                <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs & Size Guide</Link></li>
+                <li><Link href="/contact" prefetch={false} className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link href="/track-order" prefetch={false} className="hover:text-white transition-colors">Track Order</Link></li>
+                <li><Link href="/returns" prefetch={false} className="hover:text-white transition-colors">Returns & Refunds</Link></li>
+                <li><Link href="/shipping" prefetch={false} className="hover:text-white transition-colors">Shipping Info</Link></li>
+                <li><Link href="/faqs" prefetch={false} className="hover:text-white transition-colors">FAQs & Size Guide</Link></li>
               </ul>
             </div>
 
@@ -86,10 +86,10 @@ export function StorefrontFooter() {
             <div className="hidden sm:block space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">About</h4>
               <ul className="space-y-1 text-[11px] text-rose-200/70">
-                <li><Link href="/about" className="hover:text-white transition-colors">Our Story</Link></li>
-                <li><Link href="/stores" className="hover:text-white transition-colors">Store Locator</Link></li>
-                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
-                <li><Link href="/press" className="hover:text-white transition-colors">Press</Link></li>
+                <li><Link href="/about" prefetch={false} className="hover:text-white transition-colors">Our Story</Link></li>
+                <li><Link href="/stores" prefetch={false} className="hover:text-white transition-colors">Store Locator</Link></li>
+                <li><Link href="/careers" prefetch={false} className="hover:text-white transition-colors">Careers</Link></li>
+                <li><Link href="/press" prefetch={false} className="hover:text-white transition-colors">Press</Link></li>
               </ul>
             </div>
 
@@ -97,10 +97,10 @@ export function StorefrontFooter() {
             <div className="hidden sm:block space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">My Account</h4>
               <ul className="space-y-1 text-[11px] text-rose-200/70">
-                <li><Link href={isAuthenticated ? '/profile' : '/login'} className="hover:text-white transition-colors">{isAuthenticated ? 'My Account' : 'Login'}</Link></li>
-                <li><Link href="/orders" className="hover:text-white transition-colors">Orders</Link></li>
-                <li><Link href="/wishlist" className="hover:text-white transition-colors">Wishlist</Link></li>
-                <li><Link href="/profile/addresses" className="hover:text-white transition-colors">Addresses</Link></li>
+                <li><Link href={isAuthenticated ? '/profile' : '/login'} prefetch={false} className="hover:text-white transition-colors">{isAuthenticated ? 'My Account' : 'Login'}</Link></li>
+                <li><Link href="/orders" prefetch={false} className="hover:text-white transition-colors">Orders</Link></li>
+                <li><Link href="/wishlist" prefetch={false} className="hover:text-white transition-colors">Wishlist</Link></li>
+                <li><Link href="/profile/addresses" prefetch={false} className="hover:text-white transition-colors">Addresses</Link></li>
               </ul>
             </div>
 
@@ -167,9 +167,9 @@ export function StorefrontFooter() {
           <span>© 2026 Vasanthi&apos;s Signature. All rights reserved.</span>
 
           <div className="flex items-center gap-2.5 justify-center text-[9px]">
-            <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+            <Link href="/privacy" prefetch={false} className="hover:text-white transition-colors">Privacy Policy</Link>
             <span>•</span>
-            <Link href="/terms" className="hover:text-white transition-colors">Terms</Link>
+            <Link href="/terms" prefetch={false} className="hover:text-white transition-colors">Terms</Link>
           </div>
         </div>
       </div>

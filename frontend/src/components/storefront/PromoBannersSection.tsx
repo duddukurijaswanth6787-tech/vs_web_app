@@ -25,6 +25,7 @@ export function PromoBannersSection() {
             </p>
             <Link
               href="/categories/festive"
+              prefetch={false}
               className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
             >
               <span>Explore Now</span>
@@ -58,6 +59,7 @@ export function PromoBannersSection() {
             </p>
             <Link
               href="/categories/wedding"
+              prefetch={false}
               className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
             >
               <span>Explore Now</span>

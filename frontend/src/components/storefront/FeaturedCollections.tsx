@@ -19,6 +19,7 @@ function CollectionCard({ item }: { item: typeof COLLECTIONS[0] }) {
   return (
     <Link
       href={`/categories/${item.slug}`}
+      prefetch={false}
       className="group relative rounded-2xl overflow-hidden aspect-[4/5] bg-neutral-100 shadow-2xs hover:shadow-md transition-all duration-300 border border-neutral-200/60 w-[140px] sm:w-48 lg:w-full shrink-0 snap-start"
     >
       <Image
@@ -58,6 +59,7 @@ export function FeaturedCollections() {
         </div>
         <Link
           href="/categories"
+          prefetch={false}
           className="inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-xs transition-all hover:scale-105 shrink-0 self-start md:self-auto"
         >
           <span>Explore Collection</span>
