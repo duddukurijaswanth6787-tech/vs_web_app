@@ -14,6 +14,7 @@ import {
 import { CreateCategoryDto, CategoryResponse } from '@/features/catalog/categories/category.types';
 import { useAuth } from '@/hooks/useAuth';
 import { categorizeApiError } from '@/lib/api-error-handler';
+import { getApiErrorMessage } from '@/utils/api-error';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 import { 
   FolderTree, 
@@ -137,17 +138,16 @@ export default function CategoriesPage() {
 
     try {
       if (isEditing && selectedCategory) {
-        await updateCategoryMut.mutateAsync({
-          id: selectedCategory.id,
-          dto: { ...payload, status },
-        });
+        await updateCategoryMut.mutateAsync({ id: selectedCategory.id, dto: payload });
+        toast('success', `Category "${name}" updated successfully`);
       } else {
         await createCategoryMut.mutateAsync(payload);
+        toast('success', `Category "${name}" created successfully`);
       }
       refetch();
       resetForm();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      toast('error', 'Failed to save category', getApiErrorMessage(err));
     }
   };
 
@@ -155,20 +155,22 @@ export default function CategoriesPage() {
     if (!window.confirm(`Are you sure you want to archive category "${catName}"?`)) return;
     try {
       await deleteCategoryMut.mutateAsync(id);
+      toast('success', `Category "${catName}" archived successfully`);
       refetch();
       resetForm();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      toast('error', 'Failed to archive category', getApiErrorMessage(err));
     }
   };
 
   const handleRestore = async (id: string) => {
     try {
       await restoreCategoryMut.mutateAsync(id);
+      toast('success', 'Category restored successfully');
       refetch();
       resetForm();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      toast('error', 'Failed to restore category', getApiErrorMessage(err));
     }
   };
 

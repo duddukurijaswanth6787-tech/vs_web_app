@@ -105,6 +105,13 @@ export class CategoriesRepository {
     return this.prisma.category.update({ where: { id }, data });
   }
 
+  async unlinkChildren(parentId: string, newParentId: string | null = null, newLevel = 0) {
+    return this.prisma.category.updateMany({
+      where: { parentId },
+      data: { parentId: newParentId, level: newLevel },
+    });
+  }
+
   async softDelete(id: string) {
     return this.prisma.category.update({
       where: { id },

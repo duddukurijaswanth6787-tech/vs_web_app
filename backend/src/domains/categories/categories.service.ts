@@ -311,13 +311,8 @@ export class CategoriesService {
     if (!cat || cat.deletedAt)
       throw new BusinessException('Category not found', 'CAT_001');
 
-    const childrenCount = await this.categoriesRepository.countByParentId(id);
-    // ponytail: prevent deletion if children exist — force reassign first
-    if (childrenCount > 0)
-      throw new BusinessException(
-        'Category has children. Move or delete them first.',
-        'CAT_005',
-      );
+    // Safely unlink sub-categories to parent level before deletion
+    await this.categoriesRepository.unlinkChildren(id, cat.parentId || null, cat.level || 0);
 
     await this.categoriesRepository.softDelete(id);
 
