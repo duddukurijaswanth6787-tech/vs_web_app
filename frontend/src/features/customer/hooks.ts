@@ -31,6 +31,7 @@ export function useHomepage() {
   return useQuery({
     queryKey: ['homepage'],
     queryFn: () => customerStorefrontService.getHomepage(),
+    staleTime: 30 * 1000,
   });
 }
 
@@ -38,6 +39,7 @@ export function usePublicSettings() {
   return useQuery({
     queryKey: ['public-settings'],
     queryFn: () => customerStorefrontService.getPublicSettings(),
+    staleTime: 30 * 1000,
   });
 }
 
@@ -45,6 +47,7 @@ export function useStorefrontBanners() {
   return useQuery({
     queryKey: ['banners'],
     queryFn: () => customerStorefrontService.getBanners(),
+    staleTime: 30 * 1000,
   });
 }
 
