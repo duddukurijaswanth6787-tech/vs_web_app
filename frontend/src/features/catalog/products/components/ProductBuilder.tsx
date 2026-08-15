@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
@@ -177,6 +177,23 @@ export default function ProductBuilder({
       isPublished: initialData?.isPublished ?? true,
     },
   });
+
+  // brandId is a required UUID in the zod schema, so react-hook-form's
+  // handleSubmit silently refuses to call the submit handler at all while it's
+  // empty — no error is shown for it anywhere in this form, so the Save
+  // button would otherwise appear to just do nothing. The Brand field's own
+  // placeholder already promises "or default Vasanthi's Signature" if left
+  // unset, so make that actually happen: auto-select the seeded default brand
+  // once it loads, but only for a brand-new product with nothing chosen yet —
+  // never overwrite an existing product's real brand.
+  useEffect(() => {
+    if (initialData?.brandId) return;
+    if (methods.getValues('brandId')) return;
+    const defaultBrand = brands.find((b: { id: string; name: string }) => b.name === "Vasanthi's Signature");
+    if (defaultBrand) {
+      methods.setValue('brandId', defaultBrand.id, { shouldValidate: true });
+    }
+  }, [brands, initialData?.brandId, methods]);
 
   // ── Category & organisation state ────────────────────────────────────────
   const [primaryCategoryId, setPrimaryCategoryId] = useState(
@@ -1032,13 +1049,18 @@ export default function ProductBuilder({
                   {...methods.register('brandId')}
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
                 >
-                  <option value="">Select Brand (or default Vasanthi Designers)</option>
+                  <option value="">Select Brand (or default Vasanthi's Signature)</option>
                   {brands.map((b: { id: string; name: string }) => (
                     <option key={b.id} value={b.id}>
                       {b.name}
                     </option>
                   ))}
                 </select>
+                {methods.formState.errors.brandId && (
+                  <p className="text-[11px] font-semibold text-rose-600">
+                    {methods.formState.errors.brandId.message}
+                  </p>
+                )}
               </div>
 
               {/* Type */}
