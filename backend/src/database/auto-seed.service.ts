@@ -372,5 +372,156 @@ export class AutoSeedService implements OnModuleInit {
     this.logger.log(
       'Essential coupons & offers verified/seeded successfully.',
     );
+
+    // 6. Seed Essential Products if catalog is empty
+    const productCount = await this.prisma.product.count();
+    if (productCount === 0) {
+      this.logger.log('Catalog empty. Auto-seeding essential products...');
+
+      function createFashionSvg(title: string, subtitle: string, bg1: string, bg2: string, accentColor = '#D4AF37') {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="600" height="600" viewBox="0 0 600 600">
+          <defs>
+            <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="${bg1}"/>
+              <stop offset="100%" stop-color="${bg2}"/>
+            </linearGradient>
+          </defs>
+          <rect width="600" height="600" fill="url(#grad)"/>
+          <circle cx="300" cy="300" r="250" fill="none" stroke="${accentColor}" stroke-width="3" opacity="0.4"/>
+          <rect x="40" y="40" width="520" height="520" fill="none" stroke="${accentColor}" stroke-width="2" opacity="0.3" rx="16"/>
+          <text x="300" y="270" font-family="Georgia, serif" font-size="36" font-weight="bold" fill="#FFFFFF" text-anchor="middle" letter-spacing="1">${title}</text>
+          <text x="300" y="320" font-family="sans-serif" font-size="16" font-weight="600" fill="${accentColor}" text-anchor="middle" letter-spacing="3">${subtitle}</text>
+          <line x1="220" y1="350" x2="380" y2="350" stroke="${accentColor}" stroke-width="2" opacity="0.6"/>
+        </svg>`;
+        return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+      }
+
+      const brand = await this.prisma.brand.upsert({
+        where: { slug: 'vasanthis-signature' },
+        update: { name: "Vasanthi's Signature", isVisible: true, status: 'ACTIVE' },
+        create: {
+          name: "Vasanthi's Signature",
+          slug: 'vasanthis-signature',
+          isVisible: true,
+          status: 'ACTIVE',
+        },
+      });
+
+      const catEthnic = await this.prisma.category.findUnique({ where: { slug: 'ethnic-wear' } });
+      const catKurta = await this.prisma.category.findUnique({ where: { slug: 'kurta-sets' } });
+      const catSarees = await this.prisma.category.findUnique({ where: { slug: 'sarees' } });
+      const catLehengas = await this.prisma.category.findUnique({ where: { slug: 'lehengas' } });
+
+      const PRODUCTS_TO_SEED = [
+        {
+          sku: 'VAS-KRT-001',
+          barcode: '890711718851',
+          name: "Women's Floral Printed Anarkali Kurta Set",
+          slug: 'women-s-floral-printed-anarkali-kurta-set',
+          catId: catKurta?.id || catEthnic?.id,
+          basePrice: 3499,
+          salePrice: 2499,
+          isNewArrival: true,
+          isBestSeller: true,
+          isFeatured: true,
+          hsnCode: '6204',
+          bg1: '#800020',
+          bg2: '#3D000F',
+          desc: 'Elegant floral printed rayon Anarkali kurta set with matching bottom and dupatta.',
+        },
+        {
+          sku: 'VAS-SAR-002',
+          barcode: '890711718852',
+          name: 'Kanjeevaram Pure Silk Saree with Zari Border',
+          slug: 'kanjeevaram-pure-silk-saree-with-zari-border',
+          catId: catSarees?.id || catEthnic?.id,
+          basePrice: 12999,
+          salePrice: 9999,
+          isNewArrival: true,
+          isBestSeller: true,
+          isFeatured: true,
+          hsnCode: '5007',
+          bg1: '#A4161A',
+          bg2: '#4D0A0B',
+          desc: 'Handcrafted Kanjeevaram pure silk saree adorned with gold zari weave.',
+        },
+        {
+          sku: 'VAS-LHN-003',
+          barcode: '890711718853',
+          name: 'Royal Velvet Embroidered Bridal Lehenga Choli',
+          slug: 'royal-velvet-embroidered-bridal-lehenga-choli',
+          catId: catLehengas?.id || catEthnic?.id,
+          basePrice: 24999,
+          salePrice: 18999,
+          isNewArrival: true,
+          isBestSeller: true,
+          isFeatured: true,
+          hsnCode: '6204',
+          bg1: '#7209B7',
+          bg2: '#360457',
+          desc: 'Heavy velvet lehenga embroidered with zardozi, sequin, and threadwork.',
+        },
+      ];
+
+      for (const item of PRODUCTS_TO_SEED) {
+        const svgUrl = createFashionSvg(item.name.split(' ')[0], "VASANTHI'S SIGNATURE", item.bg1, item.bg2);
+        const prod = await this.prisma.product.create({
+          data: {
+            sku: item.sku,
+            barcode: item.barcode,
+            name: item.name,
+            slug: item.slug,
+            brandId: brand.id,
+            basePrice: item.basePrice,
+            salePrice: item.salePrice,
+            shortDescription: item.desc,
+            description: item.desc,
+            isNewArrival: item.isNewArrival,
+            isBestSeller: item.isBestSeller,
+            isFeatured: item.isFeatured,
+            isPublished: true,
+            status: 'ACTIVE',
+            hsnCode: item.hsnCode,
+          },
+        });
+
+        if (item.catId) {
+          await this.prisma.productCategory.create({
+            data: { productId: prod.id, categoryId: item.catId },
+          });
+        }
+
+        await this.prisma.productMedia.create({
+          data: {
+            productId: prod.id,
+            mediaType: 'IMAGE',
+            url: svgUrl,
+            thumbnailUrl: svgUrl,
+            isPrimary: true,
+            displayOrder: 1,
+          },
+        });
+
+        const vSku = `${item.sku}-M`;
+        const variant = await this.prisma.productVariant.create({
+          data: {
+            productId: prod.id,
+            sku: vSku,
+            barcode: `${item.barcode}01`,
+            title: `${item.name} - M`,
+            status: 'ACTIVE',
+          },
+        });
+
+        await this.prisma.inventory.create({
+          data: {
+            variantId: variant.id,
+            availableQuantity: 50,
+          },
+        });
+      }
+
+      this.logger.log('Essential products auto-seeded successfully.');
+    }
   }
 }
