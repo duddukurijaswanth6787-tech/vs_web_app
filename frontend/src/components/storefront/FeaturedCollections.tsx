@@ -1,21 +1,20 @@
 'use client';
 
-import React from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { MobileScrollSection } from '@/components/layout/MobileScrollSection';
+import { useFeaturedCategories } from '@/features/customer/hooks';
 import { isLocalOrPlaceholder, withVariant } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 
-const COLLECTIONS = [
-  { name: 'Anarkali', slug: 'anarkali', image: PLACEHOLDER_IMAGE },
-  { name: 'Sharara', slug: 'sharara', image: PLACEHOLDER_IMAGE },
-  { name: 'Kurta Set', slug: 'kurta-set', image: PLACEHOLDER_IMAGE },
-  { name: 'Saree', slug: 'saree', image: PLACEHOLDER_IMAGE },
-  { name: 'Lehenga', slug: 'lehenga', image: PLACEHOLDER_IMAGE },
-];
+interface CollectionItem {
+  name: string;
+  slug: string;
+  image: string;
+}
 
-function CollectionCard({ item }: { item: typeof COLLECTIONS[0] }) {
+function CollectionCard({ item }: { item: CollectionItem }) {
   return (
     <Link
       href={`/categories/${item.slug}`}
@@ -44,6 +43,32 @@ function CollectionCard({ item }: { item: typeof COLLECTIONS[0] }) {
 }
 
 export function FeaturedCollections() {
+  const { data: catData, isLoading } = useFeaturedCategories();
+
+  // Reuses the same "Featured" toggle admin already sets per-category
+  // (Admin → Categories → edit → Featured) — no separate "Collections"
+  // admin screen needed. Real name, slug, and uploaded image; no
+  // hardcoded fallback content.
+  const collections: CollectionItem[] = useMemo(() => {
+    const typed = catData as { data?: unknown[] } | unknown[];
+    const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: unknown[] })?.data) ? (typed as { data?: unknown[] }).data! : [];
+
+    return list.map((cat) => {
+      const c = cat as Record<string, unknown>;
+      const rawImg = String(c.image || c.icon || c.imageUrl || c.primaryImageUrl || '');
+      return {
+        name: String(c.name || ''),
+        slug: String(c.slug || ''),
+        image: (!rawImg || rawImg.includes('data:image/svg')) ? PLACEHOLDER_IMAGE : rawImg,
+      };
+    });
+  }, [catData]);
+
+  // Hide the whole section rather than show a heading with nothing (or
+  // fake placeholder cards) underneath it.
+  if (!isLoading && collections.length === 0) {
+    return null;
+  }
 
   return (
     <section className="w-full max-w-[1440px] mx-auto py-4 sm:py-8">
@@ -69,14 +94,14 @@ export function FeaturedCollections() {
 
       {/* Mobile Scroll Section */}
       <MobileScrollSection title="Trending Collections">
-        {COLLECTIONS.map((item) => (
+        {collections.map((item) => (
           <CollectionCard key={item.slug} item={item} />
         ))}
       </MobileScrollSection>
 
       {/* Desktop Grid Section */}
       <div className="hidden lg:grid lg:grid-cols-5 lg:gap-5 px-12">
-        {COLLECTIONS.map((item) => (
+        {collections.map((item) => (
           <CollectionCard key={item.slug} item={item} />
         ))}
       </div>
