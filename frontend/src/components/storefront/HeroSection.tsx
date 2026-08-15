@@ -95,7 +95,7 @@ export function HeroSection() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
-        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[250px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-rose-100/80 bg-[#FAF3F3]">
+        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-rose-100/80 bg-[#FAF3F3]">
           
           {/* Background Image & Gradient Overlay */}
           <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">
@@ -134,22 +134,22 @@ export function HeroSection() {
           )}
 
           {/* Hero Content Overlay (Bottom-Left Aligned) */}
-          <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-1.5 sm:space-y-3.5 pb-1 sm:pb-0">
+          <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-2.5 sm:space-y-3.5 pb-2 sm:pb-0">
 
             {/* Main Headline */}
-            <h1 className="text-2xl sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-tight sm:leading-[1.15] tracking-tight line-clamp-2">
+            <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.25] sm:leading-[1.15] tracking-tight line-clamp-3">
               {main.title && !main.title.includes('COLLECTION') ? main.title : 'FRESH STYLES — TIMELESS YOU'}
             </h1>
 
-            <p className="text-[11px] sm:text-sm text-neutral-600 font-medium leading-relaxed line-clamp-2 max-w-xs sm:max-w-md">
+            <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed line-clamp-2 max-w-[90%] sm:max-w-md">
               {main.subtitle || 'Discover handloomed sarees, designer lehengas, and Anarkali suits crafted for timeless sophistication.'}
             </p>
 
             {/* Primary CTA Button (Small sleek on mobile, bottom left) */}
-            <div className="pt-1 sm:pt-2 flex justify-start">
+            <div className="pt-2 sm:pt-2 flex justify-start">
               <Link
                 href={main.linkUrl || '/categories'}
-                className="inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-[11px] sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105"
+                className="inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105"
               >
                 {main.buttonText || 'SHOP NOW'}
               </Link>
