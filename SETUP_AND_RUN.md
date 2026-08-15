@@ -12,7 +12,8 @@ This document provides complete step-by-step instructions to setup, configure, a
 5. [Backend Execution](#5-backend-execution)
 6. [Frontend Execution](#6-frontend-execution)
 7. [Accessing Application Endpoints](#7-accessing-application-endpoints)
-8. [Troubleshooting & Common Fixes](#8-troubleshooting--common-fixes)
+8. [Default Admin Credentials](#8-default-admin-credentials)
+9. [Troubleshooting & Common Fixes](#9-troubleshooting--common-fixes)
 
 ---
 
@@ -169,10 +170,21 @@ Once both servers are running:
 - 🔌 **Backend API Base**: [http://localhost:4000/api/v1](http://localhost:4000/api/v1)
 - 📖 **Swagger API Docs**: [http://localhost:4000/api/docs](http://localhost:4000/api/docs)
 - ❤️ **Health Check**: [http://localhost:4000/health](http://localhost:4000/health)
-
 ---
 
-## 8. Troubleshooting & Common Fixes
+## 8. Default Admin Credentials
+
+Use the following credentials to access the Admin Panel and POS Dashboard:
+
+- 📧 **Admin Email**: `admin@vasanthi.com`
+- 🔑 **Admin Password**: `Admin@123`
+- 👑 **Role**: `Super Admin`
+- 🚪 **Login Page**: [http://localhost:3000/login](http://localhost:3000/login) (redirects to `/admin/dashboard`)
+- 🌐 **Live Admin Login**: [https://vs-web-app-frontend.vercel.app/login](https://vs-web-app-frontend.vercel.app/login)
+
+> 💡 *Note: Upon logging in with administrative roles, the application automatically redirects to `/admin/dashboard` or `/admin/pos` based on access level.*
+
+## 9. Troubleshooting & Common Fixes
 
 ### ⚠️ Port 4000 or 3000 Already in Use
 - Change `PORT=4000` in `backend/.env` to another port (e.g. `4001`).
