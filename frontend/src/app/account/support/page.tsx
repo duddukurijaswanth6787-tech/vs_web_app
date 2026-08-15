@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useSupportTickets } from '@/features/customer/hooks';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { Plus } from 'lucide-react';
 import type { SupportTicketResponse } from '@/features/support/support.types';
 
@@ -46,6 +47,7 @@ export default function SupportTicketsPage() {
           </div>
         )}
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

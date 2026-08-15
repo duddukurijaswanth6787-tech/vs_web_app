@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { FileText, ShieldCheck, ShoppingBag, Truck, RefreshCw, Scale, ArrowLeft, Mail } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export default function TermsOfServicePage() {
   return (
@@ -136,6 +137,7 @@ export default function TermsOfServicePage() {
       </main>
 
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }

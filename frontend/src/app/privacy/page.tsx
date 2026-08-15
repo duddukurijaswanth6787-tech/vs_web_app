@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ShieldCheck, Lock, Eye, CheckCircle2, ArrowLeft, Mail, FileText, Server } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export default function PrivacyPolicyPage() {
   return (
@@ -143,6 +144,7 @@ export default function PrivacyPolicyPage() {
       </main>
 
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }
