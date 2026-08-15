@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
+import { CacheService } from '@infrastructure/redis';
 import { AppSettingRepository } from './app-setting.repository';
 import {
   CreateSettingDto,
@@ -14,6 +15,7 @@ export class AppSettingService {
   constructor(
     private readonly settingRepository: AppSettingRepository,
     private readonly auditService: AuditService,
+    private readonly cacheService: CacheService,
   ) {}
 
   private toResponse(s: any): SettingResponse {
@@ -71,6 +73,11 @@ export class AppSettingService {
       userId,
       newValue: { key: dto.key },
     });
+    // storefront-public.service.ts caches the public settings payload under
+    // this exact key for 5 minutes — without busting it here, admin's save
+    // silently has no visible effect on the live site until the cache
+    // naturally expires.
+    await this.cacheService.del('storefront:settings');
     return this.toResponse(setting);
   }
 
@@ -95,6 +102,8 @@ export class AppSettingService {
       oldValue: { value: setting.value },
       newValue: { value: dto.value },
     });
+    // See create() above — same cache, same reason.
+    await this.cacheService.del('storefront:settings');
     return this.toResponse(updated);
   }
 
