@@ -42,39 +42,34 @@ export default function AdminHeader() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-3 sm:px-4">
-      {/* Left section: mobile trigger and breadcrumbs */}
-      <div className="flex items-center gap-1.5 sm:gap-3 min-w-0">
+      {/* Left section: mobile trigger and page title */}
+      <div className="flex items-center gap-2 min-w-0 flex-1">
         <button
           onClick={toggleMobileSidebar}
-          className="rounded p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0"
+          className="rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <div className="flex items-center gap-1 text-xs sm:text-sm font-medium text-neutral-500 truncate">
-          <span className="hidden sm:inline">Admin Console</span>
-          <span className="hidden sm:inline text-neutral-300">/</span>
-          <span className="text-neutral-900 font-bold capitalize truncate max-w-[120px] sm:max-w-none">
-            {pathname?.split('/').pop()?.replace('-', ' ') || 'Dashboard'}
-          </span>
-        </div>
+        <h1 className="text-sm sm:text-base font-bold text-neutral-900 capitalize truncate">
+          {pathname?.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || 'Dashboard'}
+        </h1>
       </div>
 
       {/* Right section: Search, System health indicator and profile dropdown */}
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
         {/* Command Palette Trigger */}
         <button
           onClick={openCommandPalette}
-          className="flex items-center gap-2 rounded-lg border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors"
+          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-1.5 sm:px-3 sm:py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors"
           aria-label="Open command palette"
         >
-          <Search className="h-3.5 w-3.5" />
+          <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
           <span className="hidden sm:inline">Search...</span>
           <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-neutral-200 bg-white px-1 py-0.5 text-[10px] font-mono text-neutral-400">
             ⌘K
           </kbd>
         </button>
-
         {/* Notification Bell */}
         <NotificationBell />
 

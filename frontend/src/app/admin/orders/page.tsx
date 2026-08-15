@@ -56,28 +56,28 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
+      <div className="flex justify-between items-center bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Orders Control Desk</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-neutral-900 tracking-tight font-sans">Orders Control Desk</h1>
           <p className="text-xs text-neutral-400 mt-1">Review orders, manage fulfillment status transitions, and inspect financial metrics.</p>
         </div>
       </div>
 
-      <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-        <div className="flex flex-col md:flex-row gap-4 items-center justify-between">
-          <form onSubmit={(e) => { e.preventDefault(); updateQuery('search', localSearch); }} className="relative w-full md:w-80">
-            <input value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Search by order number or customer ID..."
+      <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
+        <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
+          <form onSubmit={(e) => { e.preventDefault(); updateQuery('search', localSearch); }} className="relative w-full lg:w-80">
+            <input value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Search order number or customer ID..."
               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-neutral-900" />
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
           </form>
-          <div className="flex flex-wrap gap-3 items-center justify-end">
-            <form onSubmit={(e) => { e.preventDefault(); updateQuery('startDate', localStartDate); updateQuery('endDate', localEndDate); }} className="flex gap-2 items-center">
-              <input type="date" value={localStartDate} onChange={(e) => setLocalStartDate(e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1 text-2xs" />
-              <span className="text-neutral-400 text-2xs">to</span>
-              <input type="date" value={localEndDate} onChange={(e) => setLocalEndDate(e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1 text-2xs" />
-              <button type="submit" className="p-1.5 bg-neutral-100 hover:bg-neutral-200 rounded-lg text-neutral-700 text-2xs font-semibold">Apply</button>
+          <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 items-stretch sm:items-center justify-end w-full lg:w-auto">
+            <form onSubmit={(e) => { e.preventDefault(); updateQuery('startDate', localStartDate); updateQuery('endDate', localEndDate); }} className="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full sm:w-auto">
+              <input type="date" value={localStartDate} onChange={(e) => setLocalStartDate(e.target.value)} className="flex-1 sm:flex-none min-w-[120px] bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1.5 text-xs" />
+              <span className="text-neutral-400 text-xs">to</span>
+              <input type="date" value={localEndDate} onChange={(e) => setLocalEndDate(e.target.value)} className="flex-1 sm:flex-none min-w-[120px] bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1.5 text-xs" />
+              <button type="submit" className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0">Apply</button>
             </form>
-            <select value={status} onChange={(e) => updateQuery('status', e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs">
+            <select value={status} onChange={(e) => updateQuery('status', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Statuses</option>
               <option value="PENDING">PENDING</option>
               <option value="CONFIRMED">CONFIRMED</option>
