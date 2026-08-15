@@ -42,13 +42,13 @@ export class NotificationController {
     });
   }
 
-  @Patch(':id/read')
+  @Get('stats')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Mark a notification as read' })
-  async markAsRead(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+  @ApiOperation({ summary: 'Get notification stats' })
+  async getStats(@CurrentUser() user: JwtPayload) {
     return ResponseBuilder.success(
-      await this.notificationService.markAsRead(id, user.sub),
+      await this.notificationService.getStats(user.sub),
     );
   }
 
@@ -59,15 +59,6 @@ export class NotificationController {
   async markAllAsRead(@CurrentUser() user: JwtPayload) {
     await this.notificationService.markAllAsRead(user.sub);
     return ResponseBuilder.success(null, 'All notifications marked as read');
-  }
-
-  @Delete(':id')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Delete a notification' })
-  async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    await this.notificationService.delete(id, user.sub);
-    return ResponseBuilder.deleted('Notification deleted');
   }
 
   @Delete('read')
@@ -82,13 +73,22 @@ export class NotificationController {
     );
   }
 
-  @Get('stats')
+  @Patch(':id/read')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get notification stats' })
-  async getStats(@CurrentUser() user: JwtPayload) {
+  @ApiOperation({ summary: 'Mark a notification as read' })
+  async markAsRead(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     return ResponseBuilder.success(
-      await this.notificationService.getStats(user.sub),
+      await this.notificationService.markAsRead(id, user.sub),
     );
+  }
+
+  @Delete(':id')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete a notification' })
+  async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    await this.notificationService.delete(id, user.sub);
+    return ResponseBuilder.deleted('Notification deleted');
   }
 }
