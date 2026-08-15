@@ -1,6 +1,27 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { categoryService } from './category.service';
-import { CategoryQueryDto, CreateCategoryDto, UpdateCategoryDto, MoveCategoryDto, ReorderCategoriesDto } from './category.types';
+import { CategoryQueryDto, CreateCategoryDto, UpdateCategoryDto, MoveCategoryDto, ReorderCategoriesDto, CategoryResponse } from './category.types';
+
+// Build a nested tree from a flat category list, used as a fallback when the
+// dedicated /categories/tree endpoint returns empty (which was leaving the
+// admin's tree UI empty even when the DB had rows the storefront could see).
+function buildTreeFromFlat(list: CategoryResponse[]): CategoryResponse[] {
+  const map = new Map<string, CategoryResponse & { children: CategoryResponse[] }>();
+  const roots: (CategoryResponse & { children: CategoryResponse[] })[] = [];
+  for (const cat of list) {
+    map.set(cat.id, { ...cat, children: [] });
+  }
+  for (const cat of list) {
+    const node = map.get(cat.id)!;
+    const parentId = (cat as unknown as { parentId?: string }).parentId;
+    if (parentId && map.has(parentId)) {
+      map.get(parentId)!.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+  return roots;
+}
 
 export const categoryKeys = {
   all: ['categories'] as const,
@@ -21,7 +42,21 @@ export function useCategories(query: CategoryQueryDto = {}) {
 export function useCategoryTree() {
   return useQuery({
     queryKey: categoryKeys.tree(),
-    queryFn: () => categoryService.getTree(),
+    queryFn: async () => {
+      try {
+        const tree = await categoryService.getTree();
+        if (Array.isArray(tree) && tree.length > 0) {
+          return tree;
+        }
+      } catch {
+        // fall through — try the flat endpoint before giving up
+      }
+      // Fallback: fetch all categories as a flat list and build the tree
+      // client-side. Keeps admin's view honest when /categories/tree is empty
+      // or misbehaving, so admin always sees whatever's really in the DB.
+      const flat = await categoryService.findAll({ page: 1, limit: 500 });
+      return buildTreeFromFlat(flat.data || []);
+    },
   });
 }
 
