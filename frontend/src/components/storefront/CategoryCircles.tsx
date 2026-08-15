@@ -14,6 +14,10 @@ type CategoryItem = {
   imageUrl?: string;
 };
 
+// Per-slug image fallback so newly-created categories without an uploaded
+// image still render a themed circle instead of a grey placeholder. This is
+// a display fallback only — no category is ever synthesized here that admin
+// doesn't have in the database.
 const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   'ethnic-wear': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
   'womens-wear': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop',
@@ -31,13 +35,6 @@ const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   'office-wear': 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=600&auto=format&fit=crop',
 };
 
-const DEFAULT_CATEGORIES: CategoryItem[] = Object.keys(CATEGORY_DEFAULT_IMAGES).map((slug, idx) => ({
-  id: `cat-def-${idx}`,
-  name: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-  slug,
-  imageUrl: CATEGORY_DEFAULT_IMAGES[slug],
-}));
-
 export function CategoryCircles() {
   const { data: catData, isLoading } = useFeaturedCategories();
 
@@ -46,6 +43,9 @@ export function CategoryCircles() {
     const typed = catData as { data?: unknown[] } | unknown[];
     const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: unknown[] })?.data) ? (typed as { data?: unknown[] }).data! : [];
 
+    // Root-level, non-archived categories only. Whatever admin has created
+    // (or nothing) is what the storefront shows — no hardcoded fallback that
+    // lets categories exist on the customer side that admin can't manage.
     const mainCategories = list.filter((cat) => {
       const c = cat as Record<string, unknown>;
       return !c.parentId && c.status !== 'ARCHIVED';
@@ -55,7 +55,7 @@ export function CategoryCircles() {
       const c = cat as Record<string, unknown>;
       const rawImg = String(c.image || c.imageUrl || c.primaryImageUrl || '');
       const slug = String(c.slug || '');
-      const fallbackImg = CATEGORY_DEFAULT_IMAGES[slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
+      const fallbackImg = CATEGORY_DEFAULT_IMAGES[slug] || PLACEHOLDER_IMAGE;
       const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : rawImg;
       return {
         id: String(c.id || ''),
@@ -66,9 +66,12 @@ export function CategoryCircles() {
     });
   }, [catData]);
 
+  // Hide the whole section if there's nothing to show — a "Shop by Category"
+  // heading with no circles under it reads as broken, not empty-on-purpose.
   if (!isLoading && categories.length === 0) {
     return null;
   }
+
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Section Header */}
