@@ -149,14 +149,14 @@ export function StorefrontHeader() {
                 className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#800020]/20 placeholder:text-neutral-400"
               />
             </div>
-            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Wishlist">
+            <Link href="/wishlist" prefetch={false} className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Wishlist">
               <Heart className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {wishlistCount}
               </span>
             </Link>
 
-            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Cart">
+            <Link href="/cart" prefetch={false} className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Cart">
               <ShoppingBag className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {cartCount}
