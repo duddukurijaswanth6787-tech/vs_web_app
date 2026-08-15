@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
   RefreshCw,
   Activity,
 } from 'lucide-react';
@@ -89,7 +90,10 @@ export default function SettingsPage() {
   const bullStatus = healthData?.info?.queue?.connectionState === 'connected' ? 'UP' : 'DOWN';
 
   const renderHealthRow = (service: string, status: string, desc: string) => {
-    const isUp = status.toUpperCase() === 'UP' || status.toUpperCase() === 'HEALTHY' || status.toUpperCase() === 'OK';
+    const s = (status || '').toUpperCase();
+    const isUp = s === 'UP' || s === 'HEALTHY' || s === 'OK' || s === 'CONNECTED';
+    const isOptional = s === 'DISABLED' || s === 'UNCONFIGURED' || s === 'MOCK' || s === 'OPTIONAL';
+
     return (
       <div className="flex items-center justify-between p-3.5 rounded-xl border border-neutral-100 bg-neutral-50/50">
         <div>
@@ -98,11 +102,23 @@ export default function SettingsPage() {
         </div>
         <span
           className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
-            ${isUp ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}
+            ${
+              isUp
+                ? 'bg-green-50 text-green-700 border border-green-100'
+                : isOptional
+                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
+                  : 'bg-red-50 text-red-700 border border-red-100'
+            }
           `}
         >
-          {isUp ? <CheckCircle2 className="h-3 w-3" /> : <XCircle className="h-3 w-3" />}
-          {isUp ? 'Healthy' : 'Down'}
+          {isUp ? (
+            <CheckCircle2 className="h-3 w-3 text-green-600" />
+          ) : isOptional ? (
+            <AlertTriangle className="h-3 w-3 text-amber-600" />
+          ) : (
+            <XCircle className="h-3 w-3 text-red-600" />
+          )}
+          {isUp ? 'Healthy' : isOptional ? 'Optional' : 'Down'}
         </span>
       </div>
     );

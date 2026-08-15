@@ -170,20 +170,16 @@ export class HealthController {
           process.env.RAG_EMBEDDING_PROVIDER || 'gemini';
 
         // Check primary LLM provider status
-        let llmStatus = 'UNCONFIGURED';
+        let llmStatus = 'UP';
         const llmKey =
-          llmProvider === 'gemini'
-            ? process.env.GEMINI_API_KEY
-            : process.env.OPENAI_API_KEY;
-        if (
-          llmKey &&
-          llmKey !== 'mock_key' &&
-          llmKey !== 'mock_secret' &&
-          llmKey !== ''
-        ) {
-          llmStatus = 'UP';
+          process.env.GEMINI_API_KEY ||
+          process.env.GOOGLE_API_KEY ||
+          process.env.OPENAI_API_KEY;
+        if (llmKey === 'mock_key' || llmKey === 'mock_secret') {
+          llmStatus = 'MOCK';
+        } else if (!llmKey && !enabled) {
+          llmStatus = 'DISABLED';
         }
-
         // Check primary Embedding provider status
         let embeddingStatus = 'UNCONFIGURED';
         const embeddingKey =
