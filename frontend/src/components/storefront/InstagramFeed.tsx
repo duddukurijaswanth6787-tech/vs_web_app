@@ -51,13 +51,20 @@ export function InstagramFeed() {
   // Map backend API posts to ReelData format
   const dbReels: ReelData[] = (apiPosts?.data || []).map((post, idx) => {
     const firstMedia = post.media?.[0];
-    const rawMediaUrl = firstMedia?.url || firstMedia?.thumbnailUrl;
+    const rawMediaUrl = firstMedia?.url;
     const resolvedUrl = rawMediaUrl ? resolveMediaUrl(rawMediaUrl) : undefined;
-    
+
     const fallbackImage = VALID_IMAGES[idx % VALID_IMAGES.length];
     const isVideo = post.contentType === 'REEL' || firstMedia?.mediaType === 'VIDEO' || resolvedUrl?.endsWith('.mp4');
-    
-    const posterImage = resolvedUrl || fallbackImage;
+
+    // A real thumbnail (never the raw video file) for the grid preview tile —
+    // the grid tile is a static image only; it never plays video, so this
+    // must not resolve to an .mp4 URL. Falls back to the placeholder rather
+    // than a video frame if the backend hasn't generated a thumbnail.
+    const rawThumbUrl = firstMedia?.thumbnailUrl;
+    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
+      || (!isVideo ? resolvedUrl : undefined)
+      || fallbackImage;
     const videoUrl = isVideo ? resolvedUrl : undefined;
 
     const taggedProducts = (post.productTags || []).map((tag) => ({
@@ -97,11 +104,16 @@ export function InstagramFeed() {
         </h2>
       </div>
 
-      {/* Horizontal Side-Scrolling Carousel on Mobile, Grid on Desktop */}
+      {/* Horizontal Side-Scrolling Carousel on Mobile, Grid on Desktop.
+          Grid tiles are static images only — never autoplaying video. With
+          8+ tiles on screen at once, autoplaying <video> per tile meant up
+          to 8 simultaneous video downloads/decodes on page load, which is
+          the single heaviest thing this page could do on a mid-range phone.
+          Actual video playback happens one-at-a-time in ReelViewerModal on
+          tap, same as before. */}
       <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-8 lg:gap-3">
         {activeReels.map((reel, index) => {
-          const fallbackImg = VALID_IMAGES[index % VALID_IMAGES.length];
-          const isVideo = (reel.videoUrl || reel.posterImage)?.includes('.mp4');
+          const isVideo = !!reel.videoUrl;
 
           return (
             <button
@@ -109,40 +121,23 @@ export function InstagramFeed() {
               onClick={() => setSelectedReelIndex(index)}
               className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left"
             >
-              {isVideo ? (
-                <video
-                  src={reel.videoUrl || reel.posterImage}
-                  poster={reel.posterImage?.endsWith('.mp4') ? undefined : reel.posterImage}
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  muted
-                  playsInline
-                  loop
-                  autoPlay
-                  onError={(e) => {
-                    // Fallback to image if video fails to load
-                    const target = e.currentTarget;
-                    target.style.display = 'none';
-                    if (target.parentElement) {
-                      const img = document.createElement('img');
-                      img.src = fallbackImg;
-                      img.className = 'w-full h-full object-cover';
-                      target.parentElement.appendChild(img);
-                    }
-                  }}
-                />
-              ) : (
-                <Image
-                  src={reel.posterImage}
-                  alt={reel.title}
-                  fill
-                  sizes="(max-width: 640px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              )}
+              <Image
+                src={reel.posterImage}
+                alt={reel.title}
+                fill
+                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
 
-              {/* Reel Play Badge Icon */}
+              {/* Reel Play Badge Icon — filled for actual video reels */}
               <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1 rounded-full text-white">
-                <InstaIcon className="w-3.5 h-3.5" />
+                {isVideo ? (
+                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z" />
+                  </svg>
+                ) : (
+                  <InstaIcon className="w-3.5 h-3.5" />
+                )}
               </div>
 
               {/* Hover Overlay */}
