@@ -13,20 +13,29 @@ import { useQuery } from '@tanstack/react-query';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import { withVariant, resolveMediaUrl } from '@/lib/media-url';
 import type { CategoryResponse } from '@/features/catalog/categories/category.types';
+const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
+  'ethnic-wear': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
+  'womens-wear': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop',
+  'women-s-wear': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop',
+  'sarees': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
+  'lehengas': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop',
+  'kurta-sets': 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop',
+  'kurtis-suits': 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop',
+  'indo-western': 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&auto=format&fit=crop',
+  'party-wear': 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&auto=format&fit=crop',
+  'wedding-collection': 'https://images.unsplash.com/photo-1546804764-9147f715b00e?w=600&auto=format&fit=crop',
+  'festive-collection': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
+  'western-wear': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop',
+  'casual-wear': 'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=600&auto=format&fit=crop',
+  'office-wear': 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=600&auto=format&fit=crop',
+};
 
-const DEFAULT_CATEGORIES = [
-  { id: 'c1', name: 'Party Wear', slug: 'party-wear', imageUrl: '' },
-  { id: 'c2', name: 'Indo Western', slug: 'indo-western', imageUrl: '' },
-  { id: 'c3', name: 'Kurta Sets', slug: 'kurta-sets', imageUrl: '' },
-  { id: 'c4', name: 'Ethnic Wear', slug: 'ethnic-wear', imageUrl: '' },
-  { id: 'c5', name: 'Sarees', slug: 'sarees', imageUrl: '' },
-  { id: 'c6', name: 'Western Wear', slug: 'western-wear', imageUrl: '' },
-  { id: 'c7', name: 'Lehengas', slug: 'lehengas', imageUrl: '' },
-  { id: 'c8', name: 'Office Wear', slug: 'office-wear', imageUrl: '' },
-  { id: 'c9', name: 'Casual Wear', slug: 'casual-wear', imageUrl: '' },
-  { id: 'c10', name: 'Wedding Collection', slug: 'wedding-collection', imageUrl: '' },
-  { id: 'c11', name: 'Festive Collection', slug: 'festive-collection', imageUrl: '' },
-];
+const DEFAULT_CATEGORIES = Object.keys(CATEGORY_DEFAULT_IMAGES).map((slug, idx) => ({
+  id: `cat-def-${idx}`,
+  name: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
+  slug,
+  imageUrl: CATEGORY_DEFAULT_IMAGES[slug],
+}));
 
 export default function CategoriesPage() {
   const featured = useFeaturedCategories();
@@ -40,14 +49,9 @@ export default function CategoriesPage() {
     if (fromAll.length) {
       return fromAll.map((c: CategoryResponse) => {
         const rawImg = c.image || c.imageUrl || c.primaryImageUrl;
-        return { ...c, imageUrl: rawImg ? resolveMediaUrl(rawImg) : PLACEHOLDER_IMAGE };
-      });
-    }
-    const fromFeatured = Array.isArray(featured.data) ? featured.data : [];
-    if (fromFeatured.length) {
-      return fromFeatured.map((c: CategoryResponse) => {
-        const rawImg = c.image || c.imageUrl || c.primaryImageUrl;
-        return { ...c, imageUrl: rawImg ? resolveMediaUrl(rawImg) : PLACEHOLDER_IMAGE };
+        const fallbackImg = CATEGORY_DEFAULT_IMAGES[c.slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
+        const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : resolveMediaUrl(rawImg);
+        return { ...c, imageUrl: finalUrl };
       });
     }
     return DEFAULT_CATEGORIES;
