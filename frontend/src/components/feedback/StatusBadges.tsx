@@ -60,6 +60,18 @@ export function OrderStatusBadge({ status }: { status: string }) {
   }
 }
 
+// Order Channel Badge (admin-only: distinguishes online storefront orders from in-store POS/Shopora sales)
+export function ChannelBadge({ channel }: { channel?: string }) {
+  switch (channel?.toUpperCase()) {
+    case 'POS_SHOPORA':
+      return <Badge className="bg-fuchsia-50 text-fuchsia-700 border border-fuchsia-200">POS · Shopora</Badge>;
+    case 'ONLINE_STORE':
+      return <Badge className="bg-sky-50 text-sky-700 border border-sky-200">Online Store</Badge>;
+    default:
+      return <Badge className="bg-neutral-50 text-neutral-600 border border-neutral-200">{channel || 'Online Store'}</Badge>;
+  }
+}
+
 // 3. Return Status Badge
 export function ReturnStatusBadge({ status }: { status: string }) {
   switch (status?.toUpperCase()) {

@@ -42,7 +42,7 @@ export function TestimonialsSection() {
   const next = () => setIndex((i) => (i + 1) % REVIEWS.length);
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-8">
+    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-3 sm:mb-6">
         <div>

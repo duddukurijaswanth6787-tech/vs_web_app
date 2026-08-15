@@ -24,7 +24,10 @@ export interface CreateStaffDto {
   phone?: string;
   department: StaffDepartment;
   designation: StaffDesignation;
-  employeeId: string;
+  /** Omit to have the backend auto-generate one (EMP-0001, EMP-0002, …). */
+  employeeId?: string;
+  /** Role granted on creation; defaults to the base "staff" role when omitted. */
+  roleId?: string;
   jobTitle?: string;
   reportingManagerId?: string;
   emergencyContact?: string;

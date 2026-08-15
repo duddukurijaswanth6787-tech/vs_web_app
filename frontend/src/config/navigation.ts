@@ -59,6 +59,16 @@ export interface NavGroup {
   items: NavItem[];
 }
 
+// Longest-href-first so a specific page (e.g. /admin/access/roles) wins over
+// a shorter sibling that happens to share a prefix.
+export function findNavItemForPath(pathname: string): NavItem | undefined {
+  const allItems = adminNavigation.flatMap((g) => g.items);
+  return allItems
+    .slice()
+    .sort((a, b) => b.href.length - a.href.length)
+    .find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`));
+}
+
 export const adminNavigation: NavGroup[] = [
   {
     group: 'OVERVIEW',
@@ -243,21 +253,21 @@ export const adminNavigation: NavGroup[] = [
       {
         id: 'shopora-pos',
         title: 'Desktop Web POS',
-        href: '/admin/pos',
+        href: '/pos',
         icon: ShoppingBag,
         implemented: true,
       },
       {
         id: 'shopora-add-stock',
         title: 'Add Stock & Print Labels',
-        href: '/admin/pos/add-stock',
+        href: '/pos/add-stock',
         icon: Package,
         implemented: true,
       },
       {
         id: 'shopora-printers',
         title: 'Printers & Hardware',
-        href: '/admin/pos/printers',
+        href: '/pos/printers',
         icon: Sliders,
         implemented: true,
       },
@@ -491,6 +501,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'Staff',
         href: '/admin/staff',
         icon: UserCheck,
+        roles: ['super_admin', 'admin'],
         implemented: true,
       },
       {
@@ -498,6 +509,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'Roles',
         href: '/admin/access/roles',
         icon: Key,
+        roles: ['super_admin', 'admin'],
         implemented: true,
       },
       {
@@ -505,6 +517,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'Permissions',
         href: '/admin/access/permissions',
         icon: ShieldAlert,
+        roles: ['super_admin', 'admin'],
         implemented: true,
       },
       {
@@ -512,6 +525,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'RBAC Matrix',
         href: '/admin/access/matrix',
         icon: Sliders,
+        roles: ['super_admin', 'admin'],
         implemented: true,
       },
     ],
@@ -531,6 +545,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'Audit Logs',
         href: '/admin/audit',
         icon: History,
+        roles: ['super_admin', 'admin'],
         implemented: true,
       },
       {

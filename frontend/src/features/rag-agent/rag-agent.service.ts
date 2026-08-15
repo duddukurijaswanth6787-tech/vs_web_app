@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api/client';
+import { apiClient, getUnprefixedBaseUrl } from '@/lib/api/client';
 import { PaginationMeta, StandardResponse } from '@/types/api.types';
 import { SystemHealth } from '@/features/operations/operations.types';
 import {
@@ -195,7 +195,13 @@ export const ragAgentService = {
   },
 
   getHealth: async (): Promise<SystemHealth> => {
-    const response = await apiClient.get<SystemHealth>('/health');
+    // /health is excluded from the backend's api/v1 global prefix and lives
+    // at the origin root, so the versioned baseURL has to be stripped for
+    // this one call - otherwise every request 404s and the Integration
+    // Health panel misreads that as every subsystem being down.
+    const response = await apiClient.get<SystemHealth>('/health', {
+      baseURL: getUnprefixedBaseUrl(),
+    });
     return response.data;
   },
 };

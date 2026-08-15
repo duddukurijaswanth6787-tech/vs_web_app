@@ -48,11 +48,19 @@ export class UpdateReturnStatusDto {
   @ApiPropertyOptional() @IsOptional() @IsString() adminNotes?: string;
 }
 
+export class ReturnItemImageResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() url!: string;
+  @ApiProperty() displayOrder!: number;
+}
+
 export class ReturnItemResponse {
   @ApiProperty() id!: string;
   @ApiProperty() orderItemId!: string;
   @ApiProperty() quantity!: number;
   @ApiPropertyOptional() reason?: string;
+  @ApiPropertyOptional({ type: [ReturnItemImageResponse] })
+  images?: ReturnItemImageResponse[];
 }
 
 export class ReturnRequestResponse {

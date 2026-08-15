@@ -37,9 +37,12 @@ export const canAccessRoute = (
     user.roles.includes('super_admin') ||
     user.roles.includes('admin');
 
-  // POS-restricted operators (like test123) can ONLY access /admin/pos pages
+  // POS-restricted operators never reach the admin console at all — see
+  // app/pos/layout.tsx and the confinement redirect in app/admin/layout.tsx —
+  // so this only matters for a nav item that's rendered inside AdminSidebar
+  // while such an account is mid-redirect.
   if (isPosOnlyRole && !isAdminOrSuperAdmin) {
-    return route.href ? route.href.startsWith('/admin/pos') : false;
+    return route.href ? route.href.startsWith('/pos') : false;
   }
 
   // If the route doesn't specify roles or permissions, anyone authorized in admin shell can access

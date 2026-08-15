@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useOrderList } from '@/features/orders/order.hooks';
 import type { OrderResponse } from '@/features/orders/order.types';
-import { OrderStatusBadge } from '@/components/feedback/StatusBadges';
+import { OrderStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
 import { Search, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDate } from '@/utils/format';
@@ -38,6 +38,7 @@ export default function OrdersPage() {
 
   const columns: Column<OrderResponse>[] = [
     { key: 'orderNumber', label: 'Order #', render: (o) => <span className="font-mono font-bold text-neutral-900">{o.orderNumber}</span> },
+    { key: 'channel', label: 'Channel', render: (o) => <ChannelBadge channel={o.channel} /> },
     { key: 'customerId', label: 'Customer', render: (o) => <span className="font-mono text-[10px] text-neutral-500 truncate max-w-[120px] block">{o.customerId}</span> },
     { key: 'createdAt', label: 'Date', render: (o) => <span className="text-neutral-600">{formatDate(o.createdAt)}</span> },
     { key: 'items', label: 'Items', render: (o) => <span className="font-semibold text-center block">{o.items?.length || 0}</span> },

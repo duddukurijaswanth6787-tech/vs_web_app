@@ -28,6 +28,14 @@ const SYSTEM_ROLES = [
     isSystem: true,
   },
   {
+    name: 'pos_operator',
+    displayName: 'POS Operator',
+    description: 'Billing counter access only — confined to the standalone Shopora POS screen, no admin console',
+    scope: 'DOMAIN' as const,
+    hierarchy: 40,
+    isSystem: true,
+  },
+  {
     name: 'customer',
     displayName: 'Customer',
     description: 'Customer access',
@@ -36,6 +44,25 @@ const SYSTEM_ROLES = [
     isSystem: true,
   },
 ];
+
+// module -> actions. Codes are seeded as "module:action" (e.g. "staff:view").
+// Matches the module list already surfaced in shared/identity/permission-groups.ts.
+const PERMISSION_MODULES: Record<string, string[]> = {
+  dashboard: ['view'],
+  users: ['view', 'create', 'update', 'delete'],
+  staff: ['view', 'create', 'update', 'delete'],
+  products: ['view', 'create', 'update', 'delete'],
+  categories: ['view', 'create', 'update', 'delete'],
+  brands: ['view', 'create', 'update', 'delete'],
+  inventory: ['view', 'update'],
+  orders: ['view', 'update'],
+  payments: ['view', 'update'],
+  reports: ['view', 'export'],
+  settings: ['view', 'update'],
+  coupons: ['view', 'create', 'update', 'delete'],
+  reviews: ['view', 'update'],
+  customers: ['view', 'update'],
+};
 
 @Injectable()
 export class AutoSeedService implements OnModuleInit {
@@ -64,6 +91,23 @@ export class AutoSeedService implements OnModuleInit {
         update: {},
         create: role,
       });
+    }
+
+    // 1b. Seed Permission catalog
+    for (const [module, actions] of Object.entries(PERMISSION_MODULES)) {
+      for (const action of actions) {
+        const code = `${module}:${action}`;
+        await this.prisma.permission.upsert({
+          where: { code },
+          update: {},
+          create: {
+            code,
+            name: `${action.charAt(0).toUpperCase()}${action.slice(1)} ${module.charAt(0).toUpperCase()}${module.slice(1)}`,
+            module,
+            scope: 'MODULE',
+          },
+        });
+      }
     }
 
     // 2. Seed Super Admin Role & User

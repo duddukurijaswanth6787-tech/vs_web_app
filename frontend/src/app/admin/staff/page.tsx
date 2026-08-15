@@ -8,6 +8,7 @@ import {
   useDeactivateStaff,
   useSuspendStaff,
 } from '@/features/staff/staff.hooks';
+import { useRoles } from '@/features/access/access.hooks';
 import { StaffResponse, StaffDepartment, StaffDesignation } from '@/features/staff/staff.types';
 import {
   User,
@@ -20,6 +21,8 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader } from '@/components/feedback/FeedbackStates';
+import { useToast } from '@/components/toast/ToastProvider';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const DEPARTMENTS: StaffDepartment[] = [
   'MANAGEMENT',
@@ -64,31 +67,48 @@ export default function StaffPage() {
     phone: '',
     department: 'SALES' as StaffDepartment,
     designation: 'ASSOCIATE' as StaffDesignation,
-    employeeId: '',
+    roleId: '',
     jobTitle: '',
   });
 
+  const { toast } = useToast();
   const createMutation = useCreateStaff();
   const activateMutation = useActivateStaff();
   const deactivateMutation = useDeactivateStaff();
   const suspendMutation = useSuspendStaff();
+  const { data: allRoles } = useRoles();
+  // Granting super_admin is a deliberate, separate action (Staff → Roles tab),
+  // not something to hand out from a routine add-staff dialog.
+  const assignableRoles = (allRoles || []).filter((r) => r.isActive && r.name !== 'super_admin');
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await createMutation.mutateAsync(formData);
-    setIsCreateOpen(false);
-    setFormData({
-      email: '',
-      password: '',
-      firstName: '',
-      lastName: '',
-      phone: '',
-      department: 'SALES',
-      designation: 'ASSOCIATE',
-      employeeId: '',
-      jobTitle: '',
-    });
-    refetch();
+    try {
+      const created = await createMutation.mutateAsync(formData);
+      const roleLabel = assignableRoles.find((r) => r.id === formData.roleId)?.displayName;
+      toast(
+        'success',
+        'Staff operator created',
+        `${formData.firstName} ${formData.lastName} can now sign in as ${roleLabel || 'Staff'} — Employee ID ${created.employeeId}.`,
+      );
+      setIsCreateOpen(false);
+      setFormData({
+        email: '',
+        password: '',
+        firstName: '',
+        lastName: '',
+        phone: '',
+        department: 'SALES',
+        designation: 'ASSOCIATE',
+        roleId: '',
+        jobTitle: '',
+      });
+      refetch();
+    } catch (err) {
+      // Keep the dialog open with the entered data so the field that failed
+      // (e.g. a duplicate email or employee ID) can be fixed and resubmitted.
+      toast('error', 'Could not create staff operator', getApiErrorMessage(err, 'Please check the form and try again.'));
+    }
   };
 
   const handleToggleStatus = async (staff: StaffResponse) => {
@@ -364,14 +384,9 @@ export default function StaffPage() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Employee ID</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.employeeId}
-                    onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
-                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none"
-                    placeholder="EMP-1002"
-                  />
+                  <div className="w-full rounded-lg border border-dashed border-neutral-200 bg-neutral-50 px-3 py-2 text-xs text-neutral-400">
+                    Assigned automatically (EMP-0001, EMP-0002, …)
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Phone Number</label>
@@ -416,6 +431,26 @@ export default function StaffPage() {
               </div>
 
               <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase">Role</label>
+                <select
+                  required
+                  value={formData.roleId}
+                  onChange={(e) => setFormData({ ...formData, roleId: e.target.value })}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none bg-white"
+                >
+                  <option value="">Select role…</option>
+                  {assignableRoles.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.displayName}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[10px] text-neutral-400">
+                  Controls what this operator can access — e.g. POS Operator is confined to the billing screen.
+                </p>
+              </div>
+
+              <div className="space-y-1.5">
                 <label className="text-[10px] font-bold text-neutral-500 uppercase">Job Title</label>
                 <input
                   type="text"
@@ -436,9 +471,10 @@ export default function StaffPage() {
                 </button>
                 <button
                   type="submit"
-                  className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
+                  disabled={createMutation.isPending}
+                  className="rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800 disabled:opacity-50"
                 >
-                  Add Operator
+                  {createMutation.isPending ? 'Adding…' : 'Add Operator'}
                 </button>
               </div>
             </form>
