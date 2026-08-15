@@ -44,9 +44,9 @@ function InstaIcon({ className = 'w-6 h-6' }: { className?: string }) {
 
 export function InstagramFeed() {
   const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
-  
+
   // Fetch published reels & posts live from public API (works for all storefront visitors!)
-  const { data: apiPosts } = usePublicReels();
+  const { data: apiPosts, isLoading } = usePublicReels();
 
   // Map backend API posts to ReelData format
   const dbReels: ReelData[] = (apiPosts?.data || []).map((post, idx) => {
@@ -92,8 +92,15 @@ export function InstagramFeed() {
     };
   });
 
-  // Combine live database reels with fallbacks if DB is empty
-  const activeReels = dbReels.length > 0 ? dbReels : FALLBACK_REELS;
+  // Whatever admin has published (or nothing) is what shows here — no
+  // hardcoded fallback reel that customers see but admin can't manage.
+  const activeReels = dbReels;
+
+  // Hide the whole section rather than show a "Follow Us" heading with
+  // nothing under it, or a fake placeholder card unrelated to admin's data.
+  if (!isLoading && activeReels.length === 0) {
+    return null;
+  }
 
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-8">
