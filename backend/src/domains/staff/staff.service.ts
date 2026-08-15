@@ -72,7 +72,8 @@ export class StaffService {
   async create(dto: CreateStaffDto, createdBy: string) {
     let employeeId = dto.employeeId?.trim();
     if (employeeId) {
-      const existingEmp = await this.staffRepository.findByEmployeeId(employeeId);
+      const existingEmp =
+        await this.staffRepository.findByEmployeeId(employeeId);
       if (existingEmp)
         throw new BusinessException('Employee ID already exists', 'STAFF_002');
     } else {

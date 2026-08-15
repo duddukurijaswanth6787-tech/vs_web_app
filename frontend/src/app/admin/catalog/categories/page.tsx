@@ -336,19 +336,26 @@ export default function CategoriesPage() {
               </div>
 
               <div>
-                <label className="block text-xs font-bold text-neutral-400 mb-1.5 uppercase">Parent Category</label>
+                <label className="block text-xs font-bold text-neutral-400 mb-1.5 uppercase">
+                  Parent Category
+                </label>
                 <select
                   value={parentId}
                   onChange={(e) => setParentId(e.target.value)}
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2 text-xs text-neutral-900 focus:outline-none"
                 >
-                  <option value="">None (Root Category)</option>
+                  <option value="">None (Root Category - Top Level)</option>
                   {parentOptions.map((opt) => (
                     <option key={opt.id} value={opt.id}>
                       {opt.name}
                     </option>
                   ))}
                 </select>
+                <p className="text-[11px] text-neutral-500 mt-1">
+                  {parentId === ''
+                    ? '✨ Selecting "None (Root Category)" will create a main Top-Level Parent Category.'
+                    : '📂 This category will be created as a Sub-Category inside the selected parent.'}
+                </p>
               </div>
 
               <div>

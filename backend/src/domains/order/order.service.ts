@@ -97,7 +97,9 @@ export class OrderService {
       sortOrder: query.sortOrder ?? 'desc',
     });
     return {
-      data: result.data.map((o) => this.toResponse(o, false, includeAdminFields)),
+      data: result.data.map((o) =>
+        this.toResponse(o, false, includeAdminFields),
+      ),
       meta: result.meta,
     };
   }

@@ -122,7 +122,10 @@ export class UsersController {
 
   @Post(':id/roles')
   @Roles('super_admin')
-  @ApiOperation({ summary: 'Assign role to user (super_admin only — grants access, not day-to-day account management)' })
+  @ApiOperation({
+    summary:
+      'Assign role to user (super_admin only — grants access, not day-to-day account management)',
+  })
   async assignRole(@Param('id') id: string, @Body() dto: AssignRoleDto) {
     return ResponseBuilder.success(
       await this.usersService.assignRole(id, dto),

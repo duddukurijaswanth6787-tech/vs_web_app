@@ -28,11 +28,16 @@ export class CreateStaffDto {
   @ApiProperty({ enum: StaffDesignation })
   @IsEnum(StaffDesignation)
   designation!: StaffDesignation;
-  @ApiPropertyOptional({ description: 'Auto-generated (EMP-0001, EMP-0002, …) when omitted' })
+  @ApiPropertyOptional({
+    description: 'Auto-generated (EMP-0001, EMP-0002, …) when omitted',
+  })
   @IsOptional()
   @IsString()
   employeeId?: string;
-  @ApiPropertyOptional({ description: 'Role to grant on creation; defaults to the base "staff" role when omitted' })
+  @ApiPropertyOptional({
+    description:
+      'Role to grant on creation; defaults to the base "staff" role when omitted',
+  })
   @IsOptional()
   @IsString()
   roleId?: string;
