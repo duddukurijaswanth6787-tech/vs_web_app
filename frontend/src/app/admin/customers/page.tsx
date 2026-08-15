@@ -81,7 +81,7 @@ export default function CustomersPage() {
         <p className="text-sm text-neutral-500 mt-1">Manage customer profiles and account security boundaries.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3 bg-white border border-neutral-200 p-4 rounded-xl shadow-sm">
+      <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 bg-white border border-neutral-200 p-3.5 sm:p-4 rounded-xl shadow-sm">
         <div className="relative">
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <input type="text" placeholder="Search customers..." value={localSearch}
