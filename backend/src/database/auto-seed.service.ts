@@ -167,12 +167,36 @@ export class AutoSeedService implements OnModuleInit {
           },
         });
       }
-
       this.logger.log(
         `Essential admin user verified/seeded successfully: ${email}`,
       );
     }
-    // 4. Seed Essential Categories
+
+    // 3. Seed Demo Customer Account
+    const custPassword = await argon2.hash('Customer@123');
+    for (const custEmail of ['customer@vasanthi.com', 'customer@vasanthidesigners.com']) {
+      await this.prisma.user.upsert({
+        where: { email: custEmail },
+        update: {
+          passwordHash: custPassword,
+          userType: 'CUSTOMER',
+          accountStatus: 'ACTIVE',
+          isEmailVerified: true,
+          loginAttempts: 0,
+          lockoutUntil: null,
+        },
+        create: {
+          email: custEmail,
+          passwordHash: custPassword,
+          firstName: 'Anjali',
+          lastName: 'Sharma',
+          userType: 'CUSTOMER',
+          accountStatus: 'ACTIVE',
+          isEmailVerified: true,
+          loginAttempts: 0,
+        },
+      });
+    }
     const ethnicWear = await this.prisma.category.upsert({
       where: { slug: 'ethnic-wear' },
       update: {
