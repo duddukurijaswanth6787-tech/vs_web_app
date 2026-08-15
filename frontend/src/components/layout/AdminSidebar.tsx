@@ -19,6 +19,10 @@ export default function AdminSidebar() {
     setMobileSidebarOpen,
   } = useUIStore();
 
+  const allNavItems = React.useMemo(() => {
+    return adminNavigation.flatMap((g) => g.items);
+  }, []);
+
   const handleLinkClick = () => {
     setMobileSidebarOpen(false);
   };
@@ -76,7 +80,15 @@ export default function AdminSidebar() {
                 )}
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
-                    const isActive = pathname === item.href || pathname.startsWith(item.href + '/');
+                    const hasMoreSpecificMatch = allNavItems.some(
+                      (other) =>
+                        other.id !== item.id &&
+                        other.href.length > item.href.length &&
+                        (pathname === other.href || pathname.startsWith(other.href + '/')),
+                    );
+                    const isActive =
+                      (pathname === item.href || pathname.startsWith(item.href + '/')) &&
+                      !hasMoreSpecificMatch;
                     const Icon = item.icon;
 
                     return (
