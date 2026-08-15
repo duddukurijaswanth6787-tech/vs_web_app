@@ -3,12 +3,17 @@ import { QueryClient } from '@tanstack/react-query';
 const API = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:4000/api/v1';
 
 // ponytail: inline keys to avoid importing from 'use client' module
+// NOTE: these MUST exactly match the queryKey used by the real client-side
+// hooks that consume this data (features/customer/hooks.ts,
+// features/social/social.hooks.ts), or React Query hydration silently no-ops
+// and the client re-fetches from scratch — causing a flash of default/empty
+// state before the real data arrives.
 const keys = {
-  categories: ['customer', 'categories'] as const,
-  publicSettings: ['customer', 'public-settings'] as const,
-  banners: ['customer', 'banners'] as const,
+  categories: ['customer'] as const,
+  publicSettings: ['public-settings'] as const,
+  banners: ['banners'] as const,
   coupons: ['customer', 'coupons'] as const,
-  reels: ['customer', 'reels'] as const,
+  reels: ['social', 'public-reels'] as const,
 };
 
 async function apiFetch<T>(path: string): Promise<T | null> {
