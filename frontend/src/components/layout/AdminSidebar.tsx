@@ -35,8 +35,8 @@ export default function AdminSidebar() {
 
       {/* Main Sidebar Panel */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200 bg-white transition-all duration-300 lg:static
-          ${sidebarCollapsed ? 'w-16' : 'w-64'}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200 bg-white transition-transform duration-300 ease-in-out lg:static lg:transition-none
+          w-[80vw] max-w-[280px] ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
           ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >

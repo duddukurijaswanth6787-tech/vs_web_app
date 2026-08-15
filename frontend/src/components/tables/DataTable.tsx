@@ -84,8 +84,8 @@ export default function DataTable<T>({
         </div>
       )}
 
-      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto">
-            <table className="w-full text-xs" role="grid" aria-label="Data table">
+      <div className="bg-white rounded-xl border border-neutral-200 shadow-sm overflow-x-auto scrollbar-thin">
+        <table className="w-full min-w-[640px] text-xs" role="grid" aria-label="Data table">
           <thead className="bg-neutral-50 border-b border-neutral-200 sticky top-0 z-10">
             <tr>
               {onSelectionChange && (

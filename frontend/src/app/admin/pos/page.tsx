@@ -241,7 +241,7 @@ export default function DesktopPosPage() {
               Shopora Web POS
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
-              Vasanthi Designers — Counter 1 Billing
+              Vasanthi&apos;s Signature — Counter 1 Billing
             </p>
           </div>
         </div>
