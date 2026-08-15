@@ -8,6 +8,7 @@ import {
   Max,
   IsUrl,
   IsDateString,
+  IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -28,6 +29,14 @@ export class CreateBannerDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
+  @ApiPropertyOptional({ default: true, description: 'Show the CTA (Shop Now) button on this banner' })
+  @IsOptional()
+  @IsBoolean()
+  ctaEnabled?: boolean;
+  @ApiPropertyOptional({ enum: ['solid', 'transparent'], default: 'solid' })
+  @IsOptional()
+  @IsEnum(['solid', 'transparent'])
+  ctaStyle?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() startDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() endDate?: string;
 }
@@ -46,6 +55,14 @@ export class UpdateBannerDto {
   @Min(0)
   displayOrder?: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
+  @ApiPropertyOptional({ description: 'Show the CTA (Shop Now) button on this banner' })
+  @IsOptional()
+  @IsBoolean()
+  ctaEnabled?: boolean;
+  @ApiPropertyOptional({ enum: ['solid', 'transparent'] })
+  @IsOptional()
+  @IsEnum(['solid', 'transparent'])
+  ctaStyle?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() startDate?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() endDate?: string;
 }
@@ -95,6 +112,8 @@ export class BannerResponse {
   @ApiProperty() placement!: string;
   @ApiProperty() displayOrder!: number;
   @ApiProperty() isActive!: boolean;
+  @ApiProperty() ctaEnabled!: boolean;
+  @ApiProperty() ctaStyle!: string;
   @ApiPropertyOptional() startDate?: Date;
   @ApiPropertyOptional() endDate?: Date;
   @ApiProperty() createdAt!: Date;

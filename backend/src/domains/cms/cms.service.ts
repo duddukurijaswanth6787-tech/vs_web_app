@@ -35,6 +35,8 @@ export class CmsService {
       placement: b.placement,
       displayOrder: b.displayOrder,
       isActive: b.isActive,
+      ctaEnabled: b.ctaEnabled ?? true,
+      ctaStyle: b.ctaStyle ?? 'solid',
       startDate: b.startDate ?? undefined,
       endDate: b.endDate ?? undefined,
       createdAt: b.createdAt,
@@ -95,10 +97,13 @@ export class CmsService {
       title: bannerInput.title,
       description: bannerInput.description,
       imageUrl: bannerInput.imageUrl,
+      mobileImageUrl: bannerInput.mobileImageUrl,
       linkUrl: bannerInput.linkUrl,
       placement: bannerInput.placement,
       displayOrder: bannerInput.displayOrder ?? 0,
       isActive: bannerInput.isActive ?? true,
+      ctaEnabled: bannerInput.ctaEnabled ?? true,
+      ctaStyle: bannerInput.ctaStyle ?? 'solid',
       startDate: bannerInput.startDate
         ? new Date(bannerInput.startDate)
         : undefined,
@@ -125,7 +130,6 @@ export class CmsService {
     if (!banner || banner.deletedAt)
       throw new BusinessException('Banner not found', 'BANNER_001');
     const updateData: any = { ...dto, updatedBy: userId };
-    delete updateData.mobileImageUrl;
     if (dto.startDate) updateData.startDate = new Date(dto.startDate);
     if (dto.endDate) updateData.endDate = new Date(dto.endDate);
     await this.cmsRepository.updateBanner(id, updateData);

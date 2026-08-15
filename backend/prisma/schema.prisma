@@ -1514,21 +1514,24 @@ model ReviewReport {
 }
 
 model Banner {
-  id           String    @id @default(uuid())
-  title        String
-  description  String?
-  imageUrl     String
-  linkUrl      String?
-  placement    String
-  displayOrder Int       @default(0)
-  isActive     Boolean   @default(true)
-  startDate    DateTime?
-  endDate      DateTime?
-  createdBy    String?
-  updatedBy    String?
-  deletedAt    DateTime?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  title          String
+  description    String?
+  imageUrl       String
+  mobileImageUrl String?
+  linkUrl        String?
+  placement      String
+  displayOrder   Int       @default(0)
+  isActive       Boolean   @default(true)
+  ctaEnabled     Boolean   @default(true)
+  ctaStyle       String    @default("solid")
+  startDate      DateTime?
+  endDate        DateTime?
+  createdBy      String?
+  updatedBy      String?
+  deletedAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   @@index([placement])
   @@index([isActive])

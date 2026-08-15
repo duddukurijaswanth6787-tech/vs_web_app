@@ -7,6 +7,8 @@ export interface CreateBannerDto {
   placement: string;
   displayOrder?: number;
   isActive?: boolean;
+  ctaEnabled?: boolean;
+  ctaStyle?: 'solid' | 'transparent';
   startDate?: string;
   endDate?: string;
 }
@@ -20,6 +22,8 @@ export interface UpdateBannerDto {
   placement?: string;
   displayOrder?: number;
   isActive?: boolean;
+  ctaEnabled?: boolean;
+  ctaStyle?: 'solid' | 'transparent';
   startDate?: string;
   endDate?: string;
 }
@@ -41,6 +45,8 @@ export interface BannerResponse {
   placement: string;
   displayOrder: number;
   isActive: boolean;
+  ctaEnabled: boolean;
+  ctaStyle: 'solid' | 'transparent';
   startDate?: string;
   endDate?: string;
   createdAt: string;
