@@ -45,16 +45,19 @@ export default function CategoriesPage() {
   });
 
   const categories = useMemo(() => {
+    if (!all.data && !featured.data) return [];
     const fromAll = (all.data && 'data' in all.data) ? (all.data as { data: CategoryResponse[] }).data : (Array.isArray(all.data) ? all.data : []);
-    if (fromAll.length) {
-      return fromAll.map((c: CategoryResponse) => {
+    const fromFeatured = Array.isArray(featured.data) ? featured.data : [];
+    const list = fromAll.length ? fromAll : fromFeatured;
+
+    return list
+      .filter((c: CategoryResponse) => c.status !== 'ARCHIVED')
+      .map((c: CategoryResponse) => {
         const rawImg = c.image || c.imageUrl || c.primaryImageUrl;
         const fallbackImg = CATEGORY_DEFAULT_IMAGES[c.slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
         const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : resolveMediaUrl(rawImg);
         return { ...c, imageUrl: finalUrl };
       });
-    }
-    return DEFAULT_CATEGORIES;
   }, [all.data, featured.data]);
 
   return (
@@ -64,6 +67,12 @@ export default function CategoriesPage() {
       <main className="max-w-5xl mx-auto w-full px-4 py-6 flex-1">
         {(all.isLoading || featured.isLoading) && (
           <p className="text-sm text-neutral-500">Loading categories…</p>
+        )}
+        {!all.isLoading && !featured.isLoading && categories.length === 0 && (
+          <div className="text-center py-16 space-y-2">
+            <p className="text-sm font-semibold text-neutral-600">No categories registered yet in catalog.</p>
+            <p className="text-xs text-neutral-400">Add categories in the Admin Taxonomy Manager to display them here.</p>
+          </div>
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {categories.map((cat) => {

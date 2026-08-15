@@ -42,32 +42,33 @@ export function CategoryCircles() {
   const { data: catData, isLoading } = useFeaturedCategories();
 
   const categories: CategoryItem[] = useMemo(() => {
+    if (!catData) return [];
     const typed = catData as { data?: unknown[] } | unknown[];
     const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: unknown[] })?.data) ? (typed as { data?: unknown[] }).data! : [];
 
     const mainCategories = list.filter((cat) => {
       const c = cat as Record<string, unknown>;
-      return !c.parentId;
+      return !c.parentId && c.status !== 'ARCHIVED';
     });
 
-    if (mainCategories.length > 0) {
-      return mainCategories.map((cat) => {
-        const c = cat as Record<string, unknown>;
-        const rawImg = String(c.image || c.imageUrl || c.primaryImageUrl || '');
-        const slug = String(c.slug || '');
-        const fallbackImg = CATEGORY_DEFAULT_IMAGES[slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
-        const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : rawImg;
-        return {
-          id: String(c.id || ''),
-          name: String(c.name || ''),
-          slug,
-          imageUrl: finalUrl,
-        };
-      });
-    }
-    return DEFAULT_CATEGORIES;
+    return mainCategories.map((cat) => {
+      const c = cat as Record<string, unknown>;
+      const rawImg = String(c.image || c.imageUrl || c.primaryImageUrl || '');
+      const slug = String(c.slug || '');
+      const fallbackImg = CATEGORY_DEFAULT_IMAGES[slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
+      const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : rawImg;
+      return {
+        id: String(c.id || ''),
+        name: String(c.name || ''),
+        slug,
+        imageUrl: finalUrl,
+      };
+    });
   }, [catData]);
 
+  if (!isLoading && categories.length === 0) {
+    return null;
+  }
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6">
       {/* Section Header */}
