@@ -12,6 +12,7 @@ import * as z from 'zod';
 import { formatDate } from '@/utils/format';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { getPromoStatus, PROMO_STATUS_STYLES, PROMO_STATUS_LABELS } from '@/utils/promo-status';
 import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
 
@@ -63,7 +64,7 @@ export default function CouponsPage() {
     { key: 'minOrderAmount', label: 'Min Order', render: (c) => <span className="font-mono text-neutral-600 block text-right">{c.minOrderAmount ? `₹${c.minOrderAmount}` : '-'}</span> },
     { key: 'usage', label: 'Usage', render: (c) => <span className="text-center block"><span className="font-bold">{c.usedCount}</span>{c.usageLimit ? <span className="text-neutral-400 text-[10px]"> / {c.usageLimit}</span> : null}</span> },
     { key: 'dates', label: 'Validity', render: (c) => <div className="text-neutral-500"><div>Start: {formatDate(c.startDate)}</div><div className="text-[10px] text-neutral-400">End: {formatDate(c.endDate)}</div></div> },
-    { key: 'isActive', label: 'Status', render: (c) => <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${c.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-neutral-100 text-neutral-500'}`}>{c.isActive ? 'Active' : 'Inactive'}</span> },
+    { key: 'isActive', label: 'Status', render: (c) => { const s = getPromoStatus(c.isActive, c.startDate, c.endDate); return <span className={`text-[9px] px-1.5 py-0.5 rounded font-bold uppercase ${PROMO_STATUS_STYLES[s]}`}>{PROMO_STATUS_LABELS[s]}</span>; } },
     { key: 'actions', label: 'Actions', render: (c) => isEditor ? (
       <div className="flex justify-end">
         <button onClick={() => { setActiveCoupon(c); setIsDialogOpen(true); }} className="p-1.5 hover:bg-neutral-100 rounded text-neutral-600 hover:text-neutral-900"><Edit3 className="w-4 h-4" /></button>

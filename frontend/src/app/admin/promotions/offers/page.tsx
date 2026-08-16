@@ -15,6 +15,7 @@ import * as z from 'zod';
 import { formatDate } from '@/utils/format';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { getPromoStatus, PROMO_STATUS_STYLES, PROMO_STATUS_LABELS } from '@/utils/promo-status';
 
 // Zod schema
 const offerSchema = z.object({
@@ -169,10 +170,8 @@ export default function OffersPage() {
                       <div className="text-[10px] text-neutral-400">End: {formatDate(o.endDate)}</div>
                     </td>
                     <td className="p-4">
-                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase
-                        ${o.isActive ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-neutral-100 text-neutral-500'}
-                      `}>
-                        {o.isActive ? 'Active' : 'Inactive'}
+                      <span className={`inline-block px-1.5 py-0.5 rounded text-[9px] font-bold uppercase ${PROMO_STATUS_STYLES[getPromoStatus(o.isActive, o.startDate, o.endDate)]}`}>
+                        {PROMO_STATUS_LABELS[getPromoStatus(o.isActive, o.startDate, o.endDate)]}
                       </span>
                     </td>
                     <td className="p-4 text-right">

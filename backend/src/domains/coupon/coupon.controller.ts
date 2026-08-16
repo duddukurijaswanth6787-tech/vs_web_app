@@ -39,9 +39,7 @@ export class CouponController {
   @Get('active')
   @ApiOperation({ summary: 'List active public coupons for storefront' })
   async findActivePublic() {
-    return ResponseBuilder.success(
-      await this.couponService.findAll({ isActive: true, page: 1, limit: 50 }),
-    );
+    return ResponseBuilder.success(await this.couponService.getActiveCoupons());
   }
 
   @Get(':id')

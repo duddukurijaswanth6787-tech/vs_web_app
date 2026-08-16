@@ -112,7 +112,10 @@ export class OfferResponse {
   @ApiPropertyOptional() description?: string;
   @ApiProperty() type!: string;
   @ApiProperty() value!: number;
+  @ApiPropertyOptional() minOrderAmount?: number;
+  @ApiPropertyOptional() maxDiscountAmount?: number;
   @ApiPropertyOptional() applicableTo?: string;
+  @ApiPropertyOptional({ type: [String] }) applicableIds?: string[];
   @ApiProperty() priority!: number;
   @ApiProperty() startDate!: Date;
   @ApiProperty() endDate!: Date;

@@ -23,7 +23,12 @@ export class OfferService {
       description: o.description ?? undefined,
       type: o.type,
       value: Number(o.value),
+      minOrderAmount: o.minOrderAmount ? Number(o.minOrderAmount) : undefined,
+      maxDiscountAmount: o.maxDiscountAmount
+        ? Number(o.maxDiscountAmount)
+        : undefined,
       applicableTo: o.applicableTo ?? undefined,
+      applicableIds: o.applicableIds ?? undefined,
       priority: o.priority,
       startDate: o.startDate,
       endDate: o.endDate,
@@ -155,12 +160,17 @@ export class OfferService {
     if (!offer.applicableTo) return true;
     const ids: string[] = offer.applicableIds ?? [];
     if (!ids.length) return true;
+    // Admin form sends the plural forms (PRODUCTS/CATEGORIES/BRANDS/GLOBAL);
+    // accept both so this doesn't silently no-op on casing alone.
     switch (offer.applicableTo) {
       case 'PRODUCT':
+      case 'PRODUCTS':
         return ids.includes(item.productId);
       case 'CATEGORY':
+      case 'CATEGORIES':
         return !!item.categoryId && ids.includes(item.categoryId);
       case 'BRAND':
+      case 'BRANDS':
         return !!item.brandId && ids.includes(item.brandId);
       default:
         return true;
