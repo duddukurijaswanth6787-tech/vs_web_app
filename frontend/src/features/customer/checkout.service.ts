@@ -52,10 +52,15 @@ export const customerCheckoutService = {
     return res.data.data!;
   },
 
-  validateCoupon: async (code: string, orderAmount: number): Promise<CouponValidationDto> => {
+  validateCoupon: async (
+    code: string,
+    orderAmount: number,
+    items?: Array<{ productId: string; price: number; quantity: number }>,
+  ): Promise<CouponValidationDto> => {
     const res = await apiClient.post<StandardResponse<CouponValidationDto>>('/coupons/validate', {
       code,
       orderAmount,
+      ...(items && items.length ? { items } : {}),
     });
     return res.data.data!;
   },

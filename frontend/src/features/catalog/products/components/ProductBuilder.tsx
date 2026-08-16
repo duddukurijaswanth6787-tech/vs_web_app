@@ -16,6 +16,12 @@ import { useSizeCharts } from '@/features/catalog/size-charts/size-chart.hooks';
 import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
+import { useCoupons } from '@/features/coupons/coupon.hooks';
+import { couponService } from '@/features/coupons/coupon.service';
+import type { CouponResponse } from '@/features/coupons/coupon.types';
+import { useOffers } from '@/features/offers/offer.hooks';
+import { offerService } from '@/features/offers/offer.service';
+import type { OfferResponse } from '@/features/offers/offer.types';
 import {
   LiveDesktopProductPreview,
   type ColorVariantGroup,
@@ -68,6 +74,68 @@ interface IssuedVariant {
   barcode?: string;
   title: string;
   stock: number;
+}
+
+/** A scope that a product form is allowed to toggle from here without
+ *  clobbering a coupon/offer that's already scoped to categories or brands
+ *  elsewhere. */
+const isProductAttachable = (applicableTo?: string) =>
+  !applicableTo || ['GLOBAL', 'PRODUCT', 'PRODUCTS'].includes(applicableTo);
+
+interface PromoPreview {
+  finalPrice: number;
+  discountAmount: number;
+  note?: string;
+}
+
+/**
+ * Mirrors the real discount formulas in coupon.service.ts / offer.service.ts
+ * (percentage / flat / free-shipping, capped by maxDiscountAmount) so this
+ * preview never shows the admin a number checkout wouldn't actually give a
+ * customer.
+ */
+function computePromoPreview(
+  type: string,
+  value: number,
+  minOrderAmount: number | undefined,
+  maxDiscountAmount: number | undefined,
+  price: number,
+): PromoPreview {
+  if (type === 'FREE_SHIPPING') {
+    return { finalPrice: price, discountAmount: 0, note: 'Free shipping — the item price itself is unchanged.' };
+  }
+  let discount = type === 'FLAT' ? value : (price * value) / 100;
+  if (maxDiscountAmount) discount = Math.min(discount, maxDiscountAmount);
+  discount = Math.max(0, Math.min(discount, price));
+  const note =
+    minOrderAmount && price < minOrderAmount
+      ? `Only applies once the customer's cart totals at least ₹${minOrderAmount.toLocaleString('en-IN')}.`
+      : undefined;
+  return { finalPrice: Math.max(0, price - discount), discountAmount: discount, note };
+}
+
+/**
+ * Merges/removes a product's id from a coupon's or offer's applicableIds so
+ * it becomes (or stops being) restricted to specific products. Returns null
+ * when nothing actually needs to change on the server.
+ */
+function diffProductAttachment(
+  current: { applicableTo?: string; applicableIds?: string[] },
+  productId: string,
+  shouldAttach: boolean,
+): { applicableTo?: string; applicableIds: string[] } | null {
+  const ids = current.applicableIds ?? [];
+  const isAttached = ids.includes(productId);
+  if (isAttached === shouldAttach) return null;
+
+  const nextIds = shouldAttach
+    ? [...ids, productId]
+    : ids.filter((id) => id !== productId);
+
+  return {
+    applicableTo: nextIds.length > 0 ? 'PRODUCTS' : undefined,
+    applicableIds: nextIds,
+  };
 }
 
 const findAttributeBySlug = (attributes: AttributeResponse[], slug: string) =>
@@ -125,6 +193,30 @@ export default function ProductBuilder({
   // Load Brands
   const { data: brandsData } = useBrands({ limit: 100 });
   const brands = useMemo(() => (Array.isArray(brandsData) ? brandsData : (brandsData as { data?: Array<{ id: string; name: string }> })?.data || []), [brandsData]);
+
+  // Coupons & offers this product can be attached to — created and managed
+  // entirely on the Coupons & Offers pages; this form only picks from what
+  // already exists there.
+  const { data: couponsData } = useCoupons({ limit: 100 });
+  const coupons: CouponResponse[] = useMemo(() => couponsData?.data ?? [], [couponsData]);
+  const { data: offersData } = useOffers({ limit: 100 });
+  const offers: OfferResponse[] = useMemo(() => offersData?.data ?? [], [offersData]);
+
+  const [selectedCouponIds, setSelectedCouponIds] = useState<string[]>([]);
+  const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
+  const [promoSelectionInitialized, setPromoSelectionInitialized] = useState(false);
+
+  // Pre-check whichever coupons/offers already list this product once both
+  // the lists and the product being edited have loaded. Runs once — after
+  // that, the admin's own toggles are the source of truth for this session.
+  useEffect(() => {
+    if (promoSelectionInitialized) return;
+    if (!initialData?.id) return;
+    if (!couponsData || !offersData) return;
+    setSelectedCouponIds(coupons.filter((c) => c.applicableIds?.includes(initialData.id)).map((c) => c.id));
+    setSelectedOfferIds(offers.filter((o) => o.applicableIds?.includes(initialData.id)).map((o) => o.id));
+    setPromoSelectionInitialized(true);
+  }, [promoSelectionInitialized, initialData?.id, couponsData, offersData, coupons, offers]);
 
   // Load the full category tree so a primary category and its sub-category can
   // both be picked. useFeaturedCategories only returned the featured subset.
@@ -539,6 +631,29 @@ export default function ProductBuilder({
   const rawWatchedValues = useWatch({ control: methods.control });
   const watchedValues = useMemo(() => rawWatchedValues || {}, [rawWatchedValues]);
 
+  // What a customer actually pays today: Sale Price if set, otherwise MRP.
+  const referencePrice = Number(watchedValues?.salePrice) || Number(watchedValues?.basePrice) || 0;
+
+  const promoPreviewRows = useMemo(() => {
+    const couponRows = coupons
+      .filter((c) => selectedCouponIds.includes(c.id))
+      .map((c) => ({
+        key: `coupon-${c.id}`,
+        label: c.code,
+        sub: c.name,
+        ...computePromoPreview(c.type, Number(c.value), c.minOrderAmount, c.maxDiscountAmount, referencePrice),
+      }));
+    const offerRows = offers
+      .filter((o) => selectedOfferIds.includes(o.id))
+      .map((o) => ({
+        key: `offer-${o.id}`,
+        label: o.name,
+        sub: `${o.value}% off (auto-applied, no code needed)`,
+        ...computePromoPreview(o.type, Number(o.value), o.minOrderAmount, o.maxDiscountAmount, referencePrice),
+      }));
+    return [...couponRows, ...offerRows];
+  }, [coupons, offers, selectedCouponIds, selectedOfferIds, referencePrice]);
+
   // Selected Brand Name for Live Preview
   const selectedBrandObj = brands.find((b: { id: string; name?: string }) => b.id === watchedValues.brandId);
   const selectedBrandName = selectedBrandObj?.name || 'Vasanthi Designers';
@@ -791,6 +906,18 @@ export default function ProductBuilder({
 
       if (syncPayload.length > 0) {
         await productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch(() => null);
+      }
+
+      // Attach/detach this product from whichever coupons and offers were
+      // toggled on the Coupons & Offers panel above. Only coupons/offers
+      // whose membership actually changed are written.
+      for (const coupon of coupons) {
+        const diff = diffProductAttachment(coupon, created.id, selectedCouponIds.includes(coupon.id));
+        if (diff) await couponService.update(coupon.id, diff).catch(() => null);
+      }
+      for (const offer of offers) {
+        const diff = diffProductAttachment(offer, created.id, selectedOfferIds.includes(offer.id));
+        if (diff) await offerService.update(offer.id, diff).catch(() => null);
       }
 
       setIssuedVariants(issued);
@@ -1362,6 +1489,134 @@ export default function ProductBuilder({
                   <span className="text-xs font-semibold text-neutral-400">No discount applied</span>
                 )}
               </div>
+            </div>
+
+            {/* COUPONS & OFFERS FOR THIS PRODUCT */}
+            <div className="pt-6 border-t border-neutral-100 space-y-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Tag className="w-5 h-5 text-[#800020]" />
+                  <span>Coupons &amp; Offers</span>
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-1">
+                  Attach coupons or offers that already exist on the Coupons &amp; Offers pages to this product. This form can&apos;t create new ones — only pick from what&apos;s already there.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Coupons checklist */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-neutral-800">Coupons ({coupons.length})</span>
+                  <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-100 max-h-60 overflow-y-auto bg-neutral-50/50">
+                    {coupons.length === 0 ? (
+                      <p className="p-4 text-xs text-neutral-400">No coupons created yet — add one on the Coupons page first.</p>
+                    ) : (
+                      coupons.map((c) => {
+                        const attachable = isProductAttachable(c.applicableTo);
+                        const checked = selectedCouponIds.includes(c.id);
+                        return (
+                          <label key={c.id} className={`flex items-start gap-3 p-3 ${attachable ? 'cursor-pointer hover:bg-white' : 'opacity-50 cursor-not-allowed'}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!attachable}
+                              onChange={() =>
+                                setSelectedCouponIds((prev) =>
+                                  checked ? prev.filter((id) => id !== c.id) : [...prev, c.id],
+                                )
+                              }
+                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold font-mono text-neutral-900">{c.code}</span>
+                                <span className="text-[10px] font-semibold text-neutral-500">
+                                  {c.type === 'PERCENTAGE' ? `${c.value}% off` : c.type === 'FLAT' ? `₹${c.value} off` : 'Free shipping'}
+                                </span>
+                              </div>
+                              {!attachable && (
+                                <p className="text-[9px] text-amber-600 font-medium mt-0.5">
+                                  Already scoped to {String(c.applicableTo).toLowerCase()} elsewhere — can&apos;t attach here.
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+
+                {/* Offers checklist */}
+                <div className="space-y-2">
+                  <span className="text-xs font-bold text-neutral-800">Offers ({offers.length})</span>
+                  <div className="border border-neutral-200 rounded-2xl divide-y divide-neutral-100 max-h-60 overflow-y-auto bg-neutral-50/50">
+                    {offers.length === 0 ? (
+                      <p className="p-4 text-xs text-neutral-400">No offers created yet — add one on the Offers page first.</p>
+                    ) : (
+                      offers.map((o) => {
+                        const attachable = isProductAttachable(o.applicableTo);
+                        const checked = selectedOfferIds.includes(o.id);
+                        return (
+                          <label key={o.id} className={`flex items-start gap-3 p-3 ${attachable ? 'cursor-pointer hover:bg-white' : 'opacity-50 cursor-not-allowed'}`}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={!attachable}
+                              onChange={() =>
+                                setSelectedOfferIds((prev) =>
+                                  checked ? prev.filter((id) => id !== o.id) : [...prev, o.id],
+                                )
+                              }
+                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="text-xs font-bold text-neutral-900 truncate">{o.name}</span>
+                                <span className="text-[10px] font-semibold text-neutral-500 shrink-0">{o.value}% off</span>
+                              </div>
+                              {!attachable && (
+                                <p className="text-[9px] text-amber-600 font-medium mt-0.5">
+                                  Already scoped to {String(o.applicableTo).toLowerCase()} elsewhere — can&apos;t attach here.
+                                </p>
+                              )}
+                            </div>
+                          </label>
+                        );
+                      })
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Live preview */}
+              {promoPreviewRows.length > 0 && (
+                <div className="space-y-2.5 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl">
+                  <div>
+                    <h4 className="text-xs font-bold text-[#800020]">Preview — what a customer would actually pay</h4>
+                    <p className="text-[10px] text-neutral-600 mt-0.5">
+                      Based on today&apos;s Selling Price (₹{referencePrice.toLocaleString('en-IN')}). Only the single best discount applies at checkout — a coupon and an offer never stack.
+                    </p>
+                  </div>
+                  <div className="space-y-1.5">
+                    {promoPreviewRows.map((row) => (
+                      <div key={row.key} className="flex items-center justify-between gap-3 bg-white rounded-xl border border-rose-100/80 px-3.5 py-2.5">
+                        <div className="min-w-0">
+                          <p className="text-[11px] font-bold font-mono text-neutral-900 truncate">{row.label}</p>
+                          <p className="text-[9px] text-neutral-400 truncate">{row.sub}</p>
+                          {row.note && <p className="text-[9px] text-amber-600 font-medium mt-0.5">{row.note}</p>}
+                        </div>
+                        <div className="text-right shrink-0">
+                          <p className="text-sm font-black text-[#800020]">₹{row.finalPrice.toLocaleString('en-IN')}</p>
+                          {row.discountAmount > 0 && (
+                            <p className="text-[9px] text-neutral-400 line-through">₹{referencePrice.toLocaleString('en-IN')}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

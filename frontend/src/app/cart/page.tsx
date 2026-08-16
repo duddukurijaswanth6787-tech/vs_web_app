@@ -63,11 +63,16 @@ export default function CartPage() {
   const amountToFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
   const freeShippingPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
 
+  const couponItems = useMemo(
+    () => items.map((i) => ({ productId: i.productId, price: Number(i.unitPrice), quantity: i.quantity })),
+    [items],
+  );
+
   useEffect(() => {
     if (!couponApplied || !subtotal) return;
     let cancelled = false;
     customerCheckoutService
-      .validateCoupon(couponApplied.code, subtotal)
+      .validateCoupon(couponApplied.code, subtotal, couponItems)
       .then((result) => {
         if (!cancelled) setCouponApplied({ code: result.code, discountAmount: Number(result.discountAmount) });
       })
@@ -90,7 +95,7 @@ export default function CartPage() {
     setCouponError('');
     setApplyingCoupon(true);
     try {
-      const result = await customerCheckoutService.validateCoupon(code, subtotal);
+      const result = await customerCheckoutService.validateCoupon(code, subtotal, couponItems);
       setCouponApplied({ code: result.code, discountAmount: Number(result.discountAmount) });
       if (typeof window !== 'undefined') localStorage.setItem(COUPON_STORAGE_KEY, result.code);
     } catch (err) {

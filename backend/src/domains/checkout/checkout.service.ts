@@ -3,6 +3,7 @@ import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { CartService } from '@domains/cart/cart.service';
 import { CouponService } from '@domains/coupon/coupon.service';
+import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { PrismaService } from '@database/prisma.service';
 import {
@@ -11,6 +12,13 @@ import {
   CheckoutSummaryResponse,
   PlaceOrderDto,
 } from './checkout.types';
+
+interface DiscountItem {
+  productId: string;
+  brandId?: string;
+  price: number;
+  quantity: number;
+}
 
 const SHIPPING_RATES: Record<string, number> = {
   STANDARD: 50,
@@ -30,21 +38,56 @@ export class CheckoutService {
     private readonly auditService: AuditService,
     private readonly cartService: CartService,
     private readonly couponService: CouponService,
+    private readonly offerService: OfferService,
     private readonly workflow: OrderWorkflowService,
   ) {}
 
+  /**
+   * Resolves both discount sources for a cart: an entered coupon code (if
+   * any) and the best currently-active, auto-applied Offer for these items.
+   * The customer gets whichever is larger -- they don't stack -- but a
+   * coupon's free-shipping perk and usage recording are tracked against the
+   * coupon specifically, independent of which discount "wins" on amount.
+   */
   private async resolveDiscount(
     userId: string,
     couponCode: string | undefined,
     subtotal: number,
-  ): Promise<{ discountAmount: number; freeShipping: boolean }> {
-    if (!couponCode) return { discountAmount: 0, freeShipping: false };
-    const { discountAmount, freeShipping } = await this.couponService.checkCoupon(
-      userId,
-      couponCode,
-      subtotal,
-    );
-    return { discountAmount: Math.min(discountAmount, subtotal), freeShipping };
+    items: DiscountItem[],
+  ): Promise<{
+    discountTotal: number;
+    couponDiscount: number;
+    freeShipping: boolean;
+  }> {
+    let couponDiscount = 0;
+    let freeShipping = false;
+    if (couponCode) {
+      const result = await this.couponService.checkCoupon(
+        userId,
+        couponCode,
+        subtotal,
+        items,
+      );
+      couponDiscount = Math.min(result.discountAmount, subtotal);
+      freeShipping = result.freeShipping;
+    }
+
+    let offerDiscount = 0;
+    try {
+      const activeOffers = await this.offerService.getActiveOffers();
+      const best = this.offerService.calculateDiscount(items, activeOffers);
+      if (best) offerDiscount = Math.min(best.discount, subtotal);
+    } catch {
+      // Offers are a background auto-discount, not a customer-entered code --
+      // never let a problem computing them block checkout.
+      offerDiscount = 0;
+    }
+
+    return {
+      discountTotal: Math.max(couponDiscount, offerDiscount),
+      couponDiscount,
+      freeShipping,
+    };
   }
 
   private async validateAddress(addressId: string, userId: string) {
@@ -71,13 +114,18 @@ export class CheckoutService {
     return SHIPPING_RATES[method] ?? SHIPPING_RATES.STANDARD;
   }
 
-  private async buildItems(cartItems: any[]): Promise<CheckoutItemResponse[]> {
+  private async buildItems(
+    cartItems: any[],
+  ): Promise<{ items: CheckoutItemResponse[]; brandByProduct: Map<string, string | undefined> }> {
     const productIds = cartItems.map((i) => i.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds }, deletedAt: null },
-      select: { id: true, name: true, status: true, taxPercentage: true },
+      select: { id: true, name: true, status: true, taxPercentage: true, brandId: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
+    const brandByProduct = new Map(
+      products.map((p) => [p.id, p.brandId ?? undefined]),
+    );
 
     const items: CheckoutItemResponse[] = [];
     for (const item of cartItems) {
@@ -113,7 +161,7 @@ export class CheckoutService {
         taxAmount: Math.round(taxAmount * 100) / 100,
       });
     }
-    return items;
+    return { items, brandByProduct };
   }
 
   async preview(
@@ -126,12 +174,22 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const items = await this.buildItems(activeItems);
+    const { items, brandByProduct } = await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
-    const { discountAmount: discountTotal, freeShipping } =
-      await this.resolveDiscount(userId, dto.couponCode, subtotal);
+    const discountItems: DiscountItem[] = items.map((i) => ({
+      productId: i.productId,
+      brandId: brandByProduct.get(i.productId),
+      price: i.unitPrice,
+      quantity: i.quantity,
+    }));
+    const { discountTotal, freeShipping } = await this.resolveDiscount(
+      userId,
+      dto.couponCode,
+      subtotal,
+      discountItems,
+    );
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
     const shippingCharge = this.calculateShipping(
       method,
@@ -163,12 +221,23 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const items = await this.buildItems(activeItems);
+    const { items, brandByProduct } = await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
-    const { discountAmount: discountTotal, freeShipping } =
-      await this.resolveDiscount(userId, dto.couponCode, subtotal);
+    const discountItems: DiscountItem[] = items.map((i) => ({
+      productId: i.productId,
+      brandId: brandByProduct.get(i.productId),
+      price: i.unitPrice,
+      quantity: i.quantity,
+    }));
+    const { discountTotal, couponDiscount, freeShipping } =
+      await this.resolveDiscount(
+        userId,
+        dto.couponCode,
+        subtotal,
+        discountItems,
+      );
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
     const shippingCharge = this.calculateShipping(
       method,
@@ -239,11 +308,12 @@ export class CheckoutService {
     await this.workflow.reserveInventory(order.id);
     await this.cartService.clearCart(userId, undefined);
 
-    if (dto.couponCode && (discountTotal > 0 || freeShipping)) {
+    if (dto.couponCode && (couponDiscount > 0 || freeShipping)) {
       await this.couponService.applyCoupon(userId, {
         code: dto.couponCode,
         orderId: order.id,
         orderAmount: subtotal,
+        items: discountItems,
       });
     }
 
