@@ -51,20 +51,20 @@ export default function SystemHealthPage() {
   return (
     <div className="space-y-6">
       {/* Page Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">System Health</h1>
-          <p className="text-sm text-neutral-500 mt-1">
+          <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-neutral-900">System Health</h1>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1">
             Real-time status tracking of all underlying service integrations and databases.
           </p>
         </div>
         <button
           onClick={() => refetch()}
           disabled={isFetching}
-          className="flex items-center gap-2 rounded-md border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 hover:bg-neutral-55 hover:text-neutral-800 disabled:opacity-50 transition shadow-sm"
+          className="w-full sm:w-auto justify-center flex items-center gap-2 rounded-xl border border-neutral-200 bg-white px-4 py-2 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 hover:text-neutral-800 disabled:opacity-50 transition shadow-sm min-h-[38px]"
         >
-          <RefreshCw className={`h-3 w-3 ${isFetching ? 'animate-spin' : ''}`} />
-          Refresh
+          <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? 'animate-spin' : ''}`} />
+          Refresh Status
         </button>
       </div>
 

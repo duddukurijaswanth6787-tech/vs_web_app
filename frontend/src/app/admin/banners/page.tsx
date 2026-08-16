@@ -158,12 +158,12 @@ export default function BannersPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Banner Advertisements</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-neutral-900 tracking-tight font-sans">Banner Advertisements</h1>
           <p className="text-xs text-neutral-400 mt-1">Configure layout banners, carousels, or flash sale promotions across the catalog.</p>
         </div>
-        {isEditor && <button onClick={() => { setActiveBanner(null); setIsDialogOpen(true); }} className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-sm"><Plus className="w-4 h-4" /> Create Banner</button>}
+        {isEditor && <button onClick={() => { setActiveBanner(null); setIsDialogOpen(true); }} className="w-full sm:w-auto justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-sm min-h-[38px]"><Plus className="w-4 h-4" /> Create Banner</button>}
       </div>
 
       <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
@@ -196,7 +196,7 @@ export default function BannersPage() {
             <span className="text-xs text-neutral-400">seconds</span>
           </div>
 
-          <label className="flex items-center gap-2.5 text-xs font-semibold text-neutral-700 cursor-pointer border-l border-neutral-200 pl-6">
+          <label className="flex items-center gap-2.5 text-xs font-semibold text-neutral-700 cursor-pointer border-t sm:border-t-0 sm:border-l border-neutral-200 pt-3 sm:pt-0 sm:pl-6 w-full sm:w-auto">
             <input
               type="checkbox"
               checked={mobileAnnouncementEnabled}
@@ -205,15 +205,14 @@ export default function BannersPage() {
             />
             <span className="font-bold text-[#800020]">Show Top Announcement Bar on Mobile View</span>
           </label>
-
-          <div className="w-full flex items-center gap-3 pt-2">
+          <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 pt-2">
             <span className="text-xs font-semibold text-neutral-700 shrink-0">Announcement Text:</span>
             <input
               type="text"
               value={announcementBarText}
               onChange={(e) => setAnnouncementBarText(e.target.value)}
               placeholder="e.g. Festive Sale is Live! Get up to 30% OFF"
-              className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              className="w-full sm:flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900 min-h-[38px]"
             />
           </div>
 
@@ -221,16 +220,15 @@ export default function BannersPage() {
             type="button"
             onClick={handleSaveAutoplaySettings}
             disabled={isSavingSettings}
-            className="ml-auto bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs disabled:opacity-50 transition-all flex items-center gap-2 shadow-sm"
+            className="w-full sm:w-auto sm:ml-auto justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-5 rounded-xl text-xs disabled:opacity-50 transition-all flex items-center gap-2 shadow-sm min-h-[38px]"
           >
             {isSavingSettings ? 'Saving...' : 'Save Settings'}
           </button>
         </div>
       </div>
-
-      <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex items-center gap-4">
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
         <span className="text-xs font-semibold text-neutral-500">Filters:</span>
-        <select value={placement} onChange={(e) => updateQuery('placement', e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs">
+        <select value={placement} onChange={(e) => updateQuery('placement', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium min-h-[38px]">
           <option value="">All Placements</option>
           <option value="HOMEPAGE_HERO">HOMEPAGE HERO</option>
           <option value="PROMO_BANNER">PROMO BANNER</option>
@@ -339,8 +337,8 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-3 sm:p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-4 sm:p-6 shadow-xl border border-neutral-200 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
           <h3 className="text-sm font-bold text-neutral-900">{banner ? 'Edit Banner' : 'Create Banner'}</h3>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600"><X className="h-5 w-5" /></button>

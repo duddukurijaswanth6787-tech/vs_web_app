@@ -72,11 +72,13 @@ export default function OrdersPage() {
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
           </form>
           <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 items-stretch sm:items-center justify-end w-full lg:w-auto">
-            <form onSubmit={(e) => { e.preventDefault(); updateQuery('startDate', localStartDate); updateQuery('endDate', localEndDate); }} className="flex flex-wrap sm:flex-nowrap gap-2 items-center w-full sm:w-auto">
-              <input type="date" value={localStartDate} onChange={(e) => setLocalStartDate(e.target.value)} className="flex-1 sm:flex-none min-w-[120px] bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1.5 text-xs" />
-              <span className="text-neutral-400 text-xs">to</span>
-              <input type="date" value={localEndDate} onChange={(e) => setLocalEndDate(e.target.value)} className="flex-1 sm:flex-none min-w-[120px] bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-1.5 text-xs" />
-              <button type="submit" className="px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0">Apply</button>
+            <form onSubmit={(e) => { e.preventDefault(); updateQuery('startDate', localStartDate); updateQuery('endDate', localEndDate); }} className="flex flex-col sm:flex-row gap-2 items-stretch sm:items-center w-full sm:w-auto">
+              <div className="flex items-center gap-2 w-full sm:w-auto">
+                <input type="date" value={localStartDate} onChange={(e) => setLocalStartDate(e.target.value)} className="flex-1 min-w-0 bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-2 text-xs min-h-[38px]" />
+                <span className="text-neutral-400 text-xs shrink-0">to</span>
+                <input type="date" value={localEndDate} onChange={(e) => setLocalEndDate(e.target.value)} className="flex-1 min-w-0 bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-2 text-xs min-h-[38px]" />
+              </div>
+              <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0 min-h-[38px] flex items-center justify-center">Apply</button>
             </form>
             <select value={status} onChange={(e) => updateQuery('status', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Statuses</option>

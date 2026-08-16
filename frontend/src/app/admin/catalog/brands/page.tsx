@@ -160,14 +160,14 @@ export default function BrandsPage() {
     <>
     <div className="space-y-6">
       {/* Header Panel */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 font-sans tracking-tight">Brands & Manufacturers</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-neutral-900 font-sans tracking-tight">Brands & Manufacturers</h1>
           <p className="text-xs text-neutral-400 mt-1">Configure designer brands, logos, display orders, and landing configurations.</p>
         </div>
         <button
           onClick={resetForm}
-          className="bg-neutral-950 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm"
+          className="w-full sm:w-auto justify-center bg-neutral-950 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm"
         >
           <Plus className="w-4 h-4" /> Add Brand
         </button>
@@ -177,7 +177,7 @@ export default function BrandsPage() {
         {/* Brand Grid/Table view */}
         <div className="lg:col-span-2 rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
           <div className="flex justify-between items-center gap-4">
-            <form onSubmit={handleSearchSubmit} className="relative w-72">
+            <form onSubmit={handleSearchSubmit} className="relative w-full sm:w-72">
               <input
                 type="text"
                 value={localSearch}

@@ -46,18 +46,15 @@ export default function AdminSidebar() {
       >
         {/* Brand / Logo Header */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-100">
-          {!sidebarCollapsed ? (
-            <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase">
-              Vasanthi&apos;s Signature Admin
-            </span>
-          ) : (
-            <span className="text-xs font-black tracking-tighter text-neutral-900">
-              VD
-            </span>
-          )}
+          <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase lg:block hidden">
+            {sidebarCollapsed ? 'VD' : "Vasanthi's Signature Admin"}
+          </span>
+          <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase lg:hidden block">
+            Vasanthi&apos;s Signature Admin
+          </span>
           <button
             onClick={() => setMobileSidebarOpen(false)}
-            className="rounded p-1 text-neutral-500 hover:bg-neutral-100 lg:hidden"
+            className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100 lg:hidden focus:outline-none"
             aria-label="Close mobile sidebar"
           >
             <X className="h-5 w-5" />
@@ -73,11 +70,9 @@ export default function AdminSidebar() {
 
             return (
               <div key={group.group} className="space-y-1.5">
-                {!sidebarCollapsed && (
-                  <h4 className="px-3 text-[10px] font-bold tracking-wider text-neutral-400 uppercase">
-                    {group.group}
-                  </h4>
-                )}
+                <h4 className={`px-3 text-[10px] font-bold tracking-wider text-neutral-400 uppercase ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>
+                  {group.group}
+                </h4>
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
                     const hasMoreSpecificMatch = allNavItems.some(
@@ -105,11 +100,9 @@ export default function AdminSidebar() {
                         `}
                       >
                         <Icon className="h-4 w-4 shrink-0" />
-                        {!sidebarCollapsed && (
-                          <span className="truncate">{item.title}</span>
-                        )}
-                        {!item.implemented && !sidebarCollapsed && (
-                          <span className="ml-auto text-[9px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded uppercase font-semibold">
+                        <span className={`truncate ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>{item.title}</span>
+                        {!item.implemented && (
+                          <span className={`ml-auto text-[9px] bg-neutral-100 text-neutral-500 px-1.5 py-0.5 rounded uppercase font-semibold ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>
                             Phase 2
                           </span>
                         )}
@@ -135,7 +128,7 @@ export default function AdminSidebar() {
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
-            {!sidebarCollapsed && <span>Logout</span>}
+            <span className={sidebarCollapsed ? 'lg:hidden' : 'block'}>Logout</span>
           </button>
           {/* Collapse toggle (desktop only) */}
           <button

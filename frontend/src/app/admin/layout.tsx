@@ -107,7 +107,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               You are offline. Some features may be unavailable.
             </div>
           )}
-          <div className="p-3.5 sm:p-6">
+          <div className="p-3 sm:p-6">
             <div className="mx-auto max-w-7xl space-y-4 sm:space-y-6">
               <ToastProvider>
                 <ErrorBoundary>
