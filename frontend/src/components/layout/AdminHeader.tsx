@@ -46,7 +46,7 @@ export default function AdminHeader() {
       <div className="flex items-center gap-2 min-w-0 flex-1">
         <button
           onClick={toggleMobileSidebar}
-          className="rounded-lg p-1.5 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0"
+          className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
@@ -61,7 +61,7 @@ export default function AdminHeader() {
         {/* Command Palette Trigger */}
         <button
           onClick={openCommandPalette}
-          className="flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-1.5 sm:px-3 sm:py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-2 sm:px-3 sm:py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors min-h-[38px]"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
@@ -76,9 +76,10 @@ export default function AdminHeader() {
         {/* Real-time Health Indicator */}
         <Link
           href="/admin/system/health"
-          className="flex items-center gap-2 rounded-full border border-neutral-100 bg-neutral-50 px-3 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors"
+          className="flex items-center justify-center gap-2 rounded-full border border-neutral-100 bg-neutral-50 p-2 sm:px-3 sm:py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors min-h-[38px]"
+          title={healthIndicator.text}
         >
-          <span className={`h-2 w-2 rounded-full ${healthIndicator.color}`} />
+          <span className={`h-2 w-2 rounded-full shrink-0 ${healthIndicator.color}`} />
           <span className="hidden sm:inline">{healthIndicator.text}</span>
         </Link>
 
@@ -86,7 +87,7 @@ export default function AdminHeader() {
         <div className="relative">
           <button
             onClick={() => setDropdownOpen(!dropdownOpen)}
-            className="flex items-center gap-2 rounded-full border border-neutral-200 p-1.5 hover:bg-neutral-50 transition-colors"
+            className="flex items-center gap-2 rounded-full border border-neutral-200 p-1 hover:bg-neutral-50 transition-colors min-h-[38px]"
             aria-expanded={dropdownOpen}
             aria-label="User menu"
           >

@@ -940,27 +940,27 @@ export default function ProductBuilder({
       <form onSubmit={methods.handleSubmit(handleSubmitForm as never)} className="space-y-8">
         
         {/* TOP STATUS BAR & HEADER */}
-        <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm flex flex-wrap items-center justify-between gap-4">
+        <div className="bg-white rounded-2xl p-4 sm:p-6 border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#800020] flex items-center justify-center border border-rose-100 shadow-2xs font-serif text-xl font-bold">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-rose-50 text-[#800020] flex items-center justify-center border border-rose-100 shadow-2xs font-serif text-lg sm:text-xl font-bold shrink-0">
               ❖
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-xl font-bold font-serif text-neutral-900">
+              <div className="flex flex-wrap items-center gap-2">
+                <h2 className="text-base sm:text-xl font-bold font-serif text-neutral-900">
                   {productId ? 'Edit Catalog Product' : 'Add New E-Commerce Product'}
                 </h2>
-                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full uppercase tracking-wider">
                   Live Sync
                 </span>
               </div>
-              <p className="text-xs text-neutral-500 font-medium">
+              <p className="text-xs text-neutral-500 font-medium hidden sm:block">
                 Configure basic details, pricing, color-wise images & sizes with live customer desktop preview below
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
             {saveMessage && (
               <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-fade-in">
                 {saveMessage}
@@ -971,7 +971,7 @@ export default function ProductBuilder({
               <button
                 type="button"
                 onClick={() => setActiveTab('seo')}
-                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1.5 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors"
+                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors min-h-[38px]"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>
@@ -983,7 +983,7 @@ export default function ProductBuilder({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100"
+              className="w-full sm:w-auto justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100 min-h-[40px]"
             >
               <Save className="w-4 h-4" />
               <span>

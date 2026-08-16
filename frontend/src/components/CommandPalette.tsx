@@ -405,13 +405,13 @@ export default function CommandPalette() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm pt-[20vh]"
+      className="fixed inset-0 z-50 flex items-start justify-center bg-black/50 backdrop-blur-sm p-3 pt-6 sm:p-0 sm:pt-[15vh]"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-label="Command palette"
     >
-      <div className="w-full max-w-2xl rounded-xl border border-neutral-200 bg-white shadow-2xl overflow-hidden">
+      <div className="w-full max-w-2xl rounded-xl border border-neutral-200 bg-white shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
         {/* Search Input */}
         <div className="flex items-center gap-3 border-b border-neutral-200 px-4 py-3">
           <Search className="h-5 w-5 text-neutral-400 shrink-0" />
@@ -446,7 +446,7 @@ export default function CommandPalette() {
         </div>
 
         {/* Results */}
-        <div ref={listRef} className="max-h-[400px] overflow-y-auto">
+        <div ref={listRef} className="max-h-[50vh] sm:max-h-[400px] overflow-y-auto">
           {isLoading && query.length >= 2 && (
             <div className="px-4 py-8 text-center text-sm text-neutral-400">
               Searching...

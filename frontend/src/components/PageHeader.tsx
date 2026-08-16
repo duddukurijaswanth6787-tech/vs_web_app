@@ -15,7 +15,7 @@ export default function PageHeader({ title, description, children }: PageHeaderP
         <h1 className="text-2xl font-bold tracking-tight text-neutral-900">{title}</h1>
         {description && <p className="text-sm text-neutral-500 mt-1">{description}</p>}
       </div>
-      {children && <div className="flex items-center gap-3 shrink-0">{children}</div>}
+      {children && <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 shrink-0">{children}</div>}
     </div>
   );
 }

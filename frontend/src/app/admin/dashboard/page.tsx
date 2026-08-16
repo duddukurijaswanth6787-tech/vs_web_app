@@ -53,15 +53,15 @@ function KpiCard({ title, value, icon: Icon, desc, color, subtitle }: {
   title: string; value: string | number; icon: React.ElementType; desc: string; color: string; subtitle?: string;
 }) {
   return (
-    <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">{title}</span>
-        <div className={`rounded-lg border p-1.5 ${color}`}><Icon className="h-4 w-4" /></div>
+    <div className="rounded-xl border border-neutral-200 bg-white p-3.5 sm:p-5 shadow-sm">
+      <div className="flex items-center justify-between gap-1">
+        <span className="text-[10px] sm:text-xs font-semibold text-neutral-500 uppercase tracking-wider truncate">{title}</span>
+        <div className={`rounded-lg border p-1.5 shrink-0 ${color}`}><Icon className="h-4 w-4" /></div>
       </div>
-      <div className="mt-4">
-        <h3 className="text-2xl font-bold text-neutral-900">{value}</h3>
-        <p className="text-[11px] text-neutral-400 mt-1">{desc}</p>
-        {subtitle && <p className="text-[10px] text-neutral-400 mt-0.5">{subtitle}</p>}
+      <div className="mt-3 sm:mt-4">
+        <h3 className="text-lg sm:text-2xl font-bold text-neutral-900 truncate">{value}</h3>
+        <p className="text-[10px] sm:text-[11px] text-neutral-400 mt-1 truncate">{desc}</p>
+        {subtitle && <p className="text-[9px] sm:text-[10px] text-neutral-400 mt-0.5 truncate">{subtitle}</p>}
       </div>
     </div>
   );
@@ -117,7 +117,7 @@ export default function DashboardPage() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5">
         <KpiCard title="Total Revenue" value={formatCurrency(summary?.totalRevenue ?? 0)} icon={TrendingUp} desc="All time revenue" color="text-emerald-600 bg-emerald-50 border-emerald-100" />
         <KpiCard title="Today Revenue" value={formatCurrency(summary?.todayRevenue ?? 0)} icon={DollarSign} desc="Today's sales" color="text-green-600 bg-green-50 border-green-100" />
         <KpiCard title="Total Orders" value={formatNumber(summary?.totalOrders ?? 0)} icon={ShoppingBag} desc="All orders placed" color="text-blue-600 bg-blue-50 border-blue-100" />

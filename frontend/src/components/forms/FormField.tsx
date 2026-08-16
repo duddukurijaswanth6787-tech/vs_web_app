@@ -27,7 +27,7 @@ export default function FormField({ label, required, error, helperText, children
 export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInputElement>) {
   return (
     <input
-      className={`w-full px-3 py-2 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 ${className}`}
+      className={`w-full px-3 py-2 text-sm sm:text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 min-h-[38px] ${className}`}
       {...props}
     />
   );
@@ -36,7 +36,7 @@ export function Input({ className = '', ...props }: InputHTMLAttributes<HTMLInpu
 export function Select({ className = '', children, ...props }: SelectHTMLAttributes<HTMLSelectElement>) {
   return (
     <select
-      className={`w-full px-3 py-2 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 ${className}`}
+      className={`w-full px-3 py-2 text-sm sm:text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 min-h-[38px] ${className}`}
       {...props}
     >
       {children}
@@ -47,7 +47,7 @@ export function Select({ className = '', children, ...props }: SelectHTMLAttribu
 export function Textarea({ className = '', ...props }: TextareaHTMLAttributes<HTMLTextAreaElement>) {
   return (
     <textarea
-      className={`w-full px-3 py-2 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 resize-y ${className}`}
+      className={`w-full px-3 py-2 text-sm sm:text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 focus:ring-1 focus:ring-neutral-950 bg-white disabled:bg-neutral-50 disabled:text-neutral-400 resize-y min-h-[80px] ${className}`}
       {...props}
     />
   );
@@ -82,7 +82,7 @@ export function Button({ className = '', variant = 'primary', children, ...props
   };
   return (
     <button
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-2 text-xs font-semibold transition-colors disabled:opacity-40 ${variants[variant]} ${className}`}
+      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3.5 py-2 text-xs font-semibold transition-colors disabled:opacity-40 min-h-[38px] active:scale-[0.98] ${variants[variant]} ${className}`}
       {...props}
     >
       {children}

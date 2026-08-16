@@ -77,8 +77,8 @@ export default function CustomersPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Customers</h1>
-        <p className="text-sm text-neutral-500 mt-1">Manage customer profiles and account security boundaries.</p>
+        <h1 className="text-lg sm:text-2xl font-bold tracking-tight text-neutral-900">Customers</h1>
+        <p className="text-xs sm:text-sm text-neutral-500 mt-1">Manage customer profiles and account security boundaries.</p>
       </div>
 
       <div className="grid gap-3 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 bg-white border border-neutral-200 p-3.5 sm:p-4 rounded-xl shadow-sm">
@@ -86,10 +86,10 @@ export default function CustomersPage() {
           <Search className="absolute left-3 top-2.5 h-4 w-4 text-neutral-400" />
           <input type="text" placeholder="Search customers..." value={localSearch}
             onChange={(e) => { setLocalSearch(e.target.value); updateQuery('search', e.target.value); }}
-            className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950" />
+            className="w-full pl-9 pr-3 py-2 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 min-h-[38px]" />
         </div>
         <select value={status} onChange={(e) => updateQuery('status', e.target.value)}
-          className="py-2 px-3 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 bg-white">
+          className="py-2 px-3 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 bg-white min-h-[38px]">
           <option value="">All Statuses</option>
           <option value="ACTIVE">Active</option>
           <option value="INACTIVE">Inactive</option>

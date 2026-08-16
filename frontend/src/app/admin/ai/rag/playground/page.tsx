@@ -144,21 +144,21 @@ export default function RagPlaygroundPage() {
   const agents = agentsData?.data || [];
 
   return (
-    <div className="space-y-6 flex flex-col h-[calc(100vh-140px)]">
+    <div className="space-y-4 sm:space-y-6 flex flex-col min-h-[calc(100vh-140px)]">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-neutral-100 pb-4">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight text-neutral-900 font-sans">RAG Playground</h1>
-          <p className="text-sm text-neutral-500 mt-1">Interact with RAG agents to audit response relevance and tool execution paths.</p>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-neutral-900 font-sans">RAG Playground</h1>
+          <p className="text-xs sm:text-sm text-neutral-500 mt-1">Interact with RAG agents to audit response relevance and tool execution paths.</p>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
           <select
             value={selectedAgentId}
             onChange={(e) => {
               setSelectedAgentId(e.target.value);
               handleClear();
             }}
-            className="py-2 px-3 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 bg-white min-w-[200px]"
+            className="py-2 px-3 text-xs border border-neutral-200 rounded-lg focus:outline-none focus:border-neutral-950 bg-white w-full sm:w-auto min-h-[38px]"
           >
             <option value="">Select Agent...</option>
             {agents.map((agent) => (
@@ -169,7 +169,7 @@ export default function RagPlaygroundPage() {
           </select>
           <button
             onClick={handleClear}
-            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-600 hover:bg-neutral-50"
+            className="inline-flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-white px-3 py-2 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 min-h-[38px] w-full sm:w-auto"
           >
             Clear Conversation
           </button>
@@ -177,9 +177,9 @@ export default function RagPlaygroundPage() {
       </div>
 
       {/* Chat pane grid layout */}
-      <div className="flex-1 grid grid-cols-4 gap-6 min-h-0">
+      <div className="flex-1 grid grid-cols-1 lg:grid-cols-4 gap-4 sm:gap-6 min-h-0">
         {/* Chat message thread */}
-        <div className="col-span-3 rounded-xl border border-neutral-200 bg-white flex flex-col overflow-hidden shadow-sm h-full">
+        <div className="lg:col-span-3 rounded-xl border border-neutral-200 bg-white flex flex-col overflow-hidden shadow-sm h-full">
           <div className="flex-1 p-6 overflow-y-auto space-y-4">
             {messages.length > 0 ? (
               messages.map((msg) => {
