@@ -37,14 +37,14 @@ export class CheckoutService {
     userId: string,
     couponCode: string | undefined,
     subtotal: number,
-  ): Promise<number> {
-    if (!couponCode) return 0;
-    const { discountAmount } = await this.couponService.checkCoupon(
+  ): Promise<{ discountAmount: number; freeShipping: boolean }> {
+    if (!couponCode) return { discountAmount: 0, freeShipping: false };
+    const { discountAmount, freeShipping } = await this.couponService.checkCoupon(
       userId,
       couponCode,
       subtotal,
     );
-    return Math.min(discountAmount, subtotal);
+    return { discountAmount: Math.min(discountAmount, subtotal), freeShipping };
   }
 
   private async validateAddress(addressId: string, userId: string) {
@@ -61,7 +61,12 @@ export class CheckoutService {
     return { profile, address };
   }
 
-  private calculateShipping(method: string, subtotal: number): number {
+  private calculateShipping(
+    method: string,
+    subtotal: number,
+    freeShipping = false,
+  ): number {
+    if (freeShipping) return 0;
     if (method === 'STANDARD' && subtotal >= 500) return 0;
     return SHIPPING_RATES[method] ?? SHIPPING_RATES.STANDARD;
   }
@@ -125,13 +130,14 @@ export class CheckoutService {
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
-    const discountTotal = await this.resolveDiscount(
-      userId,
-      dto.couponCode,
-      subtotal,
-    );
+    const { discountAmount: discountTotal, freeShipping } =
+      await this.resolveDiscount(userId, dto.couponCode, subtotal);
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
-    const shippingCharge = this.calculateShipping(method, subtotal);
+    const shippingCharge = this.calculateShipping(
+      method,
+      subtotal,
+      freeShipping,
+    );
     const grandTotal = subtotal - discountTotal + taxTotal + shippingCharge;
 
     return {
@@ -161,13 +167,14 @@ export class CheckoutService {
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
-    const discountTotal = await this.resolveDiscount(
-      userId,
-      dto.couponCode,
-      subtotal,
-    );
+    const { discountAmount: discountTotal, freeShipping } =
+      await this.resolveDiscount(userId, dto.couponCode, subtotal);
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
-    const shippingCharge = this.calculateShipping(method, subtotal);
+    const shippingCharge = this.calculateShipping(
+      method,
+      subtotal,
+      freeShipping,
+    );
     const grandTotal = subtotal - discountTotal + taxTotal + shippingCharge;
 
     const orderNumber = await this.workflow.generateOrderNumber();
@@ -232,7 +239,7 @@ export class CheckoutService {
     await this.workflow.reserveInventory(order.id);
     await this.cartService.clearCart(userId, undefined);
 
-    if (dto.couponCode && discountTotal > 0) {
+    if (dto.couponCode && (discountTotal > 0 || freeShipping)) {
       await this.couponService.applyCoupon(userId, {
         code: dto.couponCode,
         orderId: order.id,

@@ -368,7 +368,7 @@ async function main() {
       code: 'FLAT500',
       name: 'Flat ₹500 Savings',
       description: 'Flat ₹500 discount on orders over ₹4,000.',
-      type: 'FIXED',
+      type: 'FLAT',
       value: 500,
       minOrderAmount: 4000,
       startDate: now,
@@ -431,7 +431,7 @@ async function main() {
     {
       name: 'Bridal Season Special',
       description: 'Complimentary matching dupatta & flat ₹2,000 OFF on all bridal lehengas.',
-      type: 'FIXED',
+      type: 'FESTIVAL',
       value: 2000,
       startDate: now,
       endDate: nextYear,

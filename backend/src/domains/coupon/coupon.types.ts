@@ -148,6 +148,8 @@ export class CouponResponse {
   @ApiPropertyOptional() usageLimit?: number;
   @ApiProperty() perCustomerLimit!: number;
   @ApiProperty() usedCount!: number;
+  @ApiPropertyOptional() applicableTo?: string;
+  @ApiPropertyOptional({ type: [String] }) applicableIds?: string[];
   @ApiProperty() startDate!: Date;
   @ApiProperty() endDate!: Date;
   @ApiProperty() isActive!: boolean;
@@ -158,6 +160,7 @@ export class CouponApplyResponse {
   @ApiProperty() couponId!: string;
   @ApiProperty() code!: string;
   @ApiProperty() discountAmount!: number;
+  @ApiProperty() freeShipping!: boolean;
   @ApiProperty() message!: string;
 }
 

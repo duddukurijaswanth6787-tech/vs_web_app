@@ -35,6 +35,8 @@ export class CouponService {
       usageLimit: c.usageLimit ?? undefined,
       perCustomerLimit: c.perCustomerLimit,
       usedCount: c.usedCount,
+      applicableTo: c.applicableTo ?? undefined,
+      applicableIds: c.applicableIds ?? undefined,
       startDate: c.startDate,
       endDate: c.endDate,
       isActive: c.isActive,
@@ -62,6 +64,11 @@ export class CouponService {
     const coupon = await this.couponRepository.findById(id);
     if (!coupon) throw new BusinessException('Coupon not found', 'COUPON_001');
     return this.toResponse(coupon);
+  }
+
+  async getActiveCoupons() {
+    const coupons = await this.couponRepository.findActiveCoupons();
+    return coupons.map((c) => this.toResponse(c));
   }
 
   async create(userId: string, dto: CreateCouponDto) {
@@ -131,7 +138,9 @@ export class CouponService {
    * call repeatedly for cart/checkout preview.
    */
   async checkCoupon(userId: string, code: string, orderAmount: number) {
-    const coupon = await this.couponRepository.findByCode(code);
+    const coupon = await this.couponRepository.findByCode(
+      code.trim().toUpperCase(),
+    );
     if (!coupon) throw new BusinessException('Coupon not found', 'COUPON_001');
     if (!coupon.isActive)
       throw new BusinessException('Coupon is inactive', 'COUPON_003');
@@ -165,8 +174,9 @@ export class CouponService {
       );
     }
 
-    let discountAmount: number;
-    if (coupon.type === CouponType.FREE_SHIPPING) {
+    let discountAmount = 0;
+    const freeShipping = coupon.type === CouponType.FREE_SHIPPING;
+    if (freeShipping) {
       discountAmount = 0;
     } else if (coupon.type === CouponType.FLAT) {
       discountAmount = Number(coupon.value);
@@ -180,11 +190,11 @@ export class CouponService {
       }
     }
 
-    return { coupon, discountAmount };
+    return { coupon, discountAmount, freeShipping };
   }
 
   async validateCoupon(userId: string, dto: ValidateCouponDto) {
-    const { coupon, discountAmount } = await this.checkCoupon(
+    const { coupon, discountAmount, freeShipping } = await this.checkCoupon(
       userId,
       dto.code,
       dto.orderAmount,
@@ -193,6 +203,7 @@ export class CouponService {
       couponId: coupon.id,
       code: coupon.code,
       discountAmount,
+      freeShipping,
       message: 'Coupon is valid',
     };
   }
@@ -201,7 +212,7 @@ export class CouponService {
     userId: string,
     dto: ApplyCouponDto,
   ): Promise<CouponApplyResponse> {
-    const { coupon, discountAmount } = await this.checkCoupon(
+    const { coupon, discountAmount, freeShipping } = await this.checkCoupon(
       userId,
       dto.code,
       dto.orderAmount,
@@ -230,6 +241,7 @@ export class CouponService {
       couponId: coupon.id,
       code: coupon.code,
       discountAmount,
+      freeShipping,
       message: 'Coupon applied successfully',
     };
   }

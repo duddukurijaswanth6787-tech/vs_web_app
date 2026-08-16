@@ -33,6 +33,7 @@ import {
   useWishlistMutations,
   useCustomerProducts,
   useProductReviews,
+  useActiveCoupons,
 } from '@/features/customer/hooks';
 import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import dynamic from 'next/dynamic';
@@ -172,6 +173,29 @@ export function ProductDetailClient() {
   const price = matchingVariant?.salePriceOverride ?? matchingVariant?.priceOverride ?? product?.salePrice ?? product?.basePrice ?? 0;
   const original = matchingVariant?.priceOverride ?? product?.basePrice ?? 0;
   const discount = discountLabel(original, matchingVariant?.salePriceOverride ?? product?.salePrice);
+
+  // Real, currently-active coupons — never invent codes that don't exist.
+  const { data: activeCouponsData } = useActiveCoupons();
+  const pdpOffers = useMemo(() => {
+    const list = Array.isArray(activeCouponsData) ? activeCouponsData : [];
+    return list.slice(0, 2).map((c) => {
+      const coupon = c as Record<string, unknown>;
+      const type = String(coupon.type || '');
+      const value = coupon.value;
+      const label =
+        type === 'PERCENTAGE'
+          ? `${value}% OFF`
+          : type === 'FREE_SHIPPING'
+            ? 'Free Shipping'
+            : `Flat ₹${value} OFF`;
+      const minOrder = coupon.minOrderAmount ? Number(coupon.minOrderAmount) : undefined;
+      return {
+        code: String(coupon.code || ''),
+        label,
+        detail: minOrder ? `Min purchase ₹${minOrder}.` : 'On all orders.',
+      };
+    });
+  }, [activeCouponsData]);
 
   // Simulated dynamic stock
   const stockText = useMemo(() => {
@@ -527,28 +551,25 @@ export function ProductDetailClient() {
                   {product.shortDescription || 'Elegant floral printed rayon Anarkali kurta set with matching bottom and dupatta. Perfect for festive and casual occasions.'}
                 </p>
 
-                {/* OFFERS FOR YOU section */}
-                <div className="hidden md:block border border-dashed border-neutral-200 bg-white rounded-2xl p-4 space-y-3.5 shadow-2xs">
-                  <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2.5">
-                    <div className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-neutral-800">Flat ₹300 OFF</p>
-                        <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">VASANTHI300</span> on checkout.</p>
-                      </div>
-                      <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
-                    </div>
-                    <div className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-neutral-800">10% Instant Bank Discount</p>
-                        <p className="text-[9px] text-neutral-400 font-semibold">On SBI Credit Cards. Min purchase ₹2,999.</p>
-                      </div>
-                      <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
+                {/* OFFERS FOR YOU section — real active coupons only */}
+                {pdpOffers.length > 0 && (
+                  <div className="hidden md:block border border-dashed border-neutral-200 bg-white rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                    <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
+                    </h3>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {pdpOffers.map((o) => (
+                        <div key={o.code} className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-bold text-neutral-800">{o.label}</p>
+                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">{o.code}</span> — {o.detail}</p>
+                          </div>
+                          <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
 
                 {/* SELECT COLOR section */}
                 {availableColors.length > 0 && (
@@ -743,28 +764,25 @@ export function ProductDetailClient() {
                   </div>
                 </div>
 
-                {/* OFFERS FOR YOU section (Mobile layout: under Service Icons Grid) */}
-                <div className="md:hidden mt-5 border border-dashed border-neutral-200 bg-white rounded-2xl p-4 space-y-3.5 shadow-2xs">
-                  <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
-                  </h3>
-                  <div className="grid grid-cols-1 gap-2.5">
-                    <div className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-neutral-800">Flat ₹300 OFF</p>
-                        <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">VASANTHI300</span> on checkout.</p>
-                      </div>
-                      <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
-                    </div>
-                    <div className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
-                      <div className="space-y-0.5">
-                        <p className="text-xs font-bold text-neutral-800">10% Instant Bank Discount</p>
-                        <p className="text-[9px] text-neutral-400 font-semibold">On SBI Credit Cards. Min purchase ₹2,999.</p>
-                      </div>
-                      <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
+                {/* OFFERS FOR YOU section (Mobile layout: under Service Icons Grid) — real active coupons only */}
+                {pdpOffers.length > 0 && (
+                  <div className="md:hidden mt-5 border border-dashed border-neutral-200 bg-white rounded-2xl p-4 space-y-3.5 shadow-2xs">
+                    <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
+                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
+                    </h3>
+                    <div className="grid grid-cols-1 gap-2.5">
+                      {pdpOffers.map((o) => (
+                        <div key={o.code} className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
+                          <div className="space-y-0.5">
+                            <p className="text-xs font-bold text-neutral-800">{o.label}</p>
+                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">{o.code}</span> — {o.detail}</p>
+                          </div>
+                          <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                </div>
+                )}
 
               </div>
             </div>

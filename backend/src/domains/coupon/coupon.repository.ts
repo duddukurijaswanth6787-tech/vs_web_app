@@ -55,6 +55,19 @@ export class CouponRepository {
     return this.prisma.coupon.findUnique({ where: { code } });
   }
 
+  async findActiveCoupons() {
+    const now = new Date();
+    return this.prisma.coupon.findMany({
+      where: {
+        isActive: true,
+        deletedAt: null,
+        startDate: { lte: now },
+        endDate: { gte: now },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
   async create(data: Prisma.CouponCreateInput) {
     return this.prisma.coupon.create({ data });
   }
