@@ -132,12 +132,51 @@ export class CouponService {
     return this.toResponse(updated);
   }
 
+  private isItemApplicable(
+    item: { productId: string; categoryId?: string; brandId?: string },
+    coupon: { applicableTo?: string | null; applicableIds?: string[] },
+  ): boolean {
+    if (!coupon.applicableTo) return true;
+    const ids: string[] = coupon.applicableIds ?? [];
+    if (!ids.length) return true;
+    switch (coupon.applicableTo) {
+      case 'PRODUCT':
+      case 'PRODUCTS':
+        return ids.includes(item.productId);
+      case 'CATEGORY':
+      case 'CATEGORIES':
+        return !!item.categoryId && ids.includes(item.categoryId);
+      case 'BRAND':
+      case 'BRANDS':
+        return !!item.brandId && ids.includes(item.brandId);
+      default:
+        return true;
+    }
+  }
+
   /**
    * Validates a coupon against a customer + order amount and returns the
    * discount that would apply. Read-only — no usage is recorded, safe to
    * call repeatedly for cart/checkout preview.
+   *
+   * `items`, when passed, lets a coupon scoped to specific products/
+   * categories/brands (applicableTo + applicableIds) discount only the
+   * matching portion of the cart instead of the full order amount. A
+   * scoped coupon with no matching items in the cart is rejected rather
+   * than silently discounting everything.
    */
-  async checkCoupon(userId: string, code: string, orderAmount: number) {
+  async checkCoupon(
+    userId: string,
+    code: string,
+    orderAmount: number,
+    items: {
+      productId: string;
+      categoryId?: string;
+      brandId?: string;
+      price: number;
+      quantity: number;
+    }[] = [],
+  ) {
     const coupon = await this.couponRepository.findByCode(
       code.trim().toUpperCase(),
     );
@@ -167,7 +206,23 @@ export class CouponService {
         'COUPON_007',
       );
 
-    if (coupon.minOrderAmount && orderAmount < Number(coupon.minOrderAmount)) {
+    let applicableAmount = orderAmount;
+    if (coupon.applicableTo) {
+      applicableAmount = items
+        .filter((item) => this.isItemApplicable(item, coupon))
+        .reduce((sum, item) => sum + item.price * item.quantity, 0);
+      if (applicableAmount <= 0) {
+        throw new BusinessException(
+          'This coupon does not apply to any items in your cart',
+          'COUPON_009',
+        );
+      }
+    }
+
+    if (
+      coupon.minOrderAmount &&
+      applicableAmount < Number(coupon.minOrderAmount)
+    ) {
       throw new BusinessException(
         'Order amount does not meet minimum requirement',
         'COUPON_008',
@@ -181,7 +236,7 @@ export class CouponService {
     } else if (coupon.type === CouponType.FLAT) {
       discountAmount = Number(coupon.value);
     } else {
-      discountAmount = (orderAmount * Number(coupon.value)) / 100;
+      discountAmount = (applicableAmount * Number(coupon.value)) / 100;
       if (coupon.maxDiscountAmount) {
         discountAmount = Math.min(
           discountAmount,
@@ -198,6 +253,7 @@ export class CouponService {
       userId,
       dto.code,
       dto.orderAmount,
+      dto.items,
     );
     return {
       couponId: coupon.id,
@@ -216,6 +272,7 @@ export class CouponService {
       userId,
       dto.code,
       dto.orderAmount,
+      dto.items,
     );
 
     await this.couponRepository.createUsage({

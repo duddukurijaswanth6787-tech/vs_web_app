@@ -99,15 +99,31 @@ export class UpdateCouponDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
 }
 
+export class CouponItemDto {
+  @ApiProperty() @IsString() productId!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() categoryId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() brandId?: string;
+  @ApiProperty() @IsNumber() @Type(() => Number) price!: number;
+  @ApiProperty() @IsInt() @Type(() => Number) quantity!: number;
+}
+
 export class ApplyCouponDto {
   @ApiProperty() @IsString() code!: string;
   @ApiProperty() @IsString() orderId!: string;
   @ApiProperty() @IsNumber() @Type(() => Number) orderAmount!: number;
+  @ApiPropertyOptional({ type: [CouponItemDto] })
+  @IsOptional()
+  @IsArray()
+  items?: CouponItemDto[];
 }
 
 export class ValidateCouponDto {
   @ApiProperty() @IsString() code!: string;
   @ApiProperty() @IsNumber() @Type(() => Number) orderAmount!: number;
+  @ApiPropertyOptional({ type: [CouponItemDto] })
+  @IsOptional()
+  @IsArray()
+  items?: CouponItemDto[];
 }
 
 export class CouponQueryDto {

@@ -63,6 +63,8 @@ export interface CouponResponse {
   usageLimit?: number;
   perCustomerLimit: number;
   usedCount: number;
+  applicableTo?: string;
+  applicableIds?: string[];
   startDate: string;
   endDate: string;
   isActive: boolean;
