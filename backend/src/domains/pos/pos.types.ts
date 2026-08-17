@@ -335,4 +335,11 @@ export class PreviewReceiptDto {
   @IsOptional()
   @IsString()
   cashierName?: string;
+
+  @ApiPropertyOptional({
+    description: 'Payment gateway transaction/reference ID, if this sale went through one (e.g. UPI/card). Omitted for cash sales.',
+  })
+  @IsOptional()
+  @IsString()
+  transactionId?: string;
 }

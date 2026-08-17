@@ -357,8 +357,8 @@ export class PosService {
   }
 
   async previewReceipt(dto: PreviewReceiptDto) {
-    const html = this.printerService.generateHtmlInvoiceReceipt(dto);
-    const escposBuffer = this.printerService.buildEscPosInvoiceReceipt(dto);
+    const html = await this.printerService.generateHtmlInvoiceReceipt(dto);
+    const escposBuffer = await this.printerService.buildEscPosInvoiceReceipt(dto);
     return {
       orderNumber: dto.orderNumber,
       html,

@@ -1,19 +1,30 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { PrinterService } from './printer.service';
+import { BarcodeService } from './barcode.service';
+import { PrismaService } from '@database/prisma.service';
 
 describe('PrinterService (Phase 2)', () => {
   let service: PrinterService;
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [PrinterService],
+      providers: [
+        PrinterService,
+        BarcodeService,
+        {
+          provide: PrismaService,
+          useValue: {
+            websiteSetting: { findFirst: jest.fn().mockResolvedValue(null) },
+          },
+        },
+      ],
     }).compile();
 
     service = module.get<PrinterService>(PrinterService);
   });
 
-  it('should generate thermal receipt HTML', () => {
-    const html = service.generateHtmlInvoiceReceipt({
+  it('should generate thermal receipt HTML', async () => {
+    const html = await service.generateHtmlInvoiceReceipt({
       orderNumber: 'ORD-20260811-POS101',
       grandTotal: 1468,
       items: [
@@ -30,14 +41,15 @@ describe('PrinterService (Phase 2)', () => {
     });
 
     expect(html).toContain('ORD-20260811-POS101');
-    expect(html).toContain("VASANTHI'S SIGNATURE");
+    expect(html).toContain("VASANTHI'S");
+    expect(html).toContain('SIGNATURE');
     expect(html).toContain('Anjali');
-    expect(html).toContain('₹1468');
+    expect(html).toContain('₹1468.00');
     expect(html).toContain('UPI');
   });
 
-  it('should generate ESC/POS binary buffer for thermal receipt', () => {
-    const escposBuffer = service.buildEscPosInvoiceReceipt({
+  it('should generate ESC/POS binary buffer for thermal receipt', async () => {
+    const escposBuffer = await service.buildEscPosInvoiceReceipt({
       orderNumber: 'ORD-20260811-POS101',
       grandTotal: 1468,
       items: [

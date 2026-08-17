@@ -137,6 +137,7 @@ export interface PreviewReceiptPayload {
   discountTotal?: number;
   taxTotal?: number;
   cashierName?: string;
+  transactionId?: string;
 }
 
 export interface PreviewReceiptResponse {
