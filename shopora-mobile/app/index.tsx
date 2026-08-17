@@ -15,16 +15,31 @@ import {
   Barcode,
   AlertTriangle,
   ChevronRight,
+  LogIn,
+  LogOut,
 } from 'lucide-react-native';
-import { dashboardService, DashboardSummary } from '../services/api';
+import {
+  dashboardService,
+  DashboardSummary,
+  isAuthenticated,
+  getCurrentUser,
+  authService,
+} from '../services/api';
 
 export default function ShoporaHomeScreen() {
   const router = useRouter();
 
   const [summary, setSummary] = useState<DashboardSummary | null>(null);
   const [refreshing, setRefreshing] = useState(false);
+  const [authed, setAuthed] = useState(false);
 
   const loadSummary = useCallback(async () => {
+    const signedIn = isAuthenticated();
+    setAuthed(signedIn);
+    if (!signedIn) {
+      setSummary(null);
+      return;
+    }
     try {
       const data = await dashboardService.getSummary();
       setSummary(data);
@@ -43,9 +58,16 @@ export default function ShoporaHomeScreen() {
     setRefreshing(false);
   }, [loadSummary]);
 
+  const handleSignOut = () => {
+    authService.logout();
+    setAuthed(false);
+    setSummary(null);
+  };
+
   const todaySales = summary ? `₹${summary.todayRevenue.toLocaleString('en-IN')}` : '—';
   const itemsSold = summary ? `${summary.todayItemsSold} Pcs` : '—';
   const lowStockCount = summary?.lowStockCount ?? 0;
+  const currentUser = getCurrentUser();
 
   return (
     <ScrollView
@@ -65,7 +87,26 @@ export default function ShoporaHomeScreen() {
             <Text style={styles.storeName}>Vasanthi's Signature</Text>
             <Text style={styles.storeTagline}>Shopora Retail & Inventory System</Text>
           </View>
+          {authed ? (
+            <TouchableOpacity style={styles.authBtn} onPress={handleSignOut} activeOpacity={0.8}>
+              <LogOut size={14} color="#0284c7" />
+              <Text style={styles.authBtnText} numberOfLines={1}>{currentUser?.email || 'Sign Out'}</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity
+              style={[styles.authBtn, styles.authBtnActive]}
+              onPress={() => router.push('/login?redirect=/')}
+              activeOpacity={0.8}
+            >
+              <LogIn size={14} color="#ffffff" />
+              <Text style={[styles.authBtnText, styles.authBtnTextActive]}>Sign In</Text>
+            </TouchableOpacity>
+          )}
         </View>
+
+        {!authed && (
+          <Text style={styles.signInHint}>Sign in to see today's sales & stock stats.</Text>
+        )}
 
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
@@ -211,6 +252,36 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#64748b',
     marginTop: 2,
+  },
+  authBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 10,
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    maxWidth: 130,
+  },
+  authBtnActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
+  },
+  authBtnText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0284c7',
+    marginLeft: 5,
+  },
+  authBtnTextActive: {
+    color: '#ffffff',
+  },
+  signInHint: {
+    fontSize: 11,
+    color: '#ca8a04',
+    marginBottom: 8,
+    marginTop: -4,
   },
   statsRow: {
     flexDirection: 'row',
