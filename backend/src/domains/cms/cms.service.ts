@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { LoggerService } from '@common/logger/logger.service';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
+import { StorageService } from '@infrastructure/storage/storage.service';
 import { CmsRepository } from './cms.repository';
 import {
   CreateBannerDto,
@@ -22,6 +23,7 @@ export class CmsService {
     private readonly cmsRepository: CmsRepository,
     private readonly auditService: AuditService,
     private readonly loggerService: LoggerService,
+    private readonly storageService: StorageService,
   ) {}
 
   private toBannerResponse(b: any): BannerResponse {
@@ -96,8 +98,8 @@ export class CmsService {
     const banner = await this.cmsRepository.createBanner({
       title: bannerInput.title,
       description: bannerInput.description,
-      imageUrl: bannerInput.imageUrl,
-      mobileImageUrl: bannerInput.mobileImageUrl,
+      imageUrl: this.storageService.sanitizeUrl(bannerInput.imageUrl),
+      mobileImageUrl: this.storageService.sanitizeUrl(bannerInput.mobileImageUrl),
       linkUrl: bannerInput.linkUrl,
       placement: bannerInput.placement,
       displayOrder: bannerInput.displayOrder ?? 0,
@@ -130,6 +132,8 @@ export class CmsService {
     if (!banner || banner.deletedAt)
       throw new BusinessException('Banner not found', 'BANNER_001');
     const updateData: any = { ...dto, updatedBy: userId };
+    if (dto.imageUrl) updateData.imageUrl = this.storageService.sanitizeUrl(dto.imageUrl);
+    if (dto.mobileImageUrl) updateData.mobileImageUrl = this.storageService.sanitizeUrl(dto.mobileImageUrl);
     if (dto.startDate) updateData.startDate = new Date(dto.startDate);
     if (dto.endDate) updateData.endDate = new Date(dto.endDate);
     await this.cmsRepository.updateBanner(id, updateData);

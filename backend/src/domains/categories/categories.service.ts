@@ -3,6 +3,7 @@ import { LoggerService } from '@common/logger/logger.service';
 import { BusinessException } from '@common/exceptions';
 import { SlugGenerator } from '@shared/commerce/commerce.utils';
 import { AuditService } from '@domains/audit/audit.service';
+import { StorageService } from '@infrastructure/storage/storage.service';
 import { CategoriesRepository } from './categories.repository';
 import {
   CreateCategoryDto,
@@ -20,6 +21,7 @@ export class CategoriesService {
     private readonly categoriesRepository: CategoriesRepository,
     private readonly auditService: AuditService,
     private readonly loggerService: LoggerService,
+    private readonly storageService: StorageService,
   ) {}
 
   private toResponse(cat: any): CategoryResponse {
@@ -164,9 +166,9 @@ export class CategoriesService {
       name: dto.name,
       slug,
       description: dto.description,
-      icon: dto.icon,
-      image: dto.image,
-      bannerImage: dto.bannerImage,
+      icon: this.storageService.sanitizeUrl(dto.icon),
+      image: this.storageService.sanitizeUrl(dto.image),
+      bannerImage: this.storageService.sanitizeUrl(dto.bannerImage),
       parentId: dto.parentId,
       level,
       displayOrder: dto.displayOrder ?? 0,
@@ -211,6 +213,9 @@ export class CategoriesService {
         id,
       );
     }
+    if (dto.icon) updateData.icon = this.storageService.sanitizeUrl(dto.icon);
+    if (dto.image) updateData.image = this.storageService.sanitizeUrl(dto.image);
+    if (dto.bannerImage) updateData.bannerImage = this.storageService.sanitizeUrl(dto.bannerImage);
 
     await this.categoriesRepository.update(id, updateData);
 
