@@ -17,6 +17,8 @@ import {
   inventoryService,
   barcodeService,
   getApiErrorMessage,
+  LabelSize,
+  LABEL_SIZE_OPTIONS,
 } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 
@@ -38,6 +40,7 @@ export default function MobileAddStockScreen() {
   const [quantityReceived, setQuantityReceived] = useState('15');
   const [supplier, setSupplier] = useState('ABC Textiles');
   const [printLabels, setPrintLabels] = useState(true);
+  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
   const [loading, setLoading] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
@@ -109,6 +112,7 @@ export default function MobileAddStockScreen() {
             barcode: selectedVariant.barcode ?? barcodeInput.trim(),
             price: Number(selectedVariant.price ?? 0),
             quantity: qty,
+            labelSize,
           })
           .then((label) => Share.share({ title: `Labels — ${selectedVariant.sku}`, message: label.tspl || label.html }))
           .catch(() => null);
@@ -240,13 +244,32 @@ export default function MobileAddStockScreen() {
           <View style={{ flex: 1, marginLeft: 10 }}>
             <Text style={styles.checkboxTitle}>Print Barcode Sticker Labels</Text>
             <Text style={styles.checkboxSub}>
-              Generate {quantityReceived || 0} stickers (50mm × 25mm) for received pieces.
+              Generate {quantityReceived || 0} stickers for received pieces.
             </Text>
           </View>
           <View style={[styles.checkboxCircle, printLabels && styles.checkboxCircleActive]}>
             {printLabels && <Check size={12} color="#ffffff" />}
           </View>
         </TouchableOpacity>
+
+        {printLabels && (
+          <View style={styles.labelSizeRow}>
+            {LABEL_SIZE_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.value}
+                style={[styles.labelSizeChip, labelSize === opt.value && styles.labelSizeChipActive]}
+                onPress={() => setLabelSize(opt.value)}
+              >
+                <Text style={[styles.labelSizeChipTitle, labelSize === opt.value && styles.labelSizeChipTitleActive]}>
+                  {opt.title}
+                </Text>
+                <Text style={[styles.labelSizeChipDim, labelSize === opt.value && styles.labelSizeChipDimActive]}>
+                  {opt.dimensions}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </View>
+        )}
       </View>
 
       <TouchableOpacity
@@ -474,6 +497,41 @@ const styles = StyleSheet.create({
   },
   checkboxCircleActive: {
     backgroundColor: '#0284c7',
+  },
+  labelSizeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 10,
+  },
+  labelSizeChip: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    alignItems: 'center',
+  },
+  labelSizeChipActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
+  },
+  labelSizeChipTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  labelSizeChipTitleActive: {
+    color: '#ffffff',
+  },
+  labelSizeChipDim: {
+    fontSize: 9,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  labelSizeChipDimActive: {
+    color: '#e0f2fe',
   },
   saveBtn: {
     backgroundColor: '#0284c7',

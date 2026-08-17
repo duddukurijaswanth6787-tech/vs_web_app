@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import { Printer, CheckCircle2, QrCode } from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
+import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 
 export default function PrintersConfigPage() {
   const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS'>('BROWSER');
   const [paperWidth, setPaperWidth] = useState<'80MM' | '58MM'>('80MM');
+  const [testLabelSize, setTestLabelSize] = useState<LabelSize>('SMALL');
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
   const previewReceiptMutation = usePreviewReceipt();
@@ -54,6 +56,7 @@ export default function PrintersConfigPage() {
         price: 699,
         quantity: 2,
         storeName: 'VASANTHI DESIGNERS',
+        labelSize: testLabelSize,
       },
       {
         onSuccess: (res) => {
@@ -67,7 +70,9 @@ export default function PrintersConfigPage() {
               printWindow.close();
             }, 250);
           }
-          setTestSuccessMessage('Test barcode sticker labels (2 copies) sent to printer!');
+          setTestSuccessMessage(
+            `Test ${LABEL_SIZE_OPTIONS.find((o) => o.value === testLabelSize)?.title.toLowerCase()} barcode sticker labels (2 copies) sent to printer!`,
+          );
         },
       },
     );
@@ -179,23 +184,45 @@ export default function PrintersConfigPage() {
             Hardware Diagnostics & Test Print
           </h2>
 
-          <div className="flex flex-col sm:flex-row gap-3">
-            <button
-              onClick={handleTestPrintReceipt}
-              disabled={previewReceiptMutation.isPending}
-              className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
-            >
-              <Printer className="w-4 h-4" />
-              <span>Test Print Thermal Invoice Receipt</span>
-            </button>
+          <button
+            onClick={handleTestPrintReceipt}
+            disabled={previewReceiptMutation.isPending}
+            className="w-full bg-[#800020] hover:bg-[#600018] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Test Print Thermal Invoice Receipt</span>
+          </button>
 
+          <div className="border-t border-neutral-100 pt-4 space-y-3">
+            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Barcode Label Size</span>
+            <div className="grid grid-cols-3 gap-2">
+              {LABEL_SIZE_OPTIONS.map((opt) => (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => setTestLabelSize(opt.value)}
+                  className={`text-left p-2.5 rounded-lg border transition-all ${
+                    testLabelSize === opt.value
+                      ? 'bg-amber-600 border-amber-600 text-white'
+                      : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                  }`}
+                >
+                  <div className="text-[11px] font-bold">{opt.title}</div>
+                  <div className={`text-[10px] ${testLabelSize === opt.value ? 'text-amber-100' : 'text-neutral-500'}`}>
+                    {opt.dimensions}
+                  </div>
+                </button>
+              ))}
+            </div>
             <button
               onClick={handleTestPrintLabel}
               disabled={batchStickersMutation.isPending}
-              className="flex-1 bg-amber-600 hover:bg-amber-700 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+              className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
             >
               <QrCode className="w-4 h-4" />
-              <span>Test Print 50x25mm Barcode Stickers</span>
+              <span>
+                Test Print {LABEL_SIZE_OPTIONS.find((o) => o.value === testLabelSize)?.dimensions} Barcode Stickers
+              </span>
             </button>
           </div>
         </div>

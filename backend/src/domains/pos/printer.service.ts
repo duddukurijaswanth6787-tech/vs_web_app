@@ -225,12 +225,54 @@ export class PrinterService {
     return Buffer.from(commands);
   }
 
+  /**
+   * TSPL is the raw command language most TSC/Zebra-compatible thermal label
+   * printers speak. Coordinates are in dots at the printer's native 8
+   * dots/mm resolution, so each size's numbers are just its mm dimensions
+   * scaled by 8 -- keep that in mind if a printer's actual DPI differs.
+   * Not verified against real hardware; test a single label before printing
+   * a batch on a new printer/size.
+   */
   buildTsplStickerLabel(dto: GenerateBatchStickersDto): string {
     const store = dto.storeName || 'VASANTHI DESIGNERS';
     const title = dto.variantTitle
       ? `${dto.productName} (${dto.variantTitle})`
       : dto.productName;
+    const labelSize = dto.labelSize || 'SMALL';
 
+    if (labelSize === 'MEDIUM') {
+      return `
+SIZE 75 mm, 40 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 300,20,"3.fmt",0,1,1,2,"${store}"
+TEXT 300,50,"2.fmt",0,1,1,2,"${title}"
+BARCODE 60,90,"128",60,1,0,2,2,"${dto.barcode}"
+QRCODE 470,85,"M",4,"A",0,"${dto.barcode}"
+TEXT 60,260,"2.fmt",0,1,1,1,"SKU: ${dto.sku}"
+TEXT 400,260,"3.fmt",0,1,1,2,"Rs.${dto.price}"
+PRINT 1,${dto.quantity}
+      `.trim();
+    }
+
+    if (labelSize === 'LARGE') {
+      return `
+SIZE 100 mm, 50 mm
+GAP 2 mm, 0 mm
+DIRECTION 1
+CLS
+TEXT 400,20,"3.fmt",0,1,1,2,"${store}"
+TEXT 400,55,"2.fmt",0,1,1,2,"${title}"
+BARCODE 60,110,"128",80,1,0,2,2,"${dto.barcode}"
+QRCODE 600,95,"M",6,"A",0,"${dto.barcode}"
+TEXT 60,300,"2.fmt",0,1,1,1,"SKU: ${dto.sku}"
+TEXT 550,320,"3.fmt",0,1,1,2,"Rs.${dto.price}"
+PRINT 1,${dto.quantity}
+      `.trim();
+    }
+
+    // SMALL (default) -- original 50x25mm layout.
     return `
 SIZE 50 mm, 25 mm
 GAP 2 mm, 0 mm

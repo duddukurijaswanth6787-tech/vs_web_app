@@ -13,7 +13,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Printer, Check, ArrowRight, Package, AlertCircle, Copy } from 'lucide-react-native';
-import { barcodeService, getApiErrorMessage, type CreatedVariant } from '../services/api';
+import { barcodeService, getApiErrorMessage, type CreatedVariant, type LabelSize, LABEL_SIZE_OPTIONS } from '../services/api';
 import { getLastCreatedProduct, clearLastCreatedProduct } from '../services/product-draft';
 
 /**
@@ -31,6 +31,7 @@ export default function LabelPreviewScreen() {
 
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [printingId, setPrintingId] = useState<string | null>(null);
+  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
 
   if (!product) {
     return (
@@ -65,6 +66,7 @@ export default function LabelPreviewScreen() {
         barcode: variant.barcode,
         price: labelPrice,
         quantity: quantityFor(variant),
+        labelSize,
       });
 
       // No print module ships with this app, so the generated label is shared
@@ -106,6 +108,24 @@ export default function LabelPreviewScreen() {
           Each barcode below was issued by the server and is already linked to its variant — scanning
           it in POS Sale will find this product.
         </Text>
+      </View>
+
+      <Text style={styles.sizeSectionLabel}>LABEL SIZE</Text>
+      <View style={styles.labelSizeRow}>
+        {LABEL_SIZE_OPTIONS.map((opt) => (
+          <TouchableOpacity
+            key={opt.value}
+            style={[styles.labelSizeChip, labelSize === opt.value && styles.labelSizeChipActive]}
+            onPress={() => setLabelSize(opt.value)}
+          >
+            <Text style={[styles.labelSizeChipTitle, labelSize === opt.value && styles.labelSizeChipTitleActive]}>
+              {opt.title}
+            </Text>
+            <Text style={[styles.labelSizeChipDim, labelSize === opt.value && styles.labelSizeChipDimActive]}>
+              {opt.dimensions}
+            </Text>
+          </TouchableOpacity>
+        ))}
       </View>
 
       {product.variants.map((variant) => (
@@ -230,6 +250,33 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   noteText: { flex: 1, color: '#0369a1', fontSize: 11, lineHeight: 16 },
+
+  sizeSectionLabel: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#9ca3af',
+    letterSpacing: 0.6,
+    marginTop: 16,
+    marginBottom: 8,
+  },
+  labelSizeRow: { flexDirection: 'row', gap: 8 },
+  labelSizeChip: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  labelSizeChipActive: {
+    backgroundColor: '#800020',
+    borderColor: '#800020',
+  },
+  labelSizeChipTitle: { fontSize: 12, fontWeight: '700', color: '#374151' },
+  labelSizeChipTitleActive: { color: '#ffffff' },
+  labelSizeChipDim: { fontSize: 10, color: '#9ca3af', marginTop: 1 },
+  labelSizeChipDimActive: { color: '#fbdde4' },
 
   stickerCard: {
     backgroundColor: '#ffffff',

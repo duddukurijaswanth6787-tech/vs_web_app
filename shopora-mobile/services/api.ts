@@ -462,6 +462,15 @@ export const inventoryService = {
 
 // ─── Barcode labels ──────────────────────────────────────────────────────────
 
+/** SMALL 50x25mm (barcode only), MEDIUM 75x40mm (adds a QR), LARGE 100x50mm (full branded design with QR). */
+export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+
+export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string }[] = [
+  { value: 'SMALL', title: 'Small', dimensions: '50 x 25mm' },
+  { value: 'MEDIUM', title: 'Medium', dimensions: '75 x 40mm' },
+  { value: 'LARGE', title: 'Large', dimensions: '100 x 50mm' },
+];
+
 export const barcodeService = {
   /**
    * GET /pos/barcodes/generate — streams a PNG, so this returns a URL that an
@@ -483,6 +492,7 @@ export const barcodeService = {
     barcode: string;
     price: number;
     quantity: number;
+    labelSize?: LabelSize;
   }): Promise<{ quantity: number; barcode: string; sku: string; html: string; tspl: string }> {
     const res = await posApiClient.post('/pos/barcodes/batch-stickers', dto);
     return unwrap<any>(res);
