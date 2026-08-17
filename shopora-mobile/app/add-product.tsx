@@ -1283,6 +1283,46 @@ export default function AddProductScreen() {
                 })}
               </View>
             )}
+
+            {(() => {
+              const selectedChart = sizeCharts.find((c) => c.id === sizeChartTemplateId);
+              if (!selectedChart || selectedChart.rows.length === 0) return null;
+              const measurementKeys = Array.from(
+                new Set(selectedChart.rows.flatMap((row) => Object.keys(row.measurements))),
+              );
+              return (
+                <View style={styles.card}>
+                  <Text style={styles.cardTitle}>
+                    {selectedChart.name} measurements ({selectedChart.unit})
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 10 }}>
+                    <View>
+                      <View style={styles.chartRow}>
+                        <Text style={[styles.chartCell, styles.chartSizeCell, styles.chartHeaderCell]}>
+                          SIZE
+                        </Text>
+                        {measurementKeys.map((key) => (
+                          <Text key={key} style={[styles.chartCell, styles.chartHeaderCell]}>
+                            {key.toUpperCase()}
+                          </Text>
+                        ))}
+                      </View>
+                      {selectedChart.rows.map((row) => (
+                        <View key={row.size} style={styles.chartRow}>
+                          <Text style={[styles.chartCell, styles.chartSizeCell]}>{row.size}</Text>
+                          {measurementKeys.map((key) => (
+                            <Text key={key} style={styles.chartCell}>
+                              {row.measurements[key] != null ? String(row.measurements[key]) : '—'}
+                            </Text>
+                          ))}
+                        </View>
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+              );
+            })()}
+
             {colorGroups.length === 0 ? (
               <Text style={styles.emptyHint}>Add a colour first — sizes hang off each colour.</Text>
             ) : (
@@ -1351,6 +1391,23 @@ export default function AddProductScreen() {
                         })()}
                     </View>
                   ))}
+                  <View style={styles.skuGroup}>
+                    {group.sizes
+                      .filter((row) => row.available)
+                      .map((row) => (
+                        <View key={`${row.size}-sku`} style={styles.skuRow}>
+                          <Text style={styles.skuLabel}>{row.size} SKU</Text>
+                          <TextInput
+                            style={styles.skuInput}
+                            value={row.sku ?? ''}
+                            onChangeText={(t) => setSizeSku(group.id, row.size, t)}
+                            placeholder="Auto-generated if blank"
+                            placeholderTextColor="#9ca3af"
+                            autoCapitalize="characters"
+                          />
+                        </View>
+                      ))}
+                  </View>
                 </View>
               ))
             )}
@@ -1461,6 +1518,9 @@ export default function AddProductScreen() {
                 ['Festive Pick', isFestivePick, setIsFestivePick],
                 ['Exclusive', isExclusive, setIsExclusive],
                 ['Online Only', isOnlineOnly, setIsOnlineOnly],
+                ['Featured', isFeatured, setIsFeatured],
+                ['Best Seller', isBestSeller, setIsBestSeller],
+                ['Trending', isTrending, setIsTrending],
               ] as [string, boolean, (v: boolean) => void][]).map(([label, value, setValue]) => (
                 <TouchableOpacity
                   key={label}
@@ -1986,6 +2046,44 @@ const styles = StyleSheet.create({
   sizeHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 6 },
   sizeHeaderCell: { width: 74, fontSize: 9, fontWeight: '800', color: '#9ca3af' },
   sizeHeaderCellSmall: { width: 52, fontSize: 9, fontWeight: '800', color: '#9ca3af' },
+
+  skuGroup: { marginTop: 10, gap: 6 },
+  skuRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
+  skuLabel: { width: 74, fontSize: 10, fontWeight: '700', color: '#6b7280' },
+  skuInput: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#ffffff',
+    fontSize: 12,
+    color: '#111827',
+  },
+
+  chartRow: { flexDirection: 'row' },
+  chartCell: {
+    width: 70,
+    paddingVertical: 8,
+    paddingHorizontal: 6,
+    fontSize: 11,
+    color: '#374151',
+    textAlign: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  chartSizeCell: { width: 60, fontWeight: '700', color: '#1f2937' },
+  chartHeaderCell: { fontSize: 9, fontWeight: '800', color: '#9ca3af' },
+
+  swatchPreviewWrap: { position: 'relative', width: 44, height: 44 },
+  swatchPreview: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+  },
 
   summaryCard: {
     marginTop: 22,
