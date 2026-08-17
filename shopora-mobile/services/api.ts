@@ -388,6 +388,56 @@ export const catalogService = {
   },
 };
 
+// ─── Coupons & Offers (attach existing promos to a product) ──────────────────
+
+export interface CouponOption {
+  id: string;
+  code: string;
+  name: string;
+  type: string; // 'PERCENTAGE' | 'FLAT' | 'FREE_SHIPPING'
+  value: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  applicableTo?: string;
+  applicableIds?: string[];
+}
+
+export interface OfferOption {
+  id: string;
+  name: string;
+  type: string; // 'PERCENTAGE' | 'FLAT' | 'FREE_SHIPPING'
+  value: number;
+  minOrderAmount?: number;
+  maxDiscountAmount?: number;
+  applicableTo?: string;
+  applicableIds?: string[];
+}
+
+export const promoService = {
+  /** GET /coupons — same list the website's Coupons & Offers pages use. */
+  async listCoupons(): Promise<CouponOption[]> {
+    const res = await posApiClient.get('/coupons', { params: { limit: 100 } });
+    const payload = unwrap<any>(res);
+    return Array.isArray(payload) ? payload : (payload?.data ?? []);
+  },
+  /** GET /offers */
+  async listOffers(): Promise<OfferOption[]> {
+    const res = await posApiClient.get('/offers', { params: { limit: 100 } });
+    const payload = unwrap<any>(res);
+    return Array.isArray(payload) ? payload : (payload?.data ?? []);
+  },
+  /** PATCH /coupons/:id — used only to add/remove this product from applicableIds. */
+  async updateCoupon(id: string, dto: { applicableTo?: string; applicableIds: string[] }) {
+    const res = await posApiClient.patch(`/coupons/${id}`, dto);
+    return unwrap<any>(res);
+  },
+  /** PATCH /offers/:id */
+  async updateOffer(id: string, dto: { applicableTo?: string; applicableIds: string[] }) {
+    const res = await posApiClient.patch(`/offers/${id}`, dto);
+    return unwrap<any>(res);
+  },
+};
+
 // ─── Attributes (to tag variants with Size / Colour) ──────────────────────────
 
 export interface AttributeDefinition {
