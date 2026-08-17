@@ -25,7 +25,7 @@ import {
   Shirt,
 } from 'lucide-react';
 
-import { useFeaturedCategories, useCustomerCart, useCustomerWishlist, usePublicSettings } from '@/features/customer/hooks';
+import { useFeaturedCategories, useCustomerCart, useCustomerWishlist, usePublicSettings, useHomepage } from '@/features/customer/hooks';
 
 export function StorefrontHeader() {
   const router = useRouter();
@@ -69,16 +69,27 @@ export function StorefrontHeader() {
   const mobileAnnouncementEnabled = (typedSettings?.announcementBarMobileEnabled as boolean | undefined) ?? true;
   const announcementText = (typedSettings?.announcementBarText as string | undefined) || 'Festive Sale is Live! Get up to 30% OFF';
 
+  const { data: homepageData } = useHomepage();
+  // The public /homepage endpoint only returns enabled sections, so absence
+  // of the key means it's disabled. Fail open while the request is in flight.
+  const announcementBarEnabled =
+    !homepageData ||
+    (Array.isArray(homepageData.sections) ? homepageData.sections : []).some(
+      (s) => (s as Record<string, unknown>).key === 'announcement_bar'
+    );
+
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 shadow-xs">
       {/* 01 TOP ANNOUNCEMENT BAR */}
-      <div className={mobileAnnouncementEnabled ? "bg-[#800020] text-white py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5" : "hidden sm:flex bg-[#800020] text-white py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"}>
-        <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
-        <span className="truncate">{announcementText}</span>
-        <Link href="/offers" prefetch={false} className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
-          Shop Now →
-        </Link>
-      </div>
+      {announcementBarEnabled && (
+        <div className={mobileAnnouncementEnabled ? "bg-[#800020] text-white py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5" : "hidden sm:flex bg-[#800020] text-white py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"}>
+          <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
+          <span className="truncate">{announcementText}</span>
+          <Link href="/offers" prefetch={false} className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
+            Shop Now →
+          </Link>
+        </div>
+      )}
 
       {/* Top Header Row */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-2 sm:py-3.5">

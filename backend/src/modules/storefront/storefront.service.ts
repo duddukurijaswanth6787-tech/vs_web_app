@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { CacheService } from '@infrastructure/redis';
 import { BusinessException } from '@common/exceptions';
 import {
   UpdateWebsiteSettingDto,
@@ -20,6 +21,7 @@ export class StorefrontService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
+    private readonly cache: CacheService,
   ) {}
 
   async getSettings() {
@@ -76,6 +78,7 @@ export class StorefrontService {
       resourceId: 'bulk',
       newValue: results as any,
     });
+    await this.cache.del('storefront:homepage');
     return results;
   }
 
@@ -86,6 +89,7 @@ export class StorefrontService {
         data: { displayOrder: i },
       });
     }
+    await this.cache.del('storefront:homepage');
     return this.getHomepage();
   }
 

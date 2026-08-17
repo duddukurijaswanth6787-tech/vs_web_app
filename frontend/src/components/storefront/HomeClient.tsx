@@ -17,7 +17,7 @@ import { WhyChooseUs } from '@/components/storefront/WhyChooseUs'; // Section 09
 import { NewsletterSection } from '@/components/storefront/NewsletterSection'; // Section 10
 
 import { ChevronUp } from 'lucide-react';
-import { useCustomerProducts } from '@/features/customer/hooks';
+import { useCustomerProducts, useHomepage } from '@/features/customer/hooks';
 
 export function HomeClient() {
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -29,6 +29,17 @@ export function HomeClient() {
     isFeatured: true,
     limit: 12,
   });
+  const { data: homepageData } = useHomepage();
+
+  // The public /homepage endpoint only returns enabled sections, so absence of
+  // a key means it's disabled. While the request is in flight, homepageData is
+  // undefined -- fail open so sections don't flash hidden on first paint.
+  const enabledSectionKeys = new Set(
+    (Array.isArray(homepageData?.sections) ? homepageData.sections : []).map(
+      (s) => (s as Record<string, unknown>).key as string
+    )
+  );
+  const isSectionEnabled = (key: string) => !homepageData || enabledSectionKeys.has(key);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);
@@ -48,77 +59,81 @@ export function HomeClient() {
 
       <main className="flex-1 space-y-6 sm:space-y-10">
         {/* 02 HERO SECTION */}
-        <HeroSection />
+        {isSectionEnabled('hero_banner') && <HeroSection />}
 
         {/* 03 CATEGORY SECTION */}
-        <CategoryCircles />
+        {isSectionEnabled('categories') && <CategoryCircles />}
 
         {/* 03.5 PROMO BANNERS (Mobile Side-Scrolling) */}
         <PromoBannersSection />
 
         {/* 04 NEW ARRIVALS */}
-        <ProductGridSection
-          title="New Arrivals"
-          subtitle={
-            loadingNew
-              ? 'Loading latest styles…'
-              : 'Handpicked latest styles for you'
-          }
-          products={newItems.map((pItem) => {
-            const p = pItem as Record<string, unknown>;
-            return {
-              id: String(p.id || ''),
-              brand: String(p.brand || 'Vasanthi Designers'),
-              title: String(p.title || p.name || ''),
-              price: Number(p.price || p.salePrice || 0),
-              originalPrice: Number(p.originalPrice || p.basePrice || 0),
-              discount: String(p.discount || ''),
-              rating: Number(p.rating || 5),
-              reviewsCount: Number(p.reviewsCount || 0),
-              image: String(p.image || p.primaryImageUrl || ''),
-              isNew: true,
-            };
-          })}
-          viewAllHref="/categories/new-arrivals"
-        />
+        {isSectionEnabled('new_arrivals') && (
+          <ProductGridSection
+            title="New Arrivals"
+            subtitle={
+              loadingNew
+                ? 'Loading latest styles…'
+                : 'Handpicked latest styles for you'
+            }
+            products={newItems.map((pItem) => {
+              const p = pItem as Record<string, unknown>;
+              return {
+                id: String(p.id || ''),
+                brand: String(p.brand || 'Vasanthi Designers'),
+                title: String(p.title || p.name || ''),
+                price: Number(p.price || p.salePrice || 0),
+                originalPrice: Number(p.originalPrice || p.basePrice || 0),
+                discount: String(p.discount || ''),
+                rating: Number(p.rating || 5),
+                reviewsCount: Number(p.reviewsCount || 0),
+                image: String(p.image || p.primaryImageUrl || ''),
+                isNew: true,
+              };
+            })}
+            viewAllHref="/categories/new-arrivals"
+          />
+        )}
 
         {/* 05 COLLECTIONS BANNER */}
-        <FeaturedCollections />
+        {isSectionEnabled('collections') && <FeaturedCollections />}
 
         {/* 06 TESTIMONIALS */}
-        <TestimonialsSection />
+        {isSectionEnabled('customer_reviews') && <TestimonialsSection />}
 
         {/* 07 INSTAGRAM FEED (REELS) */}
         <InstagramFeed />
 
         {/* 08 BEST SELLERS (Under Instagram Reels) */}
-        <ProductGridSection
-          title="Best Sellers"
-          subtitle="Top rated customer favorites"
-          products={(featuredList.length > 0 ? featuredList : newItems).map((pItem) => {
-            const p = pItem as Record<string, unknown>;
-            return {
-              id: String(p.id || ''),
-              brand: String(p.brand || 'Vasanthi Designers'),
-              title: String(p.title || p.name || ''),
-              price: Number(p.price || p.salePrice || 0),
-              originalPrice: Number(p.originalPrice || p.basePrice || 0),
-              discount: String(p.discount || ''),
-              rating: Number(p.rating || 5),
-              reviewsCount: Number(p.reviewsCount || 0),
-              image: String(p.image || p.primaryImageUrl || ''),
-              isBestSeller: true,
-              isNew: false,
-            };
-          })}
-          viewAllHref="/categories/best-sellers"
-        />
+        {isSectionEnabled('best_sellers') && (
+          <ProductGridSection
+            title="Best Sellers"
+            subtitle="Top rated customer favorites"
+            products={(featuredList.length > 0 ? featuredList : newItems).map((pItem) => {
+              const p = pItem as Record<string, unknown>;
+              return {
+                id: String(p.id || ''),
+                brand: String(p.brand || 'Vasanthi Designers'),
+                title: String(p.title || p.name || ''),
+                price: Number(p.price || p.salePrice || 0),
+                originalPrice: Number(p.originalPrice || p.basePrice || 0),
+                discount: String(p.discount || ''),
+                rating: Number(p.rating || 5),
+                reviewsCount: Number(p.reviewsCount || 0),
+                image: String(p.image || p.primaryImageUrl || ''),
+                isBestSeller: true,
+                isNew: false,
+              };
+            })}
+            viewAllHref="/categories/best-sellers"
+          />
+        )}
 
         {/* 09 WHY CHOOSE US */}
-        <WhyChooseUs />
+        {isSectionEnabled('why_choose_us') && <WhyChooseUs />}
 
         {/* 10 NEWSLETTER */}
-        <NewsletterSection />
+        {isSectionEnabled('newsletter') && <NewsletterSection />}
       </main>
 
       {/* 11 FOOTER */}
