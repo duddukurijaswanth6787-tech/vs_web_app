@@ -229,7 +229,9 @@ export default function ProductBuilder({
 
   // Load the full category tree so a primary category and its sub-category can
   // both be picked. useFeaturedCategories only returned the featured subset.
-  const { data: categoriesData } = useCategories({ limit: 200 });
+  // CategoryQueryDto caps `limit` at 100 (@Max(100)) — requesting more fails
+  // validation outright, so this can never legitimately be higher.
+  const { data: categoriesData } = useCategories({ limit: 100 });
   const categories = useMemo(
     () => (Array.isArray(categoriesData) ? categoriesData : categoriesData?.data || []),
     [categoriesData],
@@ -839,7 +841,11 @@ export default function ProductBuilder({
           .findAllAttributes({ limit: 100 })
           .catch(() => ({ data: [] as AttributeResponse[] })),
         variantService
-          .findAll({ productId: created.id, limit: 200 })
+          // ProductVariantQueryDto caps `limit` at 100 (@Max(100)) — 200 was
+          // silently rejected by this call's own .catch(), which meant
+          // existingVariants was always empty and re-saving an existing
+          // product created duplicate variants instead of skipping them.
+          .findAll({ productId: created.id, limit: 100 })
           .catch(() => null),
       ]);
       const attributes = attributeList?.data ?? [];
