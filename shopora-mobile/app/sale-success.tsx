@@ -11,9 +11,9 @@ import { CheckCircle2, ShoppingBag, RotateCcw } from 'lucide-react-native';
 export default function SaleSuccessScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
-  const orderNumber = (params.orderNumber as string) || 'ORD-20260811-POS101';
-  const grandTotal = (params.grandTotal as string) || '2937';
-  const completedOn = (params.completedOn as string) || 'Shopora Platform';
+  const orderNumber = (params.orderNumber as string) || '—';
+  const grandTotal = (params.grandTotal as string) || '0';
+  const completedOn = (params.completedOn as string) || '—';
 
   return (
     <View style={styles.container}>

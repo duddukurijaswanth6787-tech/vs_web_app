@@ -1,10 +1,11 @@
-import React from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  RefreshControl,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import {
@@ -15,12 +16,45 @@ import {
   AlertTriangle,
   ChevronRight,
 } from 'lucide-react-native';
+import { dashboardService, DashboardSummary } from '../services/api';
 
 export default function ShoporaHomeScreen() {
   const router = useRouter();
 
+  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadSummary = useCallback(async () => {
+    try {
+      const data = await dashboardService.getSummary();
+      setSummary(data);
+    } catch (e) {
+      console.error('Failed to load dashboard summary:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSummary();
+  }, [loadSummary]);
+
+  const handleRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await loadSummary();
+    setRefreshing(false);
+  }, [loadSummary]);
+
+  const todaySales = summary ? `₹${summary.todayRevenue.toLocaleString('en-IN')}` : '—';
+  const itemsSold = summary ? `${summary.todayItemsSold} Pcs` : '—';
+  const lowStockCount = summary?.lowStockCount ?? 0;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView
+      style={styles.container}
+      contentContainerStyle={styles.content}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0284c7" />
+      }
+    >
       {/* Top Banner / Store Header Card */}
       <View style={styles.headerCard}>
         <View style={styles.headerRow}>
@@ -36,12 +70,12 @@ export default function ShoporaHomeScreen() {
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Today's Sales</Text>
-            <Text style={styles.statValue}>₹24,580</Text>
+            <Text style={styles.statValue}>{todaySales}</Text>
           </View>
           <View style={styles.statDivider} />
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Items Sold</Text>
-            <Text style={styles.statValue}>47 Pcs</Text>
+            <Text style={styles.statValue}>{itemsSold}</Text>
           </View>
         </View>
       </View>
@@ -115,7 +149,9 @@ export default function ShoporaHomeScreen() {
           <AlertTriangle size={20} color="#0284c7" />
         </View>
         <View style={{ flex: 1 }}>
-          <Text style={styles.alertTitle}>12 Products Low on Stock</Text>
+          <Text style={styles.alertTitle}>
+            {lowStockCount > 0 ? `${lowStockCount} Products Low on Stock` : 'Stock levels are healthy'}
+          </Text>
           <Text style={styles.alertSub}>Tap to replenish inventory & print labels</Text>
         </View>
         <ChevronRight size={18} color="#94a3b8" />

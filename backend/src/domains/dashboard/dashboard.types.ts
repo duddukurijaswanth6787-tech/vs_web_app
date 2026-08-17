@@ -11,6 +11,7 @@ export class DashboardSummaryResponse {
   @ApiProperty({ type: [Object] }) topProducts!: any[];
   @ApiProperty() todayRevenue!: number;
   @ApiProperty() todayOrders!: number;
+  @ApiProperty() todayItemsSold!: number;
   @ApiProperty() averageOrderValue!: number;
   @ApiProperty() categoriesCount!: number;
   @ApiProperty() brandsCount!: number;

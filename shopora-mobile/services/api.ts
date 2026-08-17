@@ -232,6 +232,23 @@ export const posMobileService = {
   },
 };
 
+// ─── Dashboard: home screen stats ─────────────────────────────────────────────
+
+export interface DashboardSummary {
+  todayRevenue: number;
+  todayOrders: number;
+  todayItemsSold: number;
+  lowStockCount: number;
+}
+
+export const dashboardService = {
+  /** GET /dashboard/summary — today's sales, items sold, low-stock count. */
+  async getSummary(): Promise<DashboardSummary> {
+    const res = await posApiClient.get('/dashboard/summary');
+    return unwrap<DashboardSummary>(res);
+  },
+};
+
 // ─── Catalog: the same endpoints the admin ProductBuilder uses ────────────────
 
 export const catalogService = {

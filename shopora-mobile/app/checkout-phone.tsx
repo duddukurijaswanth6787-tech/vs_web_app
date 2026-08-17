@@ -10,13 +10,21 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { QrCode, Banknote, CreditCard, Sparkles, Check } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem } from '../services/api';
+import { posMobileService, PosMobileCartItem, PosMobileCustomer } from '../services/api';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
   const params = useLocalSearchParams();
   const cartJson = params.cartJson as string;
   const grandTotalStr = params.grandTotal as string;
+  const customerJson = params.customerJson as string;
+
+  let customer: PosMobileCustomer = { fullName: 'Walk-in Customer', phone: '9999999999' };
+  try {
+    if (customerJson) customer = JSON.parse(customerJson);
+  } catch (e) {
+    console.error('Failed to parse customer:', e);
+  }
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
@@ -37,7 +45,7 @@ export default function MobilePaymentScreen() {
         items: cartItems,
         paymentMethod,
         amountPaid: grandTotal,
-        customer: { fullName: 'Walk-in Customer', phone: '9999999999' },
+        customer,
       });
 
       router.push({
