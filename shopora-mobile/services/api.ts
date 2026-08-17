@@ -4,11 +4,12 @@ import axios from 'axios';
  * Backend base URL.
  *
  * Set EXPO_PUBLIC_API_BASE_URL in `.env` (see .env.example) so the same build can
- * point at a laptop on the LAN, the UAT deployment, or production without a code
- * change. The fallback is only a development convenience.
+ * point at a laptop on the LAN, or a specific deployment, without a code change.
+ * The fallback points at the live production backend so the app works out of
+ * the box for anyone who hasn't set up a `.env`.
  */
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://192.168.1.7:4000/api/v1';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://vsss-production.up.railway.app/api/v1';
 
 /** Origin without the `/api/v1` suffix — used by the websocket namespace. */
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
