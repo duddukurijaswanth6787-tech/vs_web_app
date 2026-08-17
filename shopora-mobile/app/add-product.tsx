@@ -36,6 +36,7 @@ import {
   catalogService,
   attributeService,
   inventoryService,
+  promoService,
   buildVariantAttributes,
   getApiErrorMessage,
   isAuthenticated,
@@ -45,6 +46,8 @@ import {
   type ColorGroupDraft,
   type CreatedVariant,
   type AttributeDefinition,
+  type CouponOption,
+  type OfferOption,
 } from '../services/api';
 import { setLastCreatedProduct } from '../services/product-draft';
 
@@ -59,6 +62,7 @@ import { setLastCreatedProduct } from '../services/product-draft';
  *   4. POST /variants                       (per colour x size — assigns the barcode)
  *   5. POST /inventory                      (opening stock per variant)
  *   6. POST /products/:id/color-groups/sync (binds each colour's variants + media)
+ *   7. PATCH /coupons/:id + PATCH /offers/:id (attaches selected existing promos)
  * then hands off to the label screen to print what step 4 generated.
  *
  * Publishing is gated on the same validation rules as the web builder; saving
@@ -100,6 +104,55 @@ const findColorOptionId = (attrs: AttributeDefinition[], colorName: string) => {
     (o) => o.value.toLowerCase().trim() === colorName.toLowerCase().trim(),
   )?.id;
 };
+
+/** A coupon/offer already scoped to categories or brands elsewhere can't also
+ *  be attached to a specific product from here without clobbering that scope. */
+const isProductAttachable = (applicableTo?: string) =>
+  !applicableTo || ['GLOBAL', 'PRODUCT', 'PRODUCTS'].includes(applicableTo);
+
+interface PromoPreview {
+  finalPrice: number;
+  discountAmount: number;
+  note?: string;
+}
+
+/** Mirrors the real discount formulas in the backend's coupon/offer services
+ *  (percentage / flat / free-shipping, capped by maxDiscountAmount) — must
+ *  match `computePromoPreview` in ProductBuilder.tsx exactly. */
+function computePromoPreview(
+  type: string,
+  value: number,
+  minOrderAmount: number | undefined,
+  maxDiscountAmount: number | undefined,
+  price: number,
+): PromoPreview {
+  if (type === 'FREE_SHIPPING') {
+    return { finalPrice: price, discountAmount: 0, note: 'Free shipping — the item price itself is unchanged.' };
+  }
+  let discount = type === 'FLAT' ? value : (price * value) / 100;
+  if (maxDiscountAmount) discount = Math.min(discount, maxDiscountAmount);
+  discount = Math.max(0, Math.min(discount, price));
+  const note =
+    minOrderAmount && price < minOrderAmount
+      ? `Only applies once the customer's cart totals at least ₹${minOrderAmount.toLocaleString('en-IN')}.`
+      : undefined;
+  return { finalPrice: Math.max(0, price - discount), discountAmount: discount, note };
+}
+
+/** Merges/removes a product's id from a coupon's or offer's applicableIds so
+ *  it becomes (or stops being) restricted to specific products. Returns null
+ *  when nothing actually needs to change on the server. */
+function diffProductAttachment(
+  current: { applicableTo?: string; applicableIds?: string[] },
+  productId: string,
+  shouldAttach: boolean,
+): { applicableTo?: string; applicableIds: string[] } | null {
+  const ids = current.applicableIds ?? [];
+  const isAttached = ids.includes(productId);
+  if (isAttached === shouldAttach) return null;
+  const nextIds = shouldAttach ? [...ids, productId] : ids.filter((id) => id !== productId);
+  return { applicableTo: nextIds.length > 0 ? 'PRODUCTS' : undefined, applicableIds: nextIds };
+}
 
 export default function AddProductScreen() {
   const router = useRouter();
@@ -169,6 +222,10 @@ export default function AddProductScreen() {
   const [attributes, setAttributes] = useState<AttributeDefinition[]>([]);
   const [sizeCharts, setSizeCharts] = useState<SizeChartOption[]>([]);
   const [sizeChartTemplateId, setSizeChartTemplateId] = useState('');
+  const [coupons, setCoupons] = useState<CouponOption[]>([]);
+  const [offers, setOffers] = useState<OfferOption[]>([]);
+  const [selectedCouponIds, setSelectedCouponIds] = useState<string[]>([]);
+  const [selectedOfferIds, setSelectedOfferIds] = useState<string[]>([]);
   const [loadingRefs, setLoadingRefs] = useState(true);
   const [refsError, setRefsError] = useState('');
 
@@ -188,17 +245,21 @@ export default function AddProductScreen() {
       setLoadingRefs(true);
       setRefsError('');
       try {
-        const [brandRows, categoryRows, attributeRows, sizeChartRows] = await Promise.all([
+        const [brandRows, categoryRows, attributeRows, sizeChartRows, couponRows, offerRows] = await Promise.all([
           catalogService.listBrands(),
           catalogService.listCategories(),
           attributeService.list().catch(() => [] as AttributeDefinition[]),
           catalogService.listSizeCharts().catch(() => [] as SizeChartOption[]),
+          promoService.listCoupons().catch(() => [] as CouponOption[]),
+          promoService.listOffers().catch(() => [] as OfferOption[]),
         ]);
         if (cancelled) return;
         setBrands(brandRows);
         setCategories(categoryRows);
         setAttributes(attributeRows);
         setSizeCharts(sizeChartRows);
+        setCoupons(couponRows);
+        setOffers(offerRows);
         // A product cannot be created without a real brand id, so preselect one.
         if (brandRows.length > 0) {
           setBrandId(brandRows[0].id);
@@ -683,7 +744,18 @@ export default function AddProductScreen() {
         await catalogService.syncColorGroups(productId, { colorGroups: syncPayload }).catch(() => null);
       }
 
-      // 7. Hand the issued barcodes to the label screen.
+      // 7. Attach/detach the coupons and offers picked in the Pricing step.
+      setProgress('Attaching coupons & offers…');
+      for (const coupon of coupons) {
+        const diff = diffProductAttachment(coupon, productId, selectedCouponIds.includes(coupon.id));
+        if (diff) await promoService.updateCoupon(coupon.id, diff).catch(() => null);
+      }
+      for (const offer of offers) {
+        const diff = diffProductAttachment(offer, productId, selectedOfferIds.includes(offer.id));
+        if (diff) await promoService.updateOffer(offer.id, diff).catch(() => null);
+      }
+
+      // 8. Hand the issued barcodes to the label screen.
       setLastCreatedProduct({
         productId,
         name: name.trim(),
@@ -1063,6 +1135,156 @@ export default function AddProductScreen() {
                 </Text>
               </View>
             )}
+
+            {/* ── Coupons & Offers ── */}
+            <View style={styles.promoSection}>
+              <Text style={styles.sectionTitle}>Coupons &amp; Offers</Text>
+              <Text style={styles.promoExplainer}>
+                Attach coupons or offers that already exist to this product — this screen can't
+                create new ones.
+              </Text>
+
+              <Text style={styles.label}>Coupons</Text>
+              {coupons.length === 0 ? (
+                <Text style={styles.emptyHint}>No coupons created yet</Text>
+              ) : (
+                <ScrollView
+                  style={styles.promoList}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                >
+                  {coupons.map((c) => {
+                    const attachable = isProductAttachable(c.applicableTo);
+                    const checked = selectedCouponIds.includes(c.id);
+                    const valueLabel =
+                      c.type === 'PERCENTAGE'
+                        ? `${c.value}% off`
+                        : c.type === 'FLAT'
+                          ? `₹${c.value} off`
+                          : 'Free shipping';
+                    return (
+                      <TouchableOpacity
+                        key={c.id}
+                        style={styles.promoRow}
+                        disabled={!attachable}
+                        onPress={() =>
+                          setSelectedCouponIds((prev) =>
+                            prev.includes(c.id) ? prev.filter((id) => id !== c.id) : [...prev, c.id],
+                          )
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.promoCheckbox,
+                            checked && styles.promoCheckboxChecked,
+                            !attachable && styles.promoCheckboxDisabled,
+                          ]}
+                        >
+                          {checked && <Check size={12} color="#ffffff" />}
+                        </View>
+                        <View style={[styles.promoRowBody, !attachable && styles.promoRowBodyDisabled]}>
+                          <Text style={styles.promoCode}>{c.code}</Text>
+                          <Text style={styles.promoMeta}>{valueLabel}</Text>
+                          {!attachable && (
+                            <Text style={styles.promoWarnNote}>
+                              Already scoped to {c.applicableTo?.toLowerCase()} elsewhere — can't attach
+                              here.
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
+              <Text style={styles.label}>Offers</Text>
+              {offers.length === 0 ? (
+                <Text style={styles.emptyHint}>No offers created yet</Text>
+              ) : (
+                <ScrollView
+                  style={styles.promoList}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                >
+                  {offers.map((o) => {
+                    const attachable = isProductAttachable(o.applicableTo);
+                    const checked = selectedOfferIds.includes(o.id);
+                    const valueLabel = `${o.value}% off`;
+                    return (
+                      <TouchableOpacity
+                        key={o.id}
+                        style={styles.promoRow}
+                        disabled={!attachable}
+                        onPress={() =>
+                          setSelectedOfferIds((prev) =>
+                            prev.includes(o.id) ? prev.filter((id) => id !== o.id) : [...prev, o.id],
+                          )
+                        }
+                      >
+                        <View
+                          style={[
+                            styles.promoCheckbox,
+                            checked && styles.promoCheckboxChecked,
+                            !attachable && styles.promoCheckboxDisabled,
+                          ]}
+                        >
+                          {checked && <Check size={12} color="#ffffff" />}
+                        </View>
+                        <View style={[styles.promoRowBody, !attachable && styles.promoRowBodyDisabled]}>
+                          <Text style={styles.promoCode}>{o.name}</Text>
+                          <Text style={styles.promoMeta}>{valueLabel}</Text>
+                          {!attachable && (
+                            <Text style={styles.promoWarnNote}>
+                              Already scoped to {o.applicableTo?.toLowerCase()} elsewhere — can't attach
+                              here.
+                            </Text>
+                          )}
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </ScrollView>
+              )}
+
+              {(selectedCouponIds.length > 0 || selectedOfferIds.length > 0) &&
+                (() => {
+                  const referencePrice = Number(salePrice) || Number(basePrice) || 0;
+                  const couponPreviews = selectedCouponIds
+                    .map((id) => coupons.find((c) => c.id === id))
+                    .filter((c): c is CouponOption => Boolean(c))
+                    .map((c) => ({
+                      label: c.code,
+                      ...computePromoPreview(c.type, Number(c.value), c.minOrderAmount, c.maxDiscountAmount, referencePrice),
+                    }));
+                  const offerPreviews = selectedOfferIds
+                    .map((id) => offers.find((o) => o.id === id))
+                    .filter((o): o is OfferOption => Boolean(o))
+                    .map((o) => ({
+                      label: o.name,
+                      ...computePromoPreview(o.type, Number(o.value), o.minOrderAmount, o.maxDiscountAmount, referencePrice),
+                    }));
+                  const previews = [...couponPreviews, ...offerPreviews];
+                  return (
+                    <View style={styles.promoPreviewBox}>
+                      <Text style={styles.promoPreviewTitle}>Preview at ₹{referencePrice}</Text>
+                      {previews.map((p, idx) => (
+                        <View key={`${p.label}-${idx}`} style={styles.promoPreviewRow}>
+                          <View style={styles.promoPreviewRowHead}>
+                            <Text style={styles.promoPreviewLabel}>{p.label}</Text>
+                            <Text style={styles.promoPreviewPrice}>₹{p.finalPrice.toFixed(2)}</Text>
+                          </View>
+                          {p.note && <Text style={styles.promoPreviewNote}>{p.note}</Text>}
+                        </View>
+                      ))}
+                      <Text style={styles.promoCaption}>
+                        Only the single best discount applies at checkout — a coupon and an offer
+                        never stack.
+                      </Text>
+                    </View>
+                  );
+                })()}
+            </View>
           </View>
         )}
 
@@ -1882,6 +2104,68 @@ const styles = StyleSheet.create({
     padding: 12,
   },
   infoText: { color: '#15803d', fontSize: 13, fontWeight: '600' },
+
+  promoSection: {
+    marginTop: 24,
+    paddingTop: 18,
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+  },
+  promoExplainer: { fontSize: 12, color: '#64748b', lineHeight: 17, marginBottom: 4 },
+  promoList: {
+    maxHeight: 200,
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+  },
+  promoRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  promoCheckbox: {
+    width: 18,
+    height: 18,
+    borderRadius: 5,
+    borderWidth: 1.5,
+    borderColor: '#d1d5db',
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 1,
+  },
+  promoCheckboxChecked: { backgroundColor: '#800020', borderColor: '#800020' },
+  promoCheckboxDisabled: { borderColor: '#e5e7eb', backgroundColor: '#f3f4f6' },
+  promoRowBody: { flex: 1 },
+  promoRowBodyDisabled: { opacity: 0.5 },
+  promoCode: { fontSize: 13, fontWeight: '700', color: '#1f2937' },
+  promoMeta: { fontSize: 11, color: '#6b7280', marginTop: 2 },
+  promoWarnNote: { fontSize: 10, color: '#b45309', marginTop: 3, lineHeight: 14 },
+
+  promoPreviewBox: {
+    marginTop: 16,
+    backgroundColor: '#fdf2f4',
+    borderWidth: 1,
+    borderColor: '#f3d9de',
+    borderRadius: 12,
+    padding: 12,
+  },
+  promoPreviewTitle: { fontSize: 11, fontWeight: '700', color: '#800020', marginBottom: 8 },
+  promoPreviewRow: { marginTop: 6 },
+  promoPreviewRowHead: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  promoPreviewLabel: { fontSize: 12, fontWeight: '700', color: '#374151' },
+  promoPreviewPrice: { fontSize: 12, fontWeight: '700', color: '#15803d' },
+  promoPreviewNote: { fontSize: 10, color: '#92400e', marginTop: 2, lineHeight: 14 },
+  promoCaption: { fontSize: 10, color: '#64748b', marginTop: 10, lineHeight: 14 },
 
   presetWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
   presetChip: {
