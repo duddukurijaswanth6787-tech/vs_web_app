@@ -53,11 +53,12 @@ import { setLastCreatedProduct } from '../services/product-draft';
  * (frontend/src/features/catalog/products/components/ProductBuilder.tsx).
  *
  * Same steps, same endpoints, in the same order:
- *   1. POST /products                       (incl. categoryIds, tags, occasion)
+ *   1. POST /products                       (incl. categoryIds, tags, collections, occasion)
  *   2. POST /products/:id/attributes        (dynamic registry values)
- *   3. POST /storage/upload + POST /media   (per staged photo)
+ *   3. POST /storage/upload + POST /media   (per staged photo, incl. swatch)
  *   4. POST /variants                       (per colour x size — assigns the barcode)
  *   5. POST /inventory                      (opening stock per variant)
+ *   6. POST /products/:id/color-groups/sync (binds each colour's variants + media)
  * then hands off to the label screen to print what step 4 generated.
  *
  * Publishing is gated on the same validation rules as the web builder; saving
@@ -92,6 +93,14 @@ const STEPS = [
 
 type StepKey = (typeof STEPS)[number]['key'];
 
+/** The AttributeOption id a colour group must be keyed by for color-groups/sync. */
+const findColorOptionId = (attrs: AttributeDefinition[], colorName: string) => {
+  const colorAttr = attrs.find((a) => a.slug === 'color' || a.name.toLowerCase() === 'color');
+  return colorAttr?.options.find(
+    (o) => o.value.toLowerCase().trim() === colorName.toLowerCase().trim(),
+  )?.id;
+};
+
 export default function AddProductScreen() {
   const router = useRouter();
 
@@ -105,6 +114,8 @@ export default function AddProductScreen() {
   const [shortDescription, setShortDescription] = useState('');
   const [description, setDescription] = useState('');
   const [type, setType] = useState('READYMADE');
+  const [gender, setGender] = useState('WOMEN');
+  const [season, setSeason] = useState('');
   const [brandId, setBrandId] = useState('');
   const [brandName, setBrandName] = useState('');
   const [categoryId, setCategoryId] = useState('');
@@ -114,6 +125,8 @@ export default function AddProductScreen() {
   const [occasion, setOccasion] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [collections, setCollections] = useState<string[]>([]);
+  const [collectionInput, setCollectionInput] = useState('');
 
   // attributeId -> chosen value, for the dynamic attribute registry.
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>({});
@@ -133,6 +146,8 @@ export default function AddProductScreen() {
   const [newColorHex, setNewColorHex] = useState('#800020');
   /** Shot type per image, keyed by URI; sent as the media title on save. */
   const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
+  /** Colour group id currently uploading its swatch photo, or '' when idle. */
+  const [swatchUploading, setSwatchUploading] = useState('');
 
   // ── Step 5: seo / publish ──────────────────────────────────────────────────
   const [seoTitle, setSeoTitle] = useState('');
@@ -144,6 +159,9 @@ export default function AddProductScreen() {
   const [isFestivePick, setIsFestivePick] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);
   const [isOnlineOnly, setIsOnlineOnly] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(false);
+  const [isBestSeller, setIsBestSeller] = useState(false);
+  const [isTrending, setIsTrending] = useState(false);
 
   // ── Reference data ─────────────────────────────────────────────────────────
   const [brands, setBrands] = useState<BrandOption[]>([]);
@@ -256,6 +274,44 @@ export default function AddProductScreen() {
     );
   };
 
+  /**
+   * Fabric swatch photo — distinct from the gallery, used as that colour's
+   * tab icon/thumbnail. Uploaded immediately (unlike gallery photos, which
+   * are staged locally and only uploaded on submit) so the group can carry
+   * a hosted URL straight away.
+   */
+  const pickSwatchPhoto = async (groupId: string) => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert('Permission needed', 'Allow photo access to attach a swatch photo.');
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
+    if (result.canceled) return;
+
+    setSwatchUploading(groupId);
+    try {
+      const group = colorGroups.find((g) => g.id === groupId);
+      const fileName = `${(group?.name || 'swatch').replace(/\s+/g, '-').toLowerCase()}-swatch.jpg`;
+      const url = await catalogService.uploadImage(result.assets[0].uri, fileName);
+      if (url) {
+        setColorGroups((prev) =>
+          prev.map((g) => (g.id === groupId ? { ...g, swatchUrl: url } : g)),
+        );
+      }
+    } catch (err) {
+      Alert.alert('Upload failed', getApiErrorMessage(err, 'Could not upload the swatch photo'));
+    } finally {
+      setSwatchUploading('');
+    }
+  };
+
+  const removeSwatchPhoto = (groupId: string) => {
+    setColorGroups((prev) =>
+      prev.map((g) => (g.id === groupId ? { ...g, swatchUrl: undefined } : g)),
+    );
+  };
+
   /** Move an image within its colour — position 0 is that colour's primary. */
   const moveImage = (groupId: string, index: number, direction: -1 | 1) => {
     setColorGroups((prev) =>
@@ -341,6 +397,17 @@ export default function AddProductScreen() {
     );
   };
 
+  /** User-typed SKU override for one colour/size row; blank keeps backend auto-generation. */
+  const setSizeSku = (groupId: string, size: string, raw: string) => {
+    setColorGroups((prev) =>
+      prev.map((g) =>
+        g.id === groupId
+          ? { ...g, sizes: g.sizes.map((s) => (s.size === size ? { ...s, sku: raw } : s)) }
+          : g,
+      ),
+    );
+  };
+
   // ── Derived ────────────────────────────────────────────────────────────────
 
   const productAttributes = useMemo(
@@ -363,6 +430,16 @@ export default function AddProductScreen() {
     setTagInput('');
   };
 
+  const addCollection = () => {
+    const value = collectionInput.trim();
+    if (!value || collections.includes(value)) {
+      setCollectionInput('');
+      return;
+    }
+    setCollections((prev) => [...prev, value]);
+    setCollectionInput('');
+  };
+
   const plannedVariants = useMemo(
     () =>
       colorGroups.flatMap((g) =>
@@ -372,7 +449,7 @@ export default function AddProductScreen() {
   );
 
   const totalImages = useMemo(
-    () => colorGroups.reduce((sum, g) => sum + g.images.length, 0),
+    () => colorGroups.reduce((sum, g) => sum + g.images.length + (g.swatchUrl ? 1 : 0), 0),
     [colorGroups],
   );
 
@@ -401,7 +478,7 @@ export default function AddProductScreen() {
     }
 
     for (const group of colorGroups) {
-      if (group.images.length === 0) issues.push(`${group.name} has no photo.`);
+      if (group.images.length === 0 && !group.swatchUrl) issues.push(`${group.name} has no photo.`);
       const available = group.sizes.filter((row) => row.available);
       if (available.length === 0) issues.push(`${group.name} has no size selected.`);
       for (const row of available) {
@@ -461,7 +538,7 @@ export default function AddProductScreen() {
         shortDescription: shortDescription.trim() || undefined,
         description: description.trim() || undefined,
         type,
-        gender: 'WOMEN',
+        gender,
         ageGroup: 'ADULTS',
         basePrice: Number(basePrice),
         salePrice: salePrice ? Number(salePrice) : undefined,
@@ -479,10 +556,15 @@ export default function AddProductScreen() {
         isFestivePick,
         isExclusive,
         isOnlineOnly,
+        isFeatured,
+        isBestSeller,
+        isTrending,
         // CreateProductDto takes these directly; the API rejects unknown keys.
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
         ...(tags.length > 0 ? { tags } : {}),
+        ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
+        ...(season.trim() ? { season: season.trim() } : {}),
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
       });
 
@@ -498,31 +580,42 @@ export default function AddProductScreen() {
         await catalogService.assignAttributes(productId, attributeEntries).catch(() => null);
       }
 
-      // 3. POST /storage/upload -> POST /media, flattened across colour groups
+      // 3. POST /storage/upload -> POST /media, flattened across colour groups.
+      // The swatch photo (already uploaded when picked) rides along as one
+      // more media item per colour, ahead of the staged gallery photos.
       let displayOrder = 0;
       let primarySet = false;
+      const mediaIdsByGroup: Record<string, string[]> = {};
       for (const group of colorGroups) {
-        for (const localUri of group.images) {
+        mediaIdsByGroup[group.id] = [];
+        const groupImages = [group.swatchUrl, ...group.images].filter(Boolean) as string[];
+        for (const img of groupImages) {
           setProgress(`Uploading image ${displayOrder + 1} of ${totalImages}…`);
-          const fileName = `${group.name.replace(/\s+/g, '-').toLowerCase()}-${displayOrder}.jpg`;
-          const url = await catalogService.uploadImage(localUri, fileName);
-          if (!url) continue;
-          await catalogService.addMedia({
+          let url = img;
+          if (img !== group.swatchUrl) {
+            const fileName = `${group.name.replace(/\s+/g, '-').toLowerCase()}-${displayOrder}.jpg`;
+            url = await catalogService.uploadImage(img, fileName);
+            if (!url) continue;
+          }
+          const media = await catalogService.addMedia({
             productId,
             url,
             isPrimary: !primarySet,
             displayOrder: displayOrder++,
             color: group.name,
-            ...(imageLabels[localUri] ? { title: imageLabels[localUri] } : {}),
+            ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
           });
+          if (media?.id) mediaIdsByGroup[group.id].push(media.id);
           primarySet = true;
         }
       }
 
       // 4 + 5. POST /variants then POST /inventory, per colour x size
       const createdVariants: CreatedVariant[] = [];
+      const variantIdsByGroup: Record<string, string[]> = {};
       let variantIndex = 0;
       for (const group of colorGroups) {
+        variantIdsByGroup[group.id] = [];
         for (const sizeRow of group.sizes) {
           if (!sizeRow.available) continue;
           variantIndex += 1;
@@ -533,6 +626,7 @@ export default function AddProductScreen() {
           const variant = await catalogService.createVariant({
             productId,
             title: `${group.name} / ${sizeRow.size}`,
+            sku: sizeRow.sku && sizeRow.sku.trim() ? sizeRow.sku.trim() : undefined,
             displayOrder: variantIndex - 1,
             isDefault: variantIndex === 1,
             costPrice: costPrice ? Number(costPrice) : undefined,
@@ -540,6 +634,7 @@ export default function AddProductScreen() {
           });
 
           if (!variant?.id) continue;
+          variantIdsByGroup[group.id].push(variant.id);
 
           if (sizeRow.stock > 0) {
             setProgress(`Adding stock for ${group.name} / ${sizeRow.size}…`);
@@ -568,7 +663,27 @@ export default function AddProductScreen() {
         throw new Error('The product was created but no variants were issued, so there is nothing to label.');
       }
 
-      // 6. Hand the issued barcodes to the label screen.
+      // 6. POST /products/:id/color-groups/sync — bind each colour's variants
+      // and media to its colour attribute option, so the storefront can group
+      // images and sizes by colour (mirrors the web ProductBuilder).
+      const syncPayload = colorGroups.flatMap((group) => {
+        const optionId = findColorOptionId(attributes, group.name);
+        if (!optionId) return [];
+        return [
+          {
+            colorAttributeOptionId: optionId,
+            label: group.name,
+            variantIds: variantIdsByGroup[group.id] ?? [],
+            mediaIds: mediaIdsByGroup[group.id] ?? [],
+          },
+        ];
+      });
+      if (syncPayload.length > 0) {
+        setProgress('Grouping colours…');
+        await catalogService.syncColorGroups(productId, { colorGroups: syncPayload }).catch(() => null);
+      }
+
+      // 7. Hand the issued barcodes to the label screen.
       setLastCreatedProduct({
         productId,
         name: name.trim(),
@@ -695,13 +810,38 @@ export default function AddProductScreen() {
 
             <Text style={styles.label}>Product type</Text>
             <View style={styles.pillRow}>
-              {['READYMADE', 'UNSTITCHED', 'ACCESSORY'].map((t) => (
+              {[
+                { value: 'READYMADE', label: 'READYMADE' },
+                { value: 'UNSTITCHED', label: 'UNSTITCHED' },
+                { value: 'CUSTOM', label: 'Custom Tailored' },
+              ].map((t) => (
                 <TouchableOpacity
-                  key={t}
-                  style={[styles.pill, type === t && styles.pillActive]}
-                  onPress={() => setType(t)}
+                  key={t.value}
+                  style={[styles.pill, type === t.value && styles.pillActive]}
+                  onPress={() => setType(t.value)}
                 >
-                  <Text style={[styles.pillText, type === t && styles.pillTextActive]}>{t}</Text>
+                  <Text style={[styles.pillText, type === t.value && styles.pillTextActive]}>
+                    {t.label}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Gender target</Text>
+            <View style={styles.pillRow}>
+              {[
+                { value: 'WOMEN', label: 'Women' },
+                { value: 'GIRLS', label: 'Girls' },
+                { value: 'UNISEX', label: 'Unisex' },
+              ].map((g) => (
+                <TouchableOpacity
+                  key={g.value}
+                  style={[styles.pill, gender === g.value && styles.pillActive]}
+                  onPress={() => setGender(g.value)}
+                >
+                  <Text style={[styles.pillText, gender === g.value && styles.pillTextActive]}>
+                    {g.label}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -723,6 +863,15 @@ export default function AddProductScreen() {
               placeholder="Fabric, work, care instructions…"
               placeholderTextColor="#9ca3af"
               multiline
+            />
+
+            <Text style={styles.label}>Season / Collection</Text>
+            <TextInput
+              style={styles.input}
+              value={season}
+              onChangeText={setSeason}
+              placeholder="e.g. Festive 2026, Summer Silk"
+              placeholderTextColor="#9ca3af"
             />
           </View>
         )}
@@ -804,6 +953,34 @@ export default function AddProductScreen() {
                   onPress={() => setTags((prev) => prev.filter((t) => t !== tag))}
                 >
                   <Text style={styles.tagChipText}>{tag}</Text>
+                  <X size={12} color="#6b7280" />
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <Text style={styles.label}>Collections</Text>
+            <View style={styles.inlineRow}>
+              <TextInput
+                style={[styles.input, { flex: 1, marginTop: 0 }]}
+                value={collectionInput}
+                onChangeText={setCollectionInput}
+                onSubmitEditing={addCollection}
+                placeholder="e.g. Festive Collection"
+                placeholderTextColor="#9ca3af"
+                returnKeyType="done"
+              />
+              <TouchableOpacity style={styles.addBtn} onPress={addCollection}>
+                <Plus size={18} color="#ffffff" />
+              </TouchableOpacity>
+            </View>
+            <View style={styles.tagWrap}>
+              {collections.map((collection) => (
+                <TouchableOpacity
+                  key={collection}
+                  style={styles.tagChip}
+                  onPress={() => setCollections((prev) => prev.filter((c) => c !== collection))}
+                >
+                  <Text style={styles.tagChipText}>{collection}</Text>
                   <X size={12} color="#6b7280" />
                 </TouchableOpacity>
               ))}
@@ -962,6 +1139,38 @@ export default function AddProductScreen() {
                         <Plus size={15} color="#800020" style={{ marginRight: 6 }} />
                         <Text style={styles.secondaryBtnText}>Gallery</Text>
                       </TouchableOpacity>
+                    </View>
+
+                    <Text style={styles.label}>Swatch photo</Text>
+                    <Text style={styles.helpText}>
+                      A close-up fabric swatch used as this colour&rsquo;s tab thumbnail — optional.
+                    </Text>
+                    <View style={styles.inlineRow}>
+                      <TouchableOpacity
+                        style={styles.secondaryBtn}
+                        onPress={() => pickSwatchPhoto(activeGroup.id)}
+                        disabled={swatchUploading === activeGroup.id}
+                      >
+                        {swatchUploading === activeGroup.id ? (
+                          <ActivityIndicator size="small" color="#800020" style={{ marginRight: 6 }} />
+                        ) : (
+                          <ImageIcon size={15} color="#800020" style={{ marginRight: 6 }} />
+                        )}
+                        <Text style={styles.secondaryBtnText}>
+                          {activeGroup.swatchUrl ? 'Change swatch' : 'Upload swatch'}
+                        </Text>
+                      </TouchableOpacity>
+                      {activeGroup.swatchUrl && (
+                        <View style={styles.swatchPreviewWrap}>
+                          <Image source={{ uri: activeGroup.swatchUrl }} style={styles.swatchPreview} />
+                          <TouchableOpacity
+                            style={styles.thumbRemove}
+                            onPress={() => removeSwatchPhoto(activeGroup.id)}
+                          >
+                            <X size={12} color="#ffffff" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
                     </View>
 
                     <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
