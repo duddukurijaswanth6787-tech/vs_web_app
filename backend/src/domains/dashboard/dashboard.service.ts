@@ -51,6 +51,7 @@ export class DashboardService {
       pendingReviews,
       returnsCount,
       cancelledOrders,
+      todayItemsSoldAgg,
     ] = await Promise.all([
       this.prisma.order.count({ where: orderFilter(undefined, undefined) }),
       this.prisma.customerProfile.count(),
@@ -102,6 +103,10 @@ export class DashboardService {
       this.prisma.order.count({
         where: { status: 'CANCELLED', deletedAt: null },
       }),
+      this.prisma.orderItem.aggregate({
+        _sum: { quantity: true },
+        where: { order: { deletedAt: null, createdAt: { gte: startOfToday, lt: endOfToday } } },
+      }),
     ]);
 
     const productIds = topProducts.map((p) => p.productId);
@@ -126,6 +131,7 @@ export class DashboardService {
       })),
       todayRevenue: Number(todayRevenueAgg._sum.grandTotal ?? 0),
       todayOrders,
+      todayItemsSold: Number(todayItemsSoldAgg._sum.quantity ?? 0),
       averageOrderValue:
         totalOrders > 0 ? Math.round(totalRev / totalOrders) : 0,
       categoriesCount,

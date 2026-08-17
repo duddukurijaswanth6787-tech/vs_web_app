@@ -2,14 +2,15 @@ import React from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Smartphone, Monitor, ArrowRight } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem } from '../services/api';
+import { Smartphone, Monitor, ArrowRight, User, Search } from 'lucide-react-native';
+import { posMobileService, PosMobileCartItem, PosMobileCustomer } from '../services/api';
 
 export default function CheckoutModeScreen() {
   const router = useRouter();
@@ -18,6 +19,9 @@ export default function CheckoutModeScreen() {
   const subtotalStr = params.subtotal as string;
 
   const [loading, setLoading] = React.useState(false);
+  const [phone, setPhone] = React.useState('');
+  const [customerName, setCustomerName] = React.useState('');
+  const [lookupStatus, setLookupStatus] = React.useState<'idle' | 'loading' | 'found' | 'not_found'>('idle');
 
   let cartItems: PosMobileCartItem[] = [];
   try {
@@ -30,6 +34,36 @@ export default function CheckoutModeScreen() {
   const taxTotal = Math.round(subtotal * 0.05 * 100) / 100;
   const grandTotal = subtotal + taxTotal;
 
+  const handleLookupCustomer = async () => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      Alert.alert('Invalid Phone', 'Enter a 10-digit phone number to look up the customer.');
+      return;
+    }
+    try {
+      setLookupStatus('loading');
+      const result = await posMobileService.lookupCustomer(cleanPhone);
+      if (result?.found) {
+        setCustomerName(result.fullName || '');
+        setLookupStatus('found');
+      } else {
+        setCustomerName('');
+        setLookupStatus('not_found');
+      }
+    } catch (e) {
+      console.error('Customer lookup failed:', e);
+      setLookupStatus('idle');
+    }
+  };
+
+  const resolveCustomer = (): PosMobileCustomer => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      return { fullName: 'Walk-in Customer', phone: '9999999999' };
+    }
+    return { fullName: customerName.trim() || 'Walk-in Customer', phone: cleanPhone };
+  };
+
   // Option 1: Continue on Phone
   const handleContinueOnPhone = () => {
     router.push({
@@ -38,6 +72,7 @@ export default function CheckoutModeScreen() {
         cartJson,
         subtotal: subtotalStr,
         grandTotal: grandTotal.toString(),
+        customerJson: JSON.stringify(resolveCustomer()),
       },
     });
   };
@@ -48,7 +83,7 @@ export default function CheckoutModeScreen() {
       setLoading(true);
       const session = await posMobileService.createCheckoutSession({
         items: cartItems,
-        customer: { fullName: 'Walk-in Customer', phone: '9999999999' },
+        customer: resolveCustomer(),
       });
 
       // Navigate to Waiting Screen with Session ID & 6-digit PIN
@@ -71,6 +106,50 @@ export default function CheckoutModeScreen() {
   return (
     <View style={styles.container}>
       <Text style={styles.heading}>How would you like to continue?</Text>
+
+      {/* Customer Lookup (optional — defaults to Walk-in Customer) */}
+      <View style={styles.customerCard}>
+        <View style={styles.customerRow}>
+          <User size={16} color="#0284c7" />
+          <Text style={styles.customerLabel}>CUSTOMER (OPTIONAL)</Text>
+        </View>
+        <View style={styles.phoneRow}>
+          <TextInput
+            style={styles.phoneInput}
+            placeholder="10-digit phone number"
+            placeholderTextColor="#94a3b8"
+            keyboardType="phone-pad"
+            maxLength={10}
+            value={phone}
+            onChangeText={(t) => {
+              setPhone(t);
+              setLookupStatus('idle');
+            }}
+          />
+          <TouchableOpacity style={styles.lookupBtn} onPress={handleLookupCustomer} disabled={lookupStatus === 'loading'}>
+            {lookupStatus === 'loading' ? (
+              <ActivityIndicator size="small" color="#ffffff" />
+            ) : (
+              <Search size={16} color="#ffffff" />
+            )}
+          </TouchableOpacity>
+        </View>
+        {lookupStatus === 'found' && (
+          <Text style={styles.lookupFound}>✓ {customerName || 'Registered customer'}</Text>
+        )}
+        {lookupStatus === 'not_found' && (
+          <>
+            <Text style={styles.lookupNotFound}>No account found — enter a name to save with this sale</Text>
+            <TextInput
+              style={styles.nameInput}
+              placeholder="Customer name"
+              placeholderTextColor="#94a3b8"
+              value={customerName}
+              onChangeText={setCustomerName}
+            />
+          </>
+        )}
+      </View>
 
       {/* Option 1 Card: Continue on Phone */}
       <TouchableOpacity
@@ -139,6 +218,72 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0369a1',
     marginBottom: 20,
+  },
+  customerCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    marginBottom: 16,
+  },
+  customerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  customerLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#0369a1',
+    marginLeft: 6,
+    letterSpacing: 0.5,
+  },
+  phoneRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  phoneInput: {
+    flex: 1,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#0f172a',
+    marginRight: 8,
+  },
+  lookupBtn: {
+    width: 40,
+    height: 40,
+    borderRadius: 12,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  lookupFound: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#16a34a',
+    marginTop: 8,
+  },
+  lookupNotFound: {
+    fontSize: 11,
+    color: '#ca8a04',
+    marginTop: 8,
+    marginBottom: 6,
+  },
+  nameInput: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    paddingHorizontal: 14,
+    paddingVertical: 10,
+    fontSize: 13,
+    color: '#0f172a',
   },
   modeCard: {
     backgroundColor: '#ffffff',

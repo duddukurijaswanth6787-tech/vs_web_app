@@ -66,7 +66,7 @@ export default function WaitingWebScreen() {
         {/* Session ID & 6-Digit PIN Display */}
         <View style={styles.pinBox}>
           <Text style={styles.pinLabel}>SESSION PIN (ENTER ON WEB)</Text>
-          <Text style={styles.pinValue}>{handoffToken || '582-194'}</Text>
+          <Text style={styles.pinValue}>{handoffToken || '—'}</Text>
           <Text style={styles.sessionRef}>Session #{sessionId}</Text>
         </View>
 
