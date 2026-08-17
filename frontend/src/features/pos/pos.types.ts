@@ -1,5 +1,14 @@
 export type PosPaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT';
 
+/** SMALL 50x25mm (barcode only), MEDIUM 75x40mm (adds a QR), LARGE 100x50mm (full branded design with QR). */
+export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+
+export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string; description: string }[] = [
+  { value: 'SMALL', title: 'Small', dimensions: '50 × 25mm', description: 'Compact garment tag — barcode + SKU + price only' },
+  { value: 'MEDIUM', title: 'Medium', dimensions: '75 × 40mm', description: 'Adds a scannable QR code alongside the barcode' },
+  { value: 'LARGE', title: 'Large', dimensions: '100 × 50mm', description: 'Full branded design — logo, SKU badge, barcode & QR' },
+];
+
 export interface PosCartItem {
   productId: string;
   productName: string;
@@ -108,6 +117,7 @@ export interface BatchStickersPayload {
   price: number;
   quantity: number;
   storeName?: string;
+  labelSize?: LabelSize;
 }
 
 export interface BatchStickersResponse {

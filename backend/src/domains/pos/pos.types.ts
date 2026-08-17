@@ -5,10 +5,19 @@ import {
   IsArray,
   IsNumber,
   IsEnum,
+  IsIn,
   ValidateNested,
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+
+/**
+ * Physical sticker label size. SMALL is the original 50x25mm garment-tag
+ * design (barcode only -- no room for a legible QR). MEDIUM (75x40mm) and
+ * LARGE (100x50mm) add a QR code and, for LARGE, a fuller branded layout.
+ * See BarcodeService.LABEL_SPECS for the exact dimensions/layout per size.
+ */
+export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 export enum PosPaymentMethodType {
   CASH = 'CASH',
@@ -274,6 +283,16 @@ export class GenerateBatchStickersDto {
   @IsOptional()
   @IsString()
   storeName?: string;
+
+  @ApiPropertyOptional({
+    enum: ['SMALL', 'MEDIUM', 'LARGE'],
+    default: 'SMALL',
+    description:
+      'SMALL 50x25mm (barcode only), MEDIUM 75x40mm (adds a QR code), LARGE 100x50mm (full branded design with QR)',
+  })
+  @IsOptional()
+  @IsIn(['SMALL', 'MEDIUM', 'LARGE'])
+  labelSize?: LabelSize;
 }
 
 export class PreviewReceiptDto {

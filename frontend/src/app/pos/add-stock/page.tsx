@@ -11,7 +11,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useScanBarcode, useBatchStickers } from '@/features/pos/pos.hooks';
-import { ScanBarcodeResult } from '@/features/pos/pos.types';
+import { ScanBarcodeResult, LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 import { useStockIn } from '@/features/inventory/inventory.hooks';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -27,6 +27,7 @@ export default function AddStockPage() {
   const [invoiceNumber, setInvoiceNumber] = useState('INV-45892');
   const [notes, setNotes] = useState('New shipment received');
   const [printLabels, setPrintLabels] = useState(true);
+  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
 
   // Sticker Preview Modal
   const [stickerHtml, setStickerHtml] = useState('');
@@ -83,6 +84,7 @@ export default function AddStockPage() {
                 price: selectedVariant.price,
                 quantity: quantityReceived,
                 storeName: 'VASANTHI DESIGNERS',
+                labelSize,
               },
               {
                 onSuccess: (res) => {
@@ -136,7 +138,7 @@ export default function AddStockPage() {
               + Add Stock & Print Barcode Labels
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
-              Inventory Replenishment & 50x25mm Sticker Generation
+              Inventory Replenishment & Sticker Label Generation
             </p>
           </div>
         </div>
@@ -292,22 +294,51 @@ export default function AddStockPage() {
             </div>
 
             {/* Checkbox: Print Sticker Labels */}
-            <div className="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Printer className="w-5 h-5 text-amber-800" />
-                <div>
-                  <span className="text-xs font-bold text-amber-900 block">Print Barcode Sticker Labels</span>
-                  <span className="text-[11px] text-amber-800">
-                    Generate {quantityReceived} barcode stickers (50mm × 25mm) for received pieces.
-                  </span>
+            <div className="bg-amber-50/60 p-3.5 rounded-xl border border-amber-200 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Printer className="w-5 h-5 text-amber-800" />
+                  <div>
+                    <span className="text-xs font-bold text-amber-900 block">Print Barcode Sticker Labels</span>
+                    <span className="text-[11px] text-amber-800">
+                      Generate {quantityReceived} stickers for received pieces.
+                    </span>
+                  </div>
                 </div>
+                <input
+                  type="checkbox"
+                  checked={printLabels}
+                  onChange={(e) => setPrintLabels(e.target.checked)}
+                  className="w-4 h-4 accent-[#800020] rounded"
+                />
               </div>
-              <input
-                type="checkbox"
-                checked={printLabels}
-                onChange={(e) => setPrintLabels(e.target.checked)}
-                className="w-4 h-4 accent-[#800020] rounded"
-              />
+
+              {printLabels && (
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  {LABEL_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLabelSize(opt.value)}
+                      className={`text-left p-2.5 rounded-lg border transition-all ${
+                        labelSize === opt.value
+                          ? 'bg-[#800020] border-[#800020] text-white'
+                          : 'bg-white border-amber-200 text-amber-900 hover:bg-amber-50'
+                      }`}
+                    >
+                      <div className="text-[11px] font-bold">{opt.title}</div>
+                      <div className={`text-[10px] ${labelSize === opt.value ? 'text-rose-100' : 'text-amber-700'}`}>
+                        {opt.dimensions}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+              {printLabels && (
+                <p className="text-[10px] text-amber-700">
+                  {LABEL_SIZE_OPTIONS.find((o) => o.value === labelSize)?.description}
+                </p>
+              )}
             </div>
 
             <button
@@ -348,7 +379,7 @@ export default function AddStockPage() {
             </div>
 
             <p className="text-xs text-neutral-600">
-              Preview of 50mm × 25mm barcode stickers ready to print for <b>{selectedVariant?.productName}</b>.
+              Preview of {LABEL_SIZE_OPTIONS.find((o) => o.value === labelSize)?.dimensions} barcode stickers ready to print for <b>{selectedVariant?.productName}</b>.
             </p>
 
             <div className="flex-1 overflow-y-auto bg-neutral-100 p-4 rounded-xl border border-neutral-200">
