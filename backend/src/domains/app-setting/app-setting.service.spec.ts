@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { AppSettingService } from './app-setting.service';
 import { AppSettingRepository } from './app-setting.repository';
 import { AuditService } from '@domains/audit/audit.service';
+import { CacheService } from '@infrastructure/redis';
 
 describe('AppSettingService', () => {
   let service: AppSettingService;
@@ -20,6 +21,10 @@ describe('AppSettingService', () => {
         {
           provide: AuditService,
           useValue: { log: jest.fn() },
+        },
+        {
+          provide: CacheService,
+          useValue: { get: jest.fn(), set: jest.fn(), del: jest.fn() },
         },
       ],
     }).compile();

@@ -9,6 +9,7 @@ jest.mock('@/lib/api/client', () => ({
     put: jest.fn(),
     delete: jest.fn(),
   },
+  getUnprefixedBaseUrl: jest.fn(() => 'http://127.0.0.1:4000'),
 }));
 
 describe('Phase 5.15 — RAG Agent Control Center Tests', () => {
