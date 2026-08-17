@@ -112,8 +112,8 @@ export class MediaService {
       mediaType: dto.mediaType,
       title: dto.title,
       altText: dto.altText,
-      url: dto.url,
-      thumbnailUrl: dto.thumbnailUrl,
+      url: this.storageService.sanitizeUrl(dto.url) as string,
+      thumbnailUrl: this.storageService.sanitizeUrl(dto.thumbnailUrl),
       displayOrder: dto.displayOrder ?? 0,
       isPrimary: dto.isPrimary ?? false,
       color: dto.color,
@@ -154,7 +154,10 @@ export class MediaService {
       );
     }
 
-    await this.mediaRepository.update(id, { ...dto, updatedBy: userId });
+    const updateData: typeof dto & { updatedBy: string } = { ...dto, updatedBy: userId };
+    if (dto.url) updateData.url = this.storageService.sanitizeUrl(dto.url);
+    if (dto.thumbnailUrl) updateData.thumbnailUrl = this.storageService.sanitizeUrl(dto.thumbnailUrl);
+    await this.mediaRepository.update(id, updateData);
     await this.auditService.log({
       action: 'MEDIA_UPDATED',
       module: 'media',

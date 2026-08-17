@@ -177,6 +177,26 @@ export class StorageService {
     return this.provider.getPublicUrl(filePath);
   }
 
+  /**
+   * Rewrites a stray dev-origin URL (http://<host>:4000/api/v1/storage/<key>)
+   * to the currently-configured public URL for that same key, using
+   * whichever provider (S3 or local) is actually active. Guards against a
+   * client resubmitting a URL it cached before a storage misconfiguration
+   * was fixed server-side — e.g. picking an image from the Media Library in
+   * a browser tab that had been open since before AWS_S3_PUBLIC_URL was
+   * corrected. A URL that isn't in that shape is returned unchanged.
+   */
+  sanitizeUrl<T extends string | undefined>(url: T): T {
+    if (!url) return url;
+    const match = /^https?:\/\/[^/]+:4000\/api\/v1\/storage\/(.+)$/.exec(url);
+    if (!match) return url;
+    try {
+      return this.getPublicUrl(decodeURIComponent(match[1])) as T;
+    } catch {
+      return url;
+    }
+  }
+
   async getSignedUploadUrl(
     filePath: string,
     contentType?: string,
