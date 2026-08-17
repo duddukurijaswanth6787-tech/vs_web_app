@@ -271,7 +271,9 @@ export const catalogService = {
 
   /** GET /categories — parentId is kept so sub-categories can be filtered. */
   async listCategories(): Promise<CategoryOption[]> {
-    const res = await posApiClient.get('/categories', { params: { limit: 200 } });
+    // Backend caps `limit` at 100 (@Max(100) on CategoryQueryDto) — requesting
+    // more than that fails validation outright.
+    const res = await posApiClient.get('/categories', { params: { limit: 100 } });
     const payload = unwrap<any>(res);
     const rows = Array.isArray(payload) ? payload : (payload?.data ?? []);
     return rows
