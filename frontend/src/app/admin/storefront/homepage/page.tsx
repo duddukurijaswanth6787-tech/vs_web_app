@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type DragEvent } from 'react';
 import { useHomepage, useUpdateHomepage } from '@/features/storefront/storefront.hooks';
 import type { HomepageSection } from '@/features/storefront/storefront.types';
 import { PageLoader, ButtonLoader } from '@/components/feedback/FeedbackStates';
@@ -12,6 +12,8 @@ export default function HomepagePage() {
   const updateMut = useUpdateHomepage();
   const [editState, setEditState] = useState<Record<string, HomepageSection>>({});
   const [error, setError] = useState<string | null>(null);
+  const [draggedKey, setDraggedKey] = useState<string | null>(null);
+  const [dragOverKey, setDragOverKey] = useState<string | null>(null);
 
   if (isLoading) return <PageLoader />;
 
@@ -30,6 +32,53 @@ export default function HomepagePage() {
     setEditState(p => ({ ...p, [key]: { ...section, displayOrder: newOrder } }));
   };
 
+  const getSectionState = (key: string) => editState[key] ?? items.find(s => s.key === key);
+
+  const orderedItems = [...items].sort((a, b) => getSectionState(a.key)!.displayOrder - getSectionState(b.key)!.displayOrder);
+
+  const reorder = (fromKey: string, toKey: string) => {
+    if (fromKey === toKey) return;
+    const keys = orderedItems.map(s => s.key);
+    const fromIndex = keys.indexOf(fromKey);
+    const toIndex = keys.indexOf(toKey);
+    if (fromIndex === -1 || toIndex === -1) return;
+    keys.splice(fromIndex, 1);
+    keys.splice(toIndex, 0, fromKey);
+
+    setEditState(prev => {
+      const next = { ...prev };
+      keys.forEach((key, idx) => {
+        const newOrder = idx + 1;
+        const section = items.find(s => s.key === key);
+        if (!section) return;
+        const current = next[key] ?? section;
+        if (current.displayOrder !== newOrder) {
+          next[key] = { ...current, displayOrder: newOrder };
+        }
+      });
+      return next;
+    });
+  };
+
+  const handleDragStart = (key: string) => setDraggedKey(key);
+
+  const handleDragOver = (key: string) => (e: DragEvent) => {
+    e.preventDefault();
+    if (draggedKey && draggedKey !== key) setDragOverKey(key);
+  };
+
+  const handleDrop = (key: string) => (e: DragEvent) => {
+    e.preventDefault();
+    if (draggedKey) reorder(draggedKey, key);
+    setDraggedKey(null);
+    setDragOverKey(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedKey(null);
+    setDragOverKey(null);
+  };
+
   const saveAll = async () => {
     setError(null);
     try {
@@ -38,8 +87,6 @@ export default function HomepagePage() {
       setEditState({});
     } catch (err) { setError(getApiErrorMessage(err, 'Failed to save')); }
   };
-
-  const getSectionState = (key: string) => editState[key] ?? items.find(s => s.key === key);
 
   return (
     <div className="space-y-6">
@@ -61,11 +108,21 @@ export default function HomepagePage() {
         <div className="grid grid-cols-[40px_1fr_80px_100px_120px_80px] gap-2 px-5 py-3 bg-neutral-50 border-b border-neutral-200 text-[10px] font-bold text-neutral-500 uppercase">
           <span></span><span>Section</span><span>Toggle</span><span>Order</span><span>Schedule</span><span>Actions</span>
         </div>
-        {items.map((section) => {
+        {orderedItems.map((section) => {
           const state = getSectionState(section.key)!;
+          const isDragging = draggedKey === section.key;
+          const isDropTarget = dragOverKey === section.key && draggedKey !== section.key;
           return (
-            <div key={section.key} className={`grid grid-cols-[40px_1fr_80px_100px_120px_80px] gap-2 items-center px-5 py-3 border-b border-neutral-100 last:border-0 ${editState[section.key] ? 'bg-amber-50/50' : ''}`}>
-              <div className="text-neutral-300 cursor-grab"><GripVertical className="w-4 h-4" /></div>
+            <div
+              key={section.key}
+              draggable
+              onDragStart={() => handleDragStart(section.key)}
+              onDragOver={handleDragOver(section.key)}
+              onDrop={handleDrop(section.key)}
+              onDragEnd={handleDragEnd}
+              className={`grid grid-cols-[40px_1fr_80px_100px_120px_80px] gap-2 items-center px-5 py-3 border-b border-neutral-100 last:border-0 transition-colors ${editState[section.key] ? 'bg-amber-50/50' : ''} ${isDragging ? 'opacity-40' : ''} ${isDropTarget ? 'border-t-2 border-t-neutral-900' : ''}`}
+            >
+              <div className="text-neutral-300 cursor-grab active:cursor-grabbing"><GripVertical className="w-4 h-4" /></div>
               <div>
                 <div className="text-sm font-semibold text-neutral-900 capitalize">{section.key.replace(/_/g, ' ').toLowerCase()}</div>
                 {section.title && <div className="text-[11px] text-neutral-400 truncate">{section.title}</div>}
