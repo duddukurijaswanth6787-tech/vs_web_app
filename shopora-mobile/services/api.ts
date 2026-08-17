@@ -136,6 +136,11 @@ export interface ColorGroupDraft {
   /** Local file URIs (from the camera/gallery) or already-hosted URLs. */
   images: string[];
   sizes: SizeRowDraft[];
+  /**
+   * Already-uploaded fabric swatch photo for this colour (used as that
+   * colour tab's icon/thumbnail on the storefront), distinct from `images`.
+   */
+  swatchUrl?: string;
 }
 
 export interface SizeRowDraft {
@@ -146,6 +151,8 @@ export interface SizeRowDraft {
   minStock?: number;
   /** Level at which the variant should be reordered. */
   reorderLevel?: number;
+  /** User-typed SKU override; left blank lets the backend auto-generate one. */
+  sku?: string;
 }
 
 /** One created variant, with the barcode the backend assigned to it. */
@@ -354,6 +361,27 @@ export const catalogService = {
     attributeValues?: { attributeId: string; attributeOptionId?: string; value?: string }[];
   }) {
     const res = await posApiClient.post('/variants', dto);
+    return unwrap<any>(res);
+  },
+
+  /**
+   * POST /products/:id/color-groups/sync — binds each colour's variant ids
+   * and media ids to a `colorAttributeOptionId`, so the storefront can group
+   * images and sizes by colour. Mirrors the web ProductBuilder's call of the
+   * same name (frontend/src/features/catalog/products/product.service.ts).
+   */
+  async syncColorGroups(
+    productId: string,
+    dto: {
+      colorGroups: Array<{
+        colorAttributeOptionId: string;
+        label?: string;
+        variantIds: string[];
+        mediaIds: string[];
+      }>;
+    },
+  ) {
+    const res = await posApiClient.post(`/products/${productId}/color-groups/sync`, dto);
     return unwrap<any>(res);
   },
 };

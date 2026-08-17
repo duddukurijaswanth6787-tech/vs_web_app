@@ -22,6 +22,8 @@ import type { CouponResponse } from '@/features/coupons/coupon.types';
 import { useOffers } from '@/features/offers/offer.hooks';
 import { offerService } from '@/features/offers/offer.service';
 import type { OfferResponse } from '@/features/offers/offer.types';
+import { useBatchStickers } from '@/features/pos/pos.hooks';
+import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 import {
   LiveDesktopProductPreview,
   type ColorVariantGroup,
@@ -44,6 +46,8 @@ import {
   ListChecks,
   ChevronLeft,
   ChevronRight,
+  Printer,
+  QrCode,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -74,6 +78,7 @@ interface IssuedVariant {
   barcode?: string;
   title: string;
   stock: number;
+  price: number;
 }
 
 /** A scope that a product form is allowed to toggle from here without
@@ -189,6 +194,10 @@ export default function ProductBuilder({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [issuedVariants, setIssuedVariants] = useState<IssuedVariant[]>([]);
+  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
+  const [labelQtyBySku, setLabelQtyBySku] = useState<Record<string, number>>({});
+  const [printingSku, setPrintingSku] = useState<string | null>(null);
+  const batchStickersMutation = useBatchStickers();
 
   // Load Brands
   const { data: brandsData } = useBrands({ limit: 100 });
@@ -885,6 +894,9 @@ export default function ProductBuilder({
             barcode: variant.barcode,
             title,
             stock: sizeRow.stock,
+            price: sizeRow.price
+              ? Number(sizeRow.price)
+              : Number(values.salePrice || values.basePrice || 0),
           });
         }
       }
@@ -921,6 +933,9 @@ export default function ProductBuilder({
       }
 
       setIssuedVariants(issued);
+      setLabelQtyBySku(
+        Object.fromEntries(issued.map((v) => [v.sku, Math.max(1, v.stock || 1)])),
+      );
       setSaveMessage(
         issued.length > 0
           ? `✓ Product saved — ${issued.length} variant${issued.length === 1 ? '' : 's'} created with barcodes.`
@@ -932,6 +947,46 @@ export default function ProductBuilder({
       setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to save product'));
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const productName = methods.getValues('name') || 'Product';
+
+  const handlePrintLabel = async (variant: IssuedVariant) => {
+    if (!variant.barcode) return;
+    setPrintingSku(variant.sku);
+    try {
+      const res = await batchStickersMutation.mutateAsync({
+        productName,
+        variantTitle: variant.title,
+        sku: variant.sku,
+        barcode: variant.barcode,
+        price: variant.price,
+        quantity: Math.max(1, labelQtyBySku[variant.sku] || 1),
+        labelSize,
+      });
+      const printWindow = window.open('', '_blank');
+      if (printWindow) {
+        printWindow.document.write(res.html);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+          printWindow.print();
+          printWindow.close();
+        }, 250);
+      }
+    } catch (err) {
+      setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to generate labels'));
+    } finally {
+      setPrintingSku(null);
+    }
+  };
+
+  const handlePrintAllLabels = async () => {
+    // Sequential — each print opens its own window; concurrent window.open
+    // calls get blocked as popups by most browsers.
+    for (const variant of issuedVariants) {
+      await handlePrintLabel(variant);
     }
   };
 
@@ -1000,7 +1055,7 @@ export default function ProductBuilder({
         {/* ISSUED BARCODES — shown after a save that created variants */}
         {issuedVariants.length > 0 && (
           <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm">
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
               <div>
                 <h3 className="text-sm font-bold text-neutral-900">
                   Barcodes issued ({issuedVariants.length})
@@ -1018,6 +1073,41 @@ export default function ProductBuilder({
               </button>
             </div>
 
+            {/* Label size + print-all */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-neutral-50 border border-neutral-200 rounded-2xl p-3">
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+                  Label Size
+                </span>
+                <div className="flex gap-1.5">
+                  {LABEL_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLabelSize(opt.value)}
+                      title={opt.description}
+                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
+                        labelSize === opt.value
+                          ? 'bg-amber-600 border-amber-600 text-white'
+                          : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-100'
+                      }`}
+                    >
+                      {opt.title}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handlePrintAllLabels}
+                disabled={printingSku !== null}
+                className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 disabled:opacity-60 transition-all"
+              >
+                <Printer className="w-3.5 h-3.5" />
+                <span>Print All {issuedVariants.length} Labels</span>
+              </button>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {issuedVariants.map((variant) => (
                 <div
@@ -1027,12 +1117,20 @@ export default function ProductBuilder({
                   <span className="text-xs font-bold text-neutral-700">{variant.title}</span>
                   {variant.barcode ? (
                     <>
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
-                        alt={`Barcode ${variant.barcode}`}
-                        className="h-14 my-2 object-contain"
-                      />
+                      <div className="flex items-center justify-center gap-2 my-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
+                          alt={`Barcode ${variant.barcode}`}
+                          className="h-14 object-contain"
+                        />
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
+                          alt={`QR ${variant.barcode}`}
+                          className="h-14 w-14 object-contain"
+                        />
+                      </div>
                       <span className="text-xs font-mono tracking-widest text-neutral-900">
                         {variant.barcode}
                       </span>
@@ -1042,6 +1140,37 @@ export default function ProductBuilder({
                   )}
                   <span className="text-[10px] text-neutral-400 mt-1">SKU: {variant.sku}</span>
                   <span className="text-[10px] text-neutral-400">Stock: {variant.stock}</span>
+
+                  <div className="flex items-center gap-2 mt-3 w-full">
+                    <input
+                      type="number"
+                      min={1}
+                      value={labelQtyBySku[variant.sku] ?? 1}
+                      onChange={(e) =>
+                        setLabelQtyBySku((prev) => ({
+                          ...prev,
+                          [variant.sku]: Math.max(1, Number(e.target.value) || 1),
+                        }))
+                      }
+                      className="w-16 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs text-center"
+                      title="Copies to print"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handlePrintLabel(variant)}
+                      disabled={!variant.barcode || printingSku === variant.sku}
+                      className="flex-1 bg-neutral-900 hover:bg-neutral-700 text-white text-[11px] font-bold py-1.5 rounded-lg flex items-center justify-center gap-1.5 disabled:opacity-60 transition-all"
+                    >
+                      {printingSku === variant.sku ? (
+                        <span>Printing…</span>
+                      ) : (
+                        <>
+                          <QrCode className="w-3 h-3" />
+                          <span>Print</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
