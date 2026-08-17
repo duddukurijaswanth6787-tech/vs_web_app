@@ -118,7 +118,11 @@ export function BarcodeScannerModal({
               enableTorch={enableTorch}
               onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
               barcodeScannerSettings={{
-                barcodeTypes: ['code128', 'ean13', 'code39', 'qr', 'ean8', 'code93'],
+                // Every barcode label this store prints (see backend BarcodeService)
+                // is Code128 -- restricting detection to just that format means the
+                // camera's native decoder isn't wasting each frame testing five
+                // other symbologies, which is the main lever for faster scans.
+                barcodeTypes: ['code128'],
               }}
             />
 
