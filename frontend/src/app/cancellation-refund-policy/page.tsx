@@ -2,14 +2,14 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ShieldCheck, ArrowLeft } from 'lucide-react';
+import { RefreshCw, ArrowLeft } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useCmsPage } from '@/features/customer/hooks';
 
-export default function PrivacyPolicyPage() {
-  const { data, isLoading } = useCmsPage('privacy');
+export default function CancellationRefundPolicyPage() {
+  const { data, isLoading } = useCmsPage('cancellation-refund-policy');
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
       <StorefrontHeader />
@@ -21,22 +21,19 @@ export default function PrivacyPolicyPage() {
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
           </Link>
           <span>/</span>
-          <span className="text-[#800020]">Privacy Policy</span>
+          <span className="text-[#800020]">Cancellation & Refund Policy</span>
         </div>
 
         {/* Page Hero Header */}
         <div className="bg-gradient-to-br from-rose-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
           <div className="relative z-10 space-y-3">
             <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
-              <ShieldCheck className="w-4 h-4" /> Official Data Governance & Privacy
+              <RefreshCw className="w-4 h-4" /> Cancellations, Returns & Refunds
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Privacy Policy</h1>
+            <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Cancellation & Refund Policy</h1>
             <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
-              At <strong className="text-amber-300">Vasanthi&apos;s Signature</strong> (accessible from <a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>), protecting your personal information and transparent data management is our highest commitment.
+              How order cancellations, returns, and refunds work at <strong className="text-amber-300">Vasanthi&apos;s Signature</strong>.
             </p>
-            <div className="pt-2 text-[11px] text-rose-200/70 font-mono">
-              Last Updated: August 9, 2026 • Compliant with Indian IT Act 2000 & GDPR Standards
-            </div>
           </div>
         </div>
 

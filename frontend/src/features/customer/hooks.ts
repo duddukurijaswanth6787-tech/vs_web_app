@@ -324,7 +324,9 @@ export function usePaymentMethods() {
 export function useCmsPage(slug: string) {
   return useQuery({
     queryKey: ['customer', 'cms', slug],
-    queryFn: async (): Promise<{ title: string; content: string }> => ({ title: slug, content: '' }),
+    queryFn: () => customerStorefrontService.getCmsPage(slug),
+    enabled: !!slug,
+    staleTime: 30 * 1000,
   });
 }
 

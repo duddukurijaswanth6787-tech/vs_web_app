@@ -76,7 +76,8 @@ export function StorefrontFooter() {
               <ul className="space-y-1 text-[11px] text-rose-200/70">
                 <li><Link href="/contact" prefetch={false} className="hover:text-white transition-colors">Contact Us</Link></li>
                 <li><Link href="/track-order" prefetch={false} className="hover:text-white transition-colors">Track Order</Link></li>
-                <li><Link href="/returns" prefetch={false} className="hover:text-white transition-colors">Returns & Refunds</Link></li>
+                <li><Link href="/returns" prefetch={false} className="hover:text-white transition-colors">My Returns</Link></li>
+                <li><Link href="/cancellation-refund-policy" prefetch={false} className="hover:text-white transition-colors">Cancellation & Refund Policy</Link></li>
                 <li><Link href="/shipping" prefetch={false} className="hover:text-white transition-colors">Shipping Info</Link></li>
                 <li><Link href="/faqs" prefetch={false} className="hover:text-white transition-colors">FAQs & Size Guide</Link></li>
               </ul>
@@ -170,6 +171,8 @@ export function StorefrontFooter() {
             <Link href="/privacy" prefetch={false} className="hover:text-white transition-colors">Privacy Policy</Link>
             <span>•</span>
             <Link href="/terms" prefetch={false} className="hover:text-white transition-colors">Terms</Link>
+            <span>•</span>
+            <Link href="/cancellation-refund-policy" prefetch={false} className="hover:text-white transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>
