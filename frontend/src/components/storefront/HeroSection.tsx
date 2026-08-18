@@ -118,7 +118,7 @@ export function HeroSection() {
               priority
               sizes="100vw"
               unoptimized={isLocalOrPlaceholder(main.mobileImageUrl || main.imageUrl)}
-              className={`block sm:hidden object-cover ${main.mobileImageUrl ? 'object-center' : 'object-right'} group-hover:scale-103 transition-transform duration-700 opacity-90`}
+              className={`block sm:hidden object-cover ${main.mobileImageUrl ? 'object-center' : 'object-right'} group-hover:scale-103 transition-transform duration-700`}
             />
             <Image
               src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
@@ -129,7 +129,10 @@ export function HeroSection() {
               unoptimized={isLocalOrPlaceholder(main.imageUrl)}
               className="hidden sm:block object-cover object-center group-hover:scale-103 transition-transform duration-700 opacity-90"
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF3F3] via-[#FAF3F3]/80 to-transparent sm:bg-gradient-to-r sm:from-[#FAF3F3]/95 sm:via-[#FAF3F3]/70 sm:to-transparent z-10" />
+            {/* Mobile: a thin, steep scrim right behind the text block so the
+                photo stays clear through the rest of the banner, instead of
+                a heavy tint washing out the whole lower half of the image. */}
+            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF3F3] from-0% via-[#FAF3F3]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#FAF3F3]/95 sm:via-[#FAF3F3]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
           </Link>
 
           {/* Slider Arrow Controls */}
