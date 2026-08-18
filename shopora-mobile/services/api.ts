@@ -1,4 +1,5 @@
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 /**
  * Backend base URL.
@@ -23,10 +24,14 @@ export const posApiClient = axios.create({
 });
 
 // ─── Session ─────────────────────────────────────────────────────────────────
-// Held in memory for the life of the app process. A POS device signs in when the
-// shift starts; closing the app signs out. Persisting this across restarts needs
-// a storage dependency (@react-native-async-storage/async-storage) that this app
-// does not currently ship.
+// Kept in memory for fast sync reads (isAuthenticated/getAccessToken are called
+// from render code), and mirrored to SecureStore (Keychain on iOS, Keystore-
+// backed EncryptedSharedPreferences on Android) so a sign-in survives the app
+// being closed and reopened. Call restoreSession() once at startup, before any
+// screen checks isAuthenticated() -- see app/_layout.tsx.
+
+const TOKEN_STORAGE_KEY = 'shopora_access_token';
+const USER_STORAGE_KEY = 'shopora_current_user';
 
 let accessToken: string | null = null;
 let currentUser: AuthUser | null = null;
@@ -51,9 +56,42 @@ export function isAuthenticated() {
   return Boolean(accessToken);
 }
 
+async function persistSession() {
+  try {
+    if (accessToken) {
+      await SecureStore.setItemAsync(TOKEN_STORAGE_KEY, accessToken);
+    }
+    if (currentUser) {
+      await SecureStore.setItemAsync(USER_STORAGE_KEY, JSON.stringify(currentUser));
+    }
+  } catch (e) {
+    // Best-effort -- worst case the next app launch just asks to sign in again.
+    console.error('Failed to persist session:', e);
+  }
+}
+
+/** Reads a previously saved session back into memory. Call once at app startup. */
+export async function restoreSession(): Promise<boolean> {
+  try {
+    const [token, userJson] = await Promise.all([
+      SecureStore.getItemAsync(TOKEN_STORAGE_KEY),
+      SecureStore.getItemAsync(USER_STORAGE_KEY),
+    ]);
+    if (!token) return false;
+    accessToken = token;
+    currentUser = userJson ? (JSON.parse(userJson) as AuthUser) : null;
+    return true;
+  } catch (e) {
+    console.error('Failed to restore session:', e);
+    return false;
+  }
+}
+
 export function clearSession() {
   accessToken = null;
   currentUser = null;
+  SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY).catch(() => {});
+  SecureStore.deleteItemAsync(USER_STORAGE_KEY).catch(() => {});
 }
 
 posApiClient.interceptors.request.use((config) => {
@@ -191,6 +229,7 @@ export const authService = {
     if (!token) throw new Error('Login succeeded but no access token was returned.');
     accessToken = token;
     currentUser = payload?.user ?? null;
+    await persistSession();
     return { token, user: currentUser };
   },
 

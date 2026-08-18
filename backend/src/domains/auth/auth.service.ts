@@ -61,7 +61,7 @@ export class AuthService {
       userType: user.userType,
       roles: [IDENTITY_CONSTANTS.DEFAULT_CUSTOMER_ROLE],
     };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = await this.jwtService.sign(payload);
     const refreshToken = await this.refreshTokenService.create(
       user.id,
       ip,
@@ -75,7 +75,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: this.jwtService.getExpiresIn(),
+      expiresIn: await this.jwtService.getExpiresIn(),
     };
   }
 
@@ -138,7 +138,7 @@ export class AuthService {
       roles,
     };
     const rememberMe = dto.rememberMe ?? false;
-    const accessToken = this.jwtService.sign(payload, rememberMe);
+    const accessToken = await this.jwtService.sign(payload, rememberMe);
     const refreshToken = await this.refreshTokenService.create(
       user.id,
       ip,
@@ -150,7 +150,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: this.jwtService.getExpiresIn(rememberMe),
+      expiresIn: await this.jwtService.getExpiresIn(rememberMe),
     };
   }
 
@@ -178,7 +178,7 @@ export class AuthService {
       userType: user.userType,
       roles,
     };
-    const accessToken = this.jwtService.sign(payload, rememberMe);
+    const accessToken = await this.jwtService.sign(payload, rememberMe);
     const refreshToken = await this.refreshTokenService.create(
       user.id,
       ip,
@@ -188,7 +188,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: this.jwtService.getExpiresIn(rememberMe),
+      expiresIn: await this.jwtService.getExpiresIn(rememberMe),
     };
   }
 
@@ -217,7 +217,7 @@ export class AuthService {
       userType: user.userType,
       roles,
     };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = await this.jwtService.sign(payload);
     const newRefreshToken = await this.refreshTokenService.create(
       user.id,
       ip,
@@ -231,7 +231,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      expiresIn: this.jwtService.getExpiresIn(),
+      expiresIn: await this.jwtService.getExpiresIn(),
     };
   }
 
@@ -326,7 +326,7 @@ export class AuthService {
       userType: user.userType,
       roles: [IDENTITY_CONSTANTS.DEFAULT_CUSTOMER_ROLE],
     };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = await this.jwtService.sign(payload);
     const refreshToken = await this.refreshTokenService.create(
       user.id,
       ip,
