@@ -56,7 +56,7 @@ export default function LoginScreen() {
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <View style={styles.badge}>
-            <ShieldCheck size={26} color="#800020" />
+            <ShieldCheck size={26} color="#0284c7" />
           </View>
           <Text style={styles.title}>Staff Sign In</Text>
           <Text style={styles.subtitle}>
@@ -122,9 +122,9 @@ const styles = StyleSheet.create({
     width: 56,
     height: 56,
     borderRadius: 18,
-    backgroundColor: '#fdf2f4',
+    backgroundColor: '#e0f2fe',
     borderWidth: 1,
-    borderColor: '#fbdde4',
+    borderColor: '#bae6fd',
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 18,
@@ -144,7 +144,7 @@ const styles = StyleSheet.create({
   },
   button: {
     marginTop: 28,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 15,
     flexDirection: 'row',
