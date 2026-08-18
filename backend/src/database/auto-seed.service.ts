@@ -172,7 +172,37 @@ export class AutoSeedService implements OnModuleInit {
       );
     }
 
-    // 3. Seed Demo Customer Account
+    // 3. Seed admin-configurable session length settings, once. Only
+    // `create` on first run -- `update: {}` deliberately touches nothing on
+    // later restarts, so an admin's change via Admin > Settings survives a
+    // redeploy instead of being reset back to this default every boot.
+    const sessionSettings: { key: string; value: string; description: string }[] = [
+      {
+        key: 'security.sessionExpiryMinutes',
+        value: '15',
+        description: 'How long a normal login session stays valid, in minutes, before the user must sign in again.',
+      },
+      {
+        key: 'security.rememberMeExpiryDays',
+        value: '30',
+        description: 'How long a "Remember Me" login session stays valid, in days.',
+      },
+    ];
+    for (const s of sessionSettings) {
+      await this.prisma.appSetting.upsert({
+        where: { key: s.key },
+        update: {},
+        create: {
+          key: s.key,
+          value: s.value,
+          type: 'NUMBER',
+          group: 'security',
+          description: s.description,
+        },
+      });
+    }
+
+    // 4. Seed Demo Customer Account
     const custPassword = await argon2.hash('Customer@123');
     for (const custEmail of ['customer@vasanthi.com', 'customer@vasanthidesigners.com']) {
       await this.prisma.user.upsert({

@@ -1,8 +1,27 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
+import { restoreSession } from '../services/api';
 
 export default function RootLayout() {
+  // Restore a previously saved sign-in (SecureStore) before any screen mounts
+  // and checks isAuthenticated() -- otherwise every screen would see "signed
+  // out" for a moment after a cold start even when a valid session exists.
+  const [restoring, setRestoring] = useState(true);
+
+  useEffect(() => {
+    restoreSession().finally(() => setRestoring(false));
+  }, []);
+
+  if (restoring) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f9ff' }}>
+        <ActivityIndicator size="large" color="#0284c7" />
+      </View>
+    );
+  }
+
   return (
     <>
       <StatusBar style="light" />
