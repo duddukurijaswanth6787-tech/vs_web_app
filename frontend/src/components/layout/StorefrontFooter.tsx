@@ -73,6 +73,7 @@ export function StorefrontFooter() {
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Customer Care</h4>
               <ul className="space-y-1 text-[11px] text-rose-200/70">
                 <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
+                <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/track-order" className="hover:text-white transition-colors">Track Order</Link></li>
                 <li><Link href="/returns" className="hover:text-white transition-colors">My Returns</Link></li>
                 <li><Link href="/cancellation-refund-policy" className="hover:text-white transition-colors">Cancellation & Refund Policy</Link></li>
