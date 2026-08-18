@@ -1,10 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { dehydrate } from "@tanstack/react-query";
+import { QueryClient, dehydrate } from "@tanstack/react-query";
 import "./globals.css";
 import { VDQueryProvider } from "@/lib/query/provider";
 import { AuthProvider } from "@/lib/auth/AuthContext";
-import { queryClient } from "@/lib/query/client";
 import { prefetchStorefrontData } from "@/lib/query/prefetch";
 
 const geistSans = Geist({
@@ -28,6 +27,13 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // A fresh QueryClient per request -- this is a server component running on
+  // a shared Node process, so reusing the client-side singleton here would
+  // mean every concurrent request prefetches into and dehydrates from the
+  // same cache object. The singleton from lib/query/client is only for the
+  // browser, inside VDQueryProvider.
+  const queryClient = new QueryClient();
+
   // ponytail: prefetch common storefront data server-side so every page
   // hydrates instantly — no duplicate client requests for categories,
   // settings, banners, coupons, reels.

@@ -85,7 +85,7 @@ export function StorefrontHeader() {
         <div className={mobileAnnouncementEnabled ? "bg-[#800020] text-white py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5" : "hidden sm:flex bg-[#800020] text-white py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"}>
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
           <span className="truncate">{announcementText}</span>
-          <Link href="/offers" prefetch={false} className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
+          <Link href="/offers" className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
             Shop Now →
           </Link>
         </div>
@@ -94,7 +94,6 @@ export function StorefrontHeader() {
       {/* Top Header Row */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-2 sm:py-3.5">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
-          
           {/* Left: Mobile Menu Trigger & Logo */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
@@ -127,7 +126,6 @@ export function StorefrontHeader() {
                 <Link
                   key={cat.id || cat.slug}
                   href={`/categories/${cat.slug}`}
-                  prefetch={false}
                   className="hover:text-[#800020] transition-colors whitespace-nowrap font-medium text-neutral-700"
                 >
                   {cat.name}
@@ -135,10 +133,10 @@ export function StorefrontHeader() {
               ))
             ) : (
               <>
-                <Link href="/categories/new-arrivals" prefetch={false} className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/new-arrivals" className="hover:text-[#800020] transition-colors whitespace-nowrap">
                   New Arrivals
                 </Link>
-                <Link href="/categories/collections" prefetch={false} className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/collections" className="hover:text-[#800020] transition-colors whitespace-nowrap">
                   Collections
                 </Link>
               </>
@@ -160,14 +158,14 @@ export function StorefrontHeader() {
                 className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#800020]/20 placeholder:text-neutral-400"
               />
             </div>
-            <Link href="/wishlist" prefetch={false} className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Wishlist">
               <Heart className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {wishlistCount}
               </span>
             </Link>
 
-            <Link href="/cart" prefetch={false} className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Cart">
+            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Cart">
               <ShoppingBag className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
               <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {cartCount}
@@ -207,7 +205,6 @@ export function StorefrontHeader() {
 
           {/* Slide-over Drawer Panel */}
           <div className="relative w-[85%] max-w-sm bg-white h-[100dvh] max-h-[100dvh] shadow-2xl flex flex-col justify-between overflow-y-auto overscroll-contain z-10 animate-in slide-in-from-left duration-300 pb-20">
-            
             <div>
               {/* Drawer Top Header Row */}
               <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[#FAF3F3]">
@@ -235,7 +232,6 @@ export function StorefrontHeader() {
 
               {/* Main Categories Navigation List (Women's Wear Special) */}
               <div className="p-3 space-y-1">
-                
                 {/* Home link */}
                 <Link
                   href="/"

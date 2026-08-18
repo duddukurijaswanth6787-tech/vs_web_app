@@ -50,7 +50,7 @@ function ProductCardItem({
 
   return (
     <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-white rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300">
-      <Link href={`/product/${product.slug || product.id}`} prefetch={false} className="relative aspect-[3/4] overflow-hidden bg-neutral-100 block group">
+      <Link href={`/product/${product.slug || product.id}`} className="relative aspect-[3/4] overflow-hidden bg-neutral-100 block group">
         <Image
           src={imageSrc}
           alt={cardTitle}
@@ -85,7 +85,7 @@ function ProductCardItem({
         </button>
       </Link>
       <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5">
-        <Link href={`/product/${product.slug || product.id}`} prefetch={false}>
+        <Link href={`/product/${product.slug || product.id}`}>
           <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1 hover:text-[#800020] transition-colors">
             {cardTitle}
           </h3>
@@ -134,7 +134,7 @@ export function ProductGridSection({
           </h2>
           {subtitle && <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">{subtitle}</p>}
         </div>
-        <Link href={viewAllHref} prefetch={false} className="text-xs font-semibold text-[#800020] hover:text-[#600018] flex items-center gap-1">
+        <Link href={viewAllHref} className="text-xs font-semibold text-[#800020] hover:text-[#600018] flex items-center gap-1">
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
@@ -143,7 +143,7 @@ export function ProductGridSection({
       {displayProducts.length === 0 ? (
         <div className="py-8 text-center px-4 bg-rose-50/30 border border-rose-100/60 rounded-2xl mx-4 sm:mx-8 lg:mx-0">
           <p className="text-xs font-semibold text-neutral-600">New products arriving soon for {title}.</p>
-          <Link href="/categories" prefetch={false} className="text-xs font-bold text-[#800020] hover:underline mt-1 inline-block">
+          <Link href="/categories" className="text-xs font-bold text-[#800020] hover:underline mt-1 inline-block">
             Explore All Categories →
           </Link>
         </div>

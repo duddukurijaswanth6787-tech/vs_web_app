@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { ArrowLeft, Search as SearchIcon } from 'lucide-react';
@@ -14,10 +14,18 @@ function SearchPageContent() {
   const searchParams = useSearchParams();
   const initial = searchParams.get('q') || '';
   const [q, setQ] = useState(initial);
-  const search = useCustomerSearch(q);
-  const productsFallback = useCustomerProducts({ search: q, limit: 48 });
+  // The input updates `q` immediately so typing feels responsive, but the
+  // queries below only react to `debouncedQ` -- without this, every single
+  // keystroke fired two network requests (search + fallback).
+  const [debouncedQ, setDebouncedQ] = useState(initial);
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQ(q), 300);
+    return () => clearTimeout(timer);
+  }, [q]);
 
-  const products = useMemo(() => {
+  const search = useCustomerSearch(debouncedQ);
+
+  const searchList = useMemo(() => {
     const fromSearch = search.data as Record<string, unknown>;
     const list =
       (fromSearch?.products as { data?: unknown[] })?.data ||
@@ -25,12 +33,22 @@ function SearchPageContent() {
       fromSearch?.products ||
       fromSearch?.data ||
       [];
-    if (Array.isArray(list) && list.length && list[0]?.name) {
-      return list.map(mapProductToItem);
+    return Array.isArray(list) ? list : [];
+  }, [search.data]);
+
+  // Only hit the fallback endpoint once the primary search has actually
+  // resolved with no usable results, instead of firing it on every keystroke
+  // alongside the search query regardless of outcome.
+  const needsFallback = search.isSuccess && !(searchList.length > 0 && (searchList[0] as { name?: string })?.name);
+  const productsFallback = useCustomerProducts({ search: debouncedQ, limit: 48 }, { enabled: needsFallback });
+
+  const products = useMemo(() => {
+    if (searchList.length && (searchList[0] as { name?: string })?.name) {
+      return searchList.map(mapProductToItem);
     }
     const fallbackList = productsFallback.data?.data || (Array.isArray(productsFallback.data) ? productsFallback.data : []);
     return Array.isArray(fallbackList) ? fallbackList.map(mapProductToItem) : [];
-  }, [search.data, productsFallback.data]);
+  }, [searchList, productsFallback.data]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900">

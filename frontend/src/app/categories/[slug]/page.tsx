@@ -31,10 +31,15 @@ export default function CategorySlugPage() {
           ? { isFeatured: true }
           : null;
 
-  const category = useCategoryBySlug(special ? '' : slug);
-  const categoryProducts = useCategoryProducts(special ? '' : slug, { limit: 48 });
-  const specialProducts = useCustomerProducts(special ? { ...special, limit: 48 } : { limit: 0 });
-  const fallbackProducts = useCustomerProducts({ limit: 48 });
+  // Only the branch actually taken should hit the network -- previously all
+  // four queries fired unconditionally, including two that always ran with
+  // an empty slug or a limit of 0 on whichever branch wasn't active.
+  const category = useCategoryBySlug(slug, !special);
+  const categoryProducts = useCategoryProducts(slug, { limit: 48 }, !special);
+  const specialProducts = useCustomerProducts(
+    { ...(special ?? {}), limit: 48 },
+    { enabled: !!special },
+  );
 
   const title = special
     ? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
@@ -43,9 +48,18 @@ export default function CategorySlugPage() {
   const fetched = special
     ? extractProducts(specialProducts.data)
     : extractProducts(categoryProducts.data);
+  const primaryDone = special ? specialProducts.isSuccess : categoryProducts.isSuccess;
+  const needsFallback = primaryDone && fetched.length === 0;
+
+  // Only fetched once the primary query has actually come back empty --
+  // previously this fired unconditionally on every category page load even
+  // when the category already had products.
+  const fallbackProducts = useCustomerProducts({ limit: 48 }, { enabled: needsFallback });
   const fallback = extractProducts(fallbackProducts.data);
-  const products = (fetched && fetched.length > 0) ? fetched : fallback;
-  const loading = special ? specialProducts.isLoading : (categoryProducts.isLoading && fallbackProducts.isLoading);
+  const products = fetched.length > 0 ? fetched : fallback;
+  const loading = special
+    ? specialProducts.isLoading
+    : categoryProducts.isLoading || (needsFallback && fallbackProducts.isLoading);
   const error = special ? specialProducts.error : categoryProducts.error || category.error;
 
   return (
