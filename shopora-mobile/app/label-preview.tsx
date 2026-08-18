@@ -184,7 +184,7 @@ export default function LabelPreviewScreen() {
             </TouchableOpacity>
 
             <TouchableOpacity style={styles.copyBtn} onPress={() => copyBarcode(variant)}>
-              <Copy size={15} color="#800020" />
+              <Copy size={15} color="#0284c7" />
             </TouchableOpacity>
           </View>
         </View>
@@ -192,7 +192,7 @@ export default function LabelPreviewScreen() {
 
       {product.variants.length > 1 && (
         <TouchableOpacity style={styles.secondaryBtn} onPress={handlePrintAll}>
-          <Printer size={16} color="#800020" style={{ marginRight: 8 }} />
+          <Printer size={16} color="#0284c7" style={{ marginRight: 8 }} />
           <Text style={styles.secondaryBtnText}>PRINT ALL {product.variants.length} LABELS</Text>
         </TouchableOpacity>
       )}
@@ -270,13 +270,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   labelSizeChipActive: {
-    backgroundColor: '#800020',
-    borderColor: '#800020',
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
   },
   labelSizeChipTitle: { fontSize: 12, fontWeight: '700', color: '#374151' },
   labelSizeChipTitleActive: { color: '#ffffff' },
   labelSizeChipDim: { fontSize: 10, color: '#9ca3af', marginTop: 1 },
-  labelSizeChipDimActive: { color: '#fbdde4' },
+  labelSizeChipDimActive: { color: '#bae6fd' },
 
   stickerCard: {
     backgroundColor: '#ffffff',
@@ -287,7 +287,7 @@ const styles = StyleSheet.create({
     marginTop: 16,
     alignItems: 'center',
   },
-  stickerBrand: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#800020' },
+  stickerBrand: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#0284c7' },
   stickerName: { fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 4, textAlign: 'center' },
   stickerVariant: { fontSize: 12, color: '#6b7280', marginTop: 2 },
 
@@ -297,7 +297,7 @@ const styles = StyleSheet.create({
 
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
   mrpText: { fontSize: 12, color: '#9ca3af', textDecorationLine: 'line-through' },
-  priceText: { fontSize: 19, fontWeight: '800', color: '#800020' },
+  priceText: { fontSize: 19, fontWeight: '800', color: '#0284c7' },
 
   stockRow: { marginTop: 6 },
   stockLabel: { fontSize: 11, color: '#6b7280' },
@@ -320,7 +320,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 12,
     paddingVertical: 13,
   },
@@ -330,8 +330,8 @@ const styles = StyleSheet.create({
     height: 44,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#fbdde4',
-    backgroundColor: '#fdf2f4',
+    borderColor: '#bae6fd',
+    backgroundColor: '#e0f2fe',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -344,17 +344,17 @@ const styles = StyleSheet.create({
     paddingVertical: 14,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: '#fbdde4',
-    backgroundColor: '#fdf2f4',
+    borderColor: '#bae6fd',
+    backgroundColor: '#e0f2fe',
   },
-  secondaryBtnText: { color: '#800020', fontWeight: '800', fontSize: 12, letterSpacing: 0.4 },
+  secondaryBtnText: { color: '#0284c7', fontWeight: '800', fontSize: 12, letterSpacing: 0.4 },
 
   primaryBtn: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 14,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 16,
   },

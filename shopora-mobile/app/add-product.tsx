@@ -809,7 +809,7 @@ export default function AddProductScreen() {
               style={[styles.stepChip, active && styles.stepChipActive]}
               onPress={() => setStep(s.key)}
             >
-              <s.Icon size={14} color={active ? '#ffffff' : done ? '#800020' : '#9ca3af'} />
+              <s.Icon size={14} color={active ? '#ffffff' : done ? '#0284c7' : '#9ca3af'} />
               <Text
                 style={[
                   styles.stepChipText,
@@ -859,7 +859,7 @@ export default function AddProductScreen() {
               }}
             >
               {loadingRefs ? (
-                <ActivityIndicator size="small" color="#800020" />
+                <ActivityIndicator size="small" color="#0284c7" />
               ) : (
                 <Text style={[styles.selectText, !brandName && styles.selectPlaceholder]}>
                   {brandName || 'Select a brand'}
@@ -1123,7 +1123,7 @@ export default function AddProductScreen() {
               <Switch
                 value={taxInclusive}
                 onValueChange={setTaxInclusive}
-                trackColor={{ true: '#800020', false: '#d1d5db' }}
+                trackColor={{ true: '#0284c7', false: '#d1d5db' }}
               />
             </View>
 
@@ -1351,14 +1351,14 @@ export default function AddProductScreen() {
                         style={styles.secondaryBtn}
                         onPress={() => takePhoto(activeGroup.id)}
                       >
-                        <ImageIcon size={15} color="#800020" style={{ marginRight: 6 }} />
+                        <ImageIcon size={15} color="#0284c7" style={{ marginRight: 6 }} />
                         <Text style={styles.secondaryBtnText}>Camera</Text>
                       </TouchableOpacity>
                       <TouchableOpacity
                         style={styles.secondaryBtn}
                         onPress={() => pickImages(activeGroup.id)}
                       >
-                        <Plus size={15} color="#800020" style={{ marginRight: 6 }} />
+                        <Plus size={15} color="#0284c7" style={{ marginRight: 6 }} />
                         <Text style={styles.secondaryBtnText}>Gallery</Text>
                       </TouchableOpacity>
                     </View>
@@ -1374,9 +1374,9 @@ export default function AddProductScreen() {
                         disabled={swatchUploading === activeGroup.id}
                       >
                         {swatchUploading === activeGroup.id ? (
-                          <ActivityIndicator size="small" color="#800020" style={{ marginRight: 6 }} />
+                          <ActivityIndicator size="small" color="#0284c7" style={{ marginRight: 6 }} />
                         ) : (
-                          <ImageIcon size={15} color="#800020" style={{ marginRight: 6 }} />
+                          <ImageIcon size={15} color="#0284c7" style={{ marginRight: 6 }} />
                         )}
                         <Text style={styles.secondaryBtnText}>
                           {activeGroup.swatchUrl ? 'Change swatch' : 'Upload swatch'}
@@ -1759,7 +1759,7 @@ export default function AddProductScreen() {
               <Switch
                 value={isPublished}
                 onValueChange={setIsPublished}
-                trackColor={{ true: '#800020', false: '#d1d5db' }}
+                trackColor={{ true: '#0284c7', false: '#d1d5db' }}
               />
             </View>
             <View style={styles.summaryCard}>
@@ -2000,7 +2000,7 @@ function PickerModal({
                 onPress={() => onSelect(row)}
               >
                 <Text style={styles.pickerItemText}>{row.name}</Text>
-                {selectedId === row.id && <Check size={18} color="#800020" />}
+                {selectedId === row.id && <Check size={18} color="#0284c7" />}
               </TouchableOpacity>
             ))}
             {rows.length === 0 && <Text style={styles.emptyHint}>{emptyText}</Text>}
@@ -2033,10 +2033,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#f8fafc',
     gap: 4,
   },
-  stepChipActive: { backgroundColor: '#800020' },
+  stepChipActive: { backgroundColor: '#0284c7' },
   stepChipText: { fontSize: 10, fontWeight: '700', color: '#9ca3af' },
   stepChipTextActive: { color: '#ffffff' },
-  stepChipTextDone: { color: '#800020' },
+  stepChipTextDone: { color: '#0284c7' },
 
   warnBar: {
     flexDirection: 'row',
@@ -2082,7 +2082,7 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     backgroundColor: '#ffffff',
   },
-  pillActive: { backgroundColor: '#800020', borderColor: '#800020' },
+  pillActive: { backgroundColor: '#0284c7', borderColor: '#0284c7' },
   pillText: { fontSize: 11, fontWeight: '700', color: '#6b7280' },
   pillTextActive: { color: '#ffffff' },
 
@@ -2139,7 +2139,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 1,
   },
-  promoCheckboxChecked: { backgroundColor: '#800020', borderColor: '#800020' },
+  promoCheckboxChecked: { backgroundColor: '#0284c7', borderColor: '#0284c7' },
   promoCheckboxDisabled: { borderColor: '#e5e7eb', backgroundColor: '#f3f4f6' },
   promoRowBody: { flex: 1 },
   promoRowBodyDisabled: { opacity: 0.5 },
@@ -2149,13 +2149,13 @@ const styles = StyleSheet.create({
 
   promoPreviewBox: {
     marginTop: 16,
-    backgroundColor: '#fdf2f4',
+    backgroundColor: '#e0f2fe',
     borderWidth: 1,
-    borderColor: '#f3d9de',
+    borderColor: '#bae6fd',
     borderRadius: 12,
     padding: 12,
   },
-  promoPreviewTitle: { fontSize: 11, fontWeight: '700', color: '#800020', marginBottom: 8 },
+  promoPreviewTitle: { fontSize: 11, fontWeight: '700', color: '#0284c7', marginBottom: 8 },
   promoPreviewRow: { marginTop: 6 },
   promoPreviewRowHead: {
     flexDirection: 'row',
@@ -2187,7 +2187,7 @@ const styles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 12,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     alignItems: 'center',
     justifyContent: 'center',
   },
@@ -2204,7 +2204,7 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     backgroundColor: '#ffffff',
   },
-  colorTabActive: { borderColor: '#800020', backgroundColor: '#fdf2f4' },
+  colorTabActive: { borderColor: '#0284c7', backgroundColor: '#e0f2fe' },
   colorTabText: { fontSize: 12, fontWeight: '600', color: '#374151' },
 
   card: {
@@ -2226,10 +2226,10 @@ const styles = StyleSheet.create({
     paddingVertical: 11,
     borderRadius: 12,
     borderWidth: 1,
-    borderColor: '#fbdde4',
-    backgroundColor: '#fdf2f4',
+    borderColor: '#bae6fd',
+    backgroundColor: '#e0f2fe',
   },
-  secondaryBtnText: { fontSize: 12, fontWeight: '700', color: '#800020' },
+  secondaryBtnText: { fontSize: 12, fontWeight: '700', color: '#0284c7' },
 
   thumbWrap: { marginRight: 10, position: 'relative', width: 84 },
   thumb: { width: 84, height: 104, borderRadius: 10, backgroundColor: '#f1f5f9' },
@@ -2237,7 +2237,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 34,
     left: 4,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     paddingHorizontal: 5,
     paddingVertical: 2,
     borderRadius: 5,
@@ -2296,7 +2296,7 @@ const styles = StyleSheet.create({
     borderColor: '#e5e7eb',
     backgroundColor: '#ffffff',
   },
-  sizeToggleActive: { backgroundColor: '#800020', borderColor: '#800020' },
+  sizeToggleActive: { backgroundColor: '#0284c7', borderColor: '#0284c7' },
   sizeToggleText: { fontSize: 12, fontWeight: '700', color: '#6b7280' },
   sizeToggleTextActive: { color: '#ffffff' },
   stockInput: {
@@ -2386,7 +2386,7 @@ const styles = StyleSheet.create({
   },
   summaryLabel: { fontSize: 12, color: '#6b7280' },
   summaryValue: { fontSize: 13, fontWeight: '600', color: '#1f2937', flexShrink: 1, textAlign: 'right' },
-  summaryValueEmphasis: { color: '#800020', fontWeight: '800' },
+  summaryValueEmphasis: { color: '#0284c7', fontWeight: '800' },
 
   errorBox: {
     flexDirection: 'row',
@@ -2402,7 +2402,7 @@ const styles = StyleSheet.create({
 
   primaryBtn: {
     marginTop: 20,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',
@@ -2504,6 +2504,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     borderRadius: 10,
   },
-  pickerItemActive: { backgroundColor: '#fdf2f4' },
+  pickerItemActive: { backgroundColor: '#e0f2fe' },
   pickerItemText: { fontSize: 14, color: '#374151' },
 });
