@@ -10,7 +10,6 @@ export function PromoBannersSection() {
   return (
     <section className="w-full max-w-[1440px] mx-auto py-4 sm:py-4 lg:hidden">
       <div className="flex overflow-x-auto gap-3.5 px-4 sm:px-6 pb-2.5 pt-1 scrollbar-none snap-x snap-mandatory">
-        
         {/* Festive Collection Promo Card */}
         <div className="w-[85vw] max-w-[340px] sm:w-[360px] shrink-0 snap-start bg-[#FAF3F3] rounded-3xl p-4 sm:p-5 border border-rose-100/80 shadow-2xs flex items-center justify-between relative overflow-hidden group">
           <div className="space-y-1.5 max-w-[62%] z-10">
@@ -25,7 +24,6 @@ export function PromoBannersSection() {
             </p>
             <Link
               href="/categories/festive"
-              prefetch={false}
               className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
             >
               <span>Explore Now</span>
@@ -59,7 +57,6 @@ export function PromoBannersSection() {
             </p>
             <Link
               href="/categories/wedding"
-              prefetch={false}
               className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
             >
               <span>Explore Now</span>

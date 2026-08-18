@@ -39,7 +39,10 @@ export function usePublicSettings() {
   return useQuery({
     queryKey: ['public-settings'],
     queryFn: () => customerStorefrontService.getPublicSettings(),
-    staleTime: 30 * 1000,
+    // Matches the server-side prefetch in lib/query/prefetch.ts -- a shorter
+    // staleTime here would treat the hydrated SSR data as stale immediately
+    // and silently re-fetch it on the very first mount.
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -47,11 +50,14 @@ export function useStorefrontBanners() {
   return useQuery({
     queryKey: ['banners'],
     queryFn: () => customerStorefrontService.getBanners(),
-    staleTime: 30 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-export function useCustomerProducts(query: ProductQueryDto = {}, options: { staleTime?: number } = {}) {
+export function useCustomerProducts(
+  query: ProductQueryDto = {},
+  options: { staleTime?: number; enabled?: boolean } = {},
+) {
   return useQuery({
     queryKey: ['customer', 'products', query],
     queryFn: () => productService.findAll(query),
@@ -82,24 +88,29 @@ export function useFeaturedCategories() {
       const list = await categoryService.findAll({ isVisible: true, limit: 20 });
       return list.data || [];
     },
-    staleTime: 0, // always fresh
+    // Matches the server-side prefetch in lib/query/prefetch.ts -- staleTime: 0
+    // meant this was refetched on every mount, including every time the header
+    // remounts on navigation, even though categories rarely change mid-session.
+    staleTime: 30 * 60 * 1000,
   });
 }
 
-export function useCategoryBySlug(slug: string) {
+export function useCategoryBySlug(slug: string, enabled = true) {
   return useQuery({
     queryKey: customerKeys.categorySlug(slug),
     queryFn: () => categoryService.findBySlug(slug),
+    enabled: enabled && !!slug,
   });
 }
 
-export function useCategoryProducts(slug: string, query: ProductQueryDto = {}) {
+export function useCategoryProducts(slug: string, query: ProductQueryDto = {}, enabled = true) {
   return useQuery({
     queryKey: ['customer', 'category-products', slug, query],
     queryFn: async () => {
       const cat = await categoryService.findBySlug(slug);
       return productService.findAll({ ...query, categoryId: cat.id });
     },
+    enabled: enabled && !!slug,
   });
 }
 

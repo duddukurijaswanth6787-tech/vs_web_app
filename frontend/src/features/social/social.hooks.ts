@@ -16,7 +16,8 @@ export function usePublicReels() {
   return useQuery({
     queryKey: ['social', 'public-reels'],
     queryFn: () => socialService.getPublicReels(),
-    staleTime: 1000 * 30,
+    // Matches the server-side prefetch in lib/query/prefetch.ts.
+    staleTime: 5 * 60 * 1000,
   });
 }
 
