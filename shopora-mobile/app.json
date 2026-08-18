@@ -8,14 +8,14 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "backgroundColor": "#800020"
+      "backgroundColor": "#0284c7"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vasanthi.shopora"
     },
     "android": {
-      "backgroundColor": "#800020",
+      "backgroundColor": "#0284c7",
       "package": "com.vasanthi.shopora"
     },
     "plugins": [
