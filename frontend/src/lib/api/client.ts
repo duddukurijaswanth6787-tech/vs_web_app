@@ -39,13 +39,13 @@ let currentRefreshToken: string | null = null;
 
 // Synchronization lock to ensure a single-flight refresh request
 let isRefreshing = false;
-let refreshSubscribers: ((token: string) => void)[] = [];
+let refreshSubscribers: ((token: string | null) => void)[] = [];
 
-const subscribeTokenRefresh = (cb: (token: string) => void) => {
+const subscribeTokenRefresh = (cb: (token: string | null) => void) => {
   refreshSubscribers.push(cb);
 };
 
-const onRefreshed = (token: string) => {
+const onRefreshed = (token: string | null) => {
   refreshSubscribers.forEach((cb) => cb(token));
   refreshSubscribers = [];
 };
@@ -136,8 +136,12 @@ apiClient.interceptors.response.use(
       }
 
       if (isRefreshing) {
-        return new Promise((resolve) => {
-          subscribeTokenRefresh((token: string) => {
+        return new Promise((resolve, reject) => {
+          subscribeTokenRefresh((token: string | null) => {
+            if (!token) {
+              reject(error);
+              return;
+            }
             if (originalRequest.headers) {
               originalRequest.headers.Authorization = `Bearer ${token}`;
             }
@@ -152,6 +156,8 @@ apiClient.interceptors.response.use(
       const refreshToken = getClientRefreshToken();
 
       if (!refreshToken) {
+        isRefreshing = false;
+        onRefreshed(null);
         handleAuthFailure();
         return Promise.reject(error);
       }
@@ -177,6 +183,7 @@ apiClient.interceptors.response.use(
         }
       } catch (refreshError) {
         isRefreshing = false;
+        onRefreshed(null);
         handleAuthFailure();
         return Promise.reject(refreshError);
       }
