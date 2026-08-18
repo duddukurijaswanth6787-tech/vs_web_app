@@ -1,0 +1,24 @@
+# Expo Continuous Native Generation (CNG) -- android/ and ios/ are generated
+# fresh from app.json by `expo prebuild` (locally or by EAS Build on its own
+# Linux runners), so committing them risks a stale/host-specific native
+# project fighting a differently-configured build machine. Removed from
+# version control on purpose after this exact problem caused hours of
+# Windows-only build failures.
+/android
+/ios
+
+node_modules/
+.expo/
+dist/
+web-build/
+*.orig.*
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+.env*.local
+npm-debug.*
+yarn-debug.*
+yarn-error.*
+.DS_Store
