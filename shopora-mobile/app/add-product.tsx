@@ -1588,7 +1588,7 @@ export default function AddProductScreen() {
                         onChangeText={(t) => setSizeThreshold(group.id, row.size, 'minStock', t)}
                         keyboardType="numeric"
                         editable={row.available}
-                        placeholder="min"
+                        placeholder="0"
                         placeholderTextColor="#9ca3af"
                       />
                       <TextInput
@@ -1597,7 +1597,7 @@ export default function AddProductScreen() {
                         onChangeText={(t) => setSizeThreshold(group.id, row.size, 'reorderLevel', t)}
                         keyboardType="numeric"
                         editable={row.available}
-                        placeholder="re"
+                        placeholder="0"
                         placeholderTextColor="#9ca3af"
                       />
                       {row.available &&
@@ -2283,7 +2283,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 
-  sizeRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
+  sizeRow: { flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginTop: 8 },
   sizeToggle: {
     flexDirection: 'row',
     alignItems: 'center',
