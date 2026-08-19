@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useAuth } from '@/hooks/useAuth';
+import { usePincodeLookup } from '@/hooks/usePincodeLookup';
 import { customerMeService } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
@@ -16,9 +17,9 @@ const empty = {
   phone: '',
   addressLine1: '',
   addressLine2: '',
+  postalCode: '',
   city: '',
   state: '',
-  postalCode: '',
   country: 'India',
   isDefaultShipping: true,
 };
@@ -30,6 +31,22 @@ export default function AddAddressPage() {
   const [form, setForm] = useState(empty);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pincodeFilled, setPincodeFilled] = useState(false);
+  const { lookup: lookupPincode, isLoading: pincodeLoading, notFound: pincodeNotFound } = usePincodeLookup();
+
+  const handlePostalCodeChange = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    setForm((f) => ({ ...f, postalCode: digits }));
+    setPincodeFilled(false);
+    if (digits.length === 6) {
+      lookupPincode(digits).then((result) => {
+        if (result) {
+          setForm((f) => ({ ...f, city: result.city, state: result.state }));
+          setPincodeFilled(true);
+        }
+      });
+    }
+  };
 
   if (!isInitializing && !isAuthenticated) {
     return (
@@ -88,18 +105,61 @@ export default function AddAddressPage() {
         <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-3">
           {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
           {(Object.keys(empty) as Array<keyof typeof empty>)
-            .filter((k) => k !== 'isDefaultShipping' && k !== 'country')
-            .map((key) => (
-              <label key={key} className="block space-y-1">
-                <span className="text-xs font-semibold capitalize">{String(key).replace(/([A-Z])/g, ' $1')}</span>
-                <input
-                  required={key !== 'addressLine2'}
-                  value={String(form[key] || '')}
-                  onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
-                  className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"
-                />
-              </label>
-            ))}
+            .filter((k) => k !== 'isDefaultShipping' && k !== 'country' && k !== 'postalCode')
+            .map((key) => {
+              // PIN Code goes first (typed before City/State so the lookup
+              // below can auto-fill them) -- insert it right before Address
+              // Line 2's next sibling, i.e. right after addressLine2.
+              if (key === 'city') {
+                return (
+                  <React.Fragment key="postal-and-city">
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold">Postal Code</span>
+                      <div className="relative">
+                        <input
+                          required
+                          value={form.postalCode}
+                          onChange={(e) => handlePostalCodeChange(e.target.value)}
+                          placeholder="6-digit PIN — City & State fill in automatically"
+                          inputMode="numeric"
+                          maxLength={6}
+                          className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 pr-9 text-sm outline-none"
+                        />
+                        {pincodeLoading && (
+                          <Loader2 className="w-4 h-4 text-neutral-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                        )}
+                        {!pincodeLoading && pincodeFilled && (
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-1/2 -translate-y-1/2" />
+                        )}
+                      </div>
+                      {pincodeNotFound && form.postalCode.length === 6 && (
+                        <p className="text-[11px] text-amber-600 font-medium">Couldn&apos;t auto-detect this PIN — enter City &amp; State below.</p>
+                      )}
+                    </label>
+                    <label className="block space-y-1">
+                      <span className="text-xs font-semibold">City</span>
+                      <input
+                        required
+                        value={form.city}
+                        onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
+                        className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"
+                      />
+                    </label>
+                  </React.Fragment>
+                );
+              }
+              return (
+                <label key={key} className="block space-y-1">
+                  <span className="text-xs font-semibold capitalize">{String(key).replace(/([A-Z])/g, ' $1')}</span>
+                  <input
+                    required={key !== 'addressLine2'}
+                    value={String(form[key] || '')}
+                    onChange={(e) => setForm((f) => ({ ...f, [key]: e.target.value }))}
+                    className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"
+                  />
+                </label>
+              );
+            })}
           <button
             type="submit"
             disabled={loading}
