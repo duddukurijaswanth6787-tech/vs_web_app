@@ -56,13 +56,8 @@ function GuestAccountView() {
           <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#800020] text-amber-300 flex items-center justify-center font-serif text-sm font-bold shadow-xs">
-              ❖
-            </div>
-            <span className="text-lg font-bold font-serif text-[#800020] tracking-tight">
-              Vasanthi&apos;s Signature
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-8 w-auto object-contain" />
           </Link>
         </div>
 
@@ -330,13 +325,8 @@ function AuthenticatedAccountView() {
           <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-full bg-[#800020] text-amber-300 flex items-center justify-center font-serif text-sm font-bold shadow-xs">
-              ❖
-            </div>
-            <span className="text-lg font-bold font-serif text-[#800020] tracking-tight">
-              Vasanthi&apos;s Signature
-            </span>
+          <Link href="/" className="flex items-center">
+            <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-8 w-auto object-contain" />
           </Link>
         </div>
 

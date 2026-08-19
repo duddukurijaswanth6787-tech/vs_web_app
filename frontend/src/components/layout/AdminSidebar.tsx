@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { ChevronLeft, ChevronRight, X, LogOut } from 'lucide-react';
 import { adminNavigation } from '@/config/navigation';
@@ -46,12 +47,20 @@ export default function AdminSidebar() {
       >
         {/* Brand / Logo Header */}
         <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-100">
-          <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase lg:block hidden">
-            {sidebarCollapsed ? 'VD' : "Vasanthi's Signature Admin"}
-          </span>
-          <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase lg:hidden block">
-            Vasanthi&apos;s Signature Admin
-          </span>
+          <div className="hidden lg:flex items-center gap-2 min-w-0">
+            {sidebarCollapsed ? (
+              <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-8 h-8 object-contain shrink-0" />
+            ) : (
+              <>
+                <Image src="/brand/logo-icon.png" alt="" width={1024} height={1024} className="w-7 h-7 object-contain shrink-0" />
+                <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase truncate">Vasanthi&apos;s Signature Admin</span>
+              </>
+            )}
+          </div>
+          <div className="flex lg:hidden items-center gap-2 min-w-0">
+            <Image src="/brand/logo-icon.png" alt="" width={1024} height={1024} className="w-7 h-7 object-contain shrink-0" />
+            <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase truncate">Vasanthi&apos;s Signature Admin</span>
+          </div>
           <button
             onClick={() => setMobileSidebarOpen(false)}
             className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100 lg:hidden focus:outline-none"

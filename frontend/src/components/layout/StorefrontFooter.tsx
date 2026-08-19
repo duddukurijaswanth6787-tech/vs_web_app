@@ -2,6 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Camera,
   Globe,
@@ -26,10 +27,8 @@ export function StorefrontFooter() {
           {/* Top Row: Brand & Social Icons */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div>
-              <h3 className="text-lg font-bold font-serif text-white tracking-tight">
-                Vasanthi&apos;s Signature
-              </h3>
-              <p className="text-[11px] text-rose-200/70 hidden sm:block mt-0.5">
+              <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-10 w-auto object-contain" />
+              <p className="text-[11px] text-rose-200/70 hidden sm:block mt-1.5">
                 Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
               </p>
             </div>
