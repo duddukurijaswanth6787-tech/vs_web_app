@@ -3,6 +3,7 @@
 import React, { useEffect, useSyncExternalStore } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { LayoutDashboard, LogOut } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { ToastProvider } from '@/components/toast/ToastProvider';
@@ -43,8 +44,8 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen w-screen flex-col overflow-hidden bg-neutral-100 text-neutral-900">
       <header className="flex h-16 w-full shrink-0 items-center justify-between border-b border-neutral-200 bg-white px-4 sm:px-6">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#800020] text-sm font-bold text-amber-300">
-            ◆
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#800020] p-1">
+            <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
           </div>
           <div>
             <p className="text-sm font-bold font-serif leading-none text-[#800020]">Shopora POS</p>
