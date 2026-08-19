@@ -9,6 +9,28 @@ import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { customerAuthService } from '@/features/customer/auth.service';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { sendFirebasePhoneOtp, resetRecaptcha } from '@/lib/firebase/phoneAuth';
+import type { ConfirmationResult } from 'firebase/auth';
+
+const RECAPTCHA_CONTAINER_ID = 'firebase-recaptcha-container';
+
+function getFirebaseAuthErrorMessage(err: unknown, fallback: string): string {
+  const code = (err as { code?: string })?.code;
+  switch (code) {
+    case 'auth/invalid-phone-number':
+      return 'That doesn’t look like a valid mobile number.';
+    case 'auth/too-many-requests':
+      return 'Too many attempts. Please wait a bit before trying again.';
+    case 'auth/quota-exceeded':
+      return 'SMS limit reached for this project right now. Please try again later.';
+    case 'auth/invalid-verification-code':
+      return 'That code is incorrect. Please check and try again.';
+    case 'auth/code-expired':
+      return 'This code has expired. Request a new one.';
+    default:
+      return err instanceof Error ? err.message : fallback;
+  }
+}
 
 function CustomerLoginForm() {
   const router = useRouter();
@@ -22,9 +44,9 @@ function CustomerLoginForm() {
   const [password, setPassword] = useState('');
   const [otpSent, setOtpSent] = useState(false);
   const [otp, setOtp] = useState('');
-  const [devHint, setDevHint] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
 
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, '').slice(-10), [phone]);
 
@@ -37,13 +59,13 @@ function CustomerLoginForm() {
     }
     setIsLoading(true);
     try {
-      const result = await customerAuthService.sendOtp(normalizedPhone, 'LOGIN');
+      // Firebase handles the actual SMS delivery + reCAPTCHA challenge here.
+      const result = await sendFirebasePhoneOtp(`+91${normalizedPhone}`, RECAPTCHA_CONTAINER_ID);
+      setConfirmationResult(result);
       setOtpSent(true);
-      if (result.devCode && process.env.NODE_ENV !== 'production') {
-        setDevHint(`Dev OTP: ${result.devCode}`);
-      }
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to send OTP'));
+      resetRecaptcha();
+      setError(getFirebaseAuthErrorMessage(err, 'Failed to send OTP'));
     } finally {
       setIsLoading(false);
     }
@@ -52,11 +74,19 @@ function CustomerLoginForm() {
   const handleVerifyAndLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!confirmationResult) {
+      setError('Please request a new OTP.');
+      setOtpSent(false);
+      return;
+    }
     setIsLoading(true);
     try {
-      await customerAuthService.loginWithOtp({
-        phone: normalizedPhone,
-        code: otp,
+      // Firebase checks the code itself; this just gets us the signed ID
+      // token proving that check passed, for the backend to re-verify.
+      const credential = await confirmationResult.confirm(otp);
+      const idToken = await credential.user.getIdToken();
+      await customerAuthService.loginWithFirebasePhone({
+        idToken,
         rememberMe: true,
       });
       const profileResult = await completeTokenLogin() as { data?: { roles?: string[] } | null };
@@ -77,7 +107,12 @@ function CustomerLoginForm() {
         router.push(redirectTo);
       }
     } catch (err) {
-      setError(getApiErrorMessage(err, 'OTP login failed'));
+      // A firebase/auth error (wrong code, expired) has a `.code`; anything
+      // past that point is our own backend rejecting the ID token.
+      const message = (err as { code?: string })?.code
+        ? getFirebaseAuthErrorMessage(err, 'OTP login failed')
+        : getApiErrorMessage(err, 'OTP login failed');
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -141,6 +176,7 @@ function CustomerLoginForm() {
               onClick={() => {
                 setAuthMode('PHONE');
                 setOtpSent(false);
+                setConfirmationResult(null);
                 setError('');
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
@@ -154,6 +190,7 @@ function CustomerLoginForm() {
               onClick={() => {
                 setAuthMode('EMAIL');
                 setOtpSent(false);
+                setConfirmationResult(null);
                 setError('');
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
@@ -169,11 +206,8 @@ function CustomerLoginForm() {
               {error}
             </div>
           )}
-          {devHint && (
-            <div className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">
-              {devHint}
-            </div>
-          )}
+          {/* Invisible reCAPTCHA host for Firebase Phone Auth -- must be in the DOM before sendFirebasePhoneOtp() runs. */}
+          <div id={RECAPTCHA_CONTAINER_ID} />
 
           {authMode === 'PHONE' ? (
             !otpSent ? (
@@ -226,7 +260,12 @@ function CustomerLoginForm() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => setOtpSent(false)}
+                  onClick={() => {
+                    resetRecaptcha();
+                    setConfirmationResult(null);
+                    setOtp('');
+                    setOtpSent(false);
+                  }}
                   className="w-full text-xs font-semibold text-neutral-500"
                 >
                   Change number

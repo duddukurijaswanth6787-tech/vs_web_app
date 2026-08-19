@@ -7,11 +7,13 @@ import { IDENTITY_CONSTANTS } from '@shared/identity/identity.constants';
 import { AuthService } from '@domains/auth/auth.service';
 import { AuthRepository } from '@domains/auth/auth.repository';
 import { PasswordService } from '@domains/auth/services/password.service';
+import { FirebaseAdminService } from '@domains/auth/services/firebase-admin.service';
 import { AuditService } from '@domains/audit/audit.service';
 import {
   SendOtpDto,
   VerifyOtpDto,
   OtpLoginDto,
+  FirebasePhoneLoginDto,
   SendOtpResponse,
 } from './otp.types';
 import type { AuthTokensResponse } from '@domains/auth/auth.types';
@@ -26,6 +28,7 @@ export class OtpService {
     private readonly authService: AuthService,
     private readonly authRepository: AuthRepository,
     private readonly passwordService: PasswordService,
+    private readonly firebaseAdminService: FirebaseAdminService,
     private readonly auditService: AuditService,
   ) {}
 
@@ -150,6 +153,62 @@ export class OtpService {
       purpose: 'LOGIN',
     });
     const phone = this.normalizePhone(dto.phone);
+    const user = await this.findOrCreateUserByPhone(phone, dto.firstName);
+
+    await this.auditService.log({
+      action: 'OTP_LOGIN',
+      module: 'otp',
+      resource: 'user',
+      resourceId: user.id,
+      userId: user.id,
+    });
+
+    return this.authService.issueTokensForUser(
+      user.id,
+      ip,
+      userAgent,
+      dto.rememberMe ?? false,
+    );
+  }
+
+  /**
+   * Phone login where Firebase (not our own OtpChallenge/SMS pipeline)
+   * handled sending the SMS and checking the code the user typed. The
+   * frontend hands us the Firebase ID token it got back from
+   * `confirmationResult.confirm(code)`; we verify that token was really
+   * signed by Firebase for this project (FirebaseAdminService) before
+   * trusting its `phone_number` claim, so a client can't just POST an
+   * arbitrary phone number and log in as someone else.
+   */
+  async loginWithFirebasePhone(
+    dto: FirebasePhoneLoginDto,
+    ip?: string,
+    userAgent?: string,
+  ): Promise<AuthTokensResponse> {
+    const { phone: rawPhone } = await this.firebaseAdminService.verifyPhoneIdToken(
+      dto.idToken,
+    );
+    const phone = this.normalizePhone(rawPhone);
+    const user = await this.findOrCreateUserByPhone(phone, dto.firstName);
+
+    await this.auditService.log({
+      action: 'FIREBASE_OTP_LOGIN',
+      module: 'otp',
+      resource: 'user',
+      resourceId: user.id,
+      userId: user.id,
+    });
+
+    return this.authService.issueTokensForUser(
+      user.id,
+      ip,
+      userAgent,
+      dto.rememberMe ?? false,
+    );
+  }
+
+  /** Finds the user for a verified phone number, or provisions a new customer account for it. */
+  private async findOrCreateUserByPhone(phone: string, firstName?: string) {
     let user = await this.authRepository.findByPhone(phone);
 
     if (!user) {
@@ -158,7 +217,7 @@ export class OtpService {
       const created = await this.authRepository.createUser({
         email,
         passwordHash,
-        firstName: dto.firstName?.trim() || 'Customer',
+        firstName: firstName?.trim() || 'Customer',
         phone,
         isPhoneVerified: true,
       });
@@ -186,20 +245,6 @@ export class OtpService {
     }
 
     if (!user) throw new AuthenticationException('Unable to login', 'OTP_004');
-
-    await this.auditService.log({
-      action: 'OTP_LOGIN',
-      module: 'otp',
-      resource: 'user',
-      resourceId: user.id,
-      userId: user.id,
-    });
-
-    return this.authService.issueTokensForUser(
-      user.id,
-      ip,
-      userAgent,
-      dto.rememberMe ?? false,
-    );
+    return user;
   }
 }

@@ -5,6 +5,7 @@ import { AuthRepository } from './auth.repository';
 import { PasswordService } from './services/password.service';
 import { JwtService } from './services/jwt.service';
 import { RefreshTokenService } from './services/refresh-token.service';
+import { FirebaseAdminService } from './services/firebase-admin.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { RolesGuard } from './guards/roles.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
@@ -18,6 +19,7 @@ import { PermissionsGuard } from './guards/permissions.guard';
     PasswordService,
     JwtService,
     RefreshTokenService,
+    FirebaseAdminService,
     JwtAuthGuard,
     RolesGuard,
     PermissionsGuard,
@@ -31,6 +33,7 @@ import { PermissionsGuard } from './guards/permissions.guard';
     PermissionsGuard,
     PasswordService,
     RefreshTokenService,
+    FirebaseAdminService,
   ],
 })
 export class AuthModule {}
