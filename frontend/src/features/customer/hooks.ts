@@ -1,6 +1,7 @@
 'use client';
 
 import { customerSupportService } from './support.service';
+import { customerPackingService } from './extra.service';
 import { CreateSupportTicketDto } from '@/features/support/support.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '@/features/catalog/products/product.service';
@@ -320,7 +321,7 @@ export function useCustomerReferral(enabled = true) {
 export function usePackingQueue(enabled = true) {
   return useQuery({
     queryKey: ['customer', 'packing'],
-    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
+    queryFn: () => customerPackingService.getQueue(),
     enabled,
   });
 }

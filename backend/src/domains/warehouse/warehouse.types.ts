@@ -119,6 +119,33 @@ export class AssignWarehouseInventoryDto {
   reorderLevel?: number;
 }
 
+export class UpdateWarehouseInventoryDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  availableQuantity?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  minimumStock?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maximumStock?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  reorderLevel?: number;
+}
+
 export class TransferStockDto {
   @ApiProperty() @IsUUID() variantId!: string;
   @ApiProperty() @IsUUID() fromWarehouseId!: string;

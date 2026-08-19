@@ -66,6 +66,11 @@ export class SupportRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          customer: {
+            include: { user: { select: { firstName: true, lastName: true } } },
+          },
+        },
       }),
       this.prisma.supportTicket.count({ where }),
     ]);
@@ -85,7 +90,12 @@ export class SupportRepository {
   async findTicketById(id: string) {
     return this.prisma.supportTicket.findUnique({
       where: { id },
-      include: { replies: { orderBy: { createdAt: 'asc' } } },
+      include: {
+        replies: { orderBy: { createdAt: 'asc' } },
+        customer: {
+          include: { user: { select: { firstName: true, lastName: true } } },
+        },
+      },
     });
   }
 

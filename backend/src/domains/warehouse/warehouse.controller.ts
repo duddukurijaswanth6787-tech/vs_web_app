@@ -17,6 +17,7 @@ import {
   WarehouseQueryDto,
   CreateLocationDto,
   AssignWarehouseInventoryDto,
+  UpdateWarehouseInventoryDto,
   TransferStockDto,
 } from './warehouse.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
@@ -140,11 +141,33 @@ export class WarehouseController {
     );
   }
 
+  @Patch(':id/inventory/:variantId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin', 'staff')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an existing warehouse inventory count (staff portal stock counts)' })
+  async updateInventoryCount(
+    @Param('id') id: string,
+    @Param('variantId') variantId: string,
+    @Body() dto: UpdateWarehouseInventoryDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ResponseBuilder.success(
+      await this.warehouseService.updateWarehouseInventoryCount(
+        id,
+        variantId,
+        dto,
+        user.sub,
+      ),
+      'Inventory count updated',
+    );
+  }
+
   @Post('transfer')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @Roles('super_admin', 'admin', 'staff')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Transfer stock between warehouses' })
+  @ApiOperation({ summary: 'Transfer stock between warehouses -- also used by the warehouse staff portal' })
   async transferStock(
     @Body() dto: TransferStockDto,
     @CurrentUser() user: JwtPayload,

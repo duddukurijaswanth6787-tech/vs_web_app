@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import Link from 'next/link';
-import { Package, CheckCircle2, Printer, ArrowLeft } from 'lucide-react';
+import { Package, CheckCircle2, Printer } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { usePackingQueue } from '@/features/customer/hooks';
 import { customerPackingService } from '@/features/customer/extra.service';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { StaffPortalNav } from '@/components/staff/StaffPortalNav';
+import { StaffLoginGate } from '@/components/staff/StaffLoginGate';
 
 export default function StaffPackingPortalPage() {
   const { isAuthenticated, isStaffUser, isInitializing } = useAuth();
@@ -42,38 +43,26 @@ export default function StaffPackingPortalPage() {
   };
 
   if (!isInitializing && (!isAuthenticated || !isStaffUser)) {
-    return (
-      <div className="min-h-screen bg-neutral-900 text-white flex items-center justify-center px-4">
-        <div className="text-center space-y-3">
-          <p className="text-sm">Staff login required for packing station</p>
-          <Link href="/login?redirect=/staff/packing" className="inline-block bg-rose-700 px-4 py-2 rounded-xl text-xs font-bold">
-            Login
-          </Link>
-        </div>
-      </div>
-    );
+    return <StaffLoginGate redirect="/staff/packing" />;
   }
 
   return (
-    <div className="w-full min-h-screen bg-neutral-900 text-white font-sans antialiased">
+    <div className="w-full min-h-screen bg-neutral-900 text-white font-sans antialiased pb-20 sm:pb-0">
       <header className="bg-neutral-950 border-b border-neutral-800 px-4 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-1 text-neutral-400 hover:text-white rounded-lg">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <div>
-            <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider">
-              Warehouse Staff Packing Station
-            </h1>
-            <span className="text-[10px] text-neutral-400">
-              {activeIdStr ? `Job ${activeIdStr.slice(0, 8)} • ${String(active?.status || 'QUEUED')}` : 'No active job'}
-            </span>
-          </div>
+        <div>
+          <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider">
+            Packing Station
+          </h1>
+          <span className="text-[10px] text-neutral-400">
+            {activeIdStr ? `Job ${activeIdStr.slice(0, 8)} • ${String(active?.status || 'QUEUED')}` : 'No active job'}
+          </span>
         </div>
         <span className="bg-emerald-500/20 text-emerald-400 text-xs font-bold px-3 py-1 rounded-full border border-emerald-500/30">
           {jobs.length} in queue
         </span>
       </header>
+
+      <StaffPortalNav />
 
       <main className="max-w-4xl mx-auto px-4 py-6 space-y-6">
         {isLoading && <p className="text-sm text-neutral-400">Loading packing queue…</p>}

@@ -31,4 +31,11 @@ export const authService = {
     if (!profile) throw new Error(response.data.message || 'Failed to fetch user profile');
     return profile;
   },
+
+  changePassword: async (currentPassword: string, newPassword: string): Promise<void> => {
+    await apiClient.post<StandardResponse<null>>('/auth/change-password', {
+      currentPassword,
+      newPassword,
+    });
+  },
 };

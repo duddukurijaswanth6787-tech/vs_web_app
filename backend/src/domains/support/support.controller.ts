@@ -33,8 +33,14 @@ export class SupportController {
     private readonly prisma: PrismaService,
   ) {}
 
-  private isAdmin(user: JwtPayload): boolean {
-    return !!user.roles?.some((r) => ['super_admin', 'admin'].includes(r));
+  // Covers admins and the 'staff' role, which runs the support desk in the
+  // staff portal but isn't an admin. Used to decide whether a caller sees
+  // the full ticket queue (staff) vs. only their own tickets (customer),
+  // and whether their replies are marked as staff replies.
+  private isStaffMember(user: JwtPayload): boolean {
+    return !!user.roles?.some((r) =>
+      ['super_admin', 'admin', 'staff'].includes(r),
+    );
   }
 
   private async resolveCustomerId(userId: string): Promise<string | null> {
@@ -99,7 +105,7 @@ export class SupportController {
     @Query() query: TicketQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    if (!this.isAdmin(user)) {
+    if (!this.isStaffMember(user)) {
       const customerId = await this.resolveCustomerId(user.sub);
       if (!customerId) return ResponseBuilder.success([]);
       query.customerId = customerId;
@@ -118,7 +124,7 @@ export class SupportController {
     @CurrentUser() user: JwtPayload,
   ) {
     const ticket = await this.supportService.findTicketById(id);
-    if (!this.isAdmin(user)) {
+    if (!this.isStaffMember(user)) {
       const customerId = await this.resolveCustomerId(user.sub);
       if (!customerId || (ticket as any).customerId !== customerId) {
         throw new ForbiddenException('Ticket not found');
@@ -145,9 +151,9 @@ export class SupportController {
 
   @Patch('tickets/:id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @Roles('super_admin', 'admin', 'staff')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update ticket status (admin)' })
+  @ApiOperation({ summary: 'Update ticket status (admin or support-desk staff)' })
   async updateTicketStatus(
     @Param('id') id: string,
     @Body() dto: UpdateTicketStatusDto,
@@ -162,9 +168,13 @@ export class SupportController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Add reply to ticket' })
-  async addReply(@Param('id') id: string, @Body() dto: CreateSupportReplyDto) {
+  async addReply(
+    @Param('id') id: string,
+    @Body() dto: CreateSupportReplyDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
     return ResponseBuilder.created(
-      await this.supportService.addReply(id, dto),
+      await this.supportService.addReply(id, dto, this.isStaffMember(user)),
       'Reply added',
     );
   }
