@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsArray,
   IsNumber,
+  IsBoolean,
   IsEnum,
   IsIn,
   ValidateNested,
@@ -202,6 +203,22 @@ export class CompletePosSaleDto {
   @IsNumber()
   @IsOptional()
   taxTotal?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Client-generated order number for offline-queued sales. Used as an idempotency key: replaying the same clientOrderNumber (e.g. a retried sync after a dropped connection) returns the already-created order instead of creating a duplicate.',
+  })
+  @IsOptional()
+  @IsString()
+  clientOrderNumber?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'True when this sale is being synced from the offline queue rather than submitted live. Triggers a stock-sufficiency check before the order is created, since stock may have moved while the terminal was offline.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isOfflineSync?: boolean;
 }
 
 export class BarcodeScanResultResponse {

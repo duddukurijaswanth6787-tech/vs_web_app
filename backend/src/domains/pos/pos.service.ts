@@ -3,6 +3,7 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { BusinessException } from '@common/exceptions';
 import { PosRepository } from './pos.repository';
 import { PosGateway } from './pos.gateway';
 import { BarcodeService } from './barcode.service';
@@ -205,6 +206,33 @@ export class PosService {
   }
 
   async completeSale(cashierId: string, dto: CompletePosSaleDto) {
+    // Idempotent replay: an offline sale can be retried (e.g. the network
+    // dropped after the server committed but before the client saw the
+    // response). Detect that by the client-supplied order number and
+    // return the existing order instead of creating a duplicate.
+    if (dto.clientOrderNumber) {
+      const existing = await this.repository.findOrderByOrderNumber(
+        dto.clientOrderNumber,
+      );
+      if (existing) {
+        return {
+          success: true,
+          message: 'POS Sale completed successfully',
+          order: {
+            orderId: existing.id,
+            orderNumber: existing.orderNumber,
+            channel: existing.channel,
+            paymentMethod: existing.paymentMethod,
+            status: existing.status,
+            grandTotal: Number(existing.grandTotal),
+            itemsCount: existing.items.length,
+            createdAt: existing.createdAt,
+          },
+          printReady: true,
+        };
+      }
+    }
+
     let itemsToProcess = dto.items || [];
     let customerInfo = dto.customer;
     let discountTotal = dto.discountTotal || 0;
@@ -239,6 +267,43 @@ export class PosService {
       );
     }
 
+    // Offline sync: stock may have moved while this terminal was
+    // disconnected (another terminal or the online store could have sold
+    // the same variant in the meantime). Validate before creating the
+    // order instead of letting inventory go negative silently.
+    if (dto.isOfflineSync) {
+      const variantIds = itemsToProcess
+        .map((i) => i.variantId)
+        .filter((id): id is string => Boolean(id));
+      const inventoryMap =
+        await this.repository.findInventoryQuantities(variantIds);
+      const shortages = itemsToProcess
+        .filter((i) => i.variantId)
+        .map((i) => {
+          const inv = inventoryMap.get(i.variantId!);
+          if (!inv || inv.allowBackorder) return null;
+          if (inv.availableQuantity < i.quantity) {
+            return {
+              variantId: i.variantId!,
+              productName: i.productName,
+              variantTitle: i.variantTitle,
+              requested: i.quantity,
+              available: inv.availableQuantity,
+            };
+          }
+          return null;
+        })
+        .filter((s): s is NonNullable<typeof s> => s !== null);
+
+      if (shortages.length > 0) {
+        throw new BusinessException(
+          'Insufficient stock to sync this offline sale',
+          'POS_STOCK_CONFLICT',
+          { shortages },
+        );
+      }
+    }
+
     // 1. Get Walk-in Customer profile if none supplied
     const customerProfile = await this.repository.findOrCreateWalkInCustomer();
 
@@ -250,8 +315,11 @@ export class PosService {
     const grandTotal =
       Math.round((subtotal + calculatedTax - discountTotal) * 100) / 100;
 
-    // 2. Generate unique order number
-    const orderNumber = await this.workflow.generateOrderNumber();
+    // 2. Generate unique order number (offline syncs replay the client's
+    // own order number so retries hit the idempotent-replay path above
+    // instead of creating a duplicate order)
+    const orderNumber =
+      dto.clientOrderNumber || (await this.workflow.generateOrderNumber());
 
     // 3. Create POS Order in DB
     const order = await this.repository.createPosOrder({

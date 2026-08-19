@@ -68,6 +68,10 @@ export interface CompletePosSalePayload {
   notes?: string;
   discountTotal?: number;
   taxTotal?: number;
+  /** Idempotency key for offline-queued sales; replaying it returns the already-created order instead of duplicating it. */
+  clientOrderNumber?: string;
+  /** True when syncing from the offline queue; triggers a server-side stock-sufficiency check before the order is created. */
+  isOfflineSync?: boolean;
 }
 
 export interface PosSaleResult {
