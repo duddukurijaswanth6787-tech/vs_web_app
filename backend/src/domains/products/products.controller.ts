@@ -7,8 +7,10 @@ import {
   Param,
   Body,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
+import type { Request } from 'express';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ProductsService } from './products.service';
 import {
@@ -25,13 +27,40 @@ import { CreateColorGroupDto, SyncColorGroupsDto } from './dto/color-group.dto';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import { AuthService } from '@domains/auth/auth.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
+
+const INTERNAL_ROLES = ['super_admin', 'admin', 'staff'];
 
 @ApiTags('Products')
 @Controller('products')
 export class ProductsController {
-  constructor(private readonly productsService: ProductsService) {}
+  constructor(
+    private readonly productsService: ProductsService,
+    private readonly authService: AuthService,
+  ) {}
+
+  /**
+   * This list/detail endpoint is intentionally unauthenticated (the public
+   * storefront hits it directly), but STORE-only products must stay hidden
+   * from anyone who isn't staff. Rather than trust a client-supplied "show
+   * me everything" flag, this soft-checks whatever bearer token the caller
+   * already sent (admin sessions always attach one) and only lifts the
+   * restriction if it's valid and belongs to an internal role. A
+   * missing/invalid/customer token just means "public" -- it never fails
+   * the request.
+   */
+  private isInternalRequest(req: Request): boolean {
+    const header = req.headers.authorization;
+    if (!header?.startsWith('Bearer ')) return false;
+    try {
+      const payload = this.authService.verifyToken(header.slice(7));
+      return payload.roles?.some((r) => INTERNAL_ROLES.includes(r)) ?? false;
+    } catch {
+      return false;
+    }
+  }
 
   // ─── Public ────────────────────────────────────────────
 
@@ -39,14 +68,20 @@ export class ProductsController {
   @ApiOperation({
     summary: 'List products with search, pagination, filtering, sorting',
   })
-  async findAll(@Query() query: ProductQueryDto) {
-    return ResponseBuilder.success(await this.productsService.findAll(query));
+  async findAll(@Query() query: ProductQueryDto, @Req() req: Request) {
+    const restrictToPublicChannels = !this.isInternalRequest(req);
+    return ResponseBuilder.success(
+      await this.productsService.findAll(query, restrictToPublicChannels),
+    );
   }
 
   @Get(':id')
   @ApiOperation({ summary: 'Get product by ID' })
-  async findById(@Param('id') id: string) {
-    return ResponseBuilder.success(await this.productsService.findById(id));
+  async findById(@Param('id') id: string, @Req() req: Request) {
+    const restrictToPublicChannels = !this.isInternalRequest(req);
+    return ResponseBuilder.success(
+      await this.productsService.findById(id, restrictToPublicChannels),
+    );
   }
 
   // ─── Admin: CRUD ───────────────────────────────────────

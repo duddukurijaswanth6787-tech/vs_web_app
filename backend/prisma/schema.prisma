@@ -452,6 +452,7 @@ model Product {
   isFestivePick           Boolean                  @default(false)
   isExclusive             Boolean                  @default(false)
   isOnlineOnly            Boolean                  @default(false)
+  channel                 String                   @default("BOTH")
   sizeChartTemplate       SizeChartTemplate?       @relation(fields: [sizeChartTemplateId], references: [id])
   customerRecommendations CustomerRecommendation[]
   orderItems              OrderItem[]
@@ -478,6 +479,7 @@ model Product {
   @@index([isNewArrival])
   @@index([isBestSeller])
   @@index([isTrending])
+  @@index([channel])
   @@index([isPublished])
   @@index([gender])
   @@index([ageGroup])

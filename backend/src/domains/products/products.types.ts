@@ -17,6 +17,7 @@ import {
   ProductType,
   ProductStatus,
   ProductVisibility,
+  ProductChannel,
   GenderType,
   AgeGroup,
 } from '@shared/commerce/commerce.enums';
@@ -67,6 +68,15 @@ export class CreateProductDto {
   @IsOptional()
   @IsEnum(ProductVisibility)
   visibility?: ProductVisibility;
+
+  @ApiPropertyOptional({
+    enum: ProductChannel,
+    default: ProductChannel.BOTH,
+    description: 'Where this product is sellable: STORE (POS only), ONLINE (storefront only), or BOTH.',
+  })
+  @IsOptional()
+  @IsEnum(ProductChannel)
+  channel?: ProductChannel;
 
   @ApiProperty() @Type(() => Number) @IsNumber() @Min(0) basePrice!: number;
 
@@ -279,6 +289,7 @@ export class UpdateProductDto {
   type?: ProductType;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() visibility?: string;
+  @ApiPropertyOptional({ enum: ProductChannel }) @IsOptional() @IsEnum(ProductChannel) channel?: ProductChannel;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -420,6 +431,7 @@ export class ProductQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() brandId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() visibility?: string;
+  @ApiPropertyOptional({ enum: ProductChannel }) @IsOptional() @IsEnum(ProductChannel) channel?: ProductChannel;
   @ApiPropertyOptional({ enum: ProductType })
   @IsOptional()
   @IsEnum(ProductType)
@@ -562,6 +574,7 @@ export class ProductResponse {
   @ApiProperty() type!: string;
   @ApiProperty() status!: string;
   @ApiProperty() visibility!: string;
+  @ApiProperty() channel!: string;
 
   @ApiProperty() basePrice!: number;
   @ApiPropertyOptional() salePrice?: number;
