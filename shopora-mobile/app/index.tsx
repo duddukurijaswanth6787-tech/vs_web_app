@@ -17,6 +17,7 @@ import {
   ChevronRight,
   LogIn,
   LogOut,
+  Store,
 } from 'lucide-react-native';
 import {
   dashboardService,
@@ -175,6 +176,19 @@ export default function ShoporaHomeScreen() {
           </View>
           <Text style={styles.actionCardTitleDark}>Inspect Product</Text>
           <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
+        </TouchableOpacity>
+
+        {/* 5. SHOP (Customer browsing & checkout) */}
+        <TouchableOpacity
+          style={[styles.actionCard, { backgroundColor: '#800020', borderColor: '#800020' }]}
+          onPress={() => router.push('/shop')}
+          activeOpacity={0.85}
+        >
+          <View style={styles.iconCircleLight}>
+            <Store size={24} color="#800020" />
+          </View>
+          <Text style={styles.actionCardTitleLight}>Shop</Text>
+          <Text style={styles.actionCardSubLight}>Browse & buy as a customer</Text>
         </TouchableOpacity>
       </View>
 

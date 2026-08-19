@@ -16,11 +16,11 @@ import { LogIn, ShieldCheck, AlertCircle } from 'lucide-react-native';
 import { authService, getApiErrorMessage, API_BASE_URL } from '../services/api';
 
 /**
- * Staff sign-in.
- *
- * Creating products, variants and inventory is guarded by JwtAuthGuard +
- * RolesGuard('super_admin', 'admin') on the API, so the device has to carry a
- * staff token before the add-product flow will work at all.
+ * Sign-in for both staff and customer accounts -- routes to the POS home or
+ * to Shop based on the signed-in account's userType. Creating products,
+ * variants and inventory is still guarded by JwtAuthGuard +
+ * RolesGuard('super_admin', 'admin') on the API, so those screens only work
+ * once a staff account is signed in.
  */
 export default function LoginScreen() {
   const router = useRouter();
@@ -39,8 +39,14 @@ export default function LoginScreen() {
     setError('');
     setLoading(true);
     try {
-      await authService.login(email.trim(), password);
-      router.replace((redirect as any) || '/');
+      const { user } = await authService.login(email.trim(), password);
+      if (redirect) {
+        router.replace(redirect as any);
+      } else if (user?.userType === 'CUSTOMER') {
+        router.replace('/shop');
+      } else {
+        router.replace('/');
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Sign in failed'));
     } finally {
@@ -58,9 +64,9 @@ export default function LoginScreen() {
           <View style={styles.badge}>
             <ShieldCheck size={26} color="#0284c7" />
           </View>
-          <Text style={styles.title}>Staff Sign In</Text>
+          <Text style={styles.title}>Sign In</Text>
           <Text style={styles.subtitle}>
-            Adding products and stock requires an admin account.
+            Staff accounts land on the POS tools; customer accounts go straight to Shop.
           </Text>
 
           {error !== '' && (
