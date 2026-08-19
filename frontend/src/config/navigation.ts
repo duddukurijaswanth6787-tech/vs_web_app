@@ -262,6 +262,7 @@ export const adminNavigation: NavGroup[] = [
         title: 'Till & Shift Dashboard',
         href: '/pos/dashboard',
         icon: Activity,
+        permissions: ['pos:view'],
         implemented: true,
       },
       {

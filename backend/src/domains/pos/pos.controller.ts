@@ -17,7 +17,7 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { PosService } from './pos.service';
 import {
@@ -161,10 +161,10 @@ export class PosController {
   }
 
   @Get('shifts')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin', 'pos_operator', 'pos_staff', 'staff')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List shifts (till reconciliation history)' })
+  @ApiOperation({ summary: 'List shifts (till reconciliation history) -- Till & Shift Dashboard access, gated by the pos:view permission' })
   async listShifts(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -182,18 +182,19 @@ export class PosController {
   }
 
   @Get('shifts/:id/report')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get the X-Report (open shift) or Z-Report (closed shift) for a shift' })
+  @ApiOperation({ summary: 'Get the X-Report (open shift) or Z-Report (closed shift) for a shift -- Till & Shift Dashboard access, gated by the pos:view permission' })
   async getShiftReport(@Param('id') id: string) {
     return this.posService.getShiftReport(id);
   }
 
   @Get('analytics/summary')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin', 'pos_operator', 'pos_staff', 'staff')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Day-level POS summary: payment split, terminal & cashier performance, returns' })
+  @ApiOperation({ summary: 'Day-level POS summary: payment split, terminal & cashier performance, returns -- Till & Shift Dashboard access, gated by the pos:view permission' })
   async getPosAnalyticsSummary(@Query('date') date?: string) {
     return this.posService.getPosDaySummary(date);
   }
