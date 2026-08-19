@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/api/client';
-import { RagAnalyticsSummary, SocialAnalyticsSummary, RagIntentCount } from './analytics.types';
+import { RagAnalyticsSummary, SocialAnalyticsSummary, RagIntentCount, SocialEngagementTimelinePoint } from './analytics.types';
 import { StandardResponse } from '@/types/api.types';
 
 type ApiResponse<T> = StandardResponse<T>;
@@ -17,6 +17,13 @@ export const analyticsService = {
 
   async getSocialSummary(): Promise<SocialAnalyticsSummary> {
     const res = await apiClient.get<ApiResponse<SocialAnalyticsSummary>>('/admin/social/analytics/summary');
+    return res.data.data!;
+  },
+
+  async getSocialEngagementTimeline(days = 14): Promise<SocialEngagementTimelinePoint[]> {
+    const res = await apiClient.get<ApiResponse<SocialEngagementTimelinePoint[]>>('/admin/social/analytics/timeline', {
+      params: { days },
+    });
     return res.data.data!;
   },
 };

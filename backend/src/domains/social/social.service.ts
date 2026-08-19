@@ -704,4 +704,58 @@ export class SocialService {
       topPosts,
     };
   }
+
+  async getEngagementTimeline(days: number) {
+    const since = new Date();
+    since.setDate(since.getDate() - (days - 1));
+    since.setHours(0, 0, 0, 0);
+
+    const [likes, comments, shares, views] = await Promise.all([
+      this.prisma.socialLike.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true },
+      }),
+      this.prisma.socialComment.findMany({
+        where: { createdAt: { gte: since }, deletedAt: null },
+        select: { createdAt: true },
+      }),
+      this.prisma.socialShare.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true },
+      }),
+      this.prisma.socialView.findMany({
+        where: { createdAt: { gte: since } },
+        select: { createdAt: true, viewType: true },
+      }),
+    ]);
+
+    const dayKey = (d: Date) => d.toISOString().slice(0, 10);
+    const buckets = new Map<
+      string,
+      { date: string; likes: number; comments: number; shares: number; plays: number }
+    >();
+    for (let i = 0; i < days; i++) {
+      const d = new Date(since);
+      d.setDate(since.getDate() + i);
+      const key = dayKey(d);
+      buckets.set(key, { date: key, likes: 0, comments: 0, shares: 0, plays: 0 });
+    }
+
+    for (const row of likes) {
+      buckets.get(dayKey(row.createdAt))!.likes += 1;
+    }
+    for (const row of comments) {
+      buckets.get(dayKey(row.createdAt))!.comments += 1;
+    }
+    for (const row of shares) {
+      buckets.get(dayKey(row.createdAt))!.shares += 1;
+    }
+    for (const row of views) {
+      if (row.viewType === 'PLAY' || row.viewType === 'COMPLETE') {
+        buckets.get(dayKey(row.createdAt))!.plays += 1;
+      }
+    }
+
+    return Array.from(buckets.values());
+  }
 }

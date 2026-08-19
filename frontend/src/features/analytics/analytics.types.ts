@@ -51,3 +51,11 @@ export interface RagIntentCount {
   intent: string;
   count: number;
 }
+
+export interface SocialEngagementTimelinePoint {
+  date: string;
+  likes: number;
+  comments: number;
+  shares: number;
+  plays: number;
+}

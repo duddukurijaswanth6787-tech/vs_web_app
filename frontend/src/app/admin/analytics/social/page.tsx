@@ -1,13 +1,24 @@
 'use client';
 
 import React from 'react';
-import { useSocialAnalyticsSummary } from '@/features/analytics';
+import { useSocialAnalyticsSummary, useSocialEngagementTimeline } from '@/features/analytics';
 import { Heart, MessageSquare, Share2, Eye, Sparkles } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  CartesianGrid,
+  Legend,
+} from 'recharts';
 
 export default function SocialAnalyticsPage() {
   const { data, isLoading, error, refetch } = useSocialAnalyticsSummary();
+  const { data: timeline } = useSocialEngagementTimeline(14);
 
   if (isLoading) return <SectionLoader message="Loading social engagement metrics..." />;
   if (error) return <PageError title="Load Failure" message="Could not fetch social summary metrics." retry={refetch} />;
@@ -55,6 +66,41 @@ export default function SocialAnalyticsPage() {
             </div>
           );
         })}
+      </div>
+
+      {/* Engagement Timeline */}
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <h3 className="text-base font-bold text-neutral-900 mb-4">Engagement Timeline (Last 14 Days)</h3>
+        <div className="h-72 w-full">
+          {timeline && timeline.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={timeline} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                <XAxis
+                  dataKey="date"
+                  stroke="#a3a3a3"
+                  fontSize={11}
+                  tickLine={false}
+                  tickFormatter={(v: string) => new Date(v).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                />
+                <YAxis stroke="#a3a3a3" fontSize={11} tickLine={false} allowDecimals={false} />
+                <ChartTooltip
+                  labelFormatter={(v) => new Date(String(v)).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
+                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
+                />
+                <Legend wrapperStyle={{ fontSize: '11px' }} />
+                <Area type="monotone" dataKey="likes" name="Likes" stroke="#dc2626" fill="#dc2626" fillOpacity={0.12} strokeWidth={2} />
+                <Area type="monotone" dataKey="comments" name="Comments" stroke="#0369a1" fill="#0369a1" fillOpacity={0.12} strokeWidth={2} />
+                <Area type="monotone" dataKey="shares" name="Shares" stroke="#059669" fill="#059669" fillOpacity={0.12} strokeWidth={2} />
+                <Area type="monotone" dataKey="plays" name="Video Plays" stroke="#7e22ce" fill="#7e22ce" fillOpacity={0.12} strokeWidth={2} />
+              </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex items-center justify-center">
+              <p className="text-sm text-neutral-400">No engagement activity in the last 14 days.</p>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Top Performing Posts Table */}

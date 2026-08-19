@@ -12,6 +12,11 @@ export const reportsService = {
     return res.data.data!;
   },
 
+  async getProductCategoryBreakdown(): Promise<ReportResponse> {
+    const res = await apiClient.get<ApiResponse<ReportResponse>>('/reports/products/category-breakdown');
+    return res.data.data!;
+  },
+
   async getInventoryReport(): Promise<ReportResponse> {
     const res = await apiClient.get<ApiResponse<ReportResponse>>('/reports/inventory');
     return res.data.data!;
