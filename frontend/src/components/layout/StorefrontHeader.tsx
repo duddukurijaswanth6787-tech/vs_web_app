@@ -94,8 +94,24 @@ export function StorefrontHeader() {
 
       {/* Top Header Row */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-2 sm:py-3.5">
-        <div className="flex items-center justify-between gap-2 sm:gap-4">
-          {/* Left: Mobile Menu Trigger & Logo */}
+        <div className="relative flex items-center justify-between gap-2 sm:gap-4">
+
+          {/* Mobile: logo centered at the top of the header, independent of the hamburger/icons row */}
+          <Link
+            href="/"
+            className="lg:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center"
+          >
+            <Image
+              src="/brand/logo-full.png"
+              alt="Vasanthi's Signature"
+              width={1400}
+              height={803}
+              priority
+              className="h-12 sm:h-14 w-auto object-contain"
+            />
+          </Link>
+
+          {/* Left: Mobile Menu Trigger & Desktop Logo */}
           <div className="flex items-center gap-2 sm:gap-3 shrink-0">
             <button
               onClick={() => setMobileMenuOpen(true)}
@@ -105,14 +121,14 @@ export function StorefrontHeader() {
               <Menu className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
             </button>
 
-            <Link href="/" className="flex items-center shrink-0">
+            <Link href="/" className="hidden lg:flex items-center shrink-0">
               <Image
                 src="/brand/logo-full.png"
                 alt="Vasanthi's Signature"
                 width={1400}
                 height={803}
                 priority
-                className="h-9 sm:h-12 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
             </Link>
           </div>
