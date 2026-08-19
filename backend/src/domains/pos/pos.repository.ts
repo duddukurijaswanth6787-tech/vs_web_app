@@ -394,4 +394,247 @@ export class PosRepository {
       return createdOrder;
     });
   }
+
+  async findOpenShift(cashierId: string, terminalId?: string) {
+    return this.prisma.posShift.findFirst({
+      where: {
+        cashierId,
+        status: 'OPEN',
+        ...(terminalId && { terminalId }),
+      },
+      orderBy: { openedAt: 'desc' },
+    });
+  }
+
+  async createShift(params: {
+    terminalId: string;
+    cashierId: string;
+    openingCash: number;
+    notes?: string;
+  }) {
+    return this.prisma.posShift.create({ data: params });
+  }
+
+  async findShiftById(id: string) {
+    return this.prisma.posShift.findUnique({
+      where: { id },
+      include: {
+        cashier: { select: { id: true, firstName: true, lastName: true } },
+      },
+    });
+  }
+
+  async closeShift(
+    id: string,
+    data: {
+      closingCashExpected: number;
+      closingCashCounted: number;
+      variance: number;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.posShift.update({
+      where: { id },
+      data: {
+        status: 'CLOSED',
+        closedAt: new Date(),
+        closingCashExpected: data.closingCashExpected,
+        closingCashCounted: data.closingCashCounted,
+        variance: data.variance,
+        ...(data.notes && { notes: data.notes }),
+      },
+    });
+  }
+
+  async listShifts(params: {
+    page: number;
+    limit: number;
+    status?: string;
+    terminalId?: string;
+    cashierId?: string;
+  }) {
+    const where: Prisma.PosShiftWhereInput = {
+      ...(params.status && { status: params.status }),
+      ...(params.terminalId && { terminalId: params.terminalId }),
+      ...(params.cashierId && { cashierId: params.cashierId }),
+    };
+    const [data, total] = await Promise.all([
+      this.prisma.posShift.findMany({
+        where,
+        orderBy: { openedAt: 'desc' },
+        skip: (params.page - 1) * params.limit,
+        take: params.limit,
+        include: {
+          cashier: { select: { id: true, firstName: true, lastName: true } },
+        },
+      }),
+      this.prisma.posShift.count({ where }),
+    ]);
+    return { data, total };
+  }
+
+  async getCashMovementForWindow(
+    terminalId: string,
+    from: Date,
+    to: Date,
+  ): Promise<{ cashSales: number; cashRefunds: number }> {
+    const [salesAgg, refunds] = await Promise.all([
+      this.prisma.order.aggregate({
+        _sum: { grandTotal: true },
+        where: {
+          terminalId,
+          channel: 'POS_SHOPORA',
+          paymentMethod: 'CASH',
+          deletedAt: null,
+          createdAt: { gte: from, lte: to },
+        },
+      }),
+      this.prisma.refund.findMany({
+        where: {
+          method: 'CASH',
+          createdAt: { gte: from, lte: to },
+          order: { terminalId, channel: 'POS_SHOPORA' },
+        },
+        select: { amount: true },
+      }),
+    ]);
+    return {
+      cashSales: Number(salesAgg._sum.grandTotal ?? 0),
+      cashRefunds: refunds.reduce((sum, r) => sum + Number(r.amount), 0),
+    };
+  }
+
+  async getShiftSalesBreakdown(terminalId: string, from: Date, to: Date) {
+    const [byMethod, orderCount, refunds] = await Promise.all([
+      this.prisma.order.groupBy({
+        by: ['paymentMethod'],
+        _sum: { grandTotal: true },
+        _count: true,
+        where: {
+          terminalId,
+          channel: 'POS_SHOPORA',
+          deletedAt: null,
+          createdAt: { gte: from, lte: to },
+        },
+      }),
+      this.prisma.order.count({
+        where: {
+          terminalId,
+          channel: 'POS_SHOPORA',
+          deletedAt: null,
+          createdAt: { gte: from, lte: to },
+        },
+      }),
+      this.prisma.refund.findMany({
+        where: {
+          createdAt: { gte: from, lte: to },
+          order: { terminalId, channel: 'POS_SHOPORA' },
+        },
+        select: { amount: true, method: true },
+      }),
+    ]);
+    return {
+      byMethod: byMethod.map((m) => ({
+        method: m.paymentMethod,
+        revenue: Number(m._sum.grandTotal ?? 0),
+        count: m._count,
+      })),
+      orderCount,
+      refundsCount: refunds.length,
+      refundsAmount: refunds.reduce((sum, r) => sum + Number(r.amount), 0),
+    };
+  }
+
+  async getPosDaySummary(from: Date, to: Date) {
+    const orderWhere: Prisma.OrderWhereInput = {
+      channel: 'POS_SHOPORA',
+      deletedAt: null,
+      createdAt: { gte: from, lte: to },
+    };
+
+    const [byMethod, byTerminal, byCashier, refunds, totalAgg] =
+      await Promise.all([
+        this.prisma.order.groupBy({
+          by: ['paymentMethod'],
+          _sum: { grandTotal: true },
+          _count: true,
+          where: orderWhere,
+        }),
+        this.prisma.order.groupBy({
+          by: ['terminalId'],
+          _sum: { grandTotal: true },
+          _count: true,
+          where: orderWhere,
+        }),
+        this.prisma.order.groupBy({
+          by: ['createdBy'],
+          _sum: { grandTotal: true },
+          _count: true,
+          where: orderWhere,
+        }),
+        this.prisma.refund.findMany({
+          where: {
+            createdAt: { gte: from, lte: to },
+            order: { channel: 'POS_SHOPORA' },
+          },
+          select: { amount: true, order: { select: { terminalId: true } } },
+        }),
+        this.prisma.order.aggregate({
+          _sum: { grandTotal: true },
+          _count: true,
+          where: orderWhere,
+        }),
+      ]);
+
+    const cashierIds = byCashier
+      .map((c) => c.createdBy)
+      .filter((id): id is string => Boolean(id));
+    const cashiers = await this.prisma.user.findMany({
+      where: { id: { in: cashierIds } },
+      select: { id: true, firstName: true, lastName: true },
+    });
+    const cashierMap = new Map(cashiers.map((c) => [c.id, c]));
+
+    const refundsByTerminal = new Map<string, { count: number; amount: number }>();
+    for (const r of refunds) {
+      const key = r.order.terminalId || 'COUNTER_1';
+      const existing = refundsByTerminal.get(key);
+      if (existing) {
+        existing.count += 1;
+        existing.amount += Number(r.amount);
+      } else {
+        refundsByTerminal.set(key, { count: 1, amount: Number(r.amount) });
+      }
+    }
+
+    return {
+      totalRevenue: Number(totalAgg._sum.grandTotal ?? 0),
+      totalOrders: totalAgg._count,
+      byMethod: byMethod.map((m) => ({
+        method: m.paymentMethod,
+        revenue: Number(m._sum.grandTotal ?? 0),
+        count: m._count,
+      })),
+      byTerminal: byTerminal.map((t) => ({
+        terminalId: t.terminalId,
+        revenue: Number(t._sum.grandTotal ?? 0),
+        orderCount: t._count,
+        refundsCount: refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.count ?? 0,
+        refundsAmount: refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.amount ?? 0,
+      })),
+      byCashier: byCashier
+        .filter((c) => c.createdBy)
+        .map((c) => {
+          const user = cashierMap.get(c.createdBy!);
+          return {
+            cashierId: c.createdBy,
+            cashierName: user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Unknown',
+            revenue: Number(c._sum.grandTotal ?? 0),
+            orderCount: c._count,
+          };
+        }),
+      totalRefundsCount: refunds.length,
+      totalRefundsAmount: refunds.reduce((sum, r) => sum + Number(r.amount), 0),
+    };
+  }
 }

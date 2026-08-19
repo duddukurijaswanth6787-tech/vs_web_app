@@ -12,6 +12,12 @@ import {
   PreviewReceiptPayload,
   PreviewReceiptResponse,
   PosCustomerLookupResult,
+  PosShift,
+  OpenShiftPayload,
+  CloseShiftPayload,
+  ShiftReport,
+  PosDaySummary,
+  ShiftListResponse,
 } from './pos.types';
 
 export const posService = {
@@ -77,6 +83,58 @@ export const posService = {
   async lookupCustomer(phone: string): Promise<PosCustomerLookupResult> {
     const res = await apiClient.get<StandardResponse<PosCustomerLookupResult>>('/pos/customers/lookup', {
       params: { phone },
+    });
+    return res.data.data!;
+  },
+
+  /**
+   * Open a new till/shift with a starting cash float
+   */
+  async openShift(payload: OpenShiftPayload): Promise<PosShift> {
+    const res = await apiClient.post<StandardResponse<PosShift>>('/pos/shifts/open', payload);
+    return res.data.data!;
+  },
+
+  /**
+   * Get the current logged-in cashier's open shift (null if none)
+   */
+  async getCurrentShift(terminalId?: string): Promise<PosShift | null> {
+    const res = await apiClient.get<StandardResponse<PosShift | null>>('/pos/shifts/current', {
+      params: { terminalId },
+    });
+    return res.data.data ?? null;
+  },
+
+  /**
+   * Close a shift: count cash, compute variance
+   */
+  async closeShift(shiftId: string, payload: CloseShiftPayload): Promise<PosShift> {
+    const res = await apiClient.post<StandardResponse<PosShift>>(`/pos/shifts/${shiftId}/close`, payload);
+    return res.data.data!;
+  },
+
+  /**
+   * List shifts (till reconciliation history)
+   */
+  async listShifts(params: { page?: number; limit?: number; status?: string; terminalId?: string; cashierId?: string }): Promise<ShiftListResponse> {
+    const res = await apiClient.get<StandardResponse<ShiftListResponse>>('/pos/shifts', { params });
+    return res.data.data!;
+  },
+
+  /**
+   * Get the X-Report (open shift) or Z-Report (closed shift) for a shift
+   */
+  async getShiftReport(shiftId: string): Promise<ShiftReport> {
+    const res = await apiClient.get<StandardResponse<ShiftReport>>(`/pos/shifts/${shiftId}/report`);
+    return res.data.data!;
+  },
+
+  /**
+   * Day-level POS summary: payment split, terminal & cashier performance, returns
+   */
+  async getPosDaySummary(date?: string): Promise<PosDaySummary> {
+    const res = await apiClient.get<StandardResponse<PosDaySummary>>('/pos/analytics/summary', {
+      params: { date },
     });
     return res.data.data!;
   },

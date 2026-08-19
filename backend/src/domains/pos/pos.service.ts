@@ -22,6 +22,8 @@ import {
   PreviewReceiptDto,
   PosCartItemDto,
   PosCustomerInfoDto,
+  OpenPosShiftDto,
+  ClosePosShiftDto,
 } from './pos.types';
 
 @Injectable()
@@ -364,5 +366,135 @@ export class PosService {
       html,
       escposBase64: escposBuffer.toString('base64'),
     };
+  }
+
+  async openShift(cashierId: string, dto: OpenPosShiftDto) {
+    const existing = await this.repository.findOpenShift(
+      cashierId,
+      dto.terminalId,
+    );
+    if (existing) {
+      throw new BadRequestException(
+        `You already have an open shift on ${dto.terminalId} since ${existing.openedAt.toLocaleString()}. Close it before opening a new one.`,
+      );
+    }
+    const shift = await this.repository.createShift({
+      terminalId: dto.terminalId,
+      cashierId,
+      openingCash: dto.openingCash,
+      notes: dto.notes,
+    });
+    await this.auditService.log({
+      action: 'POS_SHIFT_OPENED',
+      module: 'pos',
+      resource: 'pos_shift',
+      resourceId: shift.id,
+      userId: cashierId,
+      newValue: { terminalId: dto.terminalId, openingCash: dto.openingCash },
+    });
+    return shift;
+  }
+
+  async getCurrentShift(cashierId: string, terminalId?: string) {
+    return this.repository.findOpenShift(cashierId, terminalId);
+  }
+
+  async closeShift(shiftId: string, cashierId: string, dto: ClosePosShiftDto) {
+    const shift = await this.repository.findShiftById(shiftId);
+    if (!shift) throw new NotFoundException('Shift not found');
+    if (shift.status !== 'OPEN') {
+      throw new BadRequestException('This shift is already closed');
+    }
+
+    const { cashSales, cashRefunds } =
+      await this.repository.getCashMovementForWindow(
+        shift.terminalId,
+        shift.openedAt,
+        new Date(),
+      );
+    const closingCashExpected =
+      Number(shift.openingCash) + cashSales - cashRefunds;
+    const variance = dto.closingCashCounted - closingCashExpected;
+
+    const closed = await this.repository.closeShift(shiftId, {
+      closingCashExpected,
+      closingCashCounted: dto.closingCashCounted,
+      variance,
+      notes: dto.notes,
+    });
+
+    await this.auditService.log({
+      action: 'POS_SHIFT_CLOSED',
+      module: 'pos',
+      resource: 'pos_shift',
+      resourceId: shiftId,
+      userId: cashierId,
+      newValue: {
+        closingCashExpected,
+        closingCashCounted: dto.closingCashCounted,
+        variance,
+      },
+    });
+
+    return closed;
+  }
+
+  async listShifts(params: {
+    page?: number;
+    limit?: number;
+    status?: string;
+    terminalId?: string;
+    cashierId?: string;
+  }) {
+    const page = params.page || 1;
+    const limit = params.limit || 20;
+    const { data, total } = await this.repository.listShifts({
+      page,
+      limit,
+      status: params.status,
+      terminalId: params.terminalId,
+      cashierId: params.cashierId,
+    });
+    return {
+      data,
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages: Math.ceil(total / limit),
+        hasNext: page * limit < total,
+        hasPrevious: page > 1,
+      },
+    };
+  }
+
+  async getShiftReport(shiftId: string) {
+    const shift = await this.repository.findShiftById(shiftId);
+    if (!shift) throw new NotFoundException('Shift not found');
+
+    const windowEnd = shift.closedAt || new Date();
+    const breakdown = await this.repository.getShiftSalesBreakdown(
+      shift.terminalId,
+      shift.openedAt,
+      windowEnd,
+    );
+
+    return {
+      shift,
+      reportType: shift.status === 'OPEN' ? 'X_REPORT' : 'Z_REPORT',
+      generatedAt: new Date(),
+      windowStart: shift.openedAt,
+      windowEnd,
+      ...breakdown,
+    };
+  }
+
+  async getPosDaySummary(dateStr?: string) {
+    const date = dateStr ? new Date(dateStr) : new Date();
+    const from = new Date(date);
+    from.setHours(0, 0, 0, 0);
+    const to = new Date(date);
+    to.setHours(23, 59, 59, 999);
+    return this.repository.getPosDaySummary(from, to);
   }
 }

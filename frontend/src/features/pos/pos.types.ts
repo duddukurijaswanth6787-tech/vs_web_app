@@ -145,3 +145,67 @@ export interface PreviewReceiptResponse {
   html: string;
   escposBase64: string;
 }
+
+export interface PosShift {
+  id: string;
+  terminalId: string;
+  cashierId: string;
+  status: 'OPEN' | 'CLOSED';
+  openingCash: number;
+  closingCashExpected?: number | null;
+  closingCashCounted?: number | null;
+  variance?: number | null;
+  notes?: string | null;
+  openedAt: string;
+  closedAt?: string | null;
+  cashier?: { id: string; firstName: string; lastName?: string };
+}
+
+export interface OpenShiftPayload {
+  terminalId: string;
+  openingCash: number;
+  notes?: string;
+}
+
+export interface CloseShiftPayload {
+  closingCashCounted: number;
+  notes?: string;
+}
+
+export interface ShiftReport {
+  shift: PosShift;
+  reportType: 'X_REPORT' | 'Z_REPORT';
+  generatedAt: string;
+  windowStart: string;
+  windowEnd: string;
+  byMethod: Array<{ method: string; revenue: number; count: number }>;
+  orderCount: number;
+  refundsCount: number;
+  refundsAmount: number;
+}
+
+export interface PosDaySummary {
+  totalRevenue: number;
+  totalOrders: number;
+  byMethod: Array<{ method: string; revenue: number; count: number }>;
+  byTerminal: Array<{
+    terminalId: string;
+    revenue: number;
+    orderCount: number;
+    refundsCount: number;
+    refundsAmount: number;
+  }>;
+  byCashier: Array<{
+    cashierId: string;
+    cashierName: string;
+    revenue: number;
+    orderCount: number;
+  }>;
+  totalRefundsCount: number;
+  totalRefundsAmount: number;
+}
+
+export interface ShiftListResponse {
+  data: PosShift[];
+  meta: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrevious: boolean };
+}

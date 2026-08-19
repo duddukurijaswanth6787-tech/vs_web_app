@@ -57,6 +57,7 @@ model User {
   staffProfile            StaffProfile?
   userRoles               UserRole[]
   checkoutSessions        CheckoutSession[]        @relation("CheckoutSessionCashier")
+  posShifts               PosShift[]
 
   @@index([deletedAt])
   @@index([accountStatus])
@@ -1012,6 +1013,31 @@ model CheckoutSession {
   @@index([status])
   @@index([sessionId])
   @@map("checkout_sessions")
+}
+
+/// A single cashier's till session on a POS counter, from opening the cash
+/// drawer with a starting float to counting and closing it out at end of
+/// shift. Powers the cash-in-drawer reconciliation and Z/X-Report on the
+/// POS Till & Shift Dashboard.
+model PosShift {
+  id                    String    @id @default(uuid())
+  terminalId            String
+  cashierId             String
+  status                String    @default("OPEN") // OPEN | CLOSED
+  openingCash           Decimal   @default(0)
+  closingCashExpected   Decimal?
+  closingCashCounted    Decimal?
+  variance              Decimal?
+  notes                 String?
+  openedAt              DateTime  @default(now())
+  closedAt              DateTime?
+  cashier               User      @relation(fields: [cashierId], references: [id])
+
+  @@index([cashierId])
+  @@index([terminalId])
+  @@index([status])
+  @@index([openedAt])
+  @@map("pos_shifts")
 }
 
 

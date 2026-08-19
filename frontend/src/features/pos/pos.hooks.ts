@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { posService } from './pos.service';
 import {
   PosCartItem,
@@ -8,6 +8,8 @@ import {
   CompletePosSalePayload,
   BatchStickersPayload,
   PreviewReceiptPayload,
+  OpenShiftPayload,
+  CloseShiftPayload,
 } from './pos.types';
 
 export const posKeys = {
@@ -64,5 +66,55 @@ export function usePreviewReceipt() {
 export function useLookupCustomer() {
   return useMutation({
     mutationFn: (phone: string) => posService.lookupCustomer(phone),
+  });
+}
+
+export function useCurrentShift(terminalId?: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'current-shift', terminalId],
+    queryFn: () => posService.getCurrentShift(terminalId),
+  });
+}
+
+export function useOpenShift() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: OpenShiftPayload) => posService.openShift(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: posKeys.all });
+    },
+  });
+}
+
+export function useCloseShift() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ shiftId, payload }: { shiftId: string; payload: CloseShiftPayload }) =>
+      posService.closeShift(shiftId, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: posKeys.all });
+    },
+  });
+}
+
+export function useShiftsList(params: { page?: number; limit?: number; status?: string; terminalId?: string; cashierId?: string } = {}) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'shifts', params],
+    queryFn: () => posService.listShifts(params),
+  });
+}
+
+export function useShiftReport(shiftId?: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'shift-report', shiftId],
+    queryFn: () => posService.getShiftReport(shiftId!),
+    enabled: !!shiftId,
+  });
+}
+
+export function usePosDaySummary(date?: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'day-summary', date],
+    queryFn: () => posService.getPosDaySummary(date),
   });
 }
