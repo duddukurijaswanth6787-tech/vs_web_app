@@ -9,6 +9,7 @@ import {
   WarehouseResponse,
   CreateLocationDto,
   AssignWarehouseInventoryDto,
+  UpdateWarehouseInventoryDto,
   TransferStockDto,
 } from './warehouse.types';
 
@@ -197,6 +198,45 @@ export class WarehouseService {
       reorderLevel: dto.reorderLevel ?? 0,
     });
     return inv;
+  }
+
+  async updateWarehouseInventoryCount(
+    warehouseId: string,
+    variantId: string,
+    dto: UpdateWarehouseInventoryDto,
+    userId: string,
+  ) {
+    const wh = await this.warehouseRepository.findById(warehouseId);
+    if (!wh || wh.deletedAt)
+      throw new BusinessException('Warehouse not found', 'WAREHOUSE_001');
+
+    const existing = await this.warehouseRepository.findWarehouseInventory(
+      warehouseId,
+      variantId,
+    );
+    if (!existing)
+      throw new BusinessException(
+        'No inventory record for this variant in this warehouse -- assign it first',
+        'WAREHOUSE_006',
+      );
+
+    const previousQuantity = existing.availableQuantity;
+    const updated = await this.warehouseRepository.updateWarehouseInventory(
+      existing.id,
+      dto,
+    );
+
+    await this.auditService.log({
+      action: 'WAREHOUSE_INVENTORY_COUNT_UPDATED',
+      module: 'warehouse',
+      resource: 'variant_warehouse_inventory',
+      resourceId: existing.id,
+      userId,
+      oldValue: { availableQuantity: previousQuantity },
+      newValue: { availableQuantity: updated.availableQuantity },
+    });
+
+    return updated;
   }
 
   async getWarehouseInventory(warehouseId: string) {

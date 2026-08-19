@@ -6,6 +6,7 @@ import {
   UpdateWarehouseDto,
   CreateLocationDto,
   AssignWarehouseInventoryDto,
+  UpdateWarehouseInventoryDto,
   TransferStockDto,
 } from './warehouse.types';
 import { inventoryKeys } from '../inventory/inventory.hooks';
@@ -116,6 +117,18 @@ export function useAssignWarehouseInventory() {
       queryClient.invalidateQueries({ queryKey: warehouseKeys.inventories(data.warehouseId) });
       queryClient.invalidateQueries({ queryKey: warehouseKeys.detail(data.warehouseId) });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.all });
+    },
+  });
+}
+
+export function useUpdateWarehouseInventoryCount() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ warehouseId, variantId, dto }: { warehouseId: string; variantId: string; dto: UpdateWarehouseInventoryDto }) =>
+      warehouseService.updateInventoryCount(warehouseId, variantId, dto),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.inventories(data.warehouseId) });
+      queryClient.invalidateQueries({ queryKey: warehouseKeys.detail(data.warehouseId) });
     },
   });
 }

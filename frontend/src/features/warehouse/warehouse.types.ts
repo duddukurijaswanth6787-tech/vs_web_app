@@ -111,6 +111,13 @@ export interface AssignWarehouseInventoryDto {
   reorderLevel?: number;
 }
 
+export interface UpdateWarehouseInventoryDto {
+  availableQuantity?: number;
+  minimumStock?: number;
+  maximumStock?: number;
+  reorderLevel?: number;
+}
+
 export interface TransferStockDto {
   variantId: string;
   fromWarehouseId: string;

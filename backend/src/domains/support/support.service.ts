@@ -46,10 +46,14 @@ export class SupportService {
   }
 
   private toTicketResponse(t: any): SupportTicketResponse {
+    const customerName = t.customer?.user
+      ? [t.customer.user.firstName, t.customer.user.lastName].filter(Boolean).join(' ').trim()
+      : undefined;
     return {
       id: t.id,
       ticketNumber: t.ticketNumber,
       customerId: t.customerId ?? undefined,
+      customerName: customerName || undefined,
       subject: t.subject,
       description: t.description,
       category: t.category ?? undefined,
@@ -153,13 +157,13 @@ export class SupportService {
     return this.findTicketById(id);
   }
 
-  async addReply(ticketId: string, dto: CreateSupportReplyDto) {
+  async addReply(ticketId: string, dto: CreateSupportReplyDto, isStaff: boolean) {
     const ticket = await this.supportRepository.findTicketById(ticketId);
     if (!ticket) throw new BusinessException('Ticket not found', 'SUPPORT_001');
     const reply = await this.supportRepository.createReply({
       ticket: { connect: { id: ticketId } },
       message: dto.message,
-      isStaff: false,
+      isStaff,
       attachments: dto.attachments ?? [],
     });
     return this.toReplyResponse(reply);

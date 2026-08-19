@@ -60,6 +60,7 @@ export class SupportTicketResponse {
   @ApiProperty() id!: string;
   @ApiProperty() ticketNumber!: string;
   @ApiPropertyOptional() customerId?: string;
+  @ApiPropertyOptional() customerName?: string;
   @ApiProperty() subject!: string;
   @ApiProperty() description!: string;
   @ApiPropertyOptional() category?: string;

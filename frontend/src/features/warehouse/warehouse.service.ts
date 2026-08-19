@@ -10,6 +10,7 @@ import {
   UpdateWarehouseDto,
   CreateLocationDto,
   AssignWarehouseInventoryDto,
+  UpdateWarehouseInventoryDto,
   TransferStockDto,
 } from './warehouse.types';
 
@@ -60,6 +61,18 @@ export const warehouseService = {
 
   assignInventory: async (id: string, dto: AssignWarehouseInventoryDto): Promise<WarehouseInventoryResponse> => {
     const response = await apiClient.post<StandardResponse<WarehouseInventoryResponse>>(`/warehouses/${id}/inventory`, dto);
+    return response.data.data!;
+  },
+
+  updateInventoryCount: async (
+    id: string,
+    variantId: string,
+    dto: UpdateWarehouseInventoryDto,
+  ): Promise<WarehouseInventoryResponse> => {
+    const response = await apiClient.patch<StandardResponse<WarehouseInventoryResponse>>(
+      `/warehouses/${id}/inventory/${variantId}`,
+      dto,
+    );
     return response.data.data!;
   },
 
