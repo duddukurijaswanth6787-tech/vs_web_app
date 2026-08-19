@@ -1,11 +1,7 @@
-import {
-  RecaptchaVerifier,
-  signInWithPhoneNumber,
-  type ConfirmationResult,
-} from 'firebase/auth';
-import { firebaseAuth } from './config';
+import type { RecaptchaVerifier as RecaptchaVerifierType, ConfirmationResult } from 'firebase/auth';
+import { getFirebaseAuth } from './config';
 
-let recaptchaVerifier: RecaptchaVerifier | null = null;
+let recaptchaVerifier: RecaptchaVerifierType | null = null;
 
 /**
  * Firebase Phone Auth requires a reCAPTCHA check before it will send an SMS.
@@ -13,9 +9,11 @@ let recaptchaVerifier: RecaptchaVerifier | null = null;
  * visible challenge is needed. Must only be called client-side (uses
  * `window`/`document`), and the container element must already be mounted.
  */
-function getRecaptchaVerifier(containerId: string): RecaptchaVerifier {
+async function getRecaptchaVerifier(containerId: string): Promise<RecaptchaVerifierType> {
   if (recaptchaVerifier) return recaptchaVerifier;
-  recaptchaVerifier = new RecaptchaVerifier(firebaseAuth, containerId, {
+  const { RecaptchaVerifier } = await import('firebase/auth');
+  const auth = await getFirebaseAuth();
+  recaptchaVerifier = new RecaptchaVerifier(auth, containerId, {
     size: 'invisible',
   });
   return recaptchaVerifier;
@@ -36,6 +34,10 @@ export async function sendFirebasePhoneOtp(
   phoneE164: string,
   containerId: string,
 ): Promise<ConfirmationResult> {
-  const verifier = getRecaptchaVerifier(containerId);
-  return signInWithPhoneNumber(firebaseAuth, phoneE164, verifier);
+  const [auth, verifier, { signInWithPhoneNumber }] = await Promise.all([
+    getFirebaseAuth(),
+    getRecaptchaVerifier(containerId),
+    import('firebase/auth'),
+  ]);
+  return signInWithPhoneNumber(auth, phoneE164, verifier);
 }
