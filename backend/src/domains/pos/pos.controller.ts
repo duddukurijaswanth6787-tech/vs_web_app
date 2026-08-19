@@ -4,9 +4,9 @@ import {
   Get,
   Body,
   Query,
+  Param,
   Res,
   UseGuards,
-  Req,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
@@ -16,7 +16,9 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { PosService } from './pos.service';
 import {
   ScanBarcodeDto,
@@ -28,6 +30,8 @@ import {
   GenerateBarcodeImageDto,
   GenerateBatchStickersDto,
   PreviewReceiptDto,
+  OpenPosShiftDto,
+  ClosePosShiftDto,
 } from './pos.types';
 import type { Response } from 'express';
 
@@ -54,10 +58,10 @@ export class PosController {
   })
   @ApiResponse({ status: 201, type: CheckoutSessionResponse })
   async createCheckoutSession(
-    @Req() req: { user: { id: string } },
+    @CurrentUser() user: JwtPayload,
     @Body() dto: CreateCheckoutSessionDto,
   ): Promise<CheckoutSessionResponse> {
-    return this.posService.createCheckoutSession(req.user.id, dto);
+    return this.posService.createCheckoutSession(user.sub, dto);
   }
 
   @Post('checkout-sessions/adopt')
@@ -76,10 +80,10 @@ export class PosController {
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete POS Sale & Trigger Invoice Printing' })
   async completeSale(
-    @Req() req: { user: { id: string } },
+    @CurrentUser() user: JwtPayload,
     @Body() dto: CompletePosSaleDto,
   ) {
-    return this.posService.completeSale(req.user.id, dto);
+    return this.posService.completeSale(user.sub, dto);
   }
 
   @Get('barcodes/generate')
@@ -120,5 +124,77 @@ export class PosController {
   })
   async lookupCustomer(@Query('phone') phone: string) {
     return this.posService.lookupCustomer(phone || '');
+  }
+
+  @Post('shifts/open')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Open a new till/shift with a starting cash float' })
+  async openShift(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: OpenPosShiftDto,
+  ) {
+    return this.posService.openShift(user.sub, dto);
+  }
+
+  @Get('shifts/current')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the current logged-in cashier\'s open shift' })
+  async getCurrentShift(
+    @CurrentUser() user: JwtPayload,
+    @Query('terminalId') terminalId?: string,
+  ) {
+    return this.posService.getCurrentShift(user.sub, terminalId);
+  }
+
+  @Post('shifts/:id/close')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Close a shift: count cash, compute variance' })
+  async closeShift(
+    @CurrentUser() user: JwtPayload,
+    @Param('id') id: string,
+    @Body() dto: ClosePosShiftDto,
+  ) {
+    return this.posService.closeShift(id, user.sub, dto);
+  }
+
+  @Get('shifts')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin', 'pos_operator', 'pos_staff', 'staff')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List shifts (till reconciliation history)' })
+  async listShifts(
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('status') status?: string,
+    @Query('terminalId') terminalId?: string,
+    @Query('cashierId') cashierId?: string,
+  ) {
+    return this.posService.listShifts({
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+      status,
+      terminalId,
+      cashierId,
+    });
+  }
+
+  @Get('shifts/:id/report')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get the X-Report (open shift) or Z-Report (closed shift) for a shift' })
+  async getShiftReport(@Param('id') id: string) {
+    return this.posService.getShiftReport(id);
+  }
+
+  @Get('analytics/summary')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin', 'pos_operator', 'pos_staff', 'staff')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Day-level POS summary: payment split, terminal & cashier performance, returns' })
+  async getPosAnalyticsSummary(@Query('date') date?: string) {
+    return this.posService.getPosDaySummary(date);
   }
 }

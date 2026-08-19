@@ -258,6 +258,13 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'shopora-pos-dashboard',
+        title: 'Till & Shift Dashboard',
+        href: '/pos/dashboard',
+        icon: Activity,
+        implemented: true,
+      },
+      {
         id: 'shopora-add-stock',
         title: 'Add Stock & Print Labels',
         href: '/pos/add-stock',

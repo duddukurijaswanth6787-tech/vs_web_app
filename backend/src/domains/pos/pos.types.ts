@@ -295,6 +295,34 @@ export class GenerateBatchStickersDto {
   labelSize?: LabelSize;
 }
 
+export class OpenPosShiftDto {
+  @ApiProperty()
+  @IsString()
+  terminalId!: string;
+
+  @ApiProperty({ description: 'Starting cash float counted into the drawer' })
+  @IsNumber()
+  @Min(0)
+  openingCash!: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class ClosePosShiftDto {
+  @ApiProperty({ description: 'Physical cash counted in the drawer at close' })
+  @IsNumber()
+  @Min(0)
+  closingCashCounted!: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
 export class PreviewReceiptDto {
   @ApiProperty()
   @IsString()

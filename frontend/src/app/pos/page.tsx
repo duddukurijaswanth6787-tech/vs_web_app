@@ -173,10 +173,26 @@ export default function DesktopPosPage() {
   const handleCompleteSale = () => {
     if (cart.length === 0) return;
 
+    // The backend's completeSale/previewReceipt DTOs reject unknown
+    // properties (forbidNonWhitelisted) -- strip the cart's display-only
+    // fields (primaryImage, availableStock) before sending, or every sale
+    // with a scanned item fails validation.
+    const saleItems = cart.map(({ productId, productName, variantId, sku, variantTitle, quantity, unitPrice, discountAmount, taxAmount }) => ({
+      productId,
+      productName,
+      variantId,
+      sku,
+      variantTitle,
+      quantity,
+      unitPrice,
+      discountAmount,
+      taxAmount,
+    }));
+
     completeSaleMutation.mutate(
       {
         sessionId: activeSession?.sessionId,
-        items: cart,
+        items: saleItems,
         paymentMethod,
         amountPaid: grandTotal,
         customer,
@@ -192,7 +208,7 @@ export default function DesktopPosPage() {
             {
               orderNumber: res.order.orderNumber,
               grandTotal: res.order.grandTotal,
-              items: cart,
+              items: saleItems,
               customer,
               paymentMethod,
               discountTotal,
