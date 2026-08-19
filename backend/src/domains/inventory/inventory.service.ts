@@ -219,6 +219,17 @@ export class InventoryService {
     if (!inv)
       throw new BusinessException('Inventory not found', 'INVENTORY_001');
 
+    if (dto.referenceType && dto.referenceId) {
+      const existing = await this.inventoryRepository.findMovementByReference(
+        id,
+        dto.referenceType,
+        dto.referenceId,
+      );
+      // Replay of an offline-queued stock-in that already landed -- return the
+      // current state instead of crediting the stock a second time.
+      if (existing) return this.findById(id);
+    }
+
     const prev = inv.availableQuantity;
     const next = prev + dto.quantity;
 

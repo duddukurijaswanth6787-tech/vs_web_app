@@ -305,7 +305,23 @@ export class CheckoutService {
       return createdOrder;
     });
 
-    await this.workflow.reserveInventory(order.id);
+    // reserveInventory is atomic and all-or-nothing: it throws if any item
+    // is short (e.g. a concurrent order for the same variant claimed the
+    // last unit first). The order row above already committed as PENDING,
+    // so compensate by cancelling it instead of leaving an unreservable
+    // order stuck at PENDING forever, and leave the cart untouched so the
+    // customer can retry.
+    try {
+      await this.workflow.reserveInventory(order.id);
+    } catch (err) {
+      await this.workflow.transition(
+        order.id,
+        'CANCELLED',
+        userId,
+        'Auto-cancelled: insufficient stock at checkout',
+      );
+      throw err;
+    }
     await this.cartService.clearCart(userId, undefined);
 
     if (dto.couponCode && (couponDiscount > 0 || freeShipping)) {

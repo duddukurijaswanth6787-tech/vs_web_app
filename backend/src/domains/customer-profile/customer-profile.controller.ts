@@ -3,7 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CustomerProfileService } from './customer-profile.service';
 import { UpdateProfileDto } from './customer-profile.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -35,8 +35,8 @@ export class CustomerProfileController {
   }
 
   @Get('admin/:userId')
-  @UseGuards(RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(PermissionsGuard)
+  @Permissions('customers:view')
   @ApiOperation({ summary: 'Get customer profile by user ID (Admin only)' })
   async adminGetProfile(@Param('userId') userId: string) {
     return ResponseBuilder.success(
@@ -45,8 +45,8 @@ export class CustomerProfileController {
   }
 
   @Patch('admin/:userId')
-  @UseGuards(RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(PermissionsGuard)
+  @Permissions('customers:update')
   @ApiOperation({ summary: 'Update customer profile by user ID (Admin only)' })
   async adminUpdateProfile(
     @Param('userId') userId: string,

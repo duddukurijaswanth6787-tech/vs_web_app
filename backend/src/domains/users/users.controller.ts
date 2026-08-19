@@ -19,31 +19,32 @@ import {
 } from './users.types';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('Users')
 @Controller('users')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get()
-  @Roles('super_admin', 'admin')
+  @Permissions('users:view')
   @ApiOperation({ summary: 'List users with search, pagination, filter, sort' })
   async findAll(@Query() query: UserQueryDto) {
     return ResponseBuilder.success(await this.usersService.findAll(query));
   }
 
   @Get(':id')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:view')
   @ApiOperation({ summary: 'Get user by ID with roles and permissions' })
   async findById(@Param('id') id: string) {
     return ResponseBuilder.success(await this.usersService.findById(id));
   }
 
   @Post()
-  @Roles('super_admin', 'admin')
+  @Permissions('users:create')
   @ApiOperation({ summary: 'Create a new user' })
   async create(@Body() dto: CreateUserDto) {
     return ResponseBuilder.created(
@@ -53,7 +54,7 @@ export class UsersController {
   }
 
   @Patch(':id')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:update')
   @ApiOperation({ summary: 'Update user profile' })
   async update(@Param('id') id: string, @Body() dto: UpdateUserDto) {
     return ResponseBuilder.success(
@@ -81,7 +82,7 @@ export class UsersController {
   }
 
   @Post(':id/activate')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:update')
   @ApiOperation({ summary: 'Activate user account' })
   async activate(@Param('id') id: string) {
     return ResponseBuilder.success(
@@ -91,7 +92,7 @@ export class UsersController {
   }
 
   @Post(':id/deactivate')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:update')
   @ApiOperation({ summary: 'Deactivate user account' })
   async deactivate(@Param('id') id: string) {
     return ResponseBuilder.success(
@@ -144,14 +145,14 @@ export class UsersController {
   }
 
   @Get(':id/roles')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:view')
   @ApiOperation({ summary: 'Get user roles' })
   async getRoles(@Param('id') id: string) {
     return ResponseBuilder.success(await this.usersService.getRoles(id));
   }
 
   @Get(':id/permissions')
-  @Roles('super_admin', 'admin')
+  @Permissions('users:view')
   @ApiOperation({ summary: 'Get user permissions (computed from roles)' })
   async getPermissions(@Param('id') id: string) {
     return ResponseBuilder.success(await this.usersService.getPermissions(id));

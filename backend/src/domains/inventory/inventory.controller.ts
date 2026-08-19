@@ -19,7 +19,7 @@ import {
   MovementQueryDto,
 } from './inventory.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -71,8 +71,8 @@ export class InventoryController {
   // ─── Admin: CRUD ───────────────────────────────────────
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create inventory for a variant' })
   async create(
@@ -86,8 +86,8 @@ export class InventoryController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update inventory settings' })
   async update(
@@ -104,8 +104,8 @@ export class InventoryController {
   // ─── Admin: Stock Operations ───────────────────────────
 
   @Post(':id/increase')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Increase stock' })
   async increaseStock(
@@ -120,8 +120,8 @@ export class InventoryController {
   }
 
   @Post(':id/decrease')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Decrease stock' })
   async decreaseStock(
@@ -136,8 +136,8 @@ export class InventoryController {
   }
 
   @Post(':id/adjust')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Adjust stock (positive or negative)' })
   async adjustStock(
@@ -152,8 +152,8 @@ export class InventoryController {
   }
 
   @Post(':id/reserve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reserve stock for order' })
   async reserveStock(
@@ -168,8 +168,8 @@ export class InventoryController {
   }
 
   @Post(':id/release')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Release reserved stock' })
   async releaseStock(
@@ -184,8 +184,8 @@ export class InventoryController {
   }
 
   @Post(':id/return')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Process return stock' })
   async returnStock(
@@ -200,8 +200,8 @@ export class InventoryController {
   }
 
   @Post(':id/damage')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Report damaged stock' })
   async damageStock(

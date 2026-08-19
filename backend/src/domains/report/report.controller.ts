@@ -11,7 +11,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ReportService } from './report.service';
 import { GenerateReportDto } from './report.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -21,8 +21,8 @@ export class ReportController {
   constructor(private readonly reportService: ReportService) {}
 
   @Get('sales')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate sales report' })
   async getSalesReport(
@@ -35,8 +35,8 @@ export class ReportController {
   }
 
   @Get('products/category-breakdown')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get sales revenue/units broken down by product category' })
   async getProductCategoryBreakdown() {
@@ -46,8 +46,8 @@ export class ReportController {
   }
 
   @Get('inventory')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate inventory report' })
   async getInventoryReport() {
@@ -57,8 +57,8 @@ export class ReportController {
   }
 
   @Get('customers')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate customer report' })
   async getCustomerReport() {
@@ -68,8 +68,8 @@ export class ReportController {
   }
 
   @Get('orders')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate order report' })
   async getOrderReport(
@@ -82,8 +82,8 @@ export class ReportController {
   }
 
   @Get('list/:type')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate list report by type' })
   async getListReport(
@@ -107,8 +107,8 @@ export class ReportController {
   }
 
   @Post('export')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:export')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create export job' })
   async createExportJob(
@@ -122,8 +122,8 @@ export class ReportController {
   }
 
   @Get('exports')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:export')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List export jobs' })
   async getExportJobs(
@@ -138,8 +138,8 @@ export class ReportController {
   }
 
   @Get('exports/:id/download')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:export')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get export download URL' })
   async getExportDownloadUrl(@Param('id') id: string) {

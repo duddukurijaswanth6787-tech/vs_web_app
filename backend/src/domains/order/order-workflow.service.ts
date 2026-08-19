@@ -110,6 +110,13 @@ export class OrderWorkflowService {
     return updated;
   }
 
+  /**
+   * Reserves stock for an order's items. Uses a guarded `UPDATE ... WHERE`
+   * (not a read-then-write) so concurrent reservations for the same variant
+   * serialize on the DB row lock instead of both reading the same
+   * pre-reservation snapshot and over-reserving it -- the classic TOCTOU race
+   * that let checkout oversell under concurrency.
+   */
   async reserveInventory(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -117,29 +124,51 @@ export class OrderWorkflowService {
     });
     if (!order) throw new BusinessException('Order not found', 'ORDER_001');
 
-    for (const item of order.items) {
-      if (item.variantId) {
-        const inventory = await this.prisma.inventory.findUnique({
-          where: { variantId: item.variantId },
-        });
-        if (inventory) {
-          const available =
-            inventory.availableQuantity - inventory.reservedQuantity;
-          if (available < item.quantity && !inventory.allowBackorder) {
-            throw new BusinessException(
-              `Insufficient stock for ${item.productName}`,
-              'ORDER_003',
-            );
-          }
-          await this.prisma.inventory.update({
-            where: { id: inventory.id },
-            data: {
-              reservedQuantity: inventory.reservedQuantity + item.quantity,
-            },
+    await this.prisma.$transaction(async (tx) => {
+      const shortages: {
+        variantId: string;
+        productName: string;
+        variantTitle?: string | null;
+        requested: number;
+        available: number;
+      }[] = [];
+
+      for (const item of order.items) {
+        if (!item.variantId) continue;
+
+        const affected = await tx.$executeRaw`
+          UPDATE "inventory"
+          SET "reservedQuantity" = "reservedQuantity" + ${item.quantity}
+          WHERE "variantId" = ${item.variantId}
+            AND ("availableQuantity" - "reservedQuantity" >= ${item.quantity} OR "allowBackorder" = true)
+        `;
+
+        if (affected === 0) {
+          const current = await tx.inventory.findUnique({
+            where: { variantId: item.variantId },
           });
+          if (current) {
+            shortages.push({
+              variantId: item.variantId,
+              productName: item.productName,
+              variantTitle: item.variantTitle,
+              requested: item.quantity,
+              available: current.availableQuantity - current.reservedQuantity,
+            });
+          }
+          // No inventory row at all: same as the pre-existing behaviour,
+          // silently skipped (not every variant is stock-tracked).
         }
       }
-    }
+
+      if (shortages.length > 0) {
+        throw new BusinessException(
+          `Insufficient stock for ${shortages[0].productName}`,
+          'ORDER_003',
+          { shortages },
+        );
+      }
+    });
   }
 
   async releaseInventory(orderId: string) {
@@ -151,23 +180,25 @@ export class OrderWorkflowService {
 
     for (const item of order.items) {
       if (item.variantId) {
-        const inventory = await this.prisma.inventory.findUnique({
-          where: { variantId: item.variantId },
-        });
-        if (inventory) {
-          const newReserved = Math.max(
-            0,
-            inventory.reservedQuantity - item.quantity,
-          );
-          await this.prisma.inventory.update({
-            where: { id: inventory.id },
-            data: { reservedQuantity: newReserved },
-          });
-        }
+        await this.prisma.$executeRaw`
+          UPDATE "inventory"
+          SET "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
+          WHERE "variantId" = ${item.variantId}
+        `;
       }
     }
   }
 
+  /**
+   * Deducts stock for an order's items, atomically and all-or-nothing: each
+   * variant's decrement is a guarded `UPDATE ... WHERE availableQuantity >=
+   * quantity` (or allowBackorder), so it can never push stock negative even
+   * when two orders for the same scarce variant are being deducted at the
+   * same instant -- the second one to reach the row simply fails the guard
+   * instead of both succeeding. If any item is short, the whole deduction
+   * for this order is rolled back (no partial deduction) and a
+   * BusinessException carrying the shortages is thrown.
+   */
   async deductInventory(orderId: string) {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
@@ -175,26 +206,52 @@ export class OrderWorkflowService {
     });
     if (!order) return;
 
-    for (const item of order.items) {
-      if (item.variantId) {
-        const inventory = await this.prisma.inventory.findUnique({
-          where: { variantId: item.variantId },
-        });
-        if (inventory) {
-          const newReserved = Math.max(
-            0,
-            inventory.reservedQuantity - item.quantity,
-          );
-          await this.prisma.inventory.update({
-            where: { id: inventory.id },
-            data: {
-              availableQuantity: inventory.availableQuantity - item.quantity,
-              reservedQuantity: newReserved,
-            },
+    await this.prisma.$transaction(async (tx) => {
+      const shortages: {
+        variantId: string;
+        productName: string;
+        variantTitle?: string | null;
+        requested: number;
+        available: number;
+      }[] = [];
+
+      for (const item of order.items) {
+        if (!item.variantId) continue;
+
+        const affected = await tx.$executeRaw`
+          UPDATE "inventory"
+          SET "availableQuantity" = "availableQuantity" - ${item.quantity},
+              "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
+          WHERE "variantId" = ${item.variantId}
+            AND ("availableQuantity" >= ${item.quantity} OR "allowBackorder" = true)
+        `;
+
+        if (affected === 0) {
+          const current = await tx.inventory.findUnique({
+            where: { variantId: item.variantId },
           });
+          if (current) {
+            shortages.push({
+              variantId: item.variantId,
+              productName: item.productName,
+              variantTitle: item.variantTitle,
+              requested: item.quantity,
+              available: current.availableQuantity,
+            });
+          }
+          // No inventory row at all: preserved pre-existing behaviour of
+          // silently skipping the deduction for untracked variants.
         }
       }
-    }
+
+      if (shortages.length > 0) {
+        throw new BusinessException(
+          'Insufficient stock to complete this order',
+          'ORDER_STOCK_CONFLICT',
+          { shortages },
+        );
+      }
+    });
   }
 
   async restoreInventory(orderId: string) {
@@ -206,17 +263,10 @@ export class OrderWorkflowService {
 
     for (const item of order.items) {
       if (item.variantId) {
-        const inventory = await this.prisma.inventory.findUnique({
+        await this.prisma.inventory.updateMany({
           where: { variantId: item.variantId },
+          data: { availableQuantity: { increment: item.quantity } },
         });
-        if (inventory) {
-          await this.prisma.inventory.update({
-            where: { id: inventory.id },
-            data: {
-              availableQuantity: inventory.availableQuantity + item.quantity,
-            },
-          });
-        }
       }
     }
   }

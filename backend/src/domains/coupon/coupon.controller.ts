@@ -18,7 +18,7 @@ import {
   CouponQueryDto,
 } from './coupon.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -28,8 +28,8 @@ export class CouponController {
   constructor(private readonly couponService: CouponService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('coupons:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List coupons' })
   async findAll(@Query() query: CouponQueryDto) {
@@ -51,8 +51,8 @@ export class CouponController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('coupons:create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create coupon' })
   async create(@Body() dto: CreateCouponDto, @CurrentUser() user: JwtPayload) {
@@ -62,8 +62,8 @@ export class CouponController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('coupons:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update coupon' })
   async update(

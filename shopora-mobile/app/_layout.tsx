@@ -116,6 +116,12 @@ export default function RootLayout() {
             headerShown: false,
           }}
         />
+        <Stack.Screen
+          name="pending-sync"
+          options={{
+            title: "Pending Sync",
+          }}
+        />
         <Stack.Screen name="shop" options={{ headerShown: false }} />
         <Stack.Screen name="product/[id]" options={{ headerShown: false }} />
         <Stack.Screen name="cart" options={{ headerShown: false }} />

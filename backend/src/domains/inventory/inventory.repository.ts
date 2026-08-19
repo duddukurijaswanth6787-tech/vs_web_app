@@ -103,6 +103,17 @@ export class InventoryRepository {
     return this.prisma.inventoryMovement.create({ data });
   }
 
+  /** Looks up a prior movement by its client-supplied reference, so a replayed offline-queued request can be recognized instead of double-applied. */
+  async findMovementByReference(
+    inventoryId: string,
+    referenceType: string,
+    referenceId: string,
+  ) {
+    return this.prisma.inventoryMovement.findFirst({
+      where: { inventoryId, referenceType, referenceId },
+    });
+  }
+
   async findMovements(params: {
     inventoryId?: string;
     variantId?: string;
