@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import {
   Search,
@@ -104,15 +105,15 @@ export function StorefrontHeader() {
               <Menu className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
             </button>
 
-            <Link href="/" className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-              <div className="w-7 h-7 sm:w-8.5 sm:h-8.5 rounded-full bg-[#800020] text-amber-300 flex items-center justify-center font-serif text-sm sm:text-lg font-bold shadow-xs shrink-0">
-                ❖
-              </div>
-              <div className="flex flex-col justify-center">
-                <span className="text-base sm:text-2xl font-bold font-serif tracking-tight text-[#800020] leading-none whitespace-nowrap">
-                  Vasanthi&apos;s Signature
-                </span>
-              </div>
+            <Link href="/" className="flex items-center shrink-0">
+              <Image
+                src="/brand/logo-full.png"
+                alt="Vasanthi's Signature"
+                width={1400}
+                height={803}
+                priority
+                className="h-9 sm:h-12 w-auto object-contain"
+              />
             </Link>
           </div>
 
@@ -209,17 +210,16 @@ export function StorefrontHeader() {
               {/* Drawer Top Header Row */}
               <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[#FAF3F3]">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-8 h-8 rounded-full bg-[#800020] text-amber-300 flex items-center justify-center font-serif text-base font-bold shadow-xs">
-                    ❖
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-base font-bold font-serif text-[#800020] leading-none">
-                      Vasanthi&apos;s Signature
-                    </span>
-                    <span className="text-[10px] font-semibold text-rose-800 uppercase tracking-widest mt-0.5">
-                      Women&apos;s Boutique
-                    </span>
-                  </div>
+                  <Image
+                    src="/brand/logo-full.png"
+                    alt="Vasanthi's Signature"
+                    width={1400}
+                    height={803}
+                    className="h-10 w-auto object-contain"
+                  />
+                  <span className="text-[10px] font-semibold text-rose-800 uppercase tracking-widest">
+                    Women&apos;s Boutique
+                  </span>
                 </div>
                 <button
                   onClick={() => setMobileMenuOpen(false)}

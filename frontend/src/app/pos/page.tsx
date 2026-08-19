@@ -233,8 +233,8 @@ export default function DesktopPosPage() {
       {/* Top Header & Handoff Action Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#800020] text-amber-300 flex items-center justify-center font-bold text-lg shadow-2xs">
-            ❖
+          <div className="w-10 h-10 rounded-xl bg-[#800020] flex items-center justify-center shadow-2xs overflow-hidden p-1">
+            <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
           </div>
           <div>
             <h1 className="text-xl font-bold font-serif text-[#800020] leading-none">

@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Lock, Phone, Mail, ShieldCheck } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -117,12 +118,13 @@ function CustomerLoginForm() {
         <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold font-serif text-[#800020] tracking-tight">Vasanthi&apos;s Signature</h1>
+        <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-9 w-auto object-contain" />
         <div className="w-6" />
       </header>
 
       <main suppressHydrationWarning className="max-w-md mx-auto px-4 py-8 flex-1 w-full space-y-6">
         <div className="text-center space-y-1">
+          <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-14 w-auto object-contain mx-auto mb-3" />
           <span className="text-xs font-bold text-[#800020] uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
             Welcome Back
           </span>
