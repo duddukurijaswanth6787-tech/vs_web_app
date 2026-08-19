@@ -395,6 +395,29 @@ export class PosRepository {
     });
   }
 
+  async findOrderByOrderNumber(orderNumber: string) {
+    return this.prisma.order.findUnique({
+      where: { orderNumber },
+      include: { items: true },
+    });
+  }
+
+  async findInventoryQuantities(
+    variantIds: string[],
+  ): Promise<Map<string, { availableQuantity: number; allowBackorder: boolean }>> {
+    if (variantIds.length === 0) return new Map();
+    const rows = await this.prisma.inventory.findMany({
+      where: { variantId: { in: variantIds } },
+      select: { variantId: true, availableQuantity: true, allowBackorder: true },
+    });
+    return new Map(
+      rows.map((r) => [
+        r.variantId,
+        { availableQuantity: r.availableQuantity, allowBackorder: r.allowBackorder },
+      ]),
+    );
+  }
+
   async findOpenShift(cashierId: string, terminalId?: string) {
     return this.prisma.posShift.findFirst({
       where: {

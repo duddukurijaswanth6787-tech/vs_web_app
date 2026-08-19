@@ -20,6 +20,11 @@ import {
   X,
   History,
   UserCheck,
+  Wifi,
+  WifiOff,
+  CloudUpload,
+  AlertTriangle,
+  Clock,
 } from 'lucide-react';
 import {
   useScanBarcode,
@@ -35,6 +40,12 @@ import {
   CheckoutSessionData,
   PosCustomerLookupResult,
 } from '@/features/pos/pos.types';
+import { useOfflineSync, isNetworkFailure } from '@/features/pos/offline/useOfflineSync';
+import { offlineScanCacheDb, normalizeScanCacheKey } from '@/features/pos/offline/offlineDb';
+import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceipt';
+import { PendingSale } from '@/features/pos/offline/offline.types';
+
+const TERMINAL_ID = 'COUNTER_1';
 
 export default function DesktopPosPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -58,6 +69,11 @@ export default function DesktopPosPage() {
   const [customerLookupResult, setCustomerLookupResult] = useState<PosCustomerLookupResult | null>(null);
   const [historyModalOpen, setHistoryModalOpen] = useState(false);
 
+  // Offline queue state
+  const [syncModalOpen, setSyncModalOpen] = useState(false);
+  const [offlineNotice, setOfflineNotice] = useState<PendingSale | null>(null);
+  const [scanOfflineError, setScanOfflineError] = useState('');
+
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   const scanMutation = useScanBarcode();
@@ -65,6 +81,7 @@ export default function DesktopPosPage() {
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
   const lookupCustomerMutation = useLookupCustomer();
+  const offlineSync = useOfflineSync(TERMINAL_ID);
 
   const handlePhoneChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 10);
@@ -95,39 +112,78 @@ export default function DesktopPosPage() {
   const taxTotal = Math.round(subtotal * 0.05 * 100) / 100; // 5% GST
   const grandTotal = Math.max(0, Math.round((subtotal + taxTotal - discountTotal) * 100) / 100);
 
+  const addScannedItemToCart = (data: {
+    productId: string;
+    productName: string;
+    variantId?: string;
+    sku?: string;
+    variantTitle?: string;
+    price: number;
+    primaryImage?: string;
+    availableStock: number;
+  }) => {
+    setCart((prev) => {
+      const existingIndex = prev.findIndex(
+        (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
+      );
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex].quantity += 1;
+        return updated;
+      }
+      return [
+        ...prev,
+        {
+          productId: data.productId,
+          productName: data.productName,
+          variantId: data.variantId,
+          sku: data.sku,
+          variantTitle: data.variantTitle,
+          unitPrice: data.price,
+          quantity: 1,
+          primaryImage: data.primaryImage,
+          availableStock: data.availableStock,
+        },
+      ];
+    });
+    setBarcodeInput('');
+    barcodeInputRef.current?.focus();
+  };
+
   const handleScanSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const query = barcodeInput.trim();
     if (!query) return;
+    setScanOfflineError('');
+    const cacheKey = normalizeScanCacheKey(query);
 
     scanMutation.mutate(query, {
       onSuccess: (data) => {
-        setCart((prev) => {
-          const existingIndex = prev.findIndex(
-            (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
-          );
-          if (existingIndex >= 0) {
-            const updated = [...prev];
-            updated[existingIndex].quantity += 1;
-            return updated;
-          }
-          return [
-            ...prev,
-            {
-              productId: data.productId,
-              productName: data.productName,
-              variantId: data.variantId,
-              sku: data.sku,
-              variantTitle: data.variantTitle,
-              unitPrice: data.price,
-              quantity: 1,
-              primaryImage: data.primaryImage,
-              availableStock: data.availableStock,
-            },
-          ];
+        addScannedItemToCart(data);
+        offlineScanCacheDb.cacheScanResult({
+          key: cacheKey,
+          productId: data.productId,
+          productName: data.productName,
+          variantId: data.variantId,
+          sku: data.sku,
+          barcode: data.barcode,
+          variantTitle: data.variantTitle,
+          price: data.price,
+          availableStock: data.availableStock,
+          primaryImage: data.primaryImage,
+          cachedAt: new Date().toISOString(),
         });
-        setBarcodeInput('');
-        barcodeInputRef.current?.focus();
+      },
+      onError: async (err) => {
+        if (!isNetworkFailure(err)) return;
+        const cached = await offlineScanCacheDb.getCachedScanResult(cacheKey);
+        if (cached) {
+          addScannedItemToCart(cached);
+        } else {
+          setScanOfflineError(
+            `Offline -- "${query}" was never scanned before on this register, so it isn't in the offline cache.`,
+          );
+        }
       },
     });
   };
@@ -198,11 +254,12 @@ export default function DesktopPosPage() {
         customer,
         discountTotal,
         taxTotal,
-        terminalId: 'COUNTER_1',
+        terminalId: TERMINAL_ID,
       },
       {
         onSuccess: (res) => {
           setCompletedOrder(res.order);
+          setOfflineNotice(null);
           // Preview Receipt HTML
           previewReceiptMutation.mutate(
             {
@@ -223,6 +280,43 @@ export default function DesktopPosPage() {
           );
 
           // Reset POS State
+          setCart([]);
+          setActiveSession(null);
+          setDiscountTotal(0);
+        },
+        onError: async (err) => {
+          if (!isNetworkFailure(err)) return;
+
+          // Backend unreachable -- queue the sale locally instead of losing
+          // it. sessionId is deliberately dropped: items/customer are
+          // already resolved client-side, and the handoff session may have
+          // expired by the time this syncs.
+          const sale = await offlineSync.queueSale(
+            {
+              items: saleItems,
+              paymentMethod,
+              amountPaid: grandTotal,
+              customer,
+              discountTotal,
+              taxTotal,
+              terminalId: TERMINAL_ID,
+            },
+            {
+              items: saleItems,
+              customer,
+              paymentMethod,
+              subtotal,
+              discountTotal,
+              taxTotal,
+              grandTotal,
+            },
+          );
+
+          setCompletedOrder(null);
+          setOfflineNotice(sale);
+          setReceiptHtml(generateOfflineReceiptHtml(sale));
+          setReceiptModalOpen(true);
+
           setCart([]);
           setActiveSession(null);
           setDiscountTotal(0);
@@ -263,7 +357,44 @@ export default function DesktopPosPage() {
         </div>
 
         {/* Action Buttons */}
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
+        <div className="flex items-center gap-2.5 w-full md:w-auto flex-wrap">
+          {/* Connectivity Badge */}
+          <div
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border ${
+              offlineSync.isBackendReachable
+                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                : 'bg-amber-50 text-amber-900 border-amber-300/80'
+            }`}
+          >
+            {offlineSync.isBackendReachable ? (
+              <Wifi className="w-4 h-4 text-emerald-600" />
+            ) : (
+              <WifiOff className="w-4 h-4 text-amber-700 animate-pulse" />
+            )}
+            <span>{offlineSync.isBackendReachable ? 'Online' : 'Offline — sales queue locally'}</span>
+          </div>
+
+          {/* Pending Sync Button */}
+          {offlineSync.pendingSales.length > 0 && (
+            <button
+              onClick={() => setSyncModalOpen(true)}
+              className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                offlineSync.needsReviewCount > 0
+                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200'
+                  : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200'
+              }`}
+            >
+              {offlineSync.isSyncing ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : offlineSync.needsReviewCount > 0 ? (
+                <AlertTriangle className="w-4 h-4 text-rose-600" />
+              ) : (
+                <CloudUpload className="w-4 h-4" />
+              )}
+              <span>Pending Sync ({offlineSync.pendingSales.length})</span>
+            </button>
+          )}
+
           <button
             onClick={() => setHandoffModalOpen(true)}
             className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs"
@@ -313,6 +444,13 @@ export default function DesktopPosPage() {
               <span>Add</span>
             </button>
           </form>
+
+          {scanOfflineError && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+              <span>{scanOfflineError}</span>
+            </div>
+          )}
 
           {/* Cart Table Container */}
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
@@ -562,15 +700,24 @@ export default function DesktopPosPage() {
             <button
               onClick={handleCompleteSale}
               disabled={cart.length === 0 || completeSaleMutation.isPending}
-              className="w-full bg-[#800020] hover:bg-[#600018] text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50"
+              className={`w-full text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
+                offlineSync.isBackendReachable ? 'bg-[#800020] hover:bg-[#600018]' : 'bg-amber-700 hover:bg-amber-800'
+              }`}
             >
               {completeSaleMutation.isPending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
+              ) : offlineSync.isBackendReachable ? (
                 <Printer className="w-4 h-4" />
+              ) : (
+                <WifiOff className="w-4 h-4" />
               )}
-              <span>Complete Sale & Print Invoice</span>
+              <span>{offlineSync.isBackendReachable ? 'Complete Sale & Print Invoice' : 'Save Offline & Print Slip'}</span>
             </button>
+            {!offlineSync.isBackendReachable && (
+              <p className="text-[10px] text-amber-800 text-center font-medium">
+                Backend unreachable — this sale will be queued locally and synced automatically once the connection returns.
+              </p>
+            )}
           </div>
 
         </div>
@@ -623,10 +770,17 @@ export default function DesktopPosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Sale Completed! #{completedOrder?.orderNumber as string}</span>
-              </div>
+              {offlineNotice ? (
+                <div className="flex items-center gap-2 text-amber-800 font-bold text-sm">
+                  <WifiOff className="w-5 h-5" />
+                  <span>Saved Offline — Ref #{offlineNotice.clientOrderNumber}</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-emerald-700 font-bold text-sm">
+                  <CheckCircle2 className="w-5 h-5" />
+                  <span>Sale Completed! #{completedOrder?.orderNumber as string}</span>
+                </div>
+              )}
               <button onClick={() => setReceiptModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
                 <X className="w-5 h-5" />
               </button>
@@ -720,6 +874,128 @@ export default function DesktopPosPage() {
 
             <button
               onClick={() => setHistoryModalOpen(false)}
+              className="w-full bg-neutral-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL 4: OFFLINE SALES QUEUE */}
+      {syncModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2 text-[#800020] font-bold text-sm">
+                <CloudUpload className="w-5 h-5" />
+                <span>Offline Sales Queue ({offlineSync.pendingSales.length})</span>
+              </div>
+              <button onClick={() => setSyncModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
+              <p className="text-xs text-neutral-500">
+                Sales taken while the backend was unreachable. They sync automatically once the connection returns.
+              </p>
+              <button
+                onClick={() => offlineSync.syncNow()}
+                disabled={offlineSync.isSyncing || !offlineSync.isBackendReachable}
+                className="shrink-0 flex items-center gap-1.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${offlineSync.isSyncing ? 'animate-spin' : ''}`} />
+                <span>Sync Now</span>
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2.5 pr-1">
+              {offlineSync.pendingSales.length === 0 ? (
+                <div className="text-center py-8 text-neutral-400 text-xs font-medium">
+                  Queue is empty — everything is synced.
+                </div>
+              ) : (
+                offlineSync.pendingSales.map((sale) => (
+                  <div key={sale.localId} className="bg-neutral-50 border border-neutral-200 rounded-xl p-3.5 space-y-2">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-0">
+                        <div className="text-xs font-bold text-neutral-900 font-mono truncate">{sale.clientOrderNumber}</div>
+                        <div className="text-[10px] text-neutral-500">
+                          {new Date(sale.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })}
+                          {' • '}₹{sale.receipt.grandTotal} • {sale.receipt.items.length} item(s)
+                        </div>
+                      </div>
+                      <span
+                        className={`shrink-0 text-[10px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-1 ${
+                          sale.status === 'SYNCED'
+                            ? 'bg-emerald-100 text-emerald-800'
+                            : sale.status === 'SYNCING'
+                              ? 'bg-blue-100 text-blue-800'
+                              : sale.status === 'NEEDS_REVIEW'
+                                ? 'bg-rose-100 text-rose-800'
+                                : sale.status === 'FAILED'
+                                  ? 'bg-rose-100 text-rose-800'
+                                  : 'bg-amber-100 text-amber-800'
+                        }`}
+                      >
+                        {sale.status === 'SYNCING' && <RefreshCw className="w-2.5 h-2.5 animate-spin" />}
+                        {sale.status === 'PENDING' && <Clock className="w-2.5 h-2.5" />}
+                        {sale.status.replace('_', ' ')}
+                      </span>
+                    </div>
+
+                    {sale.status === 'NEEDS_REVIEW' && sale.shortages && sale.shortages.length > 0 && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 space-y-1">
+                        <div className="text-[10px] font-bold text-rose-800">Stock changed while offline:</div>
+                        {sale.shortages.map((s, i) => (
+                          <div key={i} className="text-[10px] text-rose-700 flex justify-between">
+                            <span className="truncate max-w-[220px]">{s.productName}{s.variantTitle ? ` (${s.variantTitle})` : ''}</span>
+                            <span>wanted {s.requested}, only {s.available} left</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {sale.status === 'FAILED' && sale.errorMessage && (
+                      <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-[10px] text-rose-700">
+                        {sale.errorMessage}
+                      </div>
+                    )}
+
+                    {sale.status === 'SYNCED' && sale.syncedOrderNumber && (
+                      <div className="text-[10px] text-emerald-700 font-semibold">
+                        Synced as order {sale.syncedOrderNumber}
+                      </div>
+                    )}
+
+                    {(sale.status === 'NEEDS_REVIEW' || sale.status === 'FAILED') && (
+                      <div className="flex items-center gap-2 pt-1">
+                        <button
+                          onClick={() => offlineSync.retrySale(sale.localId)}
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-neutral-900 text-white hover:bg-neutral-800 transition-colors"
+                        >
+                          Retry Sync
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm('Discard this sale? It will never be recorded in the system. Only do this if the sale itself is being cancelled/refunded at the register.')) {
+                              offlineSync.dismissSale(sale.localId);
+                            }
+                          }}
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 transition-colors"
+                        >
+                          Discard
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+
+            <button
+              onClick={() => setSyncModalOpen(false)}
               className="w-full bg-neutral-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors"
             >
               Close
