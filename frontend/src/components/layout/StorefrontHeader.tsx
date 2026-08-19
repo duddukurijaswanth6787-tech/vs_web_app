@@ -107,7 +107,7 @@ export function StorefrontHeader() {
               width={1400}
               height={803}
               priority
-              className="h-12 sm:h-14 w-auto object-contain"
+              className="w-[150px] sm:w-[190px] h-auto object-contain"
             />
           </Link>
 
