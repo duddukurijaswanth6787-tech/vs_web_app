@@ -5,6 +5,16 @@ import { useInventoryReport } from '@/features/reports';
 import { Package, AlertTriangle, XOctagon, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
+import {
+  ResponsiveContainer,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  CartesianGrid,
+  Cell,
+} from 'recharts';
 
 interface InventoryReportItem {
   id: string;
@@ -18,12 +28,25 @@ interface InventoryReportItem {
   };
 }
 
+interface WarehouseBreakdownRow {
+  warehouseId: string;
+  warehouseName: string;
+  totalQuantity: number;
+}
+
 interface InventoryReportData {
   totalItems: number;
   lowStock: number;
   outOfStock: number;
   items: InventoryReportItem[];
+  warehouseBreakdown?: WarehouseBreakdownRow[];
 }
+
+const STOCK_STATUS_COLORS: Record<string, string> = {
+  'In Stock': '#059669',
+  'Low Stock': '#ca8a04',
+  'Out of Stock': '#dc2626',
+};
 
 export default function InventoryAnalyticsPage() {
   const { data, isLoading, error, refetch } = useInventoryReport();
@@ -39,6 +62,14 @@ export default function InventoryAnalyticsPage() {
   }) as InventoryReportData;
 
   const activeStock = reportData.totalItems - reportData.lowStock - reportData.outOfStock;
+
+  const stockStatusChart = [
+    { name: 'In Stock', count: activeStock },
+    { name: 'Low Stock', count: reportData.lowStock },
+    { name: 'Out of Stock', count: reportData.outOfStock },
+  ];
+
+  const warehouseBreakdown = reportData.warehouseBreakdown || [];
 
   const lowStockItems = (reportData.items || []).filter(
     (i) => i.stockStatus === 'LOW_STOCK' || i.stockStatus === 'OUT_OF_STOCK'
@@ -83,6 +114,55 @@ export default function InventoryAnalyticsPage() {
             <XOctagon className="h-4 w-4 text-red-500" />
           </div>
           <h3 className="text-2xl font-bold text-red-600 mt-3">{reportData.outOfStock}</h3>
+        </div>
+      </div>
+
+      {/* Stock Status & Warehouse Distribution Charts */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <h3 className="text-base font-bold text-neutral-900 mb-4">Stock Status Breakdown</h3>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={stockStatusChart} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                <XAxis dataKey="name" stroke="#a3a3a3" fontSize={11} tickLine={false} />
+                <YAxis stroke="#a3a3a3" fontSize={11} tickLine={false} allowDecimals={false} />
+                <ChartTooltip
+                  formatter={(val: unknown) => [`${val} SKUs`, 'Count']}
+                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
+                />
+                <Bar dataKey="count" radius={[6, 6, 0, 0]} maxBarSize={80}>
+                  {stockStatusChart.map((entry) => (
+                    <Cell key={entry.name} fill={STOCK_STATUS_COLORS[entry.name]} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+          <h3 className="text-base font-bold text-neutral-900 mb-4">Inventory by Warehouse</h3>
+          <div className="h-64 w-full">
+            {warehouseBreakdown.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={warehouseBreakdown} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                  <XAxis dataKey="warehouseName" stroke="#a3a3a3" fontSize={11} tickLine={false} />
+                  <YAxis stroke="#a3a3a3" fontSize={11} tickLine={false} allowDecimals={false} />
+                  <ChartTooltip
+                    formatter={(val: unknown) => [`${val} units`, 'Quantity']}
+                    contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="totalQuantity" fill="#0369a1" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-sm text-neutral-400">No per-warehouse stock recorded yet.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -13,10 +13,13 @@ import {
   ResponsiveContainer,
   AreaChart,
   Area,
+  BarChart,
+  Bar,
   XAxis,
   YAxis,
   Tooltip as ChartTooltip,
   CartesianGrid,
+  Cell,
 } from 'recharts';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 
@@ -27,6 +30,15 @@ interface SalesReportData {
   totalOrders: number;
   orders: OrderResponse[];
 }
+
+const CHANNEL_LABELS: Record<string, string> = {
+  ONLINE_STORE: 'Online Store',
+  POS_SHOPORA: 'In-Store (POS)',
+};
+const CHANNEL_COLORS: Record<string, string> = {
+  ONLINE_STORE: '#171717',
+  POS_SHOPORA: '#800020',
+};
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -82,6 +94,17 @@ export default function SalesAnalyticsPage() {
 
   const chartPoints = Array.from(dailyAggregation.entries()).map(([name, value]) => ({
     name,
+    sales: value,
+  }));
+
+  const channelAggregation = new Map<string, number>();
+  sortedOrders.forEach((o) => {
+    const channel = o.channel || 'ONLINE_STORE';
+    channelAggregation.set(channel, (channelAggregation.get(channel) ?? 0) + Number(o.grandTotal));
+  });
+  const channelPoints = Array.from(channelAggregation.entries()).map(([channel, value]) => ({
+    channel,
+    name: CHANNEL_LABELS[channel] || channel,
     sales: value,
   }));
 
@@ -167,6 +190,35 @@ export default function SalesAnalyticsPage() {
                   fill="url(#colorSales)"
                 />
               </AreaChart>
+            </ResponsiveContainer>
+          ) : (
+            <div className="h-full flex flex-col items-center justify-center">
+              <p className="text-sm text-neutral-400">No sales recorded for this date range.</p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Sales by Channel Bar Graph */}
+      <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
+        <h3 className="text-base font-bold text-neutral-900 mb-4">Sales by Channel (Online vs In-Store)</h3>
+        <div className="h-64 w-full">
+          {channelPoints.length > 0 ? (
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={channelPoints} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
+                <XAxis dataKey="name" stroke="#a3a3a3" fontSize={11} tickLine={false} />
+                <YAxis stroke="#a3a3a3" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                <ChartTooltip
+                  formatter={(val: unknown) => [formatCurrency(val as number), 'Sales']}
+                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
+                />
+                <Bar dataKey="sales" radius={[6, 6, 0, 0]} maxBarSize={80}>
+                  {channelPoints.map((p) => (
+                    <Cell key={p.channel} fill={CHANNEL_COLORS[p.channel] || '#a3a3a3'} />
+                  ))}
+                </Bar>
+              </BarChart>
             </ResponsiveContainer>
           ) : (
             <div className="h-full flex flex-col items-center justify-center">

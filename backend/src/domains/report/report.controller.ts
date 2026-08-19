@@ -34,6 +34,17 @@ export class ReportController {
     );
   }
 
+  @Get('products/category-breakdown')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get sales revenue/units broken down by product category' })
+  async getProductCategoryBreakdown() {
+    return ResponseBuilder.success(
+      await this.reportService.getProductCategoryBreakdown(),
+    );
+  }
+
   @Get('inventory')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')

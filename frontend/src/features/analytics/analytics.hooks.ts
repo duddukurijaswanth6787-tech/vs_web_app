@@ -21,3 +21,10 @@ export function useSocialAnalyticsSummary() {
     queryFn: () => analyticsService.getSocialSummary(),
   });
 }
+
+export function useSocialEngagementTimeline(days = 14) {
+  return useQuery({
+    queryKey: ['social-engagement-timeline', days],
+    queryFn: () => analyticsService.getSocialEngagementTimeline(days),
+  });
+}

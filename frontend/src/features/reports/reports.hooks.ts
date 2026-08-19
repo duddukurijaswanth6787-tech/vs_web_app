@@ -9,6 +9,13 @@ export function useSalesReport(startDate?: string, endDate?: string) {
   });
 }
 
+export function useProductCategoryBreakdown() {
+  return useQuery({
+    queryKey: ['product-category-breakdown'],
+    queryFn: () => reportsService.getProductCategoryBreakdown(),
+  });
+}
+
 export function useInventoryReport() {
   return useQuery({
     queryKey: ['inventory-report'],

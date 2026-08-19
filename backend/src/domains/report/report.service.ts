@@ -39,6 +39,7 @@ export class ReportService {
           orderNumber: true,
           grandTotal: true,
           status: true,
+          channel: true,
           createdAt: true,
         },
         orderBy: { createdAt: 'desc' },
@@ -58,17 +59,43 @@ export class ReportService {
   }
 
   async generateInventoryReport(): Promise<ReportResponse> {
-    const inventory = await this.prisma.inventory.findMany({
-      include: {
-        variant: {
-          select: {
-            sku: true,
-            title: true,
-            product: { select: { name: true } },
+    const [inventory, warehouseRows] = await Promise.all([
+      this.prisma.inventory.findMany({
+        include: {
+          variant: {
+            select: {
+              sku: true,
+              title: true,
+              product: { select: { name: true } },
+            },
           },
         },
-      },
-    });
+      }),
+      this.prisma.variantWarehouseInventory.findMany({
+        select: {
+          availableQuantity: true,
+          warehouse: { select: { id: true, name: true } },
+        },
+      }),
+    ]);
+
+    const warehouseTotals = new Map<
+      string,
+      { warehouseId: string; warehouseName: string; totalQuantity: number }
+    >();
+    for (const row of warehouseRows) {
+      const key = row.warehouse.id;
+      const existing = warehouseTotals.get(key);
+      if (existing) {
+        existing.totalQuantity += row.availableQuantity;
+      } else {
+        warehouseTotals.set(key, {
+          warehouseId: row.warehouse.id,
+          warehouseName: row.warehouse.name,
+          totalQuantity: row.availableQuantity,
+        });
+      }
+    }
 
     return {
       type: 'INVENTORY',
@@ -78,7 +105,80 @@ export class ReportService {
         outOfStock: inventory.filter((i) => i.stockStatus === 'OUT_OF_STOCK')
           .length,
         items: inventory,
+        warehouseBreakdown: Array.from(warehouseTotals.values()),
       },
+      generatedAt: new Date(),
+    };
+  }
+
+  async getProductCategoryBreakdown(): Promise<ReportResponse> {
+    const items = await this.prisma.orderItem.findMany({
+      where: { order: { deletedAt: null } },
+      select: {
+        productId: true,
+        quantity: true,
+        totalPrice: true,
+      },
+    });
+
+    const productIds = Array.from(new Set(items.map((i) => i.productId)));
+    const products = await this.prisma.product.findMany({
+      where: { id: { in: productIds } },
+      select: {
+        id: true,
+        categories: {
+          take: 1,
+          select: { category: { select: { id: true, name: true } } },
+        },
+      },
+    });
+    const productCategoryMap = new Map(
+      products.map((p) => [p.id, p.categories[0]?.category ?? null]),
+    );
+
+    const totals = new Map<
+      string,
+      { categoryId: string; categoryName: string; revenue: number; unitsSold: number }
+    >();
+    let uncategorizedRevenue = 0;
+    let uncategorizedUnits = 0;
+
+    for (const item of items) {
+      const category = productCategoryMap.get(item.productId);
+      if (!category) {
+        uncategorizedRevenue += Number(item.totalPrice);
+        uncategorizedUnits += item.quantity;
+        continue;
+      }
+      const existing = totals.get(category.id);
+      if (existing) {
+        existing.revenue += Number(item.totalPrice);
+        existing.unitsSold += item.quantity;
+      } else {
+        totals.set(category.id, {
+          categoryId: category.id,
+          categoryName: category.name,
+          revenue: Number(item.totalPrice),
+          unitsSold: item.quantity,
+        });
+      }
+    }
+
+    const breakdown = Array.from(totals.values()).sort(
+      (a, b) => b.revenue - a.revenue,
+    );
+    if (uncategorizedRevenue > 0) {
+      breakdown.push({
+        categoryId: 'uncategorized',
+        categoryName: 'Uncategorized',
+        revenue: uncategorizedRevenue,
+        unitsSold: uncategorizedUnits,
+      });
+    }
+
+    return {
+      type: 'PRODUCT_CATEGORY_BREAKDOWN',
+      data: { breakdown },
       generatedAt: new Date(),
     };
   }
