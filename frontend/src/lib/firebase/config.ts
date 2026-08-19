@@ -1,5 +1,5 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import type { FirebaseApp } from 'firebase/app';
+import type { Auth } from 'firebase/auth';
 
 /**
  * Firebase config values are meant to be public (they identify the project
@@ -7,6 +7,15 @@ import { getAuth } from 'firebase/auth';
  * Firebase Auth's authorized-domains list and, server-side, by verifying
  * the ID token with a service account. See src/lib/firebase/phoneAuth.ts
  * for the phone OTP flow that uses this.
+ *
+ * Initialization is lazy and browser-only, via dynamic import rather than a
+ * static one: this page (login) is prerendered server-side at build time,
+ * and eagerly importing+calling getAuth() at module scope used to run
+ * during that prerender too -- with no NEXT_PUBLIC_FIREBASE_* vars
+ * available in the build environment, Firebase threw `auth/invalid-
+ * api-key` and failed the whole build. Nothing here is actually needed
+ * until a real user clicks "Send OTP" in the browser, so it's deferred
+ * until then instead.
  */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -17,5 +26,21 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-export const firebaseApp = getApps().length ? getApp() : initializeApp(firebaseConfig);
-export const firebaseAuth = getAuth(firebaseApp);
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+
+export async function getFirebaseAuth(): Promise<Auth> {
+  if (typeof window === 'undefined') {
+    throw new Error('Firebase Auth is client-only; do not call getFirebaseAuth() during SSR.');
+  }
+  if (auth) return auth;
+
+  const [{ initializeApp, getApps, getApp }, { getAuth }] = await Promise.all([
+    import('firebase/app'),
+    import('firebase/auth'),
+  ]);
+
+  app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+  auth = getAuth(app);
+  return auth;
+}
