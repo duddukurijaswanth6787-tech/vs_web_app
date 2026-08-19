@@ -63,6 +63,7 @@ const PERMISSION_MODULES: Record<string, string[]> = {
   coupons: ['view', 'create', 'update', 'delete'],
   reviews: ['view', 'update'],
   customers: ['view', 'update'],
+  pos: ['view'],
 };
 
 @Injectable()

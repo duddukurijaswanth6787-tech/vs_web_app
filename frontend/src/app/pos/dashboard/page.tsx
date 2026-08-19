@@ -11,7 +11,10 @@ import {
   X,
   AlertTriangle,
   CheckCircle2,
+  ShieldAlert,
 } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { hasPermission } from '@/lib/permissions/rules';
 import {
   useCurrentShift,
   useOpenShift,
@@ -50,6 +53,9 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
 export default function PosDashboardPage() {
+  const { user } = useAuth();
+  const canViewDashboard = hasPermission(user, 'pos:view');
+
   const [terminalId, setTerminalId] = useState('COUNTER_1');
   const [openingCashInput, setOpeningCashInput] = useState('');
   const [closingCashInput, setClosingCashInput] = useState('');
@@ -144,6 +150,22 @@ export default function PosDashboardPage() {
   const paymentChart = (daySummary?.byMethod || []).map((m) => ({ name: m.method, revenue: m.revenue }));
   const terminalChart = (daySummary?.byTerminal || []).map((t) => ({ name: t.terminalId, revenue: t.revenue }));
   const cashierChart = (daySummary?.byCashier || []).map((c) => ({ name: c.cashierName, revenue: c.revenue }));
+
+  if (!canViewDashboard) {
+    return (
+      <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 flex items-center justify-center p-6">
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 max-w-sm text-center space-y-3">
+          <ShieldAlert className="w-8 h-8 text-[#800020] mx-auto" />
+          <h1 className="text-sm font-bold text-neutral-900">Access Restricted</h1>
+          <p className="text-xs text-neutral-500 leading-relaxed">
+            You don&apos;t have permission to view the Till &amp; Shift Dashboard. Ask a super admin to grant you the
+            <span className="font-mono font-semibold text-neutral-700"> pos:view </span>
+            permission from Admin &rarr; Access Control &rarr; RBAC Matrix.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 p-3 sm:p-6 font-sans space-y-6">

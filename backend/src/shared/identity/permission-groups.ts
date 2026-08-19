@@ -13,4 +13,5 @@ export const PERMISSION_GROUPS = [
   'Coupons',
   'Reviews',
   'Customers',
+  'Pos',
 ] as const;
