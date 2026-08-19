@@ -13,6 +13,9 @@ export class ProductsRepository {
     brandId?: string;
     status?: string;
     visibility?: string;
+    channel?: string;
+    /** Restricts to these channels (e.g. ['ONLINE','BOTH']) -- used to hide STORE-only products from public storefront callers. Takes precedence over `channel` when both are set. */
+    channelIn?: string[];
     type?: string;
     gender?: string;
     ageGroup?: string;
@@ -35,6 +38,8 @@ export class ProductsRepository {
       brandId,
       status,
       visibility,
+      channel,
+      channelIn,
       type,
       gender,
       ageGroup,
@@ -64,6 +69,8 @@ export class ProductsRepository {
     if (brandId) where.brandId = brandId;
     if (status) where.status = status;
     if (visibility) where.visibility = visibility;
+    if (channelIn) where.channel = { in: channelIn };
+    else if (channel) where.channel = channel;
     if (type) where.type = type;
     if (gender) where.gender = gender;
     if (ageGroup) where.ageGroup = ageGroup;

@@ -48,6 +48,9 @@ import {
   ChevronRight,
   Printer,
   QrCode,
+  Store,
+  Globe,
+  Layers,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -275,6 +278,7 @@ export default function ProductBuilder({
       isFestivePick: initialData?.isFestivePick ?? false,
       isExclusive: initialData?.isExclusive ?? false,
       isOnlineOnly: initialData?.isOnlineOnly ?? false,
+      channel: (initialData?.channel as 'STORE' | 'ONLINE' | 'BOTH') || 'BOTH',
       hsnCode: initialData?.hsnCode || '',
       seoKeywords: initialData?.seoKeywords || '',
       isPublished: initialData?.isPublished ?? true,
@@ -2557,15 +2561,63 @@ export default function ProductBuilder({
                 />
                 <span className="text-xs font-bold text-neutral-800">Exclusive</span>
               </label>
+            </div>
 
-              <label className="flex items-center gap-3 cursor-pointer">
-                <input
-                  type="checkbox"
-                  {...methods.register('isOnlineOnly')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
-                />
-                <span className="text-xs font-bold text-neutral-800">Online Only</span>
-              </label>
+            {/* Where to Sell -- the last decision before Save, since Save is what
+                issues this product's barcode/sticker (see the "ISSUED BARCODES"
+                panel above the tabs). Stock is one shared pool either way; this
+                only controls where the product is offered. */}
+            <div className="p-5 bg-neutral-50 rounded-2xl border border-neutral-200 space-y-3">
+              <div>
+                <span className="text-xs font-bold text-neutral-800">Where should this product be sold?</span>
+                <p className="text-[11px] text-neutral-500 mt-0.5">
+                  Stock stays the same either way — this only controls where the product is offered for sale.
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                {(
+                  [
+                    {
+                      value: 'STORE' as const,
+                      label: 'Store Only',
+                      desc: 'Sellable at the POS counter. Hidden from the online website.',
+                      Icon: Store,
+                    },
+                    {
+                      value: 'ONLINE' as const,
+                      label: 'Online Only',
+                      desc: 'Shown on the website. Not sellable at the POS counter.',
+                      Icon: Globe,
+                    },
+                    {
+                      value: 'BOTH' as const,
+                      label: 'Store & Online',
+                      desc: 'Sellable at the counter and shown on the website.',
+                      Icon: Layers,
+                    },
+                  ]
+                ).map(({ value, label, desc, Icon }) => {
+                  const selected = methods.watch('channel') === value;
+                  return (
+                    <button
+                      key={value}
+                      type="button"
+                      onClick={() => methods.setValue('channel', value, { shouldValidate: true, shouldDirty: true })}
+                      className={`text-left p-4 rounded-xl border-2 transition-colors ${
+                        selected
+                          ? 'border-[#800020] bg-[#800020]/5'
+                          : 'border-neutral-200 bg-white hover:border-neutral-300'
+                      }`}
+                    >
+                      <Icon className={`w-5 h-5 mb-2 ${selected ? 'text-[#800020]' : 'text-neutral-400'}`} />
+                      <div className={`text-xs font-bold ${selected ? 'text-[#800020]' : 'text-neutral-800'}`}>
+                        {label}
+                      </div>
+                      <div className="text-[11px] text-neutral-500 mt-1 leading-snug">{desc}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
 
             {/* SEO Inputs */}

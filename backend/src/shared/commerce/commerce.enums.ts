@@ -31,6 +31,13 @@ export enum ProductVisibility {
   SEARCHABLE = 'SEARCHABLE',
 }
 
+/** Where a product is sellable: the in-store POS register, the online storefront, or both. Stock is one shared pool regardless -- this only controls where the product is offered. */
+export enum ProductChannel {
+  STORE = 'STORE',
+  ONLINE = 'ONLINE',
+  BOTH = 'BOTH',
+}
+
 export enum InventoryStatus {
   IN_STOCK = 'IN_STOCK',
   LOW_STOCK = 'LOW_STOCK',

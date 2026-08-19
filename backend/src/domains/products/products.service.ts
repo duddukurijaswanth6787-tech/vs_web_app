@@ -47,6 +47,7 @@ export class ProductsService {
       type: p.type,
       status: p.status,
       visibility: p.visibility,
+      channel: p.channel ?? 'BOTH',
       basePrice: Number(p.basePrice),
       salePrice: p.salePrice ? Number(p.salePrice) : undefined,
       wholesalePrice: p.wholesalePrice ? Number(p.wholesalePrice) : undefined,
@@ -123,7 +124,13 @@ export class ProductsService {
     };
   }
 
-  async findAll(query: ProductQueryDto) {
+  /**
+   * `restrictToPublicChannels` hides STORE-only products (in-store-only
+   * items with no online presence) from anyone who isn't an authenticated
+   * staff/admin -- see ProductsController's optional-auth check, which
+   * decides this per-request rather than trusting a client-supplied flag.
+   */
+  async findAll(query: ProductQueryDto, restrictToPublicChannels = false) {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 100);
     const result = await this.productsRepository.findAll({
@@ -131,6 +138,8 @@ export class ProductsService {
       brandId: query.brandId,
       status: query.status,
       visibility: query.visibility,
+      channel: restrictToPublicChannels ? undefined : query.channel,
+      channelIn: restrictToPublicChannels ? ['ONLINE', 'BOTH'] : undefined,
       type: query.type,
       gender: query.gender,
       ageGroup: query.ageGroup,
@@ -154,19 +163,25 @@ export class ProductsService {
     };
   }
 
-  async findById(id: string) {
+  async findById(id: string, restrictToPublicChannels = false) {
     let product = await this.productsRepository.findById(id);
     if (!product) {
       product = await this.productsRepository.findBySlug(id);
     }
     if (!product || product.deletedAt)
       throw new BusinessException('Product not found', 'PRODUCT_001');
+    if (restrictToPublicChannels && product.channel === 'STORE') {
+      // Hide existence entirely rather than a 403 -- a STORE-only product
+      // shouldn't be discoverable by a direct ID guess from the storefront.
+      throw new BusinessException('Product not found', 'PRODUCT_001');
+    }
     return this.toResponse(product);
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string, restrictToPublicChannels = false) {
     const product = await this.productsRepository.findBySlug(slug);
     if (!product || product.deletedAt) return null;
+    if (restrictToPublicChannels && product.channel === 'STORE') return null;
     return this.toResponse(product);
   }
 
@@ -282,6 +297,9 @@ export class ProductsService {
           type: dto.type ?? 'READYMADE',
           status: dto.status ?? 'DRAFT',
           visibility: dto.visibility ?? 'VISIBLE',
+          channel: dto.channel ?? 'BOTH',
+          // Kept in sync with `channel` for any older code still reading this flag directly.
+          isOnlineOnly: (dto.channel ?? 'BOTH') === 'ONLINE',
           basePrice: dto.basePrice,
           salePrice: dto.salePrice,
           wholesalePrice: dto.wholesalePrice,
@@ -412,6 +430,8 @@ export class ProductsService {
       updateData.slug = await this.generateUniqueSlug(dto.name, id);
     }
     if (brandId) updateData.brand = { connect: { id: brandId } };
+    // Kept in sync with `channel` for any older code still reading this flag directly.
+    if (dto.channel) updateData.isOnlineOnly = dto.channel === 'ONLINE';
     if (dto.isPublished === true) {
       updateData.publishedAt = new Date();
       if (!dto.status) updateData.status = 'ACTIVE';

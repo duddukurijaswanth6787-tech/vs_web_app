@@ -31,6 +31,9 @@ import {
   AlertCircle,
   FolderTree,
   ListChecks,
+  Store,
+  Globe,
+  Layers,
 } from 'lucide-react-native';
 import {
   catalogService,
@@ -93,6 +96,7 @@ const STEPS = [
   { key: 'sizes', label: 'Sizes', Icon: Ruler },
   { key: 'attributes', label: 'Details', Icon: ListChecks },
   { key: 'seo', label: 'Review', Icon: Tag },
+  { key: 'channel', label: 'Where to Sell', Icon: Store },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]['key'];
@@ -211,10 +215,14 @@ export default function AddProductScreen() {
   const [isLimitedStock, setIsLimitedStock] = useState(false);
   const [isFestivePick, setIsFestivePick] = useState(false);
   const [isExclusive, setIsExclusive] = useState(false);
-  const [isOnlineOnly, setIsOnlineOnly] = useState(false);
   const [isFeatured, setIsFeatured] = useState(false);
   const [isBestSeller, setIsBestSeller] = useState(false);
   const [isTrending, setIsTrending] = useState(false);
+
+  // ── Step 6: where to sell ──────────────────────────────────────────────────
+  // Stock is one shared pool regardless of channel -- this only controls
+  // where the product is offered (POS counter, storefront, or both).
+  const [channel, setChannel] = useState<'STORE' | 'ONLINE' | 'BOTH'>('BOTH');
 
   // ── Reference data ─────────────────────────────────────────────────────────
   const [brands, setBrands] = useState<BrandOption[]>([]);
@@ -616,10 +624,10 @@ export default function AddProductScreen() {
         isLimitedStock,
         isFestivePick,
         isExclusive,
-        isOnlineOnly,
         isFeatured,
         isBestSeller,
         isTrending,
+        channel,
         // CreateProductDto takes these directly; the API rejects unknown keys.
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
         ...(tags.length > 0 ? { tags } : {}),
@@ -1739,7 +1747,6 @@ export default function AddProductScreen() {
                 ['Limited Stock', isLimitedStock, setIsLimitedStock],
                 ['Festive Pick', isFestivePick, setIsFestivePick],
                 ['Exclusive', isExclusive, setIsExclusive],
-                ['Online Only', isOnlineOnly, setIsOnlineOnly],
                 ['Featured', isFeatured, setIsFeatured],
                 ['Best Seller', isBestSeller, setIsBestSeller],
                 ['Trending', isTrending, setIsTrending],
@@ -1787,6 +1794,61 @@ export default function AddProductScreen() {
               />
             </View>
 
+          </View>
+        )}
+
+        {/* ── STEP 6: WHERE TO SELL ── the last decision before Save, since Save
+            is what creates the product and issues its barcodes (hands off to
+            /label-preview). Stock is one shared pool either way. */}
+        {step === 'channel' && (
+          <View>
+            <Text style={styles.sectionTitle}>Where should this product be sold?</Text>
+            <Text style={styles.helperText}>
+              Stock stays the same either way — this only controls where the product is offered for sale.
+            </Text>
+
+            {(
+              [
+                {
+                  value: 'STORE' as const,
+                  label: 'Store Only',
+                  desc: 'Sellable at the POS counter. Hidden from the online website.',
+                  Icon: Store,
+                },
+                {
+                  value: 'ONLINE' as const,
+                  label: 'Online Only',
+                  desc: 'Shown on the website. Not sellable at the POS counter.',
+                  Icon: Globe,
+                },
+                {
+                  value: 'BOTH' as const,
+                  label: 'Store & Online',
+                  desc: 'Sellable at the counter and shown on the website.',
+                  Icon: Layers,
+                },
+              ]
+            ).map(({ value, label, desc, Icon }) => {
+              const selected = channel === value;
+              return (
+                <TouchableOpacity
+                  key={value}
+                  style={[styles.channelCard, selected && styles.channelCardActive]}
+                  onPress={() => setChannel(value)}
+                  activeOpacity={0.85}
+                >
+                  <Icon size={20} color={selected ? '#800020' : '#9ca3af'} style={{ marginRight: 12 }} />
+                  <View style={{ flex: 1 }}>
+                    <Text style={[styles.channelCardTitle, selected && styles.channelCardTitleActive]}>
+                      {label}
+                    </Text>
+                    <Text style={styles.channelCardDesc}>{desc}</Text>
+                  </View>
+                  {selected && <Check size={18} color="#800020" />}
+                </TouchableOpacity>
+              );
+            })}
+
             {validationIssues.length > 0 ? (
               <View style={styles.warnPanel}>
                 <View style={styles.warnHeader}>
@@ -1802,7 +1864,7 @@ export default function AddProductScreen() {
                   </Text>
                 ))}
                 <Text style={styles.warnFooter}>
-                  Turn off &ldquo;Publish immediately&rdquo; above to save as a draft.
+                  Turn off &ldquo;Publish immediately&rdquo; on the Review step to save as a draft.
                 </Text>
               </View>
             ) : (
@@ -2050,6 +2112,21 @@ const styles = StyleSheet.create({
   warnText: { flex: 1, fontSize: 11, color: '#b45309' },
 
   sectionTitle: { fontSize: 17, fontWeight: '700', color: '#1f2937', marginBottom: 6 },
+  helperText: { fontSize: 12, color: '#6b7280', marginBottom: 16, lineHeight: 17 },
+  channelCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderWidth: 2,
+    borderColor: '#e5e7eb',
+    backgroundColor: '#ffffff',
+    borderRadius: 14,
+    padding: 14,
+    marginBottom: 12,
+  },
+  channelCardActive: { borderColor: '#800020', backgroundColor: '#fdf2f4' },
+  channelCardTitle: { fontSize: 13, fontWeight: '700', color: '#1f2937' },
+  channelCardTitleActive: { color: '#800020' },
+  channelCardDesc: { fontSize: 11, color: '#6b7280', marginTop: 2, lineHeight: 15 },
   label: { fontSize: 12, fontWeight: '700', color: '#374151', marginTop: 16, marginBottom: 6 },
   input: {
     borderWidth: 1,

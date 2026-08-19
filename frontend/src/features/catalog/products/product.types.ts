@@ -31,6 +31,13 @@ export enum ProductVisibility {
   SEARCHABLE = 'SEARCHABLE',
 }
 
+/** Where a product is sellable: the in-store POS register, the online storefront, or both. Stock is one shared pool regardless -- this only controls where it's offered. */
+export enum ProductChannel {
+  STORE = 'STORE',
+  ONLINE = 'ONLINE',
+  BOTH = 'BOTH',
+}
+
 export enum AttributeType {
   TEXT = 'TEXT',
   NUMBER = 'NUMBER',
@@ -68,6 +75,7 @@ export interface CreateProductDto {
   type?: ProductType;
   status?: ProductStatus;
   visibility?: ProductVisibility;
+  channel?: ProductChannel;
   basePrice: number;
   salePrice?: number;
   wholesalePrice?: number;
@@ -119,6 +127,7 @@ export interface ProductQueryDto {
   brandId?: string;
   status?: string;
   visibility?: string;
+  channel?: ProductChannel;
   type?: ProductType;
   gender?: GenderType;
   ageGroup?: AgeGroup;
@@ -175,6 +184,7 @@ export interface ProductResponse {
   type: string;
   status: string;
   visibility: string;
+  channel: string;
   basePrice: number;
   salePrice?: number;
   wholesalePrice?: number;
@@ -315,6 +325,7 @@ export const productSchema = z.object({
   isFestivePick: z.boolean().default(false),
   isExclusive: z.boolean().default(false),
   isOnlineOnly: z.boolean().default(false),
+  channel: z.enum(['STORE', 'ONLINE', 'BOTH']).default('BOTH'),
   hsnCode: z.string().optional(),
   seoKeywords: z.string().optional(),
   isPublished: z.boolean().default(false),

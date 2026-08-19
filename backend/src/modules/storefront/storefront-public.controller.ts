@@ -73,7 +73,7 @@ export class StorefrontPublicController {
   @ApiOperation({ summary: 'Get product by slug' })
   async getProductBySlug(@Param('slug') slug: string) {
     // ponytail: reuses existing ProductsService to avoid logic duplication
-    const product = await this.productsService.findBySlug(slug);
+    const product = await this.productsService.findBySlug(slug, true);
     if (!product) throw new NotFoundException('Product not found');
     return ResponseBuilder.success(product);
   }

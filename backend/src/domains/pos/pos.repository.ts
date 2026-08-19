@@ -14,6 +14,11 @@ export class PosRepository {
 
   async findVariantByBarcode(code: string) {
     const trimmed = code.trim();
+    // ONLINE-only products aren't stocked at the counter -- POS scan/search
+    // should never resolve to one, even by exact barcode/SKU match.
+    const sellableInStore: Prisma.ProductWhereInput = {
+      channel: { in: ['STORE', 'BOTH'] },
+    };
 
     // 1. Search directly on ProductVariant (barcode, sku, id)
     const variant = await this.prisma.productVariant.findFirst({
@@ -24,6 +29,7 @@ export class PosRepository {
           { id: trimmed },
         ],
         deletedAt: null,
+        product: sellableInStore,
       },
       include: {
         product: {
@@ -60,6 +66,7 @@ export class PosRepository {
           { name: { contains: trimmed, mode: 'insensitive' } },
         ],
         deletedAt: null,
+        ...sellableInStore,
       },
       include: {
         variants: {
