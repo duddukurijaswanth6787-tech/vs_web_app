@@ -24,6 +24,7 @@ import {
 import { CreateColorGroupDto, SyncColorGroupsDto } from './dto/color-group.dto';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -51,8 +52,8 @@ export class ProductsController {
   // ─── Admin: CRUD ───────────────────────────────────────
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new product' })
   async create(@Body() dto: CreateProductDto, @CurrentUser() user: JwtPayload) {
@@ -63,8 +64,8 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a product' })
   async update(
@@ -103,8 +104,8 @@ export class ProductsController {
   // ─── Admin: Publish ────────────────────────────────────
 
   @Post(':id/publish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Publish a product' })
   async publish(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -115,8 +116,8 @@ export class ProductsController {
   }
 
   @Post(':id/unpublish')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Unpublish a product' })
   async unpublish(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -129,8 +130,8 @@ export class ProductsController {
   // ─── Admin: Feature ────────────────────────────────────
 
   @Post(':id/feature')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Feature a product' })
   async feature(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -141,8 +142,8 @@ export class ProductsController {
   }
 
   @Post(':id/unfeature')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Unfeature a product' })
   async unfeature(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -155,8 +156,8 @@ export class ProductsController {
   // ─── Admin: Categories ─────────────────────────────────
 
   @Post(':id/categories')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign categories to product' })
   async assignCategories(
@@ -171,8 +172,8 @@ export class ProductsController {
   }
 
   @Delete(':id/categories/:categoryId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove category from product' })
   async removeCategory(
@@ -188,8 +189,8 @@ export class ProductsController {
   // ─── Admin: Attributes ─────────────────────────────────
 
   @Post(':id/attributes')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign attributes to product' })
   async assignAttributes(
@@ -204,8 +205,8 @@ export class ProductsController {
   }
 
   @Delete(':id/attributes/:attributeId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove attribute from product' })
   async removeAttribute(
@@ -221,8 +222,8 @@ export class ProductsController {
   // ─── Admin: Tags ───────────────────────────────────────
 
   @Post(':id/tags')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign tags to product' })
   async assignTags(
@@ -237,8 +238,8 @@ export class ProductsController {
   }
 
   @Delete(':id/tags/:tag')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove tag from product' })
   async removeTag(
@@ -255,8 +256,8 @@ export class ProductsController {
   // ─── Admin: Collections ────────────────────────────────
 
   @Post(':id/collections')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign collections to product' })
   async assignCollections(
@@ -271,8 +272,8 @@ export class ProductsController {
   }
 
   @Delete(':id/collections/:collection')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove collection from product' })
   async removeCollection(
@@ -289,8 +290,8 @@ export class ProductsController {
   // ─── Admin: Related Products ───────────────────────────
 
   @Post(':id/related')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign related products' })
   async assignRelatedProducts(
@@ -304,8 +305,8 @@ export class ProductsController {
   }
 
   @Delete(':id/related/:relatedProductId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove related product' })
   async removeRelatedProduct(
@@ -321,8 +322,8 @@ export class ProductsController {
   // ─── Admin: Color Groups ───────────────────────────────
 
   @Post(':id/color-groups')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create or update a product color group' })
   async createColorGroup(
@@ -344,8 +345,8 @@ export class ProductsController {
   }
 
   @Delete(':id/color-groups/:groupId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Delete a color group' })
   async deleteColorGroup(
@@ -357,8 +358,8 @@ export class ProductsController {
   }
 
   @Post(':id/color-groups/sync')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Sync color groups, variants, and media' })
   async syncColorGroups(

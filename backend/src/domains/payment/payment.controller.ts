@@ -18,7 +18,7 @@ import {
   VerifyPaymentDto,
 } from './payment.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -28,8 +28,8 @@ export class PaymentController {
   constructor(private readonly paymentService: PaymentService) {}
 
   @Get()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payments:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'List payments' })
   async findAll(@Query() query: PaymentQueryDto) {
@@ -66,8 +66,8 @@ export class PaymentController {
   }
 
   @Patch(':id/status')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payments:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update payment status' })
   async updateStatus(

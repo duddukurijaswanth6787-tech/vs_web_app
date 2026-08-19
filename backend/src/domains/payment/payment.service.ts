@@ -238,8 +238,26 @@ export class PaymentService {
       'Payment verified successfully',
     );
 
-    // deduct stock
-    await this.orderWorkflowService.deductInventory(payment.orderId);
+    // Deduct stock. deductInventory is atomic and all-or-nothing; if it
+    // throws (stock ran out between reservation and this payment capture),
+    // the money has already been captured above, so this is a genuine
+    // oversold-and-paid conflict. We cancel the order so stock isn't left
+    // negative and the conflict is visible in the order timeline, but a
+    // refund is NOT triggered automatically here -- that's a business
+    // decision (refund vs. backorder vs. manual substitution) outside what
+    // this fix covers, so it's surfaced via the thrown error / audit log for
+    // a human to action rather than silently resolved.
+    try {
+      await this.orderWorkflowService.deductInventory(payment.orderId);
+    } catch (err) {
+      await this.orderWorkflowService.transition(
+        payment.orderId,
+        'CANCELLED',
+        userId,
+        'Auto-cancelled: insufficient stock after payment capture -- refund required',
+      );
+      throw err;
+    }
 
     await this.auditService.log({
       action: 'PAYMENT_CAPTURED',
@@ -317,7 +335,21 @@ export class PaymentService {
         'Payment captured via webhook',
       );
 
-      await this.orderWorkflowService.deductInventory(payment.orderId);
+      // Same atomic-deduct-then-compensate handling as the direct verify
+      // path above: capture already happened, so a shortage here is a
+      // genuine oversold-and-paid conflict that needs a human to resolve
+      // the refund, not something this fix silently papers over.
+      try {
+        await this.orderWorkflowService.deductInventory(payment.orderId);
+      } catch (err) {
+        await this.orderWorkflowService.transition(
+          payment.orderId,
+          'CANCELLED',
+          payment.createdBy || 'SYSTEM',
+          'Auto-cancelled: insufficient stock after payment capture -- refund required',
+        );
+        throw err;
+      }
 
       await this.auditService.log({
         action: 'PAYMENT_CAPTURED_WEBHOOK',

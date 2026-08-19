@@ -337,8 +337,24 @@ export class PosService {
       customerInfo,
     });
 
-    // 4. Deduct inventory & log STOCK_OUT movement immediately
-    await this.workflow.deductInventory(order.id);
+    // 4. Deduct inventory immediately. deductInventory is atomic and
+    // all-or-nothing (see order-workflow.service.ts), so a concurrent sale
+    // that already claimed the stock makes this throw rather than let the
+    // order go through with stock it doesn't actually have. The order row
+    // was already committed by createPosOrder above, so on that failure we
+    // compensate by cancelling it instead of leaving a confirmed sale with
+    // no stock behind it, then surface the conflict to the terminal.
+    try {
+      await this.workflow.deductInventory(order.id);
+    } catch (err) {
+      await this.workflow.transition(
+        order.id,
+        'CANCELLED',
+        cashierId,
+        'Auto-cancelled: insufficient stock at sale completion',
+      );
+      throw err;
+    }
 
     // 5. Update CheckoutSession if active
     if (activeSessionId) {

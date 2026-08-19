@@ -21,6 +21,10 @@ import {
   LABEL_SIZE_OPTIONS,
 } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
+import { ConnectivityBadge } from '../components/ConnectivityBadge';
+import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
+import { offlineScanCacheDb, normalizeScanCacheKey } from '../services/offline/offlineDb';
+import { CachedScanResult, ScanBarcodeResult } from '../services/offline/offline.types';
 
 const SAMPLE_BARCODES = [
   { label: 'Saree (890100000005)', code: '890100000005' },
@@ -45,17 +49,46 @@ export default function MobileAddStockScreen() {
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
 
+  const offlineSync = useOfflineSync();
+
   const executeBarcodeScan = async (codeToScan: string) => {
     const query = codeToScan.trim();
     if (!query) return;
+    const cacheKey = normalizeScanCacheKey(query);
 
     try {
       setLoading(true);
-      const data = await posMobileService.scanBarcode(query);
+      const data: ScanBarcodeResult = await posMobileService.scanBarcode(query);
       setSelectedVariant(data);
+      // Cache every successful online scan so it stays findable offline later.
+      offlineScanCacheDb.cacheScanResult({
+        key: cacheKey,
+        productId: data.productId,
+        productName: data.productName,
+        variantId: data.variantId,
+        sku: data.sku,
+        barcode: data.barcode,
+        variantTitle: data.variantTitle,
+        price: data.price,
+        costPrice: data.costPrice,
+        availableStock: data.availableStock,
+        primaryImage: data.primaryImage,
+        cachedAt: new Date().toISOString(),
+      });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Variant Not Found', `No variant matching barcode "${query}" (${errorMessage})`);
+      if (isNetworkFailure(err)) {
+        const cached: CachedScanResult | undefined = await offlineScanCacheDb.getCachedScanResult(cacheKey);
+        if (cached) {
+          setSelectedVariant(cached);
+        } else {
+          Alert.alert(
+            'Offline — Not Cached',
+            `Backend is unreachable and "${query}" was never scanned before on this device, so it isn't in the offline cache.`,
+          );
+        }
+        return;
+      }
+      Alert.alert('Variant Not Found', `No variant matching barcode "${query}" (${getApiErrorMessage(err)})`);
     } finally {
       setLoading(false);
     }
@@ -92,16 +125,14 @@ export default function MobileAddStockScreen() {
       return;
     }
 
+    const reason = supplier ? `Stock-in from ${supplier}` : 'Mobile App Stock Replenishment';
+
     try {
       setLoading(true);
       // Opens an inventory record when the variant has none, otherwise raises the
       // existing one. Replaces the old POST /inventory/stock-in call, which was
       // never an endpoint on this API and always answered 404.
-      await inventoryService.stockIn(
-        selectedVariant.variantId,
-        qty,
-        supplier ? `Stock-in from ${supplier}` : 'Mobile App Stock Replenishment',
-      );
+      await inventoryService.stockIn(selectedVariant.variantId, qty, reason);
 
       if (printLabels) {
         await barcodeService
@@ -129,8 +160,37 @@ export default function MobileAddStockScreen() {
         ],
       );
     } catch (err: unknown) {
-      const errorMessage = getApiErrorMessage(err, 'Could not update stock');
-      Alert.alert('Error', errorMessage);
+      if (isNetworkFailure(err)) {
+        // Backend unreachable -- queue the stock-in locally instead of losing
+        // it. Label printing is intentionally SKIPPED here rather than
+        // deferred to after sync: there is no user present at that later
+        // moment to receive the share sheet, and the barcode/SKU on the
+        // sticker is only meaningful once the increase has actually landed
+        // server-side, so we simply let the user reprint from Add Stock
+        // once the item shows as SYNCED in the Pending Sync queue.
+        await offlineSync.queueStockIn({
+          variantId: selectedVariant.variantId,
+          quantity: qty,
+          reason,
+          variant: {
+            productName: selectedVariant.productName,
+            variantTitle: selectedVariant.variantTitle,
+            sku: selectedVariant.sku,
+            barcode: selectedVariant.barcode,
+            price: selectedVariant.price,
+            availableStock: selectedVariant.availableStock,
+          },
+        });
+
+        Alert.alert(
+          'Queued Offline ✓',
+          `Backend unreachable — +${qty} pcs for ${selectedVariant.productName} has been queued on this device and will sync automatically once the connection returns. Labels can be printed after it syncs.`,
+          [{ text: 'OK', onPress: () => router.replace('/') }],
+        );
+        return;
+      }
+
+      Alert.alert('Error', getApiErrorMessage(err, 'Could not update stock'));
     } finally {
       setLoading(false);
     }
@@ -138,6 +198,13 @@ export default function MobileAddStockScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 40 }}>
+      <ConnectivityBadge
+        isBackendReachable={offlineSync.isBackendReachable}
+        pendingCount={offlineSync.pendingCount}
+        needsReviewCount={offlineSync.needsReviewCount}
+        isSyncing={offlineSync.isSyncing}
+      />
+
       {/* 1. FIND PRODUCT */}
       <Text style={styles.sectionTitle}>1. Find Variant to Replenish</Text>
 

@@ -16,7 +16,7 @@ import {
   ReviewQueryDto,
 } from './review.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -72,8 +72,8 @@ export class ReviewController {
   }
 
   @Post(':id/approve')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reviews:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Approve a review' })
   async approve(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -84,8 +84,8 @@ export class ReviewController {
   }
 
   @Post(':id/reject')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reviews:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reject a review' })
   async reject(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

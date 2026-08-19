@@ -21,7 +21,7 @@ import {
   CategoryQueryDto,
 } from './categories.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -96,8 +96,8 @@ export class CategoriesController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new category' })
   async create(
@@ -111,8 +111,8 @@ export class CategoriesController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a category' })
   async update(
@@ -127,8 +127,8 @@ export class CategoriesController {
   }
 
   @Patch(':id/move')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Move category to a new parent' })
   async move(
@@ -143,8 +143,8 @@ export class CategoriesController {
   }
 
   @Patch('reorder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Batch reorder categories' })
   async reorder(
@@ -156,8 +156,8 @@ export class CategoriesController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:delete')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Soft delete a category (must have no children)' })
   async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -166,8 +166,8 @@ export class CategoriesController {
   }
 
   @Post(':id/restore')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('categories:delete')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Restore a soft-deleted category' })
   async restore(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

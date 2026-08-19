@@ -10,7 +10,14 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { QrCode, Banknote, CreditCard, Sparkles, Check } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem, PosMobileCustomer } from '../services/api';
+import {
+  posMobileService,
+  PosMobileCartItem,
+  PosMobileCustomer,
+  getApiErrorMessage,
+} from '../services/api';
+import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
+import { ConnectivityBadge } from '../components/ConnectivityBadge';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -28,6 +35,8 @@ export default function MobilePaymentScreen() {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
+
+  const offlineSync = useOfflineSync();
 
   let cartItems: PosMobileCartItem[] = [];
   try {
@@ -57,8 +66,28 @@ export default function MobilePaymentScreen() {
         },
       });
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
-      Alert.alert('Payment Failed', `Could not complete POS sale: ${errorMessage}`);
+      if (isNetworkFailure(err)) {
+        // Backend unreachable -- queue the sale locally instead of losing it.
+        // The customer still gets a confirmation; the order itself is only
+        // created once this syncs (see services/offline/useOfflineSync.ts).
+        const sale = await offlineSync.queueSale(
+          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer },
+          { items: cartItems, customer, paymentMethod, grandTotal },
+        );
+
+        router.push({
+          pathname: '/sale-success',
+          params: {
+            orderNumber: sale.clientOrderNumber,
+            grandTotal: grandTotal.toString(),
+            completedOn: 'Shopora Mobile App',
+            offline: 'true',
+          },
+        });
+        return;
+      }
+
+      Alert.alert('Payment Failed', getApiErrorMessage(err, 'Could not complete POS sale'));
     } finally {
       setLoading(false);
     }
@@ -66,6 +95,13 @@ export default function MobilePaymentScreen() {
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
+      <ConnectivityBadge
+        isBackendReachable={offlineSync.isBackendReachable}
+        pendingCount={offlineSync.pendingCount}
+        needsReviewCount={offlineSync.needsReviewCount}
+        isSyncing={offlineSync.isSyncing}
+      />
+
       <Text style={styles.sectionTitle}>Select Payment Method</Text>
 
       <View style={styles.methodsGrid}>
@@ -125,7 +161,7 @@ export default function MobilePaymentScreen() {
       </View>
 
       <TouchableOpacity
-        style={styles.payBtn}
+        style={[styles.payBtn, !offlineSync.isBackendReachable && styles.payBtnOffline]}
         onPress={handleCompleteSale}
         disabled={loading}
         activeOpacity={0.85}
@@ -135,10 +171,18 @@ export default function MobilePaymentScreen() {
         ) : (
           <>
             <Check size={20} color="#ffffff" style={{ marginRight: 8 }} />
-            <Text style={styles.payBtnText}>VERIFY & COMPLETE SALE</Text>
+            <Text style={styles.payBtnText}>
+              {offlineSync.isBackendReachable ? 'VERIFY & COMPLETE SALE' : 'SAVE OFFLINE & CONTINUE'}
+            </Text>
           </>
         )}
       </TouchableOpacity>
+      {!offlineSync.isBackendReachable && (
+        <Text style={styles.offlineNote}>
+          Backend unreachable — this sale will be queued on this device and synced automatically once
+          the connection returns.
+        </Text>
+      )}
     </ScrollView>
   );
 }
@@ -217,5 +261,15 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     color: '#ffffff',
+  },
+  payBtnOffline: {
+    backgroundColor: '#b45309',
+  },
+  offlineNote: {
+    fontSize: 10,
+    color: '#b45309',
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '600',
   },
 });

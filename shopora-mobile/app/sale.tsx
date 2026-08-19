@@ -21,8 +21,12 @@ import {
   ArrowRight,
   Camera as CameraIcon,
 } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem } from '../services/api';
+import { posMobileService, PosMobileCartItem, getApiErrorMessage } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
+import { ConnectivityBadge } from '../components/ConnectivityBadge';
+import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
+import { offlineScanCacheDb, normalizeScanCacheKey } from '../services/offline/offlineDb';
+import { CachedScanResult, ScanBarcodeResult } from '../services/offline/offline.types';
 
 const SAMPLE_BARCODES = [
   { label: 'Saree (890100000005)', code: '890100000005' },
@@ -43,48 +47,80 @@ export default function SaleProductScreen() {
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
 
+  const offlineSync = useOfflineSync();
+
   const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
   const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+  const addScannedItemToCart = (data: ScanBarcodeResult | CachedScanResult) => {
+    setCart((prev) => {
+      const existingIndex = prev.findIndex(
+        (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
+      );
+      if (existingIndex >= 0) {
+        const updated = [...prev];
+        updated[existingIndex].quantity += 1;
+        return updated;
+      }
+      return [
+        ...prev,
+        {
+          productId: data.productId,
+          productName: data.productName,
+          variantId: data.variantId,
+          sku: data.sku,
+          variantTitle: data.variantTitle,
+          unitPrice: data.price,
+          quantity: 1,
+          primaryImage: data.primaryImage,
+          availableStock: data.availableStock,
+        },
+      ];
+    });
+    setBarcodeInput('');
+  };
 
   const executeBarcodeScan = async (codeToScan: string) => {
     const query = codeToScan.trim();
     if (!query) return;
+    const cacheKey = normalizeScanCacheKey(query);
 
     try {
       setLoading(true);
-      const data = await posMobileService.scanBarcode(query);
-
-      setCart((prev) => {
-        const existingIndex = prev.findIndex(
-          (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
-        );
-        if (existingIndex >= 0) {
-          const updated = [...prev];
-          updated[existingIndex].quantity += 1;
-          return updated;
-        }
-        return [
-          ...prev,
-          {
-            productId: data.productId,
-            productName: data.productName,
-            variantId: data.variantId,
-            sku: data.sku,
-            variantTitle: data.variantTitle,
-            unitPrice: data.price,
-            quantity: 1,
-            primaryImage: data.primaryImage,
-            availableStock: data.availableStock,
-          },
-        ];
+      const data: ScanBarcodeResult = await posMobileService.scanBarcode(query);
+      addScannedItemToCart(data);
+      // Cache every successful online scan so it stays sellable offline later.
+      offlineScanCacheDb.cacheScanResult({
+        key: cacheKey,
+        productId: data.productId,
+        productName: data.productName,
+        variantId: data.variantId,
+        sku: data.sku,
+        barcode: data.barcode,
+        variantTitle: data.variantTitle,
+        price: data.price,
+        costPrice: data.costPrice,
+        availableStock: data.availableStock,
+        primaryImage: data.primaryImage,
+        cachedAt: new Date().toISOString(),
       });
-
-      setBarcodeInput('');
     } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : String(err);
+      if (isNetworkFailure(err)) {
+        const cached = await offlineScanCacheDb.getCachedScanResult(cacheKey);
+        if (cached) {
+          addScannedItemToCart(cached);
+        } else {
+          Alert.alert(
+            'Offline — Not Cached',
+            `Backend is unreachable and "${query}" was never scanned before on this device, so it isn't in the offline cache.`,
+          );
+        }
+        return;
+      }
+
       Alert.alert(
         'Barcode Not Found',
-        `No variant found for barcode "${query}". Make sure the backend server is running (${errorMessage}).`,
+        `No variant found for barcode "${query}" (${getApiErrorMessage(err)}).`,
       );
     } finally {
       setLoading(false);
@@ -135,6 +171,15 @@ export default function SaleProductScreen() {
 
   return (
     <View style={styles.container}>
+      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
+        <ConnectivityBadge
+          isBackendReachable={offlineSync.isBackendReachable}
+          pendingCount={offlineSync.pendingCount}
+          needsReviewCount={offlineSync.needsReviewCount}
+          isSyncing={offlineSync.isSyncing}
+        />
+      </View>
+
       {/* Top Barcode Search Input & Camera Scanner Button */}
       <View style={styles.searchBarContainer}>
         <View style={styles.inputWrapper}>

@@ -142,7 +142,23 @@ export class OrderService {
     await this.workflow.transition(id, status, userId, message);
 
     if (status === 'CONFIRMED') {
-      await this.workflow.deductInventory(id);
+      // deductInventory is atomic and all-or-nothing; a variant's stock
+      // could in principle have moved since the checkout-time reservation
+      // (e.g. it was manually adjusted down in the meantime). If it throws,
+      // the transition to CONFIRMED already committed above, so compensate
+      // by cancelling the order rather than leaving it CONFIRMED with no
+      // stock actually deducted.
+      try {
+        await this.workflow.deductInventory(id);
+      } catch (err) {
+        await this.workflow.transition(
+          id,
+          'CANCELLED',
+          userId,
+          'Auto-cancelled: insufficient stock at confirmation',
+        );
+        throw err;
+      }
     }
 
     return this.findById(id);

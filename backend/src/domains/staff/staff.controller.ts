@@ -14,18 +14,19 @@ import { StaffService } from './staff.service';
 import { CreateStaffDto, UpdateStaffDto, StaffQueryDto } from './staff.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('Staff')
 @Controller('staff')
-@UseGuards(JwtAuthGuard, RolesGuard)
+@UseGuards(JwtAuthGuard, RolesGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
   @Get()
-  @Roles('super_admin', 'admin')
+  @Permissions('staff:view')
   @ApiOperation({
     summary: 'List all staff with search, pagination, filter, sort',
   })
@@ -34,7 +35,7 @@ export class StaffController {
   }
 
   @Get(':id')
-  @Roles('super_admin', 'admin')
+  @Permissions('staff:view')
   @ApiOperation({ summary: 'Get staff by ID' })
   async findById(@Param('id') id: string) {
     return ResponseBuilder.success(await this.staffService.findById(id));
@@ -51,7 +52,7 @@ export class StaffController {
   }
 
   @Patch(':id')
-  @Roles('super_admin', 'admin')
+  @Permissions('staff:update')
   @ApiOperation({ summary: 'Update a staff member' })
   async update(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
     return ResponseBuilder.success(
@@ -79,7 +80,7 @@ export class StaffController {
   }
 
   @Post(':id/activate')
-  @Roles('super_admin', 'admin')
+  @Permissions('staff:update')
   @ApiOperation({ summary: 'Activate a staff member' })
   async activate(@Param('id') id: string) {
     return ResponseBuilder.success(
@@ -89,7 +90,7 @@ export class StaffController {
   }
 
   @Post(':id/deactivate')
-  @Roles('super_admin', 'admin')
+  @Permissions('staff:update')
   @ApiOperation({ summary: 'Deactivate a staff member' })
   async deactivate(@Param('id') id: string) {
     return ResponseBuilder.success(

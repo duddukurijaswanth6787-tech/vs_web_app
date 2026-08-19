@@ -279,7 +279,13 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
-  /** POST /pos/sales/complete — finish the sale on the phone. */
+  /**
+   * POST /pos/sales/complete — finish the sale on the phone.
+   * `clientOrderNumber` + `isOfflineSync` mirror the web POS's offline queue
+   * contract: replaying the same clientOrderNumber returns the
+   * already-created order instead of duplicating it, and isOfflineSync asks
+   * the server to check stock is still sufficient before creating the order.
+   */
   async completeSale(payload: {
     sessionId?: string;
     items?: PosMobileCartItem[];
@@ -287,6 +293,8 @@ export const posMobileService = {
     amountPaid: number;
     customer?: PosMobileCustomer;
     notes?: string;
+    clientOrderNumber?: string;
+    isOfflineSync?: boolean;
   }) {
     const res = await posApiClient.post('/pos/sales/complete', payload);
     return unwrap<any>(res);
@@ -588,11 +596,19 @@ export const inventoryService = {
     return unwrap<any>(res);
   },
 
-  /** POST /inventory/:id/increase — replenish an existing stock record. */
-  async increase(inventoryId: string, quantity: number, reason?: string) {
+  /**
+   * POST /inventory/:id/increase — replenish an existing stock record.
+   * `clientRequestId` is an idempotency key: replaying the same one (e.g. an
+   * offline-queued stock-in retried after the response was lost) is
+   * recognized server-side and answered without crediting the stock twice.
+   */
+  async increase(inventoryId: string, quantity: number, reason?: string, clientRequestId?: string) {
     const res = await posApiClient.post(`/inventory/${inventoryId}/increase`, {
       quantity,
       reason: reason ?? 'POS mobile stock-in',
+      ...(clientRequestId
+        ? { referenceType: 'MOBILE_OFFLINE_SYNC', referenceId: clientRequestId }
+        : {}),
     });
     return unwrap<any>(res);
   },
@@ -601,19 +617,25 @@ export const inventoryService = {
    * Set the opening stock for a variant, creating the inventory record when the
    * variant has none. Replaces the old `POST /inventory/stock-in` call, which
    * was never an endpoint on this API.
+   *
+   * `clientRequestId`, when passed, is only honoured on the increase path (see
+   * above) -- a retried first-ever stock-in for a variant (the create path)
+   * is not idempotent, since Inventory.variantId is unique and a genuine
+   * retry after a lost response would 409 rather than duplicate the stock.
    */
   async stockIn(
     variantId: string,
     quantity: number,
     reason?: string,
     thresholds?: { minimumStock?: number; reorderLevel?: number },
+    clientRequestId?: string,
   ) {
     const existing = await this.findByVariant(variantId);
     if (!existing?.id) {
       return this.create({ variantId, availableQuantity: quantity, ...thresholds });
     }
     if (quantity <= 0) return existing;
-    return this.increase(existing.id, quantity, reason);
+    return this.increase(existing.id, quantity, reason, clientRequestId);
   },
 };
 

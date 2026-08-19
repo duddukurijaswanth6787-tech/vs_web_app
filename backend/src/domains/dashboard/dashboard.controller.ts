@@ -2,12 +2,12 @@ import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('Dashboard')
-@UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('super_admin', 'admin')
+@UseGuards(JwtAuthGuard, PermissionsGuard)
+@Permissions('dashboard:view')
 @ApiBearerAuth()
 @Controller('dashboard')
 export class DashboardController {
