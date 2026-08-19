@@ -2,62 +2,74 @@
 
 import React, { useState } from 'react';
 import { Bot, Send, User, Sparkles, Plus } from 'lucide-react';
+import { aiChatApi, ChatMessage } from '@/features/ai-chat/api/ai-chat.api';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { useToast } from '@/components/toast/ToastProvider';
 
-interface Message {
-  id: string;
-  role: 'USER' | 'ASSISTANT';
-  content: string;
-  time: string;
+const WELCOME_MESSAGE: ChatMessage = {
+  id: 'welcome',
+  role: 'ASSISTANT',
+  content:
+    'Hello Admin! I am Vasanthi AI Assistant. Ask me about catalog analytics, order summaries, stock alerts, or customer query assistance.',
+  tokenCount: 0,
+  createdAt: new Date().toISOString(),
+};
+
+function formatTime(iso: string) {
+  return new Date(iso).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
 export default function AdminAiChatPage() {
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: 'm-1',
-      role: 'ASSISTANT',
-      content: 'Hello Admin! I am Vasanthi AI Assistant. Ask me about catalog analytics, order summaries, stock alerts, or customer query assistance.',
-      time: '10:00 AM',
-    },
-  ]);
+  const { toast } = useToast();
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [messages, setMessages] = useState<ChatMessage[]>([WELCOME_MESSAGE]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const handleSend = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!input.trim()) return;
+    const currentQuery = input.trim();
+    if (!currentQuery || isLoading) return;
 
-    const userMsg: Message = {
+    const userMsg: ChatMessage = {
       id: 'usr-' + Date.now(),
       role: 'USER',
-      content: input,
-      time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+      content: currentQuery,
+      tokenCount: 0,
+      createdAt: new Date().toISOString(),
     };
 
     setMessages((prev) => [...prev, userMsg]);
-    const currentQuery = input;
     setInput('');
     setIsLoading(true);
 
     try {
-      // Live backend call attempt with fallback assistant response
-      const aiReply: Message = {
-        id: 'ai-' + Date.now(),
-        role: 'ASSISTANT',
-        content: `I analyzed your query "${currentQuery}". Current inventory shows 120 Banarasi Silk Sarees in stock. 14 orders pending packing at Warehouse Station #04.`,
-        time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-      };
-      setTimeout(() => {
-        setMessages((prev) => [...prev, aiReply]);
-        setIsLoading(false);
-      }, 700);
-    } catch {
+      let activeConversationId = conversationId;
+      if (!activeConversationId) {
+        const conversation = await aiChatApi.createConversation(currentQuery.slice(0, 60));
+        activeConversationId = conversation.id;
+        setConversationId(activeConversationId);
+      }
+
+      const reply = await aiChatApi.sendMessage(activeConversationId, currentQuery);
+      setMessages((prev) => [...prev, reply]);
+    } catch (err) {
+      toast('error', 'AI Assistant unavailable', getApiErrorMessage(err));
+      setMessages((prev) => prev.filter((m) => m.id !== userMsg.id));
+      setInput(currentQuery);
+    } finally {
       setIsLoading(false);
     }
   };
 
+  const handleNewChat = () => {
+    setConversationId(null);
+    setMessages([WELCOME_MESSAGE]);
+  };
+
   return (
     <div suppressHydrationWarning className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
@@ -71,12 +83,7 @@ export default function AdminAiChatPage() {
         </div>
 
         <button
-          onClick={() => setMessages([{
-            id: 'm-1',
-            role: 'ASSISTANT',
-            content: 'Conversation reset. How can I assist you with your store operations today?',
-            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          }])}
+          onClick={handleNewChat}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <Plus className="w-4 h-4 text-neutral-500" />
@@ -86,7 +93,7 @@ export default function AdminAiChatPage() {
 
       {/* Chat Console Area */}
       <div className="bg-white border border-neutral-200 rounded-3xl overflow-hidden shadow-2xs flex flex-col h-[550px]">
-        
+
         {/* Messages Feed */}
         <div className="flex-1 p-6 overflow-y-auto space-y-4 bg-[#FDFBFB]">
           {messages.map((m) => (
@@ -107,11 +114,11 @@ export default function AdminAiChatPage() {
                   ? 'bg-neutral-900 text-white rounded-tr-xs'
                   : 'bg-white border border-neutral-200/80 text-neutral-800 shadow-2xs rounded-tl-xs'
               }`}>
-                <p>{m.content}</p>
+                <p className="whitespace-pre-wrap">{m.content}</p>
                 <span className={`text-[9.5px] block text-right font-medium ${
                   m.role === 'USER' ? 'text-neutral-400' : 'text-neutral-400'
                 }`}>
-                  {m.time}
+                  {formatTime(m.createdAt)}
                 </span>
               </div>
             </div>
@@ -139,7 +146,7 @@ export default function AdminAiChatPage() {
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-[#800020] hover:bg-[#600018] text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-1.5"
+            className="bg-[#800020] hover:bg-[#600018] text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Send</span>

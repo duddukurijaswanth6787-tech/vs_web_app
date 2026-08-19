@@ -15,11 +15,10 @@ export class StorefrontPublicService {
     return this.cache.getOrSet(
       'storefront:settings',
       async () => {
-        const settings = await this.prisma.websiteSetting.findFirst({
-          where: { deletedAt: null },
-        });
-        if (!settings)
-          throw new BusinessException('Website settings not found', 'STF_001');
+        const settings =
+          (await this.prisma.websiteSetting.findFirst({
+            where: { deletedAt: null },
+          })) ?? (await this.prisma.websiteSetting.create({ data: {} }));
         const [
           autoplaySetting,
           enabledSetting,

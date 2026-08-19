@@ -7,6 +7,7 @@ import {
   SearchSuggestionResponse,
   SearchHistoryResponse,
   TrendingSearchResponse,
+  SearchStatsResponse,
 } from './ai-search.types';
 
 @Injectable()
@@ -256,5 +257,37 @@ export class AiSearchService {
 
   async getTrendingSearches(limit = 10): Promise<TrendingSearchResponse[]> {
     return this.repository.getTrendingSearches(limit);
+  }
+
+  async getStats(): Promise<SearchStatsResponse> {
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const [totalSearches, zeroResultCount, clickedCount, topQueries] =
+      await Promise.all([
+        this.prisma.searchHistory.count({
+          where: { createdAt: { gte: since } },
+        }),
+        this.prisma.searchHistory.count({
+          where: { createdAt: { gte: since }, resultCount: 0 },
+        }),
+        this.prisma.searchHistory.count({
+          where: {
+            createdAt: { gte: since },
+            NOT: { clickedProductIds: { isEmpty: true } },
+          },
+        }),
+        this.repository.getTrendingSearches(1),
+      ]);
+
+    return {
+      totalSearches,
+      zeroResultCount,
+      zeroResultRate: totalSearches
+        ? Number(((zeroResultCount / totalSearches) * 100).toFixed(1))
+        : 0,
+      clickThroughRate: totalSearches
+        ? Number(((clickedCount / totalSearches) * 100).toFixed(1))
+        : 0,
+      topQuery: topQueries[0],
+    };
   }
 }

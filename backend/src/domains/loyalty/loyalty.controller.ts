@@ -65,6 +65,15 @@ export class LoyaltyController {
     );
   }
 
+  @Get('admin/stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Admin: get loyalty program stats' })
+  async adminStats() {
+    return ResponseBuilder.success(await this.loyaltyService.getStats());
+  }
+
   @Get('admin/customer/:customerId')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')

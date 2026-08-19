@@ -28,9 +28,8 @@ export class StorefrontService {
     const settings = await this.prisma.websiteSetting.findFirst({
       where: { deletedAt: null },
     });
-    if (!settings)
-      throw new BusinessException('Website settings not found', 'STF_001');
-    return settings;
+    if (settings) return settings;
+    return this.prisma.websiteSetting.create({ data: {} });
   }
 
   async updateSettings(dto: UpdateWebsiteSettingDto, userId: string) {

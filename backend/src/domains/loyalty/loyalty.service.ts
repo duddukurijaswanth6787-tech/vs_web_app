@@ -133,6 +133,28 @@ export class LoyaltyService {
     return this.toBalance(account);
   }
 
+  async getStats() {
+    const [agg, activeMembers, tierCounts] = await Promise.all([
+      this.prisma.loyaltyAccount.aggregate({
+        _sum: { lifetimeEarned: true, lifetimeRedeemed: true },
+      }),
+      this.prisma.loyaltyAccount.count({ where: { isActive: true } }),
+      this.prisma.loyaltyAccount.groupBy({
+        by: ['tier'],
+        _count: { tier: true },
+      }),
+    ]);
+    return {
+      totalPointsIssued: agg._sum.lifetimeEarned ?? 0,
+      totalPointsRedeemed: agg._sum.lifetimeRedeemed ?? 0,
+      activeMembers,
+      tierBreakdown: tierCounts.map((t: any) => ({
+        tier: t.tier,
+        count: t._count.tier,
+      })),
+    };
+  }
+
   private async redeemInternal(
     customerId: string,
     points: number,
