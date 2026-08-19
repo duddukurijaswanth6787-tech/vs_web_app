@@ -42,6 +42,7 @@ export interface AuthUser {
   firstName?: string;
   lastName?: string;
   userType?: string;
+  roles?: string[];
 }
 
 export function getAccessToken() {
@@ -122,7 +123,7 @@ export function getApiErrorMessage(err: unknown, fallback = 'Something went wron
 }
 
 /** Every endpoint answers with { success, message, data } — this unwraps `data`. */
-function unwrap<T>(res: { data?: { data?: T } }): T {
+export function unwrap<T>(res: { data?: { data?: T } }): T {
   return (res?.data?.data ?? res?.data) as T;
 }
 
@@ -218,9 +219,10 @@ export interface CreatedProductSummary {
 
 export const authService = {
   /**
-   * POST /auth/login — stores the access token for every later request.
-   * Product, variant and inventory writes are admin-only, so the POS device
-   * must sign in with a staff account that holds those roles.
+   * POST /auth/login — stores the access token for every later request, then
+   * loads the profile via GET /auth/me (the login response itself is just
+   * tokens, no user object) so the app can tell a staff account from a
+   * customer one and route accordingly.
    */
   async login(email: string, password: string) {
     const res = await posApiClient.post('/auth/login', { email, password });
@@ -228,9 +230,28 @@ export const authService = {
     const token = payload?.accessToken ?? payload?.access_token ?? payload?.token;
     if (!token) throw new Error('Login succeeded but no access token was returned.');
     accessToken = token;
-    currentUser = payload?.user ?? null;
+    currentUser = await this.fetchMe();
     await persistSession();
     return { token, user: currentUser };
+  },
+
+  /** GET /auth/me — refreshes the in-memory profile (roles, userType, etc). */
+  async fetchMe(): Promise<AuthUser | null> {
+    try {
+      const meRes = await posApiClient.get('/auth/me');
+      const me = unwrap<any>(meRes);
+      currentUser = {
+        id: me?.id,
+        email: me?.email,
+        firstName: me?.firstName,
+        lastName: me?.lastName,
+        userType: me?.userType,
+        roles: me?.roles,
+      };
+      return currentUser;
+    } catch {
+      return null;
+    }
   },
 
   logout() {
