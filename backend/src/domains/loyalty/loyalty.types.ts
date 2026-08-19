@@ -45,3 +45,10 @@ export class LoyaltyBalanceResponse {
   @ApiProperty() tier!: string;
   @ApiProperty() isActive!: boolean;
 }
+
+export class LoyaltyStatsResponse {
+  @ApiProperty() totalPointsIssued!: number;
+  @ApiProperty() totalPointsRedeemed!: number;
+  @ApiProperty() activeMembers!: number;
+  @ApiProperty({ type: [Object] }) tierBreakdown!: { tier: string; count: number }[];
+}

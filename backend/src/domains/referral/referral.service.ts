@@ -206,14 +206,33 @@ export class ReferralService {
 
   async adminList(page = 1, limit = 20) {
     const take = Math.min(limit, 100);
-    const [data, total] = await Promise.all([
+    const [rows, total] = await Promise.all([
       this.prisma.referralCode.findMany({
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * take,
         take,
+        include: {
+          customer: {
+            include: { user: { select: { firstName: true, lastName: true } } },
+          },
+        },
       }),
       this.prisma.referralCode.count(),
     ]);
+    const data = rows.map((r) => ({
+      id: r.id,
+      code: r.code,
+      referrerName: [r.customer.user.firstName, r.customer.user.lastName]
+        .filter(Boolean)
+        .join(' ')
+        .trim(),
+      rewardPoints: r.rewardPoints,
+      refereePoints: r.refereePoints,
+      usageLimit: r.usageLimit,
+      usedCount: r.usedCount,
+      isActive: r.isActive,
+      createdAt: r.createdAt,
+    }));
     return { data, meta: { page, limit: take, total } };
   }
 }

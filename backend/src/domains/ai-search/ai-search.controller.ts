@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AiSearchService } from './ai-search.service';
 import { AiSearchDto, SearchHistoryQueryDto } from './ai-search.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -53,5 +54,14 @@ export class AiSearchController {
     return ResponseBuilder.success(
       await this.aiSearchService.getTrendingSearches(),
     );
+  }
+
+  @Get('stats')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get search analytics stats' })
+  async getStats() {
+    return ResponseBuilder.success(await this.aiSearchService.getStats());
   }
 }

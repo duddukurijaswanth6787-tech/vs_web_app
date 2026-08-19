@@ -12,16 +12,16 @@ export default function GiftCardsAdminPage() {
   const { toast } = useToast();
   const [initialBalance, setInitialBalance] = useState<number>(1000);
 
-  const { data: giftCardsData, refetch: fetchGiftCards } = useQuery({
+  const { data: giftCardsData, isLoading, refetch: fetchGiftCards } = useQuery({
     queryKey: ['gift-cards', 'admin-list'],
     queryFn: () => giftCardApi.adminList(1, 20),
   });
-  const giftCards = Array.isArray(giftCardsData) ? giftCardsData : [];
+  const giftCards = giftCardsData?.data ?? [];
 
   const handleCreateCard = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await giftCardApi.adminCreate({ initialBalance });
+      await giftCardApi.adminCreate({ amount: initialBalance });
       toast('success', 'Gift card created', `E-Gift card with ₹${initialBalance} initial balance generated`);
       fetchGiftCards();
     } catch (err) {
@@ -88,7 +88,7 @@ export default function GiftCardsAdminPage() {
           <h2 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
             Issued Gift Cards List
           </h2>
-          <span className="text-xs text-neutral-500 font-bold">Showing {giftCards.length || 2} Vouchers</span>
+          <span className="text-xs text-neutral-500 font-bold">Showing {giftCards.length} Vouchers</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -102,23 +102,30 @@ export default function GiftCardsAdminPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-neutral-800 font-medium">
-              {[
-                { id: 'gc-1', code: 'VD-GIFT-9941-8820', initial: 5000, current: 5000, status: 'ACTIVE' },
-                { id: 'gc-2', code: 'VD-GIFT-1102-3349', initial: 2500, current: 0, status: 'REDEEMED' },
-              ].map((row) => (
-                <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
-                  <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
-                  <td className="p-3">₹{row.initial}</td>
-                  <td className="p-3 font-bold text-emerald-700">₹{row.current}</td>
-                  <td className="p-3">
-                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
-                      row.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-600'
-                    }`}>
-                      {row.status}
-                    </span>
-                  </td>
+              {isLoading ? (
+                <tr>
+                  <td className="p-4 text-neutral-400 italic" colSpan={4}>Loading gift cards...</td>
                 </tr>
-              ))}
+              ) : giftCards.length === 0 ? (
+                <tr>
+                  <td className="p-4 text-neutral-400 italic" colSpan={4}>No gift cards issued yet.</td>
+                </tr>
+              ) : (
+                giftCards.map((row) => (
+                  <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
+                    <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
+                    <td className="p-3">₹{row.initialAmount.toLocaleString('en-IN')}</td>
+                    <td className="p-3 font-bold text-emerald-700">₹{row.balance.toLocaleString('en-IN')}</td>
+                    <td className="p-3">
+                      <span className={`px-2 py-0.5 rounded-md text-[10px] font-black ${
+                        row.status === 'ACTIVE' ? 'bg-emerald-50 text-emerald-700' : 'bg-neutral-100 text-neutral-600'
+                      }`}>
+                        {row.status}
+                      </span>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

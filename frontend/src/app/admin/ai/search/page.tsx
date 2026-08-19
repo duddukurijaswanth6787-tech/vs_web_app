@@ -1,31 +1,56 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Search, Sparkles, RefreshCw } from 'lucide-react';
-import { aiSearchApi } from '@/features/ai-search/api/ai-search.api';
+import React, { useEffect, useState, useCallback } from 'react';
+import { Search, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
+import { aiSearchApi, SearchSuggestions, SearchStats } from '@/features/ai-search/api/ai-search.api';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function AdminAiSearchPage() {
   const [testQuery, setTestQuery] = useState('');
-  const [suggestions, setSuggestions] = useState<string[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null);
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [isSearching, setIsSearching] = useState(false);
+
+  const [stats, setStats] = useState<SearchStats | null>(null);
+  const [statsError, setStatsError] = useState<string | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  const loadStats = useCallback(async () => {
+    setStatsLoading(true);
+    setStatsError(null);
+    try {
+      const data = await aiSearchApi.getStats();
+      setStats(data);
+    } catch (err) {
+      setStatsError(getApiErrorMessage(err));
+    } finally {
+      setStatsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadStats();
+  }, [loadStats]);
 
   const handleTestSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!testQuery.trim()) return;
-    setIsLoading(true);
+    setIsSearching(true);
+    setSearchError(null);
     try {
       const res = await aiSearchApi.getSuggestions(testQuery);
-      setSuggestions(res || ['Banarasi Silk Sarees', 'Kanjivaram Handloom', 'Bridal Lehengas']);
-    } catch {
-      setSuggestions(['Banarasi Silk Sarees', 'Kanjivaram Handloom', 'Bridal Lehengas']);
+      setSuggestions(res);
+    } catch (err) {
+      setSuggestions(null);
+      setSearchError(getApiErrorMessage(err));
     } finally {
-      setIsLoading(false);
+      setIsSearching(false);
     }
   };
 
   return (
     <div suppressHydrationWarning className="p-6 space-y-6 max-w-[1400px] mx-auto">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
@@ -39,7 +64,7 @@ export default function AdminAiSearchPage() {
         </div>
 
         <button
-          onClick={() => window.location.reload()}
+          onClick={loadStats}
           className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
         >
           <RefreshCw className="w-4 h-4 text-neutral-500" />
@@ -48,25 +73,52 @@ export default function AdminAiSearchPage() {
       </div>
 
       {/* Trending Search Analytics Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-neutral-500 block">Top Trending Query</span>
-          <span className="text-xl font-bold text-[#800020]">&quot;Banarasi Silk Saree Maroon&quot;</span>
-          <span className="text-[10px] text-emerald-600 font-bold block">1,420 searches today</span>
+      {statsError ? (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center gap-2 text-xs font-bold text-red-700">
+          <AlertTriangle className="w-4 h-4" />
+          <span>Failed to load search analytics: {statsError}</span>
         </div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
+            <span className="text-xs font-bold text-neutral-500 block">Top Trending Query (30d)</span>
+            {statsLoading ? (
+              <span className="text-xs text-neutral-400">Loading...</span>
+            ) : stats?.topQuery ? (
+              <>
+                <span className="text-xl font-bold text-[#800020] block truncate">&quot;{stats.topQuery.query}&quot;</span>
+                <span className="text-[10px] text-emerald-600 font-bold block">{stats.topQuery.count} searches</span>
+              </>
+            ) : (
+              <span className="text-xs text-neutral-400">No searches recorded yet</span>
+            )}
+          </div>
 
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-neutral-500 block">Search Click Conversion Rate</span>
-          <span className="text-2xl font-black text-emerald-700">68.4%</span>
-          <span className="text-[10px] text-emerald-600 font-bold block">↑ High Intent Conversion</span>
-        </div>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
+            <span className="text-xs font-bold text-neutral-500 block">Search Click-Through Rate</span>
+            {statsLoading ? (
+              <span className="text-xs text-neutral-400">Loading...</span>
+            ) : (
+              <>
+                <span className="text-2xl font-black text-emerald-700">{stats?.clickThroughRate ?? 0}%</span>
+                <span className="text-[10px] text-neutral-500 block">Last 30 days, {stats?.totalSearches ?? 0} searches</span>
+              </>
+            )}
+          </div>
 
-        <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
-          <span className="text-xs font-bold text-neutral-500 block">Zero-Result Searches</span>
-          <span className="text-2xl font-black text-amber-600">12 Queries</span>
-          <span className="text-[10px] text-neutral-500 block">Identified stock gaps</span>
+          <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
+            <span className="text-xs font-bold text-neutral-500 block">Zero-Result Searches</span>
+            {statsLoading ? (
+              <span className="text-xs text-neutral-400">Loading...</span>
+            ) : (
+              <>
+                <span className="text-2xl font-black text-amber-600">{stats?.zeroResultCount ?? 0} Queries</span>
+                <span className="text-[10px] text-neutral-500 block">{stats?.zeroResultRate ?? 0}% of searches, last 30 days</span>
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Test AI Search Console */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
@@ -87,24 +139,67 @@ export default function AdminAiSearchPage() {
 
           <button
             type="submit"
-            disabled={isLoading}
-            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5"
+            disabled={isSearching}
+            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             <Search className="w-3.5 h-3.5" />
-            <span>Test Query</span>
+            <span>{isSearching ? 'Testing...' : 'Test Query'}</span>
           </button>
         </form>
 
-        {suggestions.length > 0 && (
-          <div className="pt-2 space-y-2">
-            <span className="text-xs font-bold text-neutral-700 block">AI Intent Matching Suggestions:</span>
-            <div className="flex flex-wrap gap-2">
-              {suggestions.map((s, idx) => (
-                <span key={idx} className="bg-rose-50 border border-rose-200 text-[#800020] text-xs font-bold px-3 py-1 rounded-full">
-                  {s}
-                </span>
-              ))}
-            </div>
+        {searchError && (
+          <div className="bg-red-50 border border-red-200 rounded-xl p-3 flex items-center gap-2 text-xs font-bold text-red-700">
+            <AlertTriangle className="w-4 h-4 shrink-0" />
+            <span>Search request failed: {searchError}</span>
+          </div>
+        )}
+
+        {suggestions && (
+          <div className="pt-2 space-y-3">
+            {suggestions.products.length === 0 &&
+            suggestions.categories.length === 0 &&
+            suggestions.brands.length === 0 ? (
+              <span className="text-xs text-neutral-400 italic">No matching products, categories, or brands found for this query.</span>
+            ) : (
+              <>
+                {suggestions.products.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-neutral-700 block">Matching Products:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.products.map((p) => (
+                        <span key={p.id} className="bg-rose-50 border border-rose-200 text-[#800020] text-xs font-bold px-3 py-1 rounded-full">
+                          {p.name} &middot; ₹{p.price.toLocaleString('en-IN')}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {suggestions.categories.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-neutral-700 block">Matching Categories:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.categories.map((c) => (
+                        <span key={c.id} className="bg-neutral-100 border border-neutral-200 text-neutral-700 text-xs font-bold px-3 py-1 rounded-full">
+                          {c.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {suggestions.brands.length > 0 && (
+                  <div className="space-y-1.5">
+                    <span className="text-xs font-bold text-neutral-700 block">Matching Brands:</span>
+                    <div className="flex flex-wrap gap-2">
+                      {suggestions.brands.map((b) => (
+                        <span key={b.id} className="bg-neutral-100 border border-neutral-200 text-neutral-700 text-xs font-bold px-3 py-1 rounded-full">
+                          {b.name}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
           </div>
         )}
       </div>

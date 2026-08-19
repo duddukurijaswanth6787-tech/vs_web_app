@@ -42,6 +42,11 @@ import {
   ToggleLeft,
   Link2,
   Search,
+  Sparkles,
+  PhoneCall,
+  Smartphone,
+  Award,
+  Truck,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -168,6 +173,25 @@ export const adminNavigation: NavGroup[] = [
     ],
   },
   {
+    group: 'COMMUNICATION',
+    items: [
+      {
+        id: 'communication-sms',
+        title: 'SMS Gateway',
+        href: '/admin/communication/sms',
+        icon: PhoneCall,
+        implemented: true,
+      },
+      {
+        id: 'communication-push',
+        title: 'Push Notifications',
+        href: '/admin/communication/push',
+        icon: Smartphone,
+        implemented: true,
+      },
+    ],
+  },
+  {
     group: 'CATALOG',
     items: [
       {
@@ -243,6 +267,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'Shipping Operations',
         href: '/admin/shipping',
         icon: Sliders,
+        implemented: true,
+      },
+      {
+        id: 'shipping-dtdc',
+        title: 'DTDC Shipping',
+        href: '/admin/shipping/dtdc',
+        icon: Truck,
         implemented: true,
       },
     ],
@@ -350,6 +381,32 @@ export const adminNavigation: NavGroup[] = [
         title: 'Campaigns',
         href: '/admin/promotions/campaigns',
         icon: Megaphone,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'MARKETING & LOYALTY',
+    items: [
+      {
+        id: 'gift-cards',
+        title: 'Gift Cards',
+        href: '/admin/gift-cards',
+        icon: Gift,
+        implemented: true,
+      },
+      {
+        id: 'loyalty',
+        title: 'Loyalty Program',
+        href: '/admin/loyalty',
+        icon: Award,
+        implemented: true,
+      },
+      {
+        id: 'referral',
+        title: 'Referral Program',
+        href: '/admin/referral',
+        icon: Share2,
         implemented: true,
       },
     ],
@@ -478,6 +535,27 @@ export const adminNavigation: NavGroup[] = [
         title: 'RAG Playground',
         href: '/admin/ai/rag/playground',
         icon: Sliders,
+        implemented: true,
+      },
+      {
+        id: 'ai-chat',
+        title: 'AI Assistant Chat',
+        href: '/admin/ai/chat',
+        icon: Bot,
+        implemented: true,
+      },
+      {
+        id: 'ai-search',
+        title: 'AI Search Analytics',
+        href: '/admin/ai/search',
+        icon: Search,
+        implemented: true,
+      },
+      {
+        id: 'ai-recommendations',
+        title: 'AI Recommendations',
+        href: '/admin/ai/recommendations',
+        icon: Sparkles,
         implemented: true,
       },
     ],

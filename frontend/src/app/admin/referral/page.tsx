@@ -10,17 +10,17 @@ import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function ReferralAdminPage() {
   const { toast } = useToast();
-  const [rewardAmount] = useState<number>(250);
+  const [rewardPoints] = useState<number>(250);
 
-  const { data: referralsData, refetch: fetchReferrals } = useQuery({
+  const { data: referralsData, isLoading, refetch: fetchReferrals } = useQuery({
     queryKey: ['referral', 'admin-list'],
     queryFn: () => referralApi.adminList(1, 20),
   });
-  const referrals = Array.isArray(referralsData) ? referralsData : [];
+  const referrals = referralsData?.data ?? [];
 
   const handleUpdateReward = async (id: string) => {
     try {
-      await referralApi.adminUpdate(id, { rewardAmount });
+      await referralApi.adminUpdate(id, { rewardPoints });
       toast('success', 'Referral updated', 'Reward updated successfully');
       fetchReferrals();
     } catch (err) {
@@ -39,7 +39,7 @@ export default function ReferralAdminPage() {
             <span>Referral Program Management</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
-            Monitor customer referral codes, reward payouts (`ANANYA250`) and commission parameters.
+            Monitor customer referral codes, reward point payouts and usage parameters.
           </p>
         </div>
 
@@ -58,7 +58,7 @@ export default function ReferralAdminPage() {
           <h2 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">
             Active Referral Codes
           </h2>
-          <span className="text-xs text-neutral-500 font-bold">Showing {referrals.length || 3} Codes</span>
+          <span className="text-xs text-neutral-500 font-bold">Showing {referrals.length} Codes</span>
         </div>
 
         <div className="overflow-x-auto">
@@ -67,32 +67,38 @@ export default function ReferralAdminPage() {
               <tr>
                 <th className="p-3">Referral Code</th>
                 <th className="p-3">Referrer Customer</th>
-                <th className="p-3">Reward Value</th>
+                <th className="p-3">Reward Points</th>
                 <th className="p-3">Total Uses</th>
                 <th className="p-3">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100 text-neutral-800 font-medium">
-              {[
-                { id: 'ref-1', code: 'ANANYA250', referrer: 'Ananya Reddy', reward: 250, uses: 3 },
-                { id: 'ref-2', code: 'PRIYA500', referrer: 'Priya Sharma', reward: 500, uses: 7 },
-                { id: 'ref-3', code: 'KAVYA250', referrer: 'Kavya Nair', reward: 250, uses: 1 },
-              ].map((row) => (
-                <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
-                  <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
-                  <td className="p-3 font-bold text-neutral-900">{row.referrer}</td>
-                  <td className="p-3 font-extrabold text-emerald-700">₹{row.reward}</td>
-                  <td className="p-3">{row.uses} Friends Joined</td>
-                  <td className="p-3">
-                    <button
-                      onClick={() => handleUpdateReward(row.id)}
-                      className="px-3 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-[#800020] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
-                    >
-                      Update Reward
-                    </button>
-                  </td>
+              {isLoading ? (
+                <tr>
+                  <td className="p-4 text-neutral-400 italic" colSpan={5}>Loading referral codes...</td>
                 </tr>
-              ))}
+              ) : referrals.length === 0 ? (
+                <tr>
+                  <td className="p-4 text-neutral-400 italic" colSpan={5}>No referral codes generated yet.</td>
+                </tr>
+              ) : (
+                referrals.map((row) => (
+                  <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
+                    <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
+                    <td className="p-3 font-bold text-neutral-900">{row.referrerName || '—'}</td>
+                    <td className="p-3 font-extrabold text-emerald-700">{row.rewardPoints} pts</td>
+                    <td className="p-3">{row.usedCount} Friends Joined</td>
+                    <td className="p-3">
+                      <button
+                        onClick={() => handleUpdateReward(row.id)}
+                        className="px-3 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-[#800020] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
+                      >
+                        Update Reward
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              )}
             </tbody>
           </table>
         </div>

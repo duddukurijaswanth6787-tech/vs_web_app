@@ -33,6 +33,14 @@ export class TrendingSearchResponse {
   @ApiProperty() count!: number;
 }
 
+export class SearchStatsResponse {
+  @ApiProperty() totalSearches!: number;
+  @ApiProperty() zeroResultCount!: number;
+  @ApiProperty() zeroResultRate!: number;
+  @ApiProperty() clickThroughRate!: number;
+  @ApiPropertyOptional() topQuery?: TrendingSearchResponse;
+}
+
 export class SearchHistoryQueryDto {
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
