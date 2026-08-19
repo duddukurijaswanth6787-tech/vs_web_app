@@ -3,9 +3,10 @@
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2, CheckCircle2 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useAuth } from '@/hooks/useAuth';
+import { usePincodeLookup } from '@/hooks/usePincodeLookup';
 import { useCustomerAddresses } from '@/features/customer/hooks';
 import { customerMeService, AddressDto } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
@@ -44,6 +45,22 @@ export default function EditAddressPage() {
   const [form, setForm] = useState<EditAddressForm | null>(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pincodeFilled, setPincodeFilled] = useState(false);
+  const { lookup: lookupPincode, isLoading: pincodeLoading, notFound: pincodeNotFound } = usePincodeLookup();
+
+  const handlePostalCodeChange = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    setForm((f) => (f ? { ...f, postalCode: digits } : f));
+    setPincodeFilled(false);
+    if (digits.length === 6) {
+      lookupPincode(digits).then((result) => {
+        if (result) {
+          setForm((f) => (f ? { ...f, city: result.city, state: result.state } : f));
+          setPincodeFilled(true);
+        }
+      });
+    }
+  };
 
   const addresses = useMemo(() => {
     if (!data) return [];
@@ -112,11 +129,48 @@ export default function EditAddressPage() {
         ) : (
           <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-3">
             {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
-            {(['fullName', 'phone', 'addressLine1', 'addressLine2', 'city', 'state', 'postalCode'] as const).map((key) => (
+            {(['fullName', 'phone', 'addressLine1', 'addressLine2'] as const).map((key) => (
               <label key={key} className="block space-y-1">
                 <span className="text-xs font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
                 <input
                   required={key !== 'addressLine2'}
+                  value={form[key] || ''}
+                  onChange={(e) => setForm((f) => (f ? { ...f, [key]: e.target.value } : f))}
+                  className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"
+                />
+              </label>
+            ))}
+
+            {/* PIN Code first -- auto-fills City & State below */}
+            <label className="block space-y-1">
+              <span className="text-xs font-semibold">Postal Code</span>
+              <div className="relative">
+                <input
+                  required
+                  value={form.postalCode}
+                  onChange={(e) => handlePostalCodeChange(e.target.value)}
+                  placeholder="6-digit PIN — City & State fill in automatically"
+                  inputMode="numeric"
+                  maxLength={6}
+                  className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 pr-9 text-sm outline-none"
+                />
+                {pincodeLoading && (
+                  <Loader2 className="w-4 h-4 text-neutral-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+                )}
+                {!pincodeLoading && pincodeFilled && (
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-1/2 -translate-y-1/2" />
+                )}
+              </div>
+              {pincodeNotFound && form.postalCode.length === 6 && (
+                <p className="text-[11px] text-amber-600 font-medium">Couldn&apos;t auto-detect this PIN — enter City &amp; State below.</p>
+              )}
+            </label>
+
+            {(['city', 'state'] as const).map((key) => (
+              <label key={key} className="block space-y-1">
+                <span className="text-xs font-semibold capitalize">{key}</span>
+                <input
+                  required
                   value={form[key] || ''}
                   onChange={(e) => setForm((f) => (f ? { ...f, [key]: e.target.value } : f))}
                   className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none"

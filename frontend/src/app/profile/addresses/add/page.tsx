@@ -3,11 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Check, Home, Briefcase, MapPin } from 'lucide-react';
+import { ArrowLeft, Check, Home, Briefcase, MapPin, Loader2, CheckCircle2 } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
+import { usePincodeLookup } from '@/hooks/usePincodeLookup';
 import { customerMeService } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
@@ -34,6 +35,22 @@ export default function ProfileAddAddressPage() {
   const [touched, setTouched] = useState<Record<string, boolean>>({});
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pincodeFilled, setPincodeFilled] = useState(false);
+  const { lookup: lookupPincode, isLoading: pincodeLoading, notFound: pincodeNotFound } = usePincodeLookup();
+
+  const handlePostalCodeChange = (value: string) => {
+    const digits = value.replace(/\D/g, '').slice(0, 6);
+    setForm((f) => ({ ...f, postalCode: digits }));
+    setPincodeFilled(false);
+    if (digits.length === 6) {
+      lookupPincode(digits).then((result) => {
+        if (result) {
+          setForm((f) => ({ ...f, city: result.city, state: result.state }));
+          setPincodeFilled(true);
+        }
+      });
+    }
+  };
 
   if (!isInitializing && !isAuthenticated) {
     return (
@@ -207,7 +224,39 @@ export default function ProfileAddAddressPage() {
             />
           </label>
 
-          {/* City & State Grid */}
+          {/* PIN Code first -- typing it auto-fills City & State below, so the
+              customer only has to type the address once instead of hunting
+              down their own city/state spelling every time. */}
+          <label className="block space-y-1">
+            <span className="text-xs font-semibold text-neutral-700">PIN Code <span className="text-rose-600">*</span></span>
+            <div className="relative">
+              <input
+                value={form.postalCode}
+                onChange={(e) => handlePostalCodeChange(e.target.value)}
+                onBlur={() => handleBlur('postalCode')}
+                placeholder="6-digit PIN — City & State fill in automatically"
+                inputMode="numeric"
+                maxLength={6}
+                className={`w-full border rounded-xl px-3 py-2.5 pr-9 text-sm outline-none transition-colors ${
+                  getFieldError('postalCode') ? 'border-red-400 bg-red-50/30' : 'border-neutral-200'
+                }`}
+              />
+              {pincodeLoading && (
+                <Loader2 className="w-4 h-4 text-neutral-400 animate-spin absolute right-3 top-1/2 -translate-y-1/2" />
+              )}
+              {!pincodeLoading && pincodeFilled && (
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 absolute right-3 top-1/2 -translate-y-1/2" />
+              )}
+            </div>
+            {getFieldError('postalCode') && (
+              <p className="text-[11px] text-red-600 font-medium">{getFieldError('postalCode')}</p>
+            )}
+            {!getFieldError('postalCode') && pincodeNotFound && form.postalCode.length === 6 && (
+              <p className="text-[11px] text-amber-600 font-medium">Couldn&apos;t auto-detect this PIN — enter City &amp; State below.</p>
+            )}
+          </label>
+
+          {/* City & State Grid — auto-filled from the PIN above, still editable */}
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
               <span className="text-xs font-semibold text-neutral-700">City <span className="text-rose-600">*</span></span>
@@ -242,35 +291,14 @@ export default function ProfileAddAddressPage() {
             </label>
           </div>
 
-          {/* Postal Code & Country */}
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">PIN Code <span className="text-rose-600">*</span></span>
-              <input
-                value={form.postalCode}
-                onChange={(e) => setForm((f) => ({ ...f, postalCode: e.target.value }))}
-                onBlur={() => handleBlur('postalCode')}
-                placeholder="6-digit PIN"
-                inputMode="numeric"
-                maxLength={6}
-                className={`w-full border rounded-xl px-3 py-2.5 text-sm outline-none transition-colors ${
-                  getFieldError('postalCode') ? 'border-red-400 bg-red-50/30' : 'border-neutral-200'
-                }`}
-              />
-              {getFieldError('postalCode') && (
-                <p className="text-[11px] text-red-600 font-medium">{getFieldError('postalCode')}</p>
-              )}
-            </label>
-
-            <label className="block space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">Country</span>
-              <input
-                value={form.country}
-                onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
-                className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-3 py-2.5 text-sm outline-none text-neutral-700 font-medium"
-              />
-            </label>
-          </div>
+          <label className="block space-y-1">
+            <span className="text-xs font-semibold text-neutral-700">Country</span>
+            <input
+              value={form.country}
+              onChange={(e) => setForm((f) => ({ ...f, country: e.target.value }))}
+              className="w-full border border-neutral-200 bg-neutral-50 rounded-xl px-3 py-2.5 text-sm outline-none text-neutral-700 font-medium"
+            />
+          </label>
 
           {/* Set as Default Address Checkbox */}
           <label className="flex items-center gap-2.5 pt-1 cursor-pointer">
