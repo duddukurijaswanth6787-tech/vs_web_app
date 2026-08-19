@@ -34,6 +34,28 @@ export const customerAuthService = {
     return tokens;
   },
 
+  /**
+   * Phone login where Firebase already sent the SMS and confirmed the code
+   * client-side (see src/lib/firebase/phoneAuth.ts) -- `idToken` is what
+   * `confirmationResult.confirm(code)` returns. The backend re-verifies that
+   * token against Firebase before trusting the phone number and issuing its
+   * own session, so this is not just a client-side check.
+   */
+  loginWithFirebasePhone: async (dto: {
+    idToken: string;
+    firstName?: string;
+    rememberMe?: boolean;
+  }): Promise<AuthTokens> => {
+    const res = await apiClient.post<StandardResponse<AuthTokens>>(
+      '/auth/otp/firebase-login',
+      dto,
+    );
+    const tokens = res.data.data!;
+    setClientTokens(tokens);
+    customerWishlistService.syncGuestWishlist().catch(() => {});
+    return tokens;
+  },
+
   register: async (dto: Record<string, unknown>): Promise<AuthTokens> => {
     const res = await apiClient.post<StandardResponse<AuthTokens>>('/auth/register', dto);
     const tokens = res.data.data!;

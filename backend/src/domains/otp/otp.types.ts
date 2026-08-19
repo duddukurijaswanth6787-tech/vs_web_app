@@ -70,6 +70,25 @@ export class OtpLoginDto {
   rememberMe?: boolean;
 }
 
+export class FirebasePhoneLoginDto {
+  @ApiProperty({
+    description:
+      'Firebase ID token returned by confirmationResult.confirm(code) after Firebase verified the SMS OTP client-side.',
+  })
+  @IsString()
+  idToken!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  firstName?: string;
+
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
+}
+
 export class SendOtpResponse {
   @ApiProperty() phone!: string;
   @ApiProperty() expiresInSeconds!: number;

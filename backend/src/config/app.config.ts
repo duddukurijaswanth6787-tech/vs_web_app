@@ -116,6 +116,13 @@ export default registerAs('app', () => ({
     apiKey: process.env.SMS_API_KEY || '',
     senderId: process.env.SMS_SENDER_ID || 'VASANT',
   },
+  firebase: {
+    projectId: process.env.FIREBASE_PROJECT_ID || '',
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
+    // Service-account private keys are stored with literal "\n" sequences in
+    // most env var UIs (Railway, etc); FirebaseAdminService un-escapes them.
+    privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
+  },
   push: {
     enabled: process.env.ENABLE_PUSH === 'true',
     serverKey: process.env.PUSH_SERVER_KEY || '',

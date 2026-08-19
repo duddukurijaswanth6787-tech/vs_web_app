@@ -9,7 +9,12 @@ import {
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { OtpService } from './otp.service';
-import { SendOtpDto, VerifyOtpDto, OtpLoginDto } from './otp.types';
+import {
+  SendOtpDto,
+  VerifyOtpDto,
+  OtpLoginDto,
+  FirebasePhoneLoginDto,
+} from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('OTP Auth')
@@ -43,6 +48,23 @@ export class OtpController {
   async login(@Body() dto: OtpLoginDto, @Req() req: Request) {
     return ResponseBuilder.success(
       await this.otpService.loginWithOtp(
+        dto,
+        req.ip,
+        req.headers['user-agent'],
+      ),
+      'OTP login successful',
+    );
+  }
+
+  @Post('firebase-login')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Login or register with a phone number verified via Firebase Phone Auth (client already confirmed the SMS code with Firebase)',
+  })
+  async firebaseLogin(@Body() dto: FirebasePhoneLoginDto, @Req() req: Request) {
+    return ResponseBuilder.success(
+      await this.otpService.loginWithFirebasePhone(
         dto,
         req.ip,
         req.headers['user-agent'],
