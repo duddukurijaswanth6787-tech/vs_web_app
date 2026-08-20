@@ -9,5 +9,6 @@ import { AppSettingRepository } from './app-setting.repository';
   imports: [AuthModule, AuditModule],
   controllers: [AppSettingController],
   providers: [AppSettingService, AppSettingRepository],
+  exports: [AppSettingRepository],
 })
 export class AppSettingModule {}
