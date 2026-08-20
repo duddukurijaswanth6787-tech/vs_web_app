@@ -1,9 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
-import { Printer, CheckCircle2, QrCode } from 'lucide-react';
+import React, { useEffect, useState } from 'react';
+import { Printer, CheckCircle2, QrCode, Usb, AlertTriangle } from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
 import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
+import { webUsbPrinterService } from '@/features/pos/webusb-printer';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function PrintersConfigPage() {
   const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS'>('BROWSER');
@@ -11,8 +13,47 @@ export default function PrintersConfigPage() {
   const [testLabelSize, setTestLabelSize] = useState<LabelSize>('SMALL');
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
+  const [usbSupported, setUsbSupported] = useState(true);
+  const [usbConnected, setUsbConnected] = useState(false);
+  const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
+  const [usbConnecting, setUsbConnecting] = useState(false);
+  const [usbError, setUsbError] = useState('');
+
   const previewReceiptMutation = usePreviewReceipt();
   const batchStickersMutation = useBatchStickers();
+
+  useEffect(() => {
+    setUsbSupported(webUsbPrinterService.isSupported());
+    webUsbPrinterService.reconnectPrevious().then((reconnected) => {
+      if (reconnected) {
+        setUsbConnected(true);
+        setUsbDeviceName(webUsbPrinterService.connectedDeviceName());
+        setPrintMode('ESCPOS');
+      }
+    });
+  }, []);
+
+  const handleConnectUsb = async () => {
+    setUsbError('');
+    setUsbConnecting(true);
+    try {
+      await webUsbPrinterService.requestAndConnect();
+      setUsbConnected(true);
+      setUsbDeviceName(webUsbPrinterService.connectedDeviceName());
+      setPrintMode('ESCPOS');
+    } catch (err) {
+      setUsbError(getApiErrorMessage(err, 'Could not connect to a USB printer.'));
+    } finally {
+      setUsbConnecting(false);
+    }
+  };
+
+  const handleDisconnectUsb = async () => {
+    await webUsbPrinterService.disconnect();
+    setUsbConnected(false);
+    setUsbDeviceName(null);
+    setPrintMode('BROWSER');
+  };
 
   const handleTestPrintReceipt = () => {
     previewReceiptMutation.mutate(
@@ -29,7 +70,16 @@ export default function PrintersConfigPage() {
         taxTotal: 140,
       },
       {
-        onSuccess: (res) => {
+        onSuccess: async (res) => {
+          if (printMode === 'ESCPOS' && usbConnected) {
+            try {
+              await webUsbPrinterService.printBase64(res.escposBase64);
+              setTestSuccessMessage('Test receipt sent directly to the USB printer!');
+            } catch (err) {
+              setUsbError(getApiErrorMessage(err, 'USB print failed.'));
+            }
+            return;
+          }
           const printWindow = window.open('', '_blank');
           if (printWindow) {
             printWindow.document.write(res.html);
@@ -59,7 +109,16 @@ export default function PrintersConfigPage() {
         labelSize: testLabelSize,
       },
       {
-        onSuccess: (res) => {
+        onSuccess: async (res) => {
+          if (printMode === 'ESCPOS' && usbConnected) {
+            try {
+              await webUsbPrinterService.printText(res.tspl);
+              setTestSuccessMessage('Test barcode sticker labels sent directly to the USB printer!');
+            } catch (err) {
+              setUsbError(getApiErrorMessage(err, 'USB print failed.'));
+            }
+            return;
+          }
           const printWindow = window.open('', '_blank');
           if (printWindow) {
             printWindow.document.write(res.html);
@@ -130,21 +189,65 @@ export default function PrintersConfigPage() {
           </div>
 
           <div
-            className="bg-neutral-50 p-5 rounded-2xl border-2 border-dashed border-neutral-300 opacity-70 cursor-not-allowed"
-            title="Not available yet -- requires a local print daemon or WebUSB/WebSerial integration that hasn't been built."
+            className={`bg-white p-5 rounded-2xl border-2 transition-all ${
+              !usbSupported
+                ? 'border-neutral-200 opacity-60'
+                : printMode === 'ESCPOS'
+                  ? 'border-[#800020] ring-2 ring-[#800020]/10 shadow-sm cursor-pointer'
+                  : 'border-neutral-200 hover:border-neutral-300 cursor-pointer'
+            }`}
+            onClick={() => usbSupported && usbConnected && setPrintMode('ESCPOS')}
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">Mode 2 (Direct Hardware)</span>
-              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
-                Coming soon
-              </span>
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 2 (Direct Hardware)</span>
+              {printMode === 'ESCPOS' && usbConnected && <CheckCircle2 className="w-5 h-5 text-[#800020]" />}
             </div>
-            <h3 className="text-sm font-bold text-neutral-500 mb-1">ESC/POS Direct Hardware Daemon</h3>
-            <p className="text-xs text-neutral-500 leading-relaxed">
-              Raw binary ESC/POS output for instant paper cut &amp; cash drawer kick. The server can already
-              generate this data (see below) but there is no local daemon or WebUSB/WebSerial bridge wired up yet
-              to deliver it to a printer, so every receipt/label goes through browser print for now.
+            <h3 className="text-sm font-bold text-neutral-900 mb-1">USB Direct-Connect (WebUSB)</h3>
+            <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+              Streams raw ESC/POS receipt and TSPL label bytes straight to a printer plugged in by USB-C -- no
+              browser print dialog. Chrome/Edge/Opera desktop only, and only works if the printer exposes a raw
+              USB interface rather than registering itself as a standard system printer (some do, some don&apos;t --
+              there&apos;s no way to know without trying).
             </p>
+
+            {!usbSupported ? (
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                <span>This browser doesn&apos;t support WebUSB. Use Chrome, Edge, or Opera.</span>
+              </div>
+            ) : usbConnected ? (
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
+                  <Usb className="w-4 h-4" />
+                  <span>Connected: {usbDeviceName || 'USB printer'}</span>
+                </div>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDisconnectUsb();
+                  }}
+                  className="text-xs font-bold text-rose-700 hover:text-rose-900"
+                >
+                  Disconnect
+                </button>
+              </div>
+            ) : (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleConnectUsb();
+                }}
+                disabled={usbConnecting}
+                className="w-full bg-neutral-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                <Usb className="w-3.5 h-3.5" />
+                <span>{usbConnecting ? 'Connecting…' : 'Connect USB Printer'}</span>
+              </button>
+            )}
+
+            {usbError && (
+              <p className="text-[11px] font-medium text-rose-700 mt-2 leading-relaxed">{usbError}</p>
+            )}
           </div>
         </div>
 
