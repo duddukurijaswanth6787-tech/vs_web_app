@@ -37,6 +37,7 @@ import {
   useCustomerWishlist,
   useCustomerAddresses,
   useCustomerOrders,
+  useActiveCoupons,
 } from '@/features/customer/hooks';
 import type { CartDto } from '@/features/customer/cart.service';
 
@@ -247,6 +248,8 @@ function AuthenticatedAccountView() {
   const { data: cartData } = useCustomerCart();
   const { data: addressesData } = useCustomerAddresses();
   const { data: ordersData } = useCustomerOrders();
+  const { data: couponsData } = useActiveCoupons();
+  const couponsCount = Array.isArray(couponsData) ? couponsData.length : 0;
 
   const profRec = (profile || {}) as Record<string, unknown>;
   const userRec = (user || {}) as Record<string, unknown>;
@@ -254,12 +257,16 @@ function AuthenticatedAccountView() {
     profile?.firstName || user?.firstName
       ? `${profile?.firstName || user?.firstName || ''} ${profile?.lastName || user?.lastName || ''}`.trim()
       : profile?.email?.split('@')[0] || user?.email?.split('@')[0] || String(userRec.phone || '') || 'Customer';
-  const email = profile?.email || user?.email || '';
+  const rawEmail = profile?.email || user?.email || '';
+  // OTP-only signups get an auto-generated placeholder email (see
+  // otp.service.ts findOrCreateUserByPhone) purely to satisfy the DB's
+  // unique-email constraint -- never show that internal value to the customer.
+  const email = /^otp_\d+@vasanthi\.local$/i.test(rawEmail) ? '' : rawEmail;
   const rawPhone = String(profRec.phone || userRec.phone || '');
   const phone = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91 ${rawPhone}`) : '';
   const points = Number(profRec.loyaltyPoints ?? userRec.loyaltyPoints ?? 0);
   const tier = String(profRec.tier || userRec.tier || 'Member');
-  const avatarUrl = profile?.avatarUrl || String(userRec.avatarUrl || '') || PLACEHOLDER_IMAGE;
+  const avatarUrl = profile?.avatarUrl || String(userRec.avatarUrl || '') || '';
 
   const wishlistRec = (wishlistData || {}) as Record<string, unknown>;
   const wishlistCount = Array.isArray(wishlistData)
@@ -359,15 +366,19 @@ function AuthenticatedAccountView() {
           <div className="flex items-center justify-between gap-3">
             {/* User Profile Summary */}
             <div className="flex items-center gap-3">
-              <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-amber-300/80 shadow-md shrink-0">
-                <Image src={avatarUrl} alt={name} width={56} height={56} className="w-full h-full object-cover" />
+              <div className="relative w-14 h-14 rounded-full overflow-hidden border-2 border-amber-300/80 shadow-md shrink-0 flex items-center justify-center bg-white/15">
+                {avatarUrl ? (
+                  <Image src={avatarUrl} alt={name} width={56} height={56} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-xl font-bold font-serif text-white">{name.charAt(0).toUpperCase()}</span>
+                )}
               </div>
               <div className="space-y-0.5">
                 <h2 className="text-lg font-bold font-serif flex items-center gap-1.5">
                   <span>Hi, {name.split(' ')[0]}</span>
                   <span className="text-base">👋</span>
                 </h2>
-                <p className="text-[11px] text-rose-100 opacity-90 truncate max-w-[150px]">{email}</p>
+                {email && <p className="text-[11px] text-rose-100 opacity-90 truncate max-w-[150px]">{email}</p>}
                 <p className="text-[11px] text-rose-100 opacity-90">{phone}</p>
                 <div className="pt-1">
                   <Link
@@ -412,7 +423,7 @@ function AuthenticatedAccountView() {
             <Link href="/offers" className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
               <Tag className="w-4 h-4 text-rose-200" />
               <span className="text-[10px] text-rose-200">Coupons</span>
-              <span className="text-xs font-extrabold text-white">5</span>
+              <span className="text-xs font-extrabold text-white">{couponsCount}</span>
             </Link>
 
             <Link href="/profile/addresses" className="flex flex-col items-center gap-0.5 hover:opacity-80 transition-opacity">
