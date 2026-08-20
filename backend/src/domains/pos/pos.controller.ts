@@ -114,6 +114,8 @@ export class PosController {
   }
 
   @Post('printers/preview-receipt')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Preview Invoice Thermal Receipt (HTML & ESC/POS Base64)',

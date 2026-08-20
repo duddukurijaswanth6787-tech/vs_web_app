@@ -12,9 +12,10 @@ import {
   Share,
 } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Printer, Check, ArrowRight, Package, AlertCircle, Copy } from 'lucide-react-native';
+import { Printer, Check, ArrowRight, Package, AlertCircle, Copy, Bluetooth } from 'lucide-react-native';
 import { barcodeService, getApiErrorMessage, type CreatedVariant, type LabelSize, LABEL_SIZE_OPTIONS } from '../services/api';
 import { getLastCreatedProduct, clearLastCreatedProduct } from '../services/product-draft';
+import { bluetoothPrinterService } from '../services/bluetooth-printer';
 
 /**
  * Final step of the add-product flow: show the barcode the backend issued for
@@ -69,14 +70,19 @@ export default function LabelPreviewScreen() {
         labelSize,
       });
 
-      // No print module ships with this app, so the generated label is shared
-      // out to whatever can consume it (label printer app, AirPrint, email).
-      await Share.share({
-        title: `Label — ${variant.sku}`,
-        message: label.tspl || label.html,
-      });
+      if (bluetoothPrinterService.isConnected()) {
+        // Raw TSPL commands go straight to the connected label printer.
+        await bluetoothPrinterService.printText(label.tspl);
+      } else {
+        // No printer connected, so the generated label is shared out to
+        // whatever can consume it instead (label printer app, AirPrint, email).
+        await Share.share({
+          title: `Label — ${variant.sku}`,
+          message: label.tspl || label.html,
+        });
+      }
     } catch (err) {
-      Alert.alert('Could not generate label', getApiErrorMessage(err, 'Label generation failed'));
+      Alert.alert('Could not print label', getApiErrorMessage(err, 'Label generation failed'));
     } finally {
       setPrintingId(null);
     }
@@ -127,6 +133,15 @@ export default function LabelPreviewScreen() {
           </TouchableOpacity>
         ))}
       </View>
+
+      <TouchableOpacity style={styles.printerStatusRow} onPress={() => router.push('/printer-settings')}>
+        <Bluetooth size={14} color={bluetoothPrinterService.isConnected() ? '#15803d' : '#9ca3af'} style={{ marginRight: 8 }} />
+        <Text style={styles.printerStatusText}>
+          {bluetoothPrinterService.isConnected()
+            ? `Printer connected — labels print directly to ${bluetoothPrinterService.connectedDeviceName() || 'device'}`
+            : 'No printer connected — labels will be shared instead. Tap to connect one.'}
+        </Text>
+      </TouchableOpacity>
 
       {product.variants.map((variant) => (
         <View key={variant.variantId} style={styles.stickerCard}>
@@ -277,6 +292,18 @@ const styles = StyleSheet.create({
   labelSizeChipTitleActive: { color: '#ffffff' },
   labelSizeChipDim: { fontSize: 10, color: '#9ca3af', marginTop: 1 },
   labelSizeChipDimActive: { color: '#bae6fd' },
+
+  printerStatusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e5e7eb',
+    borderRadius: 12,
+    padding: 12,
+    marginTop: 10,
+  },
+  printerStatusText: { flex: 1, color: '#6b7280', fontSize: 11, lineHeight: 16 },
 
   stickerCard: {
     backgroundColor: '#ffffff',
