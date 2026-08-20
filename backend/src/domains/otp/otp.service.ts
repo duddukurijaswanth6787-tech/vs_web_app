@@ -50,7 +50,7 @@ export class OtpService {
     const phone = this.normalizePhone(dto.phone);
     const purpose = dto.purpose ?? 'LOGIN';
     const code = this.generateCode();
-    const expiryMinutes = IDENTITY_CONSTANTS.OTP_EXPIRY_MINUTES;
+    const expiryMinutes = await this.otpGatewayService.getExpiryMinutes();
     const expiresAt = new Date(Date.now() + expiryMinutes * 60 * 1000);
 
     await this.prisma.otpChallenge.updateMany({
