@@ -2,9 +2,47 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { Prisma } from '@prisma/client';
 
+// Cap on how many text-matched candidates we rank/paginate in memory --
+// mirrors the existing 1000-row cap in getAvailableFilters below. A real
+// text query narrows the catalog enough that this is never actually hit
+// in practice; it just bounds worst-case memory for a query like "a".
+const RANKED_CANDIDATE_CAP = 3000;
+
 @Injectable()
 export class SearchRepository {
   constructor(private readonly prisma: PrismaService) {}
+
+  /**
+   * Full-text + trigram relevance ranking over Postgres directly, using the
+   * generated `searchVector` tsvector column (see migration
+   * 20260820010000_add_product_full_text_search). Falls back to trigram
+   * similarity on the name so typos ("saaree") still surface results, and to
+   * a plain SKU/barcode substring match for exact-code lookups.
+   */
+  private async getRankedProductIds(
+    q: string,
+  ): Promise<{ id: string; rank: number }[]> {
+    const like = `%${q}%`;
+    return this.prisma.$queryRaw<{ id: string; rank: number }[]>`
+      SELECT "id",
+        GREATEST(
+          ts_rank("searchVector", plainto_tsquery('english', ${q})),
+          similarity("name", ${q}) * 0.5
+        ) AS rank
+      FROM "products"
+      WHERE "deletedAt" IS NULL
+        AND "isPublished" = true
+        AND "visibility" = 'VISIBLE'
+        AND (
+          "searchVector" @@ plainto_tsquery('english', ${q})
+          OR similarity("name", ${q}) > 0.25
+          OR "sku" ILIKE ${like}
+          OR "barcode" ILIKE ${like}
+        )
+      ORDER BY rank DESC
+      LIMIT ${RANKED_CANDIDATE_CAP}
+    `;
+  }
 
   async search(params: {
     q?: string;
@@ -59,14 +97,25 @@ export class SearchRepository {
       visibility: 'VISIBLE',
     };
 
+    let rankMap: Map<string, number> | null = null;
     if (q) {
+      const ranked = await this.getRankedProductIds(q);
+      if (ranked.length === 0) {
+        return {
+          data: [],
+          meta: {
+            page,
+            limit,
+            total: 0,
+            totalPages: 1,
+            hasNext: false,
+            hasPrevious: false,
+          },
+        };
+      }
+      rankMap = new Map(ranked.map((r) => [r.id, Number(r.rank)]));
       where.OR = [
-        { name: { contains: q, mode: 'insensitive' } },
-        { shortDescription: { contains: q, mode: 'insensitive' } },
-        { searchKeywords: { contains: q, mode: 'insensitive' } },
-        { sku: { contains: q, mode: 'insensitive' } },
-        { barcode: { contains: q, mode: 'insensitive' } },
-        { tags: { has: q } },
+        { id: { in: ranked.map((r) => r.id) } },
         { brand: { name: { contains: q, mode: 'insensitive' } } },
       ];
     }
@@ -112,6 +161,45 @@ export class SearchRepository {
       where.AND = attributeConditions.map((c) => c);
     }
 
+    const include: Prisma.ProductInclude = {
+      brand: { select: { id: true, name: true, slug: true } },
+      categories: {
+        include: { category: { select: { id: true, name: true, slug: true } } },
+      },
+    };
+
+    // With a text query, "relevance" means the tsvector/trigram rank
+    // computed above, which isn't a sortable DB column -- fetch every
+    // filtered candidate (bounded by the ranked-id cap), rank in memory,
+    // then paginate the sorted array.
+    if (rankMap) {
+      const matches = await this.prisma.product.findMany({ where, include });
+      const sorted =
+        sortBy === 'relevance'
+          ? matches.sort(
+              (a, b) => (rankMap!.get(b.id) ?? 0) - (rankMap!.get(a.id) ?? 0),
+            )
+          : matches.sort((a: any, b: any) => {
+              const av = a[sortBy];
+              const bv = b[sortBy];
+              const cmp = av < bv ? -1 : av > bv ? 1 : 0;
+              return sortOrder === 'asc' ? cmp : -cmp;
+            });
+      const total = sorted.length;
+      const data = sorted.slice((page - 1) * limit, (page - 1) * limit + limit);
+      return {
+        data,
+        meta: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit) || 1,
+          hasNext: page < Math.ceil(total / limit),
+          hasPrevious: page > 1,
+        },
+      };
+    }
+
     const orderBy: Prisma.ProductOrderByWithRelationInput[] =
       sortBy === 'relevance'
         ? [
@@ -120,13 +208,6 @@ export class SearchRepository {
             { createdAt: 'desc' },
           ]
         : [{ [sortBy]: sortOrder }];
-
-    const include: Prisma.ProductInclude = {
-      brand: { select: { id: true, name: true, slug: true } },
-      categories: {
-        include: { category: { select: { id: true, name: true, slug: true } } },
-      },
-    };
 
     const [data, total] = await Promise.all([
       this.prisma.product.findMany({
