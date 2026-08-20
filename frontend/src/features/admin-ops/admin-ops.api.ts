@@ -34,6 +34,13 @@ export interface OtpGatewayConfigDto {
   apiKeyConfigured: boolean;
 }
 
+export interface OtpTemplateOptionDto {
+  id: string;
+  body: string;
+  usesAppName: boolean;
+  usesExpiry: boolean;
+}
+
 export interface DtdcShipmentDto {
   id: string;
   orderId: string;
@@ -90,6 +97,11 @@ export const adminOpsApi = {
     dto: Partial<Omit<OtpGatewayConfigDto, 'apiKeyConfigured'>> & { apiKey?: string },
   ): Promise<OtpGatewayConfigDto> => {
     const res = await apiClient.put<StandardResponse<OtpGatewayConfigDto>>('/admin/otp-gateway/config', dto);
+    return res.data.data!;
+  },
+
+  getOtpTemplates: async (): Promise<OtpTemplateOptionDto[]> => {
+    const res = await apiClient.get<StandardResponse<OtpTemplateOptionDto[]>>('/admin/otp-gateway/templates');
     return res.data.data!;
   },
 

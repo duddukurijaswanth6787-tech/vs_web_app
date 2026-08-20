@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { KeyRound, Save, RefreshCw, ShieldCheck, ShieldAlert } from 'lucide-react';
-import { adminOpsApi, OtpGatewayConfigDto } from '@/features/admin-ops/admin-ops.api';
+import { adminOpsApi, OtpGatewayConfigDto, OtpTemplateOptionDto } from '@/features/admin-ops/admin-ops.api';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -24,6 +24,11 @@ export default function OtpGatewayAdminPage() {
   const { data: config, refetch } = useQuery({
     queryKey: ['admin', 'otp-gateway', 'config'],
     queryFn: () => adminOpsApi.getOtpGatewayConfig(),
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: ['admin', 'otp-gateway', 'templates'],
+    queryFn: () => adminOpsApi.getOtpTemplates(),
   });
 
   useEffect(() => {
@@ -155,8 +160,37 @@ export default function OtpGatewayAdminPage() {
 
         <div className="pt-2 border-t border-neutral-100 space-y-4">
           <p className="text-[11px] text-neutral-500">
-            Paste the Template ID for each purpose from StartMessaging&apos;s dashboard (API Docs &amp; Test → Templates Reference).
+            Click a template below to assign it to Login, Register, or Verify Phone — or paste a Template ID directly into the fields underneath.
           </p>
+
+          {templates.length > 0 && (
+            <div className="space-y-2">
+              {templates.map((t) => (
+                <TemplateCard
+                  key={t.id}
+                  template={t}
+                  selectedFor={
+                    form.templateLogin === t.id
+                      ? 'Login'
+                      : form.templateRegister === t.id
+                        ? 'Register'
+                        : form.templateVerifyPhone === t.id
+                          ? 'Verify Phone'
+                          : null
+                  }
+                  onAssign={(purpose) =>
+                    setForm((f) => ({
+                      ...f,
+                      ...(purpose === 'Login' ? { templateLogin: t.id } : {}),
+                      ...(purpose === 'Register' ? { templateRegister: t.id } : {}),
+                      ...(purpose === 'Verify Phone' ? { templateVerifyPhone: t.id } : {}),
+                    }))
+                  }
+                />
+              ))}
+            </div>
+          )}
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="space-y-1">
               <label className="text-xs font-bold text-neutral-700 block">Login OTP Template ID</label>
@@ -200,6 +234,44 @@ export default function OtpGatewayAdminPage() {
           <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
         </button>
       </form>
+    </div>
+  );
+}
+
+type OtpPurposeLabel = 'Login' | 'Register' | 'Verify Phone';
+const PURPOSES: OtpPurposeLabel[] = ['Login', 'Register', 'Verify Phone'];
+
+function TemplateCard({
+  template,
+  selectedFor,
+  onAssign,
+}: {
+  template: OtpTemplateOptionDto;
+  selectedFor: OtpPurposeLabel | null;
+  onAssign: (purpose: OtpPurposeLabel) => void;
+}) {
+  return (
+    <div className="border border-neutral-200 rounded-xl p-3 flex flex-col sm:flex-row sm:items-center gap-3">
+      <div className="flex-1 min-w-0">
+        <code className="text-[10px] text-neutral-400 block truncate">{template.id}</code>
+        <p className="text-xs text-neutral-800 mt-0.5">{template.body}</p>
+      </div>
+      <div className="flex gap-1.5 shrink-0">
+        {PURPOSES.map((purpose) => (
+          <button
+            key={purpose}
+            type="button"
+            onClick={() => onAssign(purpose)}
+            className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${
+              selectedFor === purpose
+                ? 'bg-[#800020] border-[#800020] text-white'
+                : 'bg-white border-neutral-300 text-neutral-600 hover:border-[#800020] hover:text-[#800020]'
+            }`}
+          >
+            {selectedFor === purpose ? `✓ ${purpose}` : purpose}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
