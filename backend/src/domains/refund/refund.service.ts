@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
+import { PaymentService } from '@domains/payment/payment.service';
 import { RefundRepository } from './refund.repository';
 import {
   CreateRefundDto,
@@ -20,6 +21,7 @@ export class RefundService {
   constructor(
     private readonly refundRepository: RefundRepository,
     private readonly auditService: AuditService,
+    private readonly paymentService: PaymentService,
   ) {}
 
   private toResponse(r: any): RefundResponse {
@@ -112,14 +114,32 @@ export class RefundService {
       );
     }
 
+    let transactionId = dto.transactionId;
+    let finalStatus: string = dto.status;
+
+    // Approving a refund actually moves the money -- calls Razorpay's
+    // refund API right here rather than just recording a status change, so
+    // "approved" and "money sent" can't drift apart. If Razorpay confirms
+    // the refund instantly it's marked COMPLETED immediately; otherwise it
+    // stays APPROVED until the refund.processed webhook (handled in
+    // PaymentService.handleWebhook) or a manual admin completion.
+    if (dto.status === RefundStatus.APPROVED) {
+      const result = await this.paymentService.refundPayment(
+        refund.paymentId,
+        Number(refund.amount),
+      );
+      transactionId = result.razorpayRefundId;
+      finalStatus = result.status === 'processed' ? RefundStatus.COMPLETED : RefundStatus.APPROVED;
+    }
+
     const updated = await this.refundRepository.update(id, {
-      status: dto.status,
+      status: finalStatus,
       adminNotes: dto.adminNotes,
-      transactionId: dto.transactionId,
+      transactionId,
       updatedBy: userId,
     });
 
-    if (dto.status === RefundStatus.COMPLETED) {
+    if (finalStatus === RefundStatus.COMPLETED) {
       await this.auditService.log({
         action: 'REFUND_COMPLETED',
         module: 'refund',

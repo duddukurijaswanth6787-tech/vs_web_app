@@ -3,6 +3,8 @@ import { OrderWorkflowService } from './order-workflow.service';
 import { PrismaService } from '@database/prisma.service';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { EmailService } from '@domains/email/email.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import { BusinessException } from '@common/exceptions';
 
 describe('OrderWorkflowService - atomic inventory deduction/reservation', () => {
@@ -49,6 +51,8 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: { log: jest.fn() } },
         { provide: NotificationService, useValue: { create: jest.fn() } },
+        { provide: EmailService, useValue: { sendOrderConfirmationEmail: jest.fn() } },
+        { provide: OtpGatewayService, useValue: { sendOrderConfirmedSms: jest.fn() } },
       ],
     }).compile();
 

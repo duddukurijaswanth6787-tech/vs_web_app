@@ -1,12 +1,12 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { CheckoutService } from './checkout.service';
 import { CartService } from '@domains/cart/cart.service';
 import { CouponService } from '@domains/coupon/coupon.service';
 import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
-import { EmailService } from '@domains/email/email.service';
-import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
+import { PaymentService } from '@domains/payment/payment.service';
 import { PrismaService } from '@database/prisma.service';
 
 describe('CheckoutService', () => {
@@ -33,6 +33,7 @@ describe('CheckoutService', () => {
           useValue: {
             generateOrderNumber: jest.fn(),
             reserveInventory: jest.fn(),
+            notifyOrderConfirmed: jest.fn(),
           },
         },
         {
@@ -40,12 +41,12 @@ describe('CheckoutService', () => {
           useValue: { log: jest.fn() },
         },
         {
-          provide: EmailService,
-          useValue: { sendOrderConfirmationEmail: jest.fn() },
+          provide: PaymentService,
+          useValue: { create: jest.fn() },
         },
         {
-          provide: OtpGatewayService,
-          useValue: { sendOrderConfirmedSms: jest.fn() },
+          provide: ConfigService,
+          useValue: { get: jest.fn() },
         },
         {
           provide: PrismaService,

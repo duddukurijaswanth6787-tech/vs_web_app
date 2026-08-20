@@ -61,6 +61,7 @@ export class PaymentService {
       status: p.status,
       amount: Number(p.amount),
       currency: p.currency,
+      providerOrderId: p.providerOrderId ?? undefined,
       transactionId: p.transactionId ?? undefined,
       transactions:
         includeTransactions && p.transactions
@@ -259,6 +260,8 @@ export class PaymentService {
       throw err;
     }
 
+    await this.orderWorkflowService.notifyOrderConfirmed(payment.orderId);
+
     await this.auditService.log({
       action: 'PAYMENT_CAPTURED',
       module: 'payment',
@@ -268,6 +271,45 @@ export class PaymentService {
     });
 
     return this.toResponse(updated, true);
+  }
+
+  /**
+   * Actually moves money back to the customer via Razorpay's refund API,
+   * rather than just bookkeeping a status change. Called by RefundService
+   * when an admin approves a refund. Mirrors isRazorpayEnabled()'s mock
+   * fallback used elsewhere in this service, so dev/unconfigured
+   * environments behave the same way payment capture already does.
+   */
+  async refundPayment(
+    paymentId: string,
+    amount: number,
+  ): Promise<{ razorpayRefundId: string; status: 'pending' | 'processed' | 'failed' }> {
+    const payment = await this.paymentRepository.findById(paymentId);
+    if (!payment) {
+      throw new BusinessException('Payment not found', 'PAYMENT_001');
+    }
+    if (!payment.providerPaymentId) {
+      throw new BusinessException(
+        'This payment has no captured provider payment ID to refund',
+        'PAYMENT_007',
+      );
+    }
+
+    if (!this.isRazorpayEnabled()) {
+      return { razorpayRefundId: `rfnd_mock_${Date.now()}`, status: 'processed' };
+    }
+
+    try {
+      const refund = await this.razorpay.payments.refund(payment.providerPaymentId, {
+        amount: Math.round(amount * 100),
+      });
+      return { razorpayRefundId: refund.id, status: refund.status };
+    } catch (err: any) {
+      throw new BusinessException(
+        `Razorpay refund failed: ${err.message || err}`,
+        'PAYMENT_008',
+      );
+    }
   }
 
   async handleWebhook(rawBody: string, signature: string) {
@@ -351,6 +393,8 @@ export class PaymentService {
         throw err;
       }
 
+      await this.orderWorkflowService.notifyOrderConfirmed(payment.orderId);
+
       await this.auditService.log({
         action: 'PAYMENT_CAPTURED_WEBHOOK',
         module: 'payment',
@@ -396,6 +440,36 @@ export class PaymentService {
           });
         }
       }
+      return { status: 'processed' };
+    }
+
+    if (event.event === 'refund.processed') {
+      const refundEntity = payload.refund.entity;
+      const razorpayRefundId = refundEntity.id;
+
+      const refund = await this.prisma.refund.findFirst({
+        where: { transactionId: razorpayRefundId },
+      });
+      if (!refund) {
+        return { status: 'ignored', reason: 'Refund not found' };
+      }
+      if (refund.status === 'COMPLETED') {
+        return { status: 'ignored', reason: 'Already completed' };
+      }
+
+      await this.prisma.refund.update({
+        where: { id: refund.id },
+        data: { status: 'COMPLETED' },
+      });
+
+      await this.auditService.log({
+        action: 'REFUND_COMPLETED_WEBHOOK',
+        module: 'refund',
+        resource: 'Refund',
+        resourceId: refund.id,
+        userId: 'SYSTEM',
+      });
+
       return { status: 'processed' };
     }
 

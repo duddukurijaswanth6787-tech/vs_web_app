@@ -57,6 +57,7 @@ export class PaymentResponse {
   @ApiProperty() status!: string;
   @ApiProperty() amount!: number;
   @ApiProperty() currency!: string;
+  @ApiPropertyOptional() providerOrderId?: string;
   @ApiPropertyOptional() transactionId?: string;
   @ApiPropertyOptional({ type: [PaymentTransactionResponse] })
   transactions?: PaymentTransactionResponse[];

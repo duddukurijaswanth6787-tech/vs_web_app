@@ -192,6 +192,13 @@ export default function RefundsPage() {
 }
 
 // Inner helper component to manage refund details
+// Mirrors the backend's VALID_TRANSITIONS in refund.service.ts -- REQUESTED
+// and REJECTED/COMPLETED (terminal) allow no further transitions here.
+const NEXT_STATUSES: Partial<Record<RefundStatus, RefundStatus[]>> = {
+  REQUESTED: ['APPROVED', 'REJECTED'] as RefundStatus[],
+  APPROVED: ['COMPLETED'] as RefundStatus[],
+};
+
 function ManageRefundDialog({
   refund,
   onClose,
@@ -205,6 +212,8 @@ function ManageRefundDialog({
   const [adminNotes, setAdminNotes] = useState(refund.adminNotes || '');
   const [transactionId, setTransactionId] = useState(refund.transactionId || '');
   const [refundStatus, setRefundStatus] = useState<RefundStatus>(refund.status);
+  const selectableStatuses = [refund.status, ...(NEXT_STATUSES[refund.status] || [])];
+  const isTerminal = selectableStatuses.length === 1;
 
   const updateMut = useUpdateRefundStatus();
 
@@ -261,25 +270,34 @@ function ManageRefundDialog({
             <select
               value={refundStatus}
               onChange={(e) => setRefundStatus(e.target.value as RefundStatus)}
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none"
+              disabled={isTerminal}
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none disabled:opacity-60"
             >
-              <option value="REQUESTED">REQUESTED</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="REJECTED">REJECTED</option>
-              <option value="COMPLETED">COMPLETED</option>
+              {selectableStatuses.map((s) => (
+                <option key={s} value={s}>{s}</option>
+              ))}
             </select>
+            {isTerminal && (
+              <p className="mt-1 text-[10px] text-neutral-400">This refund is in a final state and can no longer be changed.</p>
+            )}
           </div>
 
           {/* Transaction ID */}
           <div>
             <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Transaction ID</label>
-            <input
-              type="text"
-              value={transactionId}
-              onChange={(e) => setTransactionId(e.target.value)}
-              placeholder="e.g. rfnd_P1dG684H2j9z"
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none"
-            />
+            {refundStatus === 'APPROVED' ? (
+              <p className="mt-1 text-[11px] text-neutral-500 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2">
+                Filled in automatically once Razorpay confirms the refund — no need to enter one.
+              </p>
+            ) : (
+              <input
+                type="text"
+                value={transactionId}
+                onChange={(e) => setTransactionId(e.target.value)}
+                placeholder="e.g. rfnd_P1dG684H2j9z"
+                className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none"
+              />
+            )}
           </div>
 
           {/* Admin notes */}
@@ -305,8 +323,8 @@ function ManageRefundDialog({
             </button>
             <button
               type="submit"
-              disabled={updateMut.isPending}
-              className="bg-neutral-900 hover:bg-neutral-850 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center"
+              disabled={updateMut.isPending || isTerminal}
+              className="bg-neutral-900 hover:bg-neutral-850 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm flex items-center disabled:opacity-60"
             >
               {updateMut.isPending && <ButtonLoader />} Save Changes
             </button>

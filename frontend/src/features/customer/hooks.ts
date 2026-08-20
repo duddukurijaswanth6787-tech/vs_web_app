@@ -357,7 +357,7 @@ export function useCheckoutPreview(addressId?: string, couponCode?: string) {
 export function usePlaceOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto: { addressId: string; shippingMethod?: string; notes?: string; couponCode?: string }) => customerCheckoutService.placeOrder(dto),
+    mutationFn: (dto: { addressId: string; shippingMethod?: string; notes?: string; couponCode?: string; paymentMethod?: 'COD' | 'RAZORPAY' }) => customerCheckoutService.placeOrder(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.cart() });
       queryClient.invalidateQueries({ queryKey: customerKeys.orders() });

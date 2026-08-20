@@ -59,6 +59,7 @@ describe('PaymentService', () => {
       .fn()
       .mockResolvedValue({ id: 'order-uuid-222', status: 'CONFIRMED' }),
     deductInventory: jest.fn().mockResolvedValue(null),
+    notifyOrderConfirmed: jest.fn().mockResolvedValue(undefined),
   };
 
   const mockConfig = {
