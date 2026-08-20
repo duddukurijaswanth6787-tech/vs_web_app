@@ -9,8 +9,13 @@ import {
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2, ShoppingBag, RotateCcw, CloudUpload, Printer } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem, PosMobileCustomer, getApiErrorMessage } from '../services/api';
+import { PosMobileCartItem, PosMobileCustomer, getCurrentUser } from '../services/api';
 import { bluetoothPrinterService } from '../services/bluetooth-printer';
+
+const STORE_NAME = "VASANTHI'S SIGNATURE";
+const STORE_TAGLINE = 'Haute Couture & Boutique';
+const STORE_ADDRESS = 'Road No. 12, Banjara Hills, Hyderabad - 500034';
+const STORE_PHONE = '+91 98765 43210';
 
 export default function SaleSuccessScreen() {
   const router = useRouter();
@@ -47,16 +52,35 @@ export default function SaleSuccessScreen() {
     try {
       const items: PosMobileCartItem[] = cartJson ? JSON.parse(cartJson) : [];
       const customer: PosMobileCustomer | undefined = customerJson ? JSON.parse(customerJson) : undefined;
-      const receipt = await posMobileService.previewReceipt({
+      const subtotal = items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0);
+      const taxTotal = Math.round(subtotal * 0.05 * 100) / 100;
+      const user = getCurrentUser();
+      await bluetoothPrinterService.printReceipt({
+        storeName: STORE_NAME,
+        storeTagline: STORE_TAGLINE,
+        address: STORE_ADDRESS,
+        phone: STORE_PHONE,
         orderNumber,
+        dateStr: new Date().toLocaleString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        }),
+        cashierName: user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() || undefined : undefined,
+        customerName: customer?.fullName,
+        customerPhone: customer?.phone,
+        items: items.map((i) => ({
+          title: i.variantTitle ? `${i.productName} (${i.variantTitle})` : i.productName,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+        subtotal,
+        taxTotal,
         grandTotal: Number(grandTotal),
-        items,
-        customer,
         paymentMethod,
       });
-      await bluetoothPrinterService.printBase64(receipt.escposBase64);
     } catch (err) {
-      Alert.alert('Print Failed', getApiErrorMessage(err, 'Could not print the receipt.'));
+      Alert.alert('Print Failed', err instanceof Error ? err.message : 'Could not print the receipt.');
     } finally {
       setPrinting(false);
     }

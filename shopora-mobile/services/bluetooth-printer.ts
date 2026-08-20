@@ -1,85 +1,157 @@
 import { PermissionsAndroid, Platform } from 'react-native';
-import { BleManager, Device, State, Subscription } from 'react-native-ble-plx';
-import { fromByteArray, toByteArray } from 'base64-js';
 
 /**
- * Bluetooth thermal printer integration -- UNTESTED, NO BLE HARDWARE.
- *
- * Built without access to a physical Bluetooth printer or any BLE radio (the
- * build/dev sandbox has neither), so nothing here has run against real
- * hardware. Treat it as a wired-up starting point: verify every step below
- * on an actual device and printer before relying on it in the store. This
- * mirrors bluetooth-scanner.ts's caveats -- read that file's header too if
- * you haven't.
- *
- * IMPORTANT -- read this before wiring anything to a real printer:
- * Most cheap 58mm/80mm "Bluetooth thermal printer" units sold for retail use
- * classic Bluetooth SPP (serial port profile), NOT Bluetooth Low Energy.
- * This file only reaches BLE printers -- a smaller but real category (some
- * modern Epson/Star/Zjiang models expose a BLE GATT serial service). Check
- * your printer's spec sheet for "BLE" / "Bluetooth Low Energy" support
- * before assuming this will find it; if it only supports classic SPP, it
- * won't show up in the scan here at all, and a different native module
- * (react-native-ble-plx is BLE-only by design) would be needed for that
- * transport instead.
- *
- * SERVICE_UUID and CHARACTERISTIC_UUID below are PLACEHOLDERS -- there is no
- * industry-standard UUID for a printer's write characteristic, every vendor
- * picks their own (often documented in the printer's SDK/manual, sometimes
- * discoverable by connecting once and calling device.discoverAllServicesAndCharacteristics()
- * and inspecting what's returned). Replace them with your printer's real
- * values before this can print anything.
- *
- * What this DOES give you for free: the backend already renders receipts to
- * raw ESC/POS bytes (POST /pos/printers/preview-receipt -> escposBase64) and
- * labels to raw TSPL command text (POST /pos/barcodes/batch-stickers ->
- * tspl) -- both are exactly what a printer's write characteristic expects,
- * so printText()/printBase64() below just stream those bytes through
- * unmodified. No print-formatting logic needs to live in the app.
- *
- * Build requirement: same as the scanner -- react-native-ble-plx is a
- * native module, so this needs a custom dev client or an EAS build, not
- * plain Expo Go.
+ * `tp-react-native-bluetooth-printer` ships a types/index.d.ts that doesn't
+ * match its own runtime behaviour (verified directly against its Android
+ * source): the declared constant TSC_BARCODETYPE.BARCODE128 doesn't exist
+ * on the real runtime object (it's CODE128 there), and scanDevices() is
+ * typed as resolving with a parsed object but the native module actually
+ * resolves it with a JSON *string* that still needs JSON.parse. Trusting
+ * the bad types would either fail to compile or silently break at runtime,
+ * so this file imports the native modules untyped and defines its own
+ * constants/interfaces below, cross-checked against the library's actual
+ * index.js and Android source rather than its declaration file.
  */
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+const BluetoothPrinterNative = require('tp-react-native-bluetooth-printer');
 
-// TODO: replace with the real service/characteristic UUIDs from your
-// printer's documentation -- these are placeholders and will not match any
-// real device.
-export const PRINTER_SERVICE_UUID = '000018F0-0000-1000-8000-00805F9B34FB';
-export const PRINTER_CHARACTERISTIC_UUID = '00002AF1-0000-1000-8000-00805F9B34FB';
-
-/** Conservative default write size in bytes -- the safe minimum before MTU negotiation (3-byte ATT header subtracted from the 23-byte default MTU). Raised after connect() negotiates a bigger MTU on Android. */
-const DEFAULT_CHUNK_SIZE = 20;
-/** Small pause between chunk writes -- most cheap printer receive buffers can't keep up with an unthrottled burst. */
-const WRITE_DELAY_MS = 20;
-
-export interface DiscoveredPrinter {
-  id: string;
-  name: string | null;
-  rssi: number | null;
+interface NativeBluetoothManager {
+  isBluetoothEnabled(): Promise<boolean>;
+  scanDevices(): Promise<string>;
+  connect(address: string): Promise<void>;
 }
 
-function textToBytes(text: string): Uint8Array {
-  const bytes = new Uint8Array(text.length);
-  for (let i = 0; i < text.length; i++) {
-    bytes[i] = text.charCodeAt(i) & 0xff;
-  }
-  return bytes;
+interface NativeEscposPrinter {
+  printerInit(): Promise<void>;
+  printerAlign(align: number): Promise<void>;
+  printText(text: string, options: Record<string, unknown>): Promise<void>;
+  printColumn(
+    columnWidths: number[],
+    columnAligns: number[],
+    columnTexts: string[],
+    options: Record<string, unknown>,
+  ): Promise<void>;
+}
+
+interface NativeTscPrinter {
+  printLabel(options: Record<string, unknown>): Promise<void>;
+}
+
+const BluetoothManager = BluetoothPrinterNative.BluetoothManager as NativeBluetoothManager;
+const BluetoothEscposPrinter = BluetoothPrinterNative.BluetoothEscposPrinter as NativeEscposPrinter;
+const BluetoothTscPrinter = BluetoothPrinterNative.BluetoothTscPrinter as NativeTscPrinter;
+
+/** Constant values the native module expects -- copied from the library's
+ * actual index.js (not its declaration file, see note above). */
+const ALIGN = { LEFT: 0, CENTER: 1, RIGHT: 2 };
+const TEAR = { ON: 'ON', OFF: 'OFF' };
+const READABLE = { DISABLE: 0, ENABLE: 1 };
+const FONTTYPE = { FONT_1: '1', FONT_2: '2' };
+const TSC_ROTATION = { ROTATION_0: 0 };
+const TSC_BARCODETYPE = { CODE128: '128' };
+const DIRECTION = { FORWARD: 0, BACKWARD: 1 };
+
+/**
+ * Bluetooth thermal printer integration -- UNTESTED, NO PHYSICAL PRINTER.
+ *
+ * Built without access to real Bluetooth-printer hardware (the build/dev
+ * sandbox has none), so nothing here has run against a real device. Treat
+ * it as a wired-up starting point: verify every step below with an actual
+ * printer before relying on it in the store.
+ *
+ * WHY THIS LIBRARY (classic Bluetooth / SPP), NOT BLE:
+ * An earlier version of this file used react-native-ble-plx (Bluetooth Low
+ * Energy). That turned out to be the wrong transport for real hardware --
+ * virtually every budget 58mm/80mm "Bluetooth thermal printer" sold for
+ * retail (the kind suitable for both POS receipts and barcode stickers on
+ * one device) uses classic Bluetooth SPP, not BLE, and a BLE-only library
+ * simply can't see or connect to them. This file uses
+ * `tp-react-native-bluetooth-printer` instead, an actively-maintained fork
+ * of the long-standing `react-native-bluetooth-escpos-printer` -- it talks
+ * classic SPP and, notably, bundles BOTH an ESC/POS driver (for receipts)
+ * and a TSC/TSPL driver (for barcode labels) in one native module, matching
+ * a single printer doing both jobs.
+ *
+ * WHY STRUCTURED PRINT CALLS, NOT RAW BYTES:
+ * The BLE version streamed the backend's pre-rendered raw ESC/POS/TSPL
+ * bytes straight through. This library doesn't expose a raw-byte-write
+ * method on its public JS API (checked its native Android source directly
+ * -- only printText/printColumn/printPic/printBarCode/printQRCode for
+ * receipts and a structured printLabel() for TSC labels) -- pushing binary
+ * control bytes through its text methods would get mangled by their
+ * GBK-encoding step. So printReceipt()/printLabel() below build the output
+ * from the structured calls directly, instead of consuming the backend's
+ * escposBase64/tspl fields.
+ *
+ * KNOWN RISK: this library was last published years ago, targets an old
+ * Android compileSdkVersion in its own build.gradle, and predates React
+ * Native's New Architecture. This app has `newArchEnabled: false` in
+ * app.json (the legacy bridge), which is what makes an old-style native
+ * module like this viable at all -- if that ever flips to true, this
+ * module would need re-evaluating first.
+ *
+ * Build requirement: same as the barcode scanner -- this is a native
+ * module, so it needs a custom dev client or an EAS build, not plain Expo
+ * Go.
+ */
+
+export interface DiscoveredPrinter {
+  address: string;
+  name: string | null;
+}
+
+export interface PrinterReceiptItem {
+  title: string;
+  quantity: number;
+  unitPrice: number;
+}
+
+export interface PrinterReceiptData {
+  storeName: string;
+  storeTagline?: string;
+  address?: string;
+  phone?: string;
+  orderNumber: string;
+  dateStr: string;
+  cashierName?: string;
+  customerName?: string;
+  customerPhone?: string;
+  items: PrinterReceiptItem[];
+  subtotal: number;
+  discountTotal?: number;
+  taxTotal?: number;
+  grandTotal: number;
+  paymentMethod?: string;
+}
+
+export interface PrinterLabelData {
+  productName: string;
+  variantTitle?: string;
+  sku: string;
+  barcode: string;
+  price: number;
+  storeName?: string;
+  /** Number of copies to print. Defaults to 1. */
+  quantity?: number;
+}
+
+function parseDeviceList(raw: unknown): DiscoveredPrinter[] {
+  const list = Array.isArray(raw) ? raw : [];
+  return list
+    .map((entry) => (typeof entry === 'string' ? JSON.parse(entry) : entry))
+    .filter((d): d is { address: string; name?: string } => Boolean(d?.address))
+    .map((d) => ({ address: d.address, name: d.name ?? null }));
+}
+
+function money(n: number): string {
+  return `Rs.${n.toFixed(2)}`;
 }
 
 class BluetoothPrinterService {
-  private manager: BleManager | null = null;
-  private connectedDevice: Device | null = null;
-  private disconnectSubscription: Subscription | null = null;
-  private chunkSize = DEFAULT_CHUNK_SIZE;
-  private onDisconnectCallbacks = new Set<() => void>();
+  private connectedAddress: string | null = null;
+  private connectedName: string | null = null;
 
-  private getManager(): BleManager {
-    if (!this.manager) this.manager = new BleManager();
-    return this.manager;
-  }
-
-  /** Android 12+ requires runtime BLUETOOTH_SCAN/BLUETOOTH_CONNECT grants in addition to the manifest entries the config plugin adds. */
+  /** Android 12+ requires runtime BLUETOOTH_SCAN/BLUETOOTH_CONNECT grants in addition to the manifest entries this library bundles. Classic SPP scanning also needs location permission on older Android, same as BLE. */
   async requestPermissions(): Promise<boolean> {
     if (Platform.OS !== 'android') return true;
     if (Platform.Version < 31) {
@@ -98,114 +170,190 @@ class BluetoothPrinterService {
     );
   }
 
-  async getState(): Promise<State> {
-    return this.getManager().state();
+  async isBluetoothEnabled(): Promise<boolean> {
+    return BluetoothManager.isBluetoothEnabled();
   }
 
-  /** Scans for nearby BLE peripherals for up to `timeoutMs`, reporting each one found. Stop with stopScan() once the user picks a device. */
-  startScan(onDeviceFound: (device: DiscoveredPrinter) => void, timeoutMs = 15000): void {
-    const manager = this.getManager();
-    manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
-      if (error) {
-        console.warn('[BluetoothPrinter] scan error', error);
-        this.stopScan();
-        return;
-      }
-      if (device) {
-        onDeviceFound({ id: device.id, name: device.name, rssi: device.rssi });
-      }
-    });
-    setTimeout(() => this.stopScan(), timeoutMs);
+  /** Scans for classic-Bluetooth devices, returning already-paired and newly-found ones separately (paired devices are usually the printer once it's been paired once in phone Settings). */
+  async scanDevices(): Promise<{ paired: DiscoveredPrinter[]; found: DiscoveredPrinter[] }> {
+    const raw = await BluetoothManager.scanDevices();
+    const parsed = JSON.parse(raw) as { paired?: unknown[]; found?: unknown[] };
+    return {
+      paired: parseDeviceList(parsed.paired),
+      found: parseDeviceList(parsed.found),
+    };
   }
 
-  stopScan(): void {
-    this.manager?.stopDeviceScan();
+  async connect(device: DiscoveredPrinter): Promise<void> {
+    await BluetoothManager.connect(device.address);
+    this.connectedAddress = device.address;
+    this.connectedName = device.name;
   }
 
-  /** Connects to a printer the user picked from startScan's results and negotiates a larger MTU where possible so prints go faster. */
-  async connect(deviceId: string): Promise<void> {
-    const manager = this.getManager();
-    this.stopScan();
-
-    let device = await manager.connectToDevice(deviceId);
-    await device.discoverAllServicesAndCharacteristics();
-
-    if (Platform.OS === 'android') {
-      try {
-        device = await device.requestMTU(185);
-        this.chunkSize = Math.max(DEFAULT_CHUNK_SIZE, device.mtu - 3);
-      } catch {
-        this.chunkSize = DEFAULT_CHUNK_SIZE; // printer/phone didn't support the request -- fall back to the safe default
-      }
-    }
-
-    this.connectedDevice = device;
-    this.disconnectSubscription = manager.onDeviceDisconnected(device.id, () => {
-      this.connectedDevice = null;
-      this.disconnectSubscription?.remove();
-      this.disconnectSubscription = null;
-      this.onDisconnectCallbacks.forEach((cb) => cb());
-    });
-  }
-
+  /**
+   * The native module has no "disconnect but stay paired" method -- only
+   * `unpair(address)`, which removes the OS-level Bluetooth pairing
+   * entirely (requiring the user to re-pair from phone Settings next
+   * time). That's too destructive for a routine "Disconnect" button, so
+   * this only forgets the connection on the app's side; connecting again
+   * (to this or another printer) replaces it at the native layer.
+   */
   async disconnect(): Promise<void> {
-    this.disconnectSubscription?.remove();
-    this.disconnectSubscription = null;
-    if (this.connectedDevice) {
-      await this.manager?.cancelDeviceConnection(this.connectedDevice.id).catch(() => {});
-      this.connectedDevice = null;
-    }
+    this.connectedAddress = null;
+    this.connectedName = null;
   }
 
   isConnected(): boolean {
-    return this.connectedDevice != null;
+    return this.connectedAddress != null;
   }
 
   connectedDeviceName(): string | null {
-    return this.connectedDevice?.name ?? null;
+    return this.connectedName;
   }
 
-  /** Registers a listener fired when the connected printer drops the link unexpectedly. Returns an unsubscribe function. */
-  onDisconnect(callback: () => void): () => void {
-    this.onDisconnectCallbacks.add(callback);
-    return () => this.onDisconnectCallbacks.delete(callback);
-  }
-
-  /** Writes raw bytes to the printer, split into MTU-sized chunks with a short delay between writes. */
-  private async printBytes(bytes: Uint8Array): Promise<void> {
-    if (!this.connectedDevice) {
+  /** Sends a short line to confirm the connection actually reaches the printer. */
+  async testPrint(): Promise<void> {
+    if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
-    for (let offset = 0; offset < bytes.length; offset += this.chunkSize) {
-      const chunk = bytes.slice(offset, offset + this.chunkSize);
-      const chunkBase64 = fromByteArray(chunk);
-      await this.connectedDevice.writeCharacteristicWithoutResponseForService(
-        PRINTER_SERVICE_UUID,
-        PRINTER_CHARACTERISTIC_UUID,
-        chunkBase64,
-      );
-      if (offset + this.chunkSize < bytes.length) {
-        await new Promise((resolve) => setTimeout(resolve, WRITE_DELAY_MS));
-      }
+    await BluetoothEscposPrinter.printerInit();
+    await BluetoothEscposPrinter.printerAlign(ALIGN.CENTER);
+    await BluetoothEscposPrinter.printText('Shopora POS -- Test Print OK\n\n\n', {});
+  }
+
+  /** Prints a POS sale receipt using the printer's built-in ESC/POS text/column commands. */
+  async printReceipt(receipt: PrinterReceiptData): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
+    const P = BluetoothEscposPrinter;
+
+    await P.printerInit();
+    await P.printerAlign(ALIGN.CENTER);
+    await P.printText(`${receipt.storeName}\n\r`, { widthtimes: 1, heigthtimes: 1 });
+    if (receipt.storeTagline) await P.printText(`${receipt.storeTagline}\n\r`, {});
+    if (receipt.address) await P.printText(`${receipt.address}\n\r`, {});
+    if (receipt.phone) await P.printText(`Ph: ${receipt.phone}\n\r`, {});
+    await P.printText('--------------------------------\n\r', {});
+
+    await P.printerAlign(ALIGN.LEFT);
+    await P.printText(`Invoice: ${receipt.orderNumber}\n\r`, {});
+    await P.printText(`Date: ${receipt.dateStr}\n\r`, {});
+    if (receipt.cashierName) await P.printText(`Cashier: ${receipt.cashierName}\n\r`, {});
+    if (receipt.customerName) {
+      const suffix = receipt.customerPhone ? ` (${receipt.customerPhone})` : '';
+      await P.printText(`Customer: ${receipt.customerName}${suffix}\n\r`, {});
+    }
+    await P.printText('--------------------------------\n\r', {});
+
+    for (const item of receipt.items) {
+      await P.printColumn([24, 8], [ALIGN.LEFT, ALIGN.RIGHT], [item.title, `x${item.quantity}`], {});
+      await P.printColumn(
+        [24, 8],
+        [ALIGN.LEFT, ALIGN.RIGHT],
+        ['', money(item.unitPrice * item.quantity)],
+        {},
+      );
+    }
+    await P.printText('--------------------------------\n\r', {});
+
+    await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['Subtotal', money(receipt.subtotal)], {});
+    if (receipt.discountTotal) {
+      await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['Discount', `-${money(receipt.discountTotal)}`], {});
+    }
+    if (receipt.taxTotal) {
+      await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['GST', money(receipt.taxTotal)], {});
+    }
+    await P.printText('\n\r', {});
+    await P.printColumn(
+      [20, 12],
+      [ALIGN.LEFT, ALIGN.RIGHT],
+      ['TOTAL', money(receipt.grandTotal)],
+      { widthtimes: 1, heigthtimes: 1 },
+    );
+    if (receipt.paymentMethod) await P.printText(`Payment: ${receipt.paymentMethod}\n\r`, {});
+
+    await P.printText('\n\r', {});
+    await P.printerAlign(ALIGN.CENTER);
+    await P.printText('Thank You For Shopping With Us!\n\r\n\r\n\r', {});
   }
 
-  /** Prints base64-encoded raw data as-is -- for the backend's escposBase64 receipt payload. */
-  async printBase64(base64Data: string): Promise<void> {
-    await this.printBytes(toByteArray(base64Data));
-  }
+  /** Prints `quantity` copies of a barcode sticker label using the printer's built-in TSC/TSPL commands. Label geometry (50mm x 30mm, 2mm gap) assumes a common small sticker roll -- adjust to match your actual label stock. */
+  async printLabel(label: PrinterLabelData): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    const copies = Math.max(1, label.quantity ?? 1);
+    const textFields = [
+      {
+        text: (label.storeName || 'VASANTHI').toUpperCase(),
+        x: 10,
+        y: 6,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: label.productName.slice(0, 28),
+        x: 10,
+        y: 30,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      ...(label.variantTitle
+        ? [
+            {
+              text: label.variantTitle.slice(0, 28),
+              x: 10,
+              y: 50,
+              fonttype: FONTTYPE.FONT_1,
+              rotation: TSC_ROTATION.ROTATION_0,
+              xscal: 1,
+              yscal: 1,
+            },
+          ]
+        : []),
+      {
+        text: `Rs.${label.price}`,
+        x: 10,
+        y: 70,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+    ];
 
-  /** Prints a plain-text command payload -- for the backend's raw TSPL label commands. */
-  async printText(text: string): Promise<void> {
-    await this.printBytes(textToBytes(text));
-  }
-
-  destroy(): void {
-    this.disconnect();
-    this.manager?.destroy();
-    this.manager = null;
+    for (let i = 0; i < copies; i++) {
+      await BluetoothTscPrinter.printLabel({
+        width: 50,
+        height: 30,
+        gap: 2,
+        direction: DIRECTION.FORWARD,
+        reference: [0, 0],
+        tear: TEAR.ON,
+        sound: 0,
+        text: textFields,
+        barcode: [
+          {
+            x: 10,
+            y: 100,
+            type: TSC_BARCODETYPE.CODE128,
+            height: 40,
+            readable: READABLE.ENABLE,
+            rotation: TSC_ROTATION.ROTATION_0,
+            code: label.barcode,
+            wide: 2,
+            narrow: 1,
+          },
+        ],
+      });
+    }
   }
 }
 
-/** Single shared instance for the app's lifetime -- mirrors bluetoothScannerService in services/api.ts's session pattern. Connection is in-memory only (not persisted across app restarts), matching how the login session itself works in this app. */
+/** Single shared instance for the app's lifetime -- mirrors the in-memory pattern used elsewhere. Connection is in-memory only (not persisted across app restarts). */
 export const bluetoothPrinterService = new BluetoothPrinterService();
