@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import {
   Barcode,
@@ -15,6 +15,7 @@ import { ScanBarcodeResult, LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos
 import { useStockIn } from '@/features/inventory/inventory.hooks';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { webUsbPrinterService } from '@/features/pos/webusb-printer';
 
 export default function AddStockPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -31,7 +32,17 @@ export default function AddStockPage() {
 
   // Sticker Preview Modal
   const [stickerHtml, setStickerHtml] = useState('');
+  const [stickerTspl, setStickerTspl] = useState('');
   const [previewModalOpen, setPreviewModalOpen] = useState(false);
+  const [labelPrinting, setLabelPrinting] = useState(false);
+
+  // USB direct-connect printer -- see /pos/printers for the connect UI.
+  const [usbPrinterConnected, setUsbPrinterConnected] = useState(false);
+  useEffect(() => {
+    webUsbPrinterService.reconnectPrevious().then((reconnected) => {
+      if (reconnected) setUsbPrinterConnected(true);
+    });
+  }, []);
 
   const scanMutation = useScanBarcode();
   const batchStickersMutation = useBatchStickers();
@@ -89,6 +100,7 @@ export default function AddStockPage() {
               {
                 onSuccess: (res) => {
                   setStickerHtml(res.html);
+                  setStickerTspl(res.tspl);
                   setPreviewModalOpen(true);
                 },
               },
@@ -106,7 +118,23 @@ export default function AddStockPage() {
     );
   };
 
-  const triggerLabelPrint = () => {
+  const triggerLabelPrint = async () => {
+    if (usbPrinterConnected && stickerTspl) {
+      setLabelPrinting(true);
+      try {
+        await webUsbPrinterService.printText(stickerTspl);
+      } catch (err) {
+        toast('error', 'USB print failed', getApiErrorMessage(err, 'Falling back to browser print.'));
+        printViaBrowser();
+      } finally {
+        setLabelPrinting(false);
+      }
+      return;
+    }
+    printViaBrowser();
+  };
+
+  const printViaBrowser = () => {
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(stickerHtml);
@@ -123,6 +151,8 @@ export default function AddStockPage() {
     setPreviewModalOpen(false);
     setSelectedVariant(null);
     setBarcodeInput('');
+    setStickerHtml('');
+    setStickerTspl('');
   };
 
   return (
@@ -390,13 +420,20 @@ export default function AddStockPage() {
               />
             </div>
 
+            {usbPrinterConnected && stickerTspl && (
+              <p className="text-[11px] font-bold text-emerald-700">
+                USB printer connected -- will print directly, no dialog.
+              </p>
+            )}
+
             <div className="flex items-center gap-3">
               <button
                 onClick={triggerLabelPrint}
-                className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+                disabled={labelPrinting}
+                className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
-                <span>Print All {quantityReceived} Sticker Labels</span>
+                <span>{labelPrinting ? 'Printing…' : `Print All ${quantityReceived} Sticker Labels`}</span>
               </button>
               <button
                 onClick={closeLabelModal}

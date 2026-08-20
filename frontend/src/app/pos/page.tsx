@@ -25,7 +25,9 @@ import {
   CloudUpload,
   AlertTriangle,
   Clock,
+  Usb,
 } from 'lucide-react';
+import Link from 'next/link';
 import {
   useScanBarcode,
   useAdoptHandoffSession,
@@ -47,6 +49,7 @@ import { offlineScanCacheDb, normalizeScanCacheKey } from '@/features/pos/offlin
 import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceipt';
 import { PendingSale } from '@/features/pos/offline/offline.types';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { webUsbPrinterService } from '@/features/pos/webusb-printer';
 
 const TERMINAL_ID = 'COUNTER_1';
 
@@ -66,7 +69,19 @@ export default function DesktopPosPage() {
   const [handoffPin, setHandoffPin] = useState('');
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [receiptHtml, setReceiptHtml] = useState('');
+  const [receiptEscposBase64, setReceiptEscposBase64] = useState('');
   const [completedOrder, setCompletedOrder] = useState<Record<string, unknown> | null>(null);
+
+  // USB direct-connect printer -- see /pos/printers for the connect UI.
+  // Re-attaches to a printer authorized in an earlier visit (no new
+  // permission prompt needed) so this page doesn't require a detour
+  // through Printer Settings every time it loads.
+  const [usbPrinterConnected, setUsbPrinterConnected] = useState(false);
+  useEffect(() => {
+    webUsbPrinterService.reconnectPrevious().then((reconnected) => {
+      if (reconnected) setUsbPrinterConnected(true);
+    });
+  }, []);
 
   // Customer Lookup & Order History state
   const [customerLookupResult, setCustomerLookupResult] = useState<PosCustomerLookupResult | null>(null);
@@ -303,6 +318,7 @@ export default function DesktopPosPage() {
             {
               onSuccess: (receiptRes) => {
                 setReceiptHtml(receiptRes.html);
+                setReceiptEscposBase64(receiptRes.escposBase64);
                 setReceiptModalOpen(true);
               },
               onError: () => {
@@ -337,6 +353,9 @@ export default function DesktopPosPage() {
                     attempts: 0,
                   }),
                 );
+                // No escposBase64 for this fallback receipt -- fall back to
+                // browser print if the cashier hits Print while this is showing.
+                setReceiptEscposBase64('');
                 setReceiptModalOpen(true);
               },
             },
@@ -381,6 +400,7 @@ export default function DesktopPosPage() {
           setCompletedOrder(null);
           setOfflineNotice(sale);
           setReceiptHtml(generateOfflineReceiptHtml(sale));
+          setReceiptEscposBase64('');
           setReceiptModalOpen(true);
 
           setCart([]);
@@ -402,6 +422,24 @@ export default function DesktopPosPage() {
         printWindow.close();
       }, 250);
     }
+  };
+
+  const [receiptPrinting, setReceiptPrinting] = useState(false);
+
+  const handlePrintReceipt = async () => {
+    if (usbPrinterConnected && receiptEscposBase64) {
+      setReceiptPrinting(true);
+      try {
+        await webUsbPrinterService.printBase64(receiptEscposBase64);
+      } catch (err) {
+        setSaleError(getApiErrorMessage(err, 'USB print failed -- falling back to browser print.'));
+        triggerBrowserPrint();
+      } finally {
+        setReceiptPrinting(false);
+      }
+      return;
+    }
+    triggerBrowserPrint();
   };
 
   return (
@@ -468,6 +506,18 @@ export default function DesktopPosPage() {
             <Smartphone className="w-4 h-4 text-amber-700 animate-pulse" />
             <span>Receive Mobile Session (Handoff)</span>
           </button>
+
+          <Link
+            href="/pos/printers"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+              usbPrinterConnected
+                ? 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border-emerald-200'
+                : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200'
+            }`}
+          >
+            <Usb className="w-4 h-4" />
+            <span>{usbPrinterConnected ? 'Printer Connected' : 'Printer Settings'}</span>
+          </Link>
 
           {activeSession && (
             <div className="flex items-center gap-2 bg-emerald-50 text-emerald-800 border border-emerald-200 px-3 py-2 rounded-xl text-xs font-bold">
@@ -914,14 +964,22 @@ export default function DesktopPosPage() {
               />
             </div>
 
+            {usbPrinterConnected && receiptEscposBase64 && (
+              <div className="flex items-center gap-1.5 text-[11px] font-bold text-emerald-700">
+                <Usb className="w-3.5 h-3.5" />
+                <span>USB printer connected -- will print directly, no dialog.</span>
+              </div>
+            )}
+
             {/* Print Action Buttons */}
             <div className="flex items-center gap-3">
               <button
-                onClick={triggerBrowserPrint}
-                className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs"
+                onClick={handlePrintReceipt}
+                disabled={receiptPrinting}
+                className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
-                <span>Print Thermal Invoice</span>
+                <span>{receiptPrinting ? 'Printing…' : 'Print Thermal Invoice'}</span>
               </button>
               <button
                 onClick={() => setReceiptModalOpen(false)}
