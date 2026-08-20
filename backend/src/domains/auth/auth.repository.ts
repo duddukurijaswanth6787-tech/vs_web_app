@@ -289,6 +289,9 @@ export class AuthRepository {
     lastName?: string;
     phone?: string;
     isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
+    googleId?: string;
+    avatar?: string;
   }) {
     return this.prisma.user.create({
       data: {
@@ -298,8 +301,33 @@ export class AuthRepository {
         lastName: data.lastName,
         phone: data.phone,
         isPhoneVerified: data.isPhoneVerified ?? false,
+        isEmailVerified: data.isEmailVerified ?? false,
+        googleId: data.googleId,
+        avatar: data.avatar,
         accountStatus: 'ACTIVE',
       },
+    });
+  }
+
+  async findByGoogleId(googleId: string) {
+    return this.prisma.user.findUnique({
+      where: { googleId },
+      include: {
+        userRoles: {
+          include: {
+            role: {
+              include: { rolePermissions: { include: { permission: true } } },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async linkGoogleId(userId: string, googleId: string) {
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { googleId, isEmailVerified: true },
     });
   }
 

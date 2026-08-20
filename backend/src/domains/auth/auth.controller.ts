@@ -16,6 +16,7 @@ import {
   LoginDto,
   RefreshDto,
   ChangePasswordDto,
+  GoogleLoginDto,
   AuthTokensResponse,
 } from './auth.types';
 import { JwtAuthGuard, CurrentUser } from './guards/jwt-auth.guard';
@@ -62,21 +63,11 @@ export class AuthController {
   @Post('google')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Authenticate or register customer with Google OAuth',
+    summary: 'Authenticate or register customer with Google Sign-In',
   })
-  async googleAuth(
-    @Body()
-    body: {
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      avatar?: string;
-      googleId?: string;
-    },
-    @Req() req: Request,
-  ) {
+  async googleAuth(@Body() dto: GoogleLoginDto, @Req() req: Request) {
     const result = await this.authService.googleLogin(
-      body,
+      dto,
       req.ip,
       req.headers['user-agent'],
     );

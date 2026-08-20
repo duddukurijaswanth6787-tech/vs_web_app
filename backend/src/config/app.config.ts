@@ -138,6 +138,12 @@ export default registerAs('app', () => ({
     // most env var UIs (Railway, etc); FirebaseAdminService un-escapes them.
     privateKey: process.env.FIREBASE_PRIVATE_KEY || '',
   },
+  google: {
+    // Web OAuth client ID from Google Cloud Console -- used both to verify
+    // the `aud` claim on ID tokens the frontend hands us, and (implicitly,
+    // by the frontend) to initialize Google's Sign-In button.
+    clientId: process.env.GOOGLE_CLIENT_ID || '',
+  },
   push: {
     enabled: process.env.ENABLE_PUSH === 'true',
     serverKey: process.env.PUSH_SERVER_KEY || '',

@@ -56,6 +56,22 @@ export const customerAuthService = {
     return tokens;
   },
 
+  /**
+   * `credential` is the signed ID token Google's Sign-In button hands us
+   * client-side -- the backend re-verifies it against Google's public keys
+   * before trusting any of its claims, so this is not just a client-side check.
+   */
+  loginWithGoogle: async (credential: string, rememberMe = true): Promise<AuthTokens> => {
+    const res = await apiClient.post<StandardResponse<AuthTokens>>('/auth/google', {
+      credential,
+      rememberMe,
+    });
+    const tokens = res.data.data!;
+    setClientTokens(tokens);
+    customerWishlistService.syncGuestWishlist().catch(() => {});
+    return tokens;
+  },
+
   register: async (dto: Record<string, unknown>): Promise<AuthTokens> => {
     const res = await apiClient.post<StandardResponse<AuthTokens>>('/auth/register', dto);
     const tokens = res.data.data!;

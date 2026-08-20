@@ -6,10 +6,12 @@ import { AuthRepository } from './auth.repository';
 import { PasswordService } from './services/password.service';
 import { JwtService, JwtPayload } from './services/jwt.service';
 import { RefreshTokenService } from './services/refresh-token.service';
+import { GoogleAuthService } from './services/google-auth.service';
 import {
   RegisterDto,
   LoginDto,
   ChangePasswordDto,
+  GoogleLoginDto,
   AuthTokensResponse,
   MeResponse,
 } from './auth.types';
@@ -21,6 +23,7 @@ export class AuthService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly refreshTokenService: RefreshTokenService,
+    private readonly googleAuthService: GoogleAuthService,
     private readonly loggerService: LoggerService,
   ) {}
 
@@ -288,55 +291,58 @@ export class AuthService {
     return this.jwtService.verify(token);
   }
 
+  /**
+   * The frontend hands us Google's signed ID token, not raw profile fields --
+   * GoogleAuthService verifies it against Google's public keys first, so
+   * everything below is working with data Google actually vouched for, not
+   * whatever a client chose to send.
+   */
   async googleLogin(
-    dto: {
-      email: string;
-      firstName?: string;
-      lastName?: string;
-      avatar?: string;
-      googleId?: string;
-    },
+    dto: GoogleLoginDto,
     ip?: string,
     userAgent?: string,
   ): Promise<AuthTokensResponse> {
-    let user = await this.authRepository.findByEmailBasic(dto.email);
+    const profile = await this.googleAuthService.verifyIdToken(dto.credential);
+
+    // Look up by Google's stable account id first (not email, which can
+    // change) -- falling back to email only to link an existing
+    // password-based account the first time it signs in with Google.
+    let user = await this.authRepository.findByGoogleId(profile.googleId);
 
     if (!user) {
-      const randomPass = await this.passwordService.hash(
-        Math.random().toString(36).slice(-10),
-      );
-      user = await this.authRepository.createUser({
-        email: dto.email,
-        passwordHash: randomPass,
-        firstName: dto.firstName || 'Customer',
-        lastName: dto.lastName || '',
-      });
-
-      const role = await this.authRepository.findRoleByName(
-        IDENTITY_CONSTANTS.DEFAULT_CUSTOMER_ROLE,
-      );
-      if (role) {
-        await this.authRepository.assignRole(user.id, role.id);
+      const existingByEmail = await this.authRepository.findByEmailBasic(profile.email);
+      if (existingByEmail) {
+        await this.authRepository.linkGoogleId(existingByEmail.id, profile.googleId);
+        user = await this.authRepository.findById(existingByEmail.id);
+      } else {
+        const randomPass = await this.passwordService.hash(
+          Math.random().toString(36).slice(-10),
+        );
+        const created = await this.authRepository.createUser({
+          email: profile.email,
+          passwordHash: randomPass,
+          firstName: profile.firstName,
+          lastName: profile.lastName,
+          googleId: profile.googleId,
+          avatar: profile.avatar,
+          isEmailVerified: profile.emailVerified,
+        });
+        const role = await this.authRepository.findRoleByName(
+          IDENTITY_CONSTANTS.DEFAULT_CUSTOMER_ROLE,
+        );
+        if (role) {
+          await this.authRepository.assignRole(created.id, role.id);
+        }
+        user = await this.authRepository.findById(created.id);
       }
     }
 
-    const payload: JwtPayload = {
-      sub: user.id,
-      email: user.email,
-      userType: user.userType,
-      roles: [IDENTITY_CONSTANTS.DEFAULT_CUSTOMER_ROLE],
-    };
-    const accessToken = await this.jwtService.sign(payload);
-    const refreshToken = await this.refreshTokenService.create(
-      user.id,
-      ip,
-      userAgent,
-    );
+    if (!user) throw new AuthenticationException('Unable to login', 'GOOGLE_003');
 
-    return {
-      accessToken,
-      refreshToken,
-      expiresIn: await this.jwtService.getExpiresIn(),
-    };
+    this.loggerService.log({ action: 'google_login', userId: user.id }, 'AuthService');
+    // Routes through the same role-aware token issuance as every other login
+    // path, instead of hardcoding a customer-only JWT payload -- important
+    // for the account-linking case, where the matched user could be staff.
+    return this.issueTokensForUser(user.id, ip, userAgent, dto.rememberMe ?? false);
   }
 }
