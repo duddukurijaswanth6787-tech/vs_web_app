@@ -31,6 +31,7 @@ export interface OtpGatewayConfigDto {
   templateLogin: string;
   templateRegister: string;
   templateVerifyPhone: string;
+  expiryMinutes: number;
   apiKeyConfigured: boolean;
 }
 

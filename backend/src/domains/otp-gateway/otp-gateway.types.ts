@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsIn, IsOptional, IsString } from 'class-validator';
+import { IsIn, IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export const OTP_GATEWAY_PROVIDERS = ['mock', 'startmessaging'] as const;
 export type OtpGatewayProvider = (typeof OTP_GATEWAY_PROVIDERS)[number];
@@ -50,6 +51,8 @@ export class OtpGatewayConfigResponse {
   @ApiProperty() templateLogin!: string;
   @ApiProperty() templateRegister!: string;
   @ApiProperty() templateVerifyPhone!: string;
+  @ApiProperty({ description: 'OTP validity window in minutes, also substituted into {{expiry}} in templates.' })
+  expiryMinutes!: number;
   @ApiProperty({
     description: 'Whether STARTMESSAGING_API_KEY is set on the server (never returns the key itself).',
   })
@@ -66,6 +69,13 @@ export class UpdateOtpGatewayConfigDto {
   @ApiPropertyOptional() @IsOptional() @IsString() templateLogin?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() templateRegister?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() templateVerifyPhone?: string;
+
+  @ApiPropertyOptional({ description: 'OTP validity window in minutes (also used as {{expiry}} in templates).' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  expiryMinutes?: number;
 
   @ApiPropertyOptional({
     description:

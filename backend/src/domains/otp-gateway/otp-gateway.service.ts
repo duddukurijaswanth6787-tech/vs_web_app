@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@database/prisma.service';
 import { AuditService } from '@domains/audit/audit.service';
 import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
+import { IDENTITY_CONSTANTS } from '@shared/identity/identity.constants';
 import {
   OtpGatewayConfigResponse,
   OtpGatewayProvider,
@@ -16,6 +17,7 @@ const KEYS = {
   templateLogin: 'otp_gateway.template_login',
   templateRegister: 'otp_gateway.template_register',
   templateVerifyPhone: 'otp_gateway.template_verify_phone',
+  expiryMinutes: 'otp_gateway.expiry_minutes',
   apiKey: 'otp_gateway.api_key',
 };
 
@@ -55,14 +57,22 @@ export class OtpGatewayService {
     return dbKey || this.configService.get<string>('app.startMessaging.apiKey', '');
   }
 
+  /** Admin-configured OTP validity window, falling back to the identity default. */
+  async getExpiryMinutes(): Promise<number> {
+    const raw = await this.settingRepository.getByKey(KEYS.expiryMinutes);
+    const parsed = raw ? parseInt(raw, 10) : NaN;
+    return Number.isFinite(parsed) && parsed > 0 ? parsed : IDENTITY_CONSTANTS.OTP_EXPIRY_MINUTES;
+  }
+
   async getConfig(): Promise<OtpGatewayConfigResponse> {
-    const [provider, appName, templateLogin, templateRegister, templateVerifyPhone, apiKey] =
+    const [provider, appName, templateLogin, templateRegister, templateVerifyPhone, expiryMinutes, apiKey] =
       await Promise.all([
         this.settingRepository.getByKey(KEYS.provider),
         this.settingRepository.getByKey(KEYS.appName),
         this.settingRepository.getByKey(KEYS.templateLogin),
         this.settingRepository.getByKey(KEYS.templateRegister),
         this.settingRepository.getByKey(KEYS.templateVerifyPhone),
+        this.getExpiryMinutes(),
         this.getEffectiveApiKey(),
       ]);
     return {
@@ -71,6 +81,7 @@ export class OtpGatewayService {
       templateLogin: templateLogin || '',
       templateRegister: templateRegister || '',
       templateVerifyPhone: templateVerifyPhone || '',
+      expiryMinutes,
       apiKeyConfigured: !!apiKey,
     };
   }
@@ -93,6 +104,13 @@ export class OtpGatewayService {
     for (const [key, value, description] of updates) {
       if (value === undefined) continue;
       await this.upsert(key, value, description);
+    }
+    if (dto.expiryMinutes !== undefined) {
+      await this.upsert(
+        KEYS.expiryMinutes,
+        String(dto.expiryMinutes),
+        'OTP validity window in minutes (also used as {{expiry}} in templates)',
+      );
     }
     if (dto.apiKey !== undefined) {
       await this.upsert(KEYS.apiKey, dto.apiKey, 'StartMessaging API key (secret)');
