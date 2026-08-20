@@ -133,6 +133,10 @@ export interface PrinterLabelData {
   storeName?: string;
   /** Number of copies to print. Defaults to 1. */
   quantity?: number;
+  /** Physical label size in mm. Defaults to 50x30 (a common small sticker roll) when omitted. */
+  widthMm?: number;
+  heightMm?: number;
+  gapMm?: number;
 }
 
 function parseDeviceList(raw: unknown): DiscoveredPrinter[] {
@@ -278,26 +282,47 @@ class BluetoothPrinterService {
     await P.printText('Thank You For Shopping With Us!\n\r\n\r\n\r', {});
   }
 
-  /** Prints `quantity` copies of a barcode sticker label using the printer's built-in TSC/TSPL commands. Label geometry (50mm x 30mm, 2mm gap) assumes a common small sticker roll -- adjust to match your actual label stock. */
+  /**
+   * Prints `quantity` copies of a barcode sticker label using the printer's
+   * built-in TSC/TSPL commands. Layout is computed proportionally from the
+   * label's physical size (widthMm/heightMm, default 50x30mm) rather than
+   * fixed pixel positions, so Small/Medium/Large all lay out sensibly.
+   *
+   * DOTS_PER_MM assumes 203 DPI (8 dots/mm), the resolution most small
+   * TSC-style label printers use -- if your printer is 300 DPI, positions
+   * will be a bit small/off-center but still on the label; adjust this
+   * constant to match your printer's real resolution if so.
+   */
   async printLabel(label: PrinterLabelData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
     const copies = Math.max(1, label.quantity ?? 1);
+    const widthMm = label.widthMm ?? 50;
+    const heightMm = label.heightMm ?? 30;
+    const gapMm = label.gapMm ?? 2;
+
+    const DOTS_PER_MM = 8;
+    const heightDots = heightMm * DOTS_PER_MM;
+    const marginDots = Math.round(DOTS_PER_MM * 2);
+    // Rough character budget for the default font at this width -- narrower
+    // labels get titles truncated harder rather than overflowing the edge.
+    const maxChars = Math.max(10, Math.round(widthMm * 0.9));
+
     const textFields = [
       {
         text: (label.storeName || 'VASANTHI').toUpperCase(),
-        x: 10,
-        y: 6,
+        x: marginDots,
+        y: marginDots,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
       {
-        text: label.productName.slice(0, 28),
-        x: 10,
-        y: 30,
+        text: label.productName.slice(0, maxChars),
+        x: marginDots,
+        y: Math.round(heightDots * 0.32),
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -306,9 +331,9 @@ class BluetoothPrinterService {
       ...(label.variantTitle
         ? [
             {
-              text: label.variantTitle.slice(0, 28),
-              x: 10,
-              y: 50,
+              text: label.variantTitle.slice(0, maxChars),
+              x: marginDots,
+              y: Math.round(heightDots * 0.5),
               fonttype: FONTTYPE.FONT_1,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
@@ -318,8 +343,8 @@ class BluetoothPrinterService {
         : []),
       {
         text: `Rs.${label.price}`,
-        x: 10,
-        y: 70,
+        x: marginDots,
+        y: Math.round(heightDots * 0.66),
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -329,9 +354,9 @@ class BluetoothPrinterService {
 
     for (let i = 0; i < copies; i++) {
       await BluetoothTscPrinter.printLabel({
-        width: 50,
-        height: 30,
-        gap: 2,
+        width: widthMm,
+        height: heightMm,
+        gap: gapMm,
         direction: DIRECTION.FORWARD,
         reference: [0, 0],
         tear: TEAR.ON,
@@ -339,10 +364,10 @@ class BluetoothPrinterService {
         text: textFields,
         barcode: [
           {
-            x: 10,
-            y: 100,
+            x: marginDots,
+            y: Math.round(heightDots * 0.8),
             type: TSC_BARCODETYPE.CODE128,
-            height: 40,
+            height: Math.round(heightDots * 0.16),
             readable: READABLE.ENABLE,
             rotation: TSC_ROTATION.ROTATION_0,
             code: label.barcode,
