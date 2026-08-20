@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   Text,
+  TextInput,
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
@@ -9,7 +10,7 @@ import {
   ScrollView,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { QrCode, Banknote, CreditCard, Sparkles, Check } from 'lucide-react-native';
+import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock } from 'lucide-react-native';
 import {
   posMobileService,
   PosMobileCartItem,
@@ -18,6 +19,8 @@ import {
 } from '../services/api';
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
+
+const TERMINAL_ID = 'COUNTER_1';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -33,10 +36,60 @@ export default function MobilePaymentScreen() {
     console.error('Failed to parse customer:', e);
   }
 
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'SPLIT'>('UPI');
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
 
   const offlineSync = useOfflineSync();
+
+  // Billing requires an open shift on this terminal while online, so cash
+  // sales can be reconciled at close -- mirrors the same gate on the web
+  // POS. Offline sales are exempt since shift state can't be checked
+  // without the backend.
+  const [shiftChecked, setShiftChecked] = useState(false);
+  const [hasOpenShift, setHasOpenShift] = useState(true);
+  const [openingCashInput, setOpeningCashInput] = useState('');
+  const [openingShift, setOpeningShift] = useState(false);
+  const [shiftError, setShiftError] = useState('');
+
+  useEffect(() => {
+    if (!offlineSync.isBackendReachable) {
+      setShiftChecked(true);
+      return;
+    }
+    let cancelled = false;
+    posMobileService
+      .getCurrentShift(TERMINAL_ID)
+      .then((shift) => {
+        if (!cancelled) setHasOpenShift(Boolean(shift));
+      })
+      .catch(() => {
+        if (!cancelled) setHasOpenShift(true); // fail open: don't block billing on a lookup error
+      })
+      .finally(() => {
+        if (!cancelled) setShiftChecked(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [offlineSync.isBackendReachable]);
+
+  const shiftRequired = shiftChecked && offlineSync.isBackendReachable && !hasOpenShift;
+
+  const handleOpenShift = async () => {
+    const amount = parseFloat(openingCashInput);
+    if (isNaN(amount) || amount < 0) return;
+    try {
+      setOpeningShift(true);
+      setShiftError('');
+      await posMobileService.openShift({ terminalId: TERMINAL_ID, openingCash: amount });
+      setHasOpenShift(true);
+      setOpeningCashInput('');
+    } catch (err) {
+      setShiftError(getApiErrorMessage(err, 'Could not open the shift.'));
+    } finally {
+      setOpeningShift(false);
+    }
+  };
 
   let cartItems: PosMobileCartItem[] = [];
   try {
@@ -48,6 +101,10 @@ export default function MobilePaymentScreen() {
   const grandTotal = Number(grandTotalStr || '0');
 
   const handleCompleteSale = async () => {
+    if (shiftRequired) {
+      Alert.alert('Shift Required', 'Open a shift before billing so cash sales can be reconciled at close.');
+      return;
+    }
     try {
       setLoading(true);
       const res = await posMobileService.completeSale({
@@ -149,7 +206,19 @@ export default function MobilePaymentScreen() {
         >
           <Sparkles size={24} color={paymentMethod === 'SPLIT' ? '#ffffff' : '#0284c7'} />
           <Text style={[styles.methodText, paymentMethod === 'SPLIT' && styles.methodTextActive]}>
-            Split / Credit
+            Split
+          </Text>
+        </TouchableOpacity>
+
+        {/* Credit */}
+        <TouchableOpacity
+          style={[styles.methodCard, paymentMethod === 'CREDIT' && styles.methodCardActive]}
+          onPress={() => setPaymentMethod('CREDIT')}
+          activeOpacity={0.85}
+        >
+          <History size={24} color={paymentMethod === 'CREDIT' ? '#ffffff' : '#0284c7'} />
+          <Text style={[styles.methodText, paymentMethod === 'CREDIT' && styles.methodTextActive]}>
+            On Credit
           </Text>
         </TouchableOpacity>
       </View>
@@ -160,10 +229,47 @@ export default function MobilePaymentScreen() {
         <Text style={styles.summaryValue}>₹{grandTotal}</Text>
       </View>
 
+      {shiftRequired && (
+        <View style={styles.shiftGate}>
+          <View style={styles.shiftGateHeader}>
+            <Clock size={16} color="#b45309" />
+            <Text style={styles.shiftGateText}>
+              No shift is open on this terminal. Open one with a starting cash float before billing.
+            </Text>
+          </View>
+          <View style={styles.shiftGateRow}>
+            <TextInput
+              style={styles.shiftInput}
+              keyboardType="numeric"
+              value={openingCashInput}
+              onChangeText={setOpeningCashInput}
+              placeholder="Opening cash (₹)"
+              placeholderTextColor="#a16207"
+            />
+            <TouchableOpacity
+              style={[styles.shiftOpenBtn, (!openingCashInput || openingShift) && styles.shiftOpenBtnDisabled]}
+              onPress={handleOpenShift}
+              disabled={!openingCashInput || openingShift}
+            >
+              {openingShift ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <Text style={styles.shiftOpenBtnText}>Open Shift</Text>
+              )}
+            </TouchableOpacity>
+          </View>
+          {shiftError !== '' && <Text style={styles.shiftErrorText}>{shiftError}</Text>}
+        </View>
+      )}
+
       <TouchableOpacity
-        style={[styles.payBtn, !offlineSync.isBackendReachable && styles.payBtnOffline]}
+        style={[
+          styles.payBtn,
+          !offlineSync.isBackendReachable && styles.payBtnOffline,
+          shiftRequired && styles.payBtnDisabled,
+        ]}
         onPress={handleCompleteSale}
-        disabled={loading}
+        disabled={loading || shiftRequired}
         activeOpacity={0.85}
       >
         {loading ? (
@@ -264,6 +370,66 @@ const styles = StyleSheet.create({
   },
   payBtnOffline: {
     backgroundColor: '#b45309',
+  },
+  payBtnDisabled: {
+    opacity: 0.5,
+  },
+  shiftGate: {
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    borderRadius: 16,
+    padding: 14,
+    marginBottom: 16,
+  },
+  shiftGateHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    marginBottom: 10,
+  },
+  shiftGateText: {
+    flex: 1,
+    marginLeft: 8,
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400e',
+  },
+  shiftGateRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  shiftInput: {
+    flex: 1,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#fcd34d',
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginRight: 8,
+  },
+  shiftOpenBtn: {
+    backgroundColor: '#b45309',
+    borderRadius: 10,
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+  },
+  shiftOpenBtnDisabled: {
+    opacity: 0.5,
+  },
+  shiftOpenBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  shiftErrorText: {
+    fontSize: 10,
+    color: '#b91c1c',
+    fontWeight: '600',
+    marginTop: 8,
   },
   offlineNote: {
     fontSize: 10,

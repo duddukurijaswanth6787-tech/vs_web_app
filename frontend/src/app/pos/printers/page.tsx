@@ -130,20 +130,20 @@ export default function PrintersConfigPage() {
           </div>
 
           <div
-            onClick={() => setPrintMode('ESCPOS')}
-            className={`bg-white p-5 rounded-2xl border-2 cursor-pointer transition-all ${
-              printMode === 'ESCPOS'
-                ? 'border-[#800020] ring-2 ring-[#800020]/10 shadow-sm'
-                : 'border-neutral-200 hover:border-neutral-300'
-            }`}
+            className="bg-neutral-50 p-5 rounded-2xl border-2 border-dashed border-neutral-300 opacity-70 cursor-not-allowed"
+            title="Not available yet -- requires a local print daemon or WebUSB/WebSerial integration that hasn't been built."
           >
             <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 2 (Direct Hardware)</span>
-              {printMode === 'ESCPOS' && <CheckCircle2 className="w-5 h-5 text-[#800020]" />}
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">Mode 2 (Direct Hardware)</span>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full">
+                Coming soon
+              </span>
             </div>
-            <h3 className="text-sm font-bold text-neutral-900 mb-1">ESC/POS Direct Hardware Daemon</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Sends raw binary ESC/POS commands directly to thermal printers with instant paper cut & cash drawer kick.
+            <h3 className="text-sm font-bold text-neutral-500 mb-1">ESC/POS Direct Hardware Daemon</h3>
+            <p className="text-xs text-neutral-500 leading-relaxed">
+              Raw binary ESC/POS output for instant paper cut &amp; cash drawer kick. The server can already
+              generate this data (see below) but there is no local daemon or WebUSB/WebSerial bridge wired up yet
+              to deliver it to a printer, so every receipt/label goes through browser print for now.
             </p>
           </div>
         </div>

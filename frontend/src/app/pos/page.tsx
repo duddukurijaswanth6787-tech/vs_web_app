@@ -32,6 +32,8 @@ import {
   useCompletePosSale,
   usePreviewReceipt,
   useLookupCustomer,
+  useCurrentShift,
+  useOpenShift,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -44,6 +46,7 @@ import { useOfflineSync, isNetworkFailure } from '@/features/pos/offline/useOffl
 import { offlineScanCacheDb, normalizeScanCacheKey } from '@/features/pos/offline/offlineDb';
 import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceipt';
 import { PendingSale } from '@/features/pos/offline/offline.types';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 const TERMINAL_ID = 'COUNTER_1';
 
@@ -73,6 +76,14 @@ export default function DesktopPosPage() {
   const [syncModalOpen, setSyncModalOpen] = useState(false);
   const [offlineNotice, setOfflineNotice] = useState<PendingSale | null>(null);
   const [scanOfflineError, setScanOfflineError] = useState('');
+  const [saleError, setSaleError] = useState('');
+
+  // Shift state -- a sale can only be completed while online with a shift
+  // open on this terminal, so cash reconciliation isn't left to chance.
+  // Offline sales are exempt (there's no way to check shift state without
+  // the backend, and blocking emergency offline billing defeats the point
+  // of the offline queue).
+  const [openingCashInput, setOpeningCashInput] = useState('');
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
@@ -82,6 +93,18 @@ export default function DesktopPosPage() {
   const previewReceiptMutation = usePreviewReceipt();
   const lookupCustomerMutation = useLookupCustomer();
   const offlineSync = useOfflineSync(TERMINAL_ID);
+  const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(TERMINAL_ID);
+  const openShiftMutation = useOpenShift();
+  const shiftRequired = offlineSync.isBackendReachable && !shiftLoading && !currentShift;
+
+  const handleOpenShift = () => {
+    const amount = parseFloat(openingCashInput);
+    if (isNaN(amount) || amount < 0) return;
+    openShiftMutation.mutate(
+      { terminalId: TERMINAL_ID, openingCash: amount },
+      { onSuccess: () => setOpeningCashInput('') },
+    );
+  };
 
   const handlePhoneChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 10);
@@ -228,6 +251,11 @@ export default function DesktopPosPage() {
 
   const handleCompleteSale = () => {
     if (cart.length === 0) return;
+    if (shiftRequired) {
+      setSaleError('Open a shift before billing so cash sales can be reconciled at close.');
+      return;
+    }
+    setSaleError('');
 
     // The backend's completeSale/previewReceipt DTOs reject unknown
     // properties (forbidNonWhitelisted) -- strip the cart's display-only
@@ -260,6 +288,7 @@ export default function DesktopPosPage() {
         onSuccess: (res) => {
           setCompletedOrder(res.order);
           setOfflineNotice(null);
+          setSaleError('');
           // Preview Receipt HTML
           previewReceiptMutation.mutate(
             {
@@ -276,6 +305,40 @@ export default function DesktopPosPage() {
                 setReceiptHtml(receiptRes.html);
                 setReceiptModalOpen(true);
               },
+              onError: () => {
+                // The sale itself already succeeded (order is created and
+                // stock deducted) -- only the receipt HTML fetch failed, so
+                // fall back to a minimal receipt instead of leaving the
+                // cashier with no printable confirmation at all.
+                setReceiptHtml(
+                  generateOfflineReceiptHtml({
+                    localId: res.order.orderId,
+                    clientOrderNumber: res.order.orderNumber,
+                    payload: {
+                      items: saleItems,
+                      paymentMethod,
+                      amountPaid: res.order.grandTotal,
+                      customer,
+                      discountTotal,
+                      taxTotal,
+                      terminalId: TERMINAL_ID,
+                    },
+                    receipt: {
+                      items: saleItems,
+                      customer,
+                      paymentMethod,
+                      subtotal,
+                      discountTotal,
+                      taxTotal,
+                      grandTotal: res.order.grandTotal,
+                    },
+                    status: 'SYNCED',
+                    createdAt: res.order.createdAt,
+                    attempts: 0,
+                  }),
+                );
+                setReceiptModalOpen(true);
+              },
             },
           );
 
@@ -285,7 +348,10 @@ export default function DesktopPosPage() {
           setDiscountTotal(0);
         },
         onError: async (err) => {
-          if (!isNetworkFailure(err)) return;
+          if (!isNetworkFailure(err)) {
+            setSaleError(getApiErrorMessage(err, 'Could not complete this sale. Please try again.'));
+            return;
+          }
 
           // Backend unreachable -- queue the sale locally instead of losing
           // it. sessionId is deliberately dropped: items/customer are
@@ -612,11 +678,44 @@ export default function DesktopPosPage() {
             </div>
           </div>
 
+          {/* Shift Gate -- billing requires an open shift while online */}
+          {shiftRequired && (
+            <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 space-y-3">
+              <div className="flex items-start gap-2 text-xs font-bold text-amber-900">
+                <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                <span>No shift is open on this terminal. Open one with a starting cash float before billing.</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  min={0}
+                  value={openingCashInput}
+                  onChange={(e) => setOpeningCashInput(e.target.value)}
+                  placeholder="Opening cash (₹)"
+                  className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-600"
+                />
+                <button
+                  type="button"
+                  onClick={handleOpenShift}
+                  disabled={openShiftMutation.isPending || !openingCashInput}
+                  className="px-4 py-2 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap"
+                >
+                  {openShiftMutation.isPending ? 'Opening…' : 'Open Shift'}
+                </button>
+              </div>
+              {openShiftMutation.isError && (
+                <p className="text-xs font-medium text-rose-700">
+                  {getApiErrorMessage(openShiftMutation.error, 'Could not open the shift.')}
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Payment Method Selector */}
           <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Select Payment Method</span>
             
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('UPI')}
@@ -666,7 +765,20 @@ export default function DesktopPosPage() {
                 }`}
               >
                 <Sparkles className="w-5 h-5" />
-                <span>Split / Credit</span>
+                <span>Split</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('CREDIT')}
+                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                  paymentMethod === 'CREDIT'
+                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
+                    : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                }`}
+              >
+                <History className="w-5 h-5" />
+                <span>On Credit</span>
               </button>
             </div>
           </div>
@@ -697,9 +809,16 @@ export default function DesktopPosPage() {
               </div>
             </div>
 
+            {saleError && (
+              <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+                <span>{saleError}</span>
+              </div>
+            )}
+
             <button
               onClick={handleCompleteSale}
-              disabled={cart.length === 0 || completeSaleMutation.isPending}
+              disabled={cart.length === 0 || completeSaleMutation.isPending || shiftRequired}
               className={`w-full text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
                 offlineSync.isBackendReachable ? 'bg-[#800020] hover:bg-[#600018]' : 'bg-amber-700 hover:bg-amber-800'
               }`}
