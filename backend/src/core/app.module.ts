@@ -81,6 +81,7 @@ import { ReferralModule } from '@domains/referral/referral.module';
 import { RecentlyViewedModule } from '@domains/recently-viewed/recently-viewed.module';
 import { PackingModule } from '@domains/packing/packing.module';
 import { SmsModule } from '@domains/sms/sms.module';
+import { EmailModule } from '@domains/email/email.module';
 import { PushNotificationModule } from '@domains/push-notification/push-notification.module';
 import { DtdcModule } from '@domains/dtdc/dtdc.module';
 import { PosModule } from '@domains/pos/pos.module';
@@ -221,6 +222,7 @@ import { PosModule } from '@domains/pos/pos.module';
     RecentlyViewedModule,
     PackingModule,
     SmsModule,
+    EmailModule,
     PushNotificationModule,
     DtdcModule,
     PosModule,

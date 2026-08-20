@@ -73,4 +73,9 @@ export const customerAuthService = {
     const res = await apiClient.post<StandardResponse<{ success: boolean; message?: string }>>('/password/reset', dto);
     return res.data.data!;
   },
+
+  validateResetToken: async (token: string) => {
+    const res = await apiClient.post<StandardResponse<{ valid: boolean }>>('/password/validate-token', { token });
+    return res.data.data!;
+  },
 };
