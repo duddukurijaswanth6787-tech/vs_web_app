@@ -6,6 +6,7 @@ import { CouponService } from '@domains/coupon/coupon.service';
 import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { EmailService } from '@domains/email/email.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import { PrismaService } from '@database/prisma.service';
 import {
   CheckoutPreviewDto,
@@ -42,6 +43,7 @@ export class CheckoutService {
     private readonly offerService: OfferService,
     private readonly workflow: OrderWorkflowService,
     private readonly emailService: EmailService,
+    private readonly otpGatewayService: OtpGatewayService,
   ) {}
 
   /**
@@ -363,6 +365,14 @@ export class CheckoutService {
         taxTotal,
         shippingCharge,
         grandTotal: Math.round(grandTotal * 100) / 100,
+      });
+    }
+
+    if (address.phone) {
+      await this.otpGatewayService.sendOrderConfirmedSms({
+        phone: address.phone,
+        orderNumber,
+        userId,
       });
     }
 

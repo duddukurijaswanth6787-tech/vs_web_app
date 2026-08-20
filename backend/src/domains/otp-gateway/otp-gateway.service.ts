@@ -17,6 +17,7 @@ const KEYS = {
   templateLogin: 'otp_gateway.template_login',
   templateRegister: 'otp_gateway.template_register',
   templateVerifyPhone: 'otp_gateway.template_verify_phone',
+  templateOrderConfirmed: 'otp_gateway.template_order_confirmed',
   expiryMinutes: 'otp_gateway.expiry_minutes',
   apiKey: 'otp_gateway.api_key',
 };
@@ -65,22 +66,32 @@ export class OtpGatewayService {
   }
 
   async getConfig(): Promise<OtpGatewayConfigResponse> {
-    const [provider, appName, templateLogin, templateRegister, templateVerifyPhone, expiryMinutes, apiKey] =
-      await Promise.all([
-        this.settingRepository.getByKey(KEYS.provider),
-        this.settingRepository.getByKey(KEYS.appName),
-        this.settingRepository.getByKey(KEYS.templateLogin),
-        this.settingRepository.getByKey(KEYS.templateRegister),
-        this.settingRepository.getByKey(KEYS.templateVerifyPhone),
-        this.getExpiryMinutes(),
-        this.getEffectiveApiKey(),
-      ]);
+    const [
+      provider,
+      appName,
+      templateLogin,
+      templateRegister,
+      templateVerifyPhone,
+      templateOrderConfirmed,
+      expiryMinutes,
+      apiKey,
+    ] = await Promise.all([
+      this.settingRepository.getByKey(KEYS.provider),
+      this.settingRepository.getByKey(KEYS.appName),
+      this.settingRepository.getByKey(KEYS.templateLogin),
+      this.settingRepository.getByKey(KEYS.templateRegister),
+      this.settingRepository.getByKey(KEYS.templateVerifyPhone),
+      this.settingRepository.getByKey(KEYS.templateOrderConfirmed),
+      this.getExpiryMinutes(),
+      this.getEffectiveApiKey(),
+    ]);
     return {
       provider: (provider as OtpGatewayProvider) || 'mock',
       appName: appName || "Vasanthi's Signature",
       templateLogin: templateLogin || '',
       templateRegister: templateRegister || '',
       templateVerifyPhone: templateVerifyPhone || '',
+      templateOrderConfirmed: templateOrderConfirmed || '',
       expiryMinutes,
       apiKeyConfigured: !!apiKey,
     };
@@ -99,6 +110,11 @@ export class OtpGatewayService {
         KEYS.templateVerifyPhone,
         dto.templateVerifyPhone,
         'StartMessaging template ID for VERIFY_PHONE OTPs',
+      ],
+      [
+        KEYS.templateOrderConfirmed,
+        dto.templateOrderConfirmed,
+        'StartMessaging template ID for order-confirmed SMS',
       ],
     ];
     for (const [key, value, description] of updates) {
@@ -127,29 +143,27 @@ export class OtpGatewayService {
   }
 
   /**
-   * Sends the OTP through the admin-configured gateway, logging every
-   * attempt to SmsLog (same audit trail SmsService uses) regardless of
-   * outcome. Never throws -- OTP login must not break because the SMS
-   * provider is briefly down; the code the caller generated is still
-   * valid either way, the user just needs to check for it or resend.
+   * Core StartMessaging send: creates the SmsLog entry, mocks if the gateway
+   * isn't fully configured or the given template is missing, otherwise POSTs
+   * to /otp/send and records the outcome. Shared by sendOtp() and
+   * sendOrderConfirmedSms(). Never throws -- a down/misconfigured provider
+   * must not break OTP login or checkout; the caller's own logic (e.g. the
+   * OTP code itself, or the order) is already valid regardless of delivery.
    */
-  async sendOtp(params: {
+  private async sendTemplateMessage(params: {
+    config: OtpGatewayConfigResponse;
     phone: string;
-    code: string;
-    purpose: string;
-    expiryMinutes: number;
+    templateId: string | undefined;
+    variables: Record<string, string>;
+    logTemplate: string;
+    logMessage: string;
+    missingTemplateNote: string;
     userId?: string;
   }): Promise<void> {
-    const { phone, code, purpose, expiryMinutes, userId } = params;
-    const config = await this.getConfig();
+    const { config, phone, templateId, variables, logTemplate, logMessage, missingTemplateNote, userId } =
+      params;
     const log = await this.prisma.smsLog.create({
-      data: {
-        userId,
-        phone,
-        template: `OTP_${purpose}`,
-        message: `OTP ${code} (${purpose})`,
-        status: 'PENDING',
-      },
+      data: { userId, phone, template: logTemplate, message: logMessage, status: 'PENDING' },
     });
 
     if (config.provider !== 'startmessaging' || !config.apiKeyConfigured) {
@@ -169,22 +183,12 @@ export class OtpGatewayService {
       return;
     }
 
-    const templateId =
-      purpose === 'REGISTER'
-        ? config.templateRegister
-        : purpose === 'VERIFY_PHONE'
-          ? config.templateVerifyPhone
-          : config.templateLogin;
-
     if (!templateId) {
       await this.prisma.smsLog.update({
         where: { id: log.id },
-        data: {
-          status: 'FAILED',
-          error: `No StartMessaging template configured for purpose ${purpose}`,
-        },
+        data: { status: 'FAILED', error: missingTemplateNote },
       });
-      this.logger.error(`No StartMessaging template configured for purpose ${purpose}`);
+      this.logger.error(missingTemplateNote);
       return;
     }
 
@@ -197,7 +201,7 @@ export class OtpGatewayService {
         body: JSON.stringify({
           phoneNumber: phone.startsWith('+') ? phone : `+91${phone}`,
           templateId,
-          variables: { otp: code, appName: config.appName, expiry: String(expiryMinutes) },
+          variables,
         }),
       });
       const body: any = await res.json().catch(() => ({}));
@@ -212,11 +216,68 @@ export class OtpGatewayService {
         },
       });
     } catch (err: any) {
-      this.logger.error(`StartMessaging OTP send failed: ${err?.message}`);
+      this.logger.error(`StartMessaging send failed: ${err?.message}`);
       await this.prisma.smsLog.update({
         where: { id: log.id },
         data: { status: 'FAILED', error: err?.message ?? 'StartMessaging send failed' },
       });
     }
+  }
+
+  async sendOtp(params: {
+    phone: string;
+    code: string;
+    purpose: string;
+    expiryMinutes: number;
+    userId?: string;
+  }): Promise<void> {
+    const { phone, code, purpose, expiryMinutes, userId } = params;
+    const config = await this.getConfig();
+    const templateId =
+      purpose === 'REGISTER'
+        ? config.templateRegister
+        : purpose === 'VERIFY_PHONE'
+          ? config.templateVerifyPhone
+          : config.templateLogin;
+
+    await this.sendTemplateMessage({
+      config,
+      phone,
+      templateId,
+      variables: { otp: code, appName: config.appName, expiry: String(expiryMinutes) },
+      logTemplate: `OTP_${purpose}`,
+      logMessage: `OTP ${code} (${purpose})`,
+      missingTemplateNote: `No StartMessaging template configured for purpose ${purpose}`,
+      userId,
+    });
+  }
+
+  /**
+   * Sends the order-confirmed SMS via the same StartMessaging gateway used
+   * for OTPs, using a separate admin-configured template (StartMessaging's
+   * OTP-shaped templates don't fit an order-confirmation message, so this
+   * needs its own template ID from the admin's StartMessaging dashboard).
+   * The order number is passed both as {{orderNumber}} and, since
+   * StartMessaging's API always expects an `otp` variable, as {{otp}} too --
+   * whichever placeholder the admin's template actually uses will resolve.
+   */
+  async sendOrderConfirmedSms(params: {
+    phone: string;
+    orderNumber: string;
+    userId?: string;
+  }): Promise<void> {
+    const { phone, orderNumber, userId } = params;
+    const config = await this.getConfig();
+
+    await this.sendTemplateMessage({
+      config,
+      phone,
+      templateId: config.templateOrderConfirmed,
+      variables: { otp: orderNumber, orderNumber, appName: config.appName },
+      logTemplate: 'ORDER_CONFIRMED',
+      logMessage: `Order ${orderNumber} confirmed`,
+      missingTemplateNote: 'No StartMessaging template configured for order confirmation',
+      userId,
+    });
   }
 }

@@ -13,6 +13,7 @@ const EMPTY_FORM: Omit<OtpGatewayConfigDto, 'apiKeyConfigured'> = {
   templateLogin: '',
   templateRegister: '',
   templateVerifyPhone: '',
+  templateOrderConfirmed: '',
   expiryMinutes: 10,
 };
 
@@ -40,6 +41,7 @@ export default function OtpGatewayAdminPage() {
         templateLogin: config.templateLogin,
         templateRegister: config.templateRegister,
         templateVerifyPhone: config.templateVerifyPhone,
+        templateOrderConfirmed: config.templateOrderConfirmed,
         expiryMinutes: config.expiryMinutes,
       });
     }
@@ -235,6 +237,22 @@ export default function OtpGatewayAdminPage() {
                 className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
               />
             </div>
+          </div>
+
+          <div className="pt-2 border-t border-neutral-100 space-y-1">
+            <label className="text-xs font-bold text-neutral-700 block">Order Confirmed SMS Template ID</label>
+            <p className="text-[11px] text-neutral-500">
+              None of the 4 OTP templates above fit an order-confirmation message. Create a new template in your
+              StartMessaging dashboard (e.g. &ldquo;Your order {'{{orderNumber}}'} is confirmed!&rdquo;) and paste its
+              ID here.
+            </p>
+            <input
+              type="text"
+              value={form.templateOrderConfirmed}
+              onChange={(e) => setForm((f) => ({ ...f, templateOrderConfirmed: e.target.value }))}
+              placeholder="e.g. 8f1c2b40-..."
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            />
           </div>
         </div>
 
