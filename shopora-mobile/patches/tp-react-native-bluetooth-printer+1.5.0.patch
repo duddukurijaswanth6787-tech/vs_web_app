@@ -1,0 +1,19 @@
+diff --git a/node_modules/tp-react-native-bluetooth-printer/android/build.gradle b/node_modules/tp-react-native-bluetooth-printer/android/build.gradle
+index 0d3f5e8..8ec5a89 100644
+--- a/node_modules/tp-react-native-bluetooth-printer/android/build.gradle
++++ b/node_modules/tp-react-native-bluetooth-printer/android/build.gradle
+@@ -1,6 +1,5 @@
+ buildscript {
+     repositories {
+-        jcenter { url "https://jcenter.bintray.com/" }
+         maven {url "https://repo.spring.io/plugins-release/"}
+         mavenCentral()
+         maven {
+@@ -40,7 +39,6 @@ android {
+ 
+ repositories {
+     google()
+-    jcenter { url "https://jcenter.bintray.com/" }
+     maven {url "https://repo.spring.io/plugins-release/"}
+     mavenCentral()
+     maven {
