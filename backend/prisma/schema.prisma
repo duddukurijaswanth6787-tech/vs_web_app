@@ -454,9 +454,9 @@ model Product {
   isExclusive             Boolean                  @default(false)
   isOnlineOnly            Boolean                  @default(false)
   channel                 String                   @default("BOTH")
-  // Generated STORED tsvector (name/description/keywords/sku/tags, weighted) --
-  // populated by Postgres itself via the migration's GENERATED ALWAYS AS clause,
-  // never written to from application code. Read directly via $queryRaw in
+  // Weighted tsvector (name/description/keywords/sku/tags) kept in sync by a
+  // DB trigger (products_search_vector_trigger, see the migration), never
+  // written to from application code. Read directly via $queryRaw in
   // SearchRepository for full-text relevance ranking.
   searchVector            Unsupported("tsvector")?
   sizeChartTemplate       SizeChartTemplate?       @relation(fields: [sizeChartTemplateId], references: [id])
