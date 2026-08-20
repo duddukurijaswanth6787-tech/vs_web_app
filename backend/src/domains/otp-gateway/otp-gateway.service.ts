@@ -16,14 +16,18 @@ const KEYS = {
   templateLogin: 'otp_gateway.template_login',
   templateRegister: 'otp_gateway.template_register',
   templateVerifyPhone: 'otp_gateway.template_verify_phone',
+  apiKey: 'otp_gateway.api_key',
 };
 
 /**
- * Admin-configurable OTP delivery: which gateway to use and which
- * StartMessaging template ID applies to each purpose. Settings are stored
- * as AppSetting rows (group "otp_gateway") so the admin UI can manage them
- * like any other setting -- only the API key stays a server-side env var
- * (STARTMESSAGING_API_KEY), never persisted to the DB or returned to the client.
+ * Admin-configurable OTP delivery: which gateway to use, which StartMessaging
+ * template ID applies to each purpose, and the API key itself. Settings are
+ * stored as AppSetting rows (group "otp_gateway") so the admin UI can manage
+ * them without a redeploy. The API key is write-only -- accepted by
+ * updateConfig(), used internally by sendOtp(), but never included in
+ * getConfig()'s response (only whether one is set). A DB-stored key takes
+ * priority over the STARTMESSAGING_API_KEY env var if both are present, so
+ * either the admin UI or Railway variables can be used to set it.
  */
 @Injectable()
 export class OtpGatewayService {
@@ -45,14 +49,21 @@ export class OtpGatewayService {
     }
   }
 
+  /** DB-stored key wins over the env var if both are present. */
+  private async getEffectiveApiKey(): Promise<string> {
+    const dbKey = await this.settingRepository.getByKey(KEYS.apiKey);
+    return dbKey || this.configService.get<string>('app.startMessaging.apiKey', '');
+  }
+
   async getConfig(): Promise<OtpGatewayConfigResponse> {
-    const [provider, appName, templateLogin, templateRegister, templateVerifyPhone] =
+    const [provider, appName, templateLogin, templateRegister, templateVerifyPhone, apiKey] =
       await Promise.all([
         this.settingRepository.getByKey(KEYS.provider),
         this.settingRepository.getByKey(KEYS.appName),
         this.settingRepository.getByKey(KEYS.templateLogin),
         this.settingRepository.getByKey(KEYS.templateRegister),
         this.settingRepository.getByKey(KEYS.templateVerifyPhone),
+        this.getEffectiveApiKey(),
       ]);
     return {
       provider: (provider as OtpGatewayProvider) || 'mock',
@@ -60,7 +71,7 @@ export class OtpGatewayService {
       templateLogin: templateLogin || '',
       templateRegister: templateRegister || '',
       templateVerifyPhone: templateVerifyPhone || '',
-      apiKeyConfigured: !!this.configService.get<string>('app.startMessaging.apiKey'),
+      apiKeyConfigured: !!apiKey,
     };
   }
 
@@ -83,12 +94,16 @@ export class OtpGatewayService {
       if (value === undefined) continue;
       await this.upsert(key, value, description);
     }
+    if (dto.apiKey !== undefined) {
+      await this.upsert(KEYS.apiKey, dto.apiKey, 'StartMessaging API key (secret)');
+    }
     await this.auditService.log({
       action: 'OTP_GATEWAY_CONFIG_UPDATED',
       module: 'otp-gateway',
       resource: 'app_setting',
       userId,
-      newValue: { ...dto },
+      // Never audit-log the key itself -- just whether it changed.
+      newValue: { ...dto, apiKey: dto.apiKey !== undefined ? '[redacted]' : undefined },
     });
     return this.getConfig();
   }
@@ -157,10 +172,10 @@ export class OtpGatewayService {
 
     try {
       const baseUrl = this.configService.get<string>('app.startMessaging.baseUrl');
-      const apiKey = this.configService.get<string>('app.startMessaging.apiKey');
+      const apiKey = await this.getEffectiveApiKey();
       const res = await fetch(`${baseUrl}/otp/send`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey! },
+        headers: { 'Content-Type': 'application/json', 'X-API-Key': apiKey },
         body: JSON.stringify({
           phoneNumber: phone.startsWith('+') ? phone : `+91${phone}`,
           templateId,
