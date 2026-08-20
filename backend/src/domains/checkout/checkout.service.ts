@@ -1,18 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { CartService } from '@domains/cart/cart.service';
 import { CouponService } from '@domains/coupon/coupon.service';
 import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
-import { EmailService } from '@domains/email/email.service';
-import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
+import { PaymentService } from '@domains/payment/payment.service';
 import { PrismaService } from '@database/prisma.service';
 import {
   CheckoutPreviewDto,
   CheckoutItemResponse,
   CheckoutSummaryResponse,
   PlaceOrderDto,
+  PlaceOrderPaymentResponse,
 } from './checkout.types';
 
 interface DiscountItem {
@@ -42,8 +43,8 @@ export class CheckoutService {
     private readonly couponService: CouponService,
     private readonly offerService: OfferService,
     private readonly workflow: OrderWorkflowService,
-    private readonly emailService: EmailService,
-    private readonly otpGatewayService: OtpGatewayService,
+    private readonly paymentService: PaymentService,
+    private readonly configService: ConfigService,
   ) {}
 
   /**
@@ -346,35 +347,34 @@ export class CheckoutService {
       newValue: { orderNumber, grandTotal: order.grandTotal },
     });
 
-    const user = await this.prisma.user.findUnique({
-      where: { id: userId },
-      select: { email: true },
-    });
-    if (user?.email) {
-      await this.emailService.sendOrderConfirmationEmail({
-        to: user.email,
-        userId,
-        orderNumber,
-        items: items.map((i) => ({
-          productName: i.productName,
-          quantity: i.quantity,
-          unitPrice: i.unitPrice,
-        })),
-        subtotal,
-        discountTotal,
-        taxTotal,
-        shippingCharge,
-        grandTotal: Math.round(grandTotal * 100) / 100,
+    const paymentMethod = dto.paymentMethod ?? 'COD';
+
+    if (paymentMethod === 'RAZORPAY') {
+      // Payment isn't confirmed yet -- the customer still has to complete
+      // the Razorpay checkout the frontend opens with this response. The
+      // order-confirmed email/SMS fire from PaymentService instead, once
+      // the payment actually captures, so a customer who abandons payment
+      // never gets a "your order is confirmed" message for an unpaid order.
+      const payment = await this.paymentService.create(userId, {
+        orderId: order.id,
+        method: 'RAZORPAY',
+        provider: 'razorpay',
+        amount: Number(order.grandTotal),
+        currency: order.currency,
       });
+      const paymentInfo: PlaceOrderPaymentResponse = {
+        paymentId: payment.id,
+        providerOrderId: payment.providerOrderId ?? '',
+        amount: payment.amount,
+        currency: payment.currency,
+        razorpayKeyId: this.configService.get<string>('app.razorpay.keyId') || '',
+      };
+      return { ...order, payment: paymentInfo };
     }
 
-    if (address.phone) {
-      await this.otpGatewayService.sendOrderConfirmedSms({
-        phone: address.phone,
-        orderNumber,
-        userId,
-      });
-    }
+    // COD has no gateway step to wait for -- the order is confirmed
+    // immediately, same as before.
+    await this.workflow.notifyOrderConfirmed(order.id);
 
     return order;
   }

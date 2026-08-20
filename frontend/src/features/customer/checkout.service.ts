@@ -19,12 +19,22 @@ export interface CheckoutPreviewDto {
   [key: string]: unknown;
 }
 
+export interface OrderPlacePaymentDto {
+  paymentId: string;
+  providerOrderId: string;
+  amount: number;
+  currency: string;
+  razorpayKeyId: string;
+}
+
 export interface OrderPlaceResultDto {
   id: string;
   orderNumber: string;
   status: string;
   totalAmount: number;
   createdAt: string;
+  /** Present only when paymentMethod was RAZORPAY -- the order isn't paid yet. */
+  payment?: OrderPlacePaymentDto;
   [key: string]: unknown;
 }
 
@@ -47,6 +57,7 @@ export const customerCheckoutService = {
     shippingMethod?: string;
     notes?: string;
     couponCode?: string;
+    paymentMethod?: 'COD' | 'RAZORPAY';
   }): Promise<OrderPlaceResultDto> => {
     const res = await apiClient.post<StandardResponse<OrderPlaceResultDto>>('/checkout/place-order', dto);
     return res.data.data!;

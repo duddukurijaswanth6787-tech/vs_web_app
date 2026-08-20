@@ -1,5 +1,8 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsUUID, IsIn } from 'class-validator';
+
+export const CHECKOUT_PAYMENT_METHODS = ['COD', 'RAZORPAY'] as const;
+export type CheckoutPaymentMethod = (typeof CHECKOUT_PAYMENT_METHODS)[number];
 
 export class CheckoutPreviewDto {
   @ApiProperty() @IsUUID() addressId!: string;
@@ -36,4 +39,17 @@ export class PlaceOrderDto {
   @ApiPropertyOptional() @IsOptional() @IsString() shippingMethod?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() couponCode?: string;
+
+  @ApiPropertyOptional({ enum: CHECKOUT_PAYMENT_METHODS, default: 'COD' })
+  @IsOptional()
+  @IsIn(CHECKOUT_PAYMENT_METHODS)
+  paymentMethod?: CheckoutPaymentMethod;
+}
+
+export class PlaceOrderPaymentResponse {
+  @ApiProperty() paymentId!: string;
+  @ApiProperty() providerOrderId!: string;
+  @ApiProperty() amount!: number;
+  @ApiProperty() currency!: string;
+  @ApiProperty() razorpayKeyId!: string;
 }

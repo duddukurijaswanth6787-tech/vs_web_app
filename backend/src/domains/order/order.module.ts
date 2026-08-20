@@ -3,6 +3,8 @@ import { AuthModule } from '@domains/auth/auth.module';
 import { AuditModule } from '@domains/audit/audit.module';
 import { InvoiceModule } from '@domains/invoice/invoice.module';
 import { CancellationModule } from '@domains/cancellation/cancellation.module';
+import { EmailModule } from '@domains/email/email.module';
+import { OtpGatewayModule } from '@domains/otp-gateway/otp-gateway.module';
 import { OrderController } from './order.controller';
 import { MeOrdersController } from './me-orders.controller';
 import { OrderService } from './order.service';
@@ -15,6 +17,8 @@ import { OrderWorkflowService } from './order-workflow.service';
     AuditModule,
     InvoiceModule,
     forwardRef(() => CancellationModule),
+    EmailModule,
+    OtpGatewayModule,
   ],
   controllers: [OrderController, MeOrdersController],
   providers: [OrderService, OrderRepository, OrderWorkflowService],

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -9,6 +10,8 @@ import { usePaymentMethods, usePlaceOrder, useCheckoutPreview } from '@/features
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useAuth } from '@/hooks/useAuth';
+import { paymentService } from '@/features/payments/payment.service';
+import type { OrderPlacePaymentDto } from '@/features/customer/checkout.service';
 
 interface PaymentMethod {
   code: string;
@@ -27,6 +30,7 @@ function CheckoutPaymentPageContent() {
   const placeOrder = usePlaceOrder();
   const [selected, setSelected] = useState('cod');
   const [payError, setPayError] = useState('');
+  const [verifying, setVerifying] = useState(false);
   const [couponCode] = useState(
     () => (typeof window !== 'undefined' && localStorage.getItem(COUPON_STORAGE_KEY)) || '',
   );
@@ -42,6 +46,43 @@ function CheckoutPaymentPageContent() {
     );
   }
 
+  const openRazorpayCheckout = (payment: OrderPlacePaymentDto, orderNumber: string) => {
+    if (!window.Razorpay) {
+      setPayError('Payment gateway failed to load. Please refresh and try again.');
+      return;
+    }
+    const rzp = new window.Razorpay({
+      key: payment.razorpayKeyId,
+      amount: Math.round(payment.amount * 100),
+      currency: payment.currency,
+      order_id: payment.providerOrderId,
+      name: "Vasanthi's Signature",
+      description: `Order ${orderNumber}`,
+      handler: (response) => {
+        setVerifying(true);
+        paymentService
+          .verify(payment.paymentId, {
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          })
+          .then(() => {
+            router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
+          })
+          .catch((err: unknown) => {
+            setVerifying(false);
+            setPayError(
+              getApiErrorMessage(err, 'Payment verification failed. Contact support if money was deducted.'),
+            );
+          });
+      },
+      modal: {
+        ondismiss: () => setPayError('Payment cancelled. You can try again below.'),
+      },
+      theme: { color: '#800020' },
+    });
+    rzp.open();
+  };
+
   const onPay = async () => {
     if (!addressId) {
       router.push('/checkout/address');
@@ -49,13 +90,20 @@ function CheckoutPaymentPageContent() {
     }
     setPayError('');
     try {
+      const paymentMethod = selected === 'razorpay' ? 'RAZORPAY' : 'COD';
       const order = await placeOrder.mutateAsync({
         addressId,
         shippingMethod: 'STANDARD',
-        notes: `payment:${selected}`,
         couponCode: couponCode || undefined,
+        paymentMethod,
       });
       if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
+
+      if (order.payment) {
+        openRazorpayCheckout(order.payment, order.orderNumber);
+        return;
+      }
+
       const orderNumber = order?.orderNumber || order?.id || '';
       router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
     } catch (err) {
@@ -63,8 +111,11 @@ function CheckoutPaymentPageContent() {
     }
   };
 
+  const isBusy = placeOrder.isPending || verifying;
+
   return (
     <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
         <Link href="/checkout/address" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
@@ -122,11 +173,11 @@ function CheckoutPaymentPageContent() {
 
         <button
           type="button"
-          disabled={placeOrder.isPending || !addressId}
+          disabled={isBusy || !addressId}
           onClick={onPay}
           className="w-full bg-[#800020] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
         >
-          {placeOrder.isPending ? 'Processing…' : 'Confirm & Place Order'}
+          {verifying ? 'Confirming payment…' : placeOrder.isPending ? 'Processing…' : 'Confirm & Place Order'}
         </button>
       </main>
       <StorefrontFooter />

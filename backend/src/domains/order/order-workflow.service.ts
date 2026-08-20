@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { EmailService } from '@domains/email/email.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import { PrismaService } from '@database/prisma.service';
 
 const ORDER_TRANSITIONS: Record<string, string[]> = {
@@ -29,7 +31,56 @@ export class OrderWorkflowService {
     private readonly prisma: PrismaService,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
+    private readonly emailService: EmailService,
+    private readonly otpGatewayService: OtpGatewayService,
   ) {}
+
+  /**
+   * Sends the "your order is confirmed" email + SMS. Called once per order,
+   * from whichever path actually confirms it -- immediately at checkout for
+   * COD (no gateway step to wait for), or after Razorpay capture succeeds
+   * (see PaymentService) so an online-payment order isn't "confirmed" before
+   * the customer has actually paid.
+   */
+  async notifyOrderConfirmed(orderId: string): Promise<void> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: true,
+        addresses: true,
+        customer: { include: { user: true } },
+      },
+    });
+    if (!order) return;
+
+    const email = order.customer?.user?.email;
+    if (email) {
+      await this.emailService.sendOrderConfirmationEmail({
+        to: email,
+        userId: order.customer.userId,
+        orderNumber: order.orderNumber,
+        items: order.items.map((i) => ({
+          productName: i.productName,
+          quantity: i.quantity,
+          unitPrice: Number(i.unitPrice),
+        })),
+        subtotal: Number(order.subtotal),
+        discountTotal: Number(order.discountTotal),
+        taxTotal: Number(order.taxTotal),
+        shippingCharge: Number(order.shippingCharge),
+        grandTotal: Number(order.grandTotal),
+      });
+    }
+
+    const phone = order.addresses?.[0]?.phone;
+    if (phone) {
+      await this.otpGatewayService.sendOrderConfirmedSms({
+        phone,
+        orderNumber: order.orderNumber,
+        userId: order.customer?.userId,
+      });
+    }
+  }
 
   validateTransition(currentStatus: string, nextStatus: string): void {
     const allowed = ORDER_TRANSITIONS[currentStatus] ?? [];
