@@ -16,7 +16,13 @@
     },
     "android": {
       "backgroundColor": "#0284c7",
-      "package": "com.vasanthi.shopora"
+      "package": "com.vasanthi.shopora",
+      "permissions": [
+        "BLUETOOTH",
+        "BLUETOOTH_ADMIN",
+        "BLUETOOTH_CONNECT",
+        "BLUETOOTH_SCAN"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -41,7 +47,7 @@
         {
           "isBackgroundEnabled": false,
           "modes": ["central"],
-          "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner and receipt/label printer."
+          "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner."
         }
       ]
     ]

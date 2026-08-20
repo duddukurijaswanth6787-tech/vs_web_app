@@ -60,22 +60,31 @@ export default function LabelPreviewScreen() {
   const handlePrint = async (variant: CreatedVariant) => {
     setPrintingId(variant.variantId);
     try {
-      const label = await barcodeService.batchStickers({
-        productName: product.name,
-        variantTitle: variant.title,
-        sku: variant.sku,
-        barcode: variant.barcode,
-        price: labelPrice,
-        quantity: quantityFor(variant),
-        labelSize,
-      });
-
       if (bluetoothPrinterService.isConnected()) {
-        // Raw TSPL commands go straight to the connected label printer.
-        await bluetoothPrinterService.printText(label.tspl);
+        // Built from local variant data directly via the printer's TSC/TSPL
+        // driver -- see services/bluetooth-printer.ts for why this doesn't
+        // go through the backend's tspl text field.
+        await bluetoothPrinterService.printLabel({
+          productName: product.name,
+          variantTitle: variant.title,
+          sku: variant.sku,
+          barcode: variant.barcode,
+          price: labelPrice,
+          storeName: product.brandName,
+          quantity: quantityFor(variant),
+        });
       } else {
         // No printer connected, so the generated label is shared out to
         // whatever can consume it instead (label printer app, AirPrint, email).
+        const label = await barcodeService.batchStickers({
+          productName: product.name,
+          variantTitle: variant.title,
+          sku: variant.sku,
+          barcode: variant.barcode,
+          price: labelPrice,
+          quantity: quantityFor(variant),
+          labelSize,
+        });
         await Share.share({
           title: `Label — ${variant.sku}`,
           message: label.tspl || label.html,

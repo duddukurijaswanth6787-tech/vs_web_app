@@ -18,34 +18,27 @@ import { bluetoothPrinterService, DiscoveredPrinter } from '../services/bluetoot
  * (sale-success.tsx) and barcode labels (label-preview.tsx) directly,
  * instead of only sharing the print data out to another app.
  *
- * BLE GATT printers only -- see services/bluetooth-printer.ts's header for
- * why most cheap thermal printers (classic Bluetooth SPP) won't show up
- * here, and what that means for this screen.
+ * Classic Bluetooth (SPP) printers only -- see services/bluetooth-printer.ts's
+ * header for why. A printer usually needs to be paired once in the phone's
+ * own Bluetooth settings before it shows up as "already paired" below.
  */
 export default function PrinterSettingsScreen() {
   const router = useRouter();
 
   const [scanning, setScanning] = useState(false);
-  const [devices, setDevices] = useState<DiscoveredPrinter[]>([]);
-  const [connectingId, setConnectingId] = useState('');
-  const [connectedId, setConnectedId] = useState('');
+  const [pairedDevices, setPairedDevices] = useState<DiscoveredPrinter[]>([]);
+  const [foundDevices, setFoundDevices] = useState<DiscoveredPrinter[]>([]);
+  const [connectingAddress, setConnectingAddress] = useState('');
+  const [connectedAddress, setConnectedAddress] = useState('');
   const [connectedName, setConnectedName] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [testPrinting, setTestPrinting] = useState(false);
 
   useEffect(() => {
     if (bluetoothPrinterService.isConnected()) {
+      setConnectedAddress('connected');
       setConnectedName(bluetoothPrinterService.connectedDeviceName());
     }
-    const unsubscribe = bluetoothPrinterService.onDisconnect(() => {
-      setConnectedId('');
-      setConnectedName(null);
-      setError('Printer disconnected unexpectedly.');
-    });
-    return () => {
-      bluetoothPrinterService.stopScan();
-      unsubscribe();
-    };
   }, []);
 
   const startScan = async () => {
@@ -55,33 +48,44 @@ export default function PrinterSettingsScreen() {
       setError('Bluetooth permission was denied.');
       return;
     }
-    setDevices([]);
+    const enabled = await bluetoothPrinterService.isBluetoothEnabled().catch(() => false);
+    if (!enabled) {
+      setError('Bluetooth is turned off. Enable it in your phone settings and try again.');
+      return;
+    }
+    setPairedDevices([]);
+    setFoundDevices([]);
     setScanning(true);
-    bluetoothPrinterService.startScan((device) => {
-      setDevices((prev) => (prev.some((d) => d.id === device.id) ? prev : [...prev, device]));
-    });
-    setTimeout(() => setScanning(false), 15000);
+    try {
+      const { paired, found } = await bluetoothPrinterService.scanDevices();
+      setPairedDevices(paired);
+      setFoundDevices(found);
+    } catch (e) {
+      setError('Could not scan for Bluetooth devices.');
+    } finally {
+      setScanning(false);
+    }
   };
 
   const connect = async (device: DiscoveredPrinter) => {
     setError('');
-    setConnectingId(device.id);
+    setConnectingAddress(device.address);
     try {
-      await bluetoothPrinterService.connect(device.id);
-      setConnectedId(device.id);
+      await bluetoothPrinterService.connect(device);
+      setConnectedAddress(device.address);
       setConnectedName(device.name);
     } catch (e) {
       setError(
-        `Could not connect to ${device.name || device.id}. This printer may not expose the BLE write characteristic this app expects -- check services/bluetooth-printer.ts, or it may only support classic Bluetooth (SPP), which this screen can't reach.`,
+        `Could not connect to ${device.name || device.address}. Make sure it's a classic-Bluetooth (SPP) printer and it's paired in the phone's Bluetooth settings first.`,
       );
     } finally {
-      setConnectingId('');
+      setConnectingAddress('');
     }
   };
 
   const disconnect = async () => {
     await bluetoothPrinterService.disconnect();
-    setConnectedId('');
+    setConnectedAddress('');
     setConnectedName(null);
   };
 
@@ -89,9 +93,7 @@ export default function PrinterSettingsScreen() {
     setTestPrinting(true);
     setError('');
     try {
-      // ESC/POS: initialise, print a line, feed 3 lines. Plain ASCII control
-      // bytes -- printText() sends them through as raw bytes unmodified.
-      await bluetoothPrinterService.printText('\x1B\x40Shopora POS -- Test Print OK\n\n\n');
+      await bluetoothPrinterService.testPrint();
       Alert.alert('Test Print Sent', 'Check the printer for output.');
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Test print failed.');
@@ -99,6 +101,8 @@ export default function PrinterSettingsScreen() {
       setTestPrinting(false);
     }
   };
+
+  const allDevices = [...pairedDevices, ...foundDevices.filter((f) => !pairedDevices.some((p) => p.address === f.address))];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -114,22 +118,18 @@ export default function PrinterSettingsScreen() {
         <View style={styles.banner}>
           <Printer size={18} color="#0284c7" />
           <Text style={styles.bannerText}>
-            BLE printers only. Most cheap thermal printers use classic Bluetooth (SPP) instead and
-            won't appear below -- pair those in the phone's Bluetooth settings and check your
-            printer's manual for what mode it supports.
+            Classic Bluetooth (SPP) printers only -- the kind almost all budget 58mm/80mm receipt +
+            label printers use. Pair the printer in your phone's Bluetooth settings first if it
+            doesn't appear below.
           </Text>
         </View>
 
-        {connectedId ? (
+        {connectedAddress ? (
           <View style={styles.connectedBox}>
             <PrinterCheck size={28} color="#16a34a" style={{ marginBottom: 10 }} />
-            <Text style={styles.connectedText}>Connected to {connectedName || connectedId}</Text>
+            <Text style={styles.connectedText}>Connected to {connectedName || 'printer'}</Text>
 
-            <TouchableOpacity
-              style={styles.testBtn}
-              onPress={testPrint}
-              disabled={testPrinting}
-            >
+            <TouchableOpacity style={styles.testBtn} onPress={testPrint} disabled={testPrinting}>
               {testPrinting ? (
                 <ActivityIndicator color="#ffffff" size="small" />
               ) : (
@@ -154,8 +154,8 @@ export default function PrinterSettingsScreen() {
             {error !== '' && <Text style={styles.errorText}>{error}</Text>}
 
             <FlatList
-              data={devices}
-              keyExtractor={(d) => d.id}
+              data={allDevices}
+              keyExtractor={(d) => d.address}
               style={{ marginTop: 16 }}
               ListEmptyComponent={
                 !scanning ? (
@@ -166,13 +166,13 @@ export default function PrinterSettingsScreen() {
                 <TouchableOpacity
                   style={styles.deviceRow}
                   onPress={() => connect(item)}
-                  disabled={connectingId === item.id}
+                  disabled={connectingAddress === item.address}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.deviceName}>{item.name || 'Unnamed device'}</Text>
-                    <Text style={styles.deviceId}>{item.id}</Text>
+                    <Text style={styles.deviceId}>{item.address}</Text>
                   </View>
-                  {connectingId === item.id ? (
+                  {connectingAddress === item.address ? (
                     <ActivityIndicator color="#0284c7" />
                   ) : (
                     <Text style={styles.connectLabel}>Connect</Text>
