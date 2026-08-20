@@ -11,6 +11,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { AuthService } from './auth.service';
+import { GoogleAuthService } from './services/google-auth.service';
 import {
   RegisterDto,
   LoginDto,
@@ -26,7 +27,10 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 @ApiTags('Authentication')
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly googleAuthService: GoogleAuthService,
+  ) {}
 
   @Post('seed-admin')
   @Get('seed-admin')
@@ -58,6 +62,15 @@ export class AuthController {
       req.headers['user-agent'],
     );
     return ResponseBuilder.success(result, 'Login successful');
+  }
+
+  @Get('google/client-id')
+  @ApiOperation({
+    summary: 'Get the Google OAuth Client ID (public, no secret) for the frontend Sign-In button',
+  })
+  async googleClientId() {
+    const clientId = await this.googleAuthService.getEffectiveClientId();
+    return ResponseBuilder.success({ clientId });
   }
 
   @Post('google')

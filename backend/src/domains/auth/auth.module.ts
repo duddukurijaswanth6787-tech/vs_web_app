@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
 import { AuthController } from './auth.controller';
 import { SessionSettingsController } from './session-settings.controller';
+import { GoogleAuthAdminController } from './google-auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { PasswordService } from './services/password.service';
@@ -16,7 +17,7 @@ import { PermissionsGuard } from './guards/permissions.guard';
 
 @Global()
 @Module({
-  controllers: [AuthController, SessionSettingsController],
+  controllers: [AuthController, SessionSettingsController, GoogleAuthAdminController],
   providers: [
     AuthService,
     AuthRepository,

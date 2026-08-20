@@ -50,6 +50,10 @@ export interface SessionExpirySettingsDto {
   rememberMeRefreshTokenDays: number;
 }
 
+export interface GoogleAuthConfigDto {
+  clientId: string;
+}
+
 export interface DtdcShipmentDto {
   id: string;
   orderId: string;
@@ -124,6 +128,17 @@ export const adminOpsApi = {
     dto: Partial<SessionExpirySettingsDto>,
   ): Promise<SessionExpirySettingsDto> => {
     const res = await apiClient.put<StandardResponse<SessionExpirySettingsDto>>('/admin/session-settings', dto);
+    return res.data.data!;
+  },
+
+  // ── Google Sign-In ──────────────────────────────────────
+  getGoogleAuthConfig: async (): Promise<GoogleAuthConfigDto> => {
+    const res = await apiClient.get<StandardResponse<GoogleAuthConfigDto>>('/admin/google-auth/config');
+    return res.data.data!;
+  },
+
+  updateGoogleAuthConfig: async (clientId: string): Promise<GoogleAuthConfigDto> => {
+    const res = await apiClient.put<StandardResponse<GoogleAuthConfigDto>>('/admin/google-auth/config', { clientId });
     return res.data.data!;
   },
 

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Timer, Save, RefreshCw } from 'lucide-react';
+import { Timer, Save, RefreshCw, KeyRound } from 'lucide-react';
 import { adminOpsApi, SessionExpirySettingsDto } from '@/features/admin-ops/admin-ops.api';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -125,6 +125,76 @@ export default function SessionSettingsAdminPage() {
           <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
         </button>
       </form>
+
+      <GoogleAuthSection />
     </div>
+  );
+}
+
+function GoogleAuthSection() {
+  const { toast } = useToast();
+  const [clientId, setClientId] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const { data: config, refetch } = useQuery({
+    queryKey: ['admin', 'google-auth', 'config'],
+    queryFn: () => adminOpsApi.getGoogleAuthConfig(),
+  });
+
+  useEffect(() => {
+    if (config) setClientId(config.clientId);
+  }, [config]);
+
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    try {
+      await adminOpsApi.updateGoogleAuthConfig(clientId.trim());
+      toast('success', 'Google Client ID saved', 'Takes effect immediately — no redeploy needed.');
+      await refetch();
+    } catch (err) {
+      toast('error', 'Save failed', getApiErrorMessage(err));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSave} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
+      <div>
+        <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+          <KeyRound className="w-4 h-4 text-[#800020]" />
+          <span>Google Sign-In</span>
+        </h2>
+        <p className="text-xs text-neutral-500 mt-0.5">
+          Powers the "Continue with Google" button on the login page. From Google Cloud Console:
+          Google Auth Platform &gt; Clients &gt; your Web application client.
+        </p>
+      </div>
+
+      <div className="space-y-1">
+        <label className="text-xs font-bold text-neutral-700 block">Google OAuth Client ID</label>
+        <input
+          type="text"
+          value={clientId}
+          onChange={(e) => setClientId(e.target.value)}
+          placeholder="123456789-abc...apps.googleusercontent.com"
+          className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+        />
+        <p className="text-[11px] text-neutral-500">
+          Not a secret — this is the same ID that's normally embedded directly in frontend JS, so it's shown here
+          in full. The client secret from Google Cloud Console is never needed for this login flow.
+        </p>
+      </div>
+
+      <button
+        type="submit"
+        disabled={saving}
+        className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+      >
+        <Save className="w-3.5 h-3.5" />
+        <span>{saving ? 'Saving…' : 'Save Client ID'}</span>
+      </button>
+    </form>
   );
 }
