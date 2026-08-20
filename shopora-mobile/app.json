@@ -49,7 +49,8 @@
           "modes": ["central"],
           "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner."
         }
-      ]
+      ],
+      "./plugins/withAndroidJetifier"
     ]
   }
 }
