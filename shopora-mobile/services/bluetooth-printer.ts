@@ -31,6 +31,7 @@ interface NativeEscposPrinter {
     columnTexts: string[],
     options: Record<string, unknown>,
   ): Promise<void>;
+  setWidth(width: number): void;
 }
 
 interface NativeTscPrinter {
@@ -50,6 +51,17 @@ const FONTTYPE = { FONT_1: '1', FONT_2: '2' };
 const TSC_ROTATION = { ROTATION_0: 0 };
 const TSC_BARCODETYPE = { CODE128: '128' };
 const DIRECTION = { FORWARD: 0, BACKWARD: 1 };
+/**
+ * Printable-width constants in dots, read from the native Android source
+ * (RNBluetoothEscposPrinterModule.java) rather than the library's index.js
+ * (which doesn't export these at all, despite the .d.ts claiming a
+ * PAGE_WIDTH enum exists). printColumn() rejects any call whose column
+ * widths sum past deviceWidth/8 characters, and deviceWidth defaults to
+ * WIDTH_58 until setWidth() is called -- printReceipt() below calls it once
+ * per print so a genuinely 80mm printer isn't silently capped at the 58mm
+ * character budget.
+ */
+const PAGE_WIDTH = { WIDTH_58: 384, WIDTH_80: 576 };
 
 /**
  * Bluetooth thermal printer integration -- UNTESTED, NO PHYSICAL PRINTER.
@@ -122,6 +134,8 @@ export interface PrinterReceiptData {
   taxTotal?: number;
   grandTotal: number;
   paymentMethod?: string;
+  /** Paper roll width in mm. Defaults to 80 (this app's confirmed target hardware); pass 58 if printing on a narrower printer. */
+  paperWidthMm?: number;
 }
 
 export interface PrinterLabelData {
@@ -231,6 +245,20 @@ class BluetoothPrinterService {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
     const P = BluetoothEscposPrinter;
+    const paperWidthMm = receipt.paperWidthMm ?? 80;
+
+    // printColumn() rejects any call whose column widths sum past the
+    // printer's configured character budget (deviceWidth/8, native-side --
+    // see the PAGE_WIDTH comment above), which defaults to the 58mm budget
+    // (48 chars) until setWidth() is called. Tell it the real width so an
+    // 80mm printer isn't stuck using little more than half its paper.
+    await P.setWidth(paperWidthMm >= 80 ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
+    // Leaves a safety margin under the hard cap (72 chars at 80mm, 48 at
+    // 58mm) rather than using every last character.
+    const lineChars = paperWidthMm >= 80 ? 64 : 42;
+    const divider = '-'.repeat(lineChars);
+    const itemNameChars = lineChars - 12;
+    const totalsLabelChars = lineChars - 16;
 
     await P.printerInit();
     await P.printerAlign(ALIGN.CENTER);
@@ -238,7 +266,7 @@ class BluetoothPrinterService {
     if (receipt.storeTagline) await P.printText(`${receipt.storeTagline}\n\r`, {});
     if (receipt.address) await P.printText(`${receipt.address}\n\r`, {});
     if (receipt.phone) await P.printText(`Ph: ${receipt.phone}\n\r`, {});
-    await P.printText('--------------------------------\n\r', {});
+    await P.printText(`${divider}\n\r`, {});
 
     await P.printerAlign(ALIGN.LEFT);
     await P.printText(`Invoice: ${receipt.orderNumber}\n\r`, {});
@@ -248,29 +276,39 @@ class BluetoothPrinterService {
       const suffix = receipt.customerPhone ? ` (${receipt.customerPhone})` : '';
       await P.printText(`Customer: ${receipt.customerName}${suffix}\n\r`, {});
     }
-    await P.printText('--------------------------------\n\r', {});
+    await P.printText(`${divider}\n\r`, {});
 
     for (const item of receipt.items) {
-      await P.printColumn([24, 8], [ALIGN.LEFT, ALIGN.RIGHT], [item.title, `x${item.quantity}`], {});
       await P.printColumn(
-        [24, 8],
+        [itemNameChars, 12],
+        [ALIGN.LEFT, ALIGN.RIGHT],
+        [item.title, `x${item.quantity}`],
+        {},
+      );
+      await P.printColumn(
+        [itemNameChars, 12],
         [ALIGN.LEFT, ALIGN.RIGHT],
         ['', money(item.unitPrice * item.quantity)],
         {},
       );
     }
-    await P.printText('--------------------------------\n\r', {});
+    await P.printText(`${divider}\n\r`, {});
 
-    await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['Subtotal', money(receipt.subtotal)], {});
+    await P.printColumn([totalsLabelChars, 16], [ALIGN.LEFT, ALIGN.RIGHT], ['Subtotal', money(receipt.subtotal)], {});
     if (receipt.discountTotal) {
-      await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['Discount', `-${money(receipt.discountTotal)}`], {});
+      await P.printColumn(
+        [totalsLabelChars, 16],
+        [ALIGN.LEFT, ALIGN.RIGHT],
+        ['Discount', `-${money(receipt.discountTotal)}`],
+        {},
+      );
     }
     if (receipt.taxTotal) {
-      await P.printColumn([20, 12], [ALIGN.LEFT, ALIGN.RIGHT], ['GST', money(receipt.taxTotal)], {});
+      await P.printColumn([totalsLabelChars, 16], [ALIGN.LEFT, ALIGN.RIGHT], ['GST', money(receipt.taxTotal)], {});
     }
     await P.printText('\n\r', {});
     await P.printColumn(
-      [20, 12],
+      [totalsLabelChars, 16],
       [ALIGN.LEFT, ALIGN.RIGHT],
       ['TOTAL', money(receipt.grandTotal)],
       { widthtimes: 1, heigthtimes: 1 },
