@@ -86,7 +86,9 @@ export const adminOpsApi = {
     return res.data.data!;
   },
 
-  updateOtpGatewayConfig: async (dto: Partial<Omit<OtpGatewayConfigDto, 'apiKeyConfigured'>>): Promise<OtpGatewayConfigDto> => {
+  updateOtpGatewayConfig: async (
+    dto: Partial<Omit<OtpGatewayConfigDto, 'apiKeyConfigured'>> & { apiKey?: string },
+  ): Promise<OtpGatewayConfigDto> => {
     const res = await apiClient.put<StandardResponse<OtpGatewayConfigDto>>('/admin/otp-gateway/config', dto);
     return res.data.data!;
   },

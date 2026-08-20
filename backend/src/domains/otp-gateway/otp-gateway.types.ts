@@ -26,4 +26,12 @@ export class UpdateOtpGatewayConfigDto {
   @ApiPropertyOptional() @IsOptional() @IsString() templateLogin?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() templateRegister?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() templateVerifyPhone?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'StartMessaging API key. Write-only -- never returned by GET /config. Omit to leave the current key (DB-stored or env var) unchanged.',
+  })
+  @IsOptional()
+  @IsString()
+  apiKey?: string;
 }

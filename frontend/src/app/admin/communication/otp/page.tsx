@@ -18,6 +18,7 @@ const EMPTY_FORM: Omit<OtpGatewayConfigDto, 'apiKeyConfigured'> = {
 export default function OtpGatewayAdminPage() {
   const { toast } = useToast();
   const [form, setForm] = useState(EMPTY_FORM);
+  const [apiKey, setApiKey] = useState('');
   const [saving, setSaving] = useState(false);
 
   const { data: config, refetch } = useQuery({
@@ -41,8 +42,12 @@ export default function OtpGatewayAdminPage() {
     e.preventDefault();
     setSaving(true);
     try {
-      await adminOpsApi.updateOtpGatewayConfig(form);
+      await adminOpsApi.updateOtpGatewayConfig({
+        ...form,
+        ...(apiKey.trim() ? { apiKey: apiKey.trim() } : {}),
+      });
       toast('success', 'OTP gateway saved', 'Configuration updated successfully.');
+      setApiKey('');
       await refetch();
     } catch (err) {
       toast('error', 'Save failed', getApiErrorMessage(err));
@@ -83,7 +88,7 @@ export default function OtpGatewayAdminPage() {
             <div>
               <h3 className="text-xs font-bold text-neutral-900">StartMessaging API Key Configured</h3>
               <p className="text-[11px] text-neutral-600">
-                STARTMESSAGING_API_KEY is set on the server. Real OTPs will send when the provider below is StartMessaging.
+                An API key is on file. Real OTPs will send when the provider below is StartMessaging.
               </p>
             </div>
           </div>
@@ -96,7 +101,7 @@ export default function OtpGatewayAdminPage() {
             <div>
               <h3 className="text-xs font-bold text-neutral-900">StartMessaging API Key Not Set</h3>
               <p className="text-[11px] text-neutral-600">
-                Add STARTMESSAGING_API_KEY as a server environment variable to enable real sends. Until then OTPs are mocked (logged, not delivered).
+                Paste your API key below and save to enable real sends. Until then OTPs are mocked (logged, not delivered).
               </p>
             </div>
           </div>
@@ -129,6 +134,23 @@ export default function OtpGatewayAdminPage() {
               className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
             />
           </div>
+        </div>
+
+        <div className="space-y-1">
+          <label className="text-xs font-bold text-neutral-700 block">
+            StartMessaging API Key {config?.apiKeyConfigured ? '(currently set — leave blank to keep it)' : ''}
+          </label>
+          <input
+            type="password"
+            value={apiKey}
+            onChange={(e) => setApiKey(e.target.value)}
+            placeholder={config?.apiKeyConfigured ? '••••••••••••••••••••' : 'sm_live_...'}
+            autoComplete="new-password"
+            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+          />
+          <p className="text-[11px] text-neutral-500">
+            Stored securely on the server and never shown again after saving. Leave blank to keep the current key unchanged.
+          </p>
         </div>
 
         <div className="pt-2 border-t border-neutral-100 space-y-4">
