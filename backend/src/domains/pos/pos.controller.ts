@@ -41,6 +41,8 @@ export class PosController {
   constructor(private readonly posService: PosService) {}
 
   @Post('scan')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Scan Barcode or SKU for Instant Product Lookup' })
   @ApiResponse({ status: 200, type: BarcodeScanResultResponse })
@@ -65,6 +67,8 @@ export class PosController {
   }
 
   @Post('checkout-sessions/adopt')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Adopt Handoff Token on Desktop Web POS' })
   @ApiResponse({ status: 200, type: CheckoutSessionResponse })
@@ -119,6 +123,8 @@ export class PosController {
   }
 
   @Get('customers/lookup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Lookup Customer details & Order History by Phone Number',
   })

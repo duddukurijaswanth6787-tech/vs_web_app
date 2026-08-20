@@ -261,6 +261,18 @@ export const authService = {
 
 // ─── POS: scan, checkout handoff, sale ───────────────────────────────────────
 
+/**
+ * The backend's ValidationPipe rejects any property not declared on
+ * PosCartItemDto (whitelist: true, forbidNonWhitelisted: true) -- including
+ * on nested array items. `primaryImage`/`availableStock` are scan-result
+ * fields we keep on the cart item for display only; strip them before they
+ * ever reach the API or every checkout/session request 400s.
+ */
+function toApiCartItem(item: PosMobileCartItem) {
+  const { primaryImage, availableStock, ...apiItem } = item;
+  return apiItem;
+}
+
 export const posMobileService = {
   /** POST /pos/scan — resolve a barcode or SKU to a sellable variant. */
   async scanBarcode(barcode: string) {
@@ -275,7 +287,10 @@ export const posMobileService = {
     notes?: string;
     deviceId?: string;
   }) {
-    const res = await posApiClient.post('/pos/checkout-sessions', payload);
+    const res = await posApiClient.post('/pos/checkout-sessions', {
+      ...payload,
+      items: payload.items.map(toApiCartItem),
+    });
     return unwrap<any>(res);
   },
 
@@ -296,13 +311,28 @@ export const posMobileService = {
     clientOrderNumber?: string;
     isOfflineSync?: boolean;
   }) {
-    const res = await posApiClient.post('/pos/sales/complete', payload);
+    const res = await posApiClient.post('/pos/sales/complete', {
+      ...payload,
+      items: payload.items?.map(toApiCartItem),
+    });
     return unwrap<any>(res);
   },
 
   /** GET /pos/customers/lookup — customer + order history by phone. */
   async lookupCustomer(phone: string) {
     const res = await posApiClient.get('/pos/customers/lookup', { params: { phone } });
+    return unwrap<any>(res);
+  },
+
+  /** GET /pos/shifts/current — this cashier's open shift on a terminal, if any. */
+  async getCurrentShift(terminalId?: string) {
+    const res = await posApiClient.get('/pos/shifts/current', { params: { terminalId } });
+    return unwrap<any>(res);
+  },
+
+  /** POST /pos/shifts/open — open a till with a starting cash float. */
+  async openShift(payload: { terminalId: string; openingCash: number; notes?: string }) {
+    const res = await posApiClient.post('/pos/shifts/open', payload);
     return unwrap<any>(res);
   },
 };
