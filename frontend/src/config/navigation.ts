@@ -48,6 +48,7 @@ import {
   KeyRound,
   Award,
   Truck,
+  Timer,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -620,6 +621,14 @@ export const adminNavigation: NavGroup[] = [
         href: '/admin/access/matrix',
         icon: Sliders,
         roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
+        id: 'session-settings',
+        title: 'Login Sessions',
+        href: '/admin/access/session-settings',
+        icon: Timer,
+        roles: ['super_admin'],
         implemented: true,
       },
     ],

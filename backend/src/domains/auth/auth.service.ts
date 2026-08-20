@@ -336,7 +336,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: 900,
+      expiresIn: await this.jwtService.getExpiresIn(),
     };
   }
 }

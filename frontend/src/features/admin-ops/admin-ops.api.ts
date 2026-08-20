@@ -43,6 +43,13 @@ export interface OtpTemplateOptionDto {
   usesExpiry: boolean;
 }
 
+export interface SessionExpirySettingsDto {
+  accessTokenMinutes: number;
+  rememberMeAccessTokenDays: number;
+  refreshTokenDays: number;
+  rememberMeRefreshTokenDays: number;
+}
+
 export interface DtdcShipmentDto {
   id: string;
   orderId: string;
@@ -104,6 +111,19 @@ export const adminOpsApi = {
 
   getOtpTemplates: async (): Promise<OtpTemplateOptionDto[]> => {
     const res = await apiClient.get<StandardResponse<OtpTemplateOptionDto[]>>('/admin/otp-gateway/templates');
+    return res.data.data!;
+  },
+
+  // ── Session / login token expiry ───────────────────────
+  getSessionSettings: async (): Promise<SessionExpirySettingsDto> => {
+    const res = await apiClient.get<StandardResponse<SessionExpirySettingsDto>>('/admin/session-settings');
+    return res.data.data!;
+  },
+
+  updateSessionSettings: async (
+    dto: Partial<SessionExpirySettingsDto>,
+  ): Promise<SessionExpirySettingsDto> => {
+    const res = await apiClient.put<StandardResponse<SessionExpirySettingsDto>>('/admin/session-settings', dto);
     return res.data.data!;
   },
 

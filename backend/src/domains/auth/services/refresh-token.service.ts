@@ -1,21 +1,14 @@
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { randomUUID } from 'node:crypto';
 import { PrismaService } from '@database/prisma.service';
+import { SessionSettingsService } from './session-settings.service';
 
 @Injectable()
 export class RefreshTokenService {
-  private readonly defaultExpiryDays: number;
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
-  ) {
-    this.defaultExpiryDays = this.configService.get<number>(
-      'app.jwt.refreshTokenExpiryDays',
-      7,
-    );
-  }
+    private readonly sessionSettingsService: SessionSettingsService,
+  ) {}
 
   async create(
     userId: string,
@@ -23,7 +16,8 @@ export class RefreshTokenService {
     userAgent?: string,
     rememberMe = false,
   ): Promise<string> {
-    const expiryDays = rememberMe ? 30 : this.defaultExpiryDays;
+    const settings = await this.sessionSettingsService.getSettings();
+    const expiryDays = rememberMe ? settings.rememberMeRefreshTokenDays : settings.refreshTokenDays;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 
