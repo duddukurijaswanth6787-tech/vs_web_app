@@ -5,6 +5,8 @@ import { CouponService } from '@domains/coupon/coupon.service';
 import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { EmailService } from '@domains/email/email.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import { PrismaService } from '@database/prisma.service';
 
 describe('CheckoutService', () => {
@@ -36,6 +38,14 @@ describe('CheckoutService', () => {
         {
           provide: AuditService,
           useValue: { log: jest.fn() },
+        },
+        {
+          provide: EmailService,
+          useValue: { sendOrderConfirmationEmail: jest.fn() },
+        },
+        {
+          provide: OtpGatewayService,
+          useValue: { sendOrderConfirmedSms: jest.fn() },
         },
         {
           provide: PrismaService,

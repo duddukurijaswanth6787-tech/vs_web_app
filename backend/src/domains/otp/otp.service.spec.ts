@@ -7,6 +7,7 @@ import { AuthRepository } from '@domains/auth/auth.repository';
 import { PasswordService } from '@domains/auth/services/password.service';
 import { FirebaseAdminService } from '@domains/auth/services/firebase-admin.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import { AuthenticationException } from '@common/exceptions';
 
 describe('OtpService.loginWithFirebasePhone', () => {
@@ -49,6 +50,7 @@ describe('OtpService.loginWithFirebasePhone', () => {
         { provide: PasswordService, useValue: { hash: jest.fn().mockResolvedValue('hashed') } },
         { provide: FirebaseAdminService, useValue: firebaseAdminService },
         { provide: AuditService, useValue: { log: jest.fn() } },
+        { provide: OtpGatewayService, useValue: { sendOtp: jest.fn(), getExpiryMinutes: jest.fn().mockResolvedValue(10) } },
       ],
     }).compile();
 
