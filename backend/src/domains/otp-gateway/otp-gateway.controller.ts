@@ -1,7 +1,7 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OtpGatewayService } from './otp-gateway.service';
-import { UpdateOtpGatewayConfigDto } from './otp-gateway.types';
+import { STARTMESSAGING_TEMPLATES, UpdateOtpGatewayConfigDto } from './otp-gateway.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -19,6 +19,13 @@ export class OtpGatewayController {
   @ApiOperation({ summary: 'Get OTP gateway configuration' })
   async getConfig() {
     return ResponseBuilder.success(await this.otpGatewayService.getConfig());
+  }
+
+  @Get('templates')
+  @Permissions('settings:view')
+  @ApiOperation({ summary: 'List selectable StartMessaging templates' })
+  async listTemplates() {
+    return ResponseBuilder.success(STARTMESSAGING_TEMPLATES);
   }
 
   @Put('config')
