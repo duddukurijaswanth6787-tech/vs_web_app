@@ -1,12 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   StyleSheet,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { CheckCircle2, ShoppingBag, RotateCcw, CloudUpload } from 'lucide-react-native';
+import { CheckCircle2, ShoppingBag, RotateCcw, CloudUpload, Printer } from 'lucide-react-native';
+import { posMobileService, PosMobileCartItem, PosMobileCustomer, getApiErrorMessage } from '../services/api';
+import { bluetoothPrinterService } from '../services/bluetooth-printer';
 
 export default function SaleSuccessScreen() {
   const router = useRouter();
@@ -17,6 +21,46 @@ export default function SaleSuccessScreen() {
   // Set by checkout-phone.tsx when the sale was queued locally instead of
   // completed live -- the backend was unreachable at the moment of payment.
   const isOffline = params.offline === 'true';
+
+  // Carried through from checkout-phone.tsx on a live (non-offline) sale so
+  // a receipt can be requested and sent to a connected Bluetooth printer.
+  const cartJson = params.cartJson as string | undefined;
+  const customerJson = params.customerJson as string | undefined;
+  const paymentMethod = params.paymentMethod as string | undefined;
+  const [printing, setPrinting] = useState(false);
+
+  const canPrint = !isOffline && Boolean(cartJson);
+
+  const handlePrintReceipt = async () => {
+    if (!bluetoothPrinterService.isConnected()) {
+      Alert.alert(
+        'No Printer Connected',
+        'Connect a Bluetooth printer first.',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { text: 'Printer Settings', onPress: () => router.push('/printer-settings') },
+        ],
+      );
+      return;
+    }
+    setPrinting(true);
+    try {
+      const items: PosMobileCartItem[] = cartJson ? JSON.parse(cartJson) : [];
+      const customer: PosMobileCustomer | undefined = customerJson ? JSON.parse(customerJson) : undefined;
+      const receipt = await posMobileService.previewReceipt({
+        orderNumber,
+        grandTotal: Number(grandTotal),
+        items,
+        customer,
+        paymentMethod,
+      });
+      await bluetoothPrinterService.printBase64(receipt.escposBase64);
+    } catch (err) {
+      Alert.alert('Print Failed', getApiErrorMessage(err, 'Could not print the receipt.'));
+    } finally {
+      setPrinting(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
@@ -62,6 +106,29 @@ export default function SaleSuccessScreen() {
           >
             <CloudUpload size={16} color="#b45309" style={{ marginRight: 6 }} />
             <Text style={styles.pendingSyncBtnText}>View Pending Sync Queue</Text>
+          </TouchableOpacity>
+        )}
+
+        {isOffline && (
+          <Text style={styles.offlinePrintNote}>
+            Receipt printing is available once this sale syncs to the server.
+          </Text>
+        )}
+
+        {canPrint && (
+          <TouchableOpacity
+            style={styles.printBtn}
+            onPress={handlePrintReceipt}
+            disabled={printing}
+          >
+            {printing ? (
+              <ActivityIndicator color="#0369a1" size="small" />
+            ) : (
+              <>
+                <Printer size={16} color="#0369a1" style={{ marginRight: 6 }} />
+                <Text style={styles.printBtnText}>Print Receipt</Text>
+              </>
+            )}
           </TouchableOpacity>
         )}
 
@@ -186,6 +253,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     fontWeight: 'bold',
     color: '#b45309',
+  },
+  offlinePrintNote: {
+    fontSize: 10,
+    color: '#94a3b8',
+    textAlign: 'center',
+    marginBottom: 10,
+    lineHeight: 14,
+  },
+  printBtn: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    borderRadius: 14,
+    paddingVertical: 12,
+    marginBottom: 10,
+  },
+  printBtnText: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0369a1',
   },
   newSaleBtn: {
     width: '100%',

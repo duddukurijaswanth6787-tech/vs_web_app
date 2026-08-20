@@ -335,6 +335,28 @@ export const posMobileService = {
     const res = await posApiClient.post('/pos/shifts/open', payload);
     return unwrap<any>(res);
   },
+
+  /**
+   * POST /pos/printers/preview-receipt — renders a completed sale into a
+   * printable receipt: HTML (for sharing/preview) and raw ESC/POS bytes
+   * (base64) for a directly-connected Bluetooth thermal printer, see
+   * services/bluetooth-printer.ts.
+   */
+  async previewReceipt(payload: {
+    orderNumber: string;
+    grandTotal: number;
+    items: PosMobileCartItem[];
+    customer?: PosMobileCustomer;
+    paymentMethod?: string;
+    discountTotal?: number;
+    taxTotal?: number;
+  }): Promise<{ orderNumber: string; html: string; escposBase64: string }> {
+    const res = await posApiClient.post('/pos/printers/preview-receipt', {
+      ...payload,
+      items: payload.items.map(toApiCartItem),
+    });
+    return unwrap<any>(res);
+  },
 };
 
 // ─── Dashboard: home screen stats ─────────────────────────────────────────────

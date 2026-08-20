@@ -20,6 +20,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Camera as CameraIcon,
+  Printer,
 } from 'lucide-react-native';
 import { posMobileService, PosMobileCartItem, getApiErrorMessage } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
@@ -171,13 +172,21 @@ export default function SaleProductScreen() {
 
   return (
     <View style={styles.container}>
-      <View style={{ paddingHorizontal: 16, paddingTop: 12 }}>
-        <ConnectivityBadge
-          isBackendReachable={offlineSync.isBackendReachable}
-          pendingCount={offlineSync.pendingCount}
-          needsReviewCount={offlineSync.needsReviewCount}
-          isSyncing={offlineSync.isSyncing}
-        />
+      <View style={{ paddingHorizontal: 16, paddingTop: 12, flexDirection: 'row', alignItems: 'center' }}>
+        <View style={{ flex: 1 }}>
+          <ConnectivityBadge
+            isBackendReachable={offlineSync.isBackendReachable}
+            pendingCount={offlineSync.pendingCount}
+            needsReviewCount={offlineSync.needsReviewCount}
+            isSyncing={offlineSync.isSyncing}
+          />
+        </View>
+        <TouchableOpacity
+          style={styles.printerSettingsBtn}
+          onPress={() => router.push('/printer-settings')}
+        >
+          <Printer size={18} color="#0284c7" />
+        </TouchableOpacity>
       </View>
 
       {/* Top Barcode Search Input & Camera Scanner Button */}
@@ -314,6 +323,15 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f0f9ff',
+  },
+  printerSettingsBtn: {
+    width: 34,
+    height: 34,
+    borderRadius: 10,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: 8,
   },
   searchBarContainer: {
     flexDirection: 'row',

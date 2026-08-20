@@ -120,6 +120,12 @@ export default function MobilePaymentScreen() {
           orderNumber: res.order.orderNumber,
           grandTotal: res.order.grandTotal.toString(),
           completedOn: 'Shopora Mobile App',
+          // Carried through so the success screen can request a printable
+          // receipt (POST /pos/printers/preview-receipt) without needing to
+          // refetch the order.
+          cartJson: JSON.stringify(cartItems),
+          customerJson: JSON.stringify(customer),
+          paymentMethod,
         },
       });
     } catch (err: unknown) {

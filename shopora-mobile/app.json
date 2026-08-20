@@ -41,7 +41,7 @@
         {
           "isBackgroundEnabled": false,
           "modes": ["central"],
-          "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner."
+          "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner and receipt/label printer."
         }
       ]
     ]
