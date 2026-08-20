@@ -5,6 +5,7 @@ import { CartService } from '@domains/cart/cart.service';
 import { CouponService } from '@domains/coupon/coupon.service';
 import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
+import { EmailService } from '@domains/email/email.service';
 import { PrismaService } from '@database/prisma.service';
 import {
   CheckoutPreviewDto,
@@ -40,6 +41,7 @@ export class CheckoutService {
     private readonly couponService: CouponService,
     private readonly offerService: OfferService,
     private readonly workflow: OrderWorkflowService,
+    private readonly emailService: EmailService,
   ) {}
 
   /**
@@ -341,6 +343,28 @@ export class CheckoutService {
       userId,
       newValue: { orderNumber, grandTotal: order.grandTotal },
     });
+
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true },
+    });
+    if (user?.email) {
+      await this.emailService.sendOrderConfirmationEmail({
+        to: user.email,
+        userId,
+        orderNumber,
+        items: items.map((i) => ({
+          productName: i.productName,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+        subtotal,
+        discountTotal,
+        taxTotal,
+        shippingCharge,
+        grandTotal: Math.round(grandTotal * 100) / 100,
+      });
+    }
 
     return order;
   }

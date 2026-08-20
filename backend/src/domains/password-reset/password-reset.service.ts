@@ -1,9 +1,11 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { randomBytes } from 'node:crypto';
 import { createHash } from 'node:crypto';
 import { PrismaService } from '@database/prisma.service';
 import { PasswordService } from '@domains/auth/services/password.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { EmailService } from '@domains/email/email.service';
 import { LoggerService } from '@common/logger/logger.service';
 import { BusinessException } from '@common/exceptions';
 
@@ -16,6 +18,8 @@ export class PasswordResetService {
     private readonly passwordService: PasswordService,
     private readonly auditService: AuditService,
     private readonly loggerService: LoggerService,
+    private readonly emailService: EmailService,
+    private readonly configService: ConfigService,
   ) {}
 
   // ponytail: ipAddress/userAgent reserved for audit — unused in forgot for now
@@ -55,10 +59,22 @@ export class PasswordResetService {
       { action: 'forgot_password', userId: user.id },
       'PasswordResetService',
     );
-    // ponytail: raw token returned here for development — replace with email/SMS delivery in production
+
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'https://www.vsboutique.shop',
+    );
+    const resetUrl = `${frontendUrl}/reset-password/${rawToken}`;
+    await this.emailService.sendPasswordResetEmail(
+      user.email,
+      resetUrl,
+      user.id,
+    );
+
     return {
       message:
         'If an account with that email exists, a reset link has been generated.',
+      // ponytail: raw token still surfaced outside production so local/dev testing works without a real inbox
       ...(process.env.NODE_ENV !== 'production' && { resetToken: rawToken }),
     };
   }

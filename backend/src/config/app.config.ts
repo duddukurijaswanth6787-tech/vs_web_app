@@ -116,6 +116,17 @@ export default registerAs('app', () => ({
     apiKey: process.env.SMS_API_KEY || '',
     senderId: process.env.SMS_SENDER_ID || 'VASANT',
   },
+  email: {
+    smtpHost: process.env.SMTP_HOST || '',
+    smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
+    smtpSecure: process.env.SMTP_SECURE === 'true',
+    smtpUser: process.env.SMTP_USER || '',
+    smtpPassword: process.env.SMTP_PASSWORD || '',
+    fromAddress: process.env.EMAIL_FROM || 'no-reply@vsboutique.shop',
+    fromName: process.env.EMAIL_FROM_NAME || "Vasanthi's Signature",
+  },
+  // Used to build links (password reset, order tracking) inside emails.
+  frontendUrl: process.env.FRONTEND_URL || 'https://www.vsboutique.shop',
   firebase: {
     projectId: process.env.FIREBASE_PROJECT_ID || '',
     clientEmail: process.env.FIREBASE_CLIENT_EMAIL || '',
