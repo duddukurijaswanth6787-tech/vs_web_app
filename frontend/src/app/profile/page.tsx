@@ -3,7 +3,6 @@
 import React, { useMemo } from 'react';
 import Link from 'next/link';
 import {
-  ArrowLeft,
   ChevronRight,
   MapPin,
   Package,
@@ -28,6 +27,7 @@ import {
 } from 'lucide-react';
 import Image from 'next/image';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { ReviewPromptBanner } from '@/components/storefront/ReviewPromptBanner';
 import { useAuth } from '@/hooks/useAuth';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
@@ -39,50 +39,13 @@ import {
   useCustomerOrders,
   useActiveCoupons,
 } from '@/features/customer/hooks';
-import type { CartDto } from '@/features/customer/cart.service';
 
 function GuestAccountView() {
-  const { data: wishlistData } = useCustomerWishlist();
-  const wishlistCount = Array.isArray(wishlistData)
-    ? wishlistData.length
-    : wishlistData?.items?.length ?? 0;
-  const { data: cartData } = useCustomerCart();
-  const cartCount = (cartData as CartDto | undefined)?.items?.length ?? (cartData as CartDto | undefined)?.itemCount ?? 0;
-
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <Link href="/" className="flex items-center">
-            <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-8 w-auto object-contain" />
-          </Link>
-        </div>
+    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+      <StorefrontHeader />
 
-        <div className="flex items-center gap-3">
-          <Link href="/wishlist" className="relative p-1 text-neutral-700 hover:text-[#800020]">
-            <Heart className="w-5 h-5" />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
-                {wishlistCount}
-              </span>
-            )}
-          </Link>
-          <Link href="/cart" className="relative p-1 text-neutral-700 hover:text-[#800020]">
-            <ShoppingBag className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-md mx-auto w-full px-4 py-5 flex-1 space-y-5">
+      <main className="max-w-md lg:max-w-xl mx-auto w-full px-4 py-5 lg:py-16 flex-1 space-y-5">
         {/* 1. Hero Welcome Banner */}
         <div className="bg-gradient-to-br from-rose-100/70 via-pink-50/60 to-amber-50/40 border border-rose-100/90 rounded-3xl p-5 relative overflow-hidden shadow-xs">
           <div className="relative z-10 pr-24 sm:pr-32 space-y-1">
@@ -325,42 +288,17 @@ function AuthenticatedAccountView() {
   }, [ordersList]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-3">
-          <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
-            <ArrowLeft className="w-5 h-5" />
-          </Link>
-          <Link href="/" className="flex items-center">
-            <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-8 w-auto object-contain" />
-          </Link>
-        </div>
+    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+      <StorefrontHeader />
 
-        <div className="flex items-center gap-3">
-          <Link href="/wishlist" className="relative p-1 text-neutral-700 hover:text-[#800020]">
-            <Heart className="w-5 h-5" />
-            {wishlistCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
-                {wishlistCount}
-              </span>
-            )}
-          </Link>
-          <Link href="/cart" className="relative p-1 text-neutral-700 hover:text-[#800020]">
-            <ShoppingBag className="w-5 h-5" />
-            {cartCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 min-w-4 h-4 px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
-                {cartCount}
-              </span>
-            )}
-          </Link>
-        </div>
-      </header>
-
-      <main className="max-w-md mx-auto w-full px-4 py-5 flex-1 space-y-4">
+      <main className="max-w-md lg:max-w-6xl mx-auto w-full px-4 py-5 lg:py-8 flex-1">
         {/* Pending Review Prompt Banner */}
         <ReviewPromptBanner />
 
+        <div className="mt-4 lg:mt-0 flex flex-col-reverse gap-4 lg:grid lg:grid-cols-[300px_1fr] lg:gap-6 lg:items-start">
+          <AccountSidebar onLogout={() => logout()} />
+
+          <div className="space-y-4">
         {/* 1. Royal Maroon Customer Card */}
         <div className="bg-gradient-to-br from-[#600018] via-[#800020] to-[#990026] text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
           <div className="flex items-center justify-between gap-3">
@@ -487,63 +425,7 @@ function AuthenticatedAccountView() {
           </div>
         </div>
 
-        {/* 3. Account Settings Menu Group */}
-        <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
-          <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/50">
-            <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">Account Settings</h3>
-          </div>
-          <div className="divide-y divide-neutral-100">
-            <Link href="/profile/edit" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <User className="w-4 h-4 text-[#800020]" />
-                <span>My Profile</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/profile/addresses" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <MapPin className="w-4 h-4 text-[#800020]" />
-                <span>Address Book</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/profile/payments" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <CreditCard className="w-4 h-4 text-[#800020]" />
-                <span>Payment Methods</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/offers" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <Tag className="w-4 h-4 text-[#800020]" />
-                <span>My Coupons & Offers</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/profile/notifications" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <Bell className="w-4 h-4 text-[#800020]" />
-                <span>Notifications</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/privacy" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <ShieldCheck className="w-4 h-4 text-[#800020]" />
-                <span>Privacy Settings</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-          </div>
-        </div>
-
-        {/* 4. Refer & Earn Banner */}
+        {/* 3. Refer & Earn Banner */}
         <Link href="/profile/referral" className="bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50/60 border border-rose-100/90 rounded-3xl p-4 flex items-center justify-between shadow-2xs hover:shadow-xs transition-shadow">
           <div className="space-y-0.5 pr-2">
             <h4 className="text-xs font-bold text-[#800020]">Refer & Earn</h4>
@@ -558,43 +440,104 @@ function AuthenticatedAccountView() {
             <ChevronRight className="w-4 h-4 text-neutral-400" />
           </div>
         </Link>
-
-        {/* 5. Customer Support Menu Group */}
-        <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
-          <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/50">
-            <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">Customer Support</h3>
-          </div>
-          <div className="divide-y divide-neutral-100">
-            <Link href="/faqs" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <HelpCircle className="w-4 h-4 text-[#800020]" />
-                <span>Help Center</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
-
-            <Link href="/contact" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
-              <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-                <MessageCircle className="w-4 h-4 text-[#800020]" />
-                <span>Contact Us</span>
-              </span>
-              <ChevronRight className="w-4 h-4 text-neutral-400" />
-            </Link>
           </div>
         </div>
-
-        {/* 6. Logout Button */}
-        <button
-          type="button"
-          onClick={() => logout()}
-          className="w-full bg-white border border-rose-200 text-[#800020] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs shadow-xs active:scale-[0.98] transition-all"
-        >
-          <LogOut className="w-4 h-4 text-[#800020]" />
-          <span>Logout</span>
-        </button>
       </main>
 
       <MobileBottomNav />
+    </div>
+  );
+}
+
+function AccountSidebar({ onLogout }: { onLogout: () => void }) {
+  return (
+    <div className="space-y-4 lg:sticky lg:top-20">
+      <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
+        <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/50">
+          <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">Account Settings</h3>
+        </div>
+        <div className="divide-y divide-neutral-100">
+          <Link href="/profile/edit" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <User className="w-4 h-4 text-[#800020]" />
+              <span>My Profile</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/profile/addresses" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <MapPin className="w-4 h-4 text-[#800020]" />
+              <span>Address Book</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/profile/payments" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <CreditCard className="w-4 h-4 text-[#800020]" />
+              <span>Payment Methods</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/offers" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <Tag className="w-4 h-4 text-[#800020]" />
+              <span>My Coupons & Offers</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/profile/notifications" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <Bell className="w-4 h-4 text-[#800020]" />
+              <span>Notifications</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/privacy" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <ShieldCheck className="w-4 h-4 text-[#800020]" />
+              <span>Privacy Settings</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+        </div>
+      </div>
+
+      <div className="bg-white border border-neutral-200/80 rounded-3xl overflow-hidden shadow-xs">
+        <div className="px-4 py-3 border-b border-neutral-100 bg-neutral-50/50">
+          <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">Customer Support</h3>
+        </div>
+        <div className="divide-y divide-neutral-100">
+          <Link href="/faqs" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <HelpCircle className="w-4 h-4 text-[#800020]" />
+              <span>Help Center</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
+          <Link href="/contact" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <MessageCircle className="w-4 h-4 text-[#800020]" />
+              <span>Contact Us</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        onClick={onLogout}
+        className="w-full bg-white border border-rose-200 text-[#800020] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs shadow-xs active:scale-[0.98] transition-all"
+      >
+        <LogOut className="w-4 h-4 text-[#800020]" />
+        <span>Logout</span>
+      </button>
     </div>
   );
 }
