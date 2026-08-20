@@ -47,6 +47,17 @@ export class LoginDto {
   rememberMe?: boolean;
 }
 
+export class GoogleLoginDto {
+  @ApiProperty({ description: 'The signed ID token credential from Google Sign-In (GIS).' })
+  @IsString()
+  credential!: string;
+
+  @ApiProperty({ required: false, default: false })
+  @IsOptional()
+  @IsBoolean()
+  rememberMe?: boolean;
+}
+
 export class RefreshDto {
   @ApiProperty()
   @IsString()

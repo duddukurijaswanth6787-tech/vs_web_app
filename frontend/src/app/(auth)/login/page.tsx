@@ -6,9 +6,12 @@ import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Lock, Phone, Mail, ShieldCheck } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { GoogleSignInButton } from '@/components/auth/GoogleSignInButton';
 import { customerAuthService } from '@/features/customer/auth.service';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
+
+type ProfileWithRoles = { roles?: string[] } | null | undefined;
 
 function CustomerLoginForm() {
   const router = useRouter();
@@ -26,6 +29,23 @@ function CustomerLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
 
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, '').slice(-10), [phone]);
+
+  const redirectAfterLogin = (profile: ProfileWithRoles) => {
+    const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
+    const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
+    const isPlainStaff = profile?.roles?.includes('staff');
+    const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
+
+    if (profile && isStaffUser) {
+      // Billing-only staff land straight on the standalone POS screen, not
+      // the admin console — see app/pos/layout.tsx.
+      let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
+      if (redirectTo !== '/') destination = redirectTo;
+      router.push(destination);
+    } else {
+      router.push(redirectTo);
+    }
+  };
 
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,24 +78,23 @@ function CustomerLoginForm() {
         rememberMe: true,
       });
       const profileResult = await completeTokenLogin() as { data?: { roles?: string[] } | null };
-      const profile = profileResult?.data;
-
-      const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
-      const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
-      const isPlainStaff = profile?.roles?.includes('staff');
-      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
-
-      if (profile && isStaffUser) {
-        // Billing-only staff land straight on the standalone POS screen, not
-        // the admin console — see app/pos/layout.tsx.
-        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
-        if (redirectTo !== '/') destination = redirectTo;
-        router.push(destination);
-      } else {
-        router.push(redirectTo);
-      }
+      redirectAfterLogin(profileResult?.data);
     } catch (err) {
       setError(getApiErrorMessage(err, 'OTP login failed'));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async (credential: string) => {
+    setError('');
+    setIsLoading(true);
+    try {
+      await customerAuthService.loginWithGoogle(credential);
+      const profileResult = await completeTokenLogin() as { data?: { roles?: string[] } | null };
+      redirectAfterLogin(profileResult?.data);
+    } catch (err) {
+      setError(getApiErrorMessage(err, 'Google login failed'));
     } finally {
       setIsLoading(false);
     }
@@ -88,21 +107,7 @@ function CustomerLoginForm() {
     try {
       await login({ email, password });
       const profileResult = await refetchUser() as { data?: { roles?: string[] } | null };
-      const profile = profileResult?.data;
-      const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
-      const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
-      const isPlainStaff = profile?.roles?.includes('staff');
-      const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
-
-      if (profile && isStaffUser) {
-        // Billing-only staff land straight on the standalone POS screen, not
-        // the admin console — see app/pos/layout.tsx.
-        let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
-        if (redirectTo !== '/') destination = redirectTo;
-        router.push(destination);
-      } else {
-        router.push(redirectTo);
-      }
+      redirectAfterLogin(profileResult?.data);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Login failed'));
     } finally {
@@ -272,6 +277,14 @@ function CustomerLoginForm() {
               </button>
             </form>
           )}
+
+          <div className="flex items-center gap-3 pt-1">
+            <div className="h-[1px] bg-neutral-200 flex-1" />
+            <span className="text-xs text-neutral-400 font-medium">or</span>
+            <div className="h-[1px] bg-neutral-200 flex-1" />
+          </div>
+
+          <GoogleSignInButton onCredential={handleGoogleLogin} />
         </div>
 
         <p className="text-center text-xs text-neutral-500">

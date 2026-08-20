@@ -11,6 +11,7 @@ model User {
   email                   String                   @unique
   phone                   String?
   passwordHash            String
+  googleId                String?                  @unique
   userType                UserType                 @default(CUSTOMER)
   accountStatus           AccountStatus            @default(PENDING_VERIFICATION)
   gender                  Gender?
