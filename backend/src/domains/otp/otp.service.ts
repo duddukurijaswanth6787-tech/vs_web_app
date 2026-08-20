@@ -9,6 +9,7 @@ import { AuthRepository } from '@domains/auth/auth.repository';
 import { PasswordService } from '@domains/auth/services/password.service';
 import { FirebaseAdminService } from '@domains/auth/services/firebase-admin.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
 import {
   SendOtpDto,
   VerifyOtpDto,
@@ -30,6 +31,7 @@ export class OtpService {
     private readonly passwordService: PasswordService,
     private readonly firebaseAdminService: FirebaseAdminService,
     private readonly auditService: AuditService,
+    private readonly otpGatewayService: OtpGatewayService,
   ) {}
 
   private normalizePhone(phone: string): string {
@@ -67,34 +69,26 @@ export class OtpService {
       },
     });
 
-    const smsEnabled = this.configService.get<boolean>(
-      'app.features.sms',
-      false,
-    );
-    if (smsEnabled) {
-      await this.prisma.smsLog.create({
-        data: {
-          userId: user?.id,
-          phone,
-          template: 'OTP_LOGIN',
-          message: `Your Vasanthi's Signature OTP is ${code}. Valid for ${expiryMinutes} minutes.`,
-          status: 'QUEUED',
-          metadata: { purpose },
-        },
-      });
+    await this.otpGatewayService.sendOtp({
+      phone,
+      code,
+      purpose,
+      expiryMinutes,
+      userId: user?.id,
+    });
+
+    const isDev =
+      this.configService.get<string>('app.env') !== 'production' &&
+      process.env.NODE_ENV !== 'production';
+    if (isDev) {
+      // Print OTP in the backend terminal for local/dev testing only --
+      // never in production logs, where it would be a real credential leak.
+      this.logger.log('================================================');
+      this.logger.log(` OTP SENT  | phone: ${phone} | purpose: ${purpose}`);
+      this.logger.log(` OTP CODE  | ${code}`);
+      this.logger.log(` Expires in ${expiryMinutes} minutes`);
+      this.logger.log('================================================');
     }
-
-    // Always print OTP in backend terminal for local/dev testing
-    this.logger.log('================================================');
-    this.logger.log(` OTP SENT  | phone: ${phone} | purpose: ${purpose}`);
-    this.logger.log(` OTP CODE  | ${code}`);
-    this.logger.log(` Expires in ${expiryMinutes} minutes`);
-    this.logger.log('================================================');
-    // Also print plain console so it is easy to spot in nest logs
-
-    console.log(
-      `\n>>> [OTP] phone=${phone} code=${code} purpose=${purpose} <<<\n`,
-    );
 
     await this.auditService.log({
       action: 'OTP_SENT',
@@ -104,9 +98,6 @@ export class OtpService {
       newValue: { purpose, phone },
     });
 
-    const isDev =
-      this.configService.get<string>('app.env') !== 'production' &&
-      process.env.NODE_ENV !== 'production';
     return {
       phone,
       expiresInSeconds: expiryMinutes * 60,

@@ -75,6 +75,7 @@ import { RagKnowledgeModule } from '../domains/rag-knowledge/rag-knowledge.modul
 import { StorefrontModule } from '../modules/storefront/storefront.module';
 import { FeatureGateModule } from '@common/feature-gate/feature-gate.module';
 import { OtpModule } from '@domains/otp/otp.module';
+import { OtpGatewayModule } from '@domains/otp-gateway/otp-gateway.module';
 import { LoyaltyModule } from '@domains/loyalty/loyalty.module';
 import { GiftCardModule } from '@domains/gift-card/gift-card.module';
 import { ReferralModule } from '@domains/referral/referral.module';
@@ -216,6 +217,7 @@ import { PosModule } from '@domains/pos/pos.module';
     // Feature gate + Phase 11 commerce extensions
     FeatureGateModule,
     OtpModule,
+    OtpGatewayModule,
     LoyaltyModule,
     GiftCardModule,
     ReferralModule,

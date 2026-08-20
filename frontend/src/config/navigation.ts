@@ -45,6 +45,7 @@ import {
   Sparkles,
   PhoneCall,
   Smartphone,
+  KeyRound,
   Award,
   Truck,
 } from 'lucide-react';
@@ -187,6 +188,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'Push Notifications',
         href: '/admin/communication/push',
         icon: Smartphone,
+        implemented: true,
+      },
+      {
+        id: 'communication-otp',
+        title: 'OTP Gateway',
+        href: '/admin/communication/otp',
+        icon: KeyRound,
         implemented: true,
       },
     ],

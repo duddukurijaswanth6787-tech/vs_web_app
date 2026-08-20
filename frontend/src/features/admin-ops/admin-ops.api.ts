@@ -25,6 +25,15 @@ export interface PushResultDto {
   [key: string]: unknown;
 }
 
+export interface OtpGatewayConfigDto {
+  provider: 'mock' | 'startmessaging';
+  appName: string;
+  templateLogin: string;
+  templateRegister: string;
+  templateVerifyPhone: string;
+  apiKeyConfigured: boolean;
+}
+
 export interface DtdcShipmentDto {
   id: string;
   orderId: string;
@@ -68,6 +77,17 @@ export const adminOpsApi = {
     const res = await apiClient.get<StandardResponse<{ logs: Array<Record<string, unknown>>; total: number }>>('/sms/logs', {
       params: { page, limit },
     });
+    return res.data.data!;
+  },
+
+  // ── OTP Gateway ───────────────────────────────────────
+  getOtpGatewayConfig: async (): Promise<OtpGatewayConfigDto> => {
+    const res = await apiClient.get<StandardResponse<OtpGatewayConfigDto>>('/admin/otp-gateway/config');
+    return res.data.data!;
+  },
+
+  updateOtpGatewayConfig: async (dto: Partial<Omit<OtpGatewayConfigDto, 'apiKeyConfigured'>>): Promise<OtpGatewayConfigDto> => {
+    const res = await apiClient.put<StandardResponse<OtpGatewayConfigDto>>('/admin/otp-gateway/config', dto);
     return res.data.data!;
   },
 

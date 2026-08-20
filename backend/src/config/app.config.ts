@@ -116,6 +116,10 @@ export default registerAs('app', () => ({
     apiKey: process.env.SMS_API_KEY || '',
     senderId: process.env.SMS_SENDER_ID || 'VASANT',
   },
+  startMessaging: {
+    apiKey: process.env.STARTMESSAGING_API_KEY || '',
+    baseUrl: process.env.STARTMESSAGING_BASE_URL || 'https://api.startmessaging.com',
+  },
   email: {
     smtpHost: process.env.SMTP_HOST || '',
     smtpPort: parseInt(process.env.SMTP_PORT || '587', 10),
