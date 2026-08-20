@@ -17,6 +17,13 @@ import { barcodeService, getApiErrorMessage, type CreatedVariant, type LabelSize
 import { getLastCreatedProduct, clearLastCreatedProduct } from '../services/product-draft';
 import { bluetoothPrinterService } from '../services/bluetooth-printer';
 
+/** Physical label roll dimensions matching LABEL_SIZE_OPTIONS's displayed sizes, for the direct Bluetooth print path. */
+const LABEL_SIZE_MM: Record<LabelSize, { widthMm: number; heightMm: number }> = {
+  SMALL: { widthMm: 50, heightMm: 25 },
+  MEDIUM: { widthMm: 75, heightMm: 40 },
+  LARGE: { widthMm: 100, heightMm: 50 },
+};
+
 /**
  * Final step of the add-product flow: show the barcode the backend issued for
  * every variant and print the sticker labels.
@@ -72,6 +79,7 @@ export default function LabelPreviewScreen() {
           price: labelPrice,
           storeName: product.brandName,
           quantity: quantityFor(variant),
+          ...LABEL_SIZE_MM[labelSize],
         });
       } else {
         // No printer connected, so the generated label is shared out to
