@@ -105,7 +105,12 @@ export class PosRepository {
         salePriceOverride: product.salePrice,
         product,
         media: product.media,
-        inventory: { availableQuantity: 100 },
+        // No ProductVariant row exists for this product, so there is no
+        // Inventory row either (Inventory is keyed off variantId) -- report
+        // it the same way every other untracked variant is reported
+        // (scanBarcode's `inventory?.availableQuantity ?? 0`), not a fake
+        // in-stock number.
+        inventory: null,
         attributeValues: [],
       };
     }
