@@ -4,11 +4,14 @@ import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
+import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
 import { PaymentRepository } from './payment.repository';
 import {
   CreatePaymentDto,
   PaymentQueryDto,
   PaymentResponse,
+  RazorpayConfigResponse,
+  UpdateRazorpayConfigDto,
 } from './payment.types';
 import Razorpay from 'razorpay';
 import * as crypto from 'crypto';
@@ -19,36 +22,102 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
   CAPTURED: ['REFUNDED'],
 };
 
+const GROUP = 'razorpay';
+const KEYS = {
+  keyId: 'razorpay.key_id',
+  keySecret: 'razorpay.key_secret',
+  webhookSecret: 'razorpay.webhook_secret',
+};
+
 @Injectable()
 export class PaymentService {
-  private razorpay: Razorpay;
-
   constructor(
     private readonly paymentRepository: PaymentRepository,
     private readonly auditService: AuditService,
     private readonly orderWorkflowService: OrderWorkflowService,
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
-  ) {
-    this.razorpay = new Razorpay({
-      key_id:
-        this.configService.get<string>('app.razorpay.keyId') || 'mock_key',
-      key_secret:
-        this.configService.get<string>('app.razorpay.keySecret') ||
-        'mock_secret',
-    });
+    private readonly settingRepository: AppSettingRepository,
+  ) {}
+
+  /**
+   * Razorpay credentials are admin-configurable (Admin > Access > Login
+   * Sessions, same pattern as the StartMessaging API key and Google Client
+   * ID) so they can be set/rotated without a redeploy. A DB-stored value
+   * takes priority over the env var if both are present. Unlike the key ID,
+   * the key secret and webhook secret are real secrets -- write-only, never
+   * returned by getConfig().
+   */
+  private async getEffectiveKeyId(): Promise<string> {
+    const dbValue = await this.settingRepository.getByKey(KEYS.keyId);
+    return dbValue || this.configService.get<string>('app.razorpay.keyId', '');
   }
 
-  private isRazorpayEnabled(): boolean {
-    const enabled = this.configService.get<boolean>(
-      'app.razorpay.enabled',
-      true,
-    );
-    const keyId = this.configService.get<string>('app.razorpay.keyId');
-    const keySecret = this.configService.get<string>('app.razorpay.keySecret');
-    return (
-      enabled && !!keyId && !!keySecret && keyId !== 'mock_key' && keyId !== ''
-    );
+  private async getEffectiveKeySecret(): Promise<string> {
+    const dbValue = await this.settingRepository.getByKey(KEYS.keySecret);
+    return dbValue || this.configService.get<string>('app.razorpay.keySecret', '');
+  }
+
+  private async getEffectiveWebhookSecret(): Promise<string> {
+    const dbValue = await this.settingRepository.getByKey(KEYS.webhookSecret);
+    return dbValue || this.configService.get<string>('app.razorpay.webhookSecret', '');
+  }
+
+  async getConfig(): Promise<RazorpayConfigResponse> {
+    const [keyId, keySecret, webhookSecret] = await Promise.all([
+      this.getEffectiveKeyId(),
+      this.getEffectiveKeySecret(),
+      this.getEffectiveWebhookSecret(),
+    ]);
+    return {
+      keyId,
+      keySecretConfigured: !!keySecret,
+      webhookSecretConfigured: !!webhookSecret,
+    };
+  }
+
+  async updateConfig(dto: UpdateRazorpayConfigDto, userId: string): Promise<RazorpayConfigResponse> {
+    const upsert = async (key: string, value: string, description: string) => {
+      const existing = await this.settingRepository.findByKey(key);
+      if (existing) {
+        await this.settingRepository.update(existing.id, { value });
+      } else {
+        await this.settingRepository.create({ key, value, group: GROUP, description });
+      }
+    };
+    if (dto.keyId !== undefined) {
+      await upsert(KEYS.keyId, dto.keyId, 'Razorpay Key ID (public, safe to expose to frontend)');
+    }
+    if (dto.keySecret !== undefined) {
+      await upsert(KEYS.keySecret, dto.keySecret, 'Razorpay Key Secret (private)');
+    }
+    if (dto.webhookSecret !== undefined) {
+      await upsert(KEYS.webhookSecret, dto.webhookSecret, 'Razorpay Webhook Secret (private)');
+    }
+    await this.auditService.log({
+      action: 'RAZORPAY_CONFIG_UPDATED',
+      module: 'payment',
+      resource: 'app_setting',
+      userId,
+      // Never audit-log the secrets themselves -- just whether they changed.
+      newValue: {
+        keyId: dto.keyId,
+        keySecret: dto.keySecret !== undefined ? '[redacted]' : undefined,
+        webhookSecret: dto.webhookSecret !== undefined ? '[redacted]' : undefined,
+      },
+    });
+    return this.getConfig();
+  }
+
+  private async isRazorpayEnabled(): Promise<boolean> {
+    const enabled = this.configService.get<boolean>('app.razorpay.enabled', true);
+    const [keyId, keySecret] = await Promise.all([this.getEffectiveKeyId(), this.getEffectiveKeySecret()]);
+    return enabled && !!keyId && !!keySecret;
+  }
+
+  private async getRazorpayClient(): Promise<Razorpay> {
+    const [keyId, keySecret] = await Promise.all([this.getEffectiveKeyId(), this.getEffectiveKeySecret()]);
+    return new Razorpay({ key_id: keyId || 'mock_key', key_secret: keySecret || 'mock_secret' });
   }
 
   private toResponse(p: any, includeTransactions = false): PaymentResponse {
@@ -118,9 +187,10 @@ export class PaymentService {
 
     let providerOrderId = `rzp_mock_${paymentNumber}`;
 
-    if (this.isRazorpayEnabled()) {
+    if (await this.isRazorpayEnabled()) {
       try {
-        const razorpayOrder = await this.razorpay.orders.create({
+        const razorpay = await this.getRazorpayClient();
+        const razorpayOrder = await razorpay.orders.create({
           amount: Math.round(dto.amount * 100), // in paise
           currency: dto.currency || 'INR',
           receipt: paymentNumber,
@@ -170,8 +240,6 @@ export class PaymentService {
       return this.toResponse(payment, true);
     }
 
-    const keySecret =
-      this.configService.get<string>('app.razorpay.keySecret') || '';
     const orderId = payment.providerOrderId;
     if (!orderId) {
       throw new BusinessException(
@@ -180,7 +248,8 @@ export class PaymentService {
       );
     }
 
-    if (this.isRazorpayEnabled()) {
+    if (await this.isRazorpayEnabled()) {
+      const keySecret = await this.getEffectiveKeySecret();
       const text = `${orderId}|${razorpayPaymentId}`;
       const generated = crypto
         .createHmac('sha256', keySecret)
@@ -295,12 +364,13 @@ export class PaymentService {
       );
     }
 
-    if (!this.isRazorpayEnabled()) {
+    if (!(await this.isRazorpayEnabled())) {
       return { razorpayRefundId: `rfnd_mock_${Date.now()}`, status: 'processed' };
     }
 
     try {
-      const refund = await this.razorpay.payments.refund(payment.providerPaymentId, {
+      const razorpay = await this.getRazorpayClient();
+      const refund = await razorpay.payments.refund(payment.providerPaymentId, {
         amount: Math.round(amount * 100),
       });
       return { razorpayRefundId: refund.id, status: refund.status };
@@ -313,10 +383,9 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
-    const webhookSecret =
-      this.configService.get<string>('app.razorpay.webhookSecret') || '';
+    const webhookSecret = await this.getEffectiveWebhookSecret();
 
-    if (this.isRazorpayEnabled() && webhookSecret) {
+    if ((await this.isRazorpayEnabled()) && webhookSecret) {
       const generated = crypto
         .createHmac('sha256', webhookSecret)
         .update(rawBody)
