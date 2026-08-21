@@ -67,8 +67,14 @@ export default function SaleProductScreen() {
         (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
       );
       if (existingIndex >= 0) {
+        const existing = prev[existingIndex];
+        const stock = existing.availableStock ?? 0;
+        if (stock > 0 && existing.quantity + 1 > stock) {
+          Alert.alert('Stock Limit Reached', `Only ${stock} in stock for ${existing.productName}.`);
+          return prev;
+        }
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
+        updated[existingIndex] = { ...existing, quantity: existing.quantity + 1 };
         return updated;
       }
       return [
@@ -149,12 +155,18 @@ export default function SaleProductScreen() {
 
   const updateQuantity = (index: number, delta: number) => {
     setCart((prev) => {
-      const updated = [...prev];
-      const newQty = updated[index].quantity + delta;
+      const item = prev[index];
+      const newQty = item.quantity + delta;
       if (newQty <= 0) {
         return prev.filter((_, i) => i !== index);
       }
-      updated[index].quantity = newQty;
+      const stock = item.availableStock ?? 0;
+      if (delta > 0 && stock > 0 && newQty > stock) {
+        Alert.alert('Stock Limit Reached', `Only ${stock} in stock for ${item.productName}.`);
+        return prev;
+      }
+      const updated = [...prev];
+      updated[index] = { ...item, quantity: newQty };
       return updated;
     });
   };
@@ -271,7 +283,7 @@ export default function SaleProductScreen() {
       ) : (
         <FlatList
           data={cart}
-          keyExtractor={(_, index) => index.toString()}
+          keyExtractor={(item, index) => item.variantId || item.sku || `${item.productId}-${index}`}
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.cartCard}>
@@ -284,11 +296,19 @@ export default function SaleProductScreen() {
               </View>
 
               <View style={styles.qtyContainer}>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(index, -1)}>
+                <TouchableOpacity
+                  style={styles.qtyBtn}
+                  onPress={() => updateQuantity(index, -1)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
                   <Minus size={14} color="#0369a1" />
                 </TouchableOpacity>
                 <Text style={styles.qtyText}>{item.quantity}</Text>
-                <TouchableOpacity style={styles.qtyBtn} onPress={() => updateQuantity(index, 1)}>
+                <TouchableOpacity
+                  style={styles.qtyBtn}
+                  onPress={() => updateQuantity(index, 1)}
+                  hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+                >
                   <Plus size={14} color="#0369a1" />
                 </TouchableOpacity>
               </View>
