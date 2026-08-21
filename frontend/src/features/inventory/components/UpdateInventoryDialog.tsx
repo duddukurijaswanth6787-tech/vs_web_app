@@ -64,7 +64,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
           <div>
-            <h3 className="text-sm font-bold text-neutral-900">Inventory Settings</h3>
+            <h3 className="text-sm font-bold text-[#800020]">Inventory Settings</h3>
             <p className="text-[10px] text-neutral-400 mt-0.5">SKU: {inventory.variant?.sku || inventory.variantId}</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition">
@@ -88,7 +88,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
               <input
                 type="number"
                 {...register('minimumStock', { valueAsNumber: true })}
-                className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
               />
               {errors.minimumStock && <p className="text-[10px] text-red-600 mt-1">{errors.minimumStock.message}</p>}
             </div>
@@ -99,7 +99,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
               <input
                 type="number"
                 {...register('maximumStock', { valueAsNumber: true })}
-                className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
               />
               {errors.maximumStock && <p className="text-[10px] text-red-600 mt-1">{errors.maximumStock.message}</p>}
             </div>
@@ -111,7 +111,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
             <input
               type="number"
               {...register('reorderLevel', { valueAsNumber: true })}
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
             />
             {errors.reorderLevel && <p className="text-[10px] text-red-600 mt-1">{errors.reorderLevel.message}</p>}
           </div>
@@ -122,7 +122,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
               <input
                 type="checkbox"
                 {...register('allowBackorder')}
-                className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-0"
+                className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-[#800020] focus:ring-offset-0"
               />
               <div>
                 <span className="text-xs font-semibold text-neutral-700">Allow Backorders</span>
@@ -134,7 +134,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
               <input
                 type="checkbox"
                 {...register('trackInventory')}
-                className="h-4 w-4 rounded border-neutral-300 text-neutral-900 focus:ring-neutral-900 focus:ring-offset-0"
+                className="h-4 w-4 rounded border-neutral-300 text-[#800020] focus:ring-[#800020] focus:ring-offset-0"
               />
               <div>
                 <span className="text-xs font-semibold text-neutral-700">Track Inventory</span>
@@ -155,7 +155,7 @@ export default function UpdateInventoryDialog({ inventory, onClose }: UpdateInve
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm disabled:opacity-55 flex items-center"
+              className="bg-[#800020] hover:bg-[#600018] text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm disabled:opacity-55 flex items-center"
             >
               {isSubmitting && <ButtonLoader />} Save Settings
             </button>

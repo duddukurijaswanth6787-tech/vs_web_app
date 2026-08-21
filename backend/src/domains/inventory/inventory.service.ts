@@ -282,18 +282,21 @@ export class InventoryService {
     return this.findById(id);
   }
 
+  /**
+   * Sets available stock to an exact target count (e.g. reconciling to a
+   * physical stock take), not a delta -- dto.quantity is the new absolute
+   * quantity. The signed difference from the current quantity is what gets
+   * logged as the movement's `quantity`, matching every other movement type
+   * where `quantity` means "how much moved."
+   */
   async adjustStock(id: string, dto: AdjustStockDto, userId: string) {
     const inv = await this.inventoryRepository.findById(id);
     if (!inv)
       throw new BusinessException('Inventory not found', 'INVENTORY_001');
 
     const prev = inv.availableQuantity;
-    const next = prev + dto.quantity;
-    if (next < 0)
-      throw new ValidationException(
-        'Adjustment would result in negative stock',
-        'INVENTORY_004',
-      );
+    const next = dto.quantity;
+    const delta = next - prev;
 
     await this.inventoryRepository.updateStock(id, { availableQuantity: next });
     await this.updateStockStatus(id, userId);
@@ -302,7 +305,7 @@ export class InventoryService {
       inventory: { connect: { id } },
       variantId: inv.variantId,
       movementType: 'ADJUSTMENT',
-      quantity: dto.quantity,
+      quantity: delta,
       previousQuantity: prev,
       newQuantity: next,
       reason: dto.reason,
@@ -316,7 +319,8 @@ export class InventoryService {
       resource: 'inventory',
       resourceId: id,
       userId,
-      newValue: { quantity: dto.quantity, reason: dto.reason },
+      oldValue: { quantity: prev },
+      newValue: { quantity: next, reason: dto.reason },
     });
     return this.findById(id);
   }
