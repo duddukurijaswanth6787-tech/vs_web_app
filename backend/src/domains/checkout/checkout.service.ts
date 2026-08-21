@@ -317,7 +317,7 @@ export class CheckoutService {
     // order stuck at PENDING forever, and leave the cart untouched so the
     // customer can retry.
     try {
-      await this.workflow.reserveInventory(order.id);
+      await this.workflow.reserveInventory(order.id, userId);
     } catch (err) {
       await this.workflow.transition(
         order.id,

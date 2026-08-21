@@ -186,6 +186,7 @@ describe('PaymentService', () => {
       );
       expect(orderWorkflow.deductInventory).toHaveBeenCalledWith(
         'order-uuid-222',
+        'user-123',
       );
     });
   });
@@ -222,6 +223,7 @@ describe('PaymentService', () => {
       );
       expect(orderWorkflow.deductInventory).toHaveBeenCalledWith(
         'order-uuid-222',
+        'user-123',
       );
     });
 
