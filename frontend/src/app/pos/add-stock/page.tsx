@@ -9,6 +9,7 @@ import {
   Printer,
   CheckCircle2,
   RefreshCw,
+  X,
 } from 'lucide-react';
 import { useScanBarcode, useBatchStickers } from '@/features/pos/pos.hooks';
 import { ScanBarcodeResult, LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
@@ -428,7 +429,7 @@ export default function AddStockPage() {
                 <span>Labels Ready ({quantityReceived} Stickers)</span>
               </div>
               <button onClick={closeLabelModal} className="text-neutral-400 hover:text-neutral-700">
-                ✕
+                <X className="w-5 h-5" />
               </button>
             </div>
 
