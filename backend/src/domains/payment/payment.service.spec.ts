@@ -5,6 +5,7 @@ import { AuditService } from '@domains/audit/audit.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@database/prisma.service';
+import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
 import * as crypto from 'crypto';
 
 describe('PaymentService', () => {
@@ -90,6 +91,15 @@ describe('PaymentService', () => {
     },
   };
 
+  // No DB-stored overrides in these tests -- every credential comes from
+  // mockConfig's env-var-shaped values, matching the pre-admin-panel setup.
+  const mockSettingRepository = {
+    getByKey: jest.fn().mockResolvedValue(null),
+    findByKey: jest.fn().mockResolvedValue(null),
+    create: jest.fn(),
+    update: jest.fn(),
+  };
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -99,6 +109,7 @@ describe('PaymentService', () => {
         { provide: OrderWorkflowService, useValue: mockOrderWorkflow },
         { provide: ConfigService, useValue: mockConfig },
         { provide: PrismaService, useValue: mockPrisma },
+        { provide: AppSettingRepository, useValue: mockSettingRepository },
       ],
     }).compile();
 
@@ -108,12 +119,15 @@ describe('PaymentService', () => {
     config = module.get<ConfigService>(ConfigService);
     prisma = module.get<PrismaService>(PrismaService);
 
-    // Mock internal razorpay object
-    (service as any).razorpay = {
+    // Mock the Razorpay SDK client the service builds per-call.
+    jest.spyOn(service as any, 'getRazorpayClient').mockResolvedValue({
       orders: {
         create: jest.fn().mockResolvedValue({ id: 'order_mock_999' }),
       },
-    };
+      payments: {
+        refund: jest.fn().mockResolvedValue({ id: 'rfnd_mock_999', status: 'processed' }),
+      },
+    });
 
     jest.clearAllMocks();
     void repository;

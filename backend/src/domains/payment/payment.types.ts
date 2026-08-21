@@ -21,6 +21,31 @@ export class CreatePaymentDto {
   currency?: string;
 }
 
+export class RazorpayConfigResponse {
+  @ApiProperty({ description: 'Not a secret -- safe to display and to embed in frontend JS.' })
+  keyId!: string;
+  @ApiProperty({ description: 'Whether a Key Secret is set on the server (the value itself is never returned).' })
+  keySecretConfigured!: boolean;
+  @ApiProperty({ description: 'Whether a Webhook Secret is set on the server (the value itself is never returned).' })
+  webhookSecretConfigured!: boolean;
+}
+
+export class UpdateRazorpayConfigDto {
+  @ApiPropertyOptional() @IsOptional() @IsString() keyId?: string;
+  @ApiPropertyOptional({
+    description: 'Write-only -- never returned by GET. Omit to leave the current secret (DB-stored or env var) unchanged.',
+  })
+  @IsOptional()
+  @IsString()
+  keySecret?: string;
+  @ApiPropertyOptional({
+    description: 'Write-only -- never returned by GET. Omit to leave the current secret (DB-stored or env var) unchanged.',
+  })
+  @IsOptional()
+  @IsString()
+  webhookSecret?: string;
+}
+
 export class PaymentQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() orderId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
