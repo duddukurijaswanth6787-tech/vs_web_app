@@ -9,7 +9,7 @@ import { customerMeService, AddressDto } from '@/features/customer/me.service';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
-export default function EditAddressPage() {
+function EditAddressForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addressId = searchParams.get('id');
@@ -307,5 +307,13 @@ export default function EditAddressPage() {
         )}
       </main>
     </div>
+  );
+}
+
+export default function EditAddressPage() {
+  return (
+    <React.Suspense fallback={<div className="p-8 text-center text-xs text-neutral-400">Loading address...</div>}>
+      <EditAddressForm />
+    </React.Suspense>
   );
 }
