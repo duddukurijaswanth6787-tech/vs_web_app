@@ -19,6 +19,7 @@ import {
 } from './product-variants.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -42,8 +43,8 @@ export class ProductVariantsController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:create')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create a new variant' })
   async create(@Body() dto: CreateVariantDto, @CurrentUser() user: JwtPayload) {
@@ -54,8 +55,8 @@ export class ProductVariantsController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update a variant' })
   async update(
@@ -92,8 +93,8 @@ export class ProductVariantsController {
   }
 
   @Post(':id/activate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Activate a variant' })
   async activate(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -104,8 +105,8 @@ export class ProductVariantsController {
   }
 
   @Post(':id/deactivate')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Deactivate a variant' })
   async deactivate(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -116,8 +117,8 @@ export class ProductVariantsController {
   }
 
   @Post(':id/set-default')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set variant as default for its product' })
   async setDefault(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -128,8 +129,8 @@ export class ProductVariantsController {
   }
 
   @Post(':id/attribute-values')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Assign attribute values to variant' })
   async assignAttributeValues(
@@ -144,8 +145,8 @@ export class ProductVariantsController {
   }
 
   @Delete(':id/attribute-values/:attributeId')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Remove attribute value from variant' })
   async removeAttributeValue(

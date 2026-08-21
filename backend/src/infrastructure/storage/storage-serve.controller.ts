@@ -24,7 +24,7 @@ import type { Request, Response } from 'express';
 import { StorageService } from './storage.service';
 import { StorageUtils } from './storage.utils';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 const VARIANT_WIDTHS: Record<string, number> = {
@@ -44,8 +44,8 @@ export class StorageServeController {
   constructor(private readonly storageService: StorageService) {}
 
   @Post('upload')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({

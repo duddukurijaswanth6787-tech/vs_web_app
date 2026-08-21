@@ -19,6 +19,7 @@ import {
 } from './media.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -40,8 +41,8 @@ export class MediaController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Upload/add media to product' })
   async create(@Body() dto: CreateMediaDto, @CurrentUser() user: JwtPayload) {
@@ -52,8 +53,8 @@ export class MediaController {
   }
 
   @Patch(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Update media' })
   async update(
@@ -90,8 +91,8 @@ export class MediaController {
   }
 
   @Post(':id/set-primary')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Set media as primary image' })
   async setPrimary(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -102,8 +103,8 @@ export class MediaController {
   }
 
   @Post('reorder')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Reorder media gallery' })
   async reorder(@Body() dto: ReorderMediaDto) {
@@ -114,8 +115,8 @@ export class MediaController {
   }
 
   @Post('upload-url')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin', 'admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get a signed S3 upload URL for product media' })
   async getUploadUrl(
