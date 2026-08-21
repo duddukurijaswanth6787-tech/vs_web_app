@@ -213,7 +213,10 @@ export default function DesktopPosPage() {
         });
       },
       onError: async (err) => {
-        if (!isNetworkFailure(err)) return;
+        if (!isNetworkFailure(err)) {
+          setScanOfflineError(getApiErrorMessage(err, `Could not find a product for "${query}".`));
+          return;
+        }
         const cached = await offlineScanCacheDb.getCachedScanResult(cacheKey);
         if (cached) {
           addScannedItemToCart(cached);
@@ -263,6 +266,10 @@ export default function DesktopPosPage() {
       },
     });
   };
+
+  const handoffError = adoptMutation.isError
+    ? getApiErrorMessage(adoptMutation.error, 'Invalid or expired session PIN.')
+    : '';
 
   const handleCompleteSale = () => {
     if (cart.length === 0) return;
@@ -921,6 +928,10 @@ export default function DesktopPosPage() {
                 className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-neutral-900 focus:outline-none focus:border-[#800020]"
                 autoFocus
               />
+
+              {handoffError && (
+                <p className="text-xs font-medium text-rose-700">{handoffError}</p>
+              )}
 
               <button
                 type="submit"

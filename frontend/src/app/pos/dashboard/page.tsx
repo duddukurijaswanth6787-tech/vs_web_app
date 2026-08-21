@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/permissions/rules';
+import { getApiErrorMessage } from '@/utils/api-error';
 import {
   useCurrentShift,
   useOpenShift,
@@ -244,6 +245,11 @@ export default function PosDashboardPage() {
                 >
                   Cancel
                 </button>
+                {closeShiftMutation.isError && (
+                  <p className="w-full text-xs font-medium text-rose-700">
+                    {getApiErrorMessage(closeShiftMutation.error, 'Could not close the shift.')}
+                  </p>
+                )}
               </div>
             )}
           </div>

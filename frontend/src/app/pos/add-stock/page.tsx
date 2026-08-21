@@ -61,6 +61,9 @@ export default function AddStockPage() {
           // costPrice available from scan result
         }
       },
+      onError: (err) => {
+        toast('error', 'Could not find variant', getApiErrorMessage(err, `No product found for "${query}".`));
+      },
     });
   };
 
@@ -102,6 +105,18 @@ export default function AddStockPage() {
                   setStickerHtml(res.html);
                   setStickerTspl(res.tspl);
                   setPreviewModalOpen(true);
+                },
+                onError: (err) => {
+                  // Stock is already saved at this point -- only label
+                  // generation failed, so warn and clear the form instead of
+                  // leaving the cashier staring at a form that looks stuck.
+                  toast(
+                    'error',
+                    'Stock saved, but labels failed',
+                    getApiErrorMessage(err, 'Could not generate barcode labels for this batch.'),
+                  );
+                  setSelectedVariant(null);
+                  setBarcodeInput('');
                 },
               },
             );
