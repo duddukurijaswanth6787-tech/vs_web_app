@@ -189,10 +189,10 @@ export default function AddStockPage() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         {/* LEFT COLUMN: Search/Scan Product Variant (5 Cols) */}
-        <div className="lg:col-span-5 space-y-4">
+        <div className="md:col-span-5 space-y-4">
           <form onSubmit={handleScanSubmit} className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
             <label className="block text-xs font-bold uppercase tracking-wider text-neutral-500">
               1. Scan or Search Variant
@@ -266,7 +266,7 @@ export default function AddStockPage() {
         </div>
 
         {/* RIGHT COLUMN: Stock Quantity & Label Batch Configuration (7 Cols) */}
-        <div className="lg:col-span-7 space-y-4">
+        <div className="md:col-span-7 space-y-4">
           <form onSubmit={handleSaveStock} className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
             <h2 className="text-sm font-bold uppercase tracking-wider text-neutral-500">
               2. Stock Replenishment Details

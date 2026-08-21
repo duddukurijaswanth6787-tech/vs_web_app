@@ -557,10 +557,10 @@ export default function DesktopPosPage() {
       </div>
 
       {/* Main 2-Column POS Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
         
         {/* LEFT COLUMN: Barcode Scanner & Live Item Cart Table (8 Cols) */}
-        <div className="lg:col-span-7 xl:col-span-8 space-y-4">
+        <div className="md:col-span-7 xl:col-span-8 space-y-4">
           
           {/* Barcode Search Box */}
           <form onSubmit={handleScanSubmit} className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs flex items-center gap-3">
@@ -699,7 +699,7 @@ export default function DesktopPosPage() {
         </div>
 
         {/* RIGHT COLUMN: Customer, Payment & Order Checkout Summary (4-5 Cols) */}
-        <div className="lg:col-span-5 xl:col-span-4 space-y-4">
+        <div className="md:col-span-5 xl:col-span-4 space-y-4">
           
           {/* Customer Selection */}
           <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
