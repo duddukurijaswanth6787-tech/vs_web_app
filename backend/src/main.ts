@@ -28,12 +28,30 @@ async function bootstrap() {
   const configService = app.get(ConfigService);
   const isProd = configService.get<string>('app.env') === 'production';
 
+  // CORS_ORIGIN is a comma-separated allowlist (app.config.ts defaults it to
+  // '*' outside production for local-dev convenience, and '' -- meaning
+  // nothing allowed until explicitly configured -- in production). Reflecting
+  // every request's Origin unconditionally (the previous behavior here)
+  // combined with credentials:true let any website make authenticated
+  // cross-origin requests against this API using a signed-in visitor's
+  // session, regardless of what CORS_ORIGIN was actually set to.
+  const corsOrigins = configService
+    .get<string>('app.cors.origin', '')
+    .split(',')
+    .map((o) => o.trim())
+    .filter(Boolean);
+  const corsAllowAny = corsOrigins.includes('*');
+
   app.enableCors({
     origin: (
       requestOrigin: string | undefined,
       callback: (err: Error | null, origin?: any) => void,
     ) => {
-      callback(null, requestOrigin || true);
+      if (corsAllowAny || !requestOrigin || corsOrigins.includes(requestOrigin)) {
+        callback(null, requestOrigin || true);
+        return;
+      }
+      callback(new Error(`Origin ${requestOrigin} not allowed by CORS`), false);
     },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
     allowedHeaders: [

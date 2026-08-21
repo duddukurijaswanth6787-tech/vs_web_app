@@ -27,9 +27,10 @@ export default registerAs('app', () => ({
     limit: parseInt(process.env.THROTTLE_LIMIT || '10', 10),
   },
   cors: {
-    origin:
-      process.env.CORS_ORIGIN ||
-      (process.env.NODE_ENV === 'production' ? '' : '*'),
+    // Joi's validation schema (env.validation.ts) already guarantees this is
+    // a real, non-wildcard origin allowlist in production -- the app fails
+    // to boot otherwise, so no fallback is needed here.
+    origin: process.env.CORS_ORIGIN || '*',
     methods:
       process.env.CORS_METHODS || 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
     allowedHeaders:
@@ -77,11 +78,10 @@ export default registerAs('app', () => ({
     provider: process.env.PAYMENT_PROVIDER || 'razorpay',
   },
   jwt: {
-    secret:
-      process.env.JWT_SECRET ||
-      (process.env.NODE_ENV === 'production'
-        ? ''
-        : 'dev-secret-change-in-production'),
+    // Joi's validation schema (env.validation.ts) already guarantees this is
+    // set to a real secret in production -- the app fails to boot otherwise,
+    // so no fallback is needed here.
+    secret: process.env.JWT_SECRET,
     expiresIn: parseInt(process.env.JWT_EXPIRES_IN || '900', 10),
     rememberMeExpiresIn: parseInt(
       process.env.JWT_REMEMBER_ME_EXPIRES_IN || '2592000',

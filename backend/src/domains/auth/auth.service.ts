@@ -28,6 +28,16 @@ export class AuthService {
   ) {}
 
   async seedAdmin() {
+    // This endpoint has no auth guard -- it exists purely to bootstrap the
+    // very first admin on an empty database. Once any super_admin exists,
+    // it must be a no-op, or anyone who can reach it could reset a live
+    // admin's password/lockout state at will.
+    if (await this.authRepository.hasSuperAdmin()) {
+      throw new BusinessException(
+        'Admin already provisioned',
+        'AUTH_ADMIN_ALREADY_SEEDED',
+      );
+    }
     return this.authRepository.seedAdmin();
   }
 
