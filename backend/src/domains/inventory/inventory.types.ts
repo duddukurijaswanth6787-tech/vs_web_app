@@ -46,6 +46,8 @@ export class CreateInventoryDto {
   @IsOptional()
   @IsBoolean()
   trackInventory?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() reason?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() remarks?: string;
 }
 
 // ─── Update ──────────────────────────────────────────────

@@ -22,11 +22,11 @@ export default function AddStockPage() {
   const [selectedVariant, setSelectedVariant] = useState<ScanBarcodeResult | null>(null);
 
   // Stock Form State
-  const [quantityReceived, setQuantityReceived] = useState(15);
+  const [quantityReceived, setQuantityReceived] = useState(1);
   const [location, setLocation] = useState('Main Store');
-  const [supplier, setSupplier] = useState('ABC Textiles');
-  const [invoiceNumber, setInvoiceNumber] = useState('INV-45892');
-  const [notes, setNotes] = useState('New shipment received');
+  const [supplier, setSupplier] = useState('');
+  const [invoiceNumber, setInvoiceNumber] = useState('');
+  const [notes, setNotes] = useState('');
   const [printLabels, setPrintLabels] = useState(true);
   const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
 
@@ -71,13 +71,22 @@ export default function AddStockPage() {
     e.preventDefault();
     if (!selectedVariant?.variantId || quantityReceived <= 0) return;
 
+    const remarks = [
+      location && `Location: ${location}`,
+      invoiceNumber.trim() && `Invoice: ${invoiceNumber.trim()}`,
+      notes.trim(),
+    ]
+      .filter(Boolean)
+      .join(' • ');
+
     // 1. Persist the stock increase first — everything below (labels) is
     //    secondary and must not run if this fails.
     stockInMutation.mutate(
       {
         variantId: selectedVariant.variantId,
         quantity: quantityReceived,
-        reason: supplier ? `Stock-in from ${supplier}` : 'Web POS stock replenishment',
+        reason: supplier.trim() ? `Stock-in from ${supplier.trim()}` : 'Web POS stock replenishment',
+        remarks: remarks || undefined,
       },
       {
         onSuccess: (updated) => {
