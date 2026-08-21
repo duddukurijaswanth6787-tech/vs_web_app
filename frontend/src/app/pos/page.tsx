@@ -13,7 +13,6 @@ import {
   QrCode,
   CreditCard,
   Banknote,
-  Sparkles,
   Smartphone,
   CheckCircle2,
   RefreshCw,
@@ -92,6 +91,8 @@ export default function DesktopPosPage() {
   const [offlineNotice, setOfflineNotice] = useState<PendingSale | null>(null);
   const [scanOfflineError, setScanOfflineError] = useState('');
   const [saleError, setSaleError] = useState('');
+  const [stockCapNotice, setStockCapNotice] = useState('');
+  const [cashTendered, setCashTendered] = useState('');
 
   // Shift state -- a sale can only be completed while online with a shift
   // open on this terminal, so cash reconciliation isn't left to chance.
@@ -160,13 +161,20 @@ export default function DesktopPosPage() {
     primaryImage?: string;
     availableStock: number;
   }) => {
+    setStockCapNotice('');
     setCart((prev) => {
       const existingIndex = prev.findIndex(
         (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
       );
       if (existingIndex >= 0) {
+        const existing = prev[existingIndex];
+        const existingStock = existing.availableStock ?? 0;
+        if (existingStock > 0 && existing.quantity + 1 > existingStock) {
+          setStockCapNotice(`Only ${existingStock} in stock for ${existing.productName}.`);
+          return prev;
+        }
         const updated = [...prev];
-        updated[existingIndex].quantity += 1;
+        updated[existingIndex] = { ...existing, quantity: existing.quantity + 1 };
         return updated;
       }
       return [
@@ -230,13 +238,20 @@ export default function DesktopPosPage() {
   };
 
   const updateQuantity = (index: number, delta: number) => {
+    setStockCapNotice('');
     setCart((prev) => {
-      const updated = [...prev];
-      const newQty = updated[index].quantity + delta;
+      const item = prev[index];
+      const newQty = item.quantity + delta;
       if (newQty <= 0) {
         return prev.filter((_, i) => i !== index);
       }
-      updated[index].quantity = newQty;
+      const itemStock = item.availableStock ?? 0;
+      if (delta > 0 && itemStock > 0 && newQty > itemStock) {
+        setStockCapNotice(`Only ${itemStock} in stock for ${item.productName}.`);
+        return prev;
+      }
+      const updated = [...prev];
+      updated[index] = { ...item, quantity: newQty };
       return updated;
     });
   };
@@ -275,6 +290,10 @@ export default function DesktopPosPage() {
     if (cart.length === 0) return;
     if (shiftRequired) {
       setSaleError('Open a shift before billing so cash sales can be reconciled at close.');
+      return;
+    }
+    if (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal)) {
+      setSaleError('Enter cash tendered of at least the total payable before completing this sale.');
       return;
     }
     setSaleError('');
@@ -372,6 +391,7 @@ export default function DesktopPosPage() {
           setCart([]);
           setActiveSession(null);
           setDiscountTotal(0);
+          setCashTendered('');
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -413,6 +433,7 @@ export default function DesktopPosPage() {
           setCart([]);
           setActiveSession(null);
           setDiscountTotal(0);
+          setCashTendered('');
         },
       },
     );
@@ -572,6 +593,13 @@ export default function DesktopPosPage() {
             <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
               <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
               <span>{scanOfflineError}</span>
+            </div>
+          )}
+
+          {stockCapNotice && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
+              <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+              <span>{stockCapNotice}</span>
             </div>
           )}
 
@@ -812,32 +840,35 @@ export default function DesktopPosPage() {
                 <span>Card</span>
               </button>
 
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('SPLIT')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                  paymentMethod === 'SPLIT'
-                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
-                    : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
-                }`}
-              >
-                <Sparkles className="w-5 h-5" />
-                <span>Split</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setPaymentMethod('CREDIT')}
-                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
-                  paymentMethod === 'CREDIT'
-                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
-                    : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
-                }`}
-              >
-                <History className="w-5 h-5" />
-                <span>On Credit</span>
-              </button>
             </div>
+
+            {paymentMethod === 'CASH' && (
+              <div className="pt-1 space-y-2 border-t border-neutral-100">
+                <div className="flex items-center justify-between gap-2 pt-2">
+                  <span className="text-[11px] font-semibold text-neutral-600 shrink-0">Cash Tendered</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={cashTendered}
+                    onChange={(e) => setCashTendered(e.target.value)}
+                    placeholder={String(grandTotal)}
+                    className="w-28 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-xs font-bold focus:outline-none focus:border-[#800020]"
+                  />
+                </div>
+                {cashTendered !== '' && (
+                  Number(cashTendered) >= grandTotal ? (
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
+                      <span>Change Due</span>
+                      <span>₹{Math.round((Number(cashTendered) - grandTotal) * 100) / 100}</span>
+                    </div>
+                  ) : (
+                    <p className="text-[11px] font-semibold text-rose-700">
+                      Short by ₹{Math.round((grandTotal - Number(cashTendered)) * 100) / 100}.
+                    </p>
+                  )
+                )}
+              </div>
+            )}
           </div>
 
           {/* Pricing Totals & Complete Sale Button */}
@@ -875,7 +906,12 @@ export default function DesktopPosPage() {
 
             <button
               onClick={handleCompleteSale}
-              disabled={cart.length === 0 || completeSaleMutation.isPending || shiftRequired}
+              disabled={
+                cart.length === 0 ||
+                completeSaleMutation.isPending ||
+                shiftRequired ||
+                (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal))
+              }
               className={`w-full text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
                 offlineSync.isBackendReachable ? 'bg-[#800020] hover:bg-[#600018]' : 'bg-amber-700 hover:bg-amber-800'
               }`}
