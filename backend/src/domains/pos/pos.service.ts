@@ -51,7 +51,13 @@ export class PosService {
       );
     }
 
-    const availableStock = variantMatch.inventory?.availableQuantity ?? 0;
+    const availableStock = variantMatch.inventory
+      ? Math.max(
+          0,
+          variantMatch.inventory.availableQuantity -
+            (variantMatch.inventory.reservedQuantity ?? 0),
+        )
+      : 0;
     const price = Number(
       variantMatch.salePriceOverride ??
         variantMatch.priceOverride ??
