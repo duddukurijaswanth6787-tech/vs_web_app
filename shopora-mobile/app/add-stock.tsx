@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,13 +10,14 @@ import {
   ActivityIndicator,
   Share,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { Barcode, Search, Plus, Printer, Check, Camera as CameraIcon } from 'lucide-react-native';
 import {
   posMobileService,
   inventoryService,
   barcodeService,
   getApiErrorMessage,
+  isAuthenticated,
   LabelSize,
   LABEL_SIZE_OPTIONS,
 } from '../services/api';
@@ -48,6 +49,14 @@ export default function MobileAddStockScreen() {
   const [loading, setLoading] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/add-stock');
+      }
+    }, [router]),
+  );
 
   const offlineSync = useOfflineSync();
 

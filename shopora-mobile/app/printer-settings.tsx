@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,9 +9,10 @@ import {
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Printer, PrinterCheck } from 'lucide-react-native';
 import { bluetoothPrinterService, DiscoveredPrinter } from '../services/bluetooth-printer';
+import { isAuthenticated } from '../services/api';
 
 /**
  * Pair/connect a Bluetooth thermal printer for the POS app to print receipts
@@ -33,6 +34,14 @@ export default function PrinterSettingsScreen() {
   const [connectedName, setConnectedName] = useState<string | null>(null);
   const [error, setError] = useState('');
   const [testPrinting, setTestPrinting] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/printer-settings');
+      }
+    }, [router]),
+  );
 
   useEffect(() => {
     if (bluetoothPrinterService.isConnected()) {
