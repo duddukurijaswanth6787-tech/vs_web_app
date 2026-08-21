@@ -42,8 +42,8 @@ export default function MobileAddStockScreen() {
 
   const [barcodeInput, setBarcodeInput] = useState('');
   const [selectedVariant, setSelectedVariant] = useState<any>(null);
-  const [quantityReceived, setQuantityReceived] = useState('15');
-  const [supplier, setSupplier] = useState('ABC Textiles');
+  const [quantityReceived, setQuantityReceived] = useState('1');
+  const [supplier, setSupplier] = useState('');
   const [printLabels, setPrintLabels] = useState(true);
   const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
   const [loading, setLoading] = useState(false);
