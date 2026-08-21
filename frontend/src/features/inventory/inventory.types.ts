@@ -42,6 +42,8 @@ export interface CreateInventoryDto {
   reorderLevel?: number;
   allowBackorder?: boolean;
   trackInventory?: boolean;
+  reason?: string;
+  remarks?: string;
 }
 
 export interface UpdateInventoryDto {

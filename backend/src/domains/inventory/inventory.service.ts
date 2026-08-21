@@ -163,7 +163,8 @@ export class InventoryService {
         quantity: available,
         previousQuantity: 0,
         newQuantity: available,
-        reason: 'Initial stock',
+        reason: dto.reason ?? 'Initial stock',
+        remarks: dto.remarks,
         performedBy: userId,
       });
     }

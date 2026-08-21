@@ -97,12 +97,14 @@ export function useStockIn() {
       quantity,
       reason,
       thresholds,
+      remarks,
     }: {
       variantId: string;
       quantity: number;
       reason?: string;
       thresholds?: { minimumStock?: number; reorderLevel?: number };
-    }) => inventoryService.stockIn(variantId, quantity, reason, thresholds),
+      remarks?: string;
+    }) => inventoryService.stockIn(variantId, quantity, reason, thresholds, remarks),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: inventoryKeys.lists() });
       queryClient.invalidateQueries({ queryKey: inventoryKeys.detail(data.id) });
