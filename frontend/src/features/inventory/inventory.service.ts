@@ -101,6 +101,7 @@ export const inventoryService = {
     quantity: number,
     reason?: string,
     thresholds?: { minimumStock?: number; reorderLevel?: number },
+    remarks?: string,
   ): Promise<InventoryResponse> => {
     let existing: InventoryResponse | null = null;
     try {
@@ -110,9 +111,9 @@ export const inventoryService = {
       if (status !== 422 && status !== 404) throw err;
     }
     if (!existing?.id) {
-      return inventoryService.create({ variantId, availableQuantity: quantity, ...thresholds });
+      return inventoryService.create({ variantId, availableQuantity: quantity, ...thresholds, reason, remarks });
     }
     if (quantity <= 0) return existing;
-    return inventoryService.increaseStock(existing.id, { quantity, reason });
+    return inventoryService.increaseStock(existing.id, { quantity, reason, remarks });
   },
 };
