@@ -78,7 +78,10 @@ export class UpdateInventoryDto {
 // ─── Stock Adjustment ────────────────────────────────────
 
 export class AdjustStockDto {
-  @ApiProperty() @Type(() => Number) @IsInt() quantity!: number;
+  /** Target absolute available quantity (e.g. the count from a physical
+   * stock take), not a delta -- the service computes and logs the signed
+   * difference from the current quantity itself. */
+  @ApiProperty() @Type(() => Number) @IsInt() @Min(0) quantity!: number;
   @ApiPropertyOptional() @IsOptional() @IsString() reason?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() remarks?: string;
 }

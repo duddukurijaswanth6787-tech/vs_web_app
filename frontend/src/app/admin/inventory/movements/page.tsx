@@ -52,7 +52,7 @@ export default function StockMovementsPage() {
             <ArrowLeft className="w-4 h-4 text-neutral-600" />
           </Link>
           <div>
-            <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Stock Movements Audit Ledger</h1>
+            <h1 className="text-xl font-bold text-[#800020] tracking-tight font-sans">Stock Movements Audit Ledger</h1>
             <p className="text-xs text-neutral-400 mt-1">Audit trail tracking every stock allocation, release, deduction, or damage event.</p>
           </div>
         </div>
