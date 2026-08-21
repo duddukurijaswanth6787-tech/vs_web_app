@@ -286,11 +286,20 @@ export class PaymentService {
       }
     }
 
-    const updated = await this.paymentRepository.update(id, {
+    const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(id, {
       status: 'CAPTURED',
       providerPaymentId: razorpayPaymentId,
       metadata: { razorpayPaymentId, razorpaySignature },
     });
+    if (capturedCount === 0) {
+      // Lost the race to a concurrent verify/webhook call that captured
+      // this payment first -- it already ran the confirm/deduct/notify
+      // flow below, so just return the current state instead of doing it
+      // all again.
+      const current = await this.paymentRepository.findById(id);
+      return this.toResponse(current, true);
+    }
+    const updated = await this.paymentRepository.findById(id);
 
     await this.paymentRepository.createTransaction({
       payment: { connect: { id } },
@@ -421,15 +430,19 @@ export class PaymentService {
       }
 
       const payment = payments[0];
-      if (payment.status === 'CAPTURED') {
+
+      // Guarded UPDATE ... WHERE status <> 'CAPTURED': Razorpay can and
+      // does redeliver the same webhook event, and this can race a
+      // concurrent verifyPayment call for the same payment. Only the
+      // first to reach the row wins; the loser gets 0 rows affected here
+      // instead of re-running the confirm/deduct/notify flow a second time.
+      const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(
+        payment.id,
+        { status: 'CAPTURED', providerPaymentId, metadata: paymentEntity },
+      );
+      if (capturedCount === 0) {
         return { status: 'ignored', reason: 'Already captured' };
       }
-
-      await this.paymentRepository.update(payment.id, {
-        status: 'CAPTURED',
-        providerPaymentId,
-        metadata: paymentEntity,
-      });
 
       await this.paymentRepository.createTransaction({
         payment: { connect: { id: payment.id } },

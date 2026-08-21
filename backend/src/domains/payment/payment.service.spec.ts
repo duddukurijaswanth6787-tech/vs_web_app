@@ -48,6 +48,7 @@ describe('PaymentService', () => {
         ...data,
       }),
     ),
+    markCapturedIfNotAlready: jest.fn().mockResolvedValue(1),
     createTransaction: jest.fn().mockResolvedValue({ id: 'tx-uuid' }),
   };
 
@@ -172,7 +173,7 @@ describe('PaymentService', () => {
       );
 
       expect(verified).toBeDefined();
-      expect(mockRepository.update).toHaveBeenCalledWith(
+      expect(mockRepository.markCapturedIfNotAlready).toHaveBeenCalledWith(
         mockPayment.id,
         expect.objectContaining({
           status: 'CAPTURED',
@@ -188,6 +189,29 @@ describe('PaymentService', () => {
         'order-uuid-222',
         'user-123',
       );
+    });
+
+    it('skips the confirm/deduct/notify flow when a concurrent call already captured this payment', async () => {
+      const text = 'order_mock_999|pay_payment_id_999';
+      const keySecret = 'testsecret12345';
+      const validSignature = crypto
+        .createHmac('sha256', keySecret)
+        .update(text)
+        .digest('hex');
+
+      mockRepository.markCapturedIfNotAlready.mockResolvedValueOnce(0);
+
+      const verified = await service.verifyPayment(
+        mockPayment.id,
+        'pay_payment_id_999',
+        validSignature,
+        'user-123',
+      );
+
+      expect(verified).toBeDefined();
+      expect(mockRepository.createTransaction).not.toHaveBeenCalled();
+      expect(orderWorkflow.transition).not.toHaveBeenCalled();
+      expect(orderWorkflow.deductInventory).not.toHaveBeenCalled();
     });
   });
 
@@ -232,6 +256,7 @@ describe('PaymentService', () => {
       jest
         .spyOn(prisma.payment, 'findMany')
         .mockResolvedValueOnce([capturedPayment] as any);
+      mockRepository.markCapturedIfNotAlready.mockResolvedValueOnce(0);
 
       const payload = {
         event: 'payment.captured',
