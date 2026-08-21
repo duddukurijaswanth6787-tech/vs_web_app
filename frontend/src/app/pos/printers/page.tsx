@@ -18,6 +18,7 @@ export default function PrintersConfigPage() {
   const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
   const [usbConnecting, setUsbConnecting] = useState(false);
   const [usbError, setUsbError] = useState('');
+  const [testPrintError, setTestPrintError] = useState('');
 
   const previewReceiptMutation = usePreviewReceipt();
   const batchStickersMutation = useBatchStickers();
@@ -56,6 +57,7 @@ export default function PrintersConfigPage() {
   };
 
   const handleTestPrintReceipt = () => {
+    setTestPrintError('');
     previewReceiptMutation.mutate(
       {
         orderNumber: 'TEST-ORD-2026-001',
@@ -92,11 +94,15 @@ export default function PrintersConfigPage() {
           }
           setTestSuccessMessage('Test thermal receipt sent to browser print engine!');
         },
+        onError: (err) => {
+          setTestPrintError(getApiErrorMessage(err, 'Could not generate the test receipt.'));
+        },
       },
     );
   };
 
   const handleTestPrintLabel = () => {
+    setTestPrintError('');
     batchStickersMutation.mutate(
       {
         productName: "Women's Designer Kurti",
@@ -132,6 +138,9 @@ export default function PrintersConfigPage() {
           setTestSuccessMessage(
             `Test ${LABEL_SIZE_OPTIONS.find((o) => o.value === testLabelSize)?.title.toLowerCase()} barcode sticker labels (2 copies) sent to printer!`,
           );
+        },
+        onError: (err) => {
+          setTestPrintError(getApiErrorMessage(err, 'Could not generate the test labels.'));
         },
       },
     );
@@ -328,6 +337,13 @@ export default function PrintersConfigPage() {
               </span>
             </button>
           </div>
+
+          {testPrintError && (
+            <div className="flex items-center gap-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+              <span>{testPrintError}</span>
+            </div>
+          )}
         </div>
       </div>
     </div>
