@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Printer, CheckCircle2, QrCode, Usb, AlertTriangle } from 'lucide-react';
+import { Printer, CheckCircle2, QrCode, Usb, AlertTriangle, X } from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
 import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
@@ -9,7 +9,6 @@ import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function PrintersConfigPage() {
   const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS'>('BROWSER');
-  const [paperWidth, setPaperWidth] = useState<'80MM' | '58MM'>('80MM');
   const [testLabelSize, setTestLabelSize] = useState<LabelSize>('SMALL');
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
@@ -158,7 +157,7 @@ export default function PrintersConfigPage() {
               Thermal Printers & Barcode Label Setup
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
-              ESC/POS Hardware Daemon & Browser Print Integration
+              USB Direct-Connect & Browser Print Integration
             </p>
           </div>
         </div>
@@ -172,7 +171,7 @@ export default function PrintersConfigPage() {
               <span>{testSuccessMessage}</span>
             </div>
             <button onClick={() => setTestSuccessMessage('')} className="text-emerald-700 hover:text-emerald-900">
-              ✕
+              <X className="w-4 h-4" />
             </button>
           </div>
         )}
@@ -257,36 +256,6 @@ export default function PrintersConfigPage() {
             {usbError && (
               <p className="text-[11px] font-medium text-rose-700 mt-2 leading-relaxed">{usbError}</p>
             )}
-          </div>
-        </div>
-
-        {/* Paper Size Configuration */}
-        <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            Paper Width Configuration
-          </h2>
-
-          <div className="flex gap-4">
-            <button
-              onClick={() => setPaperWidth('80MM')}
-              className={`px-5 py-3 rounded-xl border text-xs font-bold transition-all ${
-                paperWidth === '80MM'
-                  ? 'bg-[#800020] text-white border-[#800020]'
-                  : 'bg-neutral-50 text-neutral-700 border-neutral-200'
-              }`}
-            >
-              80mm Standard Thermal Paper
-            </button>
-            <button
-              onClick={() => setPaperWidth('58MM')}
-              className={`px-5 py-3 rounded-xl border text-xs font-bold transition-all ${
-                paperWidth === '58MM'
-                  ? 'bg-[#800020] text-white border-[#800020]'
-                  : 'bg-neutral-50 text-neutral-700 border-neutral-200'
-              }`}
-            >
-              58mm Compact Thermal Paper
-            </button>
           </div>
         </div>
 
