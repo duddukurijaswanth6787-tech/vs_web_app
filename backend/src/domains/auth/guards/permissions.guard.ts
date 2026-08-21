@@ -28,12 +28,13 @@ export class PermissionsGuard implements CanActivate {
     const user = request.user;
     if (!user) return false;
 
-    // ponytail: single query to get permission codes for user's roles, no nested includes
-    const userPermissions = await this.prisma.userRole.findMany({
+    // ponytail: single query to get user roles and permission codes
+    const userRoles = await this.prisma.userRole.findMany({
       where: { userId: user.sub },
       select: {
         role: {
           select: {
+            name: true,
             rolePermissions: {
               select: {
                 permission: { select: { code: true } },
@@ -44,8 +45,13 @@ export class PermissionsGuard implements CanActivate {
       },
     });
 
+    // Super admin has full access to all endpoints
+    if (userRoles.some((ur) => ur.role.name === 'super_admin')) {
+      return true;
+    }
+
     const userPermissionSet = new Set(
-      userPermissions.flatMap((ur) =>
+      userRoles.flatMap((ur) =>
         ur.role.rolePermissions.map((rp) => rp.permission.code),
       ),
     );

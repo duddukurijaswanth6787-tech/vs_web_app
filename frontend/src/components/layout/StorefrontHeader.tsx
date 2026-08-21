@@ -258,180 +258,35 @@ export function StorefrontHeader() {
                   <span>Home</span>
                 </Link>
 
-                {/* Sarees Section */}
-                <div className="rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors">
+                {/* Dynamic Database Categories */}
+                {navCategories && navCategories.length > 0 ? (
+                  navCategories.map((cat: { id?: string; slug?: string; name?: string }) => (
                     <Link
-                      href="/categories/sarees"
+                      key={cat.id || cat.slug}
+                      href={`/categories/${cat.slug}`}
                       onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3.5 flex-1"
+                      className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
                     >
-                      <Shirt className="w-4.5 h-4.5 text-[#800020]" />
-                      <span>Sarees</span>
+                      <div className="flex items-center gap-3.5">
+                        <Shirt className="w-4.5 h-4.5 text-[#800020]" />
+                        <span>{cat.name}</span>
+                      </div>
+                      <ChevronRight className="w-4 h-4 text-neutral-400" />
                     </Link>
-                    <button
-                      onClick={() => setExpandedCategory(expandedCategory === 'sarees' ? null : 'sarees')}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedCategory === 'sarees' ? 'rotate-180 text-[#800020]' : ''}`} />
-                    </button>
-                  </div>
-                  {expandedCategory === 'sarees' && (
-                    <div className="pl-12 pr-4 py-1.5 space-y-2 bg-rose-50/50 rounded-b-xl border-l-2 border-[#800020] ml-4 my-1">
-                      <Link href="/categories/silk-sarees" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Silk Sarees</Link>
-                      <Link href="/categories/kanjeevaram" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Kanjeevaram</Link>
-                      <Link href="/categories/banarasi" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Banarasi Sarees</Link>
-                      <Link href="/categories/organza" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Organza & Chiffon</Link>
+                  ))
+                ) : (
+                  <Link
+                    href="/categories"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center justify-between px-4 py-3 text-neutral-600 hover:bg-neutral-50 rounded-xl text-sm font-medium transition-colors"
+                  >
+                    <div className="flex items-center gap-3.5">
+                      <Tag className="w-4.5 h-4.5 text-[#800020]" />
+                      <span>All Categories</span>
                     </div>
-                  )}
-                </div>
-
-                {/* Lehengas Section */}
-                <div className="rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors">
-                    <Link
-                      href="/categories/lehengas"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3.5 flex-1"
-                    >
-                      <Shirt className="w-4.5 h-4.5 text-[#800020]" />
-                      <span>Lehengas</span>
-                    </Link>
-                    <button
-                      onClick={() => setExpandedCategory(expandedCategory === 'lehengas' ? null : 'lehengas')}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedCategory === 'lehengas' ? 'rotate-180 text-[#800020]' : ''}`} />
-                    </button>
-                  </div>
-                  {expandedCategory === 'lehengas' && (
-                    <div className="pl-12 pr-4 py-1.5 space-y-2 bg-rose-50/50 rounded-b-xl border-l-2 border-[#800020] ml-4 my-1">
-                      <Link href="/categories/bridal-lehengas" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Bridal Lehengas</Link>
-                      <Link href="/categories/party-lehengas" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Party Wear Lehengas</Link>
-                      <Link href="/categories/crop-top-lehengas" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Crop Top Lehengas</Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Kurtis & Suits Section */}
-                <div className="rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors">
-                    <Link
-                      href="/categories/kurtis"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3.5 flex-1"
-                    >
-                      <Shirt className="w-4.5 h-4.5 text-[#800020]" />
-                      <span>Kurtis & Suits</span>
-                    </Link>
-                    <button
-                      onClick={() => setExpandedCategory(expandedCategory === 'kurtis' ? null : 'kurtis')}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedCategory === 'kurtis' ? 'rotate-180 text-[#800020]' : ''}`} />
-                    </button>
-                  </div>
-                  {expandedCategory === 'kurtis' && (
-                    <div className="pl-12 pr-4 py-1.5 space-y-2 bg-rose-50/50 rounded-b-xl border-l-2 border-[#800020] ml-4 my-1">
-                      <Link href="/categories/anarkali-suits" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Anarkali Suits</Link>
-                      <Link href="/categories/straight-kurtis" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Straight Cut Kurtis</Link>
-                      <Link href="/categories/sharara-sets" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Sharara & Gharara Sets</Link>
-                      <Link href="/categories/palazzo-suits" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Palazzo Suit Sets</Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Dresses & Indo-Western */}
-                <div className="rounded-xl overflow-hidden">
-                  <div className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors">
-                    <Link
-                      href="/categories/dresses"
-                      onClick={() => setMobileMenuOpen(false)}
-                      className="flex items-center gap-3.5 flex-1"
-                    >
-                      <Shirt className="w-4.5 h-4.5 text-[#800020]" />
-                      <span>Indo-Western & Dresses</span>
-                    </Link>
-                    <button
-                      onClick={() => setExpandedCategory(expandedCategory === 'dresses' ? null : 'dresses')}
-                      className="p-1 text-neutral-400 hover:text-neutral-700"
-                    >
-                      <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${expandedCategory === 'dresses' ? 'rotate-180 text-[#800020]' : ''}`} />
-                    </button>
-                  </div>
-                  {expandedCategory === 'dresses' && (
-                    <div className="pl-12 pr-4 py-1.5 space-y-2 bg-rose-50/50 rounded-b-xl border-l-2 border-[#800020] ml-4 my-1">
-                      <Link href="/categories/designer-gowns" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Designer Gowns</Link>
-                      <Link href="/categories/indo-western" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Indo-Western Fusion</Link>
-                      <Link href="/categories/party-dresses" onClick={() => setMobileMenuOpen(false)} className="block text-xs font-medium text-neutral-700 hover:text-[#800020]">Party Dresses</Link>
-                    </div>
-                  )}
-                </div>
-
-                {/* Dupattas */}
-                <Link
-                  href="/categories/dupattas"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Shirt className="w-4.5 h-4.5 text-[#800020]" />
-                    <span>Dupattas & Stoles</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400" />
-                </Link>
-
-                {/* New Arrivals */}
-                <Link
-                  href="/categories/new-arrivals"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Tag className="w-4.5 h-4.5 text-[#800020]" />
-                    <span>New Arrivals</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400" />
-                </Link>
-
-                {/* Festive Collection */}
-                <Link
-                  href="/categories/festive"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Sparkles className="w-4.5 h-4.5 text-amber-600" />
-                    <span>Festive Collection</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400" />
-                </Link>
-
-                {/* Sale */}
-                <Link
-                  href="/offers"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 text-[#800020] bg-rose-50/70 hover:bg-rose-100/70 rounded-xl text-sm font-bold transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Percent className="w-4.5 h-4.5 text-[#800020]" />
-                    <span>Special Sale & Offers</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-[#800020]" />
-                </Link>
-
-                {/* Collections */}
-                <Link
-                  href="/collections"
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
-                >
-                  <div className="flex items-center gap-3.5">
-                    <Layers className="w-4.5 h-4.5 text-[#800020]" />
-                    <span>Trending Collections</span>
-                  </div>
-                  <ChevronRight className="w-4 h-4 text-neutral-400" />
-                </Link>
+                    <ChevronRight className="w-4 h-4 text-neutral-400" />
+                  </Link>
+                )}
 
               </div>
 

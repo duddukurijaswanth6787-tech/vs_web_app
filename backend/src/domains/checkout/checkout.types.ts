@@ -38,7 +38,12 @@ export class PlaceOrderDto {
   @ApiProperty() @IsUUID() addressId!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() shippingMethod?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() deliveryInstructions?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() preferredDeliverySlot?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() terminalId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() couponCode?: string;
+  @ApiPropertyOptional() @IsOptional() isGift?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsString() giftWrapMessage?: string;
 
   @ApiPropertyOptional({ enum: CHECKOUT_PAYMENT_METHODS, default: 'COD' })
   @IsOptional()

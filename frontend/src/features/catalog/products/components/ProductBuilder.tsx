@@ -1612,6 +1612,82 @@ export default function ProductBuilder({
                 />
               </div>
 
+              {/* Wholesale / B2B Price */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">B2B Wholesale Price (₹)</label>
+                <input
+                  type="number"
+                  {...methods.register('wholesalePrice' as any)}
+                  placeholder="e.g. 1200"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+              </div>
+
+              {/* Min & Max Order Quantity Limits */}
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Min Order Qty</label>
+                <input
+                  type="number"
+                  {...methods.register('minimumOrderQuantity' as any)}
+                  placeholder="1"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-neutral-800">Max Order Qty</label>
+                <input
+                  type="number"
+                  {...methods.register('maximumOrderQuantity' as any)}
+                  placeholder="10"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                />
+              </div>
+
+              {/* Parcel Dimensions (DTDC Shipping Calculation) */}
+              <div className="md:col-span-3 pt-3 border-t border-neutral-100 space-y-3">
+                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Parcel Shipping Dimensions (DTDC Courier Fee Calculation)</h4>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-1">Weight (Kg)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      {...methods.register('weight' as any)}
+                      placeholder="0.8"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-1">Length (cm)</label>
+                    <input
+                      type="number"
+                      {...methods.register('length' as any)}
+                      placeholder="35"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-1">Width (cm)</label>
+                    <input
+                      type="number"
+                      {...methods.register('width' as any)}
+                      placeholder="25"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-bold text-neutral-700 block mb-1">Height (cm)</label>
+                    <input
+                      type="number"
+                      {...methods.register('height' as any)}
+                      placeholder="8"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
               {/* Calculated Discount Pill Badge */}
               <div className="md:col-span-3 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl flex items-center justify-between">
                 <div className="space-y-0.5">

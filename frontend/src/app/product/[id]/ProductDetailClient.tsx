@@ -35,6 +35,7 @@ import {
   useProductReviews,
   useActiveCoupons,
 } from '@/features/customer/hooks';
+import { useTrackRecentlyViewed } from '@/features/recently-viewed/recently-viewed.hooks';
 import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import dynamic from 'next/dynamic';
 
@@ -58,6 +59,13 @@ export function ProductDetailClient() {
   const { isAuthenticated } = useAuth();
   const looksLikeUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idOrSlug);
   const { data: product, isLoading, error } = useCustomerProduct(idOrSlug);
+  const trackMutation = useTrackRecentlyViewed();
+
+  React.useEffect(() => {
+    if (product?.id && isAuthenticated) {
+      trackMutation.mutate(product.id);
+    }
+  }, [product?.id, isAuthenticated]);
 
   // Extract unique colors and sizes from variants
   const { data: variantsData } = useVariants({ productId: looksLikeUuid ? idOrSlug : product?.id, limit: 100 });

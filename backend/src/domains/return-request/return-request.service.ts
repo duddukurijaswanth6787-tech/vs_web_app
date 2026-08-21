@@ -103,8 +103,12 @@ export class ReturnRequestService {
         throw new BusinessException('Return window has expired', 'RETURN_006');
     }
 
+    const itemsToProcess = dto.items?.length
+      ? dto.items
+      : order.items.map((i) => ({ orderItemId: i.id, quantity: i.quantity, reason: dto.reason }));
+
     const orderItemMap = new Map(order.items.map((i) => [i.id, i]));
-    for (const item of dto.items) {
+    for (const item of itemsToProcess) {
       const orderItem = orderItemMap.get(item.orderItemId);
       if (!orderItem)
         throw new BusinessException(
@@ -123,10 +127,10 @@ export class ReturnRequestService {
       order: { connect: { id: dto.orderId } },
       returnNumber,
       reason: dto.reason,
-      refundPreference: (dto as any).refundPreference,
+      refundPreference: dto.refundPreference,
       createdBy: userId,
       items: {
-        create: dto.items.map((i) => ({
+        create: itemsToProcess.map((i) => ({
           orderItem: { connect: { id: i.orderItemId } },
           quantity: i.quantity,
           reason: i.reason,

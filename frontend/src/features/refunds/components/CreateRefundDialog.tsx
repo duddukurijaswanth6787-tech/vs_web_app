@@ -134,6 +134,28 @@ export default function CreateRefundDialog({
             {errors.reason && <p className="text-[10px] text-red-600 mt-1">{errors.reason.message}</p>}
           </div>
 
+          {/* Transaction UTR ID */}
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Transaction UTR / Bank Reference (Optional)</label>
+            <input
+              type="text"
+              {...register('transactionId' as any)}
+              placeholder="e.g. UTR1234567890"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900 font-mono"
+            />
+          </div>
+
+          {/* Manager Audit Notes */}
+          <div>
+            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Manager Audit Notes (Optional)</label>
+            <input
+              type="text"
+              {...register('adminNotes' as any)}
+              placeholder="Internal manager notes for refund approval"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+            />
+          </div>
+
           {/* Actions */}
           <div className="flex justify-end gap-3 pt-3 border-t border-neutral-100">
             <button

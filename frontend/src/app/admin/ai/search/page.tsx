@@ -5,6 +5,8 @@ import { Search, Sparkles, RefreshCw, AlertTriangle } from 'lucide-react';
 import { aiSearchApi, SearchSuggestions, SearchStats } from '@/features/ai-search/api/ai-search.api';
 import { getApiErrorMessage } from '@/utils/api-error';
 
+import { usePopularSearches } from '@/features/ai-analytics/ai-analytics.hooks';
+
 export default function AdminAiSearchPage() {
   const [testQuery, setTestQuery] = useState('');
   const [suggestions, setSuggestions] = useState<SearchSuggestions | null>(null);
@@ -204,6 +206,41 @@ export default function AdminAiSearchPage() {
         )}
       </div>
 
+      <PopularSearchesSection />
     </div>
   );
 }
+
+function PopularSearchesSection() {
+  const { data: searches = [], isLoading } = usePopularSearches(10);
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
+      <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+        <Sparkles className="w-4 h-4 text-[#800020]" />
+        <span>Popular Customer Search Queries</span>
+      </h2>
+
+      {isLoading ? (
+        <div className="p-6 text-center text-xs text-neutral-400 font-medium">Loading search query analytics...</div>
+      ) : searches.length === 0 ? (
+        <div className="p-6 text-center text-xs text-neutral-500 bg-neutral-50 rounded-xl">No search query analytics recorded yet.</div>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          {searches.map((item, idx) => (
+            <div key={idx} className="p-3 bg-neutral-50 border border-neutral-200/80 rounded-xl flex items-center justify-between">
+              <div>
+                <span className="text-xs font-bold text-neutral-900 block">&quot;{item.query}&quot;</span>
+                <span className="text-[10px] text-neutral-500 block">Last searched: {new Date(item.lastSearchedAt || Date.now()).toLocaleDateString()}</span>
+              </div>
+              <span className="text-xs font-bold text-[#800020] bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+                {item.count} searches
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+

@@ -281,4 +281,32 @@ export class StorefrontService {
       orderBy: { subscribedAt: 'desc' },
     });
   }
+
+  async getFeatureToggles() {
+    return this.prisma.featureToggle.findMany({
+      orderBy: { key: 'asc' },
+    });
+  }
+
+  async updateFeatureToggle(key: string, enabled: boolean) {
+    return this.prisma.featureToggle.upsert({
+      where: { key },
+      update: { enabled },
+      create: {
+        key,
+        name: key.replace(/_/g, ' ').toUpperCase(),
+        enabled,
+        category: 'CUSTOMER',
+      },
+    });
+  }
+
+  async getPublicFeatureToggles() {
+    const toggles = await this.prisma.featureToggle.findMany();
+    const result: Record<string, boolean> = {};
+    for (const t of toggles) {
+      result[t.key] = t.enabled;
+    }
+    return result;
+  }
 }

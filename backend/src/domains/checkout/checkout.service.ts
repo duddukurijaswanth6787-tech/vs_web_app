@@ -265,6 +265,11 @@ export class CheckoutService {
           shippingCharge,
           grandTotal: Math.round(grandTotal * 100) / 100,
           notes: dto.notes,
+          deliveryInstructions: dto.deliveryInstructions,
+          preferredDeliverySlot: dto.preferredDeliverySlot,
+          isGift: Boolean(dto.isGift),
+          giftWrapMessage: dto.giftWrapMessage,
+          terminalId: dto.terminalId,
           addresses: {
             create: [
               {

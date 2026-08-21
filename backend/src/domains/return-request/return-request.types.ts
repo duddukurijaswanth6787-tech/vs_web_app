@@ -25,6 +25,13 @@ export enum ReturnStatus {
   CANCELLED = 'CANCELLED',
 }
 
+export enum RefundPreference {
+  ORIGINAL_PAYMENT = 'ORIGINAL_PAYMENT',
+  WALLET = 'WALLET',
+  BANK_TRANSFER = 'BANK_TRANSFER',
+  STORE_CREDIT = 'STORE_CREDIT',
+}
+
 export class ReturnItemDto {
   @ApiProperty() @IsUUID() orderItemId!: string;
   @ApiProperty() @Type(() => Number) @IsInt() @Min(1) quantity!: number;
@@ -34,11 +41,17 @@ export class ReturnItemDto {
 export class CreateReturnDto {
   @ApiProperty() @IsUUID() orderId!: string;
   @ApiProperty() @IsString() reason!: string;
-  @ApiProperty({ type: [ReturnItemDto] })
+  @ApiPropertyOptional({ enum: RefundPreference })
+  @IsOptional()
+  @IsEnum(RefundPreference)
+  refundPreference?: RefundPreference;
+
+  @ApiPropertyOptional({ type: [ReturnItemDto] })
+  @IsOptional()
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => ReturnItemDto)
-  items!: ReturnItemDto[];
+  items?: ReturnItemDto[];
 }
 
 export class UpdateReturnStatusDto {

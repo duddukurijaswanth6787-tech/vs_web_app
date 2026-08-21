@@ -12,6 +12,8 @@ model User {
   phone                   String?
   passwordHash            String
   googleId                String?                  @unique
+  facebookId              String?                  @unique
+  appleId                 String?                  @unique
   userType                UserType                 @default(CUSTOMER)
   accountStatus           AccountStatus            @default(PENDING_VERIFICATION)
   gender                  Gender?
@@ -37,7 +39,6 @@ model User {
   notifications           Notification[]
   otpChallenges           OtpChallenge[]
   passwordResetTokens     PasswordResetToken[]
-  prescriptions           Prescription[]
   pushDevices             PushDevice[]
   pushLogs                PushNotificationLog[]
   recommendationHistory   RecommendationHistory[]
@@ -455,6 +456,8 @@ model Product {
   isExclusive             Boolean                  @default(false)
   isOnlineOnly            Boolean                  @default(false)
   channel                 String                   @default("BOTH")
+  warrantyInfo            String?
+  careInstructions        String?
   // Weighted tsvector (name/description/keywords/sku/tags) kept in sync by a
   // DB trigger (products_search_vector_trigger, see the migration), never
   // written to from application code. Read directly via $queryRaw in
@@ -463,7 +466,6 @@ model Product {
   sizeChartTemplate       SizeChartTemplate?       @relation(fields: [sizeChartTemplateId], references: [id])
   customerRecommendations CustomerRecommendation[]
   orderItems              OrderItem[]
-  prescriptionMedicines   PrescriptionMedicine[]
   attributeValues         ProductAttribute[]
   categories              ProductCategory[]
   colorGroups             ProductColorGroup[]
@@ -838,6 +840,9 @@ model CustomerProfile {
   preferredPriceMin       Decimal?
   preferredPriceMax       Decimal?
   profileImage            String?
+  companyName             String?
+  gstin                   String?
+  taxExempt               Boolean                  @default(false)
   createdAt               DateTime                 @default(now())
   updatedAt               DateTime                 @updatedAt
   addresses               CustomerAddress[]
@@ -971,6 +976,10 @@ model Order {
   paymentMethod  PosPaymentMethod?
   terminalId     String?
   notes          String?
+  deliveryInstructions  String?
+  preferredDeliverySlot String?
+  isGift                Boolean              @default(false)
+  giftWrapMessage       String?
   cancelReason   String?
   createdBy      String?
   updatedBy      String?
@@ -1777,68 +1786,6 @@ model AiMessage {
   @@map("ai_messages")
 }
 
-model Prescription {
-  id                 String                 @id @default(uuid())
-  userId             String
-  imageUrl           String
-  doctorName         String?
-  hospitalName       String?
-  prescriptionDate   DateTime?
-  expiryDate         DateTime?
-  ocrRawText         String?
-  ocrConfidence      Decimal?
-  verificationStatus String                 @default("PENDING")
-  verifiedBy         String?
-  verifiedAt         DateTime?
-  notes              String?
-  createdAt          DateTime               @default(now())
-  updatedAt          DateTime               @updatedAt
-  medicines          PrescriptionMedicine[]
-  user               User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([verificationStatus])
-  @@index([createdAt])
-  @@map("prescriptions")
-}
-
-model PrescriptionMedicine {
-  id             String       @id @default(uuid())
-  prescriptionId String
-  medicineName   String
-  dosage         String?
-  frequency      String?
-  duration       String?
-  quantity       Int?
-  instructions   String?
-  confidence     Decimal?
-  productId      String?
-  createdAt      DateTime     @default(now())
-  prescription   Prescription @relation(fields: [prescriptionId], references: [id], onDelete: Cascade)
-  product        Product?     @relation(fields: [productId], references: [id])
-
-  @@index([prescriptionId])
-  @@index([productId])
-  @@map("prescription_medicines")
-}
-
-model MedicineInteraction {
-  id             String   @id @default(uuid())
-  medicineA      String
-  medicineB      String
-  severity       String
-  description    String
-  recommendation String?
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
-
-  @@unique([medicineA, medicineB])
-  @@index([medicineA])
-  @@index([medicineB])
-  @@index([severity])
-  @@map("medicine_interactions")
-}
 
 model RecommendationHistory {
   id                    String   @id @default(uuid())
@@ -3000,3 +2947,27 @@ model SizeChartRow {
   @@index([templateId])
   @@map("size_chart_rows")
 }
+
+model Testimonial {
+  id           String    @id @default(uuid())
+  name         String
+  role         String?   @default("Verified Buyer")
+  comment      String
+  rating       Int       @default(5)
+  avatarUrl    String?
+  location     String?
+  isFeatured   Boolean   @default(true)
+  displayOrder Int       @default(0)
+  status       String    @default("ACTIVE")
+  createdBy    String?
+  updatedBy    String?
+  deletedAt    DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([isFeatured])
+  @@index([status])
+  @@index([displayOrder])
+  @@map("testimonials")
+}
+

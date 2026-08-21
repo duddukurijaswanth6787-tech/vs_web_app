@@ -15,7 +15,6 @@ export class AiAnalyticsService {
     const [
       totalConversations,
       totalSearches,
-      totalPrescriptions,
       totalRecommendations,
       popularSearches,
       popularProducts,
@@ -25,9 +24,6 @@ export class AiAnalyticsService {
         where: { createdAt: { gte: startDate, lte: endDate } },
       }),
       this.prisma.searchHistory.count({
-        where: { createdAt: { gte: startDate, lte: endDate } },
-      }),
-      this.prisma.prescription.count({
         where: { createdAt: { gte: startDate, lte: endDate } },
       }),
       this.prisma.customerRecommendation.count({
@@ -41,7 +37,6 @@ export class AiAnalyticsService {
     return {
       totalConversations,
       totalSearches,
-      totalPrescriptions,
       totalRecommendations,
       popularSearches,
       popularProducts,

@@ -461,6 +461,39 @@ export default function StaffPage() {
                 />
               </div>
 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase">Joined Date</label>
+                  <input
+                    type="date"
+                    value={(formData as any).joinedAt || ''}
+                    onChange={(e) => setFormData({ ...formData, joinedAt: e.target.value } as any)}
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-neutral-500 uppercase">Emergency Contact</label>
+                  <input
+                    type="tel"
+                    placeholder="Emergency mobile"
+                    value={(formData as any).emergencyContact || ''}
+                    onChange={(e) => setFormData({ ...formData, emergencyContact: e.target.value } as any)}
+                    className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-[10px] font-bold text-neutral-500 uppercase">Residential Address</label>
+                <input
+                  type="text"
+                  placeholder="Street, City, State"
+                  value={(formData as any).address || ''}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value } as any)}
+                  className="w-full rounded-lg border border-neutral-200 px-3 py-2 text-xs focus:border-neutral-950 focus:outline-none"
+                />
+              </div>
+
               <div className="flex justify-end gap-2 pt-4 border-t border-neutral-100">
                 <button
                   type="button"

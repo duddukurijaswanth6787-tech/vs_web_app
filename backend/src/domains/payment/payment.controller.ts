@@ -16,9 +16,11 @@ import {
   CreatePaymentDto,
   PaymentQueryDto,
   VerifyPaymentDto,
+  UpdateRazorpayConfigDto,
 } from './payment.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -34,6 +36,30 @@ export class PaymentController {
   @ApiOperation({ summary: 'List payments' })
   async findAll(@Query() query: PaymentQueryDto) {
     return ResponseBuilder.success(await this.paymentService.findAll(query));
+  }
+
+  @Get('config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Razorpay gateway config (Super Admin)' })
+  async getConfig() {
+    return ResponseBuilder.success(await this.paymentService.getConfig());
+  }
+
+  @Patch('config')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update Razorpay gateway config (Super Admin)' })
+  async updateConfig(
+    @Body() dto: UpdateRazorpayConfigDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ResponseBuilder.success(
+      await this.paymentService.updateConfig(dto, user.sub),
+      'Razorpay credentials updated',
+    );
   }
 
   @Get('order/:orderId')

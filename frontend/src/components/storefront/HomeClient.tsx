@@ -31,15 +31,18 @@ export function HomeClient() {
   });
   const { data: homepageData } = useHomepage();
 
-  // The public /homepage endpoint only returns enabled sections, so absence of
-  // a key means it's disabled. While the request is in flight, homepageData is
-  // undefined -- fail open so sections don't flash hidden on first paint.
+  // The public /homepage endpoint returns custom sections configured in admin.
+  // If no sections have been explicitly configured in DB yet (sections is empty),
+  // fail-open by enabling all sections by default so the home page renders fully.
+  const hasConfiguredSections =
+    Array.isArray(homepageData?.sections) && homepageData.sections.length > 0;
   const enabledSectionKeys = new Set(
-    (Array.isArray(homepageData?.sections) ? homepageData.sections : []).map(
+    (hasConfiguredSections ? homepageData.sections! : []).map(
       (s) => (s as Record<string, unknown>).key as string
     )
   );
-  const isSectionEnabled = (key: string) => !homepageData || enabledSectionKeys.has(key);
+  const isSectionEnabled = (key: string) =>
+    !homepageData || !hasConfiguredSections || enabledSectionKeys.has(key);
 
   useEffect(() => {
     const handleScroll = () => setShowScrollTop(window.scrollY > 400);

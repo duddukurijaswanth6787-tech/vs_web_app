@@ -10,7 +10,6 @@ export class AnalyticsQueryDto {
 export class AiAnalyticsResponse {
   @ApiProperty() totalConversations!: number;
   @ApiProperty() totalSearches!: number;
-  @ApiProperty() totalPrescriptions!: number;
   @ApiProperty() totalRecommendations!: number;
   @ApiProperty({ type: [Object] }) popularSearches!: any[];
   @ApiProperty({ type: [Object] }) popularProducts!: any[];

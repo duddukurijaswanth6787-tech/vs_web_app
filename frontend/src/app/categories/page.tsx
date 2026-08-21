@@ -30,13 +30,6 @@ const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
   'office-wear': 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=600&auto=format&fit=crop',
 };
 
-const DEFAULT_CATEGORIES = Object.keys(CATEGORY_DEFAULT_IMAGES).map((slug, idx) => ({
-  id: `cat-def-${idx}`,
-  name: slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase()),
-  slug,
-  imageUrl: CATEGORY_DEFAULT_IMAGES[slug],
-}));
-
 export default function CategoriesPage() {
   const featured = useFeaturedCategories();
   const all = useQuery({

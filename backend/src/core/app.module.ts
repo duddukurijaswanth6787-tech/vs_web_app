@@ -55,6 +55,7 @@ import { WalletModule } from '@domains/wallet/wallet.module';
 import { NotificationModule } from '@domains/notification/notification.module';
 import { ReviewModule } from '@domains/review/review.module';
 import { CmsModule } from '@domains/cms/cms.module';
+import { TestimonialsModule } from '@domains/testimonials/testimonials.module';
 import { DashboardModule } from '@domains/dashboard/dashboard.module';
 import { ReportModule } from '@domains/report/report.module';
 import { AppSettingModule } from '@domains/app-setting/app-setting.module';
@@ -63,8 +64,6 @@ import { FaqModule } from '@domains/faq/faq.module';
 import { CampaignModule } from '@domains/campaign/campaign.module';
 import { AiChatModule } from '@domains/ai-chat/ai-chat.module';
 import { SizeChartModule } from '@domains/size-chart/size-chart.module';
-import { PrescriptionModule } from '@domains/prescription/prescription.module';
-import { DrugInteractionModule } from '@domains/drug-interaction/drug-interaction.module';
 import { AiSearchModule } from '@domains/ai-search/ai-search.module';
 import { AiRecommendationModule } from '@domains/ai-recommendation/ai-recommendation.module';
 import { AiAnalyticsModule } from '@domains/ai-analytics/ai-analytics.module';
@@ -191,6 +190,7 @@ import { PosModule } from '@domains/pos/pos.module';
     NotificationModule,
     ReviewModule,
     CmsModule,
+    TestimonialsModule,
     DashboardModule,
     ReportModule,
     StorefrontModule,
@@ -202,8 +202,6 @@ import { PosModule } from '@domains/pos/pos.module';
     // AI Platform (Phase 7.0)
     AiChatModule,
     SizeChartModule,
-    PrescriptionModule,
-    DrugInteractionModule,
     AiSearchModule,
     AiRecommendationModule,
     AiAnalyticsModule,

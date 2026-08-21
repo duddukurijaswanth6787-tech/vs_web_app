@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Timer, Save, RefreshCw, KeyRound, CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
 import { adminOpsApi, SessionExpirySettingsDto } from '@/features/admin-ops/admin-ops.api';
+import { useUserSessions, useSessionStats, useRevokeSession, useRevokeExpiredSessions } from '@/features/sessions/session.hooks';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -126,6 +127,7 @@ export default function SessionSettingsAdminPage() {
         </button>
       </form>
 
+      <ActiveUserSessionsSection />
       <GoogleAuthSection />
       <RazorpaySection />
     </div>
@@ -326,3 +328,119 @@ function RazorpaySection() {
     </form>
   );
 }
+
+function ActiveUserSessionsSection() {
+  const { toast } = useToast();
+  const { data: sessions = [], isLoading, refetch } = useUserSessions();
+  const { data: stats } = useSessionStats();
+  const revokeMutation = useRevokeSession();
+  const revokeExpiredMutation = useRevokeExpiredSessions();
+
+  const handleRevoke = async (id: string) => {
+    try {
+      await revokeMutation.mutateAsync(id);
+      toast('success', 'Session revoked', 'User session has been invalidated.');
+      refetch();
+    } catch (err) {
+      toast('error', 'Revoke failed', getApiErrorMessage(err));
+    }
+  };
+
+  const handleCleanExpired = async () => {
+    try {
+      await revokeExpiredMutation.mutateAsync();
+      toast('success', 'Expired sessions cleaned', 'All stale sessions removed.');
+      refetch();
+    } catch (err) {
+      toast('error', 'Cleanup failed', getApiErrorMessage(err));
+    }
+  };
+
+  return (
+    <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
+            <KeyRound className="w-4 h-4 text-[#800020]" />
+            <span>Active Login Sessions ({sessions.length})</span>
+          </h2>
+          <p className="text-xs text-neutral-500 mt-0.5">
+            Monitor live customer and staff sessions, inspect IP addresses & user agents, or forcefully revoke access.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          onClick={handleCleanExpired}
+          disabled={revokeExpiredMutation.isPending}
+          className="px-3 py-1.5 border border-neutral-300 hover:bg-neutral-50 text-neutral-700 text-xs font-bold rounded-xl transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <RefreshCw className="w-3.5 h-3.5" />
+          <span>Purge Expired Sessions</span>
+        </button>
+      </div>
+
+      {stats && (
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+          <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
+            <span className="text-neutral-500 font-medium block text-[11px]">Total Active</span>
+            <strong className="text-sm font-bold text-neutral-900">{stats.totalActiveSessions || sessions.length}</strong>
+          </div>
+          <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
+            <span className="text-neutral-500 font-medium block text-[11px]">Unique Users</span>
+            <strong className="text-sm font-bold text-neutral-900">{stats.uniqueUsersActive || 1}</strong>
+          </div>
+          <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
+            <span className="text-neutral-500 font-medium block text-[11px]">Revoked Count</span>
+            <strong className="text-sm font-bold text-neutral-900">{stats.revokedSessionsCount || 0}</strong>
+          </div>
+          <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
+            <span className="text-neutral-500 font-medium block text-[11px]">Expired Count</span>
+            <strong className="text-sm font-bold text-neutral-900">{stats.expiredSessionsCount || 0}</strong>
+          </div>
+        </div>
+      )}
+
+      {isLoading ? (
+        <div className="p-8 text-center text-xs text-neutral-400 font-medium">Loading session monitoring data...</div>
+      ) : sessions.length === 0 ? (
+        <div className="p-6 text-center text-xs text-neutral-500 bg-neutral-50 rounded-xl">No active sessions currently logged in.</div>
+      ) : (
+        <div className="overflow-x-auto border border-neutral-200 rounded-xl">
+          <table className="w-full text-left text-xs">
+            <thead className="bg-neutral-50 border-b border-neutral-200 text-neutral-600 font-bold">
+              <tr>
+                <th className="p-3">User / Email</th>
+                <th className="p-3">IP Address</th>
+                <th className="p-3">User Agent</th>
+                <th className="p-3">Last Active</th>
+                <th className="p-3 text-right">Action</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-100">
+              {sessions.map((s) => (
+                <tr key={s.id} className="hover:bg-neutral-50/60 transition-colors">
+                  <td className="p-3 font-semibold text-neutral-900">{s.user?.email || s.userId}</td>
+                  <td className="p-3 font-mono text-neutral-600">{s.ipAddress || '127.0.0.1'}</td>
+                  <td className="p-3 text-neutral-500 max-w-[200px] truncate">{s.userAgent || 'Web Browser'}</td>
+                  <td className="p-3 text-neutral-500">{new Date(s.lastActivityAt || s.createdAt).toLocaleString()}</td>
+                  <td className="p-3 text-right">
+                    <button
+                      type="button"
+                      onClick={() => handleRevoke(s.id)}
+                      disabled={revokeMutation.isPending}
+                      className="px-2.5 py-1 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      Revoke
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+

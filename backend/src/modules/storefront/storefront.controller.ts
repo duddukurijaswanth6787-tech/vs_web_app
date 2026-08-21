@@ -223,4 +223,24 @@ export class StorefrontController {
     await this.storefrontService.removeNewsletter(id);
     return ResponseBuilder.deleted('Newsletter subscriber deleted');
   }
+
+  @Get('feature-toggles')
+  @ApiOperation({ summary: 'Get all system feature toggles (Super Admin)' })
+  async getFeatureToggles() {
+    return ResponseBuilder.success(
+      await this.storefrontService.getFeatureToggles(),
+    );
+  }
+
+  @Patch('feature-toggles/:key')
+  @ApiOperation({ summary: 'Toggle a feature flag ON/OFF (Super Admin)' })
+  async updateFeatureToggle(
+    @Param('key') key: string,
+    @Body('enabled') enabled: boolean,
+  ) {
+    return ResponseBuilder.success(
+      await this.storefrontService.updateFeatureToggle(key, enabled),
+      `Feature ${key} updated`,
+    );
+  }
 }

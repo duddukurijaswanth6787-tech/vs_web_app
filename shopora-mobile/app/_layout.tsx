@@ -4,6 +4,8 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { restoreSession } from '../services/api';
 
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+
 export default function RootLayout() {
   // Restore a previously saved sign-in (SecureStore) before any screen mounts
   // and checks isAuthenticated() -- otherwise every screen would see "signed
@@ -23,7 +25,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <SafeAreaProvider>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -139,6 +141,6 @@ export default function RootLayout() {
         />
         <Stack.Screen name="orders" options={{ headerShown: false }} />
       </Stack>
-    </>
+    </SafeAreaProvider>
   );
 }

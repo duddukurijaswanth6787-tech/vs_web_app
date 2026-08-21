@@ -56,6 +56,11 @@ export const customerCheckoutService = {
     addressId: string;
     shippingMethod?: string;
     notes?: string;
+    deliveryInstructions?: string;
+    preferredDeliverySlot?: string;
+    isGift?: boolean;
+    giftWrapMessage?: string;
+    terminalId?: string;
     couponCode?: string;
     paymentMethod?: 'COD' | 'RAZORPAY';
   }): Promise<OrderPlaceResultDto> => {

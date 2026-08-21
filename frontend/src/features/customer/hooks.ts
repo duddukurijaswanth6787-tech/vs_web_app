@@ -357,7 +357,18 @@ export function useCheckoutPreview(addressId?: string, couponCode?: string) {
 export function usePlaceOrder() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (dto: { addressId: string; shippingMethod?: string; notes?: string; couponCode?: string; paymentMethod?: 'COD' | 'RAZORPAY' }) => customerCheckoutService.placeOrder(dto),
+    mutationFn: (dto: {
+      addressId: string;
+      shippingMethod?: string;
+      notes?: string;
+      deliveryInstructions?: string;
+      preferredDeliverySlot?: string;
+      isGift?: boolean;
+      giftWrapMessage?: string;
+      terminalId?: string;
+      couponCode?: string;
+      paymentMethod?: 'COD' | 'RAZORPAY';
+    }) => customerCheckoutService.placeOrder(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: customerKeys.cart() });
       queryClient.invalidateQueries({ queryKey: customerKeys.orders() });
@@ -366,8 +377,17 @@ export function usePlaceOrder() {
 }
 
 export function useContactSupport() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: async (_dto: { name: string; email: string; subject: string; message: string }) => { void _dto; return { success: true }; },
+    mutationFn: (dto: { name: string; email: string; subject: string; message: string }) =>
+      customerSupportService.createTicket({
+        subject: dto.subject,
+        description: `Customer Contact Message:\nName: ${dto.name}\nEmail: ${dto.email}\n\n${dto.message}`,
+        category: 'GENERAL',
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customer', 'support', 'tickets'] });
+    },
   });
 }
 

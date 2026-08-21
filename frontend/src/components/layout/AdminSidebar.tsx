@@ -28,6 +28,17 @@ export default function AdminSidebar() {
     setMobileSidebarOpen(false);
   };
 
+  const navRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    if (navRef.current) {
+      const activeEl = navRef.current.querySelector<HTMLElement>('[data-sidebar-active="true"]');
+      if (activeEl) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [pathname]);
+
   return (
     <>
       {/* Mobile Drawer Overlay */}
@@ -71,7 +82,7 @@ export default function AdminSidebar() {
         </div>
 
         {/* Scrollable Navigation Groups */}
-        <nav className="flex-1 overflow-y-auto p-3 space-y-6 scrollbar-thin">
+        <nav ref={navRef} className="flex-1 overflow-y-auto p-3 space-y-6 scrollbar-thin">
           {adminNavigation.map((group) => {
             // Filter items by current user permissions
             const visibleItems = group.items.filter((item) => canAccessRoute(user, item));
@@ -100,6 +111,7 @@ export default function AdminSidebar() {
                         key={item.id}
                         href={item.implemented ? item.href : '#'}
                         onClick={item.implemented ? handleLinkClick : undefined}
+                        data-sidebar-active={isActive ? 'true' : 'false'}
                         className={`flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors group relative
                           ${isActive 
                             ? 'bg-neutral-900 text-white' 

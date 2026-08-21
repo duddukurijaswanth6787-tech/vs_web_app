@@ -471,6 +471,13 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'testimonials',
+        title: 'Testimonials',
+        href: '/admin/cms/testimonials',
+        icon: MessageSquareHeart,
+        implemented: true,
+      },
+      {
         id: 'faqs',
         title: 'FAQs',
         href: '/admin/faqs',
@@ -649,6 +656,22 @@ export const adminNavigation: NavGroup[] = [
         href: '/admin/audit',
         icon: History,
         roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
+        id: 'payment-gateways',
+        title: 'Payment Gateways',
+        href: '/admin/system/payment-gateways',
+        icon: CreditCard,
+        roles: ['super_admin'],
+        implemented: true,
+      },
+      {
+        id: 'feature-flags',
+        title: 'Feature Flags Control',
+        href: '/admin/system/feature-flags',
+        icon: ToggleLeft,
+        roles: ['super_admin'],
         implemented: true,
       },
       {
