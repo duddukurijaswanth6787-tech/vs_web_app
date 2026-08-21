@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
   ScrollView,
 } from 'react-native';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import {
   Barcode,
   Search,
@@ -22,7 +22,7 @@ import {
   Camera as CameraIcon,
   Printer,
 } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem, getApiErrorMessage } from '../services/api';
+import { posMobileService, PosMobileCartItem, getApiErrorMessage, isAuthenticated } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
@@ -47,6 +47,14 @@ export default function SaleProductScreen() {
   const [loading, setLoading] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/sale');
+      }
+    }, [router]),
+  );
 
   const offlineSync = useOfflineSync();
 

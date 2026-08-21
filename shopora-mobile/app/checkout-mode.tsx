@@ -8,9 +8,9 @@ import {
   ActivityIndicator,
   Alert,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Smartphone, Monitor, ArrowRight, User, Search } from 'lucide-react-native';
-import { posMobileService, PosMobileCartItem, PosMobileCustomer } from '../services/api';
+import { posMobileService, PosMobileCartItem, PosMobileCustomer, isAuthenticated } from '../services/api';
 
 export default function CheckoutModeScreen() {
   const router = useRouter();
@@ -22,6 +22,14 @@ export default function CheckoutModeScreen() {
   const [phone, setPhone] = React.useState('');
   const [customerName, setCustomerName] = React.useState('');
   const [lookupStatus, setLookupStatus] = React.useState<'idle' | 'loading' | 'found' | 'not_found'>('idle');
+
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/checkout-mode');
+      }
+    }, [router]),
+  );
 
   let cartItems: PosMobileCartItem[] = [];
   try {

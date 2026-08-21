@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
   View,
   Text,
@@ -13,9 +13,10 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, scanFromURLAsync } from 'expo-camera';
 import * as ImagePicker from 'expo-image-picker';
-import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Flashlight, Image as ImageIcon, Barcode, Bluetooth, Camera as CameraIcon } from 'lucide-react-native';
 import { bluetoothScannerService, ScannedDevice } from '../services/bluetooth-scanner';
+import { isAuthenticated } from '../services/api';
 
 const QUICK_TEST_BARCODES = [
   { label: 'Saree (890100000005)', code: '890100000005' },
@@ -41,6 +42,14 @@ export default function DedicatedScannerScreen() {
   const [btConnectedId, setBtConnectedId] = useState('');
   const [btError, setBtError] = useState('');
   const scannedRef = useRef(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/scanner');
+      }
+    }, [router]),
+  );
 
   useEffect(() => {
     if (permission && !permission.granted && permission.canAskAgain) {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -9,13 +9,14 @@ import {
   Alert,
   ScrollView,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock } from 'lucide-react-native';
 import {
   posMobileService,
   PosMobileCartItem,
   PosMobileCustomer,
   getApiErrorMessage,
+  isAuthenticated,
 } from '../services/api';
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
@@ -38,6 +39,14 @@ export default function MobilePaymentScreen() {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
+
+  useFocusEffect(
+    useCallback(() => {
+      if (!isAuthenticated()) {
+        router.replace('/login?redirect=/checkout-phone');
+      }
+    }, [router]),
+  );
 
   const offlineSync = useOfflineSync();
 
