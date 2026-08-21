@@ -318,7 +318,7 @@ export class PaymentService {
     // this fix covers, so it's surfaced via the thrown error / audit log for
     // a human to action rather than silently resolved.
     try {
-      await this.orderWorkflowService.deductInventory(payment.orderId);
+      await this.orderWorkflowService.deductInventory(payment.orderId, userId);
     } catch (err) {
       await this.orderWorkflowService.transition(
         payment.orderId,
@@ -451,7 +451,7 @@ export class PaymentService {
       // genuine oversold-and-paid conflict that needs a human to resolve
       // the refund, not something this fix silently papers over.
       try {
-        await this.orderWorkflowService.deductInventory(payment.orderId);
+        await this.orderWorkflowService.deductInventory(payment.orderId, payment.createdBy || 'SYSTEM');
       } catch (err) {
         await this.orderWorkflowService.transition(
           payment.orderId,

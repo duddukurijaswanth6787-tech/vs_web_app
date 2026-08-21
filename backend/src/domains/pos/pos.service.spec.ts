@@ -239,7 +239,7 @@ describe('PosService (Phase 1 Backend)', () => {
       });
 
       expect(res.success).toBe(true);
-      expect(workflow.deductInventory).toHaveBeenCalledWith('order-pos-1');
+      expect(workflow.deductInventory).toHaveBeenCalledWith('order-pos-1', 'cashier-1');
       expect(gateway.emitSaleCompleted).toHaveBeenCalled();
       expect(gateway.emitTriggerPrint).toHaveBeenCalled();
       expect(auditService.log).toHaveBeenCalledWith(

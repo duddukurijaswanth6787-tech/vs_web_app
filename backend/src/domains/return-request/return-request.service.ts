@@ -201,7 +201,7 @@ export class ReturnRequestService {
     });
 
     if (dto.status === 'REFUND_COMPLETED') {
-      await this.workflow.restoreInventory(ret.orderId);
+      await this.workflow.restoreInventory(ret.orderId, userId);
       await this.workflow.transition(
         ret.orderId,
         'RETURN_COMPLETED',

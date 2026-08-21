@@ -149,7 +149,7 @@ export class OrderService {
       // by cancelling the order rather than leaving it CONFIRMED with no
       // stock actually deducted.
       try {
-        await this.workflow.deductInventory(id);
+        await this.workflow.deductInventory(id, userId);
       } catch (err) {
         await this.workflow.transition(
           id,

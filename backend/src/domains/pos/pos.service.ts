@@ -345,7 +345,7 @@ export class PosService {
     // compensate by cancelling it instead of leaving a confirmed sale with
     // no stock behind it, then surface the conflict to the terminal.
     try {
-      await this.workflow.deductInventory(order.id);
+      await this.workflow.deductInventory(order.id, cashierId);
     } catch (err) {
       await this.workflow.transition(
         order.id,

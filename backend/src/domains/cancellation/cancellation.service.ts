@@ -66,7 +66,7 @@ export class CancellationService {
       userId,
       `Cancelled: ${dto.reason}`,
     );
-    await this.workflow.releaseInventory(dto.orderId);
+    await this.workflow.releaseInventory(dto.orderId, userId);
 
     await this.auditService.log({
       action: 'ORDER_CANCELLED',

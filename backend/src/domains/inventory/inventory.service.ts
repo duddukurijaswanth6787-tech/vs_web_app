@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { BusinessException, ValidationException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { calculateStockStatus } from '@shared/inventory/stock-status.util';
 import { InventoryRepository } from './inventory.repository';
 import {
   CreateInventoryDto,
@@ -61,27 +62,10 @@ export class InventoryService {
     };
   }
 
-  private calculateStockStatus(inventory: {
-    availableQuantity: number;
-    reservedQuantity: number;
-    minimumStock: number;
-    reorderLevel: number;
-    allowBackorder: boolean;
-  }): string {
-    const available = inventory.availableQuantity - inventory.reservedQuantity;
-    if (available <= 0)
-      return inventory.allowBackorder ? 'BACKORDER' : 'OUT_OF_STOCK';
-    if (inventory.minimumStock > 0 && available <= inventory.minimumStock)
-      return 'LOW_STOCK';
-    if (inventory.reorderLevel > 0 && available <= inventory.reorderLevel)
-      return 'LOW_STOCK';
-    return 'IN_STOCK';
-  }
-
   private async updateStockStatus(id: string, userId?: string) {
     const inv = await this.inventoryRepository.findById(id);
     if (!inv) return;
-    const status = this.calculateStockStatus(inv);
+    const status = calculateStockStatus(inv);
     if (status !== inv.stockStatus) {
       await this.inventoryRepository.update(id, { stockStatus: status });
       if (userId && (status === 'LOW_STOCK' || status === 'OUT_OF_STOCK')) {
@@ -152,7 +136,7 @@ export class InventoryService {
     const available = dto.availableQuantity ?? 0;
     const minimumStock = dto.minimumStock ?? 0;
     const reorderLevel = dto.reorderLevel ?? 0;
-    const status = this.calculateStockStatus({
+    const status = calculateStockStatus({
       availableQuantity: available,
       reservedQuantity: 0,
       minimumStock,

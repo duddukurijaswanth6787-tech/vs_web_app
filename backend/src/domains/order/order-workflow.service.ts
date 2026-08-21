@@ -4,7 +4,18 @@ import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
 import { EmailService } from '@domains/email/email.service';
 import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
+import { calculateStockStatus } from '@shared/inventory/stock-status.util';
 import { PrismaService } from '@database/prisma.service';
+import { Prisma } from '@prisma/client';
+
+interface InventoryRow {
+  id: string;
+  availableQuantity: number;
+  reservedQuantity: number;
+  minimumStock: number;
+  reorderLevel: number;
+  allowBackorder: boolean;
+}
 
 const ORDER_TRANSITIONS: Record<string, string[]> = {
   PENDING: ['CONFIRMED', 'CANCELLED'],
@@ -162,13 +173,53 @@ export class OrderWorkflowService {
   }
 
   /**
+   * Logs the movement and recalculates stockStatus for a row already
+   * updated by a guarded raw SQL statement, inside the same transaction.
+   * `row` must carry the POST-update quantities (via a RETURNING clause) so
+   * the previous value can be reverse-derived from the delta actually
+   * applied -- no second read, so nothing can drift between the write and
+   * the log within this transaction.
+   */
+  private async logMovement(
+    tx: Prisma.TransactionClient,
+    row: InventoryRow,
+    params: {
+      variantId: string;
+      movementType: string;
+      quantity: number;
+      previousAvailable: number;
+      referenceType: string;
+      referenceId: string;
+      reason: string;
+      performedBy?: string;
+    },
+  ) {
+    await tx.inventoryMovement.create({
+      data: {
+        inventory: { connect: { id: row.id } },
+        variantId: params.variantId,
+        movementType: params.movementType,
+        quantity: params.quantity,
+        previousQuantity: params.previousAvailable,
+        newQuantity: row.availableQuantity,
+        referenceType: params.referenceType,
+        referenceId: params.referenceId,
+        reason: params.reason,
+        performedBy: params.performedBy,
+      },
+    });
+    const status = calculateStockStatus(row);
+    await tx.inventory.update({ where: { id: row.id }, data: { stockStatus: status } });
+  }
+
+  /**
    * Reserves stock for an order's items. Uses a guarded `UPDATE ... WHERE`
    * (not a read-then-write) so concurrent reservations for the same variant
    * serialize on the DB row lock instead of both reading the same
    * pre-reservation snapshot and over-reserving it -- the classic TOCTOU race
    * that let checkout oversell under concurrency.
    */
-  async reserveInventory(orderId: string) {
+  async reserveInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -187,14 +238,15 @@ export class OrderWorkflowService {
       for (const item of order.items) {
         if (!item.variantId) continue;
 
-        const affected = await tx.$executeRaw`
+        const rows = await tx.$queryRaw<InventoryRow[]>`
           UPDATE "inventory"
           SET "reservedQuantity" = "reservedQuantity" + ${item.quantity}
           WHERE "variantId" = ${item.variantId}
             AND ("availableQuantity" - "reservedQuantity" >= ${item.quantity} OR "allowBackorder" = true)
+          RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
         `;
 
-        if (affected === 0) {
+        if (rows.length === 0) {
           const current = await tx.inventory.findUnique({
             where: { variantId: item.variantId },
           });
@@ -209,7 +261,19 @@ export class OrderWorkflowService {
           }
           // No inventory row at all: same as the pre-existing behaviour,
           // silently skipped (not every variant is stock-tracked).
+          continue;
         }
+
+        await this.logMovement(tx, rows[0], {
+          variantId: item.variantId,
+          movementType: 'RESERVED',
+          quantity: item.quantity,
+          previousAvailable: rows[0].reservedQuantity - item.quantity,
+          referenceType: 'ORDER',
+          referenceId: orderId,
+          reason: `Order ${order.orderNumber} reserved`,
+          performedBy: userId,
+        });
       }
 
       if (shortages.length > 0) {
@@ -222,22 +286,37 @@ export class OrderWorkflowService {
     });
   }
 
-  async releaseInventory(orderId: string) {
+  async releaseInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { items: true },
     });
     if (!order) return;
 
-    for (const item of order.items) {
-      if (item.variantId) {
-        await this.prisma.$executeRaw`
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        if (!item.variantId) continue;
+
+        const rows = await tx.$queryRaw<InventoryRow[]>`
           UPDATE "inventory"
           SET "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
           WHERE "variantId" = ${item.variantId}
+          RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
         `;
+        if (rows.length === 0) continue;
+
+        await this.logMovement(tx, rows[0], {
+          variantId: item.variantId,
+          movementType: 'UNRESERVED',
+          quantity: item.quantity,
+          previousAvailable: rows[0].reservedQuantity + item.quantity,
+          referenceType: 'ORDER',
+          referenceId: orderId,
+          reason: `Order ${order.orderNumber} reservation released`,
+          performedBy: userId,
+        });
       }
-    }
+    });
   }
 
   /**
@@ -250,7 +329,7 @@ export class OrderWorkflowService {
    * for this order is rolled back (no partial deduction) and a
    * BusinessException carrying the shortages is thrown.
    */
-  async deductInventory(orderId: string) {
+  async deductInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { items: true },
@@ -269,15 +348,16 @@ export class OrderWorkflowService {
       for (const item of order.items) {
         if (!item.variantId) continue;
 
-        const affected = await tx.$executeRaw`
+        const rows = await tx.$queryRaw<InventoryRow[]>`
           UPDATE "inventory"
           SET "availableQuantity" = "availableQuantity" - ${item.quantity},
               "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
           WHERE "variantId" = ${item.variantId}
             AND ("availableQuantity" >= ${item.quantity} OR "allowBackorder" = true)
+          RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
         `;
 
-        if (affected === 0) {
+        if (rows.length === 0) {
           const current = await tx.inventory.findUnique({
             where: { variantId: item.variantId },
           });
@@ -292,7 +372,19 @@ export class OrderWorkflowService {
           }
           // No inventory row at all: preserved pre-existing behaviour of
           // silently skipping the deduction for untracked variants.
+          continue;
         }
+
+        await this.logMovement(tx, rows[0], {
+          variantId: item.variantId,
+          movementType: 'SALE',
+          quantity: item.quantity,
+          previousAvailable: rows[0].availableQuantity + item.quantity,
+          referenceType: 'ORDER',
+          referenceId: orderId,
+          reason: `Order ${order.orderNumber} sold`,
+          performedBy: userId,
+        });
       }
 
       if (shortages.length > 0) {
@@ -305,21 +397,37 @@ export class OrderWorkflowService {
     });
   }
 
-  async restoreInventory(orderId: string) {
+  async restoreInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },
       include: { items: true },
     });
     if (!order) return;
 
-    for (const item of order.items) {
-      if (item.variantId) {
-        await this.prisma.inventory.updateMany({
-          where: { variantId: item.variantId },
-          data: { availableQuantity: { increment: item.quantity } },
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        if (!item.variantId) continue;
+
+        const rows = await tx.$queryRaw<InventoryRow[]>`
+          UPDATE "inventory"
+          SET "availableQuantity" = "availableQuantity" + ${item.quantity}
+          WHERE "variantId" = ${item.variantId}
+          RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
+        `;
+        if (rows.length === 0) continue;
+
+        await this.logMovement(tx, rows[0], {
+          variantId: item.variantId,
+          movementType: 'RESTORE',
+          quantity: item.quantity,
+          previousAvailable: rows[0].availableQuantity - item.quantity,
+          referenceType: 'ORDER',
+          referenceId: orderId,
+          reason: `Order ${order.orderNumber} cancelled/returned -- stock restored`,
+          performedBy: userId,
         });
       }
-    }
+    });
   }
 
   async generateOrderNumber(): Promise<string> {
