@@ -19,10 +19,14 @@ export class JwtService {
     private readonly configService: ConfigService,
     private readonly sessionSettingsService: SessionSettingsService,
   ) {
-    this.secret = this.configService.get<string>(
-      'app.jwt.secret',
-      'dev-secret',
-    );
+    const secret = this.configService.get<string>('app.jwt.secret');
+    if (!secret) {
+      // Joi's validation schema already requires JWT_SECRET in production,
+      // so this should be unreachable there -- this is a last-resort guard
+      // against ever signing/verifying a token with an empty secret.
+      throw new Error('JWT_SECRET is not configured');
+    }
+    this.secret = secret;
     this.issuer = this.configService.get<string>(
       'app.jwt.issuer',
       'vasanthi-designers',
