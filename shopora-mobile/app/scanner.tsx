@@ -9,6 +9,7 @@ import {
   ScrollView,
   ActivityIndicator,
   FlatList,
+  Linking,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, scanFromURLAsync } from 'expo-camera';
@@ -242,10 +243,17 @@ export default function DedicatedScannerScreen() {
           <Barcode size={54} color="#38bdf8" />
           <Text style={styles.permTitle}>Camera Access Required</Text>
           <Text style={styles.permText}>
-            Shopora Mobile POS requires camera permission to scan product barcode labels.
+            {permission.canAskAgain
+              ? 'Shopora Mobile POS requires camera permission to scan product barcode labels.'
+              : 'Camera permission was denied. Enable it for Shopora in your device Settings to scan barcodes.'}
           </Text>
-          <TouchableOpacity style={styles.grantBtn} onPress={requestPermission}>
-            <Text style={styles.grantBtnText}>Grant Camera Permission</Text>
+          <TouchableOpacity
+            style={styles.grantBtn}
+            onPress={permission.canAskAgain ? requestPermission : () => Linking.openSettings()}
+          >
+            <Text style={styles.grantBtnText}>
+              {permission.canAskAgain ? 'Grant Camera Permission' : 'Open Settings'}
+            </Text>
           </TouchableOpacity>
         </View>
       ) : (
