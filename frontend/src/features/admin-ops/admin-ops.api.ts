@@ -54,6 +54,12 @@ export interface GoogleAuthConfigDto {
   clientId: string;
 }
 
+export interface RazorpayConfigDto {
+  keyId: string;
+  keySecretConfigured: boolean;
+  webhookSecretConfigured: boolean;
+}
+
 export interface DtdcShipmentDto {
   id: string;
   orderId: string;
@@ -139,6 +145,21 @@ export const adminOpsApi = {
 
   updateGoogleAuthConfig: async (clientId: string): Promise<GoogleAuthConfigDto> => {
     const res = await apiClient.put<StandardResponse<GoogleAuthConfigDto>>('/admin/google-auth/config', { clientId });
+    return res.data.data!;
+  },
+
+  // ── Razorpay ────────────────────────────────────────────
+  getRazorpayConfig: async (): Promise<RazorpayConfigDto> => {
+    const res = await apiClient.get<StandardResponse<RazorpayConfigDto>>('/admin/payment-settings/razorpay');
+    return res.data.data!;
+  },
+
+  updateRazorpayConfig: async (dto: {
+    keyId?: string;
+    keySecret?: string;
+    webhookSecret?: string;
+  }): Promise<RazorpayConfigDto> => {
+    const res = await apiClient.put<StandardResponse<RazorpayConfigDto>>('/admin/payment-settings/razorpay', dto);
     return res.data.data!;
   },
 
