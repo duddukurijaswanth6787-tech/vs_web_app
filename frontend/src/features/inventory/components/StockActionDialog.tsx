@@ -18,14 +18,30 @@ import { InventoryResponse, StockMovementDto, AdjustStockDto } from '../inventor
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
 
-const schema = z.object({
-  action: z.enum(['INCREASE', 'DECREASE', 'ADJUST', 'RESERVE', 'RELEASE', 'RETURN', 'DAMAGE']),
-  quantity: z.number().int().min(1, 'Quantity must be at least 1'),
-  reason: z.string().min(1, 'Reason is required').max(200, 'Reason cannot exceed 200 characters'),
-  remarks: z.string().max(500, 'Remarks cannot exceed 500 characters').optional(),
-  referenceType: z.string().optional(),
-  referenceId: z.string().uuid('Reference ID must be a valid UUID').or(z.literal('')).optional(),
-});
+const schema = z
+  .object({
+    action: z.enum(['INCREASE', 'DECREASE', 'ADJUST', 'RESERVE', 'RELEASE', 'RETURN', 'DAMAGE']),
+    // ADJUST sets an absolute target quantity (0 is a valid target -- "we
+    // have none left"); every other action is a positive magnitude to move.
+    quantity: z.number().int(),
+    reason: z.string().min(1, 'Reason is required').max(200, 'Reason cannot exceed 200 characters'),
+    remarks: z.string().max(500, 'Remarks cannot exceed 500 characters').optional(),
+    referenceType: z.string().optional(),
+    referenceId: z.string().uuid('Reference ID must be a valid UUID').or(z.literal('')).optional(),
+  })
+  .superRefine((values, ctx) => {
+    const min = values.action === 'ADJUST' ? 0 : 1;
+    if (values.quantity < min) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['quantity'],
+        message:
+          values.action === 'ADJUST'
+            ? 'Target quantity cannot be negative'
+            : 'Quantity must be at least 1',
+      });
+    }
+  });
 
 type FormValues = z.infer<typeof schema>;
 
@@ -125,7 +141,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
           <div>
-            <h3 className="text-sm font-bold text-neutral-900">Manage Stock levels</h3>
+            <h3 className="text-sm font-bold text-[#800020]">Manage Stock levels</h3>
             <p className="text-[10px] text-neutral-400 mt-0.5">SKU: {inventory.variant?.sku || inventory.variantId}</p>
           </div>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition">
@@ -147,7 +163,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
             <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Operation</label>
             <select
               {...register('action')}
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
             >
               <option value="INCREASE">Increase Stock</option>
               <option value="DECREASE">Decrease Stock</option>
@@ -161,12 +177,15 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
 
           {/* Quantity */}
           <div>
-            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Quantity</label>
+            <label className="block text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
+              {selectedAction === 'ADJUST' ? 'New Total Quantity' : 'Quantity'}
+            </label>
             <input
               type="number"
+              min={selectedAction === 'ADJUST' ? 0 : 1}
               {...register('quantity', { valueAsNumber: true })}
-              placeholder={selectedAction === 'ADJUST' ? "Target available stock quantity" : "Quantity to adjust"}
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+              placeholder={selectedAction === 'ADJUST' ? 'e.g. 47 (from a physical stock count)' : 'Quantity to adjust'}
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
             />
             {errors.quantity && <p className="text-[10px] text-red-600 mt-1">{errors.quantity.message}</p>}
           </div>
@@ -178,7 +197,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
               type="text"
               {...register('reason')}
               placeholder="e.g. Inbound purchase order, physical inventory count, damage claim"
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020]"
             />
             {errors.reason && <p className="text-[10px] text-red-600 mt-1">{errors.reason.message}</p>}
           </div>
@@ -190,7 +209,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
               {...register('remarks')}
               rows={2}
               placeholder="Provide internal documentation..."
-              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-neutral-900 resize-none"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#800020] resize-none"
             />
           </div>
 
@@ -203,7 +222,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
                   type="text"
                   {...register('referenceType')}
                   placeholder="e.g. ORDER"
-                  className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2 py-1.5 text-2xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                  className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2 py-1.5 text-2xs text-neutral-800 focus:outline-none focus:border-[#800020]"
                 />
               </div>
               <div>
@@ -212,7 +231,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
                   type="text"
                   {...register('referenceId')}
                   placeholder="UUID Format"
-                  className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2 py-1.5 text-2xs text-neutral-800 focus:outline-none focus:border-neutral-900"
+                  className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2 py-1.5 text-2xs text-neutral-800 focus:outline-none focus:border-[#800020]"
                 />
                 {errors.referenceId && <p className="text-[9px] text-red-600 mt-1">{errors.referenceId.message}</p>}
               </div>
@@ -231,7 +250,7 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
             <button
               type="submit"
               disabled={isSubmitting}
-              className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm disabled:opacity-55 flex items-center"
+              className="bg-[#800020] hover:bg-[#600018] text-white font-bold py-2 px-4 rounded-xl text-xs transition shadow-sm disabled:opacity-55 flex items-center"
             >
               {isSubmitting && <ButtonLoader />} Confirm Transaction
             </button>

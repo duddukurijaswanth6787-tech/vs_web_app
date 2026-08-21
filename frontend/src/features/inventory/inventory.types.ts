@@ -12,6 +12,8 @@ export interface InventoryResponse {
   reservedQuantity: number;
   damagedQuantity: number;
   returnedQuantity: number;
+  /** availableQuantity - reservedQuantity: what's actually sellable now. */
+  availableStock: number;
   minimumStock: number;
   maximumStock: number;
   reorderLevel: number;
@@ -55,6 +57,7 @@ export interface UpdateInventoryDto {
 }
 
 export interface AdjustStockDto {
+  /** Target absolute available quantity, not a delta. */
   quantity: number;
   reason?: string;
   remarks?: string;
