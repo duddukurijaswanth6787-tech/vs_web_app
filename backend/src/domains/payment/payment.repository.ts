@@ -66,6 +66,26 @@ export class PaymentRepository {
     return this.prisma.payment.update({ where: { id }, data });
   }
 
+  /**
+   * Guarded `UPDATE ... WHERE status <> 'CAPTURED'` so two concurrent
+   * capture attempts for the same payment (a retried verify call racing a
+   * webhook delivery, or Razorpay's documented webhook-retry behaviour)
+   * can't both win: only the first to reach the row actually updates it,
+   * the second matches zero rows instead of re-running the whole
+   * confirm-order/deduct-stock/notify flow a second time. Returns the
+   * number of rows affected (0 or 1) so the caller can skip that flow.
+   */
+  async markCapturedIfNotAlready(
+    id: string,
+    data: Prisma.PaymentUpdateManyMutationInput,
+  ): Promise<number> {
+    const result = await this.prisma.payment.updateMany({
+      where: { id, status: { not: 'CAPTURED' } },
+      data,
+    });
+    return result.count;
+  }
+
   async createTransaction(data: Prisma.PaymentTransactionCreateInput) {
     return this.prisma.paymentTransaction.create({ data });
   }
