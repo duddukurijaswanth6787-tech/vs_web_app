@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { CreditCard, Key, ShieldCheck, CheckCircle2, AlertCircle, Save, Lock, Eye, EyeOff, RefreshCw, Globe, HelpCircle } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
-
+import { apiClient } from '@/lib/api/client';
 export default function PaymentGatewaysPage() {
   const { user } = useAuth();
   const [keyId, setKeyId] = useState('');
@@ -26,18 +26,12 @@ export default function PaymentGatewaysPage() {
     setLoading(true);
     setErrorMsg('');
     try {
-      const res = await fetch('http://127.0.0.1:4000/api/v1/payments/config', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const config = data.data || data;
-        setKeyId(config.keyId || '');
-        setKeySecretConfigured(Boolean(config.keySecretConfigured));
-        setWebhookSecretConfigured(Boolean(config.webhookSecretConfigured));
-      }
+      const res = await apiClient.get('/payments/config');
+      const data = res.data;
+      const config = data.data || data;
+      setKeyId(config.keyId || '');
+      setKeySecretConfigured(Boolean(config.keySecretConfigured));
+      setWebhookSecretConfigured(Boolean(config.webhookSecretConfigured));
     } catch (err) {
       setErrorMsg(getApiErrorMessage(err, 'Failed to load gateway config'));
     } finally {
@@ -61,18 +55,7 @@ export default function PaymentGatewaysPage() {
       if (keySecret.trim()) payload.keySecret = keySecret.trim();
       if (webhookSecret.trim()) payload.webhookSecret = webhookSecret.trim();
 
-      const res = await fetch('http://127.0.0.1:4000/api/v1/payments/config', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to update Razorpay credentials');
-      }
+      await apiClient.patch('/payments/config', payload);
 
       setSuccessMsg('Razorpay API Keys and Webhook Secret saved successfully in database!');
       setKeySecret('');
@@ -221,7 +204,7 @@ export default function PaymentGatewaysPage() {
               </button>
             </div>
             <p className="text-[11px] text-neutral-400">
-              Webhook Endpoint URL to paste in Razorpay Dashboard: <code className="bg-neutral-100 px-2 py-0.5 rounded text-neutral-800 font-mono text-[10px]">http://127.0.0.1:4000/api/v1/payments/webhook</code>
+              Webhook Endpoint URL to paste in Razorpay Dashboard: <code className="bg-neutral-100 px-2 py-0.5 rounded text-neutral-800 font-mono text-[10px]">https://api.vsboutique.shop/api/v1/payments/webhook</code>
             </p>
           </div>
         </div>

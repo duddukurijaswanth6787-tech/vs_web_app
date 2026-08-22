@@ -1,9 +1,11 @@
 'use client';
 
+import React, { useEffect, useState } from 'react';
 import { useDashboard } from '@/features/storefront/storefront.hooks';
 import { PageLoader } from '@/components/feedback/FeedbackStates';
-import { Store, Layout, ToggleLeft, Link2, Share2, Newspaper, Wrench, Eye, Settings, ExternalLink } from 'lucide-react';
+import { Store, Layout, ToggleLeft, Link2, Share2, Newspaper, Wrench, Eye, Settings, ExternalLink, Activity } from 'lucide-react';
 import Link from 'next/link';
+import { apiClient } from '@/lib/api/client';
 
 const quickActions = [
   { label: 'Store Information', href: '/admin/storefront/store', icon: Settings, color: 'bg-blue-50 text-blue-700 border-blue-200' },
@@ -14,6 +16,18 @@ const quickActions = [
 
 export default function StorefrontDashboardPage() {
   const { data, isLoading } = useDashboard();
+  const [logs, setLogs] = useState<any[]>([]);
+  const [logsLoading, setLogsLoading] = useState(true);
+
+  useEffect(() => {
+    apiClient.get('/audit-logs?limit=5')
+      .then((res) => {
+        const list = res.data?.data?.data || res.data?.data || [];
+        setLogs(Array.isArray(list) ? list : []);
+      })
+      .catch(() => setLogs([]))
+      .finally(() => setLogsLoading(false));
+  }, []);
 
   if (isLoading) return <PageLoader />;
 
@@ -62,9 +76,26 @@ export default function StorefrontDashboardPage() {
         </div>
 
         <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm">
-          <h2 className="text-sm font-bold text-neutral-900 mb-3">Recent Changes</h2>
-          {/* ponytail: static placeholder — real audit log integration when needed */}
-          <p className="text-xs text-neutral-400">Audit log integration coming soon.</p>
+          <h2 className="text-sm font-bold text-neutral-900 mb-3 flex items-center gap-2">
+            <Activity className="w-4 h-4 text-neutral-500" /> Recent Audit Activity
+          </h2>
+          {logsLoading ? (
+            <p className="text-xs text-neutral-400">Loading audit history...</p>
+          ) : logs.length > 0 ? (
+            <div className="space-y-2.5">
+              {logs.slice(0, 5).map((log: any) => (
+                <div key={log.id || log.createdAt} className="flex items-center justify-between p-2.5 rounded-xl bg-neutral-50 border border-neutral-100 text-xs">
+                  <div>
+                    <span className="font-semibold text-neutral-800 uppercase text-[10px] bg-neutral-200/60 px-1.5 py-0.5 rounded mr-2">{log.action || log.module}</span>
+                    <span className="text-neutral-600 font-medium">{log.resource || log.description || 'System Update'}</span>
+                  </div>
+                  <span className="text-[10px] text-neutral-400">{new Date(log.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-xs text-neutral-400">No recent audit log activity found.</p>
+          )}
         </div>
       </div>
     </div>

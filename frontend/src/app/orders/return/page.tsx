@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, RefreshCw, CheckCircle2, AlertCircle, Package } from 'lucide-react';
@@ -24,11 +24,10 @@ const REFUND_PREFERENCES = [
   { id: 'STORE_CREDIT', label: 'Store Credit Voucher', desc: 'Digital discount voucher' },
 ];
 
-export default function OrderReturnPage() {
+function OrderReturnForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const preselectedOrderId = searchParams.get('orderId');
-
   const { data: orderData, isLoading: ordersLoading } = useCustomerOrders();
   const orders: OrderDto[] = Array.isArray(orderData)
     ? orderData
@@ -208,5 +207,12 @@ export default function OrderReturnPage() {
         </form>
       </main>
     </div>
+  );
+}
+export default function OrderReturnPage() {
+  return (
+    <Suspense fallback={<div className="p-8 text-center text-xs text-neutral-400">Loading return portal...</div>}>
+      <OrderReturnForm />
+    </Suspense>
   );
 }

@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Shield, ToggleLeft, ToggleRight, Sparkles, AlertCircle, CheckCircle2, RotateCw, Lock, Sliders, RefreshCw } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
-
+import { apiClient } from '@/lib/api/client';
 interface FeatureToggle {
   id: string;
   key: string;
@@ -38,24 +38,17 @@ export default function FeatureFlagsPage() {
   const fetchToggles = async () => {
     setLoading(true);
     try {
-      const res = await fetch('http://127.0.0.1:4000/api/v1/admin/storefront/feature-toggles', {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-      });
-      if (res.ok) {
-        const data = await res.json();
-        const apiToggles = data.data || data;
-        if (Array.isArray(apiToggles) && apiToggles.length > 0) {
-          // Merge API toggles with defaults
-          const map = new Map(apiToggles.map((t: FeatureToggle) => [t.key, t.enabled]));
-          setToggles((prev) =>
-            prev.map((t) => ({
-              ...t,
-              enabled: map.has(t.key) ? Boolean(map.get(t.key)) : t.enabled,
-            }))
-          );
-        }
+      const res = await apiClient.get('/admin/storefront/feature-toggles');
+      const apiToggles = res.data?.data || res.data;
+      if (Array.isArray(apiToggles) && apiToggles.length > 0) {
+        // Merge API toggles with defaults
+        const map = new Map(apiToggles.map((t: FeatureToggle) => [t.key, t.enabled]));
+        setToggles((prev) =>
+          prev.map((t) => ({
+            ...t,
+            enabled: map.has(t.key) ? Boolean(map.get(t.key)) : t.enabled,
+          }))
+        );
       }
     } catch {
       // Keep defaults
@@ -80,18 +73,7 @@ export default function FeatureFlagsPage() {
     );
 
     try {
-      const res = await fetch(`http://127.0.0.1:4000/api/v1/admin/storefront/feature-toggles/${key}`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('access_token')}`,
-        },
-        body: JSON.stringify({ enabled: newStatus }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to update feature toggle');
-      }
+      await apiClient.patch(`/admin/storefront/feature-toggles/${key}`, { enabled: newStatus });
 
       setSuccessMsg(`Feature "${key.replace(/_/g, ' ').toUpperCase()}" is now ${newStatus ? 'ENABLED' : 'DISABLED'}. Storefront will update dynamically.`);
       setTimeout(() => setSuccessMsg(''), 3000);
