@@ -23,8 +23,14 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 export class CancellationController {
   constructor(private readonly cancelService: CancellationService) {}
 
+  // Admin-only: customers create/view their own cancellations through
+  // POST /me/orders/:orderNumber/cancel, which resolves and checks
+  // ownership before ever calling into this service. These raw routes
+  // key off orderId directly with no ownership check of their own, so
+  // they must stay restricted to admins (the only real callers today).
   @Get(':orderId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get cancellation by order ID' })
   async findByOrderId(@Param('orderId') orderId: string) {
@@ -34,7 +40,8 @@ export class CancellationController {
   }
 
   @Post()
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Create cancellation request' })
   async create(
