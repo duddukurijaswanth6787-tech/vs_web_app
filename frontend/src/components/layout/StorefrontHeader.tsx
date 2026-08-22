@@ -94,25 +94,10 @@ export function StorefrontHeader() {
 
       {/* Top Header Row */}
       <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-2 sm:py-3.5">
-        <div className="relative flex items-center justify-between gap-2 sm:gap-4">
-
-          {/* Mobile: logo centered at the top of the header, independent of the hamburger/icons row */}
-          <Link
-            href="/"
-            className="lg:hidden absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center"
-          >
-            <Image
-              src="/brand/logo-full.png"
-              alt="Vasanthi's Signature"
-              width={1400}
-              height={803}
-              priority
-              className="w-[150px] sm:w-[190px] h-auto object-contain"
-            />
-          </Link>
+        <div className="flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Left: Mobile Menu Trigger & Desktop Logo */}
-          <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-2 sm:gap-3 flex-1 shrink-0 lg:flex-none">
             <button
               onClick={() => setMobileMenuOpen(true)}
               className="lg:hidden p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg shrink-0"
@@ -132,6 +117,21 @@ export function StorefrontHeader() {
               />
             </Link>
           </div>
+
+          {/* Mobile: logo in normal flow, centered between the menu button and the icons --
+              a tall wide lockup like this needs the row to actually grow to fit it, which
+              absolute-positioning it over just the (much shorter) icon row didn't allow,
+              leaving it cramped with almost no breathing room above/below. */}
+          <Link href="/" className="lg:hidden flex items-center justify-center">
+            <Image
+              src="/brand/logo-full.png"
+              alt="Vasanthi's Signature"
+              width={1400}
+              height={803}
+              priority
+              className="w-[150px] sm:w-[190px] h-auto object-contain"
+            />
+          </Link>
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-neutral-700">
@@ -161,7 +161,7 @@ export function StorefrontHeader() {
           </nav>
 
           {/* Right Action Icons */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center justify-end gap-1.5 sm:gap-3 flex-1 shrink-0 lg:flex-none">
             <div className="hidden lg:block relative w-56 xl:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input
