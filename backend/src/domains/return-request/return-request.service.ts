@@ -82,6 +82,16 @@ export class ReturnRequestService {
     });
     if (!order) throw new BusinessException('Order not found', 'ORDER_001');
 
+    // Customers call POST /returns directly (no ownership-checked proxy
+    // like orders has via /me/orders), so this is the only place that
+    // stops someone from filing a return against an order they don't own.
+    const customerProfile = await this.prisma.customerProfile.findUnique({
+      where: { userId },
+    });
+    if (!customerProfile || order.customerId !== customerProfile.id) {
+      throw new BusinessException('Order not found', 'ORDER_001');
+    }
+
     if (!this.workflow.canReturn(order.status))
       throw new BusinessException(
         'Order must be delivered before requesting a return',
