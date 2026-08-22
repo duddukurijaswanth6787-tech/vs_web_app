@@ -93,7 +93,7 @@ export function StorefrontHeader() {
       )}
 
       {/* Top Header Row */}
-      <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-2 sm:py-3.5">
+      <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-1 sm:py-3.5">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Left: Mobile Menu Trigger & Desktop Logo */}
@@ -129,7 +129,7 @@ export function StorefrontHeader() {
               width={1400}
               height={803}
               priority
-              className="w-[150px] sm:w-[190px] h-auto object-contain"
+              className="w-[105px] sm:w-[190px] h-auto object-contain"
             />
           </Link>
 
@@ -196,7 +196,7 @@ export function StorefrontHeader() {
         </div>
 
         {/* Mobile Search Bar Row */}
-        <div className="mt-2.5 relative w-full lg:hidden">
+        <div className="mt-1.5 relative w-full lg:hidden">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
           <input
             id="mobile-search-input"
