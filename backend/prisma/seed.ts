@@ -1,8 +1,14 @@
+const initialDbUrl = process.env.DATABASE_URL;
 import 'dotenv/config';
-import { PrismaClient } from '@prisma/client';
+if (initialDbUrl) {
+  process.env.DATABASE_URL = initialDbUrl;
+}
+import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL || '' });
+const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 const SYSTEM_ROLES = [
