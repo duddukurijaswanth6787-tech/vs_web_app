@@ -87,8 +87,8 @@ export class DashboardService {
         where: todayFilter,
       }),
       this.prisma.order.count({ where: todayFilter }),
-      this.prisma.category.count(),
-      this.prisma.brand.count(),
+      this.prisma.category.count({ where: { deletedAt: null } }),
+      this.prisma.brand.count({ where: { deletedAt: null } }),
       this.prisma.coupon.count({
         where: {
           isActive: true,
