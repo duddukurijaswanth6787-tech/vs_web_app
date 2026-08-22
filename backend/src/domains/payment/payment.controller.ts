@@ -36,8 +36,12 @@ export class PaymentController {
     return ResponseBuilder.success(await this.paymentService.findAll(query));
   }
 
+  // Only admin pages consume these two lookups (checkout only ever POSTs
+  // to /payments and /payments/:id/verify), so they get the same
+  // payments:view guard as findAll rather than a customer ownership check.
   @Get('order/:orderId')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payments:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payments by order ID' })
   async findByOrderId(@Param('orderId') orderId: string) {
@@ -47,7 +51,8 @@ export class PaymentController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payments:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get payment by ID' })
   async findById(@Param('id') id: string) {
