@@ -67,18 +67,21 @@ export function StorefrontHeader() {
 
   const { data: settings } = usePublicSettings();
   const typedSettings = settings as Record<string, unknown> | undefined;
-  const mobileAnnouncementEnabled = (typedSettings?.announcementBarMobileEnabled as boolean | undefined) ?? true;
-  const announcementText = (typedSettings?.announcementBarText as string | undefined) || 'Festive Sale is Live! Get up to 30% OFF';
+  const mobileAnnouncementEnabled =
+    (typedSettings?.announcementBarMobileEnabled as boolean | undefined) ??
+    (typedSettings?.announcement_bar_mobile_enabled === 'true' || typedSettings?.announcement_bar_mobile_enabled === true) ??
+    true;
+  const announcementText =
+    (typedSettings?.announcementBarText as string | undefined) ||
+    (typedSettings?.announcement_bar_text as string | undefined) ||
+    'Festive Sale is Live! Get up to 30% OFF';
 
   const { data: homepageData } = useHomepage();
-  // The public /homepage endpoint only returns enabled sections, so absence
-  // of the key means it's disabled. Fail open while the request is in flight.
   const announcementBarEnabled =
     !homepageData ||
-    (Array.isArray(homepageData.sections) ? homepageData.sections : []).some(
-      (s) => (s as Record<string, unknown>).key === 'announcement_bar'
-    );
-
+    !Array.isArray(homepageData.sections) ||
+    homepageData.sections.length === 0 ||
+    homepageData.sections.some((s) => (s as Record<string, unknown>).key === 'announcement_bar');
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 shadow-xs">
       {/* 01 TOP ANNOUNCEMENT BAR */}
