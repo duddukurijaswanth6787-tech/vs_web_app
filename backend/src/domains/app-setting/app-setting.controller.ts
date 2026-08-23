@@ -42,11 +42,12 @@ export class AppSettingController {
   }
 
   @Get(':key')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('settings:view')
-  @ApiBearerAuth()
+  @Public()
   @ApiOperation({ summary: 'Get setting by key' })
   async findByKey(@Param('key') key: string) {
+    if (key === 'public') {
+      return ResponseBuilder.success(await this.settingService.getPublicSettingsFallback());
+    }
     return ResponseBuilder.success(await this.settingService.findByKey(key));
   }
 
