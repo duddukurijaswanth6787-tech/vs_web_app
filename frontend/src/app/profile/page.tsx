@@ -382,7 +382,7 @@ function AuthenticatedAccountView() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-5 gap-1 text-center pt-1">
+          <div className="grid grid-cols-4 gap-1 text-center pt-1">
             <Link href="/orders?status=PENDING" className="flex flex-col items-center gap-1 group">
               <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
                 <Clock className="w-4 h-4 text-[#800020]" />
@@ -415,37 +415,14 @@ function AuthenticatedAccountView() {
               <span className="text-xs font-extrabold text-[#800020]">{orderCounts.delivered}</span>
             </Link>
 
-            <Link href="/returns" className="flex flex-col items-center gap-1 group">
-              <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
-                <RotateCcw className="w-4 h-4 text-[#800020]" />
-              </div>
-              <span className="text-[10px] font-medium text-neutral-600">Returns</span>
-              <span className="text-xs font-extrabold text-[#800020]">{orderCounts.returns}</span>
-            </Link>
           </div>
         </div>
-
-        {/* 3. Refer & Earn Banner */}
-        <Link href="/profile/referral" className="bg-gradient-to-r from-rose-50 via-pink-50 to-amber-50/60 border border-rose-100/90 rounded-3xl p-4 flex items-center justify-between shadow-2xs hover:shadow-xs transition-shadow">
-          <div className="space-y-0.5 pr-2">
-            <h4 className="text-xs font-bold text-[#800020]">Refer & Earn</h4>
-            <p className="text-[10px] text-neutral-600 leading-snug">
-              Invite your friends and earn ₹100 off on their first order
-            </p>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            <div className="w-10 h-10 rounded-2xl bg-white/90 shadow-2xs flex items-center justify-center text-rose-600">
-              <Gift className="w-5 h-5 text-[#800020]" />
-            </div>
-            <ChevronRight className="w-4 h-4 text-neutral-400" />
-          </div>
-        </Link>
-          </div>
-        </div>
-      </main>
-
-      <MobileBottomNav />
+      </div>
     </div>
+  </main>
+
+    <MobileBottomNav />
+  </div>
   );
 }
 

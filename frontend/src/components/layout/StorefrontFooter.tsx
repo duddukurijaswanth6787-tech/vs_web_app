@@ -103,34 +103,6 @@ export function StorefrontFooter() {
               </ul>
             </div>
 
-            {/* Column 5: Download App (Desktop) */}
-            <div className="hidden lg:block space-y-2 col-span-2 lg:col-span-1">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-white">Download App</h4>
-              <div className="space-y-2">
-                <a
-                  href="#"
-                  className="flex items-center gap-2.5 bg-[#42101F] hover:bg-[#541629] border border-rose-900/50 p-2 rounded-xl text-white transition-all group"
-                >
-                  <Smartphone className="w-4 h-4 text-rose-300 group-hover:scale-110 transition-transform shrink-0" />
-                  <div>
-                    <span className="text-[8px] uppercase tracking-wider text-rose-300/80 block leading-none">GET IT ON</span>
-                    <span className="text-[11px] font-bold">Google Play</span>
-                  </div>
-                </a>
-
-                <a
-                  href="#"
-                  className="flex items-center gap-2.5 bg-[#42101F] hover:bg-[#541629] border border-rose-900/50 p-2 rounded-xl text-white transition-all group"
-                >
-                  <Smartphone className="w-4 h-4 text-rose-300 group-hover:scale-110 transition-transform shrink-0" />
-                  <div>
-                    <span className="text-[8px] uppercase tracking-wider text-rose-300/80 block leading-none">DOWNLOAD ON THE</span>
-                    <span className="text-[11px] font-bold">App Store</span>
-                  </div>
-                </a>
-              </div>
-            </div>
-
           </div>
 
         </div>

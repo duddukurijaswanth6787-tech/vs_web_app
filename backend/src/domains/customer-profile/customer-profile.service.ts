@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
+import { PrismaService } from '@database/prisma.service';
 import { CustomerProfileRepository } from './customer-profile.repository';
 import { UpdateProfileDto, ProfileResponse } from './customer-profile.types';
 
@@ -9,6 +10,7 @@ export class CustomerProfileService {
   constructor(
     private readonly profileRepository: CustomerProfileRepository,
     private readonly auditService: AuditService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private toResponse(p: any): ProfileResponse {
@@ -60,7 +62,19 @@ export class CustomerProfileService {
     const profile = await this.profileRepository.findByUserId(userId);
     if (!profile)
       throw new BusinessException('Profile not found', 'PROFILE_001');
-    await this.profileRepository.update(profile.id, { ...dto });
+
+    const { firstName, lastName, ...profileData } = dto;
+    if (firstName !== undefined || lastName !== undefined) {
+      await this.prisma.user.update({
+        where: { id: userId },
+        data: {
+          ...(firstName !== undefined ? { firstName } : {}),
+          ...(lastName !== undefined ? { lastName } : {}),
+        },
+      });
+    }
+
+    await this.profileRepository.update(profile.id, { ...profileData });
     await this.auditService.log({
       action: 'PROFILE_UPDATED',
       module: 'customer-profile',
