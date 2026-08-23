@@ -34,14 +34,19 @@ export class AppSettingController {
   async findAll(@Query() query: SettingQueryDto) {
     return ResponseBuilder.success(await this.settingService.findAll(query));
   }
+  @Get('public')
+  @Public()
+  @ApiOperation({ summary: 'Get public store settings' })
+  async getPublic() {
+    return ResponseBuilder.success(await this.settingService.getPublicSettingsFallback());
+  }
 
   @Get(':key')
-  @Public()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get setting by key' })
   async findByKey(@Param('key') key: string) {
-    if (key === 'public') {
-      return ResponseBuilder.success(await this.settingService.getPublicSettingsFallback());
-    }
     return ResponseBuilder.success(await this.settingService.findByKey(key));
   }
 
