@@ -74,7 +74,7 @@ export function FeaturedCollections() {
       {/* Header (Hidden on Mobile, Visible on Desktop/Tablet) */}
       <div className="hidden sm:flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 px-4 sm:px-8 lg:px-12">
         <div className="space-y-1">
-          <span className="text-xs font-bold text-[#800020] uppercase tracking-widest bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+          <span className="text-xs font-bold text-[#1769D2] uppercase tracking-widest bg-[#EAF4FF] px-3 py-1 rounded-full border border-[#DCEBFA]">
             Trending Collections
           </span>
           <h2 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-900 tracking-tight pt-1">
@@ -83,7 +83,7 @@ export function FeaturedCollections() {
         </div>
         <Link
           href="/categories"
-          className="inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-xs transition-all hover:scale-105 shrink-0 self-start md:self-auto"
+          className="inline-flex items-center justify-center bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-xs transition-all hover:scale-105 shrink-0 self-start md:self-auto"
         >
           <span>Explore Collection</span>
           <span className="ml-1">→</span>

@@ -66,7 +66,7 @@ function ProductCardItem({
             BEST SELLER
           </span>
         ) : product.isNew !== false ? (
-          <span className="absolute top-2.5 left-2.5 bg-[#800020] text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs z-20">
+          <span className="absolute top-2.5 left-2.5 bg-[#1769D2] text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs z-20">
             NEW
           </span>
         ) : null}
@@ -86,7 +86,7 @@ function ProductCardItem({
       </Link>
       <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5">
         <Link href={`/product/${product.slug || product.id}`}>
-          <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1 hover:text-[#800020] transition-colors">
+          <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1 hover:text-[#1769D2] transition-colors">
             {cardTitle}
           </h3>
         </Link>
@@ -134,16 +134,16 @@ export function ProductGridSection({
           </h2>
           {subtitle && <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">{subtitle}</p>}
         </div>
-        <Link href={viewAllHref} className="text-xs font-semibold text-[#800020] hover:text-[#600018] flex items-center gap-1">
+        <Link href={viewAllHref} className="text-xs font-semibold text-[#1769D2] hover:text-[#0B3B78] flex items-center gap-1">
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
       {displayProducts.length === 0 ? (
-        <div className="py-8 text-center px-4 bg-rose-50/30 border border-rose-100/60 rounded-2xl mx-4 sm:mx-8 lg:mx-0">
+        <div className="py-8 text-center px-4 bg-[#EAF4FF]/40 border border-[#DCEBFA] rounded-2xl mx-4 sm:mx-8 lg:mx-0">
           <p className="text-xs font-semibold text-neutral-600">New products arriving soon for {title}.</p>
-          <Link href="/categories" className="text-xs font-bold text-[#800020] hover:underline mt-1 inline-block">
+          <Link href="/categories" className="text-xs font-bold text-[#1769D2] hover:underline mt-1 inline-block">
             Explore All Categories →
           </Link>
         </div>

@@ -20,14 +20,14 @@ export function NewsletterSection() {
 
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#600018] via-[#800020] to-[#500014] text-white p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-rose-900/40 min-h-[180px]">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0B3B78] via-[#1769D2] to-[#1257B5] text-white p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-[#DCEBFA]/40 min-h-[180px]">
         
         {/* Left Content */}
         <div className="space-y-3 max-w-lg z-10 text-center md:text-left">
           <h2 className="text-lg sm:text-3xl font-bold font-serif tracking-tight drop-shadow-xs">
             Stay Updated with Latest Trends & Offers
           </h2>
-          <p className="text-xs sm:text-sm text-rose-100/90 font-medium">
+          <p className="text-xs sm:text-sm text-blue-100/90 font-medium">
             Subscribe to our newsletter and never miss an update!
           </p>
 
@@ -39,11 +39,11 @@ export function NewsletterSection() {
               placeholder="Enter your email address"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 bg-white/95 text-neutral-900 placeholder-neutral-400 text-xs sm:text-sm px-4 py-3 rounded-xl outline-none font-medium border border-rose-200/50 shadow-2xs focus:ring-2 focus:ring-amber-400"
+              className="flex-1 bg-white/95 text-neutral-900 placeholder-neutral-400 text-xs sm:text-sm px-4 py-3 rounded-xl outline-none font-medium border border-blue-200/50 shadow-2xs focus:ring-2 focus:ring-amber-400"
             />
             <button
               type="submit"
-              className="bg-[#500014] hover:bg-[#38000e] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 sm:px-6 py-3 rounded-xl transition-all shadow-md shrink-0 hover:scale-105"
+              className="bg-[#0B3B78] hover:bg-[#072449] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 sm:px-6 py-3 rounded-xl transition-all shadow-md shrink-0 hover:scale-105"
             >
               Subscribe
             </button>

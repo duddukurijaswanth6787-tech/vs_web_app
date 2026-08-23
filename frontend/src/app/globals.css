@@ -2,20 +2,40 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #102a43;
+  --primary-brand: #1769d2;
+  --primary-dark: #0b3b78;
+  --primary-light: #eaf4ff;
+  --secondary-blue: #4a90e2;
+  --soft-blue-bg: #f3f8ff;
+  --very-light-blue: #f8fbff;
+  --border-blue: #dcebfa;
+  --heading-text: #102a43;
+  --body-text: #486581;
+  --muted-text: #829ab1;
+  --hover-blue: #1257b5;
+  --success-stock: #16825d;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-primary: #1769d2;
+  --color-primary-dark: #0b3b78;
+  --color-primary-light: #eaf4ff;
+  --color-secondary-blue: #4a90e2;
+  --color-soft-blue-bg: #f3f8ff;
+  --color-very-light-blue: #f8fbff;
+  --color-border-custom: #dcebfa;
+  --color-heading-text: #102a43;
+  --color-body-text: #486581;
+  --color-muted-text: #829ab1;
+  --color-hover-blue: #1257b5;
+  --color-success-stock: #16825d;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --background: #0b1929;
+    --foreground: #f8fbff;
   }
 }
 

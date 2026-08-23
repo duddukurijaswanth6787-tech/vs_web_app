@@ -66,7 +66,7 @@ export function HeroSection() {
           imageUrl: isDesktopValid ? resolvedDesktop : PLACEHOLDER_IMAGE,
           mobileImageUrl: isMobileValid ? resolvedMobile : undefined,
           badge: String(b.badge || 'New Collection'),
-          color: String(b.color || '#800020'),
+          color: String(b.color || '#1769D2'),
           ctaEnabled: b.ctaEnabled !== false,
           ctaStyle: b.ctaStyle === 'transparent' ? 'transparent' as const : 'solid' as const,
         };
@@ -177,8 +177,8 @@ export function HeroSection() {
                   href={main.linkUrl || '/categories'}
                   className={
                     main.ctaStyle === 'transparent'
-                      ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#800020] text-[#800020] hover:bg-[#800020] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
-                      : 'inline-flex items-center justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
+                      ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#1769D2] text-[#1769D2] hover:bg-[#1769D2] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
+                      : 'inline-flex items-center justify-center bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
                   }
                 >
                   {main.buttonText || 'SHOP NOW'}
@@ -196,7 +196,7 @@ export function HeroSection() {
                   type="button"
                   onClick={() => setIndex(i)}
                   className={`h-1.5 rounded-full transition-all ${
-                    i === index ? 'w-5 sm:w-6 bg-[#800020]' : 'w-1.5 sm:w-2 bg-neutral-300 hover:bg-neutral-400'
+                    i === index ? 'w-5 sm:w-6 bg-[#1769D2]' : 'w-1.5 sm:w-2 bg-neutral-300 hover:bg-neutral-400'
                   }`}
                   aria-label={`Go to slide ${i + 1}`}
                 />
@@ -211,9 +211,9 @@ export function HeroSection() {
         <div className="hidden lg:flex lg:flex-col lg:col-span-4 gap-6 justify-between">
           
           {/* Top Promo Card: Festive Collection */}
-          <div className="flex-1 bg-[#FAF3F3] rounded-3xl p-5 sm:p-6 border border-rose-100/80 shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex-1 bg-[#F3F8FF] rounded-3xl p-5 sm:p-6 border border-[#DCEBFA] shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
             <div className="space-y-2 max-w-[62%] z-10">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#800020] bg-rose-100/80 px-2.5 py-0.5 rounded-md">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[#1769D2] bg-[#EAF4FF] px-2.5 py-0.5 rounded-md">
                 FOR YOUR SPECIAL DAY
               </span>
               <h3 className="text-lg sm:text-xl font-bold font-serif text-neutral-900 leading-tight">
@@ -224,7 +224,7 @@ export function HeroSection() {
               </p>
               <Link
                 href="/categories/festive"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#1769D2] hover:underline pt-1"
               >
                 <span>Explore Now</span>
                 <span>→</span>
@@ -244,9 +244,9 @@ export function HeroSection() {
           </div>
 
           {/* Bottom Promo Card: Wedding Collection */}
-          <div className="flex-1 bg-[#FAF3F3] rounded-3xl p-5 sm:p-6 border border-rose-100/80 shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
+          <div className="flex-1 bg-[#F3F8FF] rounded-3xl p-5 sm:p-6 border border-[#DCEBFA] shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
             <div className="space-y-2 max-w-[62%] z-10">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#800020] bg-rose-100/80 px-2.5 py-0.5 rounded-md">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[#1769D2] bg-[#EAF4FF] px-2.5 py-0.5 rounded-md">
                 FOR YOUR SPECIAL DAY
               </span>
               <h3 className="text-lg sm:text-xl font-bold font-serif text-neutral-900 leading-tight">
@@ -257,7 +257,7 @@ export function HeroSection() {
               </p>
               <Link
                 href="/categories/wedding"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#1769D2] hover:underline pt-1"
               >
                 <span>Explore Now</span>
                 <span>→</span>

@@ -401,8 +401,8 @@ export function StorefrontHeader() {
 
             {/* Bottom Promo Card Box (Matching Mobile Drawer Screenshot) */}
             <div className="p-4">
-              <div className="bg-[#FAF0F2] border border-rose-100 rounded-2xl p-4 text-center space-y-2">
-                <div className="w-8 h-8 rounded-full bg-[#800020] text-white flex items-center justify-center mx-auto">
+              <div className="bg-[#EAF4FF] border border-[#DCEBFA] rounded-2xl p-4 text-center space-y-2">
+                <div className="w-8 h-8 rounded-full bg-[#1769D2] text-white flex items-center justify-center mx-auto">
                   <Percent className="w-4 h-4" />
                 </div>
                 <h4 className="text-base font-bold text-neutral-900 leading-tight">
@@ -411,7 +411,7 @@ export function StorefrontHeader() {
                 <p className="text-xs text-neutral-500">
                   On your first order
                 </p>
-                <button className="w-full bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
+                <button className="w-full bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
                   JOIN NOW
                 </button>
               </div>

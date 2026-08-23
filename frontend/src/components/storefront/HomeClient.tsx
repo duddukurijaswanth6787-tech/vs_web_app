@@ -55,7 +55,7 @@ export function HomeClient() {
   const newItems = newArrivalsList.length ? newArrivalsList : featuredList;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 selection:bg-rose-100 selection:text-[#800020]">
+    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 selection:bg-[#EAF4FF] selection:text-[#1769D2]">
       
       {/* 01 HEADER */}
       <StorefrontHeader />
@@ -147,7 +147,7 @@ export function HomeClient() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-20 md:bottom-8 right-6 z-40 w-11 h-11 rounded-full bg-[#800020] hover:bg-[#600018] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 border border-white/20"
+          className="fixed bottom-20 md:bottom-8 right-6 z-40 w-11 h-11 rounded-full bg-[#1769D2] hover:bg-[#0B3B78] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 border border-white/20"
           aria-label="Scroll to top"
         >
           <ChevronUp className="w-6 h-6" />

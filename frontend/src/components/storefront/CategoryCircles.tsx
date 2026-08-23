@@ -88,7 +88,7 @@ export function CategoryCircles() {
         </div>
         <Link
           href="/categories"
-          className="text-xs sm:text-sm font-bold text-[#800020] hover:underline inline-flex items-center gap-1 shrink-0"
+          className="text-xs sm:text-sm font-bold text-[#1769D2] hover:underline inline-flex items-center gap-1 shrink-0"
         >
           <span>View All Categories</span>
           <span>→</span>
@@ -118,7 +118,7 @@ export function CategoryCircles() {
                 className="flex flex-col items-center gap-2 shrink-0 snap-start group w-[85px] sm:w-[100px] text-center"
               >
                 {/* Circle Container (100px diameter with border & shadow) */}
-                <div className="w-[85px] h-[85px] sm:w-[100px] sm:h-[100px] rounded-full overflow-hidden border-2 border-rose-100/80 p-0.5 bg-white shadow-2xs group-hover:border-[#800020] group-hover:shadow-md transition-all duration-300">
+                <div className="w-[85px] h-[85px] sm:w-[100px] sm:h-[100px] rounded-full overflow-hidden border-2 border-[#DCEBFA] p-0.5 bg-white shadow-2xs group-hover:border-[#1769D2] group-hover:shadow-md transition-all duration-300">
                   <div className="w-full h-full rounded-full overflow-hidden relative">
                     <Image
                       src={src}
@@ -132,7 +132,7 @@ export function CategoryCircles() {
                 </div>
 
                 {/* Category Label */}
-                <span className="text-xs font-bold text-neutral-800 group-hover:text-[#800020] transition-colors line-clamp-1 leading-tight">
+                <span className="text-xs font-bold text-neutral-800 group-hover:text-[#1769D2] transition-colors line-clamp-1 leading-tight">
                   {cat.name}
                 </span>
               </Link>

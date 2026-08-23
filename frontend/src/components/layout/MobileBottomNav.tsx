@@ -27,10 +27,10 @@ export function MobileBottomNav() {
       <Link
         href="/"
         className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-          isHome ? 'text-[#800020] scale-105 font-bold' : 'text-neutral-600 hover:text-[#800020]'
+          isHome ? 'text-[#1769D2] scale-105 font-bold' : 'text-neutral-600 hover:text-[#1769D2]'
         }`}
       >
-        <Home className={`w-5 h-5 ${isHome ? 'fill-[#800020]' : ''}`} />
+        <Home className={`w-5 h-5 ${isHome ? 'fill-[#1769D2]' : ''}`} />
         <span className="text-[10px]">Home</span>
       </Link>
 
@@ -38,10 +38,10 @@ export function MobileBottomNav() {
       <Link
         href="/categories"
         className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-          isCategories ? 'text-[#800020] scale-105 font-bold' : 'text-neutral-600 hover:text-[#800020]'
+          isCategories ? 'text-[#1769D2] scale-105 font-bold' : 'text-neutral-600 hover:text-[#1769D2]'
         }`}
       >
-        <LayoutGrid className={`w-5 h-5 ${isCategories ? 'fill-[#800020]' : ''}`} />
+        <LayoutGrid className={`w-5 h-5 ${isCategories ? 'fill-[#1769D2]' : ''}`} />
         <span className="text-[10px]">Categories</span>
       </Link>
 
@@ -52,13 +52,13 @@ export function MobileBottomNav() {
       >
         <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-amber-300 shadow-lg transition-all duration-300 ${
           isNewArrivals
-            ? 'bg-gradient-to-tr from-[#600018] via-[#800020] to-[#a0002a] text-amber-300 scale-110 shadow-amber-900/40 ring-4 ring-[#800020]/20'
-            : 'bg-gradient-to-tr from-[#800020] to-[#b3002d] text-white hover:scale-105 shadow-neutral-400/30'
+            ? 'bg-gradient-to-tr from-[#0B3B78] via-[#1769D2] to-[#4A90E2] text-amber-300 scale-110 shadow-blue-900/40 ring-4 ring-[#1769D2]/20'
+            : 'bg-gradient-to-tr from-[#1769D2] to-[#4A90E2] text-white hover:scale-105 shadow-neutral-400/30'
         }`}>
           <Sparkles className={`w-6 h-6 ${isNewArrivals ? 'fill-amber-300 text-amber-300 animate-pulse' : 'text-amber-200'}`} />
         </div>
         <span className={`text-[10px] font-bold mt-1 tracking-tight whitespace-nowrap ${
-          isNewArrivals ? 'text-[#800020]' : 'text-neutral-700'
+          isNewArrivals ? 'text-[#1769D2]' : 'text-neutral-700'
         }`}>
           New Arrivals
         </span>
@@ -68,12 +68,12 @@ export function MobileBottomNav() {
       <Link
         href="/wishlist"
         className={`flex flex-col items-center gap-0.5 transition-all duration-200 relative ${
-          isWishlist ? 'text-[#800020] scale-105 font-bold' : 'text-neutral-600 hover:text-[#800020]'
+          isWishlist ? 'text-[#1769D2] scale-105 font-bold' : 'text-neutral-600 hover:text-[#1769D2]'
         }`}
       >
         <div className="relative">
-          <Heart className={`w-5 h-5 ${isWishlist ? 'fill-[#800020]' : ''}`} />
-          <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 bg-[#800020] text-white text-[8px] font-extrabold rounded-full flex items-center justify-center border border-white shadow-2xs">
+          <Heart className={`w-5 h-5 ${isWishlist ? 'fill-[#1769D2]' : ''}`} />
+          <span className="absolute -top-1.5 -right-2 min-w-4 h-4 px-1 bg-[#1769D2] text-white text-[8px] font-extrabold rounded-full flex items-center justify-center border border-white shadow-2xs">
             {wishlistCount}
           </span>
         </div>
@@ -84,10 +84,10 @@ export function MobileBottomNav() {
       <Link
         href="/profile"
         className={`flex flex-col items-center gap-0.5 transition-all duration-200 ${
-          isAccount ? 'text-[#800020] scale-105 font-bold' : 'text-neutral-600 hover:text-[#800020]'
+          isAccount ? 'text-[#1769D2] scale-105 font-bold' : 'text-neutral-600 hover:text-[#1769D2]'
         }`}
       >
-        <User className={`w-5 h-5 ${isAccount ? 'fill-[#800020]' : ''}`} />
+        <User className={`w-5 h-5 ${isAccount ? 'fill-[#1769D2]' : ''}`} />
         <span className="text-[10px]">Account</span>
       </Link>
     </div>

@@ -46,7 +46,7 @@ export function FeaturedBrands() {
       {/* Header section */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#800020] mb-1">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#1769D2] mb-1">
             <Sparkles className="w-3.5 h-3.5" />
             <span>Curated Label Directory</span>
           </div>
@@ -57,7 +57,7 @@ export function FeaturedBrands() {
 
         <Link
           href="/brands"
-          className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#800020] hover:text-[#600018] transition-colors"
+          className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#1769D2] hover:text-[#0B3B78] transition-colors"
         >
           <span>View All Brands</span>
           <ArrowRight className="w-3.5 h-3.5" />
@@ -74,7 +74,7 @@ export function FeaturedBrands() {
               key={brand.id}
               href={`/products?brandId=${brand.id}`}
               onMouseEnter={() => handleMouseEnter(brand.id)}
-              className="group relative bg-white border border-neutral-200/80 hover:border-[#800020]/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
+              className="group relative bg-white border border-neutral-200/80 hover:border-[#1769D2]/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
             >
               {/* Logo or Initials Avatar */}
               <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-neutral-50 flex items-center justify-center p-2 mb-3 border border-neutral-100 group-hover:border-rose-200 transition-colors overflow-hidden">
@@ -88,14 +88,14 @@ export function FeaturedBrands() {
                     className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
                   />
                 ) : (
-                  <span className="font-serif font-bold text-lg text-[#800020]">
+                  <span className="font-serif font-bold text-lg text-[#1769D2]">
                     {brand.name.substring(0, 2).toUpperCase()}
                   </span>
                 )}
               </div>
 
               {/* Brand Title */}
-              <h3 className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-[#800020] transition-colors line-clamp-1">
+              <h3 className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-[#1769D2] transition-colors line-clamp-1">
                 {brand.name}
               </h3>
 
