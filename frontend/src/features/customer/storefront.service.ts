@@ -41,7 +41,7 @@ export interface CmsPageDto {
 export const customerStorefrontService = {
   getPublicSettings: async (): Promise<PublicSettingsDto> => {
     try {
-      const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/storefront-settings');
+      const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/public/settings');
       return res.data.data!;
     } catch {
       const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/settings/public');
