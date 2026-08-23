@@ -12,20 +12,6 @@ import { ProductsService } from '@domains/products/products.service';
 import { NewsletterSubscribeDto } from './storefront.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
-@ApiTags('Storefront Public Settings')
-@Controller('settings')
-export class StorefrontPublicSettingsController {
-  constructor(private readonly storefrontPublicService: StorefrontPublicService) {}
-
-  @Get('public')
-  @ApiOperation({ summary: 'Get public store settings' })
-  async getPublicSettings() {
-    return ResponseBuilder.success(
-      await this.storefrontPublicService.getPublicSettings(),
-    );
-  }
-}
-
 @ApiTags('Storefront Public')
 @Controller()
 export class StorefrontPublicController {
@@ -33,6 +19,14 @@ export class StorefrontPublicController {
     private readonly storefrontPublicService: StorefrontPublicService,
     private readonly productsService: ProductsService,
   ) {}
+
+  @Get('storefront-settings')
+  @ApiOperation({ summary: 'Get public store settings' })
+  async getPublicSettings() {
+    return ResponseBuilder.success(
+      await this.storefrontPublicService.getPublicSettings(),
+    );
+  }
 
   @Get('homepage')
   @ApiOperation({ summary: 'Get homepage configuration' })
