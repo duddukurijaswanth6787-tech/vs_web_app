@@ -18,7 +18,7 @@ const keys = {
 
 async function apiFetch<T>(path: string): Promise<T | null> {
   try {
-    const res = await fetch(`${API}${path}`, { next: { revalidate: 60 } });
+    const res = await fetch(`${API}${path}`, { cache: 'no-store' });
     if (!res.ok) return null;
     const json = await res.json();
     return json.data ?? json;

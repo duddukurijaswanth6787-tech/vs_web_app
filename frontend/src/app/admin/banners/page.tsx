@@ -55,7 +55,7 @@ export default function BannersPage() {
   const [announcementBarText, setAnnouncementBarText] = useState<string>('Festive Sale is Live! Get up to 30% OFF');
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
 
-  const { data: allSettingsData, refetch: refetchSettings } = useSettings({ limit: 100 });
+  const { data: allSettingsData, refetch: refetchSettings } = useSettings({ limit: 500 });
   const createSettingMut = useCreateSetting();
   const updateSettingMut = useUpdateSetting();
 
