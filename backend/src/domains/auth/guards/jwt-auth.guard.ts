@@ -3,12 +3,13 @@ import {
   ExecutionContext,
   UnauthorizedException,
   createParamDecorator,
+  SetMetadata,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService, JwtPayload } from '../services/jwt.service';
 
 export const IS_PUBLIC_KEY = 'isPublic';
-export const Public = () => Reflect.metadata(IS_PUBLIC_KEY, true);
+export const Public = () => SetMetadata(IS_PUBLIC_KEY, true);
 
 @Injectable()
 export class JwtAuthGuard {
