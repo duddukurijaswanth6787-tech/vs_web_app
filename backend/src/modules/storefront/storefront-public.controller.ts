@@ -11,6 +11,7 @@ import { StorefrontPublicService } from './storefront-public.service';
 import { ProductsService } from '@domains/products/products.service';
 import { NewsletterSubscribeDto } from './storefront.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import { Public } from '@domains/auth/guards/jwt-auth.guard';
 
 @ApiTags('Storefront Public')
 @Controller()
@@ -21,6 +22,7 @@ export class StorefrontPublicController {
   ) {}
 
   @Get('settings/public')
+  @Public()
   @ApiOperation({ summary: 'Get public store settings' })
   async getPublicSettings() {
     return ResponseBuilder.success(

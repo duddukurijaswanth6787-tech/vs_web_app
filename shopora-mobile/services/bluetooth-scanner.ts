@@ -71,8 +71,15 @@ class BluetoothScannerService {
   private notifySubscription: Subscription | null = null;
   private scanCallbacks = new Set<ScanCallback>();
 
-  private getManager(): BleManager {
-    if (!this.manager) this.manager = new BleManager();
+  private getManager(): BleManager | null {
+    if (!this.manager) {
+      try {
+        this.manager = new BleManager();
+      } catch {
+        console.warn('[BluetoothScanner] BleManager native module not available');
+        return null;
+      }
+    }
     return this.manager;
   }
 
@@ -96,12 +103,15 @@ class BluetoothScannerService {
   }
 
   async getState(): Promise<State> {
-    return this.getManager().state();
+    const manager = this.getManager();
+    if (!manager) return State.Unsupported;
+    return manager.state();
   }
 
   /** Scans for nearby BLE peripherals for up to `timeoutMs`, reporting each one found. Stop with stopScan() once the user picks a device. */
   startScan(onDeviceFound: (device: ScannedDevice) => void, timeoutMs = 15000): void {
     const manager = this.getManager();
+    if (!manager) return;
     manager.startDeviceScan(null, { allowDuplicates: false }, (error, device) => {
       if (error) {
         console.warn('[BluetoothScanner] scan error', error);
