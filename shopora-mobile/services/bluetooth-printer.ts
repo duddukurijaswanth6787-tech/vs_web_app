@@ -13,10 +13,10 @@ import { PermissionsAndroid, Platform } from 'react-native';
  * index.js and Android source rather than its declaration file.
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-let BluetoothPrinterNative: any = null;
+let BluetoothPrinterNative: Record<string, unknown> | null = null;
 try {
   BluetoothPrinterNative = require('tp-react-native-bluetooth-printer');
-} catch (e) {
+} catch {
   console.warn('[BluetoothPrinter] Native module not available (e.g. Expo Go)');
 }
 
@@ -194,11 +194,15 @@ class BluetoothPrinterService {
   }
 
   async isBluetoothEnabled(): Promise<boolean> {
+    if (!BluetoothManager) return false;
     return BluetoothManager.isBluetoothEnabled();
   }
 
   /** Scans for classic-Bluetooth devices, returning already-paired and newly-found ones separately (paired devices are usually the printer once it's been paired once in phone Settings). */
   async scanDevices(): Promise<{ paired: DiscoveredPrinter[]; found: DiscoveredPrinter[] }> {
+    if (!BluetoothManager) {
+      return { paired: [], found: [] };
+    }
     const raw = await BluetoothManager.scanDevices();
     const parsed = JSON.parse(raw) as { paired?: unknown[]; found?: unknown[] };
     return {
@@ -208,6 +212,9 @@ class BluetoothPrinterService {
   }
 
   async connect(device: DiscoveredPrinter): Promise<void> {
+    if (!BluetoothManager) {
+      throw new Error('Bluetooth printer native module is not available in this environment.');
+    }
     await BluetoothManager.connect(device.address);
     this.connectedAddress = device.address;
     this.connectedName = device.name;
