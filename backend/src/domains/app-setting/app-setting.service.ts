@@ -120,11 +120,20 @@ export class AppSettingService {
         this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
         this.settingRepository.findByKey('announcement_bar_text'),
       ]);
+    const announcementText = announcementTextSetting ? announcementTextSetting.value : 'Festive Sale is Live! Get up to 30% OFF';
+    const mobileEnabled = mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true;
+    const autoplayInterval = autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5;
+    const autoplayEnabled = enabledSetting ? enabledSetting.value === 'true' : true;
+
     return {
-      bannerAutoplayInterval: autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5,
-      bannerAutoplayEnabled: enabledSetting ? enabledSetting.value === 'true' : true,
-      announcementBarMobileEnabled: mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true,
-      announcementBarText: announcementTextSetting ? announcementTextSetting.value : 'Festive Sale is Live! Get up to 30% OFF',
+      bannerAutoplayInterval: autoplayInterval,
+      bannerAutoplayEnabled: autoplayEnabled,
+      announcementBarMobileEnabled: mobileEnabled,
+      announcementBarText: announcementText,
+      announcement_bar_text: announcementText,
+      announcement_bar_mobile_enabled: mobileEnabled,
+      banner_autoplay_interval: autoplayInterval,
+      banner_autoplay_enabled: autoplayEnabled,
     };
   }
 }

@@ -13,7 +13,12 @@ import { PermissionsAndroid, Platform } from 'react-native';
  * index.js and Android source rather than its declaration file.
  */
 // eslint-disable-next-line @typescript-eslint/no-var-requires
-const BluetoothPrinterNative = require('tp-react-native-bluetooth-printer');
+let BluetoothPrinterNative: any = null;
+try {
+  BluetoothPrinterNative = require('tp-react-native-bluetooth-printer');
+} catch (e) {
+  console.warn('[BluetoothPrinter] Native module not available (e.g. Expo Go)');
+}
 
 interface NativeBluetoothManager {
   isBluetoothEnabled(): Promise<boolean>;
@@ -38,9 +43,9 @@ interface NativeTscPrinter {
   printLabel(options: Record<string, unknown>): Promise<void>;
 }
 
-const BluetoothManager = BluetoothPrinterNative.BluetoothManager as NativeBluetoothManager;
-const BluetoothEscposPrinter = BluetoothPrinterNative.BluetoothEscposPrinter as NativeEscposPrinter;
-const BluetoothTscPrinter = BluetoothPrinterNative.BluetoothTscPrinter as NativeTscPrinter;
+const BluetoothManager = (BluetoothPrinterNative?.BluetoothManager || null) as NativeBluetoothManager | null;
+const BluetoothEscposPrinter = (BluetoothPrinterNative?.BluetoothEscposPrinter || null) as NativeEscposPrinter | null;
+const BluetoothTscPrinter = (BluetoothPrinterNative?.BluetoothTscPrinter || null) as NativeTscPrinter | null;
 
 /** Constant values the native module expects -- copied from the library's
  * actual index.js (not its declaration file, see note above). */
