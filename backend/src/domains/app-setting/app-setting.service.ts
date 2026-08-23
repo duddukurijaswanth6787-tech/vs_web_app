@@ -111,4 +111,20 @@ export class AppSettingService {
     const value = await this.settingRepository.getByKey(key);
     return value ?? defaultValue ?? null;
   }
+
+  async getPublicSettingsFallback() {
+    const [autoplaySetting, enabledSetting, mobileAnnouncementSetting, announcementTextSetting] =
+      await Promise.all([
+        this.settingRepository.findByKey('banner_autoplay_interval'),
+        this.settingRepository.findByKey('banner_autoplay_enabled'),
+        this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
+        this.settingRepository.findByKey('announcement_bar_text'),
+      ]);
+    return {
+      bannerAutoplayInterval: autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5,
+      bannerAutoplayEnabled: enabledSetting ? enabledSetting.value === 'true' : true,
+      announcementBarMobileEnabled: mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true,
+      announcementBarText: announcementTextSetting ? announcementTextSetting.value : 'Festive Sale is Live! Get up to 30% OFF',
+    };
+  }
 }
