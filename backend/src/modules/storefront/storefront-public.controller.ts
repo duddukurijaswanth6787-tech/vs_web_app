@@ -13,14 +13,14 @@ import { NewsletterSubscribeDto } from './storefront.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('Storefront Public')
-@Controller('public')
+@Controller()
 export class StorefrontPublicController {
   constructor(
     private readonly storefrontPublicService: StorefrontPublicService,
     private readonly productsService: ProductsService,
   ) {}
 
-  @Get('settings')
+  @Get('settings/public')
   @ApiOperation({ summary: 'Get public store settings' })
   async getPublicSettings() {
     return ResponseBuilder.success(
