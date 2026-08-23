@@ -10,20 +10,14 @@ function getBackendOrigin(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      if (hostname.includes('vasanthissignature.in')) {
-        return 'https://api.vasanthissignature.in';
-      }
-      if (hostname.includes('vasanthis-signature.in')) {
-        return 'https://api.vasanthis-signature.in';
-      }
-      if (hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
-        return 'https://api.vasanthissignature.in';
+      if (hostname.includes('vasanthissignature.in') || hostname.includes('vasanthis-signature.in') || hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
+        return 'https://vsss-production.up.railway.app';
       }
       return `http://${hostname}:4000`;
     }
     return 'http://localhost:4000';
   }
-  return 'https://api.vasanthissignature.in';
+  return 'https://vsss-production.up.railway.app';
 }
 
 export function resolveMediaUrl(url?: string | null): string {
