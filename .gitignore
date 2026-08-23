@@ -31,3 +31,5 @@ lint-*.txt
 lint-*.json
 *_output.txt
 .env*
+*.apk
+shopora-mobile/*.apk

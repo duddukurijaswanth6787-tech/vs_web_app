@@ -75,7 +75,17 @@ export const envValidationSchema = Joi.object({
   BULLMQ_PREFIX: Joi.string().default('vasanthi'),
   THROTTLE_TTL: Joi.number().integer().min(1).default(60),
   THROTTLE_LIMIT: Joi.number().integer().min(1).default(10),
-  CORS_ORIGIN: Joi.string().allow('').default('*'),
+  // Wildcard/empty is fine for local dev; production must set an explicit,
+  // comma-separated allowlist of real frontend origins, or the app refuses
+  // to boot rather than silently running wide open (see main.ts's CORS setup).
+  CORS_ORIGIN: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string()
+      .required()
+      .invalid('', '*')
+      .description('Comma-separated allowlist of real frontend origins, required in production'),
+    otherwise: Joi.string().allow('').default('*'),
+  }),
 
   // Security Configuration
   TRUST_PROXY_COUNT: Joi.number().integer().min(0).default(1),
@@ -147,9 +157,18 @@ export const envValidationSchema = Joi.object({
     .default(1000),
 
   // JWT Configuration
-  JWT_SECRET: Joi.string()
-    .min(16)
-    .default('dev-secret-change-in-production-vasanthi-key'),
+  // No production fallback: a hardcoded default secret sitting in this repo
+  // would let anyone forge a valid admin JWT. Dev/test keep a convenience
+  // default; production must set a real, unique secret or refuse to boot.
+  JWT_SECRET: Joi.string().when('NODE_ENV', {
+    is: 'production',
+    then: Joi.string()
+      .min(32)
+      .required()
+      .invalid('dev-secret-change-in-production-vasanthi-key')
+      .description('Real, unique JWT signing secret, required in production'),
+    otherwise: Joi.string().min(16).default('dev-secret-change-in-production-vasanthi-key'),
+  }),
   JWT_EXPIRES_IN: Joi.number().integer().min(60).default(900),
   JWT_REMEMBER_ME_EXPIRES_IN: Joi.number().integer().min(3600).default(2592000),
   JWT_REFRESH_TOKEN_EXPIRY_DAYS: Joi.number()

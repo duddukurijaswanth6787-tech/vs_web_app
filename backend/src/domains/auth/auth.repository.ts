@@ -47,6 +47,17 @@ export class AuthRepository {
     });
   }
 
+  /** Used to make seedAdmin() a bootstrap-only, idempotent no-op once a
+   * real admin exists -- this endpoint has no auth guard (it's what creates
+   * the very first admin on an empty DB), so anyone able to reach it must
+   * never be able to reset an already-provisioned admin's credentials. */
+  async hasSuperAdmin(): Promise<boolean> {
+    const link = await this.prisma.userRole.findFirst({
+      where: { role: { name: 'super_admin' } },
+    });
+    return !!link;
+  }
+
   async seedAdmin() {
     const SYSTEM_ROLES = [
       {

@@ -13,12 +13,25 @@ import { OrderQueryDto } from './order.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import { PrismaService } from '@database/prisma.service';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
 @ApiTags('Orders')
 @Controller('orders')
 export class OrderController {
-  constructor(private readonly orderService: OrderService) {}
+  constructor(
+    private readonly orderService: OrderService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  // Order.customerId is a CustomerProfile id, not the User id in the JWT's
+  // `sub` -- must resolve one to the other before comparing ownership.
+  private async resolveCustomerId(userId: string): Promise<string | null> {
+    const profile = await this.prisma.customerProfile.findUnique({
+      where: { userId },
+    });
+    return profile?.id ?? null;
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard)
@@ -36,11 +49,21 @@ export class OrderController {
   }
 
   @Get('number/:orderNumber')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order by order number' })
-  async findByOrderNumber(@Param('orderNumber') orderNumber: string) {
-    return ResponseBuilder.success(
-      await this.orderService.findByOrderNumber(orderNumber),
+  async findByOrderNumber(
+    @Param('orderNumber') orderNumber: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    const isAdmin = user.roles?.some((r: string) =>
+      ['super_admin', 'admin'].includes(r),
     );
+    const order = await this.orderService.findByOrderNumber(orderNumber);
+    if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
+      return ResponseBuilder.success(null, 'Order not found');
+    }
+    return ResponseBuilder.success(order);
   }
 
   @Get(':id')
@@ -52,7 +75,7 @@ export class OrderController {
       ['super_admin', 'admin'].includes(r),
     );
     const order = await this.orderService.findById(id, isAdmin);
-    if (!isAdmin && order.customerId !== user.sub) {
+    if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
       return ResponseBuilder.success(null, 'Order not found');
     }
     return ResponseBuilder.success(order);
