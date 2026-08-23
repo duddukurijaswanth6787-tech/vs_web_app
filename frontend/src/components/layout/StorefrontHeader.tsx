@@ -67,6 +67,10 @@ export function StorefrontHeader() {
 
   const { data: settings } = usePublicSettings();
   const typedSettings = settings as Record<string, unknown> | undefined;
+  const isBarEnabledSetting =
+    (typedSettings?.announcementBarEnabled as boolean | undefined) ??
+    (typedSettings?.announcement_bar_enabled === 'true' || typedSettings?.announcement_bar_enabled === true) ??
+    true;
   const mobileAnnouncementEnabled =
     (typedSettings?.announcementBarMobileEnabled as boolean | undefined) ??
     (typedSettings?.announcement_bar_mobile_enabled === 'true' || typedSettings?.announcement_bar_mobile_enabled === true) ??
@@ -75,23 +79,49 @@ export function StorefrontHeader() {
     (typedSettings?.announcementBarText as string | undefined) ||
     (typedSettings?.announcement_bar_text as string | undefined) ||
     'Festive Sale is Live! Get up to 30% OFF';
+  const announcementLink =
+    (typedSettings?.announcementBarLink as string | undefined) ||
+    (typedSettings?.announcement_bar_link as string | undefined) ||
+    '/offers';
+  const announcementLinkText =
+    (typedSettings?.announcementBarLinkText as string | undefined) ||
+    (typedSettings?.announcement_bar_link_text as string | undefined) ||
+    'Shop Now →';
+  const announcementBgColor =
+    (typedSettings?.announcementBarBgColor as string | undefined) ||
+    (typedSettings?.announcement_bar_bg_color as string | undefined) ||
+    '#800020';
+  const announcementTextColor =
+    (typedSettings?.announcementBarTextColor as string | undefined) ||
+    (typedSettings?.announcement_bar_text_color as string | undefined) ||
+    '#FFFFFF';
 
   const { data: homepageData } = useHomepage();
   const announcementBarEnabled =
-    !homepageData ||
-    !Array.isArray(homepageData.sections) ||
-    homepageData.sections.length === 0 ||
-    homepageData.sections.some((s) => (s as Record<string, unknown>).key === 'announcement_bar');
+    isBarEnabledSetting &&
+    (!homepageData ||
+      !Array.isArray(homepageData.sections) ||
+      homepageData.sections.length === 0 ||
+      homepageData.sections.some((s) => (s as Record<string, unknown>).key === 'announcement_bar'));
   return (
     <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 shadow-xs">
       {/* 01 TOP ANNOUNCEMENT BAR */}
       {announcementBarEnabled && (
-        <div className={mobileAnnouncementEnabled ? "bg-[#800020] text-white py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5" : "hidden sm:flex bg-[#800020] text-white py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"}>
+        <div
+          style={{ backgroundColor: announcementBgColor, color: announcementTextColor }}
+          className={
+            mobileAnnouncementEnabled
+              ? "py-1.5 px-3 text-center text-[10px] sm:text-xs font-semibold tracking-wide flex items-center justify-center gap-1.5"
+              : "hidden sm:flex py-1.5 px-3 text-center text-xs font-semibold tracking-wide items-center justify-center gap-2"
+          }
+        >
           <Sparkles className="w-3.5 h-3.5 text-amber-300 animate-pulse shrink-0" />
           <span className="truncate">{announcementText}</span>
-          <Link href="/offers" className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
-            Shop Now →
-          </Link>
+          {announcementLink && announcementLinkText && (
+            <Link href={announcementLink} className="underline font-bold text-amber-300 hover:text-amber-200 shrink-0 ml-0.5">
+              {announcementLinkText}
+            </Link>
+          )}
         </div>
       )}
 

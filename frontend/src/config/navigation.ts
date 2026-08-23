@@ -450,6 +450,13 @@ export const adminNavigation: NavGroup[] = [
     group: 'CONTENT',
     items: [
       {
+        id: 'announcement-bar',
+        title: 'Announcement Bar',
+        href: '/admin/storefront/announcement-bar',
+        icon: Megaphone,
+        implemented: true,
+      },
+      {
         id: 'banners',
         title: 'Banners',
         href: '/admin/banners',
@@ -490,11 +497,8 @@ export const adminNavigation: NavGroup[] = [
     group: 'STOREFRONT',
     items: [
       { id: 'storefront-dashboard', title: 'Dashboard', href: '/admin/storefront', icon: LayoutDashboard, permissions: ['storefront.view'], implemented: true },
+      { id: 'storefront-announcement-bar', title: 'Announcement Bar', href: '/admin/storefront/announcement-bar', icon: Megaphone, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-store', title: 'Store Information', href: '/admin/storefront/store', icon: Store, permissions: ['storefront.manage'], implemented: true },
-      { id: 'storefront-homepage', title: 'Homepage', href: '/admin/storefront/homepage', icon: Layout, permissions: ['storefront.manage'], implemented: true },
-      { id: 'storefront-categories', title: 'Homepage Categories', href: '/admin/storefront/categories', icon: FolderOpen, permissions: ['storefront.manage'], implemented: true },
-      { id: 'storefront-features', title: 'Feature Toggles', href: '/admin/storefront/features', icon: ToggleLeft, permissions: ['storefront.manage'], implemented: true },
-      { id: 'storefront-footer', title: 'Footer', href: '/admin/storefront/footer', icon: Link2, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-social', title: 'Social Links', href: '/admin/storefront/social', icon: Share2, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-seo', title: 'SEO', href: '/admin/storefront/seo', icon: Search, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-newsletter', title: 'Newsletter', href: '/admin/storefront/newsletter', icon: Newspaper, permissions: ['storefront.view'], implemented: true },

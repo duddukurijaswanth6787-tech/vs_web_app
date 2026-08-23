@@ -113,25 +113,54 @@ export class AppSettingService {
   }
 
   async getPublicSettingsFallback() {
-    const [autoplaySetting, enabledSetting, mobileAnnouncementSetting, announcementTextSetting] =
-      await Promise.all([
-        this.settingRepository.findByKey('banner_autoplay_interval'),
-        this.settingRepository.findByKey('banner_autoplay_enabled'),
-        this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
-        this.settingRepository.findByKey('announcement_bar_text'),
-      ]);
+    const [
+      autoplaySetting,
+      enabledSetting,
+      mobileAnnouncementSetting,
+      announcementTextSetting,
+      announcementEnabledSetting,
+      announcementLinkSetting,
+      announcementLinkTextSetting,
+      announcementBgColorSetting,
+      announcementTextColorSetting,
+    ] = await Promise.all([
+      this.settingRepository.findByKey('banner_autoplay_interval'),
+      this.settingRepository.findByKey('banner_autoplay_enabled'),
+      this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
+      this.settingRepository.findByKey('announcement_bar_text'),
+      this.settingRepository.findByKey('announcement_bar_enabled'),
+      this.settingRepository.findByKey('announcement_bar_link'),
+      this.settingRepository.findByKey('announcement_bar_link_text'),
+      this.settingRepository.findByKey('announcement_bar_bg_color'),
+      this.settingRepository.findByKey('announcement_bar_text_color'),
+    ]);
     const announcementText = announcementTextSetting ? announcementTextSetting.value : 'Festive Sale is Live! Get up to 30% OFF';
     const mobileEnabled = mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true;
     const autoplayInterval = autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5;
     const autoplayEnabled = enabledSetting ? enabledSetting.value === 'true' : true;
+    const announcementEnabled = announcementEnabledSetting ? announcementEnabledSetting.value === 'true' : true;
+    const announcementLink = announcementLinkSetting ? announcementLinkSetting.value : '/offers';
+    const announcementLinkText = announcementLinkTextSetting ? announcementLinkTextSetting.value : 'Shop Now →';
+    const announcementBgColor = announcementBgColorSetting ? announcementBgColorSetting.value : '#800020';
+    const announcementTextColor = announcementTextColorSetting ? announcementTextColorSetting.value : '#FFFFFF';
 
     return {
       bannerAutoplayInterval: autoplayInterval,
       bannerAutoplayEnabled: autoplayEnabled,
+      announcementBarEnabled: announcementEnabled,
       announcementBarMobileEnabled: mobileEnabled,
       announcementBarText: announcementText,
+      announcementBarLink: announcementLink,
+      announcementBarLinkText: announcementLinkText,
+      announcementBarBgColor: announcementBgColor,
+      announcementBarTextColor: announcementTextColor,
+      announcement_bar_enabled: announcementEnabled,
       announcement_bar_text: announcementText,
       announcement_bar_mobile_enabled: mobileEnabled,
+      announcement_bar_link: announcementLink,
+      announcement_bar_link_text: announcementLinkText,
+      announcement_bar_bg_color: announcementBgColor,
+      announcement_bar_text_color: announcementTextColor,
       banner_autoplay_interval: autoplayInterval,
       banner_autoplay_enabled: autoplayEnabled,
     };

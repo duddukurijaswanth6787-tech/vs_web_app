@@ -24,6 +24,11 @@ export class StorefrontPublicService {
           enabledSetting,
           mobileAnnouncementSetting,
           announcementTextSetting,
+          announcementEnabledSetting,
+          announcementLinkSetting,
+          announcementLinkTextSetting,
+          announcementBgColorSetting,
+          announcementTextColorSetting,
         ] = await Promise.all([
           this.prisma.appSetting.findUnique({
             where: { key: 'banner_autoplay_interval' },
@@ -37,20 +42,50 @@ export class StorefrontPublicService {
           this.prisma.appSetting.findUnique({
             where: { key: 'announcement_bar_text' },
           }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_enabled' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_link' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_link_text' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_bg_color' },
+          }),
+          this.prisma.appSetting.findUnique({
+            where: { key: 'announcement_bar_text_color' },
+          }),
         ]);
         const announcementText = announcementTextSetting?.value || 'Festive Sale is Live! Get up to 30% OFF';
         const mobileEnabled = mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true;
         const autoplayInterval = autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5;
         const autoplayEnabled = enabledSetting ? enabledSetting.value === 'true' : true;
+        const announcementEnabled = announcementEnabledSetting ? announcementEnabledSetting.value === 'true' : true;
+        const announcementLink = announcementLinkSetting?.value || '/offers';
+        const announcementLinkText = announcementLinkTextSetting?.value || 'Shop Now →';
+        const announcementBgColor = announcementBgColorSetting?.value || '#800020';
+        const announcementTextColor = announcementTextColorSetting?.value || '#FFFFFF';
 
         return {
           ...settings,
           bannerAutoplayInterval: autoplayInterval,
           bannerAutoplayEnabled: autoplayEnabled,
+          announcementBarEnabled: announcementEnabled,
           announcementBarMobileEnabled: mobileEnabled,
           announcementBarText: announcementText,
+          announcementBarLink: announcementLink,
+          announcementBarLinkText: announcementLinkText,
+          announcementBarBgColor: announcementBgColor,
+          announcementBarTextColor: announcementTextColor,
+          announcement_bar_enabled: announcementEnabled,
           announcement_bar_text: announcementText,
           announcement_bar_mobile_enabled: mobileEnabled,
+          announcement_bar_link: announcementLink,
+          announcement_bar_link_text: announcementLinkText,
+          announcement_bar_bg_color: announcementBgColor,
+          announcement_bar_text_color: announcementTextColor,
           banner_autoplay_interval: autoplayInterval,
           banner_autoplay_enabled: autoplayEnabled,
         };
