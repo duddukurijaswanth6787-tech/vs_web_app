@@ -31,7 +31,11 @@ export function useUpdateSettings() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (dto: UpdateWebsiteSettingsDto) => storefrontService.updateSettings(dto),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: storefrontKeys.settings() }); qc.invalidateQueries({ queryKey: storefrontKeys.dashboard() }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: storefrontKeys.settings() });
+      qc.invalidateQueries({ queryKey: storefrontKeys.dashboard() });
+      qc.invalidateQueries({ queryKey: ['public-settings'] });
+    },
   });
 }
 
@@ -43,7 +47,11 @@ export function useUpdateHomepage() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (sections: { key: string; data: Partial<Record<string, unknown>> }[]) => storefrontService.updateHomepage(sections),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: storefrontKeys.homepage() }); qc.invalidateQueries({ queryKey: storefrontKeys.dashboard() }); },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: storefrontKeys.homepage() });
+      qc.invalidateQueries({ queryKey: storefrontKeys.dashboard() });
+      qc.invalidateQueries({ queryKey: ['public-settings'] });
+    },
   });
 }
 

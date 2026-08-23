@@ -41,11 +41,15 @@ export interface CmsPageDto {
 export const customerStorefrontService = {
   getPublicSettings: async (): Promise<PublicSettingsDto> => {
     try {
-      const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/public/settings');
-      return res.data.data!;
-    } catch {
       const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/settings/public');
       return res.data.data!;
+    } catch {
+      return {
+        bannerAutoplayInterval: 5,
+        bannerAutoplayEnabled: true,
+        announcementBarMobileEnabled: true,
+        announcementBarText: 'Festive Sale is Live! Get up to 30% OFF',
+      };
     }
   },
 

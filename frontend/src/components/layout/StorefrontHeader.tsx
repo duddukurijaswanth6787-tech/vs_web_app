@@ -74,7 +74,7 @@ export function StorefrontHeader() {
   const announcementText =
     (typedSettings?.announcementBarText as string | undefined) ||
     (typedSettings?.announcement_bar_text as string | undefined) ||
-    'We Are coming with a new and different types of dresses and frocks, keep your strings high in the sky for 1 week wee will come';
+    'Festive Sale is Live! Get up to 30% OFF';
 
   const { data: homepageData } = useHomepage();
   const announcementBarEnabled =

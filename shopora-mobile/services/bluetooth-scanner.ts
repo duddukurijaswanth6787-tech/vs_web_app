@@ -132,6 +132,7 @@ class BluetoothScannerService {
   /** Connects to a device the user picked from startScan's results and subscribes to the scan-data characteristic. */
   async connect(deviceId: string): Promise<void> {
     const manager = this.getManager();
+    if (!manager) throw new Error('Bluetooth scanner native module is not available.');
     this.stopScan();
 
     const device = await manager.connectToDevice(deviceId);

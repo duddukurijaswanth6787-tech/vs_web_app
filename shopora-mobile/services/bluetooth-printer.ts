@@ -246,6 +246,9 @@ class BluetoothPrinterService {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
+    if (!BluetoothEscposPrinter) {
+      throw new Error('Bluetooth ESC/POS printer native module is not available.');
+    }
     await BluetoothEscposPrinter.printerInit();
     await BluetoothEscposPrinter.printerAlign(ALIGN.CENTER);
     await BluetoothEscposPrinter.printText('Shopora POS -- Test Print OK\n\n\n', {});
@@ -257,6 +260,9 @@ class BluetoothPrinterService {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
     const P = BluetoothEscposPrinter;
+    if (!P) {
+      throw new Error('Bluetooth ESC/POS printer native module is not available.');
+    }
     const paperWidthMm = receipt.paperWidthMm ?? 80;
 
     // printColumn() rejects any call whose column widths sum past the
@@ -346,6 +352,9 @@ class BluetoothPrinterService {
   async printLabel(label: PrinterLabelData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    if (!BluetoothTscPrinter) {
+      throw new Error('Bluetooth TSC printer native module is not available.');
     }
     const copies = Math.max(1, label.quantity ?? 1);
     const widthMm = label.widthMm ?? 50;

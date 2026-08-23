@@ -23,6 +23,7 @@ export function useCreateSetting() {
     mutationFn: (dto: CreateSettingDto) => settingsService.createSetting(dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-settings'] });
     },
   });
 }
@@ -34,6 +35,7 @@ export function useUpdateSetting() {
       settingsService.updateSetting(id, dto),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['settings'] });
+      queryClient.invalidateQueries({ queryKey: ['public-settings'] });
     },
   });
 }

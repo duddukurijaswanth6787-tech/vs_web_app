@@ -3,6 +3,7 @@ import { CmsService } from './cms.service';
 import { CmsRepository } from './cms.repository';
 import { AuditService } from '@domains/audit/audit.service';
 import { LoggerService } from '@common/logger/logger.service';
+import { StorageService } from '@infrastructure/storage/storage.service';
 
 describe('CmsService', () => {
   let service: CmsService;
@@ -27,6 +28,10 @@ describe('CmsService', () => {
         {
           provide: LoggerService,
           useValue: { log: jest.fn(), error: jest.fn() },
+        },
+        {
+          provide: StorageService,
+          useValue: { getPublicUrl: jest.fn(), deleteFile: jest.fn() },
         },
       ],
     }).compile();

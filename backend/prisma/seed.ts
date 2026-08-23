@@ -98,7 +98,7 @@ async function main() {
 
   const homepageSections = [
     { key: 'hero_banner', title: 'Hero Banner', displayOrder: 1, enabled: true },
-    { key: 'announcement_bar', title: 'Announcement Bar', displayOrder: 2, enabled: false },
+    { key: 'announcement_bar', title: 'Announcement Bar', displayOrder: 2, enabled: true },
     { key: 'categories', title: 'Categories', displayOrder: 3, enabled: true },
     { key: 'featured_categories', title: 'Featured Categories', displayOrder: 4, enabled: true },
     { key: 'new_arrivals', title: 'New Arrivals', displayOrder: 5, enabled: true },

@@ -3,6 +3,7 @@ import { CategoriesService } from './categories.service';
 import { CategoriesRepository } from './categories.repository';
 import { AuditService } from '@domains/audit/audit.service';
 import { LoggerService } from '@common/logger/logger.service';
+import { StorageService } from '@infrastructure/storage/storage.service';
 import { CreateCategoryDto } from './categories.types';
 
 describe('CategoriesService', () => {
@@ -29,6 +30,10 @@ describe('CategoriesService', () => {
         {
           provide: LoggerService,
           useValue: { log: jest.fn(), error: jest.fn() },
+        },
+        {
+          provide: StorageService,
+          useValue: { getPublicUrl: jest.fn(), deleteFile: jest.fn(), sanitizeUrl: jest.fn().mockImplementation((url) => url) },
         },
       ],
     }).compile();

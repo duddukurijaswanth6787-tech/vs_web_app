@@ -47,6 +47,7 @@ export class StorefrontService {
       oldValue: existing,
       newValue: updated,
     });
+    await this.cache.del('storefront:settings');
     return updated;
   }
 

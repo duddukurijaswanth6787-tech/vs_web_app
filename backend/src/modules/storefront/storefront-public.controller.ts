@@ -21,7 +21,7 @@ export class StorefrontPublicController {
     private readonly productsService: ProductsService,
   ) {}
 
-  @Get('settings/public')
+  @Get(['settings/public', 'public/settings'])
   @Public()
   @ApiOperation({ summary: 'Get public store settings' })
   async getPublicSettings() {
