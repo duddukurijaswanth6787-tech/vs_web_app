@@ -61,7 +61,6 @@ export class PaymentController {
       'Razorpay credentials updated',
     );
   }
-
   // Only admin pages consume these two lookups (checkout only ever POSTs
   // to /payments and /payments/:id/verify), so they get the same
   // payments:view guard as findAll rather than a customer ownership check.
