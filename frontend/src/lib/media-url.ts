@@ -4,16 +4,17 @@
  * against the Next.js origin (404). Map those to the backend storage proxy.
  */
 function getBackendOrigin(): string {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL.replace(/\/api\/v1\/?$/, '');
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (envUrl) {
+    if (envUrl.includes('api.vasanthisignature.in') || envUrl.includes('api.vasanthis-signature.in')) {
+      return 'https://vsss-production.up.railway.app';
+    }
+    return envUrl.replace(/\/api\/v1\/?$/, '');
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      if (hostname.includes('vasanthissignature.in') || hostname.includes('vasanthis-signature.in') || hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
-        return 'https://vsss-production.up.railway.app';
-      }
-      return `http://${hostname}:4000`;
+      return 'https://vsss-production.up.railway.app';
     }
     return 'http://localhost:4000';
   }

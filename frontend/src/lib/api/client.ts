@@ -2,17 +2,18 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthTokens } from '@/types/auth.types';
 
 const getApiBaseUrl = () => {
-  if (process.env.NEXT_PUBLIC_API_BASE_URL) {
-    return process.env.NEXT_PUBLIC_API_BASE_URL;
+  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
+  if (envUrl) {
+    if (envUrl.includes('api.vasanthisignature.in') || envUrl.includes('api.vasanthis-signature.in')) {
+      return 'https://vsss-production.up.railway.app/api/v1';
+    }
+    return envUrl;
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      if (hostname.includes('vasanthissignature.in') || hostname.includes('vasanthis-signature.in') || hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
-        return 'https://vsss-production.up.railway.app/api/v1';
-      }
-      return `${protocol}//${hostname}:4000/api/v1`;
+      return 'https://vsss-production.up.railway.app/api/v1';
     }
     return '/api/v1';
   }
