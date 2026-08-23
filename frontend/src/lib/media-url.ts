@@ -10,6 +10,9 @@ function getBackendOrigin(): string {
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      if (hostname.includes('vasanthis-signature.in')) {
+        return 'https://api.vasanthis-signature.in';
+      }
       if (hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
         return 'https://api.vasanthisignature.in';
       }
@@ -17,7 +20,7 @@ function getBackendOrigin(): string {
     }
     return 'http://localhost:4000';
   }
-  return 'https://api.vasanthisignature.in';
+  return 'https://api.vasanthis-signature.in';
 }
 
 export function resolveMediaUrl(url?: string | null): string {

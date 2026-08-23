@@ -9,6 +9,9 @@ const getApiBaseUrl = () => {
     const hostname = window.location.hostname;
     const protocol = window.location.protocol;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
+      if (hostname.includes('vasanthis-signature.in')) {
+        return 'https://api.vasanthis-signature.in/api/v1';
+      }
       if (hostname.includes('vasanthisignature.in') || hostname.includes('vercel.app')) {
         return 'https://api.vasanthisignature.in/api/v1';
       }
@@ -16,7 +19,7 @@ const getApiBaseUrl = () => {
     }
     return '/api/v1';
   }
-  return 'https://api.vasanthisignature.in/api/v1';
+  return 'https://api.vasanthis-signature.in/api/v1';
 };
 export const apiClient = axios.create({
   baseURL: getApiBaseUrl(),
