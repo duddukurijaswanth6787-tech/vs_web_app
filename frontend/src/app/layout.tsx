@@ -16,6 +16,20 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Shared Open Graph fields, reused by page-level metadata exports so each
+// page can set its own `url` (og:url must match that page's real URL, not
+// always the homepage) without duplicating title/description/siteName/etc.
+// in every page.tsx. See Next.js's own guidance on overwriting vs.
+// inheriting nested metadata fields across route segments.
+export const siteOpenGraph = {
+  type: "website" as const,
+  locale: "en_IN",
+  siteName: "Vasanthi's Signature",
+  title: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Sarees",
+  description: "Official Online Store for Vasanthi's Signature - Premium Sarees, Lehengas & Handcrafted Designer Wear",
+  images: ["/brand/logo-full.png"],
+};
+
 export const metadata: Metadata = {
   metadataBase: new URL("https://vasanthissignature.in"),
   title: {
@@ -38,13 +52,8 @@ export const metadata: Metadata = {
     canonical: "https://vasanthissignature.in",
   },
   openGraph: {
-    type: "website",
-    locale: "en_IN",
+    ...siteOpenGraph,
     url: "https://vasanthissignature.in",
-    siteName: "Vasanthi's Signature",
-    title: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Sarees",
-    description: "Official Online Store for Vasanthi's Signature - Premium Sarees, Lehengas & Handcrafted Designer Wear",
-    images: ["/brand/logo-full.png"],
   },
   twitter: {
     card: "summary_large_image",
