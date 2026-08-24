@@ -16,18 +16,19 @@ const keys = {
   reels: ['social', 'public-reels'] as const,
 };
 
-async function apiFetch<T>(path: string): Promise<T | null> {
-  try {
-    const res = await fetch(`${API}${path}`, { cache: 'no-store' });
-    if (!res.ok) {
-      const body = await res.text().catch(() => '');
-      return { __debugError: true, status: res.status, body: body.slice(0, 500), url: `${API}${path}` } as T;
-    }
-    const json = await res.json();
-    return json.data ?? json;
-  } catch (e) {
-    return { __debugError: true, message: String(e), url: `${API}${path}` } as T;
+// Throws on failure rather than swallowing to null: prefetchQuery marks a
+// thrown query as status 'error', and dehydrate() skips error queries by
+// default, so a failed SSR prefetch simply hydrates nothing for that key --
+// the client-side useQuery then runs its own fetch immediately instead of
+// treating a dead SSR result as fresh, successful, empty data for the full
+// staleTime window (previously up to 30 minutes of a section looking empty).
+async function apiFetch<T>(path: string): Promise<T> {
+  const res = await fetch(`${API}${path}`, { cache: 'no-store' });
+  if (!res.ok) {
+    throw new Error(`${res.status} ${res.statusText} fetching ${API}${path}`);
   }
+  const json = await res.json();
+  return json.data ?? json;
 }
 
 export async function prefetchStorefrontData(queryClient: QueryClient) {
