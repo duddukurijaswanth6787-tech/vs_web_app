@@ -1,4 +1,4 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsEmail,
   IsString,
@@ -35,8 +35,15 @@ export class RegisterDto {
 
 export class LoginDto {
   @ApiProperty({ example: 'customer@vasanthidesigners.com' })
+  @IsOptional()
   @IsString()
-  email!: string;
+  email?: string;
+
+  @ApiPropertyOptional({ example: 'admin' })
+  @IsOptional()
+  @IsString()
+  username?: string;
+
   @ApiProperty({ example: 'P@ssw0rd2026' })
   @IsString()
   password!: string;

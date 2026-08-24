@@ -105,11 +105,12 @@ function CustomerLoginForm() {
     setError('');
     setIsLoading(true);
     try {
-      await login({ email, password });
+      const cleanEmail = email.trim();
+      await login({ email: cleanEmail, password });
       const profileResult = await refetchUser() as { data?: { roles?: string[] } | null };
       redirectAfterLogin(profileResult?.data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Login failed'));
+      setError(getApiErrorMessage(err, 'Login failed. Please check your credentials and try again.'));
     } finally {
       setIsLoading(false);
     }

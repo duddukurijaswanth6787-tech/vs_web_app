@@ -97,7 +97,11 @@ export class AuthService {
     ip?: string,
     userAgent?: string,
   ): Promise<AuthTokensResponse> {
-    const user = await this.authRepository.findByEmail(dto.email);
+    const inputIdentifier = (dto.email || dto.username || '').trim();
+    if (!inputIdentifier) {
+      throw new AuthenticationException('Email or username is required', 'AUTH_001');
+    }
+    const user = await this.authRepository.findByEmail(inputIdentifier);
     if (!user) {
       throw new AuthenticationException('Invalid credentials', 'AUTH_001');
     }
