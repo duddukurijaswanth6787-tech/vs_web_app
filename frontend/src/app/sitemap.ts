@@ -47,7 +47,10 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.4,
     },
     {
-      url: `${baseUrl}/returns`,
+      // Not /returns -- that's the signed-in "My Returns" account page
+      // (login-gated, no content for a logged-out crawler), not a public
+      // policy page.
+      url: `${baseUrl}/cancellation-refund-policy`,
       lastModified: new Date(),
       changeFrequency: "monthly",
       priority: 0.4,

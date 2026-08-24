@@ -44,11 +44,13 @@ export const metadata: Metadata = {
     siteName: "Vasanthi's Signature",
     title: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Sarees",
     description: "Official Online Store for Vasanthi's Signature - Premium Sarees, Lehengas & Handcrafted Designer Wear",
+    images: ["/brand/logo-full.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Vasanthi's Signature | Luxury Ethnic Wear & Sarees",
     description: "Official Online Store for Vasanthi's Signature - Premium Sarees & Designer Wear",
+    images: ["/brand/logo-full.png"],
   },
   robots: {
     index: true,
