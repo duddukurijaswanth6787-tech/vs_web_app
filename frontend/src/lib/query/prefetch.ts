@@ -19,11 +19,14 @@ const keys = {
 async function apiFetch<T>(path: string): Promise<T | null> {
   try {
     const res = await fetch(`${API}${path}`, { cache: 'no-store' });
-    if (!res.ok) return null;
+    if (!res.ok) {
+      const body = await res.text().catch(() => '');
+      return { __debugError: true, status: res.status, body: body.slice(0, 500), url: `${API}${path}` } as T;
+    }
     const json = await res.json();
     return json.data ?? json;
-  } catch {
-    return null;
+  } catch (e) {
+    return { __debugError: true, message: String(e), url: `${API}${path}` } as T;
   }
 }
 
