@@ -10,7 +10,7 @@ import * as SecureStore from 'expo-secure-store';
  * the box for anyone who hasn't set up a `.env`.
  */
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'http://localhost:4000/api/v1';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://vsss-production.up.railway.app/api/v1';
 
 /** Origin without the `/api/v1` suffix — used by the websocket namespace. */
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
