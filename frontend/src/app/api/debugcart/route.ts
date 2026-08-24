@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 // Temporary diagnostic route -- delete after use.
 export async function GET() {
   const base = process.env.NEXT_PUBLIC_API_BASE_URL || '';
-  const guestId = '11111111-1111-4111-8111-111111111111';
+  const guestId = 'f72b14b4-7261-42c5-883c-dcec3fd47d82';
   const paths = [
     `/cart/summary?guestId=${guestId}`,
     `/cart?guestId=${guestId}`,
