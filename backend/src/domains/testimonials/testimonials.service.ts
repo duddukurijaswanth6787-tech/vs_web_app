@@ -7,29 +7,37 @@ export class TestimonialsService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findFeatured() {
-    return this.prisma.testimonial.findMany({
-      where: {
-        isFeatured: true,
-        status: 'ACTIVE',
-        deletedAt: null,
-      },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    });
+    try {
+      return await this.prisma.testimonial.findMany({
+        where: {
+          isFeatured: true,
+          status: 'ACTIVE',
+          deletedAt: null,
+        },
+        orderBy: [
+          { displayOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    } catch {
+      return [];
+    }
   }
 
   async findAll() {
-    return this.prisma.testimonial.findMany({
-      where: {
-        deletedAt: null,
-      },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { createdAt: 'desc' },
-      ],
-    });
+    try {
+      return await this.prisma.testimonial.findMany({
+        where: {
+          deletedAt: null,
+        },
+        orderBy: [
+          { displayOrder: 'asc' },
+          { createdAt: 'desc' },
+        ],
+      });
+    } catch {
+      return [];
+    }
   }
 
   async findById(id: string) {

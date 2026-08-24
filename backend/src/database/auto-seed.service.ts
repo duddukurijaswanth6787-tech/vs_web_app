@@ -80,8 +80,27 @@ export class AutoSeedService implements OnModuleInit {
       await this.prisma.$executeRawUnsafe(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS "appleId" TEXT;',
       );
+      await this.prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS testimonials (
+          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
+          name TEXT NOT NULL,
+          title TEXT,
+          location TEXT,
+          rating INTEGER NOT NULL DEFAULT 5,
+          content TEXT NOT NULL,
+          avatarUrl TEXT,
+          isFeatured BOOLEAN NOT NULL DEFAULT false,
+          displayOrder INTEGER NOT NULL DEFAULT 0,
+          status TEXT NOT NULL DEFAULT 'ACTIVE',
+          createdBy TEXT,
+          updatedBy TEXT,
+          createdAt TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          updatedAt TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          deletedAt TIMESTAMP(3)
+        );
+      `);
     } catch {
-      // ignore DDL errors if column exists or role is unprivileged
+      // ignore DDL errors if column/table exists or role is unprivileged
     }
     await this.seedEssentialData();
   }
