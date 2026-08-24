@@ -80,6 +80,21 @@ export class AutoSeedService implements OnModuleInit {
       await this.prisma.$executeRawUnsafe(
         'ALTER TABLE users ADD COLUMN IF NOT EXISTS "appleId" TEXT;',
       );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE products ADD COLUMN IF NOT EXISTS "warrantyInfo" TEXT;',
+      );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE products ADD COLUMN IF NOT EXISTS "careInstructions" TEXT;',
+      );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE products ADD COLUMN IF NOT EXISTS "hsnCode" TEXT;',
+      );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE products ADD COLUMN IF NOT EXISTS "countryOfOrigin" TEXT;',
+      );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE products ADD COLUMN IF NOT EXISTS "colorGroup" TEXT;',
+      );
       await this.prisma.$executeRawUnsafe(`
         CREATE TABLE IF NOT EXISTS testimonials (
           id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,

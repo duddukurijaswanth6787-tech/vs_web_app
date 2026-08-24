@@ -31,8 +31,11 @@ export const categoryService = {
   },
 
   findFeatured: async (): Promise<CategoryResponse[]> => {
-    const response = await apiClient.get<StandardResponse<CategoryResponse[]>>('/categories/featured');
-    return response.data.data!;
+    const response = await apiClient.get<StandardResponse<any>>('/categories/featured');
+    const data = response.data.data;
+    if (Array.isArray(data)) return data;
+    if (data && Array.isArray((data as any).data)) return (data as any).data;
+    return [];
   },
 
   findBySlug: async (slug: string): Promise<CategoryResponse> => {

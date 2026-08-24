@@ -87,7 +87,7 @@ export function useFeaturedCategories() {
         // fallback
       }
       const list = await categoryService.findAll({ isVisible: true, limit: 20 });
-      return list.data || [];
+      return Array.isArray(list) ? list : (list as any)?.data || [];
     },
     // Matches the server-side prefetch in lib/query/prefetch.ts -- staleTime: 0
     // meant this was refetched on every mount, including every time the header

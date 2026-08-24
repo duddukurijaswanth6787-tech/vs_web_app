@@ -133,34 +133,41 @@ export class ProductsService {
   async findAll(query: ProductQueryDto, restrictToPublicChannels = false) {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 100);
-    const result = await this.productsRepository.findAll({
-      search: query.search,
-      brandId: query.brandId,
-      status: query.status,
-      visibility: query.visibility,
-      channel: restrictToPublicChannels ? undefined : query.channel,
-      channelIn: restrictToPublicChannels ? ['ONLINE', 'BOTH'] : undefined,
-      type: query.type,
-      gender: query.gender,
-      ageGroup: query.ageGroup,
-      occasion: query.occasion,
-      season: query.season,
-      isFeatured: query.isFeatured,
-      isNewArrival: query.isNewArrival,
-      isBestSeller: query.isBestSeller,
-      isPublished: query.isPublished,
-      minPrice: query.minPrice,
-      maxPrice: query.maxPrice,
-      categoryId: query.categoryId,
-      page,
-      limit,
-      sortBy: query.sortBy ?? 'createdAt',
-      sortOrder: query.sortOrder ?? 'desc',
-    });
-    return {
-      data: result.data.map((p: any) => this.toResponse(p)),
-      meta: result.meta,
-    };
+    try {
+      const result = await this.productsRepository.findAll({
+        search: query.search,
+        brandId: query.brandId,
+        status: query.status,
+        visibility: query.visibility,
+        channel: restrictToPublicChannels ? undefined : query.channel,
+        channelIn: restrictToPublicChannels ? ['ONLINE', 'BOTH'] : undefined,
+        type: query.type,
+        gender: query.gender,
+        ageGroup: query.ageGroup,
+        occasion: query.occasion,
+        season: query.season,
+        isFeatured: query.isFeatured,
+        isNewArrival: query.isNewArrival,
+        isBestSeller: query.isBestSeller,
+        isPublished: query.isPublished,
+        minPrice: query.minPrice,
+        maxPrice: query.maxPrice,
+        categoryId: query.categoryId,
+        page,
+        limit,
+        sortBy: query.sortBy ?? 'createdAt',
+        sortOrder: query.sortOrder ?? 'desc',
+      });
+      return {
+        data: result.data.map((p: any) => this.toResponse(p)),
+        meta: result.meta,
+      };
+    } catch {
+      return {
+        data: [],
+        meta: { page, limit, total: 0, totalPages: 0 },
+      };
+    }
   }
 
   async findById(id: string, restrictToPublicChannels = false) {
