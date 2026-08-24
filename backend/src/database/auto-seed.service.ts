@@ -74,13 +74,16 @@ export class AutoSeedService implements OnModuleInit {
 
   async onModuleInit() {
     try {
-      await this.seedEssentialData();
-    } catch (error) {
-      this.logger.error(
-        'Error auto-seeding essential database records',
-        error instanceof Error ? error.stack : String(error),
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS "facebookId" TEXT;',
       );
+      await this.prisma.$executeRawUnsafe(
+        'ALTER TABLE users ADD COLUMN IF NOT EXISTS "appleId" TEXT;',
+      );
+    } catch {
+      // ignore DDL errors if column exists or role is unprivileged
     }
+    await this.seedEssentialData();
   }
 
   async seedEssentialData() {
