@@ -34,7 +34,7 @@ export class RegisterDto {
 }
 
 export class LoginDto {
-  @ApiProperty({ example: 'customer@vasanthidesigners.com' })
+  @ApiPropertyOptional({ example: 'customer@vasanthidesigners.com' })
   @IsOptional()
   @IsString()
   email?: string;
@@ -48,10 +48,9 @@ export class LoginDto {
   @IsString()
   password!: string;
 
-  @ApiProperty({ required: false, default: false })
+  @ApiPropertyOptional({ default: false })
   @IsOptional()
-  @IsBoolean()
-  rememberMe?: boolean;
+  rememberMe?: any;
 }
 
 export class GoogleLoginDto {
