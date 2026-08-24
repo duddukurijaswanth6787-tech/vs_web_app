@@ -49,7 +49,7 @@ export default function CategoriesPage() {
   const [description, setDescription] = useState('');
   const [parentId, setParentId] = useState('');
   const [displayOrder, setDisplayOrder] = useState('0');
-  const [isFeatured, setIsFeatured] = useState(false);
+  const [isFeatured, setIsFeatured] = useState(true);
   const [isVisible, setIsVisible] = useState(true);
   const [isMenuVisible, setIsMenuVisible] = useState(true);
   const [seoTitle, setSeoTitle] = useState('');
@@ -80,7 +80,7 @@ export default function CategoriesPage() {
     setDescription('');
     setParentId('');
     setDisplayOrder('0');
-    setIsFeatured(false);
+    setIsFeatured(true);
     setIsVisible(true);
     setIsMenuVisible(true);
     setSeoTitle('');

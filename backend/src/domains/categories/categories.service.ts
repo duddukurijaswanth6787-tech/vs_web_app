@@ -84,8 +84,19 @@ export class CategoriesService {
   }
 
   async findFeatured() {
-    return this.findAll({
+    const featured = await this.findAll({
       isFeatured: true,
+      isVisible: true,
+      status: 'ACTIVE',
+      page: 1,
+      limit: 20,
+      sortBy: 'displayOrder',
+      sortOrder: 'asc',
+    });
+    if (featured.data && featured.data.length > 0) {
+      return featured;
+    }
+    return this.findAll({
       isVisible: true,
       status: 'ACTIVE',
       page: 1,

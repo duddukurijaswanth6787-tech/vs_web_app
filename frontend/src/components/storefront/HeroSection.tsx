@@ -49,13 +49,11 @@ export function HeroSection() {
     const list = Array.isArray(typedData) ? typedData : typedData?.data || [];
     if (list.length > 0) {
       return list.map((b: Record<string, unknown>) => {
-        const rawDesktopImg = (b.imageUrl as string) || '';
+        const rawDesktopImg = (b.imageUrl as string) || (b.image as string) || '';
         const resolvedDesktop = rawDesktopImg ? resolveMediaUrl(rawDesktopImg) : '';
-        const isDesktopValid = resolvedDesktop && !resolvedDesktop.includes('placehold.co');
 
-        const rawMobileImg = (b.mobileImageUrl as string) || '';
+        const rawMobileImg = (b.mobileImageUrl as string) || (b.mobileImage as string) || '';
         const resolvedMobile = rawMobileImg ? resolveMediaUrl(rawMobileImg) : '';
-        const isMobileValid = resolvedMobile && !resolvedMobile.includes('placehold.co');
 
         return {
           id: String(b.id || ''),
@@ -63,12 +61,12 @@ export function HeroSection() {
           subtitle: String(b.description || b.subtitle || ''),
           buttonText: String(b.ctaText || 'SHOP NOW'),
           linkUrl: String(b.ctaLink || b.linkUrl || '/catalog'),
-          imageUrl: isDesktopValid ? resolvedDesktop : PLACEHOLDER_IMAGE,
-          mobileImageUrl: isMobileValid ? resolvedMobile : undefined,
+          imageUrl: resolvedDesktop || PLACEHOLDER_IMAGE,
+          mobileImageUrl: resolvedMobile || undefined,
           badge: String(b.badge || 'New Collection'),
           color: String(b.color || '#1769D2'),
           ctaEnabled: b.ctaEnabled !== false,
-          ctaStyle: b.ctaStyle === 'transparent' ? 'transparent' as const : 'solid' as const,
+          ctaStyle: b.ctaStyle === 'transparent' ? ('transparent' as const) : ('solid' as const),
         };
       });
     }
