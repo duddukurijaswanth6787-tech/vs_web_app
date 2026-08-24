@@ -59,8 +59,9 @@ export const customerWishlistService = {
       const res = await apiClient.get<StandardResponse<WishlistDto>>('/wishlist');
       return res.data.data || { items: [] };
     } catch (err: unknown) {
-      if (getErrorStatus(err) === 401) return { items: getGuestWishlist() };
-      throw err;
+      const status = getErrorStatus(err);
+      if (status === 401 || status === 400) return { items: getGuestWishlist() };
+      return { items: getGuestWishlist() };
     }
   },
 
@@ -79,11 +80,13 @@ export const customerWishlistService = {
         total: data?.total ?? (data?.items?.length || 0),
       };
     } catch (err: unknown) {
-      if (getErrorStatus(err) === 401) {
+      const status = getErrorStatus(err);
+      if (status === 401 || status === 400) {
         const items = getGuestWishlist();
         return { items, total: items.length };
       }
-      throw err;
+      const items = getGuestWishlist();
+      return { items, total: items.length };
     }
   },
 
@@ -93,8 +96,9 @@ export const customerWishlistService = {
       const res = await apiClient.get<StandardResponse<{ count: number }>>('/wishlist/count');
       return res.data.data || { count: 0 };
     } catch (err: unknown) {
-      if (getErrorStatus(err) === 401) return { count: getGuestWishlist().length };
-      return { count: 0 };
+      const status = getErrorStatus(err);
+      if (status === 401 || status === 400) return { count: getGuestWishlist().length };
+      return { count: getGuestWishlist().length };
     }
   },
 
@@ -109,11 +113,8 @@ export const customerWishlistService = {
       );
       return res.data.data!;
     } catch (err: unknown) {
-      if (getErrorStatus(err) === 401) {
-        const items = getGuestWishlist();
-        return { inWishlist: items.some((item) => item.productId === productId || item.id === productId) };
-      }
-      return { inWishlist: false };
+      const items = getGuestWishlist();
+      return { inWishlist: items.some((item) => item.productId === productId || item.id === productId) };
     }
   },
 
