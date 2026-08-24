@@ -1,6 +1,5 @@
 import axios from 'axios';
-
-const HEALTH_URL = process.env.NEXT_PUBLIC_HEALTH_URL || 'http://localhost:4000/health';
+import { getUnprefixedBaseUrl } from '@/lib/api/client';
 
 export interface HealthCheckResponse {
   status: 'ok' | 'error';
@@ -11,8 +10,11 @@ export interface HealthCheckResponse {
 
 export const healthService = {
   getHealth: async (): Promise<HealthCheckResponse> => {
-    // Call raw health check endpoint directly
-    const response = await axios.get<HealthCheckResponse>(HEALTH_URL, {
+    let url = process.env.NEXT_PUBLIC_HEALTH_URL;
+    if (!url || url.includes('api.vasanthisignature.in') || url.includes('api.vasanthis-signature.in')) {
+      url = `${getUnprefixedBaseUrl()}/health`;
+    }
+    const response = await axios.get<HealthCheckResponse>(url, {
       timeout: 5000,
     });
     return response.data;

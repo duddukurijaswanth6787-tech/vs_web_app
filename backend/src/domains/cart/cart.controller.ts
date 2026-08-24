@@ -37,14 +37,20 @@ export class CartController {
   private resolveUser(req: Request): { userId?: string; guestId?: string } {
     const authHeader = req.headers['authorization'];
     if (authHeader?.startsWith('Bearer ')) {
-      try {
-        const payload: JwtPayload = this.jwtService.verify(authHeader.slice(7));
-        return { userId: payload.sub };
-      } catch {
-        throw new UnauthorizedException('Invalid or expired token');
+      const token = authHeader.slice(7).trim();
+      if (token && token !== 'null' && token !== 'undefined') {
+        try {
+          const payload: JwtPayload = this.jwtService.verify(token);
+          if (payload?.sub) {
+            return { userId: payload.sub };
+          }
+        } catch {
+          // Token is expired or invalid -- fallback gracefully to guestId
+        }
       }
     }
-    const guestId = (req.query['guestId'] as string) ?? undefined;
+    const rawGuestId = req.query['guestId'];
+    const guestId = typeof rawGuestId === 'string' && rawGuestId.trim() ? rawGuestId.trim() : undefined;
     return { guestId };
   }
 
