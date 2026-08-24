@@ -32,7 +32,7 @@ export class AppSettingService {
 
   async findAll(query: SettingQueryDto) {
     const page = query.page ?? 1;
-    const limit = Math.min(query.limit ?? 20, 100);
+    const limit = Math.min(query.limit ?? 20, 500);
     const result = await this.settingRepository.findAll({
       group: query.group,
       page,
