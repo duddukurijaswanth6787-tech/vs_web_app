@@ -16,6 +16,13 @@ const getApiBaseUrl = () => {
 export const apiClient = axios.create({
   baseURL: getApiBaseUrl(),
   timeout: 15000,
+  // The API lives on api.vasanthissignature.in while the app is served from
+  // vasanthissignature.in -- a different ORIGIN, even though it is the same
+  // site. Without this the browser discards the Set-Cookie on the login
+  // response outright, so the httpOnly refresh cookie was never stored and
+  // every reload logged the user out. Required on the instance, not just on
+  // the refresh call, because login is what mints the cookie.
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
