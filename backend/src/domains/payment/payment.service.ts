@@ -392,9 +392,20 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
-    const webhookSecret = await this.getEffectiveWebhookSecret();
+    if (await this.isRazorpayEnabled()) {
+      const webhookSecret = await this.getEffectiveWebhookSecret();
+      // Fail closed: an unconfigured secret must reject the webhook, not
+      // skip verification. The previous `&& webhookSecret` guard let anyone
+      // who found this URL POST a fake payment.captured event and have it
+      // processed as real (capturing the order, deducting stock) for as
+      // long as the admin hadn't set a webhook secret yet.
+      if (!webhookSecret) {
+        throw new BusinessException(
+          'Webhook secret not configured',
+          'PAYMENT_WEBHOOK_002',
+        );
+      }
 
-    if ((await this.isRazorpayEnabled()) && webhookSecret) {
       const generated = crypto
         .createHmac('sha256', webhookSecret)
         .update(rawBody)

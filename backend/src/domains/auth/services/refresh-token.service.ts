@@ -1,7 +1,11 @@
 import { Injectable } from '@nestjs/common';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { PrismaService } from '@database/prisma.service';
 import { SessionSettingsService } from './session-settings.service';
+
+function hashToken(token: string): string {
+  return createHash('sha256').update(token).digest('hex');
+}
 
 @Injectable()
 export class RefreshTokenService {
@@ -24,7 +28,7 @@ export class RefreshTokenService {
     const token = randomUUID();
     await this.prisma.refreshToken.create({
       data: {
-        token,
+        token: hashToken(token),
         userId,
         ipAddress: ipAddress || null,
         userAgent: userAgent || null,
@@ -37,7 +41,7 @@ export class RefreshTokenService {
 
   async validate(token: string) {
     const record = await this.prisma.refreshToken.findUnique({
-      where: { token },
+      where: { token: hashToken(token) },
     });
     if (!record || record.isRevoked || record.expiresAt < new Date()) {
       return null;
@@ -51,7 +55,7 @@ export class RefreshTokenService {
 
   async revoke(token: string): Promise<void> {
     await this.prisma.refreshToken.updateMany({
-      where: { token, isRevoked: false },
+      where: { token: hashToken(token), isRevoked: false },
       data: { isRevoked: true, revokedAt: new Date() },
     });
   }

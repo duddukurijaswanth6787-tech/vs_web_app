@@ -374,8 +374,4 @@ export class AuthRepository {
       data: { passwordHash },
     });
   }
-
-  async findRefreshToken(token: string) {
-    return this.prisma.refreshToken.findUnique({ where: { token } });
-  }
 }
