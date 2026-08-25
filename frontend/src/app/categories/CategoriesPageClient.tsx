@@ -10,25 +10,8 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useFeaturedCategories } from '@/features/customer/hooks';
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { useQuery } from '@tanstack/react-query';
-import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import { withVariant, resolveMediaUrl } from '@/lib/media-url';
 import type { CategoryResponse } from '@/features/catalog/categories/category.types';
-const CATEGORY_DEFAULT_IMAGES: Record<string, string> = {
-  'ethnic-wear': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
-  'womens-wear': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop',
-  'women-s-wear': 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop',
-  'sarees': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
-  'lehengas': 'https://images.unsplash.com/photo-1595777457583-95e059d581b8?w=600&auto=format&fit=crop',
-  'kurta-sets': 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop',
-  'kurtis-suits': 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop',
-  'indo-western': 'https://images.unsplash.com/photo-1539109136881-3be0616acf4b?w=600&auto=format&fit=crop',
-  'party-wear': 'https://images.unsplash.com/photo-1566174053879-31528523f8ae?w=600&auto=format&fit=crop',
-  'wedding-collection': 'https://images.unsplash.com/photo-1546804764-9147f715b00e?w=600&auto=format&fit=crop',
-  'festive-collection': 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop',
-  'western-wear': 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop',
-  'casual-wear': 'https://images.unsplash.com/photo-1525507119028-ed4c629a60a3?w=600&auto=format&fit=crop',
-  'office-wear': 'https://images.unsplash.com/photo-1487222477894-8943e31ef7b2?w=600&auto=format&fit=crop',
-};
 
 export default function CategoriesPage() {
   const featured = useFeaturedCategories();
@@ -46,10 +29,12 @@ export default function CategoriesPage() {
     return list
       .filter((c: CategoryResponse) => c.status !== 'ARCHIVED')
       .map((c: CategoryResponse) => {
+        // No stock-photo fallback: showing a random Unsplash model for a
+        // category the admin never gave an image to made the catalog look
+        // populated when it was not. Null here renders an explicit Empty tile.
         const rawImg = c.image || c.imageUrl || c.primaryImageUrl;
-        const fallbackImg = CATEGORY_DEFAULT_IMAGES[c.slug] || 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop';
-        const finalUrl = (!rawImg || rawImg.includes('data:image/svg')) ? fallbackImg : resolveMediaUrl(rawImg);
-        return { ...c, imageUrl: finalUrl };
+        const hasImage = !!rawImg && !rawImg.includes('data:image/svg');
+        return { ...c, imageUrl: hasImage ? resolveMediaUrl(rawImg) : null };
       });
   }, [all.data, featured.data]);
 
@@ -69,7 +54,6 @@ export default function CategoriesPage() {
         )}
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
           {categories.map((cat) => {
-            const fallbackSrc = PLACEHOLDER_IMAGE;
             return (
               <Link
                 key={cat.id}
@@ -77,13 +61,19 @@ export default function CategoriesPage() {
                 className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group"
               >
                 <div className="aspect-square bg-neutral-100 relative overflow-hidden">
-                  <Image
-                    src={withVariant(cat.imageUrl || fallbackSrc, 'medium')}
-                    alt={cat.name}
-                    fill
-                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {cat.imageUrl ? (
+                    <Image
+                      src={withVariant(cat.imageUrl, 'medium')}
+                      alt={cat.name}
+                      fill
+                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-50 border-b border-neutral-100">
+                      <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">Empty</span>
+                    </div>
+                  )}
                 </div>
                 <div className="p-3">
                   <h2 className="text-sm font-bold text-neutral-900 line-clamp-1">{cat.name}</h2>
