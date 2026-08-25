@@ -69,6 +69,29 @@ describe('CustomerProfileService profile auto-creation', () => {
     expect(repo.update).toHaveBeenCalledWith('profile-1', { phone: '07660922416' });
   });
 
+  it('converts dateOfBirth to a Date, since Prisma rejects the date-only string', async () => {
+    // <input type="date"> submits 'YYYY-MM-DD'. Passing that straight through
+    // threw PrismaClientValidationError, which the exception mapper turned
+    // into a bare 422 with no usable message.
+    const { service, repo } = buildService({ profileExists: true });
+
+    await service.updateProfile('user-1', { dateOfBirth: '2004-07-09' });
+
+    const [, data] = repo.update.mock.calls[0];
+    expect(data.dateOfBirth).toBeInstanceOf(Date);
+    expect((data.dateOfBirth as Date).toISOString()).toBe('2004-07-09T00:00:00.000Z');
+  });
+
+  it('omits dateOfBirth entirely when it was not supplied', async () => {
+    // Sending `undefined` through would blank out a stored date.
+    const { service, repo } = buildService({ profileExists: true });
+
+    await service.updateProfile('user-1', { phone: '07660922416' });
+
+    const [, data] = repo.update.mock.calls[0];
+    expect('dateOfBirth' in data).toBe(false);
+  });
+
   it('leaves the User row alone when no name fields are supplied', async () => {
     const { service, prisma } = buildService({ profileExists: true });
 

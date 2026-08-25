@@ -71,7 +71,20 @@ export class CustomerProfileService {
   ): Promise<ProfileResponse> {
     const profile = await this.findOrCreateProfile(userId);
 
-    const { firstName, lastName, ...profileData } = dto;
+    const { firstName, lastName, dateOfBirth, ...rest } = dto;
+
+    // <input type="date"> submits 'YYYY-MM-DD', and @IsDateString accepts it,
+    // but Prisma's DateTime rejects the date-only form at runtime with
+    // PrismaClientValidationError. That is not a PrismaClientKnownRequestError,
+    // so it bypasses the mapper's 400/404/409 branches and surfaces as a bare
+    // 422 -- which is why saving personal details failed with no usable error.
+    // Prisma's types accept `string | Date` here, so TypeScript never flagged it.
+    const profileData = {
+      ...rest,
+      ...(dateOfBirth !== undefined
+        ? { dateOfBirth: new Date(dateOfBirth) }
+        : {}),
+    };
     if (firstName !== undefined || lastName !== undefined) {
       await this.prisma.user.update({
         where: { id: userId },
