@@ -39,7 +39,7 @@ export default function WishlistPage() {
           <div className="text-center py-16 space-y-3">
             <Heart className="w-10 h-10 mx-auto text-neutral-300" />
             <p className="text-sm text-neutral-600">No saved items yet</p>
-            <Link href="/categories" className="inline-block bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+            <Link href="/categories" className="inline-block bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
               Browse Products
             </Link>
           </div>
@@ -67,15 +67,15 @@ export default function WishlistPage() {
                 />
               </Link>
               <div className="flex-1 min-w-0 space-y-2">
-                <Link href={`/product/${product.slug || productId}`} className="text-sm font-bold line-clamp-2 hover:text-[#800020]">
+                <Link href={`/product/${product.slug || productId}`} className="text-sm font-bold line-clamp-2 hover:text-[#0284c7]">
                   {name}
                 </Link>
-                <p className="text-sm font-bold text-[#800020]">{formatInr(Number(price))}</p>
+                <p className="text-sm font-bold text-[#0284c7]">{formatInr(Number(price))}</p>
                 <div className="flex gap-2">
                   <button
                     type="button"
                     onClick={() => moveToCart.mutate(productId)}
-                    className="text-xs font-bold bg-[#800020] text-white px-3 py-1.5 rounded-lg flex items-center gap-1"
+                    className="text-xs font-bold bg-[#0284c7] text-white px-3 py-1.5 rounded-lg flex items-center gap-1"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" /> Move to Bag
                   </button>

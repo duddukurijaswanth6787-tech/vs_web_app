@@ -29,7 +29,7 @@ export default function CollectionSlugPage() {
         <Link href="/collections" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">{title}</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">{title}</h1>
       </header>
 
       <main className="flex-1">

@@ -90,7 +90,7 @@ export function StorefrontHeader() {
   const announcementBgColor =
     (typedSettings?.announcementBarBgColor as string | undefined) ||
     (typedSettings?.announcement_bar_bg_color as string | undefined) ||
-    '#800020';
+    '#0284c7';
   const announcementTextColor =
     (typedSettings?.announcementBarTextColor as string | undefined) ||
     (typedSettings?.announcement_bar_text_color as string | undefined) ||
@@ -168,7 +168,7 @@ export function StorefrontHeader() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-neutral-700">
-            <Link href="/" className="hover:text-[#800020] transition-colors font-bold text-[#800020] whitespace-nowrap">
+            <Link href="/" className="hover:text-[#0284c7] transition-colors font-bold text-[#0284c7] whitespace-nowrap">
               Home
             </Link>
             {navCategories && navCategories.length > 0 ? (
@@ -176,17 +176,17 @@ export function StorefrontHeader() {
                 <Link
                   key={cat.id || cat.slug}
                   href={`/categories/${cat.slug}`}
-                  className="hover:text-[#800020] transition-colors whitespace-nowrap font-medium text-neutral-700"
+                  className="hover:text-[#0284c7] transition-colors whitespace-nowrap font-medium text-neutral-700"
                 >
                   {cat.name}
                 </Link>
               ))
             ) : (
               <>
-                <Link href="/categories/new-arrivals" className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/new-arrivals" className="hover:text-[#0284c7] transition-colors whitespace-nowrap">
                   New Arrivals
                 </Link>
-                <Link href="/categories/collections" className="hover:text-[#800020] transition-colors whitespace-nowrap">
+                <Link href="/categories/collections" className="hover:text-[#0284c7] transition-colors whitespace-nowrap">
                   Collections
                 </Link>
               </>
@@ -205,24 +205,24 @@ export function StorefrontHeader() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-                className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#800020]/20 placeholder:text-neutral-400"
+                className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#0284c7]/20 placeholder:text-neutral-400"
               />
             </div>
-            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0" aria-label="Wishlist">
               <Heart className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#0284c7] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {wishlistCount}
               </span>
             </Link>
 
-            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0" aria-label="Cart">
+            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0" aria-label="Cart">
               <ShoppingBag className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#800020] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#0284c7] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {cartCount}
               </span>
             </Link>
 
-            <Link href="/profile" className="hidden sm:block p-1.5 text-neutral-800 hover:text-[#800020] transition-colors shrink-0">
+            <Link href="/profile" className="hidden sm:block p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0">
               <User className="w-6 h-6" />
             </Link>
           </div>
@@ -239,7 +239,7 @@ export function StorefrontHeader() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-            className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#800020]/20 placeholder:text-neutral-400"
+            className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#0284c7]/20 placeholder:text-neutral-400"
           />
         </div>
       </div>
@@ -257,7 +257,7 @@ export function StorefrontHeader() {
           <div className="relative w-[85%] max-w-sm bg-white h-[100dvh] max-h-[100dvh] shadow-2xl flex flex-col justify-between overflow-y-auto overscroll-contain z-10 animate-in slide-in-from-left duration-300 pb-20">
             <div>
               {/* Drawer Top Header Row */}
-              <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[#FAF3F3]">
+              <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[#EAF4FF]">
                 <div className="flex items-center gap-2.5">
                   <Image
                     src="/brand/logo-full.png"
@@ -285,9 +285,9 @@ export function StorefrontHeader() {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-[#FAF0F2] text-[#800020] font-bold text-sm"
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-[#F3F8FF] text-[#0284c7] font-bold text-sm"
                 >
-                  <Home className="w-4.5 h-4.5 fill-[#800020]" />
+                  <Home className="w-4.5 h-4.5 fill-[#0284c7]" />
                   <span>Home</span>
                 </Link>
 
@@ -301,7 +301,7 @@ export function StorefrontHeader() {
                       className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
                     >
                       <div className="flex items-center gap-3.5">
-                        <Shirt className="w-4.5 h-4.5 text-[#800020]" />
+                        <Shirt className="w-4.5 h-4.5 text-[#0284c7]" />
                         <span>{cat.name}</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -314,7 +314,7 @@ export function StorefrontHeader() {
                     className="flex items-center justify-between px-4 py-3 text-neutral-600 hover:bg-neutral-50 rounded-xl text-sm font-medium transition-colors"
                   >
                     <div className="flex items-center gap-3.5">
-                      <Tag className="w-4.5 h-4.5 text-[#800020]" />
+                      <Tag className="w-4.5 h-4.5 text-[#0284c7]" />
                       <span>All Categories</span>
                     </div>
                     <ChevronRight className="w-4 h-4 text-neutral-400" />

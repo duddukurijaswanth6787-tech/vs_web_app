@@ -50,7 +50,7 @@ function GuestAccountView() {
         <div className="bg-gradient-to-br from-rose-100/70 via-pink-50/60 to-amber-50/40 border border-rose-100/90 rounded-3xl p-5 relative overflow-hidden shadow-xs">
           <div className="relative z-10 pr-24 sm:pr-32 space-y-1">
             <p className="text-xs font-bold text-neutral-800 tracking-wide">Welcome to</p>
-            <h2 className="text-2xl font-bold font-serif text-[#800020] tracking-tight leading-tight">
+            <h2 className="text-2xl font-bold font-serif text-[#0284c7] tracking-tight leading-tight">
               Vasanthi&apos;s Signature
             </h2>
             <p className="text-xs text-neutral-600 mt-1 leading-relaxed">
@@ -73,7 +73,7 @@ function GuestAccountView() {
           {/* 2x2 Benefits Grid */}
           <div className="grid grid-cols-2 gap-2.5 mt-5 relative z-10">
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 flex items-center gap-2 border border-white/60 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#800020] shrink-0">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#0284c7] shrink-0">
                 <Truck className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
@@ -83,7 +83,7 @@ function GuestAccountView() {
             </div>
 
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 flex items-center gap-2 border border-white/60 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#800020] shrink-0">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#0284c7] shrink-0">
                 <Heart className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
@@ -93,7 +93,7 @@ function GuestAccountView() {
             </div>
 
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 flex items-center gap-2 border border-white/60 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#800020] shrink-0">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#0284c7] shrink-0">
                 <Tag className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
@@ -103,7 +103,7 @@ function GuestAccountView() {
             </div>
 
             <div className="bg-white/80 backdrop-blur-xs rounded-2xl p-2.5 flex items-center gap-2 border border-white/60 shadow-2xs">
-              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#800020] shrink-0">
+              <div className="w-8 h-8 rounded-full bg-rose-50 flex items-center justify-center text-[#0284c7] shrink-0">
                 <ShoppingBag className="w-4 h-4" />
               </div>
               <div className="overflow-hidden">
@@ -117,7 +117,7 @@ function GuestAccountView() {
         {/* 2. Login or Sign Up Card */}
         <div className="bg-white border border-neutral-200/80 rounded-3xl p-6 shadow-xs space-y-4 text-center">
           <div>
-            <h3 className="text-xl font-bold font-serif text-[#800020] tracking-tight">
+            <h3 className="text-xl font-bold font-serif text-[#0284c7] tracking-tight">
               Login or Sign Up
             </h3>
             <p className="text-xs text-neutral-500 mt-1">
@@ -128,7 +128,7 @@ function GuestAccountView() {
           <div className="space-y-2.5 pt-1">
             <Link
               href="/login?mode=phone"
-              className="w-full bg-[#800020] hover:bg-[#600018] text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm text-sm transition-all active:scale-[0.98]"
+              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 shadow-sm text-sm transition-all active:scale-[0.98]"
             >
               <Phone className="w-4 h-4" />
               <span>Continue with Mobile Number</span>
@@ -136,7 +136,7 @@ function GuestAccountView() {
 
             <Link
               href="/login?mode=email"
-              className="w-full bg-white border border-[#800020] text-[#800020] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 text-sm transition-all active:scale-[0.98]"
+              className="w-full bg-white border border-[#0284c7] text-[#0284c7] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2.5 text-sm transition-all active:scale-[0.98]"
             >
               <Mail className="w-4 h-4" />
               <span>Continue with Email</span>
@@ -188,11 +188,11 @@ function GuestAccountView() {
 
           <p className="text-[11px] text-neutral-500 pt-2 leading-relaxed">
             By continuing, you agree to our{' '}
-            <Link href="/terms" className="font-bold text-[#800020] hover:underline">
+            <Link href="/terms" className="font-bold text-[#0284c7] hover:underline">
               Terms & Conditions
             </Link>{' '}
             and{' '}
-            <Link href="/privacy" className="font-bold text-[#800020] hover:underline">
+            <Link href="/privacy" className="font-bold text-[#0284c7] hover:underline">
               Privacy Policy
             </Link>
           </p>
@@ -300,7 +300,7 @@ function AuthenticatedAccountView() {
 
           <div className="space-y-4">
         {/* 1. Royal Maroon Customer Card */}
-        <div className="bg-gradient-to-br from-[#600018] via-[#800020] to-[#990026] text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
+        <div className="bg-gradient-to-br from-[#0B3B78] via-[#0284c7] to-[#990026] text-white rounded-3xl p-5 shadow-lg relative overflow-hidden space-y-4">
           <div className="flex items-center justify-between gap-3">
             {/* User Profile Summary */}
             <div className="flex items-center gap-3">
@@ -376,7 +376,7 @@ function AuthenticatedAccountView() {
         <div className="bg-white border border-neutral-200/80 rounded-3xl p-4 shadow-xs space-y-3">
           <div className="flex items-center justify-between">
             <h3 className="text-sm font-bold text-neutral-900">My Orders</h3>
-            <Link href="/orders" className="text-xs font-bold text-[#800020] hover:underline flex items-center gap-0.5">
+            <Link href="/orders" className="text-xs font-bold text-[#0284c7] hover:underline flex items-center gap-0.5">
               <span>View All</span>
               <ChevronRight className="w-3.5 h-3.5" />
             </Link>
@@ -385,34 +385,34 @@ function AuthenticatedAccountView() {
           <div className="grid grid-cols-4 gap-1 text-center pt-1">
             <Link href="/orders?status=PENDING" className="flex flex-col items-center gap-1 group">
               <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
-                <Clock className="w-4 h-4 text-[#800020]" />
+                <Clock className="w-4 h-4 text-[#0284c7]" />
               </div>
               <span className="text-[10px] font-medium text-neutral-600">Pending</span>
-              <span className="text-xs font-extrabold text-[#800020]">{orderCounts.pending}</span>
+              <span className="text-xs font-extrabold text-[#0284c7]">{orderCounts.pending}</span>
             </Link>
 
             <Link href="/orders?status=CONFIRMED" className="flex flex-col items-center gap-1 group">
               <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
-                <CheckCircle2 className="w-4 h-4 text-[#800020]" />
+                <CheckCircle2 className="w-4 h-4 text-[#0284c7]" />
               </div>
               <span className="text-[10px] font-medium text-neutral-600">Confirmed</span>
-              <span className="text-xs font-extrabold text-[#800020]">{orderCounts.confirmed}</span>
+              <span className="text-xs font-extrabold text-[#0284c7]">{orderCounts.confirmed}</span>
             </Link>
 
             <Link href="/orders?status=SHIPPED" className="flex flex-col items-center gap-1 group">
               <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
-                <Truck className="w-4 h-4 text-[#800020]" />
+                <Truck className="w-4 h-4 text-[#0284c7]" />
               </div>
               <span className="text-[10px] font-medium text-neutral-600">Shipped</span>
-              <span className="text-xs font-extrabold text-[#800020]">{orderCounts.shipped}</span>
+              <span className="text-xs font-extrabold text-[#0284c7]">{orderCounts.shipped}</span>
             </Link>
 
             <Link href="/orders?status=DELIVERED" className="flex flex-col items-center gap-1 group">
               <div className="w-9 h-9 rounded-2xl bg-neutral-50 group-hover:bg-rose-50 flex items-center justify-center text-neutral-700 transition-colors">
-                <Package className="w-4 h-4 text-[#800020]" />
+                <Package className="w-4 h-4 text-[#0284c7]" />
               </div>
               <span className="text-[10px] font-medium text-neutral-600">Delivered</span>
-              <span className="text-xs font-extrabold text-[#800020]">{orderCounts.delivered}</span>
+              <span className="text-xs font-extrabold text-[#0284c7]">{orderCounts.delivered}</span>
             </Link>
 
           </div>
@@ -436,7 +436,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
         <div className="divide-y divide-neutral-100">
           <Link href="/profile/edit" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <User className="w-4 h-4 text-[#800020]" />
+              <User className="w-4 h-4 text-[#0284c7]" />
               <span>My Profile</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -444,7 +444,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/profile/addresses" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <MapPin className="w-4 h-4 text-[#800020]" />
+              <MapPin className="w-4 h-4 text-[#0284c7]" />
               <span>Address Book</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -452,7 +452,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/profile/payments" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <CreditCard className="w-4 h-4 text-[#800020]" />
+              <CreditCard className="w-4 h-4 text-[#0284c7]" />
               <span>Payment Methods</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -460,7 +460,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/offers" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <Tag className="w-4 h-4 text-[#800020]" />
+              <Tag className="w-4 h-4 text-[#0284c7]" />
               <span>My Coupons & Offers</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -468,7 +468,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/profile/notifications" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <Bell className="w-4 h-4 text-[#800020]" />
+              <Bell className="w-4 h-4 text-[#0284c7]" />
               <span>Notifications</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -476,7 +476,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/privacy" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <ShieldCheck className="w-4 h-4 text-[#800020]" />
+              <ShieldCheck className="w-4 h-4 text-[#0284c7]" />
               <span>Privacy Settings</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -491,7 +491,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
         <div className="divide-y divide-neutral-100">
           <Link href="/faqs" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <HelpCircle className="w-4 h-4 text-[#800020]" />
+              <HelpCircle className="w-4 h-4 text-[#0284c7]" />
               <span>Help Center</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -499,7 +499,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 
           <Link href="/contact" className="flex items-center justify-between px-4 py-3.5 hover:bg-rose-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
-              <MessageCircle className="w-4 h-4 text-[#800020]" />
+              <MessageCircle className="w-4 h-4 text-[#0284c7]" />
               <span>Contact Us</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -510,9 +510,9 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
       <button
         type="button"
         onClick={onLogout}
-        className="w-full bg-white border border-rose-200 text-[#800020] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs shadow-xs active:scale-[0.98] transition-all"
+        className="w-full bg-white border border-rose-200 text-[#0284c7] hover:bg-rose-50/50 font-bold py-3.5 px-4 rounded-2xl flex items-center justify-center gap-2 text-xs shadow-xs active:scale-[0.98] transition-all"
       >
-        <LogOut className="w-4 h-4 text-[#800020]" />
+        <LogOut className="w-4 h-4 text-[#0284c7]" />
         <span>Logout</span>
       </button>
     </div>

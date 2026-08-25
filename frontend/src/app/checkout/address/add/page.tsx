@@ -51,7 +51,7 @@ export default function AddAddressPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/checkout/address/add" className="text-sm font-bold text-[#800020]">
+        <Link href="/login?redirect=/checkout/address/add" className="text-sm font-bold text-[#0284c7]">
           Login required
         </Link>
       </div>
@@ -98,7 +98,7 @@ export default function AddAddressPage() {
         <Link href="/checkout/address" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Add Address</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Add Address</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1">
@@ -163,7 +163,7 @@ export default function AddAddressPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#800020] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
+            className="w-full bg-[#0284c7] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
           >
             {loading ? 'Saving…' : 'Save Address'}
           </button>

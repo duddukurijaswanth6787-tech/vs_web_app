@@ -73,7 +73,7 @@ import { setLastCreatedProduct } from '../services/product-draft';
  */
 
 const COLOR_PRESETS = [
-  { name: 'Maroon', hex: '#800020' },
+  { name: 'Maroon', hex: '#0284c7' },
   { name: 'Emerald Green', hex: '#0E6251' },
   { name: 'Royal Blue', hex: '#1B4F72' },
   { name: 'Pastel Pink', hex: '#FADBD8' },
@@ -200,7 +200,7 @@ export default function AddProductScreen() {
   const [colorGroups, setColorGroups] = useState<ColorGroupDraft[]>([]);
   const [activeColorId, setActiveColorId] = useState('');
   const [newColorName, setNewColorName] = useState('');
-  const [newColorHex, setNewColorHex] = useState('#800020');
+  const [newColorHex, setNewColorHex] = useState('#0284c7');
   /** Shot type per image, keyed by URI; sent as the media title on save. */
   const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
   /** Colour group id currently uploading its swatch photo, or '' when idle. */
@@ -1837,14 +1837,14 @@ export default function AddProductScreen() {
                   onPress={() => setChannel(value)}
                   activeOpacity={0.85}
                 >
-                  <Icon size={20} color={selected ? '#800020' : '#9ca3af'} style={{ marginRight: 12 }} />
+                  <Icon size={20} color={selected ? '#0284c7' : '#9ca3af'} style={{ marginRight: 12 }} />
                   <View style={{ flex: 1 }}>
                     <Text style={[styles.channelCardTitle, selected && styles.channelCardTitleActive]}>
                       {label}
                     </Text>
                     <Text style={styles.channelCardDesc}>{desc}</Text>
                   </View>
-                  {selected && <Check size={18} color="#800020" />}
+                  {selected && <Check size={18} color="#0284c7" />}
                 </TouchableOpacity>
               );
             })}
@@ -2123,9 +2123,9 @@ const styles = StyleSheet.create({
     padding: 14,
     marginBottom: 12,
   },
-  channelCardActive: { borderColor: '#800020', backgroundColor: '#fdf2f4' },
+  channelCardActive: { borderColor: '#0284c7', backgroundColor: '#fdf2f4' },
   channelCardTitle: { fontSize: 13, fontWeight: '700', color: '#1f2937' },
-  channelCardTitleActive: { color: '#800020' },
+  channelCardTitleActive: { color: '#0284c7' },
   channelCardDesc: { fontSize: 11, color: '#6b7280', marginTop: 2, lineHeight: 15 },
   label: { fontSize: 12, fontWeight: '700', color: '#374151', marginTop: 16, marginBottom: 6 },
   input: {

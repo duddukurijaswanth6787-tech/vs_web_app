@@ -58,7 +58,7 @@ export default function ResetPasswordPage() {
         <Link href="/login" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Reset Password</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Reset Password</h1>
         <div className="w-6" />
       </header>
 
@@ -74,7 +74,7 @@ export default function ResetPasswordPage() {
             <p className="text-xs text-neutral-500">You can now log in with your new password.</p>
             <button
               onClick={() => router.push('/login')}
-              className="w-full bg-[#800020] hover:bg-[#600018] text-white text-sm font-bold py-3 rounded-xl"
+              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-sm font-bold py-3 rounded-xl"
             >
               Go to Login
             </button>
@@ -85,7 +85,7 @@ export default function ResetPasswordPage() {
             <p className="text-xs text-neutral-500">Reset links expire 15 minutes after they're requested.</p>
             <Link
               href="/forgot-password"
-              className="block w-full bg-[#800020] hover:bg-[#600018] text-white text-sm font-bold py-3 rounded-xl text-center"
+              className="block w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-sm font-bold py-3 rounded-xl text-center"
             >
               Request a New Link
             </Link>
@@ -125,7 +125,7 @@ export default function ResetPasswordPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
             >
               {loading ? 'Resetting…' : 'Reset Password'}
             </button>

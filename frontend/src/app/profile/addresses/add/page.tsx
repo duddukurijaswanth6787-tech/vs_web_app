@@ -55,7 +55,7 @@ export default function ProfileAddAddressPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/addresses/add" className="text-sm font-bold text-[#800020]">
+        <Link href="/login?redirect=/profile/addresses/add" className="text-sm font-bold text-[#0284c7]">
           Login required
         </Link>
       </div>
@@ -124,7 +124,7 @@ export default function ProfileAddAddressPage() {
           <Link href="/profile/addresses" className="p-1 rounded-lg hover:bg-neutral-100">
             <ArrowLeft className="w-5 h-5 text-neutral-700" />
           </Link>
-          <h1 className="text-lg font-bold font-serif text-[#800020]">Add New Address</h1>
+          <h1 className="text-lg font-bold font-serif text-[#0284c7]">Add New Address</h1>
         </div>
 
         <form onSubmit={onSubmit} className="bg-white border border-neutral-200/90 rounded-3xl p-6 space-y-4 shadow-xs">
@@ -149,7 +149,7 @@ export default function ProfileAddAddressPage() {
                   onClick={() => setForm((f) => ({ ...f, label }))}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                     form.label === label
-                      ? 'border-[#800020] bg-rose-50/70 text-[#800020]'
+                      ? 'border-[#0284c7] bg-rose-50/70 text-[#0284c7]'
                       : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                   }`}
                 >
@@ -306,7 +306,7 @@ export default function ProfileAddAddressPage() {
               type="checkbox"
               checked={form.isDefaultShipping}
               onChange={(e) => setForm((f) => ({ ...f, isDefaultShipping: e.target.checked }))}
-              className="w-4 h-4 accent-[#800020] rounded-md"
+              className="w-4 h-4 accent-[#0284c7] rounded-md"
             />
             <span className="text-xs font-semibold text-neutral-800">Set as default delivery address</span>
           </label>
@@ -314,7 +314,7 @@ export default function ProfileAddAddressPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#800020] hover:bg-[#600018] text-white text-sm font-bold py-3.5 rounded-xl disabled:opacity-60 transition-all shadow-xs"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-sm font-bold py-3.5 rounded-xl disabled:opacity-60 transition-all shadow-xs"
           >
             {loading ? 'Saving…' : 'Save Address'}
           </button>

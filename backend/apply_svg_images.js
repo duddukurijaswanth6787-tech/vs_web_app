@@ -23,7 +23,7 @@ function createFashionSvg(title, subtitle, bg1, bg2, accentColor = '#D4AF37', is
 }
 
 const CATEGORY_STYLE_MAP = {
-  'indo-western': { title: 'Indo Western', subtitle: 'LUXURY FUSION', bg1: '#800020', bg2: '#3A000E' },
+  'indo-western': { title: 'Indo Western', subtitle: 'LUXURY FUSION', bg1: '#0284c7', bg2: '#3A000E' },
   'party-wear': { title: 'Party Wear', subtitle: 'EVENING GOWNS', bg1: '#0F382C', bg2: '#051A14' },
   'kurta-sets': { title: 'Kurta Sets', subtitle: 'ANARKALI & SUITS', bg1: '#9E2A2B', bg2: '#4A1212' },
   'ethnic-wear': { title: 'Ethnic Wear', subtitle: 'HERITAGE WEAVE', bg1: '#1B263B', bg2: '#0D131D' },
@@ -32,7 +32,7 @@ const CATEGORY_STYLE_MAP = {
   'lehengas': { title: 'Lehengas', subtitle: 'BRIDAL & COUTURE', bg1: '#7209B7', bg2: '#360457' },
   'office-wear': { title: 'Office Wear', subtitle: 'WORK ETHNIC', bg1: '#2B2D42', bg2: '#14151F' },
   'casual-wear': { title: 'Casual Wear', subtitle: 'EVERYDAY COTTONS', bg1: '#C05C46', bg2: '#57281D' },
-  'wedding-collection': { title: 'Wedding Collection', subtitle: 'ROYAL BRIDAL', bg1: '#800020', bg2: '#200008' },
+  'wedding-collection': { title: 'Wedding Collection', subtitle: 'ROYAL BRIDAL', bg1: '#0284c7', bg2: '#200008' },
 };
 
 async function main() {
@@ -44,7 +44,7 @@ async function main() {
     const config = CATEGORY_STYLE_MAP[cat.slug] || {
       title: cat.name,
       subtitle: 'VASANTHI DESIGNERS',
-      bg1: '#800020',
+      bg1: '#0284c7',
       bg2: '#3D000F',
     };
     const svgData = createFashionSvg(config.title, config.subtitle, config.bg1, config.bg2, '#D4AF37', true);
@@ -64,7 +64,7 @@ async function main() {
 
   const products = await prisma.product.findMany({ include: { media: true } });
   for (const prod of products) {
-    const prodSvg = createFashionSvg(prod.name, 'VASANTHI DESIGNERS', '#800020', '#3D000F', '#FFD700', false);
+    const prodSvg = createFashionSvg(prod.name, 'VASANTHI DESIGNERS', '#0284c7', '#3D000F', '#FFD700', false);
 
     if (prod.media.length > 0) {
       for (const m of prod.media) {

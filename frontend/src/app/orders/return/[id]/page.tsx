@@ -50,7 +50,7 @@ export default function OrderReturnPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href={`/login?redirect=/orders/return/${orderNumber}`} className="text-sm font-bold text-[#800020]">
+        <Link href={`/login?redirect=/orders/return/${orderNumber}`} className="text-sm font-bold text-[#0284c7]">
           Login to request return
         </Link>
       </div>
@@ -80,7 +80,7 @@ export default function OrderReturnPage() {
             <label className="block text-sm font-bold mb-2">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border p-3 rounded-xl h-32" placeholder="Tell us more..." />
           </div>
-          <button disabled={loading} type="submit" className="w-full bg-[#800020] text-white py-3 rounded-xl font-bold">
+          <button disabled={loading} type="submit" className="w-full bg-[#0284c7] text-white py-3 rounded-xl font-bold">
             {loading ? 'Submitting...' : 'Submit Return Request'}
           </button>
           {error && <p className="text-red-600 text-sm">{error}</p>}

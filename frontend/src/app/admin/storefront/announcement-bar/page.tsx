@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 
 const COLOR_PRESETS = [
-  { name: 'Signature Maroon', bg: '#800020', text: '#FFFFFF' },
+  { name: 'Signature Maroon', bg: '#0284c7', text: '#FFFFFF' },
   { name: 'Royal Gold', bg: '#D4AF37', text: '#0A0A0A' },
   { name: 'Midnight Black', bg: '#171717', text: '#F59E0B' },
   { name: 'Deep Navy', bg: '#0F2C59', text: '#FFFFFF' },
@@ -56,7 +56,7 @@ export default function AnnouncementBarAdminPage() {
   const [text, setText] = useState<string>('Festive Sale is Live! Get up to 30% OFF');
   const [link, setLink] = useState<string>('/offers');
   const [linkText, setLinkText] = useState<string>('Shop Now →');
-  const [bgColor, setBgColor] = useState<string>('#800020');
+  const [bgColor, setBgColor] = useState<string>('#0284c7');
   const [textColor, setTextColor] = useState<string>('#FFFFFF');
 
   const [previewDevice, setPreviewDevice] = useState<'desktop' | 'mobile'>('desktop');
@@ -71,7 +71,7 @@ export default function AnnouncementBarAdminPage() {
     if (announcementTextSetting) setText(announcementTextSetting.value || '');
     if (announcementLinkSetting) setLink(announcementLinkSetting.value || '/offers');
     if (announcementLinkTextSetting) setLinkText(announcementLinkTextSetting.value || 'Shop Now →');
-    if (announcementBgColorSetting) setBgColor(announcementBgColorSetting.value || '#800020');
+    if (announcementBgColorSetting) setBgColor(announcementBgColorSetting.value || '#0284c7');
     if (announcementTextColorSetting) setTextColor(announcementTextColorSetting.value || '#FFFFFF');
   }
 
@@ -122,7 +122,7 @@ export default function AnnouncementBarAdminPage() {
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-white p-5 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-[#800020]/10 text-[#800020] rounded-xl shrink-0">
+          <div className="p-3 bg-[#0284c7]/10 text-[#0284c7] rounded-xl shrink-0">
             <Megaphone className="w-6 h-6" />
           </div>
           <div>
@@ -141,7 +141,7 @@ export default function AnnouncementBarAdminPage() {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="flex-1 sm:flex-none justify-center bg-[#800020] hover:bg-[#660019] text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm min-h-[40px] disabled:opacity-50"
+            className="flex-1 sm:flex-none justify-center bg-[#0284c7] hover:bg-[#660019] text-white font-bold py-2.5 px-5 rounded-xl text-xs transition-all flex items-center gap-2 shadow-sm min-h-[40px] disabled:opacity-50"
           >
             {isSaving ? <ButtonLoader /> : <Save className="w-4 h-4" />}
             <span>{isSaving ? 'Updating...' : 'Save & Publish Live'}</span>
@@ -166,14 +166,14 @@ export default function AnnouncementBarAdminPage() {
           <div className="flex items-center bg-white p-1 rounded-lg border border-neutral-200 gap-1">
             <button
               onClick={() => setPreviewDevice('desktop')}
-              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${previewDevice === 'desktop' ? 'bg-[#800020] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${previewDevice === 'desktop' ? 'bg-[#0284c7] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
             >
               <Monitor className="w-3.5 h-3.5" />
               <span>Desktop</span>
             </button>
             <button
               onClick={() => setPreviewDevice('mobile')}
-              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${previewDevice === 'mobile' ? 'bg-[#800020] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
+              className={`p-1.5 rounded-md text-xs font-semibold flex items-center gap-1.5 transition-all ${previewDevice === 'mobile' ? 'bg-[#0284c7] text-white' : 'text-neutral-600 hover:bg-neutral-100'}`}
             >
               <Smartphone className="w-3.5 h-3.5" />
               <span>Mobile</span>
@@ -208,7 +208,7 @@ export default function AnnouncementBarAdminPage() {
 
             {/* Fake Store Header mock below preview */}
             <div className="bg-white border-t border-neutral-200 p-3 flex items-center justify-between">
-              <span className="font-serif font-bold text-sm text-[#800020]">Vasanthi&apos;s Signature</span>
+              <span className="font-serif font-bold text-sm text-[#0284c7]">Vasanthi&apos;s Signature</span>
               <span className="text-[10px] text-neutral-400 font-mono">Store Navigation Mock</span>
             </div>
           </div>
@@ -220,7 +220,7 @@ export default function AnnouncementBarAdminPage() {
         <div className="lg:col-span-2 space-y-6">
           <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-6">
             <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2 border-b border-neutral-100 pb-3">
-              <Type className="w-4 h-4 text-[#800020]" />
+              <Type className="w-4 h-4 text-[#0284c7]" />
               Announcement Content & Controls
             </h2>
 
@@ -232,7 +232,7 @@ export default function AnnouncementBarAdminPage() {
                   type="checkbox"
                   checked={barEnabled}
                   onChange={(e) => setBarEnabled(e.target.checked)}
-                  className="h-4.5 w-4.5 rounded-md border-neutral-300 text-[#800020] focus:ring-[#800020] cursor-pointer"
+                  className="h-4.5 w-4.5 rounded-md border-neutral-300 text-[#0284c7] focus:ring-[#0284c7] cursor-pointer"
                 />
               </label>
 
@@ -242,7 +242,7 @@ export default function AnnouncementBarAdminPage() {
                   type="checkbox"
                   checked={mobileEnabled}
                   onChange={(e) => setMobileEnabled(e.target.checked)}
-                  className="h-4.5 w-4.5 rounded-md border-neutral-300 text-[#800020] focus:ring-[#800020] cursor-pointer"
+                  className="h-4.5 w-4.5 rounded-md border-neutral-300 text-[#0284c7] focus:ring-[#0284c7] cursor-pointer"
                 />
               </label>
             </div>
@@ -258,7 +258,7 @@ export default function AnnouncementBarAdminPage() {
                 value={text}
                 onChange={(e) => setText(e.target.value)}
                 placeholder="e.g. Festive Sale is Live! Get up to 30% OFF Shop Now"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-3 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-3 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
               />
             </div>
 
@@ -274,7 +274,7 @@ export default function AnnouncementBarAdminPage() {
                   value={linkText}
                   onChange={(e) => setLinkText(e.target.value)}
                   placeholder="e.g. Shop Now →"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
                 />
               </div>
 
@@ -288,7 +288,7 @@ export default function AnnouncementBarAdminPage() {
                   value={link}
                   onChange={(e) => setLink(e.target.value)}
                   placeholder="e.g. /offers or /collections"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
                 />
               </div>
             </div>
@@ -297,7 +297,7 @@ export default function AnnouncementBarAdminPage() {
           {/* Color Customization Box */}
           <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-6">
             <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2 border-b border-neutral-100 pb-3">
-              <Palette className="w-4 h-4 text-[#800020]" />
+              <Palette className="w-4 h-4 text-[#0284c7]" />
               Color Scheme & Theme
             </h2>
 
@@ -334,7 +334,7 @@ export default function AnnouncementBarAdminPage() {
                     type="text"
                     value={bgColor}
                     onChange={(e) => setBgColor(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
                   />
                 </div>
               </div>
@@ -352,7 +352,7 @@ export default function AnnouncementBarAdminPage() {
                     type="text"
                     value={textColor}
                     onChange={(e) => setTextColor(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
                   />
                 </div>
               </div>
@@ -375,10 +375,10 @@ export default function AnnouncementBarAdminPage() {
                   key={idx}
                   type="button"
                   onClick={() => applyPreset(p.text, p.linkText, p.link)}
-                  className="w-full text-left p-3 bg-neutral-50 hover:bg-[#800020]/5 hover:border-[#800020]/30 rounded-xl border border-neutral-200 transition-all space-y-1 group"
+                  className="w-full text-left p-3 bg-neutral-50 hover:bg-[#0284c7]/5 hover:border-[#0284c7]/30 rounded-xl border border-neutral-200 transition-all space-y-1 group"
                 >
-                  <p className="text-xs font-semibold text-neutral-800 group-hover:text-[#800020] line-clamp-2">{p.text}</p>
-                  <span className="text-[10px] font-bold text-[#800020] underline inline-block">{p.linkText}</span>
+                  <p className="text-xs font-semibold text-neutral-800 group-hover:text-[#0284c7] line-clamp-2">{p.text}</p>
+                  <span className="text-[10px] font-bold text-[#0284c7] underline inline-block">{p.linkText}</span>
                 </button>
               ))}
             </div>

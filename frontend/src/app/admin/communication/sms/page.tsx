@@ -67,7 +67,7 @@ export default function SmsGatewayAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <PhoneCall className="w-6 h-6 text-[#800020]" />
+            <PhoneCall className="w-6 h-6 text-[#0284c7]" />
             <span>SMS Provider Gateway & Logs</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -102,7 +102,7 @@ export default function SmsGatewayAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Send className="w-4 h-4 text-[#800020]" />
+          <Send className="w-4 h-4 text-[#0284c7]" />
           <span>Send Customer SMS Message</span>
         </h2>
 
@@ -117,7 +117,7 @@ export default function SmsGatewayAdminPage() {
                 value={mobileNumber}
                 onChange={(e) => setMobileNumber(e.target.value)}
                 placeholder="9876543210"
-                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
               />
             </div>
             <div className="space-y-1">
@@ -125,7 +125,7 @@ export default function SmsGatewayAdminPage() {
               <select
                 value={template}
                 onChange={(e) => setTemplate(e.target.value)}
-                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:border-[#800020]"
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
               >
                 <option value="CUSTOM">CUSTOM</option>
                 <option value="ORDER_CONFIRMED">ORDER_CONFIRMED</option>
@@ -143,14 +143,14 @@ export default function SmsGatewayAdminPage() {
               required
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              className="w-full border border-neutral-300 rounded-xl p-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl p-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+            className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{loading ? 'Sending…' : 'Send SMS Message'}</span>
@@ -179,7 +179,7 @@ export default function SmsGatewayAdminPage() {
                   <tr key={String(log.id || idx)} className="border-t border-neutral-100">
                     <td className="px-3 py-2 font-mono">{String(log.phone || '')}</td>
                     <td className="px-3 py-2">{String(log.template || '')}</td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{String(log.status || '')}</td>
+                    <td className="px-3 py-2 font-bold text-[#0284c7]">{String(log.status || '')}</td>
                     <td className="px-3 py-2 text-neutral-600 line-clamp-1 max-w-xs">{String(log.message || '')}</td>
                     <td className="px-3 py-2 text-neutral-500">
                       {log.createdAt ? new Date(String(log.createdAt)).toLocaleString() : '—'}

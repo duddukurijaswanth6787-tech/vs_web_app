@@ -20,7 +20,7 @@ import {
   Legend,
 } from 'recharts';
 
-const CATEGORY_COLORS = ['#800020', '#c2410c', '#a16207', '#4d7c0f', '#0f766e', '#1d4ed8', '#7e22ce', '#be185d'];
+const CATEGORY_COLORS = ['#0284c7', '#c2410c', '#a16207', '#4d7c0f', '#0f766e', '#1d4ed8', '#7e22ce', '#be185d'];
 
 const formatCurrency = (val: number) => {
   return new Intl.NumberFormat('en-IN', {
@@ -100,7 +100,7 @@ export default function ProductAnalyticsPage() {
                     formatter={(val: unknown, key) => [key === 'revenue' ? formatCurrency(val as number) : `${val} units`, key === 'revenue' ? 'Revenue' : 'Units Sold']}
                     contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
                   />
-                  <Bar dataKey="revenue" fill="#800020" radius={[0, 6, 6, 0]} maxBarSize={18} />
+                  <Bar dataKey="revenue" fill="#0284c7" radius={[0, 6, 6, 0]} maxBarSize={18} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (

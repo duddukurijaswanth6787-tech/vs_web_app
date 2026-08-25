@@ -171,7 +171,7 @@ export default function CustomerAnalyticsPage() {
                   formatter={(val: unknown) => [`${val} customers`, 'Count']}
                   contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
                 />
-                <Bar dataKey="count" fill="#800020" radius={[6, 6, 0, 0]} maxBarSize={80} />
+                <Bar dataKey="count" fill="#0284c7" radius={[6, 6, 0, 0]} maxBarSize={80} />
               </BarChart>
             </ResponsiveContainer>
           </div>

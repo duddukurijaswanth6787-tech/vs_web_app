@@ -74,7 +74,7 @@ export default function AdminAiChatPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Bot className="w-6 h-6 text-[#800020]" />
+            <Bot className="w-6 h-6 text-[#0284c7]" />
             <span>Admin AI Assistant Chat Console</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -104,7 +104,7 @@ export default function AdminAiChatPage() {
               }`}
             >
               <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                m.role === 'USER' ? 'bg-neutral-900 text-white' : 'bg-[#800020] text-white shadow-2xs'
+                m.role === 'USER' ? 'bg-neutral-900 text-white' : 'bg-[#0284c7] text-white shadow-2xs'
               }`}>
                 {m.role === 'USER' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
               </div>
@@ -126,7 +126,7 @@ export default function AdminAiChatPage() {
 
           {isLoading && (
             <div className="flex items-center gap-2 text-xs text-neutral-400 font-medium italic pl-11">
-              <Sparkles className="w-3.5 h-3.5 animate-spin text-[#800020]" />
+              <Sparkles className="w-3.5 h-3.5 animate-spin text-[#0284c7]" />
               <span>Vasanthi AI is thinking...</span>
             </div>
           )}
@@ -140,13 +140,13 @@ export default function AdminAiChatPage() {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask AI assistant (e.g. 'Show revenue breakdown for Banarasi sarees this week')..."
-            className="flex-1 border border-neutral-300 rounded-2xl px-4 py-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            className="flex-1 border border-neutral-300 rounded-2xl px-4 py-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
 
           <button
             type="submit"
             disabled={isLoading}
-            className="bg-[#800020] hover:bg-[#600018] text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="bg-[#0284c7] hover:bg-[#0B3B78] text-white font-extrabold text-xs px-5 py-3 rounded-2xl shadow-md transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Send</span>

@@ -40,7 +40,7 @@ export const StepVariants = () => {
         <input placeholder="Size" value={size} onChange={e => setSize(e.target.value)} className="border p-2 rounded" />
         <input type="number" placeholder="Price" value={price} onChange={e => setPrice(Number(e.target.value))} className="border p-2 rounded" />
         <input type="number" placeholder="Stock" value={stock} onChange={e => setStock(Number(e.target.value))} className="border p-2 rounded" />
-        <button type="button" onClick={addVariant} className="col-span-4 bg-[#800020] text-white py-2 rounded-lg flex items-center justify-center gap-2">
+        <button type="button" onClick={addVariant} className="col-span-4 bg-[#0284c7] text-white py-2 rounded-lg flex items-center justify-center gap-2">
           <Plus className="w-4 h-4" /> Add Variant
         </button>
       </div>

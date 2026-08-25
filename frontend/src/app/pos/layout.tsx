@@ -63,11 +63,11 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
               <Menu className="h-5 w-5" />
             </button>
 
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#800020] p-1">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#0284c7] p-1">
               <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-bold font-serif leading-none text-[#800020]">Shopora POS</p>
+              <p className="text-sm font-bold font-serif leading-none text-[#0284c7]">Shopora POS</p>
               <p className="text-[10px] text-neutral-400 leading-none mt-1">Vasanthi&apos;s Signature — Billing</p>
             </div>
           </div>
@@ -81,7 +81,7 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
                   href={href}
                   className={`flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors ${
                     active
-                      ? 'bg-[#800020]/10 text-[#800020]'
+                      ? 'bg-[#0284c7]/10 text-[#0284c7]'
                       : 'text-neutral-500 hover:bg-neutral-50 hover:text-neutral-800'
                   }`}
                 >

@@ -475,11 +475,11 @@ export default function DesktopPosPage() {
       {/* Top Header & Handoff Action Bar */}
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 mb-4 bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#800020] flex items-center justify-center shadow-2xs overflow-hidden p-1">
+          <div className="w-10 h-10 rounded-xl bg-[#0284c7] flex items-center justify-center shadow-2xs overflow-hidden p-1">
             <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
           </div>
           <div>
-            <h1 className="text-xl font-bold font-serif text-[#800020] leading-none">
+            <h1 className="text-xl font-bold font-serif text-[#0284c7] leading-none">
               Shopora Web POS
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
@@ -565,20 +565,20 @@ export default function DesktopPosPage() {
           {/* Barcode Search Box */}
           <form onSubmit={handleScanSubmit} className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs flex items-center gap-3">
             <div className="relative flex-1">
-              <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#800020]" />
+              <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0284c7]" />
               <input
                 ref={barcodeInputRef}
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 placeholder="Scan barcode or type SKU (e.g. 890100000005)..."
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-11 pr-4 py-2.5 text-xs sm:text-sm text-neutral-900 font-mono font-medium focus:outline-none focus:border-[#800020] focus:ring-2 focus:ring-[#800020]/10"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-11 pr-4 py-2.5 text-xs sm:text-sm text-neutral-900 font-mono font-medium focus:outline-none focus:border-[#0284c7] focus:ring-2 focus:ring-[#0284c7]/10"
               />
             </div>
             <button
               type="submit"
               disabled={scanMutation.isPending}
-              className="bg-[#800020] hover:bg-[#600018] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 shadow-2xs disabled:opacity-50"
+              className="bg-[#0284c7] hover:bg-[#0B3B78] text-white px-5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 shrink-0 shadow-2xs disabled:opacity-50"
             >
               {scanMutation.isPending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -607,7 +607,7 @@ export default function DesktopPosPage() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
             <div className="p-4 border-b border-neutral-100 flex items-center justify-between bg-neutral-50/50">
               <div className="flex items-center gap-2">
-                <ShoppingBag className="w-4.5 h-4.5 text-[#800020]" />
+                <ShoppingBag className="w-4.5 h-4.5 text-[#0284c7]" />
                 <h2 className="text-sm font-bold text-neutral-900">
                   Cart Items ({cart.reduce((s, i) => s + i.quantity, 0)})
                 </h2>
@@ -626,7 +626,7 @@ export default function DesktopPosPage() {
             {/* Item List */}
             {cart.length === 0 ? (
               <div className="p-12 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-rose-50 text-[#800020] flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-full bg-rose-50 text-[#0284c7] flex items-center justify-center mx-auto">
                   <Barcode className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-bold text-neutral-800">Cart is Empty</h3>
@@ -722,7 +722,7 @@ export default function DesktopPosPage() {
                   onChange={(e) => handlePhoneChange(e.target.value)}
                   placeholder="Mobile Number (10 digits)"
                   maxLength={10}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#800020] font-mono"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7] font-mono"
                 />
                 {lookupCustomerMutation.isPending && (
                   <span className="absolute right-3 top-2.5 text-[10px] text-neutral-400 animate-pulse">
@@ -736,7 +736,7 @@ export default function DesktopPosPage() {
                 value={customer.fullName || ''}
                 onChange={(e) => setCustomer((prev) => ({ ...prev, fullName: e.target.value }))}
                 placeholder="Customer Name"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#800020]"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7]"
               />
 
               {customerLookupResult?.found && (
@@ -806,7 +806,7 @@ export default function DesktopPosPage() {
                 onClick={() => setPaymentMethod('UPI')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                   paymentMethod === 'UPI'
-                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
+                    ? 'bg-[#0284c7] text-white border-[#0284c7] shadow-xs'
                     : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
                 }`}
               >
@@ -819,7 +819,7 @@ export default function DesktopPosPage() {
                 onClick={() => setPaymentMethod('CASH')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                   paymentMethod === 'CASH'
-                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
+                    ? 'bg-[#0284c7] text-white border-[#0284c7] shadow-xs'
                     : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
                 }`}
               >
@@ -832,7 +832,7 @@ export default function DesktopPosPage() {
                 onClick={() => setPaymentMethod('CARD')}
                 className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
                   paymentMethod === 'CARD'
-                    ? 'bg-[#800020] text-white border-[#800020] shadow-xs'
+                    ? 'bg-[#0284c7] text-white border-[#0284c7] shadow-xs'
                     : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
                 }`}
               >
@@ -852,7 +852,7 @@ export default function DesktopPosPage() {
                     value={cashTendered}
                     onChange={(e) => setCashTendered(e.target.value)}
                     placeholder={String(grandTotal)}
-                    className="w-28 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-xs font-bold focus:outline-none focus:border-[#800020]"
+                    className="w-28 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-xs font-bold focus:outline-none focus:border-[#0284c7]"
                   />
                 </div>
                 {cashTendered !== '' && (
@@ -884,14 +884,14 @@ export default function DesktopPosPage() {
                   type="number"
                   value={discountTotal}
                   onChange={(e) => setDiscountTotal(Number(e.target.value) || 0)}
-                  className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-right text-xs font-bold focus:outline-none focus:border-[#800020]"
+                  className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-right text-xs font-bold focus:outline-none focus:border-[#0284c7]"
                 />
               </div>
               <div className="flex justify-between text-neutral-600">
                 <span>GST Tax (5%)</span>
                 <span className="font-semibold text-neutral-900">₹{taxTotal}</span>
               </div>
-              <div className="border-t border-neutral-100 pt-2 flex justify-between items-center text-base font-bold text-[#800020]">
+              <div className="border-t border-neutral-100 pt-2 flex justify-between items-center text-base font-bold text-[#0284c7]">
                 <span>Total Payable</span>
                 <span className="text-lg">₹{grandTotal}</span>
               </div>
@@ -913,7 +913,7 @@ export default function DesktopPosPage() {
                 (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal))
               }
               className={`w-full text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
-                offlineSync.isBackendReachable ? 'bg-[#800020] hover:bg-[#600018]' : 'bg-amber-700 hover:bg-amber-800'
+                offlineSync.isBackendReachable ? 'bg-[#0284c7] hover:bg-[#0B3B78]' : 'bg-amber-700 hover:bg-amber-800'
               }`}
             >
               {completeSaleMutation.isPending ? (
@@ -941,7 +941,7 @@ export default function DesktopPosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-2 text-[#800020] font-bold text-sm">
+              <div className="flex items-center gap-2 text-[#0284c7] font-bold text-sm">
                 <Smartphone className="w-5 h-5" />
                 <span>Receive Mobile Handoff</span>
               </div>
@@ -961,7 +961,7 @@ export default function DesktopPosPage() {
                 onChange={(e) => setHandoffPin(e.target.value)}
                 placeholder="582-194"
                 maxLength={7}
-                className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-neutral-900 focus:outline-none focus:border-[#800020]"
+                className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-neutral-900 focus:outline-none focus:border-[#0284c7]"
                 autoFocus
               />
 
@@ -972,7 +972,7 @@ export default function DesktopPosPage() {
               <button
                 type="submit"
                 disabled={adoptMutation.isPending}
-                className="w-full bg-[#800020] text-white py-3 rounded-xl text-xs font-bold hover:bg-[#600018] transition-colors"
+                className="w-full bg-[#0284c7] text-white py-3 rounded-xl text-xs font-bold hover:bg-[#0B3B78] transition-colors"
               >
                 {adoptMutation.isPending ? 'Adopting...' : 'Load Cart on Desktop'}
               </button>
@@ -1023,7 +1023,7 @@ export default function DesktopPosPage() {
               <button
                 onClick={handlePrintReceipt}
                 disabled={receiptPrinting}
-                className="flex-1 bg-[#800020] hover:bg-[#600018] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
+                className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-xs disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
                 <span>{receiptPrinting ? 'Printing…' : 'Print Thermal Invoice'}</span>
@@ -1044,7 +1044,7 @@ export default function DesktopPosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-2 text-[#800020] font-bold text-sm">
+              <div className="flex items-center gap-2 text-[#0284c7] font-bold text-sm">
                 <History className="w-5 h-5" />
                 <span>Customer Order History ({customerLookupResult.fullName})</span>
               </div>
@@ -1075,7 +1075,7 @@ export default function DesktopPosPage() {
                 customerLookupResult.recentOrders?.map((ord) => (
                   <div key={ord.orderId} className="bg-neutral-50 p-3.5 rounded-xl border border-neutral-200 space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-neutral-900">
-                      <span className="text-[#800020]">{ord.orderNumber}</span>
+                      <span className="text-[#0284c7]">{ord.orderNumber}</span>
                       <span>₹{ord.grandTotal}</span>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-neutral-500">
@@ -1111,7 +1111,7 @@ export default function DesktopPosPage() {
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
-              <div className="flex items-center gap-2 text-[#800020] font-bold text-sm">
+              <div className="flex items-center gap-2 text-[#0284c7] font-bold text-sm">
                 <CloudUpload className="w-5 h-5" />
                 <span>Offline Sales Queue ({offlineSync.pendingSales.length})</span>
               </div>
@@ -1127,7 +1127,7 @@ export default function DesktopPosPage() {
               <button
                 onClick={() => offlineSync.syncNow()}
                 disabled={offlineSync.isSyncing || !offlineSync.isBackendReachable}
-                className="shrink-0 flex items-center gap-1.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
+                className="shrink-0 flex items-center gap-1.5 bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-3 py-2 rounded-xl disabled:opacity-50 transition-colors"
               >
                 <RefreshCw className={`w-3.5 h-3.5 ${offlineSync.isSyncing ? 'animate-spin' : ''}`} />
                 <span>Sync Now</span>

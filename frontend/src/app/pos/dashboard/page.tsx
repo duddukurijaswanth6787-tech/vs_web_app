@@ -48,7 +48,7 @@ const PAYMENT_METHOD_COLORS: Record<string, string> = {
   UPI: '#0369a1',
   CARD: '#7e22ce',
   CREDIT: '#ca8a04',
-  SPLIT: '#800020',
+  SPLIT: '#0284c7',
 };
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
@@ -156,7 +156,7 @@ export default function PosDashboardPage() {
     return (
       <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm p-8 max-w-sm text-center space-y-3">
-          <ShieldAlert className="w-8 h-8 text-[#800020] mx-auto" />
+          <ShieldAlert className="w-8 h-8 text-[#0284c7] mx-auto" />
           <h1 className="text-sm font-bold text-neutral-900">Access Restricted</h1>
           <p className="text-xs text-neutral-500 leading-relaxed">
             You don&apos;t have permission to view the Till &amp; Shift Dashboard. Ask a super admin to grant you the
@@ -172,7 +172,7 @@ export default function PosDashboardPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 p-3 sm:p-6 font-sans space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold font-serif text-[#800020]">Till & Shift Dashboard</h1>
+          <h1 className="text-xl font-bold font-serif text-[#0284c7]">Till & Shift Dashboard</h1>
           <p className="text-xs text-neutral-500 mt-1">Cash reconciliation, counter performance, and daily reports.</p>
         </div>
         <input
@@ -186,7 +186,7 @@ export default function PosDashboardPage() {
       {/* Shift Status Panel */}
       <div className="bg-white rounded-2xl border border-neutral-200 shadow-2xs p-5">
         <div className="flex items-center gap-2 mb-4">
-          <Wallet className="w-4 h-4 text-[#800020]" />
+          <Wallet className="w-4 h-4 text-[#0284c7]" />
           <h2 className="text-sm font-bold text-neutral-900">Your Till</h2>
         </div>
 
@@ -215,7 +215,7 @@ export default function PosDashboardPage() {
             {!showCloseForm ? (
               <button
                 onClick={() => setShowCloseForm(true)}
-                className="bg-[#800020] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#600018]"
+                className="bg-[#0284c7] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#0B3B78]"
               >
                 Close Shift
               </button>
@@ -229,13 +229,13 @@ export default function PosDashboardPage() {
                     value={closingCashInput}
                     onChange={(e) => setClosingCashInput(e.target.value)}
                     placeholder="0.00"
-                    className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                    className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
                   />
                 </div>
                 <button
                   onClick={handleCloseShift}
                   disabled={closeShiftMutation.isPending || !closingCashInput}
-                  className="bg-[#800020] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#600018] disabled:opacity-50"
+                  className="bg-[#0284c7] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#0B3B78] disabled:opacity-50"
                 >
                   {closeShiftMutation.isPending ? 'Closing...' : 'Confirm & Close'}
                 </button>
@@ -261,7 +261,7 @@ export default function PosDashboardPage() {
                 type="text"
                 value={terminalId}
                 onChange={(e) => setTerminalId(e.target.value.toUpperCase())}
-                className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
               />
             </div>
             <div>
@@ -272,13 +272,13 @@ export default function PosDashboardPage() {
                 value={openingCashInput}
                 onChange={(e) => setOpeningCashInput(e.target.value)}
                 placeholder="0.00"
-                className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-[#800020]"
+                className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-40 focus:outline-none focus:ring-1 focus:ring-[#0284c7]"
               />
             </div>
             <button
               onClick={handleOpenShift}
               disabled={openShiftMutation.isPending || !openingCashInput}
-              className="bg-[#800020] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#600018] disabled:opacity-50"
+              className="bg-[#0284c7] text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-[#0B3B78] disabled:opacity-50"
             >
               {openShiftMutation.isPending ? 'Opening...' : 'Open Shift'}
             </button>
@@ -388,7 +388,7 @@ export default function PosDashboardPage() {
                   <XAxis dataKey="name" stroke="#a3a3a3" fontSize={10} tickLine={false} />
                   <YAxis stroke="#a3a3a3" fontSize={10} tickLine={false} tickFormatter={(v) => `₹${v}`} />
                   <ChartTooltip formatter={(val: unknown) => [formatCurrency(val as number), 'Revenue']} contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }} />
-                  <Bar dataKey="revenue" fill="#800020" radius={[6, 6, 0, 0]} maxBarSize={50} />
+                  <Bar dataKey="revenue" fill="#0284c7" radius={[6, 6, 0, 0]} maxBarSize={50} />
                 </BarChart>
               </ResponsiveContainer>
             ) : (
@@ -502,7 +502,7 @@ export default function PosDashboardPage() {
             )}
             <button
               onClick={handlePrintReport}
-              className="w-full flex items-center justify-center gap-2 bg-[#800020] text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-[#600018]"
+              className="w-full flex items-center justify-center gap-2 bg-[#0284c7] text-white text-xs font-bold px-4 py-2.5 rounded-lg hover:bg-[#0B3B78]"
             >
               <Printer className="w-3.5 h-3.5" /> Print Report
             </button>

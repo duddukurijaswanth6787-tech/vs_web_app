@@ -55,7 +55,7 @@ export default function SessionSettingsAdminPage() {
         min={1}
         value={form[key]}
         onChange={(e) => setForm((f) => ({ ...f, [key]: Math.max(1, Number(e.target.value) || 1) }))}
-        className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+        className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
       />
       <p className="text-[11px] text-neutral-500">{helper}</p>
     </div>
@@ -66,7 +66,7 @@ export default function SessionSettingsAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Timer className="w-6 h-6 text-[#800020]" />
+            <Timer className="w-6 h-6 text-[#0284c7]" />
             <span>Login Sessions</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -120,7 +120,7 @@ export default function SessionSettingsAdminPage() {
         <button
           type="submit"
           disabled={saving}
-          className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+          className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
         >
           <Save className="w-3.5 h-3.5" />
           <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
@@ -166,7 +166,7 @@ function GoogleAuthSection() {
     <form onSubmit={handleSave} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
       <div>
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <KeyRound className="w-4 h-4 text-[#800020]" />
+          <KeyRound className="w-4 h-4 text-[#0284c7]" />
           <span>Google Sign-In</span>
         </h2>
         <p className="text-xs text-neutral-500 mt-0.5">
@@ -182,7 +182,7 @@ function GoogleAuthSection() {
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           placeholder="123456789-abc...apps.googleusercontent.com"
-          className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+          className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
         />
         <p className="text-[11px] text-neutral-500">
           Not a secret — this is the same ID that's normally embedded directly in frontend JS, so it's shown here
@@ -193,7 +193,7 @@ function GoogleAuthSection() {
       <button
         type="submit"
         disabled={saving}
-        className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+        className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
       >
         <Save className="w-3.5 h-3.5" />
         <span>{saving ? 'Saving…' : 'Save Client ID'}</span>
@@ -256,7 +256,7 @@ function RazorpaySection() {
       <div className="flex items-start justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-            <CreditCard className="w-4 h-4 text-[#800020]" />
+            <CreditCard className="w-4 h-4 text-[#0284c7]" />
             <span>Razorpay</span>
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5">
@@ -277,7 +277,7 @@ function RazorpaySection() {
           value={keyId}
           onChange={(e) => setKeyId(e.target.value)}
           placeholder="rzp_live_... or rzp_test_..."
-          className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+          className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
         />
         <p className="text-[11px] text-neutral-500">
           Not a secret — this is the same ID normally embedded in frontend checkout JS.
@@ -295,7 +295,7 @@ function RazorpaySection() {
             onChange={(e) => setKeySecret(e.target.value)}
             placeholder={config?.keySecretConfigured ? '••••••••••••••••••••' : 'Paste Key Secret'}
             autoComplete="new-password"
-            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
         </div>
         <div className="space-y-1">
@@ -308,7 +308,7 @@ function RazorpaySection() {
             onChange={(e) => setWebhookSecret(e.target.value)}
             placeholder={config?.webhookSecretConfigured ? '••••••••••••••••••••' : 'Paste Webhook Secret'}
             autoComplete="new-password"
-            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
         </div>
       </div>
@@ -320,7 +320,7 @@ function RazorpaySection() {
       <button
         type="submit"
         disabled={saving}
-        className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+        className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
       >
         <Save className="w-3.5 h-3.5" />
         <span>{saving ? 'Saving…' : 'Save Razorpay Settings'}</span>
@@ -361,7 +361,7 @@ function ActiveUserSessionsSection() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div>
           <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-[#800020]" />
+            <KeyRound className="w-4 h-4 text-[#0284c7]" />
             <span>Active Login Sessions ({sessions.length})</span>
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5">

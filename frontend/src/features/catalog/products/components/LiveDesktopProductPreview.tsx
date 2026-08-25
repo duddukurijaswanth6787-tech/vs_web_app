@@ -103,7 +103,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
             onClick={() => setPreviewMode('detail')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               previewMode === 'detail'
-                ? 'bg-[#800020] text-white shadow-xs'
+                ? 'bg-[#0284c7] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
@@ -116,7 +116,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
             onClick={() => setPreviewMode('card')}
             className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
               previewMode === 'card'
-                ? 'bg-[#800020] text-white shadow-xs'
+                ? 'bg-[#0284c7] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
@@ -139,7 +139,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
               <ChevronRight className="w-3 h-3" />
               <span>Catalog</span>
               <ChevronRight className="w-3 h-3" />
-              <span className="text-[#800020] font-bold">{brand}</span>
+              <span className="text-[#0284c7] font-bold">{brand}</span>
               <ChevronRight className="w-3 h-3" />
               <span className="text-neutral-800 font-semibold truncate max-w-[200px]">{title}</span>
             </div>
@@ -161,8 +161,8 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-rose-50/50 to-neutral-100 text-center space-y-3">
-                      <div className="w-14 h-14 rounded-2xl bg-white border border-rose-200 shadow-2xs flex items-center justify-center text-[#800020]">
-                        <Eye className="w-7 h-7 text-[#800020]" />
+                      <div className="w-14 h-14 rounded-2xl bg-white border border-rose-200 shadow-2xs flex items-center justify-center text-[#0284c7]">
+                        <Eye className="w-7 h-7 text-[#0284c7]" />
                       </div>
                       <div className="space-y-1 max-w-xs">
                         <h4 className="text-xs font-bold text-neutral-800 uppercase tracking-wider">Product Media Preview</h4>
@@ -207,7 +207,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                         onClick={() => setActiveImageIndex(idx)}
                         className={`w-16 h-20 rounded-xl overflow-hidden relative shrink-0 border-2 transition-all ${
                           idx === activeImageIndex
-                            ? 'border-[#800020] shadow-sm scale-105'
+                            ? 'border-[#0284c7] shadow-sm scale-105'
                             : 'border-neutral-200 opacity-70 hover:opacity-100'
                         }`}
                       >
@@ -230,7 +230,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                 
                 {/* Brand & Title */}
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#800020] uppercase tracking-widest block">
+                  <span className="text-xs font-bold text-[#0284c7] uppercase tracking-widest block">
                     {brand}
                   </span>
                   <h1 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-900 leading-tight">
@@ -252,7 +252,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                 {/* Price Section */}
                 <div className="p-4 bg-rose-50/60 rounded-2xl border border-rose-100 space-y-1">
                   <div className="flex items-baseline gap-3">
-                    <span className="text-3xl font-extrabold text-[#800020] font-serif">
+                    <span className="text-3xl font-extrabold text-[#0284c7] font-serif">
                       ₹{price.toLocaleString('en-IN')}
                     </span>
                     {hasDiscount && (
@@ -281,7 +281,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                   <div className="space-y-2.5 pt-2">
                     <div className="flex justify-between text-xs">
                       <span className="font-bold text-neutral-900">Color:</span>
-                      <span className="font-bold text-[#800020]">{currentColorGroup?.name}</span>
+                      <span className="font-bold text-[#0284c7]">{currentColorGroup?.name}</span>
                     </div>
 
                     <div className="flex flex-wrap gap-3">
@@ -297,7 +297,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                           }}
                           className={`relative w-9 h-9 rounded-full p-0.5 transition-all duration-200 ${
                             idx === activeColorIndex
-                              ? 'ring-2 ring-offset-2 ring-[#800020] scale-110 shadow-sm'
+                              ? 'ring-2 ring-offset-2 ring-[#0284c7] scale-110 shadow-sm'
                               : 'hover:scale-105 opacity-85 hover:opacity-100 border border-neutral-200'
                           }`}
                         >
@@ -313,7 +313,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                           ) : (
                             <span
                               className="block w-full h-full rounded-full shadow-2xs border border-black/10"
-                              style={{ backgroundColor: group.hex || '#800020' }}
+                              style={{ backgroundColor: group.hex || '#0284c7' }}
                             />
                           )}
                         </button>
@@ -326,7 +326,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                 <div className="space-y-2.5 pt-2">
                   <div className="flex justify-between text-xs">
                     <span className="font-bold text-neutral-900">Select Size:</span>
-                    <span className="text-[#800020] font-bold underline cursor-pointer">Size Chart</span>
+                    <span className="text-[#0284c7] font-bold underline cursor-pointer">Size Chart</span>
                   </div>
 
                   <div className="flex flex-wrap gap-2.5">
@@ -348,7 +348,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                           onClick={() => setSelectedSize(sz.size)}
                           className={`min-w-12 h-11 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center ${
                             isSelected
-                              ? 'border-[#800020] bg-[#800020] text-white shadow-md'
+                              ? 'border-[#0284c7] bg-[#0284c7] text-white shadow-md'
                               : isOutOfStock
                               ? 'border-neutral-200 bg-neutral-100 text-neutral-400 opacity-50 cursor-not-allowed line-through'
                               : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
@@ -366,7 +366,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                   <div className="flex gap-3">
                     <button
                       type="button"
-                      className="flex-1 bg-[#800020] hover:bg-[#600018] text-white font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl shadow-md transition-all hover:scale-102 flex items-center justify-center gap-2"
+                      className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] text-white font-bold text-xs uppercase tracking-wider py-3.5 px-6 rounded-xl shadow-md transition-all hover:scale-102 flex items-center justify-center gap-2"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       <span>ADD TO CART</span>
@@ -385,15 +385,15 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                 {/* Trust Badges */}
                 <div className="grid grid-cols-3 gap-2 pt-2 border-t border-neutral-100 text-center">
                   <div className="p-2.5 bg-neutral-50 rounded-xl space-y-1">
-                    <Truck className="w-4 h-4 text-[#800020] mx-auto" />
+                    <Truck className="w-4 h-4 text-[#0284c7] mx-auto" />
                     <p className="text-[10px] font-bold text-neutral-800">Free Shipping</p>
                   </div>
                   <div className="p-2.5 bg-neutral-50 rounded-xl space-y-1">
-                    <RotateCcw className="w-4 h-4 text-[#800020] mx-auto" />
+                    <RotateCcw className="w-4 h-4 text-[#0284c7] mx-auto" />
                     <p className="text-[10px] font-bold text-neutral-800">10 Days Return</p>
                   </div>
                   <div className="p-2.5 bg-neutral-50 rounded-xl space-y-1">
-                    <ShieldCheck className="w-4 h-4 text-[#800020] mx-auto" />
+                    <ShieldCheck className="w-4 h-4 text-[#0284c7] mx-auto" />
                     <p className="text-[10px] font-bold text-neutral-800">100% Authentic</p>
                   </div>
                 </div>
@@ -420,7 +420,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                   />
                 ) : (
                   <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-rose-50/50 to-neutral-100 text-center space-y-2">
-                    <Eye className="w-6 h-6 text-[#800020]" />
+                    <Eye className="w-6 h-6 text-[#0284c7]" />
                     <span className="text-[10px] font-bold text-neutral-600">Product Card Preview</span>
                   </div>
                 )}
@@ -442,7 +442,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
               </div>
 
               <div className="p-4 space-y-2 text-left">
-                <span className="text-[10px] font-bold text-[#800020] uppercase tracking-wider block">
+                <span className="text-[10px] font-bold text-[#0284c7] uppercase tracking-wider block">
                   {brand}
                 </span>
                 <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 leading-snug">
@@ -451,7 +451,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
 
                 <div className="flex items-center justify-between pt-1">
                   <div className="flex items-baseline gap-2">
-                    <span className="text-sm font-extrabold text-[#800020]">
+                    <span className="text-sm font-extrabold text-[#0284c7]">
                       ₹{price.toLocaleString('en-IN')}
                     </span>
                     {hasDiscount && (

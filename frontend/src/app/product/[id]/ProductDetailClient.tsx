@@ -343,7 +343,7 @@ export function ProductDetailClient() {
         {error && (
           <div className="text-center py-20 bg-red-50 rounded-3xl p-6 border border-red-100 max-w-md mx-auto">
             <p className="text-sm font-bold text-red-700">{getApiErrorMessage(error, 'Product not found')}</p>
-            <Link href="/" className="inline-block mt-4 text-xs font-bold text-[#800020] underline">Back to home</Link>
+            <Link href="/" className="inline-block mt-4 text-xs font-bold text-[#0284c7] underline">Back to home</Link>
           </div>
         )}
 
@@ -351,13 +351,13 @@ export function ProductDetailClient() {
           <>
             {/* Breadcrumb Trail */}
             <nav className="hidden md:flex text-[11px] text-neutral-400 font-bold items-center gap-1.5">
-              <Link href="/" className="hover:text-[#800020]">Home</Link>
+              <Link href="/" className="hover:text-[#0284c7]">Home</Link>
               <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[#800020]">Women</span>
+              <span className="hover:text-[#0284c7]">Women</span>
               <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[#800020]">Ethnic Wear</span>
+              <span className="hover:text-[#0284c7]">Ethnic Wear</span>
               <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[#800020]">Kurta Sets</span>
+              <span className="hover:text-[#0284c7]">Kurta Sets</span>
               <ChevronRight className="w-3 h-3 text-neutral-300" />
               <span className="text-neutral-600 truncate max-w-[180px] md:max-w-none">{product.name}</span>
             </nav>
@@ -377,7 +377,7 @@ export function ProductDetailClient() {
                         type="button"
                         onClick={() => setActiveImage(i)}
                         className={`w-full aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all shrink-0 ${
-                          i === activeImage ? 'border-[#800020] scale-95 shadow-sm' : 'border-transparent opacity-80 hover:opacity-100'
+                          i === activeImage ? 'border-[#0284c7] scale-95 shadow-sm' : 'border-transparent opacity-80 hover:opacity-100'
                         }`}
                       >
                         <div className="relative w-full h-full">
@@ -404,13 +404,13 @@ export function ProductDetailClient() {
                       />
                       <div className="absolute inset-0 flex items-center justify-center z-10">
                         <div className="w-7 h-7 rounded-full bg-white/90 flex items-center justify-center shadow-xs">
-                          <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[8px] border-l-[#800020] ml-0.5"></div>
+                          <div className="w-0 h-0 border-t-[5px] border-t-transparent border-b-[5px] border-b-transparent border-l-[8px] border-l-[#0284c7] ml-0.5"></div>
                         </div>
                       </div>
                     </div>
                   </div>
                   {/* Scroll Down chevron indicator */}
-                  <button type="button" className="mx-auto text-neutral-400 hover:text-[#800020] p-1">
+                  <button type="button" className="mx-auto text-neutral-400 hover:text-[#0284c7] p-1">
                     <ChevronDown className="w-4 h-4" />
                   </button>
                 </div>
@@ -434,7 +434,7 @@ export function ProductDetailClient() {
                     
                     {/* Discount pill badge */}
                     {discount && (
-                      <span className="absolute top-4 left-4 text-[10px] font-black text-white bg-[#800020] px-3 py-1 rounded-full shadow-md uppercase tracking-widest">
+                      <span className="absolute top-4 left-4 text-[10px] font-black text-white bg-[#0284c7] px-3 py-1 rounded-full shadow-md uppercase tracking-widest">
                         {discount} OFF
                       </span>
                     )}
@@ -464,7 +464,7 @@ export function ProductDetailClient() {
                         <div
                           key={i}
                           className={`h-1.5 rounded-full transition-all ${
-                            i === activeImage ? 'w-4 bg-[#800020]' : 'w-1.5 bg-neutral-300/80'
+                            i === activeImage ? 'w-4 bg-[#0284c7]' : 'w-1.5 bg-neutral-300/80'
                           }`}
                         ></div>
                       ))}
@@ -479,7 +479,7 @@ export function ProductDetailClient() {
                         type="button"
                         onClick={() => setActiveImage(i)}
                         className={`w-14 aspect-[3/4] rounded-lg overflow-hidden border-2 transition-all flex-shrink-0 ${
-                          i === activeImage ? 'border-[#800020] scale-95 shadow-sm' : 'border-transparent opacity-70'
+                          i === activeImage ? 'border-[#0284c7] scale-95 shadow-sm' : 'border-transparent opacity-70'
                         }`}
                       >
                         <div className="relative w-full h-full">
@@ -506,7 +506,7 @@ export function ProductDetailClient() {
                       />
                       <div className="absolute inset-0 flex items-center justify-center z-10">
                         <div className="w-5 h-5 rounded-full bg-white/90 flex items-center justify-center">
-                          <div className="w-0 h-0 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent border-l-[5px] border-l-[#800020] ml-0.5"></div>
+                          <div className="w-0 h-0 border-t-[3px] border-t-transparent border-b-[3px] border-b-transparent border-l-[5px] border-l-[#0284c7] ml-0.5"></div>
                         </div>
                       </div>
                     </div>
@@ -523,7 +523,7 @@ export function ProductDetailClient() {
                 {/* Brand Tag, Title & Ratings */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#800020] bg-rose-50 px-3 py-1 rounded-lg">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0284c7] bg-rose-50 px-3 py-1 rounded-lg">
                       {product.brandName || 'VASANTHI DESIGNERS'}
                     </span>
                   </div>
@@ -544,7 +544,7 @@ export function ProductDetailClient() {
 
                 {/* Pricing Block */}
                 <div className="flex items-baseline gap-3">
-                  <span className="text-2xl font-black text-[#800020]">{formatInr(price)}</span>
+                  <span className="text-2xl font-black text-[#0284c7]">{formatInr(price)}</span>
                   {original > price && (
                     <span className="text-xs font-semibold text-neutral-400 line-through">{formatInr(original)}</span>
                   )}
@@ -570,7 +570,7 @@ export function ProductDetailClient() {
                         <div key={o.code} className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
                           <div className="space-y-0.5">
                             <p className="text-xs font-bold text-neutral-800">{o.label}</p>
-                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">{o.code}</span> — {o.detail}</p>
+                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#0284c7]">{o.code}</span> — {o.detail}</p>
                           </div>
                           <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
                         </div>
@@ -593,7 +593,7 @@ export function ProductDetailClient() {
                             onClick={() => setSelectedColor(color)}
                             className={`px-4 py-2 rounded-xl text-xs font-bold transition-all border ${
                               active 
-                                ? 'bg-[#800020] border-[#800020] text-white shadow-sm' 
+                                ? 'bg-[#0284c7] border-[#0284c7] text-white shadow-sm' 
                                 : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300'
                             }`}
                           >
@@ -613,7 +613,7 @@ export function ProductDetailClient() {
                       <button
                         type="button"
                         onClick={() => setShowSizeChart(true)}
-                        className="text-[10px] font-bold text-[#800020] hover:underline flex items-center gap-1"
+                        className="text-[10px] font-bold text-[#0284c7] hover:underline flex items-center gap-1"
                       >
                         <Ruler className="w-3 h-3" /> Size Guide
                       </button>
@@ -628,7 +628,7 @@ export function ProductDetailClient() {
                             onClick={() => setSelectedSize(size)}
                             className={`w-10 h-10 rounded-full border text-xs font-bold transition-all flex items-center justify-center ${
                               active 
-                                ? 'bg-[#800020] border-[#800020] text-white shadow-sm' 
+                                ? 'bg-[#0284c7] border-[#0284c7] text-white shadow-sm' 
                                 : 'bg-white border-neutral-200 text-neutral-700 hover:border-neutral-300'
                             }`}
                           >
@@ -665,7 +665,7 @@ export function ProductDetailClient() {
                       type="button"
                       disabled={addItem.isPending}
                       onClick={handleAddToCart}
-                      className="flex-1 bg-[#800020] hover:bg-[#600018] active:scale-98 transition-all disabled:opacity-60 text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-rose-900/10"
+                      className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] active:scale-98 transition-all disabled:opacity-60 text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-rose-900/10"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       {addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
@@ -783,7 +783,7 @@ export function ProductDetailClient() {
                         <div key={o.code} className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
                           <div className="space-y-0.5">
                             <p className="text-xs font-bold text-neutral-800">{o.label}</p>
-                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#800020]">{o.code}</span> — {o.detail}</p>
+                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#0284c7]">{o.code}</span> — {o.detail}</p>
                           </div>
                           <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
                         </div>
@@ -804,7 +804,7 @@ export function ProductDetailClient() {
                   type="button"
                   onClick={() => setActiveTab('overview')}
                   className={`pb-3 border-b-2 transition-all ${
-                    activeTab === 'overview' ? 'border-[#800020] text-[#800020]' : 'border-transparent text-neutral-400'
+                    activeTab === 'overview' ? 'border-[#0284c7] text-[#0284c7]' : 'border-transparent text-neutral-400'
                   }`}
                 >
                   Description
@@ -813,7 +813,7 @@ export function ProductDetailClient() {
                   type="button"
                   onClick={() => setActiveTab('care')}
                   className={`pb-3 border-b-2 transition-all ${
-                    activeTab === 'care' ? 'border-[#800020] text-[#800020]' : 'border-transparent text-neutral-400'
+                    activeTab === 'care' ? 'border-[#0284c7] text-[#0284c7]' : 'border-transparent text-neutral-400'
                   }`}
                 >
                   Fabric & Care
@@ -822,7 +822,7 @@ export function ProductDetailClient() {
                   type="button"
                   onClick={() => setActiveTab('shipping')}
                   className={`pb-3 border-b-2 transition-all ${
-                    activeTab === 'shipping' ? 'border-[#800020] text-[#800020]' : 'border-transparent text-neutral-400'
+                    activeTab === 'shipping' ? 'border-[#0284c7] text-[#0284c7]' : 'border-transparent text-neutral-400'
                   }`}
                 >
                   Shipping Info
@@ -831,7 +831,7 @@ export function ProductDetailClient() {
                   type="button"
                   onClick={() => setActiveTab('reviews')}
                   className={`pb-3 border-b-2 transition-all ${
-                    activeTab === 'reviews' ? 'border-[#800020] text-[#800020]' : 'border-transparent text-neutral-400'
+                    activeTab === 'reviews' ? 'border-[#0284c7] text-[#0284c7]' : 'border-transparent text-neutral-400'
                   }`}
                 >
                   Reviews ({reviewSummary.totalReviews.toLocaleString()})
@@ -849,11 +849,11 @@ export function ProductDetailClient() {
                     <div className="pt-4 space-y-2">
                       <p className="text-xs font-bold text-neutral-800">Key Features:</p>
                       <ul className="space-y-2 text-xs text-neutral-700 font-semibold">
-                        <li className="flex items-center gap-2"><span className="text-[#800020] font-bold">✔</span> Floral printed Anarkali kurta with elegant flare</li>
-                        <li className="flex items-center gap-2"><span className="text-[#800020] font-bold">✔</span> Matching bottom with comfortable fit</li>
-                        <li className="flex items-center gap-2"><span className="text-[#800020] font-bold">✔</span> Lightweight floral dupatta with tassels</li>
-                        <li className="flex items-center gap-2"><span className="text-[#800020] font-bold">✔</span> Round neckline with delicate detailing</li>
-                        <li className="flex items-center gap-2"><span className="text-[#800020] font-bold">✔</span> Full length sleeves</li>
+                        <li className="flex items-center gap-2"><span className="text-[#0284c7] font-bold">✔</span> Floral printed Anarkali kurta with elegant flare</li>
+                        <li className="flex items-center gap-2"><span className="text-[#0284c7] font-bold">✔</span> Matching bottom with comfortable fit</li>
+                        <li className="flex items-center gap-2"><span className="text-[#0284c7] font-bold">✔</span> Lightweight floral dupatta with tassels</li>
+                        <li className="flex items-center gap-2"><span className="text-[#0284c7] font-bold">✔</span> Round neckline with delicate detailing</li>
+                        <li className="flex items-center gap-2"><span className="text-[#0284c7] font-bold">✔</span> Full length sleeves</li>
                       </ul>
                       <p className="text-xs text-neutral-500 font-semibold pt-2">
                         <strong>Ideal For:</strong> Festive wear, casual outings, family gatherings, office wear, and day celebrations.
@@ -887,7 +887,7 @@ export function ProductDetailClient() {
                       <button
                         type="button"
                         onClick={() => setShowReviewForm(true)}
-                        className="text-xs font-bold text-[#800020] hover:underline"
+                        className="text-xs font-bold text-[#0284c7] hover:underline"
                       >
                         Write a Review
                       </button>
@@ -958,7 +958,7 @@ export function ProductDetailClient() {
               <div className="border-t border-neutral-100 pt-8 space-y-6">
                 <div className="flex items-center justify-between">
                   <h3 className="text-base font-bold font-serif text-neutral-900 uppercase tracking-wide">You May Also Like</h3>
-                  <Link href="/catalog" className="text-xs font-bold text-[#800020] hover:underline flex items-center gap-0.5">
+                  <Link href="/catalog" className="text-xs font-bold text-[#0284c7] hover:underline flex items-center gap-0.5">
                     View All <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
@@ -984,11 +984,11 @@ export function ProductDetailClient() {
                         <span className="text-[9px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
                           {p.brandName || "VASANTHI'S SIGNATURE"}
                         </span>
-                        <h4 className="text-xs font-bold text-neutral-800 line-clamp-1 group-hover:text-[#800020] transition-colors flex-1">
+                        <h4 className="text-xs font-bold text-neutral-800 line-clamp-1 group-hover:text-[#0284c7] transition-colors flex-1">
                           {p.name}
                         </h4>
                         <div className="flex items-center gap-1.5 mt-2">
-                          <span className="text-xs font-black text-[#800020]">{formatInr(pPrice)}</span>
+                          <span className="text-xs font-black text-[#0284c7]">{formatInr(pPrice)}</span>
                           {p.salePrice && p.basePrice && p.basePrice > p.salePrice && (
                             <span className="text-[10px] text-neutral-400 line-through">{formatInr(p.basePrice)}</span>
                           )}
@@ -1002,7 +1002,7 @@ export function ProductDetailClient() {
 
             {/* Bottom 100% Original Trust Badge Banner */}
             <div className="border border-rose-100 bg-rose-50/30 rounded-2xl p-4 flex items-center justify-center gap-3 max-w-md mx-auto text-center mt-6 shadow-2xs">
-              <Award className="w-6 h-6 text-[#800020] shrink-0" />
+              <Award className="w-6 h-6 text-[#0284c7] shrink-0" />
               <div className="text-left space-y-0.5">
                 <p className="text-xs font-black text-neutral-800 uppercase tracking-wider">100% Original Products</p>
                 <p className="text-[10px] text-neutral-500 font-semibold">Quality you can trust, style you&apos;ll love.</p>
@@ -1043,7 +1043,7 @@ export function ProductDetailClient() {
             <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-100 shadow-[0_-8px_20px_rgba(0,0,0,0.03)] px-4 py-3 flex items-center justify-between md:hidden">
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide">Price</span>
-                <span className="text-lg font-black text-[#800020] leading-none">{formatInr(price)}</span>
+                <span className="text-lg font-black text-[#0284c7] leading-none">{formatInr(price)}</span>
               </div>
               <div className="flex gap-2">
                 <select 
@@ -1058,7 +1058,7 @@ export function ProductDetailClient() {
                   type="button"
                   disabled={addItem.isPending}
                   onClick={handleAddToCart}
-                  className="bg-[#800020] text-white font-bold text-[11px] px-3 py-2.5 rounded-xl hover:bg-[#600018] flex items-center gap-1 shadow-2xs"
+                  className="bg-[#0284c7] text-white font-bold text-[11px] px-3 py-2.5 rounded-xl hover:bg-[#0B3B78] flex items-center gap-1 shadow-2xs"
                 >
                   <ShoppingBag className="w-3.5 h-3.5" />
                   Bag

@@ -34,13 +34,13 @@ export function PromoBannersRow() {
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-2 sm:py-6 space-y-4 sm:space-y-8">
       {coupon && (
-        <div className="bg-[#FAF0F2] border border-rose-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="bg-[#F3F8FF] border border-rose-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-[#800020] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-white flex items-center justify-center shrink-0 shadow-xs">
               <Tag className="w-5 h-5" />
             </div>
             <div>
-              <h4 className="text-sm font-bold text-[#800020] leading-tight">
+              <h4 className="text-sm font-bold text-[#0284c7] leading-tight">
                 {String(coupon.name || 'Special Offer')}
               </h4>
               <p className="text-xs font-medium text-neutral-700">
@@ -48,7 +48,7 @@ export function PromoBannersRow() {
               </p>
             </div>
           </div>
-          <div className="w-full sm:w-auto bg-white border border-dashed border-[#800020] text-[#800020] px-4 py-2 rounded-xl text-xs font-bold text-center tracking-wider shadow-xs">
+          <div className="w-full sm:w-auto bg-white border border-dashed border-[#0284c7] text-[#0284c7] px-4 py-2 rounded-xl text-xs font-bold text-center tracking-wider shadow-xs">
             Use Code: <span className="font-extrabold uppercase">{String(coupon.code || '')}</span>
           </div>
         </div>
@@ -62,7 +62,7 @@ export function PromoBannersRow() {
             </h2>
             <Link
               href="/categories"
-              className="text-xs font-semibold text-[#800020] hover:text-[#600018] flex items-center gap-1"
+              className="text-xs font-semibold text-[#0284c7] hover:text-[#0B3B78] flex items-center gap-1"
             >
               <span>View All</span>
               <ArrowRight className="w-3.5 h-3.5" />

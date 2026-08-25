@@ -50,10 +50,10 @@ export function PromoBannersSection() {
         {categories.map((cat) => (
           <div
             key={cat.id || cat.slug}
-            className="w-[85vw] max-w-[340px] sm:w-[360px] shrink-0 snap-start bg-[#FAF3F3] rounded-3xl p-4 sm:p-5 border border-rose-100/80 shadow-2xs flex items-center justify-between relative overflow-hidden group"
+            className="w-[85vw] max-w-[340px] sm:w-[360px] shrink-0 snap-start bg-[#EAF4FF] rounded-3xl p-4 sm:p-5 border border-rose-100/80 shadow-2xs flex items-center justify-between relative overflow-hidden group"
           >
             <div className="space-y-1.5 max-w-[62%] z-10">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#800020] bg-rose-100/80 px-2 py-0.5 rounded-md">
+              <span className="text-[9px] font-bold uppercase tracking-widest text-[#0284c7] bg-rose-100/80 px-2 py-0.5 rounded-md">
                 FOR YOUR SPECIAL DAY
               </span>
               <h3 className="text-base sm:text-lg font-bold font-serif text-neutral-900 leading-tight">
@@ -64,7 +64,7 @@ export function PromoBannersSection() {
               </p>
               <Link
                 href={`/categories/${cat.slug}`}
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#800020] hover:underline pt-1"
+                className="inline-flex items-center gap-1 text-xs font-bold text-[#0284c7] hover:underline pt-1"
               >
                 <span>Explore Now</span>
                 <span>→</span>

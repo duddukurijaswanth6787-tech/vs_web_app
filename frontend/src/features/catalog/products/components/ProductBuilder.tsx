@@ -60,7 +60,7 @@ interface ProductBuilderProps {
 }
 
 const COLOR_PRESETS = [
-  { name: 'Maroon', hex: '#800020' },
+  { name: 'Maroon', hex: '#0284c7' },
   { name: 'Emerald Green', hex: '#0E6251' },
   { name: 'Royal Blue', hex: '#1B4F72' },
   { name: 'Pastel Pink', hex: '#FADBD8' },
@@ -374,7 +374,7 @@ export default function ProductBuilder({
 
   // Add New Color Group
   const [newColorName, setNewColorName] = useState('');
-  const [newColorHex, setNewColorHex] = useState('#800020');
+  const [newColorHex, setNewColorHex] = useState('#0284c7');
   const [newColorSwatch, setNewColorSwatch] = useState<string | undefined>(undefined);
   const [newColorImages, setNewColorImages] = useState<string[]>([]);
 
@@ -1007,7 +1007,7 @@ export default function ProductBuilder({
         {/* TOP STATUS BAR & HEADER */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-rose-50 text-[#800020] flex items-center justify-center border border-rose-100 shadow-2xs font-serif text-lg sm:text-xl font-bold shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center border border-rose-100 shadow-2xs font-serif text-lg sm:text-xl font-bold shrink-0">
               ❖
             </div>
             <div>
@@ -1048,7 +1048,7 @@ export default function ProductBuilder({
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full sm:w-auto justify-center bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100 min-h-[40px]"
+              className="w-full sm:w-auto justify-center bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100 min-h-[40px]"
             >
               <Save className="w-4 h-4" />
               <span>
@@ -1111,7 +1111,7 @@ export default function ProductBuilder({
                 type="button"
                 onClick={handlePrintAllLabels}
                 disabled={printingSku !== null}
-                className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 disabled:opacity-60 transition-all"
+                className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 disabled:opacity-60 transition-all"
               >
                 <Printer className="w-3.5 h-3.5" />
                 <span>Print All {issuedVariants.length} Labels</span>
@@ -1194,7 +1194,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('basic')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'basic'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1207,7 +1207,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('organisation')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'organisation'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1220,7 +1220,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('pricing')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'pricing'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1233,7 +1233,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('colors')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'colors'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1246,7 +1246,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('sizes')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'sizes'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1259,7 +1259,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('attributes')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'attributes'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1272,7 +1272,7 @@ export default function ProductBuilder({
             onClick={() => setActiveTab('seo')}
             className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
               activeTab === 'seo'
-                ? 'bg-[#800020] text-white shadow-sm'
+                ? 'bg-[#0284c7] text-white shadow-sm'
                 : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
             }`}
           >
@@ -1285,7 +1285,7 @@ export default function ProductBuilder({
         {activeTab === 'basic' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <Package className="w-5 h-5 text-[#800020]" />
+              <Package className="w-5 h-5 text-[#0284c7]" />
               <span>Product Specification & Description</span>
             </h3>
 
@@ -1299,7 +1299,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('name')}
                   placeholder="e.g. Women's Floral Printed Anarkali Kurta Set"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
                 {methods.formState.errors.name && (
                   <p className="text-[11px] font-semibold text-rose-600">
@@ -1313,7 +1313,7 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Brand</label>
                 <select
                   {...methods.register('brandId')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="">Select Brand (or default Vasanthi's Signature)</option>
                   {brands.map((b: { id: string; name: string }) => (
@@ -1334,7 +1334,7 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Product Type</label>
                 <select
                   {...methods.register('type')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="READYMADE">Readymade</option>
                   <option value="UNSTITCHED">Unstitched Fabric</option>
@@ -1347,7 +1347,7 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Gender Target</label>
                 <select
                   {...methods.register('gender')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="WOMEN">Women</option>
                   <option value="GIRLS">Girls</option>
@@ -1362,7 +1362,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('season')}
                   placeholder="e.g. Festive 2026, Summer Silk"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1373,7 +1373,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('shortDescription')}
                   placeholder="Brief 1-sentence product summary displayed under title..."
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1384,7 +1384,7 @@ export default function ProductBuilder({
                   rows={4}
                   {...methods.register('description')}
                   placeholder="Detailed specifications, fabric details, care instructions, craftsmanship..."
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
             </div>
@@ -1395,7 +1395,7 @@ export default function ProductBuilder({
         {activeTab === 'organisation' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <FolderTree className="w-5 h-5 text-[#800020]" />
+              <FolderTree className="w-5 h-5 text-[#0284c7]" />
               <span>Category &amp; Organisation</span>
             </h3>
             <p className="text-[11px] text-neutral-500 -mt-4">
@@ -1414,7 +1414,7 @@ export default function ProductBuilder({
                     setPrimaryCategoryId(e.target.value);
                     setSubCategoryId('');
                   }}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="">Select a category</option>
                   {rootCategories.map((category) => (
@@ -1437,7 +1437,7 @@ export default function ProductBuilder({
                   value={subCategoryId}
                   onChange={(e) => setSubCategoryId(e.target.value)}
                   disabled={!primaryCategoryId || subCategories.length === 0}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20 disabled:opacity-50"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20 disabled:opacity-50"
                 >
                   <option value="">
                     {!primaryCategoryId
@@ -1460,7 +1460,7 @@ export default function ProductBuilder({
                 <select
                   value={occasion}
                   onChange={(e) => setOccasion(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="">Not specified</option>
                   {['Festive', 'Wedding', 'Party', 'Casual', 'Office', 'Daily Wear'].map((o) => (
@@ -1478,7 +1478,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('season')}
                   placeholder="e.g. Festive 2026"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1497,7 +1497,7 @@ export default function ProductBuilder({
                       }
                     }}
                     placeholder="e.g. Festive Collection — press Enter to add"
-                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                   />
                   <button
                     type="button"
@@ -1511,7 +1511,7 @@ export default function ProductBuilder({
                   {collections.map((collection) => (
                     <span
                       key={collection}
-                      className="inline-flex items-center gap-1.5 bg-rose-50 text-[#800020] border border-rose-100 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                      className="inline-flex items-center gap-1.5 bg-rose-50 text-[#0284c7] border border-rose-100 rounded-full px-3 py-1.5 text-[11px] font-bold"
                     >
                       {collection}
                       <button
@@ -1540,7 +1540,7 @@ export default function ProductBuilder({
                       }
                     }}
                     placeholder="e.g. Floral, Rayon, Anarkali — press Enter to add"
-                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                   />
                   <button
                     type="button"
@@ -1572,7 +1572,7 @@ export default function ProductBuilder({
         {activeTab === 'pricing' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <DollarSign className="w-5 h-5 text-[#800020]" />
+              <DollarSign className="w-5 h-5 text-[#0284c7]" />
               <span>Pricing, Discount & Taxes</span>
             </h3>
 
@@ -1586,7 +1586,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('basePrice')}
                   placeholder="2499"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1597,7 +1597,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('salePrice')}
                   placeholder="1799"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1608,7 +1608,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('costPrice')}
                   placeholder="800"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1619,7 +1619,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('wholesalePrice' as any)}
                   placeholder="e.g. 1200"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1630,7 +1630,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('minimumOrderQuantity' as any)}
                   placeholder="1"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1640,7 +1640,7 @@ export default function ProductBuilder({
                   type="number"
                   {...methods.register('maximumOrderQuantity' as any)}
                   placeholder="10"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
 
@@ -1691,7 +1691,7 @@ export default function ProductBuilder({
               {/* Calculated Discount Pill Badge */}
               <div className="md:col-span-3 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <h4 className="text-xs font-bold text-[#800020]">Calculated Customer Discount</h4>
+                  <h4 className="text-xs font-bold text-[#0284c7]">Calculated Customer Discount</h4>
                   <p className="text-[11px] text-neutral-600">
                     MRP: ₹{watchedValues?.basePrice || 0} → Selling Price: ₹{watchedValues?.salePrice || watchedValues?.basePrice || 0}
                   </p>
@@ -1710,7 +1710,7 @@ export default function ProductBuilder({
             <div className="pt-6 border-t border-neutral-100 space-y-4">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Tag className="w-5 h-5 text-[#800020]" />
+                  <Tag className="w-5 h-5 text-[#0284c7]" />
                   <span>Coupons &amp; Offers</span>
                 </h3>
                 <p className="text-xs text-neutral-500 font-medium mt-1">
@@ -1740,7 +1740,7 @@ export default function ProductBuilder({
                                   checked ? prev.filter((id) => id !== c.id) : [...prev, c.id],
                                 )
                               }
-                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]"
+                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#0284c7] focus:ring-[#0284c7]"
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -1783,7 +1783,7 @@ export default function ProductBuilder({
                                   checked ? prev.filter((id) => id !== o.id) : [...prev, o.id],
                                 )
                               }
-                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#800020] focus:ring-[#800020]"
+                              className="h-4 w-4 mt-0.5 rounded border-neutral-300 text-[#0284c7] focus:ring-[#0284c7]"
                             />
                             <div className="flex-1 min-w-0">
                               <div className="flex items-center gap-2 flex-wrap">
@@ -1808,7 +1808,7 @@ export default function ProductBuilder({
               {promoPreviewRows.length > 0 && (
                 <div className="space-y-2.5 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl">
                   <div>
-                    <h4 className="text-xs font-bold text-[#800020]">Preview — what a customer would actually pay</h4>
+                    <h4 className="text-xs font-bold text-[#0284c7]">Preview — what a customer would actually pay</h4>
                     <p className="text-[10px] text-neutral-600 mt-0.5">
                       Based on today&apos;s Selling Price (₹{referencePrice.toLocaleString('en-IN')}). Only the single best discount applies at checkout — a coupon and an offer never stack.
                     </p>
@@ -1822,7 +1822,7 @@ export default function ProductBuilder({
                           {row.note && <p className="text-[9px] text-amber-600 font-medium mt-0.5">{row.note}</p>}
                         </div>
                         <div className="text-right shrink-0">
-                          <p className="text-sm font-black text-[#800020]">₹{row.finalPrice.toLocaleString('en-IN')}</p>
+                          <p className="text-sm font-black text-[#0284c7]">₹{row.finalPrice.toLocaleString('en-IN')}</p>
                           {row.discountAmount > 0 && (
                             <p className="text-[9px] text-neutral-400 line-through">₹{referencePrice.toLocaleString('en-IN')}</p>
                           )}
@@ -1842,7 +1842,7 @@ export default function ProductBuilder({
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-[#800020]" />
+                  <Palette className="w-5 h-5 text-[#0284c7]" />
                   <span>Color Groups & Color-Specific Media Gallery</span>
                 </h3>
                 <p className="text-xs text-neutral-500 font-medium mt-0.5">
@@ -1872,7 +1872,7 @@ export default function ProductBuilder({
             {/* Add Custom Color & Fabric Texture Swatch */}
             <div className="p-5 bg-rose-50/50 rounded-2xl border border-rose-200/80 space-y-4">
               <div className="flex items-center justify-between">
-                <h4 className="text-xs font-bold text-[#800020] uppercase tracking-wider flex items-center gap-1.5">
+                <h4 className="text-xs font-bold text-[#0284c7] uppercase tracking-wider flex items-center gap-1.5">
                   <Plus className="w-4 h-4" />
                   <span>Step 1: Create Color Variant & Upload Fabric Texture Photo</span>
                 </h4>
@@ -1904,13 +1904,13 @@ export default function ProductBuilder({
                       {newColorSwatch ? (
                         <Image src={newColorSwatch} alt="swatch" width={22} height={22} className="w-5 h-5 rounded-full object-cover border border-neutral-300 shadow-2xs" unoptimized />
                       ) : (
-                        <Palette className="w-4 h-4 text-[#800020]" />
+                        <Palette className="w-4 h-4 text-[#0284c7]" />
                       )}
                       <span className="truncate text-xs font-bold text-neutral-800">
                         {newColorSwatch ? '✓ Fabric Texture Photo Uploaded' : 'Upload Fabric Texture Photo'}
                       </span>
                     </div>
-                    <Upload className="w-4 h-4 text-[#800020] shrink-0" />
+                    <Upload className="w-4 h-4 text-[#0284c7] shrink-0" />
                     <input
                       type="file"
                       accept="image/*"
@@ -1939,7 +1939,7 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">GST %</label>
                 <select
                   {...methods.register('taxPercentage')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   {[0, 3, 5, 12, 18, 28].map((rate) => (
                     <option key={rate} value={rate}>
@@ -1956,7 +1956,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('hsnCode')}
                   placeholder="e.g. 6204"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
                 <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
               </div>
@@ -1968,7 +1968,7 @@ export default function ProductBuilder({
                   <input
                     type="checkbox"
                     {...methods.register('taxInclusive')}
-                    className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                    className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                   />
                   <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
                 </label>
@@ -1986,7 +1986,7 @@ export default function ProductBuilder({
                 <button
                   type="button"
                   onClick={() => addColorGroup()}
-                  className="bg-[#800020] text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[#600018] transition-all flex items-center gap-1.5 shadow-md"
+                  className="bg-[#0284c7] text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[#0B3B78] transition-all flex items-center gap-1.5 shadow-md"
                 >
                   <Plus className="w-4 h-4" />
                   <span>+ Create Color Variant</span>
@@ -2005,7 +2005,7 @@ export default function ProductBuilder({
                       onClick={() => setActiveColorTab(group.id)}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all shrink-0 ${
                         activeColorTab === group.id
-                          ? 'border-[#800020] bg-rose-50 text-[#800020] shadow-2xs'
+                          ? 'border-[#0284c7] bg-rose-50 text-[#0284c7] shadow-2xs'
                           : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                       }`}
                     >
@@ -2099,7 +2099,7 @@ export default function ProductBuilder({
                               )}
                             </div>
 
-                            <label className="cursor-pointer text-xs font-bold text-[#800020] bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all">
+                            <label className="cursor-pointer text-xs font-bold text-[#0284c7] bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all">
                               <Upload className="w-3.5 h-3.5" />
                               <span>Upload Custom Swatch Image</span>
                               <input
@@ -2129,17 +2129,17 @@ export default function ProductBuilder({
                               handleLocalImageUpload(cur.id, e.dataTransfer.files);
                             }}
                             onClick={() => fileInputRef.current?.click()}
-                            className="border-2 border-dashed border-rose-200 hover:border-[#800020] bg-white hover:bg-rose-50/40 rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group"
+                            className="border-2 border-dashed border-rose-200 hover:border-[#0284c7] bg-white hover:bg-rose-50/40 rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group"
                           >
-                            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#800020] flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 transition-transform">
-                              <Upload className="w-6 h-6 text-[#800020]" />
+                            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 transition-transform">
+                              <Upload className="w-6 h-6 text-[#0284c7]" />
                             </div>
                             <div>
                               <h5 className="text-xs font-bold text-neutral-800">
                                 Upload Product Images for &quot;{cur.name}&quot;
                               </h5>
                               <p className="text-[11px] text-neutral-500 font-medium mt-0.5">
-                                Drag & drop image files here, or <span className="text-[#800020] font-bold underline">browse local files</span>
+                                Drag & drop image files here, or <span className="text-[#0284c7] font-bold underline">browse local files</span>
                               </p>
                             </div>
                             <span className="inline-block text-[10px] text-neutral-400 font-semibold bg-neutral-100 px-2.5 py-1 rounded-full">
@@ -2159,7 +2159,7 @@ export default function ProductBuilder({
                             <button
                               type="button"
                               onClick={() => addImageToColorGroup(cur.id)}
-                              className="bg-[#800020] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#600018] shrink-0"
+                              className="bg-[#0284c7] text-white text-xs font-bold px-4 py-2.5 rounded-xl hover:bg-[#0B3B78] shrink-0"
                             >
                               + Add URL Image
                             </button>
@@ -2209,7 +2209,7 @@ export default function ProductBuilder({
                                 </div>
 
                                 {idx === 0 ? (
-                                  <span className="absolute bottom-9 left-2 bg-[#800020] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                                  <span className="absolute bottom-9 left-2 bg-[#0284c7] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
                                     PRIMARY
                                   </span>
                                 ) : (
@@ -2255,7 +2255,7 @@ export default function ProductBuilder({
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <div>
               <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <Ruler className="w-5 h-5 text-[#800020]" />
+                <Ruler className="w-5 h-5 text-[#0284c7]" />
                 <span>Color-Wise Sizes, Stock & SKU Management</span>
               </h3>
               <p className="text-xs text-neutral-500 font-medium mt-0.5">
@@ -2276,7 +2276,7 @@ export default function ProductBuilder({
                 <select
                   value={sizeChartTemplateId}
                   onChange={(e) => setSizeChartTemplateId(e.target.value)}
-                  className="w-full sm:w-72 bg-white border border-neutral-200 rounded-xl px-4 py-2.5 text-xs text-neutral-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full sm:w-72 bg-white border border-neutral-200 rounded-xl px-4 py-2.5 text-xs text-neutral-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 >
                   <option value="">No size chart</option>
                   {sizeCharts.map((chart) => (
@@ -2354,7 +2354,7 @@ export default function ProductBuilder({
                           })
                         );
                       }}
-                      className="text-xs font-bold text-[#800020] bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl hover:bg-rose-100 transition-all"
+                      className="text-xs font-bold text-[#0284c7] bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl hover:bg-rose-100 transition-all"
                     >
                       ⚡ Add Standard Sizes (S, M, L, XL, XXL, 3XL)
                     </button>
@@ -2373,7 +2373,7 @@ export default function ProductBuilder({
                             onClick={() => toggleSizeAvailability(group.id, sz.size)}
                             className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-xs transition-all ${
                               sz.available
-                                ? 'bg-[#800020] text-white border-[#800020]'
+                                ? 'bg-[#0284c7] text-white border-[#0284c7]'
                                 : 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
                             }`}
                           >
@@ -2481,7 +2481,7 @@ export default function ProductBuilder({
         {activeTab === 'attributes' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <ListChecks className="w-5 h-5 text-[#800020]" />
+              <ListChecks className="w-5 h-5 text-[#0284c7]" />
               <span>Product Attributes</span>
             </h3>
             <p className="text-[11px] text-neutral-500 -mt-4">
@@ -2509,7 +2509,7 @@ export default function ProductBuilder({
                         <select
                           value={value}
                           onChange={(e) => setAttributeValue(attribute.id, e.target.value)}
-                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                         >
                           <option value="">Not specified</option>
                           {attribute.options?.map((option) => (
@@ -2524,7 +2524,7 @@ export default function ProductBuilder({
                           value={value}
                           onChange={(e) => setAttributeValue(attribute.id, e.target.value)}
                           placeholder={attribute.description || `e.g. ${attribute.name}`}
-                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                         />
                       )}
                     </div>
@@ -2538,7 +2538,7 @@ export default function ProductBuilder({
         {activeTab === 'seo' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
             <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <Tag className="w-5 h-5 text-[#800020]" />
+              <Tag className="w-5 h-5 text-[#0284c7]" />
               <span>Badges, Homepage Display &amp; SEO</span>
             </h3>
 
@@ -2579,7 +2579,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isNewArrival')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">New Arrival Badge</span>
               </label>
@@ -2588,7 +2588,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isBestSeller')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Best Seller Badge</span>
               </label>
@@ -2597,7 +2597,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isFeatured')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Featured Banner</span>
               </label>
@@ -2606,7 +2606,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isTrending')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Trending Section</span>
               </label>
@@ -2615,7 +2615,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isLimitedStock')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Limited Stock</span>
               </label>
@@ -2624,7 +2624,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isFestivePick')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Festive Pick</span>
               </label>
@@ -2633,7 +2633,7 @@ export default function ProductBuilder({
                 <input
                   type="checkbox"
                   {...methods.register('isExclusive')}
-                  className="w-4 h-4 text-[#800020] rounded focus:ring-[#800020]"
+                  className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
                 />
                 <span className="text-xs font-bold text-neutral-800">Exclusive</span>
               </label>
@@ -2681,12 +2681,12 @@ export default function ProductBuilder({
                       onClick={() => methods.setValue('channel', value, { shouldValidate: true, shouldDirty: true })}
                       className={`text-left p-4 rounded-xl border-2 transition-colors ${
                         selected
-                          ? 'border-[#800020] bg-[#800020]/5'
+                          ? 'border-[#0284c7] bg-[#0284c7]/5'
                           : 'border-neutral-200 bg-white hover:border-neutral-300'
                       }`}
                     >
-                      <Icon className={`w-5 h-5 mb-2 ${selected ? 'text-[#800020]' : 'text-neutral-400'}`} />
-                      <div className={`text-xs font-bold ${selected ? 'text-[#800020]' : 'text-neutral-800'}`}>
+                      <Icon className={`w-5 h-5 mb-2 ${selected ? 'text-[#0284c7]' : 'text-neutral-400'}`} />
+                      <div className={`text-xs font-bold ${selected ? 'text-[#0284c7]' : 'text-neutral-800'}`}>
                         {label}
                       </div>
                       <div className="text-[11px] text-neutral-500 mt-1 leading-snug">{desc}</div>
@@ -2724,7 +2724,7 @@ export default function ProductBuilder({
                   type="text"
                   {...methods.register('seoKeywords')}
                   placeholder="anarkali, kurta set, women's ethnic wear, floral kurta"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
                 <p className="text-[10px] text-neutral-400">Comma separated.</p>
               </div>

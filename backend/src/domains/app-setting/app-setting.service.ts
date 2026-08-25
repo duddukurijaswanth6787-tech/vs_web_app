@@ -141,7 +141,7 @@ export class AppSettingService {
     const announcementEnabled = announcementEnabledSetting ? announcementEnabledSetting.value === 'true' : true;
     const announcementLink = announcementLinkSetting ? announcementLinkSetting.value : '/offers';
     const announcementLinkText = announcementLinkTextSetting ? announcementLinkTextSetting.value : 'Shop Now →';
-    const announcementBgColor = announcementBgColorSetting ? announcementBgColorSetting.value : '#800020';
+    const announcementBgColor = announcementBgColorSetting ? announcementBgColorSetting.value : '#0284c7';
     const announcementTextColor = announcementTextColorSetting ? announcementTextColorSetting.value : '#FFFFFF';
 
     return {

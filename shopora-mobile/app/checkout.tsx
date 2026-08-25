@@ -63,7 +63,7 @@ export default function CheckoutScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       ) : (
         <View style={styles.content}>
@@ -140,9 +140,9 @@ const styles = StyleSheet.create({
   rowValue: { fontSize: 13, fontWeight: '600', color: '#1f2937' },
   totalRow: { borderTopWidth: 1, borderTopColor: '#f0e0e4', marginTop: 6, paddingTop: 12 },
   totalLabel: { fontSize: 14, fontWeight: 'bold', color: '#1f2937' },
-  totalValue: { fontSize: 17, fontWeight: 'bold', color: '#800020' },
+  totalValue: { fontSize: 17, fontWeight: 'bold', color: '#0284c7' },
   placeBtn: {
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',

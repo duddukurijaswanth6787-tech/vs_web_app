@@ -48,7 +48,7 @@ export default function ReturnsPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
         <RotateCcw className="w-10 h-10 text-neutral-300" />
         <p className="text-sm text-neutral-600">Login to view your returns</p>
-        <Link href="/login?redirect=/returns" className="bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+        <Link href="/login?redirect=/returns" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
           Login
         </Link>
       </div>
@@ -61,7 +61,7 @@ export default function ReturnsPage() {
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">My Returns</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">My Returns</h1>
       </header>
 
       <main className="max-w-3xl mx-auto w-full px-4 py-6 flex-1 space-y-3">
@@ -71,7 +71,7 @@ export default function ReturnsPage() {
           <div className="text-center py-16 space-y-3">
             <RotateCcw className="w-10 h-10 mx-auto text-neutral-300" />
             <p className="text-sm text-neutral-600">No return requests yet</p>
-            <Link href="/orders" className="inline-block bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+            <Link href="/orders" className="inline-block bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
               View Orders
             </Link>
           </div>

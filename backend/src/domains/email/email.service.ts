@@ -126,7 +126,7 @@ export class EmailService {
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#faf7f5;padding:32px 16px;">
     <tr><td align="center">
       <table role="presentation" width="100%" style="max-width:480px;background:#ffffff;border-radius:16px;overflow:hidden;border:1px solid #f0e4e8;">
-        <tr><td style="background:#800020;padding:24px;text-align:center;">
+        <tr><td style="background:#0284c7;padding:24px;text-align:center;">
           <img src="${logoUrl}" alt="${STORE_NAME}" width="48" height="48" style="border-radius:8px;" />
           <div style="color:#fbe4ea;font-size:12px;letter-spacing:1px;margin-top:8px;">${STORE_NAME.toUpperCase()}</div>
         </td></tr>
@@ -145,10 +145,10 @@ export class EmailService {
 
   async sendPasswordResetEmail(to: string, resetUrl: string, userId?: string) {
     const html = this.layout(`
-      <h2 style="margin:0 0 12px;color:#800020;font-size:18px;">Reset your password</h2>
+      <h2 style="margin:0 0 12px;color:#0284c7;font-size:18px;">Reset your password</h2>
       <p>We received a request to reset the password on your account. This link expires in 15 minutes.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${resetUrl}" style="background:#800020;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Reset Password</a>
+        <a href="${resetUrl}" style="background:#0284c7;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Reset Password</a>
       </p>
       <p style="color:#78716c;font-size:12px;">If you didn't request this, you can safely ignore this email -- your password won't change.</p>
     `);
@@ -159,10 +159,10 @@ export class EmailService {
 
   async sendWelcomeEmail(to: string, firstName: string | undefined, userId?: string) {
     const html = this.layout(`
-      <h2 style="margin:0 0 12px;color:#800020;font-size:18px;">Welcome${firstName ? `, ${firstName}` : ''}!</h2>
+      <h2 style="margin:0 0 12px;color:#0284c7;font-size:18px;">Welcome${firstName ? `, ${firstName}` : ''}!</h2>
       <p>Thank you for creating an account with ${STORE_NAME}. Explore our latest sarees, lehengas and designer wear online.</p>
       <p style="text-align:center;margin:24px 0;">
-        <a href="${this.configService.get<string>('app.frontendUrl')}" style="background:#800020;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Start Shopping</a>
+        <a href="${this.configService.get<string>('app.frontendUrl')}" style="background:#0284c7;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Start Shopping</a>
       </p>
     `);
     return this.send({ to, template: 'WELCOME', subject: `Welcome to ${STORE_NAME}`, html, userId });
@@ -193,7 +193,7 @@ export class EmailService {
     const trackUrl = `${this.configService.get<string>('app.frontendUrl')}/orders/track/${encodeURIComponent(params.orderNumber)}`;
 
     const html = this.layout(`
-      <h2 style="margin:0 0 4px;color:#800020;font-size:18px;">Order confirmed!</h2>
+      <h2 style="margin:0 0 4px;color:#0284c7;font-size:18px;">Order confirmed!</h2>
       <p style="margin:0 0 16px;color:#78716c;">Order #${params.orderNumber}</p>
       <table role="presentation" width="100%" style="font-size:13px;border-collapse:collapse;">
         <thead><tr>
@@ -208,10 +208,10 @@ export class EmailService {
         ${params.discountTotal ? `<tr><td>Discount</td><td style="text-align:right;color:#15803d;">-₹${params.discountTotal.toFixed(2)}</td></tr>` : ''}
         ${params.taxTotal ? `<tr><td>Tax</td><td style="text-align:right;">₹${params.taxTotal.toFixed(2)}</td></tr>` : ''}
         <tr><td>Shipping</td><td style="text-align:right;">${params.shippingCharge ? `₹${params.shippingCharge.toFixed(2)}` : 'FREE'}</td></tr>
-        <tr><td style="font-weight:bold;padding-top:6px;border-top:1px solid #e7e5e4;">Total</td><td style="text-align:right;font-weight:bold;color:#800020;padding-top:6px;border-top:1px solid #e7e5e4;">₹${params.grandTotal.toFixed(2)}</td></tr>
+        <tr><td style="font-weight:bold;padding-top:6px;border-top:1px solid #e7e5e4;">Total</td><td style="text-align:right;font-weight:bold;color:#0284c7;padding-top:6px;border-top:1px solid #e7e5e4;">₹${params.grandTotal.toFixed(2)}</td></tr>
       </table>
       <p style="text-align:center;margin:24px 0 0;">
-        <a href="${trackUrl}" style="background:#800020;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Track Your Order</a>
+        <a href="${trackUrl}" style="background:#0284c7;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Track Your Order</a>
       </p>
     `);
 

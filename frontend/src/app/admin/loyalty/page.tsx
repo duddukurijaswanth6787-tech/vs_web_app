@@ -72,7 +72,7 @@ export default function LoyaltyAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Award className="w-6 h-6 text-[#800020]" />
+            <Award className="w-6 h-6 text-[#0284c7]" />
             <span>Loyalty Program Management</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -96,7 +96,7 @@ export default function LoyaltyAdminPage() {
           {statsLoading ? (
             <span className="text-xs text-neutral-400">Loading...</span>
           ) : (
-            <span className="text-2xl font-black text-[#800020]">{(stats?.totalPointsIssued ?? 0).toLocaleString('en-IN')} pts</span>
+            <span className="text-2xl font-black text-[#0284c7]">{(stats?.totalPointsIssued ?? 0).toLocaleString('en-IN')} pts</span>
           )}
         </div>
 
@@ -129,7 +129,7 @@ export default function LoyaltyAdminPage() {
       {/* Manual Earn / Credit Section */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Gift className="w-4 h-4 text-[#800020]" />
+          <Gift className="w-4 h-4 text-[#0284c7]" />
           <span>Credit / Redeem Customer Loyalty Points</span>
         </h2>
 
@@ -142,7 +142,7 @@ export default function LoyaltyAdminPage() {
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
               placeholder="Customer's profile UUID"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -154,7 +154,7 @@ export default function LoyaltyAdminPage() {
               value={points}
               onChange={(e) => setPoints(Number(e.target.value))}
               placeholder="100"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -166,7 +166,7 @@ export default function LoyaltyAdminPage() {
               value={reason}
               onChange={(e) => setReason(e.target.value)}
               placeholder="Festive Bonus / Goodwill"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -182,7 +182,7 @@ export default function LoyaltyAdminPage() {
             <button
               type="submit"
               disabled={isLoading}
-              className="flex-1 px-4 py-2 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+              className="flex-1 px-4 py-2 bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
             >
               {isLoading ? 'Processing...' : 'Credit Points'}
             </button>
@@ -193,10 +193,10 @@ export default function LoyaltyAdminPage() {
           <div className="bg-rose-50/50 border border-rose-200 rounded-xl p-3 text-xs text-neutral-800 flex items-center justify-between">
             <div>
               <span className="font-bold block">Customer {customerBalance.customerId}</span>
-              <span className="text-neutral-500">Active Tier: <span className="font-bold text-[#800020]">{customerBalance.tier}</span></span>
+              <span className="text-neutral-500">Active Tier: <span className="font-bold text-[#0284c7]">{customerBalance.tier}</span></span>
               <span className="text-neutral-500 block">Lifetime Earned: {customerBalance.lifetimeEarned} · Redeemed: {customerBalance.lifetimeRedeemed}</span>
             </div>
-            <span className="text-base font-black text-[#800020]">{customerBalance.pointsBalance} Points</span>
+            <span className="text-base font-black text-[#0284c7]">{customerBalance.pointsBalance} Points</span>
           </div>
         )}
       </div>

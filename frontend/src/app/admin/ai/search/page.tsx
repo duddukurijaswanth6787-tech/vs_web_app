@@ -57,7 +57,7 @@ export default function AdminAiSearchPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Search className="w-6 h-6 text-[#800020]" />
+            <Search className="w-6 h-6 text-[#0284c7]" />
             <span>AI Search & Intent Analytics Portal</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -88,7 +88,7 @@ export default function AdminAiSearchPage() {
               <span className="text-xs text-neutral-400">Loading...</span>
             ) : stats?.topQuery ? (
               <>
-                <span className="text-xl font-bold text-[#800020] block truncate">&quot;{stats.topQuery.query}&quot;</span>
+                <span className="text-xl font-bold text-[#0284c7] block truncate">&quot;{stats.topQuery.query}&quot;</span>
                 <span className="text-[10px] text-emerald-600 font-bold block">{stats.topQuery.count} searches</span>
               </>
             ) : (
@@ -125,7 +125,7 @@ export default function AdminAiSearchPage() {
       {/* Test AI Search Console */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Sparkles className="w-4 h-4 text-[#800020]" />
+          <Sparkles className="w-4 h-4 text-[#0284c7]" />
           <span>Test Semantic Vector Search Engine</span>
         </h2>
 
@@ -136,13 +136,13 @@ export default function AdminAiSearchPage() {
             value={testQuery}
             onChange={(e) => setTestQuery(e.target.value)}
             placeholder="e.g. 'Red saree for evening wedding reception under 5000'"
-            className="flex-1 border border-neutral-300 rounded-xl px-4 py-2.5 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            className="flex-1 border border-neutral-300 rounded-xl px-4 py-2.5 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
 
           <button
             type="submit"
             disabled={isSearching}
-            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
+            className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-1.5 disabled:opacity-50"
           >
             <Search className="w-3.5 h-3.5" />
             <span>{isSearching ? 'Testing...' : 'Test Query'}</span>
@@ -169,7 +169,7 @@ export default function AdminAiSearchPage() {
                     <span className="text-xs font-bold text-neutral-700 block">Matching Products:</span>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.products.map((p) => (
-                        <span key={p.id} className="bg-rose-50 border border-rose-200 text-[#800020] text-xs font-bold px-3 py-1 rounded-full">
+                        <span key={p.id} className="bg-rose-50 border border-rose-200 text-[#0284c7] text-xs font-bold px-3 py-1 rounded-full">
                           {p.name} &middot; ₹{p.price.toLocaleString('en-IN')}
                         </span>
                       ))}
@@ -217,7 +217,7 @@ function PopularSearchesSection() {
   return (
     <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
       <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-        <Sparkles className="w-4 h-4 text-[#800020]" />
+        <Sparkles className="w-4 h-4 text-[#0284c7]" />
         <span>Popular Customer Search Queries</span>
       </h2>
 
@@ -233,7 +233,7 @@ function PopularSearchesSection() {
                 <span className="text-xs font-bold text-neutral-900 block">&quot;{item.query}&quot;</span>
                 <span className="text-[10px] text-neutral-500 block">Last searched: {new Date(item.lastSearchedAt || Date.now()).toLocaleDateString()}</span>
               </div>
-              <span className="text-xs font-bold text-[#800020] bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-bold text-[#0284c7] bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
                 {item.count} searches
               </span>
             </div>

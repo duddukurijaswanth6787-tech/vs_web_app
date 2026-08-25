@@ -30,7 +30,7 @@ export default function OrdersPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
         <Package className="w-10 h-10 text-neutral-300" />
         <p className="text-sm text-neutral-600">Login to view your orders</p>
-        <Link href="/login?redirect=/orders" className="bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+        <Link href="/login?redirect=/orders" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
           Login
         </Link>
       </div>
@@ -56,15 +56,15 @@ export default function OrdersPage() {
                   {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
                 </p>
               </div>
-              <span className="text-[11px] font-bold uppercase bg-rose-50 text-[#800020] px-2 py-1 rounded-lg">
+              <span className="text-[11px] font-bold uppercase bg-rose-50 text-[#0284c7] px-2 py-1 rounded-lg">
                 {order.status}
               </span>
             </div>
-            <p className="text-sm font-bold text-[#800020]">
+            <p className="text-sm font-bold text-[#0284c7]">
               {formatInr(Number(order.grandTotal ?? order.total ?? 0))}
             </p>
             <div className="flex flex-wrap gap-2 text-xs font-semibold">
-              <Link href={`/orders/details/${order.orderNumber}`} className="text-[#800020] font-bold">
+              <Link href={`/orders/details/${order.orderNumber}`} className="text-[#0284c7] font-bold">
                 View Details
               </Link>
               <Link href={`/orders/track/${order.orderNumber}`} className="text-neutral-600">

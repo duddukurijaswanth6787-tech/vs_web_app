@@ -35,7 +35,7 @@ export default function ReferralAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Share2 className="w-6 h-6 text-[#800020]" />
+            <Share2 className="w-6 h-6 text-[#0284c7]" />
             <span>Referral Program Management</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -84,14 +84,14 @@ export default function ReferralAdminPage() {
               ) : (
                 referrals.map((row) => (
                   <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
-                    <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
+                    <td className="p-3 font-mono font-bold text-[#0284c7]">{row.code}</td>
                     <td className="p-3 font-bold text-neutral-900">{row.referrerName || '—'}</td>
                     <td className="p-3 font-extrabold text-emerald-700">{row.rewardPoints} pts</td>
                     <td className="p-3">{row.usedCount} Friends Joined</td>
                     <td className="p-3">
                       <button
                         onClick={() => handleUpdateReward(row.id)}
-                        className="px-3 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-[#800020] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
+                        className="px-3 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-[#0284c7] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
                       >
                         Update Reward
                       </button>

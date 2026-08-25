@@ -97,7 +97,7 @@ export default function AddressScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       ) : (
         <ScrollView contentContainerStyle={{ padding: 16 }}>
@@ -107,7 +107,7 @@ export default function AddressScreen() {
             <>
               {addresses.map((addr) => (
                 <TouchableOpacity key={addr.id} style={styles.addressCard} onPress={() => goToCheckout(addr.id)}>
-                  <MapPin size={18} color="#800020" style={{ marginTop: 2 }} />
+                  <MapPin size={18} color="#0284c7" style={{ marginTop: 2 }} />
                   <View style={{ flex: 1, marginLeft: 10 }}>
                     <Text style={styles.addressName}>{addr.fullName} · {addr.phone}</Text>
                     <Text style={styles.addressText}>
@@ -119,7 +119,7 @@ export default function AddressScreen() {
               ))}
 
               <TouchableOpacity style={styles.addNewBtn} onPress={() => setShowForm(true)}>
-                <Plus size={16} color="#800020" style={{ marginRight: 8 }} />
+                <Plus size={16} color="#0284c7" style={{ marginRight: 8 }} />
                 <Text style={styles.addNewText}>Add New Address</Text>
               </TouchableOpacity>
             </>
@@ -190,13 +190,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1,
-    borderColor: '#800020',
+    borderColor: '#0284c7',
     borderStyle: 'dashed',
     borderRadius: 14,
     padding: 14,
     marginTop: 4,
   },
-  addNewText: { color: '#800020', fontWeight: 'bold', fontSize: 13 },
+  addNewText: { color: '#0284c7', fontWeight: 'bold', fontSize: 13 },
   form: { backgroundColor: '#ffffff', borderRadius: 16, padding: 16, borderWidth: 1, borderColor: '#f0e0e4' },
   label: { fontSize: 11, fontWeight: 'bold', color: '#374151', marginBottom: 6, marginTop: 12 },
   input: {
@@ -211,7 +211,7 @@ const styles = StyleSheet.create({
   },
   submitBtn: {
     marginTop: 20,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 12,
     paddingVertical: 14,
     alignItems: 'center',

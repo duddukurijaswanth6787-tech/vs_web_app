@@ -81,7 +81,7 @@ export default function AiRecommendationsAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Sparkles className="w-6 h-6 text-[#800020]" />
+            <Sparkles className="w-6 h-6 text-[#0284c7]" />
             <span>Customer AI Recommendations</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -93,7 +93,7 @@ export default function AiRecommendationsAdminPage() {
           type="button"
           onClick={handleGenerate}
           disabled={loading}
-          className="px-4 py-2 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+          className="px-4 py-2 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
         >
           <Cpu className="w-4 h-4 text-rose-200" />
           <span>{loading ? 'Working…' : 'Re-compute Recommendations'}</span>
@@ -107,7 +107,7 @@ export default function AiRecommendationsAdminPage() {
             value={customerUserId}
             onChange={(e) => setCustomerUserId(e.target.value)}
             placeholder="Customer user UUID"
-            className="flex-1 border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#800020]"
+            className="flex-1 border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#0284c7]"
           />
           <button
             type="button"
@@ -122,7 +122,7 @@ export default function AiRecommendationsAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <BarChart3 className="w-4 h-4 text-[#800020]" />
+          <BarChart3 className="w-4 h-4 text-[#0284c7]" />
           <span>Recommendation Engine Weighting Matrix</span>
         </h2>
 
@@ -130,7 +130,7 @@ export default function AiRecommendationsAdminPage() {
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-neutral-800">
               <span>Visual Similarity Weight</span>
-              <span className="text-[#800020]">{visualWeight}%</span>
+              <span className="text-[#0284c7]">{visualWeight}%</span>
             </div>
             <input
               type="range"
@@ -142,14 +142,14 @@ export default function AiRecommendationsAdminPage() {
                 setVisualWeight(v);
                 setPurchaseHistoryWeight(100 - v);
               }}
-              className="w-full accent-[#800020]"
+              className="w-full accent-[#0284c7]"
             />
           </div>
 
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-bold text-neutral-800">
               <span>Customer Purchase History Weight</span>
-              <span className="text-[#800020]">{purchaseHistoryWeight}%</span>
+              <span className="text-[#0284c7]">{purchaseHistoryWeight}%</span>
             </div>
             <input
               type="range"
@@ -161,7 +161,7 @@ export default function AiRecommendationsAdminPage() {
                 setPurchaseHistoryWeight(v);
                 setVisualWeight(100 - v);
               }}
-              className="w-full accent-[#800020]"
+              className="w-full accent-[#0284c7]"
             />
           </div>
 
@@ -177,7 +177,7 @@ export default function AiRecommendationsAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-3">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <ListOrdered className="w-4 h-4 text-[#800020]" />
+          <ListOrdered className="w-4 h-4 text-[#0284c7]" />
           Recommendation Results ({items.length})
         </h2>
         {items.length === 0 ? (
@@ -198,7 +198,7 @@ export default function AiRecommendationsAdminPage() {
                   <tr key={String(row.id || row.productId || idx)} className="border-t border-neutral-100">
                     <td className="px-3 py-2 font-mono">{String(row.productId || '')}</td>
                     <td className="px-3 py-2">{String(row.type || '')}</td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{String(row.score || '')}</td>
+                    <td className="px-3 py-2 font-bold text-[#0284c7]">{String(row.score || '')}</td>
                     <td className="px-3 py-2 text-neutral-600">{String(row.reason || '—')}</td>
                   </tr>
                 ))}

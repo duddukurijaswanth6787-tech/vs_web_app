@@ -15,7 +15,7 @@ export default function AboutPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Our Story</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Our Story</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-10">
@@ -41,11 +41,11 @@ export default function AboutPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <Link href="/categories/sarees" className="bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#600018]">
+          <Link href="/categories/sarees" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#0B3B78]">
             Explore Sarees
           </Link>
           <Link href="/stores" className="border border-neutral-300 text-neutral-800 text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-neutral-50 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-[#800020]" />
+            <MapPin className="w-4 h-4 text-[#0284c7]" />
             <span>Visit Our Flagship Store</span>
           </Link>
         </div>

@@ -55,25 +55,25 @@ export default function ContactPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Contact Us</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Contact Us</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-8 flex-1 space-y-6">
         {/* Business Contact Information (editable from Storefront > Store Information) */}
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-3 shadow-xs">
-          <div className="flex items-center gap-2 text-[#800020] font-bold text-sm font-serif">
+          <div className="flex items-center gap-2 text-[#0284c7] font-bold text-sm font-serif">
             <Store className="w-4 h-4" />
             <span>{storeName}</span>
           </div>
           <div className="space-y-2 text-xs text-neutral-700">
             {supportEmail && (
-              <a href={`mailto:${supportEmail}`} className="flex items-center gap-2 hover:text-[#800020] transition-colors">
+              <a href={`mailto:${supportEmail}`} className="flex items-center gap-2 hover:text-[#0284c7] transition-colors">
                 <Mail className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                 <span>{supportEmail}</span>
               </a>
             )}
             {(supportPhone || whatsappNumber) && (
-              <a href={`tel:${supportPhone || whatsappNumber}`} className="flex items-center gap-2 hover:text-[#800020] transition-colors">
+              <a href={`tel:${supportPhone || whatsappNumber}`} className="flex items-center gap-2 hover:text-[#0284c7] transition-colors">
                 <Phone className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
                 <span>{supportPhone || whatsappNumber}</span>
               </a>
@@ -136,7 +136,7 @@ export default function ContactPage() {
           <button
             type="submit"
             disabled={contact.isPending}
-            className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
           >
             {contact.isPending ? 'Sending…' : 'Send Message'}
           </button>

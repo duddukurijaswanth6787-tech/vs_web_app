@@ -37,7 +37,7 @@ const CHANNEL_LABELS: Record<string, string> = {
 };
 const CHANNEL_COLORS: Record<string, string> = {
   ONLINE_STORE: '#171717',
-  POS_SHOPORA: '#800020',
+  POS_SHOPORA: '#0284c7',
 };
 
 const formatCurrency = (val: number) => {

@@ -21,7 +21,7 @@ export function RecentlyViewedCarousel() {
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-6">
       <div className="flex items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2">
-          <History className="w-5 h-5 text-[#800020]" />
+          <History className="w-5 h-5 text-[#0284c7]" />
           <h3 className="text-lg font-bold font-serif text-neutral-900">
             Recently Viewed Garments
           </h3>
@@ -60,10 +60,10 @@ export function RecentlyViewedCarousel() {
                 />
               </div>
               <div className="p-3 space-y-1">
-                <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[#800020] transition-colors">
+                <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[#0284c7] transition-colors">
                   {product.name}
                 </h4>
-                <div className="text-xs font-bold text-[#800020]">
+                <div className="text-xs font-bold text-[#0284c7]">
                   {formatInr(displayPrice)}
                 </div>
               </div>

@@ -109,7 +109,7 @@ export default function TestimonialsAdminPage() {
         <button
           type="button"
           onClick={openCreateModal}
-          className="inline-flex items-center gap-2 bg-[#800020] text-white px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#600018] transition-all shadow-2xs cursor-pointer"
+          className="inline-flex items-center gap-2 bg-[#0284c7] text-white px-4 py-2.5 rounded-xl font-bold text-xs hover:bg-[#0B3B78] transition-all shadow-2xs cursor-pointer"
         >
           <Plus className="w-4 h-4" />
           <span>Add New Testimonial</span>
@@ -120,7 +120,7 @@ export default function TestimonialsAdminPage() {
       <div className="bg-white rounded-2xl border border-neutral-200/80 shadow-2xs overflow-hidden">
         {isLoading ? (
           <div className="p-12 text-center text-neutral-500 flex flex-col items-center justify-center gap-2">
-            <Loader2 className="w-6 h-6 animate-spin text-[#800020]" />
+            <Loader2 className="w-6 h-6 animate-spin text-[#0284c7]" />
             <span className="text-xs font-medium">Loading testimonials...</span>
           </div>
         ) : testimonials.length === 0 ? (
@@ -133,7 +133,7 @@ export default function TestimonialsAdminPage() {
             <button
               type="button"
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 bg-[#800020] text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-[#600018] transition-all"
+              className="inline-flex items-center gap-2 bg-[#0284c7] text-white px-4 py-2 rounded-xl font-bold text-xs hover:bg-[#0B3B78] transition-all"
             >
               <Plus className="w-4 h-4" />
               <span>Create First Testimonial</span>
@@ -248,7 +248,7 @@ export default function TestimonialsAdminPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   placeholder="e.g. Priya Sharma"
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020]"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                 />
               </div>
 
@@ -260,7 +260,7 @@ export default function TestimonialsAdminPage() {
                     value={formData.role}
                     onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                     placeholder="e.g. Verified Buyer"
-                    className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020]"
+                    className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                   />
                 </div>
                 <div>
@@ -270,7 +270,7 @@ export default function TestimonialsAdminPage() {
                     value={formData.location}
                     onChange={(e) => setFormData({ ...formData, location: e.target.value })}
                     placeholder="e.g. Hyderabad, Telangana"
-                    className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020]"
+                    className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                   />
                 </div>
               </div>
@@ -280,7 +280,7 @@ export default function TestimonialsAdminPage() {
                 <select
                   value={formData.rating}
                   onChange={(e) => setFormData({ ...formData, rating: Number(e.target.value) })}
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020]"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                 >
                   <option value={5}>⭐⭐⭐⭐⭐ (5 Stars)</option>
                   <option value={4}>⭐⭐⭐⭐ (4 Stars)</option>
@@ -296,7 +296,7 @@ export default function TestimonialsAdminPage() {
                   value={formData.comment}
                   onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
                   placeholder="e.g. The quality of the silk saree is amazing! Beautiful zari embroidery work."
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020]"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                 />
               </div>
 
@@ -306,7 +306,7 @@ export default function TestimonialsAdminPage() {
                   id="isFeatured"
                   checked={formData.isFeatured}
                   onChange={(e) => setFormData({ ...formData, isFeatured: e.target.checked })}
-                  className="rounded border-neutral-300 text-[#800020] focus:ring-[#800020]"
+                  className="rounded border-neutral-300 text-[#0284c7] focus:ring-[#0284c7]"
                 />
                 <label htmlFor="isFeatured" className="font-bold text-neutral-800 cursor-pointer">
                   Feature on Storefront Homepage
@@ -324,7 +324,7 @@ export default function TestimonialsAdminPage() {
                 <button
                   type="submit"
                   disabled={createMutation.isPending || updateMutation.isPending}
-                  className="px-4 py-2 rounded-xl bg-[#800020] text-white font-bold hover:bg-[#600018] transition-all flex items-center gap-2"
+                  className="px-4 py-2 rounded-xl bg-[#0284c7] text-white font-bold hover:bg-[#0B3B78] transition-all flex items-center gap-2"
                 >
                   {(createMutation.isPending || updateMutation.isPending) && (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

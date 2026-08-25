@@ -51,7 +51,7 @@ const SAMPLE_PRODUCTS = [
     isPublished: true,
     hsnCode: '6204',
     badge: 'BESTSELLER',
-    bg1: '#800020',
+    bg1: '#0284c7',
     bg2: '#3D000F',
     desc: 'Elegant floral printed rayon Anarkali kurta set with matching bottom and dupatta. Perfect for festive and casual occasions.',
   },

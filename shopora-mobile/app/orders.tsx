@@ -40,7 +40,7 @@ export default function OrdersScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -94,7 +94,7 @@ const styles = StyleSheet.create({
     borderColor: '#f0e0e4',
   },
   orderRow: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 4 },
-  orderNumber: { fontSize: 13, fontWeight: 'bold', color: '#800020' },
+  orderNumber: { fontSize: 13, fontWeight: 'bold', color: '#0284c7' },
   orderStatus: {
     fontSize: 10,
     fontWeight: 'bold',

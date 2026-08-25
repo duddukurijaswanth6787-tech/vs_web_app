@@ -80,7 +80,7 @@ export default function RegisterPage() {
         <Link href="/login" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Create Account</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Create Account</h1>
         <div className="w-6" />
       </header>
 
@@ -154,7 +154,7 @@ export default function RegisterPage() {
               <select
                 value={form.gender}
                 onChange={(e) => onChange('gender', e.target.value)}
-                className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-3 outline-none focus:border-[#800020] bg-white font-medium text-neutral-800"
+                className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-3 outline-none focus:border-[#0284c7] bg-white font-medium text-neutral-800"
               >
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
@@ -215,21 +215,21 @@ export default function RegisterPage() {
             <button
               type="button"
               onClick={() => onChange('agreeToTerms', !form.agreeToTerms)}
-              className="mt-0.5 text-[#800020] hover:scale-105 transition-transform"
+              className="mt-0.5 text-[#0284c7] hover:scale-105 transition-transform"
             >
               {form.agreeToTerms ? (
-                <CheckSquare className="w-4 h-4 text-[#800020]" />
+                <CheckSquare className="w-4 h-4 text-[#0284c7]" />
               ) : (
                 <Square className="w-4 h-4 text-neutral-300" />
               )}
             </button>
             <span className="text-xs text-neutral-600 leading-snug">
               I agree to Vasanthi Designers&apos;{' '}
-              <Link href="/terms" className="text-[#800020] font-semibold underline">
+              <Link href="/terms" className="text-[#0284c7] font-semibold underline">
                 Terms of Service
               </Link>{' '}
               and{' '}
-              <Link href="/privacy" className="text-[#800020] font-semibold underline">
+              <Link href="/privacy" className="text-[#0284c7] font-semibold underline">
                 Privacy Policy
               </Link>
               .
@@ -239,7 +239,7 @@ export default function RegisterPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md mt-2"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl transition-all shadow-md mt-2"
           >
             {loading ? 'Creating Account…' : 'Register'}
           </button>

@@ -201,7 +201,7 @@ export function ReelViewerModal({
             {/* Right Social Action Bar */}
             <div className="absolute right-3 bottom-12 lg:bottom-16 z-30 flex flex-col items-center gap-4.5 text-white">
               <div className="relative cursor-pointer">
-                <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-[#800020] text-amber-300 font-serif font-bold text-xs flex items-center justify-center shadow-md">
+                <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-[#0284c7] text-amber-300 font-serif font-bold text-xs flex items-center justify-center shadow-md">
                   VD
                 </div>
                 <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
@@ -235,7 +235,7 @@ export function ReelViewerModal({
             {/* Left Bottom Account Overlay */}
             <div className="absolute left-3 bottom-6 lg:bottom-8 z-30 max-w-[68%] text-white space-y-1 drop-shadow-md">
               <div className="flex items-center gap-2">
-                <div className="w-5.5 h-5.5 rounded-full bg-[#800020] text-amber-300 font-serif font-bold text-[9px] flex items-center justify-center border border-white/40 shadow-xs">
+                <div className="w-5.5 h-5.5 rounded-full bg-[#0284c7] text-amber-300 font-serif font-bold text-[9px] flex items-center justify-center border border-white/40 shadow-xs">
                   VD
                 </div>
                 <span className="text-xs font-bold text-white tracking-wide">
@@ -281,12 +281,12 @@ export function ReelViewerModal({
                     <div>
                       <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">{prod.name}</h4>
                       <div className="flex items-baseline gap-1.5">
-                        <span className="text-xs font-extrabold text-[#800020]">₹{prod.price.toLocaleString('en-IN')}</span>
+                        <span className="text-xs font-extrabold text-[#0284c7]">₹{prod.price.toLocaleString('en-IN')}</span>
                         <span className="text-[10px] text-neutral-400 line-through">₹{prod.originalPrice.toLocaleString('en-IN')}</span>
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setCartCount((prev) => prev + 1)} className="p-1.5 text-[#800020] border border-rose-200 bg-rose-50 rounded-xl">
+                  <button onClick={() => setCartCount((prev) => prev + 1)} className="p-1.5 text-[#0284c7] border border-rose-200 bg-rose-50 rounded-xl">
                     <ShoppingBag className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -305,7 +305,7 @@ export function ReelViewerModal({
           <div className="space-y-4">
             <div className="flex items-center justify-between pb-3 border-b border-neutral-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-[#800020] text-amber-300 font-serif font-bold text-sm flex items-center justify-center shadow-xs">
+                <div className="w-10 h-10 rounded-full bg-[#0284c7] text-amber-300 font-serif font-bold text-sm flex items-center justify-center shadow-xs">
                   VD
                 </div>
                 <div>
@@ -319,7 +319,7 @@ export function ReelViewerModal({
               </div>
 
               <div className="flex items-center gap-3">
-                <button className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-4 py-1.5 rounded-full transition-colors shadow-2xs">
+                <button className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-4 py-1.5 rounded-full transition-colors shadow-2xs">
                   Follow
                 </button>
                 <button
@@ -336,7 +336,7 @@ export function ReelViewerModal({
               <p className="text-xs text-neutral-800 font-medium leading-relaxed">
                 {currentReel.caption}
               </p>
-              <div className="flex items-center gap-1.5 text-xs text-[#800020] font-semibold">
+              <div className="flex items-center gap-1.5 text-xs text-[#0284c7] font-semibold">
                 <Music className="w-3.5 h-3.5 animate-spin" />
                 <span>{currentReel.audioTrack}</span>
               </div>
@@ -358,7 +358,7 @@ export function ReelViewerModal({
             {currentReel.taggedProducts.map((prod) => (
               <div
                 key={prod.id}
-                className="p-3.5 rounded-2xl border border-neutral-200/80 bg-white hover:border-[#800020]/40 transition-all duration-300 shadow-2xs hover:shadow-xs flex items-center justify-between gap-4 group"
+                className="p-3.5 rounded-2xl border border-neutral-200/80 bg-white hover:border-[#0284c7]/40 transition-all duration-300 shadow-2xs hover:shadow-xs flex items-center justify-between gap-4 group"
               >
                 <div className="flex items-center gap-3.5 flex-1 min-w-0">
                   <Image
@@ -369,12 +369,12 @@ export function ReelViewerModal({
                     className="w-16 h-20 object-cover rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="space-y-1 flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[#800020] transition-colors">
+                    <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[#0284c7] transition-colors">
                       {prod.name}
                     </h4>
                     
                     <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-extrabold text-[#800020]">
+                      <span className="text-sm font-extrabold text-[#0284c7]">
                         ₹{prod.price.toLocaleString('en-IN')}
                       </span>
                       <span className="text-xs text-neutral-400 line-through">
@@ -395,7 +395,7 @@ export function ReelViewerModal({
                 <div className="flex flex-col gap-2 shrink-0">
                   <Link
                     href="/product/banarasi-silk-saree"
-                    className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-2xs text-center flex items-center gap-1"
+                    className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-2xs text-center flex items-center gap-1"
                   >
                     <Zap className="w-3.5 h-3.5 fill-white" />
                     <span>Buy</span>
@@ -403,7 +403,7 @@ export function ReelViewerModal({
 
                   <button
                     onClick={() => setCartCount((prev) => prev + 1)}
-                    className="border border-[#800020] text-[#800020] hover:bg-[#FAF0F2] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1"
+                    className="border border-[#0284c7] text-[#0284c7] hover:bg-[#F3F8FF] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
                     <span>Cart</span>
@@ -417,7 +417,7 @@ export function ReelViewerModal({
           <div className="pt-4 border-t border-neutral-100 flex items-center gap-3">
             <Link
               href="/categories/sarees"
-              className="w-full border-2 border-[#800020] hover:bg-[#FAF0F2] text-[#800020] font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs"
+              className="w-full border-2 border-[#0284c7] hover:bg-[#F3F8FF] text-[#0284c7] font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs"
             >
               <span>EXPLORE ALL REEL PRODUCTS</span>
             </Link>

@@ -91,7 +91,7 @@ export default function FeatureFlagsPage() {
   return (
     <div className="p-6 max-w-6xl mx-auto space-y-6 font-sans text-neutral-900">
       {/* Header Banner */}
-      <div className="bg-gradient-to-r from-[#800020] to-[#500014] rounded-3xl p-6 text-white shadow-xl flex items-center justify-between">
+      <div className="bg-gradient-to-r from-[#0284c7] to-[#500014] rounded-3xl p-6 text-white shadow-xl flex items-center justify-between">
         <div className="space-y-1">
           <div className="flex items-center gap-2 text-rose-200 text-xs font-bold uppercase tracking-wider">
             <Shield className="w-4 h-4" /> Super Admin System Control
@@ -156,7 +156,7 @@ export default function FeatureFlagsPage() {
                   onClick={() => handleToggle(item.key, item.enabled)}
                   className={`relative shrink-0 w-12 h-7 rounded-full transition-colors cursor-pointer p-1 border ${
                     item.enabled
-                      ? 'bg-[#800020] border-[#800020]'
+                      ? 'bg-[#0284c7] border-[#0284c7]'
                       : 'bg-neutral-200 border-neutral-300'
                   }`}
                 >
@@ -168,7 +168,7 @@ export default function FeatureFlagsPage() {
                     {isUpdating ? (
                       <RotateCw className="w-3 h-3 text-neutral-400 animate-spin" />
                     ) : item.enabled ? (
-                      <span className="w-2 h-2 rounded-full bg-[#800020]" />
+                      <span className="w-2 h-2 rounded-full bg-[#0284c7]" />
                     ) : null}
                   </div>
                 </button>

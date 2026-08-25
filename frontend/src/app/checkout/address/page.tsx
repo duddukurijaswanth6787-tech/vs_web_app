@@ -39,7 +39,7 @@ export default function AddressListPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/checkout/address" className="text-sm font-bold text-[#800020]">
+        <Link href="/login?redirect=/checkout/address" className="text-sm font-bold text-[#0284c7]">
           Login to manage addresses
         </Link>
       </div>
@@ -53,9 +53,9 @@ export default function AddressListPage() {
           <Link href="/cart" className="p-1 rounded-lg hover:bg-neutral-100">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-lg font-bold font-serif text-[#800020]">Addresses</h1>
+          <h1 className="text-lg font-bold font-serif text-[#0284c7]">Addresses</h1>
         </div>
-        <Link href="/checkout/address/add" className="text-xs font-bold text-[#800020] flex items-center gap-1">
+        <Link href="/checkout/address/add" className="text-xs font-bold text-[#0284c7] flex items-center gap-1">
           <Plus className="w-4 h-4" /> Add
         </Link>
       </header>
@@ -90,7 +90,7 @@ export default function AddressListPage() {
             </div>
             <Link
               href={`/checkout/payment?addressId=${addr.id}`}
-              className="inline-block text-xs font-bold text-white bg-[#800020] px-3 py-1.5 rounded-lg"
+              className="inline-block text-xs font-bold text-white bg-[#0284c7] px-3 py-1.5 rounded-lg"
             >
               Deliver here
             </Link>

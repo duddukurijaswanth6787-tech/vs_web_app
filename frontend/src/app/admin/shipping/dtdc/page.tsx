@@ -76,7 +76,7 @@ export default function DtdcShippingAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Truck className="w-6 h-6 text-[#800020]" />
+            <Truck className="w-6 h-6 text-[#0284c7]" />
             <span>DTDC Express Shipping Integration</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -111,7 +111,7 @@ export default function DtdcShippingAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-[#800020]" />
+          <Plus className="w-4 h-4 text-[#0284c7]" />
           <span>Dispatch Order via DTDC Express</span>
         </h2>
 
@@ -124,7 +124,7 @@ export default function DtdcShippingAdminPage() {
               value={orderRef}
               onChange={(e) => setOrderRef(e.target.value)}
               placeholder="VD-987654 or UUID"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -137,7 +137,7 @@ export default function DtdcShippingAdminPage() {
               required
               value={weight}
               onChange={(e) => setWeight(e.target.value)}
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -146,7 +146,7 @@ export default function DtdcShippingAdminPage() {
             <select
               value={serviceType}
               onChange={(e) => setServiceType(e.target.value)}
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-bold focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-bold focus:outline-hidden focus:border-[#0284c7]"
             >
               <option value="STANDARD">STANDARD</option>
               <option value="EXPRESS">EXPRESS</option>
@@ -158,7 +158,7 @@ export default function DtdcShippingAdminPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full px-4 py-2 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+              className="w-full px-4 py-2 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all"
             >
               {loading ? 'Creating…' : 'Generate DTDC Waybill'}
             </button>
@@ -169,7 +169,7 @@ export default function DtdcShippingAdminPage() {
           <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 text-xs space-y-1">
             <p>
               <span className="font-bold">AWB:</span>{' '}
-              <span className="font-mono text-[#800020]">{shipment.awbNumber}</span>
+              <span className="font-mono text-[#0284c7]">{shipment.awbNumber}</span>
             </p>
             <p>
               <span className="font-bold">Status:</span> {shipment.status}
@@ -183,7 +183,7 @@ export default function DtdcShippingAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Search className="w-4 h-4 text-[#800020]" />
+          <Search className="w-4 h-4 text-[#0284c7]" />
           Track AWB
         </h2>
         <div className="flex flex-col sm:flex-row gap-3">
@@ -191,7 +191,7 @@ export default function DtdcShippingAdminPage() {
             value={trackAwb}
             onChange={(e) => setTrackAwb(e.target.value)}
             placeholder="AWB number"
-            className="flex-1 border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#800020]"
+            className="flex-1 border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#0284c7]"
           />
           <button
             type="button"

@@ -20,7 +20,7 @@ export default function CareersPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Careers at Vasanthi&apos;s Signature</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Careers at Vasanthi&apos;s Signature</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
@@ -33,7 +33,7 @@ export default function CareersPage() {
         </div>
 
         <div className="space-y-4">
-          <h3 className="text-base font-serif font-bold text-[#800020]">Current Openings</h3>
+          <h3 className="text-base font-serif font-bold text-[#0284c7]">Current Openings</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {OPEN_POSITIONS.map((pos, idx) => (
               <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-2 shadow-xs hover:border-rose-200 transition-colors">
@@ -48,8 +48,8 @@ export default function CareersPage() {
         </div>
 
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 text-center space-y-3">
-          <Briefcase className="w-8 h-8 mx-auto text-[#800020]" />
-          <h3 className="font-serif font-bold text-base text-[#800020]">Don&apos;t see your role?</h3>
+          <Briefcase className="w-8 h-8 mx-auto text-[#0284c7]" />
+          <h3 className="font-serif font-bold text-base text-[#0284c7]">Don&apos;t see your role?</h3>
           <p className="text-xs text-neutral-600 max-w-md mx-auto">
             Send your resume and portfolio to <span className="font-bold text-neutral-800">careers@vasanthisignature.com</span>. We are always happy to hear from extraordinary talent.
           </p>

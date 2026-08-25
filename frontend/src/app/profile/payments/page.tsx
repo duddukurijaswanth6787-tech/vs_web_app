@@ -14,7 +14,7 @@ export default function ProfilePaymentsPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/payments" className="text-sm font-bold text-[#800020]">
+        <Link href="/login?redirect=/profile/payments" className="text-sm font-bold text-[#0284c7]">
           Login required
         </Link>
       </div>
@@ -27,7 +27,7 @@ export default function ProfilePaymentsPage() {
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Payment Methods</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Payment Methods</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-3">
@@ -36,7 +36,7 @@ export default function ProfilePaymentsPage() {
           const m = mItem as Record<string, unknown>;
           return (
             <div key={String(m.code || '')} className="bg-white border border-neutral-200 rounded-2xl p-4 flex gap-3">
-              <CreditCard className="w-5 h-5 text-[#800020] shrink-0" />
+              <CreditCard className="w-5 h-5 text-[#0284c7] shrink-0" />
               <div>
                 <p className="text-sm font-bold">{String(m.title || '')}</p>
                 <p className="text-xs text-neutral-500 mt-1">{String(m.description || '')}</p>

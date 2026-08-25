@@ -31,13 +31,13 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
         >
           <X className="w-5 h-5 text-neutral-500" />
         </button>
-        <h4 className="text-base font-bold font-serif text-[#800020]">Share this style</h4>
+        <h4 className="text-base font-bold font-serif text-[#0284c7]">Share this style</h4>
         <div className="grid grid-cols-4 gap-4 py-2">
           <a
             href={`https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#800020]"
+            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#0284c7]"
           >
             <div className="w-11 h-11 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center border border-emerald-100">
               <MessageSquare className="w-5 h-5 fill-current" />
@@ -48,7 +48,7 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
             href={`https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#800020]"
+            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#0284c7]"
           >
             <div className="w-11 h-11 rounded-full bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
               <Share2 className="w-5 h-5" />
@@ -59,7 +59,7 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
             href={`https://twitter.com/intent/tweet?url=${encodedUrl}&text=${encodedTitle}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#800020]"
+            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#0284c7]"
           >
             <div className="w-11 h-11 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center border border-sky-100">
               <Send className="w-5 h-5" />
@@ -68,7 +68,7 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
           </a>
           <button
             onClick={handleCopy}
-            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#800020]"
+            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[#0284c7]"
           >
             <div className="w-11 h-11 rounded-full bg-neutral-50 text-neutral-600 flex items-center justify-center border border-neutral-100">
               <Copy className="w-5 h-5" />

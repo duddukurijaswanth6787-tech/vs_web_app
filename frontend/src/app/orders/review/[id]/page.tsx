@@ -53,7 +53,7 @@ export default function OrderReviewPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href={`/login?redirect=/orders/review/${orderNumber}`} className="text-sm font-bold text-[#800020]">
+        <Link href={`/login?redirect=/orders/review/${orderNumber}`} className="text-sm font-bold text-[#0284c7]">
           Login to review
         </Link>
       </div>
@@ -66,7 +66,7 @@ export default function OrderReviewPage() {
         <Link href="/orders" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Review Order</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Review Order</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1">
@@ -111,7 +111,7 @@ export default function OrderReviewPage() {
           <button
             type="submit"
             disabled={loading || !productId}
-            className="w-full bg-[#800020] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
+            className="w-full bg-[#0284c7] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
           >
             {loading ? 'Submitting…' : 'Submit Review'}
           </button>

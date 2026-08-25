@@ -65,7 +65,7 @@ export class StorefrontPublicService {
         const announcementEnabled = announcementEnabledSetting ? announcementEnabledSetting.value === 'true' : true;
         const announcementLink = announcementLinkSetting?.value || '/offers';
         const announcementLinkText = announcementLinkTextSetting?.value || 'Shop Now →';
-        const announcementBgColor = announcementBgColorSetting?.value || '#800020';
+        const announcementBgColor = announcementBgColorSetting?.value || '#0284c7';
         const announcementTextColor = announcementTextColorSetting?.value || '#FFFFFF';
 
         return {

@@ -25,7 +25,7 @@ export function ReviewPromptBanner() {
     <>
       <div className="bg-gradient-to-r from-amber-50 via-rose-50 to-pink-50 border border-amber-200/80 rounded-3xl p-4 shadow-xs relative overflow-hidden space-y-3 animate-in fade-in duration-300">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#800020] uppercase tracking-wide">
+          <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#0284c7] uppercase tracking-wide">
             <Sparkles className="w-4 h-4 text-amber-500 fill-amber-300 animate-pulse" />
             <span>Rate Your Recent Purchase</span>
           </div>
@@ -67,7 +67,7 @@ export function ReviewPromptBanner() {
 
           <button
             onClick={() => setSelectedProduct(currentItem)}
-            className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1 shrink-0 shadow-2xs active:scale-95 transition-all"
+            className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1 shrink-0 shadow-2xs active:scale-95 transition-all"
           >
             <span>Review</span>
             <ChevronRight className="w-3.5 h-3.5" />

@@ -59,7 +59,7 @@ async function main() {
 <p>Use this chart to find your perfect fit. Measurements are in inches.</p>
 <table style="width:100%;border-collapse:collapse;text-align:center;font-size:12px">
   <thead>
-    <tr style="background:#fff1f2;color:#800020">
+    <tr style="background:#fff1f2;color:#0284c7">
       <th style="border:1px solid #fecdd3;padding:8px">Size</th>
       <th style="border:1px solid #fecdd3;padding:8px">Bust</th>
       <th style="border:1px solid #fecdd3;padding:8px">Waist</th>

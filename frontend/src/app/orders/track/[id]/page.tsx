@@ -25,7 +25,7 @@ export default function OrderTrackPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href={`/login?redirect=/orders/track/${orderNumber}`} className="text-sm font-bold text-[#800020]">
+        <Link href={`/login?redirect=/orders/track/${orderNumber}`} className="text-sm font-bold text-[#0284c7]">
           Login to track order
         </Link>
       </div>
@@ -38,7 +38,7 @@ export default function OrderTrackPage() {
         <Link href="/orders" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Track #{orderNumber}</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Track #{orderNumber}</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-4">
@@ -48,7 +48,7 @@ export default function OrderTrackPage() {
           <>
             <div className="bg-white border border-neutral-200 rounded-2xl p-4">
               <p className="text-xs text-neutral-500">Current status</p>
-              <p className="text-sm font-bold text-[#800020] mt-1">{String(data.currentStatus || data.status || '')}</p>
+              <p className="text-sm font-bold text-[#0284c7] mt-1">{String(data.currentStatus || data.status || '')}</p>
               {data.trackingNumber && (
                 <p className="text-xs text-neutral-600 mt-2">AWB: {String(data.trackingNumber)}</p>
               )}

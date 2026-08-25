@@ -61,7 +61,7 @@ export default function CustomerReviewsPage() {
             <ArrowLeft className="w-5 h-5" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold font-serif text-[#800020]">Customer Reviews & Stories</h1>
+            <h1 className="text-2xl font-bold font-serif text-[#0284c7]">Customer Reviews & Stories</h1>
             <p className="text-xs text-neutral-500 mt-0.5">Real feedback from verified Vasanthi Designers shoppers</p>
           </div>
         </div>
@@ -80,11 +80,11 @@ export default function CustomerReviewsPage() {
 
           <div className="flex flex-wrap gap-4 justify-center">
             <div className="bg-rose-50/60 border border-rose-100 rounded-2xl px-4 py-3 text-center">
-              <p className="text-lg font-bold text-[#800020]">98%</p>
+              <p className="text-lg font-bold text-[#0284c7]">98%</p>
               <p className="text-[11px] text-neutral-600 font-medium">Satisfaction Rate</p>
             </div>
             <div className="bg-rose-50/60 border border-rose-100 rounded-2xl px-4 py-3 text-center">
-              <p className="text-lg font-bold text-[#800020]">100%</p>
+              <p className="text-lg font-bold text-[#0284c7]">100%</p>
               <p className="text-[11px] text-neutral-600 font-medium">Authentic Silk</p>
             </div>
           </div>
@@ -96,7 +96,7 @@ export default function CustomerReviewsPage() {
             <div key={review.id} className="bg-white border border-neutral-200/80 rounded-2xl p-5 space-y-3 shadow-2xs">
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-9 h-9 rounded-full bg-[#800020] text-amber-300 font-serif font-bold text-sm flex items-center justify-center">
+                  <div className="w-9 h-9 rounded-full bg-[#0284c7] text-amber-300 font-serif font-bold text-sm flex items-center justify-center">
                     {review.author[0]}
                   </div>
                   <div>
@@ -119,7 +119,7 @@ export default function CustomerReviewsPage() {
                 </div>
               </div>
 
-              <h3 className="text-sm font-bold text-[#800020]">{review.title}</h3>
+              <h3 className="text-sm font-bold text-[#0284c7]">{review.title}</h3>
               <p className="text-xs text-neutral-700 leading-relaxed">{review.content}</p>
             </div>
           ))}

@@ -51,7 +51,7 @@ export default function InventoryPage() {
     { key: 'stockStatus', label: 'Status', render: (i) => <StockStatusBadge status={i.stockStatus} /> },
     ...(isEditor ? [{ key: 'actions' as const, label: 'Actions' as const, render: (i: InventoryResponse) => (
       <div className="flex justify-end gap-2">
-        <button onClick={() => setActionItem(i)} className="px-2 py-1 bg-[#800020] text-white rounded text-[10px] font-bold hover:bg-[#600018]">Transact</button>
+        <button onClick={() => setActionItem(i)} className="px-2 py-1 bg-[#0284c7] text-white rounded text-[10px] font-bold hover:bg-[#0B3B78]">Transact</button>
         <button onClick={() => setSettingsItem(i)} className="p-1 hover:bg-neutral-100 rounded text-neutral-500 hover:text-neutral-950"><Sliders className="w-3.5 h-3.5" /></button>
       </div>
     )}] : [] as Column<InventoryResponse>[]),
@@ -61,7 +61,7 @@ export default function InventoryPage() {
     <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-[#800020] tracking-tight font-sans">Stock Inventory Management</h1>
+          <h1 className="text-xl font-bold text-[#0284c7] tracking-tight font-sans">Stock Inventory Management</h1>
           <p className="text-xs text-neutral-400 mt-1">Track physical stock, reserve quantities, record damaged items, and configure replenishment levels.</p>
         </div>
         <Link href="/admin/inventory/movements" className="bg-white hover:bg-neutral-50 text-neutral-800 font-semibold py-2.5 px-4 rounded-xl text-xs border border-neutral-200 flex items-center gap-2">
@@ -82,7 +82,7 @@ export default function InventoryPage() {
       <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm flex flex-col md:flex-row gap-4 items-center justify-between">
         <form onSubmit={(e) => { e.preventDefault(); updateQuery('search', localSearch); }} className="relative w-full md:w-80">
           <input value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Search variant SKU..."
-            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-[#800020]" />
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-[#0284c7]" />
           <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
         </form>
         <select value={stockStatus} onChange={(e) => updateQuery('stockStatus', e.target.value)} className="bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs">

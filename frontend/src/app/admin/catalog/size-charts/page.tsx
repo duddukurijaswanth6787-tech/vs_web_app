@@ -192,7 +192,7 @@ export default function SizeChartsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#800020] flex items-center justify-center border border-rose-100">
+          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center border border-rose-100">
             <Ruler className="w-5 h-5" />
           </div>
           <div>
@@ -218,7 +218,7 @@ export default function SizeChartsPage() {
           <button
             type="button"
             onClick={startNew}
-            className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl flex items-center gap-2 transition-colors"
+            className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl flex items-center gap-2 transition-colors"
           >
             <Plus className="w-4 h-4" />
             <span>New Chart</span>
@@ -257,7 +257,7 @@ export default function SizeChartsPage() {
                       <button
                         type="button"
                         onClick={() => startEdit(template)}
-                        className="text-xs font-bold text-[#800020] hover:underline"
+                        className="text-xs font-bold text-[#0284c7] hover:underline"
                       >
                         Edit
                       </button>
@@ -302,7 +302,7 @@ export default function SizeChartsPage() {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="e.g. Anarkali Standard"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
               />
             </div>
 
@@ -311,7 +311,7 @@ export default function SizeChartsPage() {
               <select
                 value={garmentType}
                 onChange={(e) => setGarmentType(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
               >
                 <option value="">Not specified</option>
                 {GARMENT_TYPES.map((type) => (
@@ -327,7 +327,7 @@ export default function SizeChartsPage() {
               <select
                 value={unit}
                 onChange={(e) => setUnit(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
               >
                 <option value="inch">inch</option>
                 <option value="cm">cm</option>
@@ -341,7 +341,7 @@ export default function SizeChartsPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 placeholder="How to measure, fit notes…"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#800020]/20"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-xs font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
               />
             </div>
           </div>
@@ -460,7 +460,7 @@ export default function SizeChartsPage() {
             type="button"
             onClick={handleSave}
             disabled={isSaving}
-            className="bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl flex items-center gap-2 disabled:opacity-60"
+            className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-6 py-3 rounded-xl flex items-center gap-2 disabled:opacity-60"
           >
             <Save className="w-4 h-4" />
             <span>{isSaving ? 'Saving…' : 'Save Chart'}</span>

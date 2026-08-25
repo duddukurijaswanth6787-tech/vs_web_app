@@ -185,7 +185,7 @@ export class BarcodeService {
       border: 1.5px dashed #333333;
       ${forPreview ? '' : border}
     }
-    .brand-mark { font-size: 10px; color: #800020; line-height: 1; }
+    .brand-mark { font-size: 10px; color: #0284c7; line-height: 1; }
     .store-name {
       font-family: Georgia, 'Times New Roman', serif;
       font-size: 12px;

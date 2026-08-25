@@ -77,7 +77,7 @@ export default function CartScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -161,7 +161,7 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b91c1c', fontSize: 13, textAlign: 'center' },
   emptyTitle: { fontSize: 14, color: '#6b7280', marginTop: 12, marginBottom: 16 },
-  shopLink: { backgroundColor: '#800020', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
+  shopLink: { backgroundColor: '#0284c7', paddingHorizontal: 20, paddingVertical: 12, borderRadius: 12 },
   shopLinkText: { color: '#ffffff', fontWeight: 'bold', fontSize: 13 },
   itemRow: {
     flexDirection: 'row',
@@ -195,7 +195,7 @@ const styles = StyleSheet.create({
   },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 },
   totalLabel: { fontSize: 13, color: '#6b7280' },
-  totalValue: { fontSize: 17, fontWeight: 'bold', color: '#800020' },
-  checkoutBtn: { backgroundColor: '#800020', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
+  totalValue: { fontSize: 17, fontWeight: 'bold', color: '#0284c7' },
+  checkoutBtn: { backgroundColor: '#0284c7', borderRadius: 14, paddingVertical: 16, alignItems: 'center' },
   checkoutBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
 });

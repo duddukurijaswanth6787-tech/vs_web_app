@@ -72,7 +72,7 @@ export default function OtpGatewayAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <KeyRound className="w-6 h-6 text-[#800020]" />
+            <KeyRound className="w-6 h-6 text-[#0284c7]" />
             <span>OTP Gateway</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -127,7 +127,7 @@ export default function OtpGatewayAdminPage() {
             <select
               value={form.provider}
               onChange={(e) => setForm((f) => ({ ...f, provider: e.target.value as OtpGatewayConfigDto['provider'] }))}
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold focus:outline-hidden focus:border-[#0284c7]"
             >
               <option value="mock">Mock (log only, no real SMS)</option>
               <option value="startmessaging">StartMessaging</option>
@@ -140,7 +140,7 @@ export default function OtpGatewayAdminPage() {
               value={form.appName}
               onChange={(e) => setForm((f) => ({ ...f, appName: e.target.value }))}
               placeholder="Vasanthi's Signature"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
           <div className="space-y-1">
@@ -151,7 +151,7 @@ export default function OtpGatewayAdminPage() {
               value={form.expiryMinutes}
               onChange={(e) => setForm((f) => ({ ...f, expiryMinutes: Number(e.target.value) || 1 }))}
               placeholder="10"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
         </div>
@@ -166,7 +166,7 @@ export default function OtpGatewayAdminPage() {
             onChange={(e) => setApiKey(e.target.value)}
             placeholder={config?.apiKeyConfigured ? '••••••••••••••••••••' : 'sm_live_...'}
             autoComplete="new-password"
-            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+            className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
           <p className="text-[11px] text-neutral-500">
             Stored securely on the server and never shown again after saving. Leave blank to keep the current key unchanged.
@@ -214,7 +214,7 @@ export default function OtpGatewayAdminPage() {
                 value={form.templateLogin}
                 onChange={(e) => setForm((f) => ({ ...f, templateLogin: e.target.value }))}
                 placeholder="e.g. 39beb731-de09-4..."
-                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
               />
             </div>
             <div className="space-y-1">
@@ -224,7 +224,7 @@ export default function OtpGatewayAdminPage() {
                 value={form.templateRegister}
                 onChange={(e) => setForm((f) => ({ ...f, templateRegister: e.target.value }))}
                 placeholder="e.g. 6990f1b1-6a28-4..."
-                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
               />
             </div>
             <div className="space-y-1">
@@ -234,7 +234,7 @@ export default function OtpGatewayAdminPage() {
                 value={form.templateVerifyPhone}
                 onChange={(e) => setForm((f) => ({ ...f, templateVerifyPhone: e.target.value }))}
                 placeholder="e.g. 3465e087-ff91-4..."
-                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
               />
             </div>
           </div>
@@ -251,7 +251,7 @@ export default function OtpGatewayAdminPage() {
               value={form.templateOrderConfirmed}
               onChange={(e) => setForm((f) => ({ ...f, templateOrderConfirmed: e.target.value }))}
               placeholder="e.g. 8f1c2b40-..."
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
         </div>
@@ -259,7 +259,7 @@ export default function OtpGatewayAdminPage() {
         <button
           type="submit"
           disabled={saving}
-          className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+          className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
         >
           <Save className="w-3.5 h-3.5" />
           <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
@@ -295,8 +295,8 @@ function TemplateCard({
             onClick={() => onAssign(purpose)}
             className={`px-2.5 py-1.5 rounded-lg text-[10px] font-bold border transition-colors ${
               selectedFor === purpose
-                ? 'bg-[#800020] border-[#800020] text-white'
-                : 'bg-white border-neutral-300 text-neutral-600 hover:border-[#800020] hover:text-[#800020]'
+                ? 'bg-[#0284c7] border-[#0284c7] text-white'
+                : 'bg-white border-neutral-300 text-neutral-600 hover:border-[#0284c7] hover:text-[#0284c7]'
             }`}
           >
             {selectedFor === purpose ? `✓ ${purpose}` : purpose}

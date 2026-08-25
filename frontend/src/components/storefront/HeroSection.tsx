@@ -103,7 +103,7 @@ export function HeroSection() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
-        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-rose-100/80 bg-[#FAF3F3]">
+        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-rose-100/80 bg-[#EAF4FF]">
           
           {/* Background Image & Gradient Overlay */}
           <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">
@@ -131,7 +131,7 @@ export function HeroSection() {
             {/* Mobile: a thin, steep scrim right behind the text block so the
                 photo stays clear through the rest of the banner, instead of
                 a heavy tint washing out the whole lower half of the image. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#FAF3F3] from-0% via-[#FAF3F3]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#FAF3F3]/95 sm:via-[#FAF3F3]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#EAF4FF] from-0% via-[#EAF4FF]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#EAF4FF]/95 sm:via-[#EAF4FF]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
           </Link>
 
           {/* Slider Arrow Controls */}

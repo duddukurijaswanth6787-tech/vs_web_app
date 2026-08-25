@@ -78,13 +78,13 @@ function OrderReturnForm() {
         <Link href="/me/orders" className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-neutral-700" />
         </Link>
-        <h1 className="text-base font-bold font-serif text-[#800020]">Request Order Return</h1>
+        <h1 className="text-base font-bold font-serif text-[#0284c7]">Request Order Return</h1>
       </header>
 
       <main className="max-w-lg mx-auto w-full px-4 py-6 flex-1 space-y-6">
         {/* Header Notice */}
         <div className="bg-white border border-neutral-200/80 rounded-2xl p-5 shadow-2xs space-y-2">
-          <div className="flex items-center gap-2 text-[#800020] font-bold text-sm font-serif">
+          <div className="flex items-center gap-2 text-[#0284c7] font-bold text-sm font-serif">
             <RefreshCw className="w-4 h-4" />
             <span>Easy 7-Day Returns</span>
           </div>
@@ -123,7 +123,7 @@ function OrderReturnForm() {
               <select
                 value={selectedOrderId}
                 onChange={(e) => setSelectedOrderId(e.target.value)}
-                className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#800020] bg-white font-medium text-neutral-800"
+                className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#0284c7] bg-white font-medium text-neutral-800"
               >
                 <option value="">-- Choose Order --</option>
                 {orders.map((o) => (
@@ -141,7 +141,7 @@ function OrderReturnForm() {
             <select
               value={selectedReason}
               onChange={(e) => setSelectedReason(e.target.value)}
-              className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#800020] bg-white font-medium text-neutral-800"
+              className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2.5 outline-none focus:border-[#0284c7] bg-white font-medium text-neutral-800"
             >
               {RETURN_REASONS.map((r) => (
                 <option key={r} value={r}>
@@ -160,7 +160,7 @@ function OrderReturnForm() {
                   key={pref.id}
                   className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     refundPreference === pref.id
-                      ? 'border-[#800020] bg-rose-50/40'
+                      ? 'border-[#0284c7] bg-rose-50/40'
                       : 'border-neutral-200 bg-white hover:border-neutral-300'
                   }`}
                 >
@@ -170,7 +170,7 @@ function OrderReturnForm() {
                     value={pref.id}
                     checked={refundPreference === pref.id}
                     onChange={(e) => setRefundPreference(e.target.value)}
-                    className="mt-0.5 text-[#800020] focus:ring-[#800020]"
+                    className="mt-0.5 text-[#0284c7] focus:ring-[#0284c7]"
                   />
                   <div>
                     <div className="text-xs font-bold text-neutral-900">{pref.label}</div>
@@ -189,14 +189,14 @@ function OrderReturnForm() {
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               placeholder="Describe any issues with fit, stitching, or packaging..."
-              className="w-full text-xs border border-neutral-200 rounded-xl p-3 outline-none focus:border-[#800020] transition-colors resize-none"
+              className="w-full text-xs border border-neutral-200 rounded-xl p-3 outline-none focus:border-[#0284c7] transition-colors resize-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSubmitting || !selectedOrderId}
-            className="w-full bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold py-3 px-4 rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <span>Submitting Return Request...</span>

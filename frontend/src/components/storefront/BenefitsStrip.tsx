@@ -44,7 +44,7 @@ export function BenefitsStrip() {
                 index < benefits.length - 1 ? 'md:border-r md:border-rose-200/50 md:pr-4' : ''
               }`}
             >
-              <div className="w-10 h-10 rounded-full bg-white text-[#800020] flex items-center justify-center shrink-0 shadow-2xs border border-rose-100">
+              <div className="w-10 h-10 rounded-full bg-white text-[#0284c7] flex items-center justify-center shrink-0 shadow-2xs border border-rose-100">
                 <Icon className="w-5 h-5" />
               </div>
               <div className="space-y-0.5 min-w-0">

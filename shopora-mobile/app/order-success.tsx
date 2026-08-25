@@ -44,7 +44,7 @@ const styles = StyleSheet.create({
   subtitle: { fontSize: 13, color: '#6b7280', marginTop: 8, textAlign: 'center' },
   primaryBtn: {
     marginTop: 32,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 15,
     paddingHorizontal: 40,
@@ -53,5 +53,5 @@ const styles = StyleSheet.create({
   },
   primaryBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
   secondaryBtn: { marginTop: 14, paddingVertical: 10 },
-  secondaryBtnText: { color: '#800020', fontWeight: 'bold', fontSize: 13 },
+  secondaryBtnText: { color: '#0284c7', fontWeight: 'bold', fontSize: 13 },
 });

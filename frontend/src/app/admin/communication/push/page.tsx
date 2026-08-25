@@ -69,7 +69,7 @@ export default function PushNotificationsAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Smartphone className="w-6 h-6 text-[#800020]" />
+            <Smartphone className="w-6 h-6 text-[#0284c7]" />
             <span>Push Notifications Manager</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -89,7 +89,7 @@ export default function PushNotificationsAdminPage() {
 
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Send className="w-4 h-4 text-[#800020]" />
+          <Send className="w-4 h-4 text-[#0284c7]" />
           <span>Compose Push Notification Campaign</span>
         </h2>
 
@@ -101,7 +101,7 @@ export default function PushNotificationsAdminPage() {
               required
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-bold text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-bold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -112,7 +112,7 @@ export default function PushNotificationsAdminPage() {
               required
               value={body}
               onChange={(e) => setBody(e.target.value)}
-              className="w-full border border-neutral-300 rounded-xl p-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl p-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
@@ -125,14 +125,14 @@ export default function PushNotificationsAdminPage() {
               value={targetUserId}
               onChange={(e) => setTargetUserId(e.target.value)}
               placeholder="Customer user UUID or blank for broadcast"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-mono focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
           <button
             type="submit"
             disabled={loading}
-            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
+            className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
           >
             <Send className="w-3.5 h-3.5" />
             <span>{loading ? 'Broadcasting…' : 'Broadcast Push Notification'}</span>
@@ -162,7 +162,7 @@ export default function PushNotificationsAdminPage() {
                       <p className="font-bold">{String(log.title || '')}</p>
                       <p className="text-neutral-500 line-clamp-1">{String(log.body || '')}</p>
                     </td>
-                    <td className="px-3 py-2 font-bold text-[#800020]">{String(log.status || '')}</td>
+                    <td className="px-3 py-2 font-bold text-[#0284c7]">{String(log.status || '')}</td>
                     <td className="px-3 py-2">{String(log.targetCount ?? log.successCount ?? 0)}</td>
                     <td className="px-3 py-2 text-neutral-500">
                       {log.createdAt ? new Date(String(log.createdAt)).toLocaleString() : '—'}

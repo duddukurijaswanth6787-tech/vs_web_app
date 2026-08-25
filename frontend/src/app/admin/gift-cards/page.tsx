@@ -36,7 +36,7 @@ export default function GiftCardsAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Gift className="w-6 h-6 text-[#800020]" />
+            <Gift className="w-6 h-6 text-[#0284c7]" />
             <span>Digital E-Gift Cards Management</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -56,7 +56,7 @@ export default function GiftCardsAdminPage() {
       {/* Issue Gift Card Form */}
       <div className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-4">
         <h2 className="text-sm font-bold text-neutral-900 flex items-center gap-2">
-          <Plus className="w-4 h-4 text-[#800020]" />
+          <Plus className="w-4 h-4 text-[#0284c7]" />
           <span>Issue New E-Gift Voucher</span>
         </h2>
 
@@ -69,13 +69,13 @@ export default function GiftCardsAdminPage() {
               value={initialBalance}
               onChange={(e) => setInitialBalance(Number(e.target.value))}
               placeholder="1000"
-              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#800020]"
+              className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
             />
           </div>
 
           <button
             type="submit"
-            className="px-5 py-2.5 bg-[#800020] hover:bg-[#600018] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
+            className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold rounded-xl shadow-xs transition-all"
           >
             Issue Gift Voucher
           </button>
@@ -113,7 +113,7 @@ export default function GiftCardsAdminPage() {
               ) : (
                 giftCards.map((row) => (
                   <tr key={row.id} className="hover:bg-neutral-50/60 transition-colors">
-                    <td className="p-3 font-mono font-bold text-[#800020]">{row.code}</td>
+                    <td className="p-3 font-mono font-bold text-[#0284c7]">{row.code}</td>
                     <td className="p-3">₹{row.initialAmount.toLocaleString('en-IN')}</td>
                     <td className="p-3 font-bold text-emerald-700">₹{row.balance.toLocaleString('en-IN')}</td>
                     <td className="p-3">

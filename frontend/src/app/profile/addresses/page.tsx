@@ -42,7 +42,7 @@ export default function ProfileAddressListPage() {
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4">
         <MapPin className="w-10 h-10 text-neutral-300" />
         <p className="text-sm text-neutral-600">Login to manage your addresses</p>
-        <Link href="/login?redirect=/profile/addresses" className="bg-[#800020] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
+        <Link href="/login?redirect=/profile/addresses" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl">
           Login
         </Link>
       </div>
@@ -59,12 +59,12 @@ export default function ProfileAddressListPage() {
             <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
               <ArrowLeft className="w-5 h-5 text-neutral-700" />
             </Link>
-            <h1 className="text-lg font-bold font-serif text-[#800020]">Address Book</h1>
+            <h1 className="text-lg font-bold font-serif text-[#0284c7]">Address Book</h1>
           </div>
 
           <Link
             href="/profile/addresses/add"
-            className="inline-flex items-center gap-1 bg-[#800020] text-white text-xs font-bold px-3 py-2 rounded-xl"
+            className="inline-flex items-center gap-1 bg-[#0284c7] text-white text-xs font-bold px-3 py-2 rounded-xl"
           >
             <Plus className="w-4 h-4" /> Add New
           </Link>
@@ -80,7 +80,7 @@ export default function ProfileAddressListPage() {
             <p className="text-sm font-semibold text-neutral-600">No saved addresses yet</p>
             <Link
               href="/profile/addresses/add"
-              className="inline-block bg-[#800020] text-white text-xs font-bold px-4 py-2.5 rounded-xl"
+              className="inline-block bg-[#0284c7] text-white text-xs font-bold px-4 py-2.5 rounded-xl"
             >
               Add First Address
             </Link>
@@ -93,7 +93,7 @@ export default function ProfileAddressListPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-neutral-900">{addr.fullName}</span>
                 {Boolean(addr.label) && (
-                  <span className="text-[10px] font-extrabold uppercase bg-rose-50 text-[#800020] px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-extrabold uppercase bg-rose-50 text-[#0284c7] px-2 py-0.5 rounded-md">
                     {String(addr.label)}
                   </span>
                 )}

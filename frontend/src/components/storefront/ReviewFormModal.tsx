@@ -149,7 +149,7 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
                 value={title}
                 onChange={(e) => setTitle(e.target.value)}
                 placeholder="Summarize your thoughts (e.g. Beautiful fabric & perfect fit!)"
-                className="w-full px-3.5 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020] focus:bg-white"
+                className="w-full px-3.5 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7] focus:bg-white"
               />
             </div>
 
@@ -161,7 +161,7 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
                 value={comment}
                 onChange={(e) => setComment(e.target.value)}
                 placeholder="Share your experience with the design, fabric quality, and sizing..."
-                className="w-full px-3.5 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#800020] focus:bg-white resize-none"
+                className="w-full px-3.5 py-2.5 text-xs bg-neutral-50 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7] focus:bg-white resize-none"
               />
             </div>
 
@@ -174,7 +174,7 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
             <button
               type="submit"
               disabled={createReviewMutation.isPending}
-              className="w-full bg-[#800020] hover:bg-[#600018] text-white font-bold py-3.5 rounded-2xl shadow-sm text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
+              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white font-bold py-3.5 rounded-2xl shadow-sm text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
             >
               {createReviewMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Submit Review</span>

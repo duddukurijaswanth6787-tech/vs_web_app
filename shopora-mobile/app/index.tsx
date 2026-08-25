@@ -180,12 +180,12 @@ export default function ShoporaHomeScreen() {
 
         {/* 5. SHOP (Customer browsing & checkout) */}
         <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: '#800020', borderColor: '#800020' }]}
+          style={[styles.actionCard, { backgroundColor: '#0284c7', borderColor: '#0284c7' }]}
           onPress={() => router.push('/shop')}
           activeOpacity={0.85}
         >
           <View style={styles.iconCircleLight}>
-            <Store size={24} color="#800020" />
+            <Store size={24} color="#0284c7" />
           </View>
           <Text style={styles.actionCardTitleLight}>Shop</Text>
           <Text style={styles.actionCardSubLight}>Browse & buy as a customer</Text>

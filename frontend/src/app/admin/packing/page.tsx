@@ -38,7 +38,7 @@ export default function WarehousePackingAdminPage() {
       <div className="flex items-center justify-between border-b border-neutral-200 pb-4">
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
-            <Package className="w-6 h-6 text-[#800020]" />
+            <Package className="w-6 h-6 text-[#0284c7]" />
             <span>Warehouse Packing Queue & Station Admin</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
@@ -72,7 +72,7 @@ export default function WarehousePackingAdminPage() {
         </div>
         <div className="bg-white border border-neutral-200 rounded-2xl p-4 shadow-2xs space-y-1">
           <span className="text-xs font-bold text-neutral-500 block">Total Jobs</span>
-          <span className="text-2xl font-black text-[#800020]">{stats.total}</span>
+          <span className="text-2xl font-black text-[#0284c7]">{stats.total}</span>
         </div>
       </div>
 
@@ -105,7 +105,7 @@ export default function WarehousePackingAdminPage() {
               {jobs.map((job) => (
                 <tr key={job.id} className="hover:bg-neutral-50/60 transition-colors">
                   <td className="p-3">
-                    <p className="font-mono font-bold text-[#800020]">
+                    <p className="font-mono font-bold text-[#0284c7]">
                       {job.orderNumber || job.orderId || job.id}
                     </p>
                     <p className="text-[10px] text-neutral-400 font-mono">{job.id}</p>

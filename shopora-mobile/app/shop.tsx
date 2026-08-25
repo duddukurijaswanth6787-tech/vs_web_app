@@ -93,7 +93,7 @@ export default function ShopScreen() {
 
       {loading ? (
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       ) : error ? (
         <View style={styles.centerContainer}>
@@ -145,13 +145,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingVertical: 12,
   },
-  headerTitle: { fontSize: 18, fontWeight: 'bold', fontFamily: 'serif', color: '#800020' },
+  headerTitle: { fontSize: 18, fontWeight: 'bold', fontFamily: 'serif', color: '#0284c7' },
   iconBtn: { padding: 4, position: 'relative' },
   cartBadge: {
     position: 'absolute',
     top: -4,
     right: -4,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 8,
     minWidth: 16,
     height: 16,
@@ -189,6 +189,6 @@ const styles = StyleSheet.create({
   cardImagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   cardName: { fontSize: 12, fontWeight: '600', color: '#1f2937', marginTop: 8, minHeight: 32 },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 4 },
-  cardPrice: { fontSize: 14, fontWeight: 'bold', color: '#800020' },
+  cardPrice: { fontSize: 14, fontWeight: 'bold', color: '#0284c7' },
   cardOriginalPrice: { fontSize: 11, color: '#9ca3af', textDecorationLine: 'line-through' },
 });

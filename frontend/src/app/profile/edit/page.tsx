@@ -44,7 +44,7 @@ export default function ProfileEditPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/edit" className="text-sm font-bold text-[#800020]">
+        <Link href="/login?redirect=/profile/edit" className="text-sm font-bold text-[#0284c7]">
           Login required
         </Link>
       </div>
@@ -72,7 +72,7 @@ export default function ProfileEditPage() {
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#800020]">Edit Personal Details</h1>
+        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Edit Personal Details</h1>
       </header>
 
       <main className="max-w-lg mx-auto w-full px-4 py-6 flex-1">
@@ -127,7 +127,7 @@ export default function ProfileEditPage() {
               <select
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:border-[#800020] bg-white font-medium text-neutral-800"
+                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:border-[#0284c7] bg-white font-medium text-neutral-800"
               >
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
@@ -154,7 +154,7 @@ export default function ProfileEditPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#800020] hover:bg-[#600018] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60 transition-all shadow-md flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60 transition-all shadow-md flex items-center justify-center gap-2 mt-4"
           >
             <Save className="w-4 h-4" />
             <span>{loading ? 'Saving…' : 'Save Details'}</span>

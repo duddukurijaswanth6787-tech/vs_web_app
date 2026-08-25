@@ -129,7 +129,7 @@ function CustomerLoginForm() {
       <main suppressHydrationWarning className="max-w-md mx-auto px-4 py-8 flex-1 w-full space-y-6">
         <div className="text-center space-y-1">
           <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-14 w-auto object-contain mx-auto mb-3" />
-          <span className="text-xs font-bold text-[#800020] uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
             Welcome Back
           </span>
           <h2 className="text-2xl font-bold font-serif text-neutral-900 pt-2">Login to Your Account</h2>
@@ -148,7 +148,7 @@ function CustomerLoginForm() {
                 setError('');
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                authMode === 'PHONE' ? 'bg-[#800020] text-white shadow-2xs' : 'text-neutral-600'
+                authMode === 'PHONE' ? 'bg-[#0284c7] text-white shadow-2xs' : 'text-neutral-600'
               }`}
             >
               Mobile Number (OTP)
@@ -161,7 +161,7 @@ function CustomerLoginForm() {
                 setError('');
               }}
               className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all ${
-                authMode === 'EMAIL' ? 'bg-[#800020] text-white shadow-2xs' : 'text-neutral-600'
+                authMode === 'EMAIL' ? 'bg-[#0284c7] text-white shadow-2xs' : 'text-neutral-600'
               }`}
             >
               Email & Password
@@ -194,7 +194,7 @@ function CustomerLoginForm() {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+                  className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
                 >
                   {isLoading ? 'Sending…' : 'Send OTP'}
                 </button>
@@ -218,7 +218,7 @@ function CustomerLoginForm() {
                 <button
                   type="submit"
                   disabled={isLoading || otp.length < 4}
-                  className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+                  className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
                 >
                   {isLoading ? 'Verifying…' : 'Verify & Login'}
                 </button>
@@ -265,14 +265,14 @@ function CustomerLoginForm() {
                 </div>
               </label>
               <div className="flex justify-end">
-                <Link href="/forgot-password" className="text-xs font-semibold text-[#800020]">
+                <Link href="/forgot-password" className="text-xs font-semibold text-[#0284c7]">
                   Forgot password?
                 </Link>
               </div>
               <button
                 type="submit"
                 disabled={isLoading}
-                className="w-full bg-[#800020] hover:bg-[#600018] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+                className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
               >
                 {isLoading ? 'Signing in…' : 'Login'}
               </button>
@@ -290,7 +290,7 @@ function CustomerLoginForm() {
 
         <p className="text-center text-xs text-neutral-500">
           New here?{' '}
-          <Link href="/register" className="font-bold text-[#800020]">
+          <Link href="/register" className="font-bold text-[#0284c7]">
             Create an account
           </Link>
         </p>

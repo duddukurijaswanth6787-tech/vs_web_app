@@ -57,7 +57,7 @@ export default function ProductDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <View style={styles.centerContainer}>
-          <ActivityIndicator size="large" color="#800020" />
+          <ActivityIndicator size="large" color="#0284c7" />
         </View>
       </SafeAreaView>
     );
@@ -159,13 +159,13 @@ const styles = StyleSheet.create({
   centerContainer: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   errorText: { color: '#b91c1c', fontSize: 13, textAlign: 'center', marginBottom: 8 },
   backLink: { marginTop: 12 },
-  backLinkText: { color: '#800020', fontWeight: 'bold', fontSize: 13 },
+  backLinkText: { color: '#0284c7', fontWeight: 'bold', fontSize: 13 },
   image: { width: '100%', height: 340, backgroundColor: '#f5f5f5' },
   imagePlaceholder: { alignItems: 'center', justifyContent: 'center' },
   content: { padding: 20 },
   name: { fontSize: 19, fontWeight: 'bold', fontFamily: 'serif', color: '#1f2937' },
   priceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 8 },
-  price: { fontSize: 20, fontWeight: 'bold', color: '#800020' },
+  price: { fontSize: 20, fontWeight: 'bold', color: '#0284c7' },
   originalPrice: { fontSize: 14, color: '#9ca3af', textDecorationLine: 'line-through' },
   description: { fontSize: 13, color: '#6b7280', marginTop: 14, lineHeight: 20 },
   quantityRow: {
@@ -188,7 +188,7 @@ const styles = StyleSheet.create({
   quantityValue: { fontSize: 14, fontWeight: 'bold', color: '#1f2937', minWidth: 20, textAlign: 'center' },
   addBtn: {
     marginTop: 24,
-    backgroundColor: '#800020',
+    backgroundColor: '#0284c7',
     borderRadius: 14,
     paddingVertical: 16,
     flexDirection: 'row',

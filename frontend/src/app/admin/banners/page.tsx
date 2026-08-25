@@ -201,9 +201,9 @@ export default function BannersPage() {
               type="checkbox"
               checked={mobileAnnouncementEnabled}
               onChange={(e) => setMobileAnnouncementEnabled(e.target.checked)}
-              className="h-4.5 w-4.5 rounded-md border-neutral-350 text-[#800020] focus:ring-[#800020] focus:ring-offset-2 transition-all cursor-pointer"
+              className="h-4.5 w-4.5 rounded-md border-neutral-350 text-[#0284c7] focus:ring-[#0284c7] focus:ring-offset-2 transition-all cursor-pointer"
             />
-            <span className="font-bold text-[#800020]">Show Top Announcement Bar on Mobile View</span>
+            <span className="font-bold text-[#0284c7]">Show Top Announcement Bar on Mobile View</span>
           </label>
           <div className="w-full flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-3 pt-2">
             <span className="text-xs font-semibold text-neutral-700 shrink-0">Announcement Text:</span>
