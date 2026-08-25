@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
 import { CustomerProfileRepository } from './customer-profile.repository';
@@ -38,30 +37,39 @@ export class CustomerProfileService {
     };
   }
 
+  /**
+   * A CustomerProfile row is created lazily, not at signup -- the Google and
+   * OTP paths create a User without one. Reads have always tolerated that by
+   * creating on demand; writes used to throw 'Profile not found' (422)
+   * instead, so a customer who signed up with Google and went straight to
+   * editing their details could never save. Both paths share this now.
+   */
+  private async findOrCreateProfile(userId: string) {
+    const existing = await this.profileRepository.findByUserId(userId);
+    if (existing) return existing;
+
+    const created = await this.profileRepository.create({
+      user: { connect: { id: userId } },
+    });
+    await this.auditService.log({
+      action: 'PROFILE_CREATED',
+      module: 'customer-profile',
+      resource: 'customerProfile',
+      resourceId: created.id,
+      userId,
+    });
+    return created;
+  }
+
   async getProfile(userId: string): Promise<ProfileResponse> {
-    let profile = await this.profileRepository.findByUserId(userId);
-    if (!profile) {
-      profile = await this.profileRepository.create({
-        user: { connect: { id: userId } },
-      });
-      await this.auditService.log({
-        action: 'PROFILE_CREATED',
-        module: 'customer-profile',
-        resource: 'customerProfile',
-        resourceId: profile.id,
-        userId,
-      });
-    }
-    return this.toResponse(profile);
+    return this.toResponse(await this.findOrCreateProfile(userId));
   }
 
   async updateProfile(
     userId: string,
     dto: UpdateProfileDto,
   ): Promise<ProfileResponse> {
-    const profile = await this.profileRepository.findByUserId(userId);
-    if (!profile)
-      throw new BusinessException('Profile not found', 'PROFILE_001');
+    const profile = await this.findOrCreateProfile(userId);
 
     const { firstName, lastName, ...profileData } = dto;
     if (firstName !== undefined || lastName !== undefined) {
