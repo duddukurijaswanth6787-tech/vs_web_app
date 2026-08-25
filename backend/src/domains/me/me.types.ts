@@ -16,6 +16,22 @@ import {
 
 // ─── Profile ─────────────────────────────────────────────
 
+export class RequestPhoneChangeDto {
+  @ApiProperty()
+  @IsString()
+  phone!: string;
+}
+
+export class ConfirmPhoneChangeDto {
+  @ApiProperty()
+  @IsString()
+  phone!: string;
+
+  @ApiProperty()
+  @IsString()
+  code!: string;
+}
+
 export class UpdateMeDto {
   // CustomerProfileService.updateProfile() already splits these two off and
   // writes them to the User row, but they were missing here -- so the global

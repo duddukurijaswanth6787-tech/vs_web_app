@@ -9,6 +9,8 @@ import {
   Query,
   Req,
   UseGuards,
+  HttpCode,
+  HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
 import {
@@ -20,11 +22,14 @@ import {
 import type { Request } from 'express';
 import { JwtService } from '@domains/auth/services/jwt.service';
 import { CustomerProfileService } from '@domains/customer-profile/customer-profile.service';
+import { PhoneChangeService } from '@domains/customer-profile/phone-change.service';
 import { CustomerAddressService } from '@domains/customer-address/customer-address.service';
 import { WishlistService } from '@domains/wishlist/wishlist.service';
 import { CartService } from '@domains/cart/cart.service';
 import {
   UpdateMeDto,
+  RequestPhoneChangeDto,
+  ConfirmPhoneChangeDto,
   CreateAddressDto,
   UpdateAddressDto,
   AddToWishlistDto,
@@ -44,6 +49,7 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 export class MeController {
   constructor(
     private readonly profileService: CustomerProfileService,
+    private readonly phoneChangeService: PhoneChangeService,
     private readonly addressService: CustomerAddressService,
     private readonly wishlistService: WishlistService,
     private readonly cartService: CartService,
@@ -95,6 +101,40 @@ export class MeController {
     return ResponseBuilder.success(
       await this.profileService.updateProfile(user.sub, dto),
       'Profile updated',
+    );
+  }
+
+  // Phone is a login credential, not just a profile field: OTP login resolves
+  // an account by its number. So it is never written by PUT /me -- it changes
+  // only through this request/confirm pair, and only once an OTP proves the
+  // customer holds the number.
+  @Post('phone/change/request')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Send a verification code to a new phone number' })
+  async requestPhoneChange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: RequestPhoneChangeDto,
+  ) {
+    return ResponseBuilder.success(
+      await this.phoneChangeService.requestChange(user.sub, dto.phone),
+      'Verification code sent',
+    );
+  }
+
+  @Post('phone/change/confirm')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Confirm a phone number change with its code' })
+  async confirmPhoneChange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: ConfirmPhoneChangeDto,
+  ) {
+    return ResponseBuilder.success(
+      await this.phoneChangeService.confirmChange(user.sub, dto.phone, dto.code),
+      'Phone number updated',
     );
   }
 
