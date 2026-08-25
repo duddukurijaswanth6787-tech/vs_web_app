@@ -89,6 +89,33 @@ describe('access token bootstrap', () => {
     expect(second.headers.Authorization).toBeUndefined();
   });
 
+  describe('resolveSession', () => {
+    it('reports a session when the refresh cookie yields a token', async () => {
+      const { client, axiosMod } = await loadModule();
+      resolvesToken(axiosMod);
+
+      await expect(client.resolveSession()).resolves.toBe(true);
+    });
+
+    it('reports no session for a signed-out visitor, so /auth/me is never sent', async () => {
+      // The whole point: an unsent request cannot 401, and a 401 is logged by
+      // the browser itself where no try/catch can reach it.
+      const { client, axiosMod } = await loadModule();
+      (axiosMod.post as jest.Mock).mockRejectedValue(new Error('no session'));
+
+      await expect(client.resolveSession()).resolves.toBe(false);
+    });
+
+    it('answers from memory once a token is known, without re-asking', async () => {
+      const { client, axiosMod } = await loadModule();
+      resolvesToken(axiosMod, 'unused');
+      client.setClientTokens({ accessToken: 't', refreshToken: '', expiresIn: 1 } as never);
+
+      await expect(client.resolveSession()).resolves.toBe(true);
+      expect(axiosMod.post).not.toHaveBeenCalled();
+    });
+  });
+
   it('skips the bootstrap entirely once a login has supplied a token', async () => {
     const { client, axiosMod } = await loadModule();
     resolvesToken(axiosMod, 'unused');

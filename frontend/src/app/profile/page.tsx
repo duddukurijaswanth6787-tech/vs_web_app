@@ -531,7 +531,19 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
 export default function ProfilePage() {
   const { isAuthenticated, isInitializing } = useAuth();
 
-  if (!isInitializing && !isAuthenticated) {
+  // Rendering the authenticated view while the session is still unresolved
+  // mounted its queries (/me, /me/orders, /me/addresses, /me/pending-reviews)
+  // before any token existed, so a signed-out visitor produced a burst of 401s
+  // and a flash of the signed-in layout before falling back to the guest view.
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#FDFBFB]">
+        <div className="h-8 w-8 rounded-full border-2 border-neutral-200 border-t-[#0284c7] animate-spin" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
     return <GuestAccountView />;
   }
 

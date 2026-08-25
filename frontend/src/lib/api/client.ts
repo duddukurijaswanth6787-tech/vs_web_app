@@ -108,6 +108,19 @@ const bootstrapAccessToken = (): Promise<void> => {
 // key is no longer written by anything.
 export const hasClientAccessToken = (): boolean => !!currentAccessToken;
 
+/**
+ * Resolves whether this visitor has a session, doing the one-time bootstrap if
+ * it has not run yet. Lets callers avoid firing authenticated requests for a
+ * signed-out visitor: without this, /auth/me went out regardless and answered
+ * 401, which the browser logs as a red console error that no amount of
+ * try/catch can suppress (it is emitted at the network layer, not by JS).
+ */
+export const resolveSession = async (): Promise<boolean> => {
+  if (currentAccessToken) return true;
+  if (!bootstrapSettled) await bootstrapAccessToken();
+  return !!currentAccessToken;
+};
+
 export const getClientRefreshToken = (): string | null => {
   // Refresh token is in an httpOnly cookie; client JS never sees it.
   // Backend reads it from the cookie on /auth/refresh requests.

@@ -1,8 +1,9 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { authService } from './auth.service';
+import { resolveSession } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/client';
 import { UserProfile } from '@/types/auth.types';
 import { customerCartService } from '@/features/customer/cart.service';
@@ -32,11 +33,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   // false on every load, gated the /auth/me query off, and logged the user out
   // on every full page load or direct URL visit.
   //
-  // So /auth/me now runs on mount. If the access token is missing or expired
-  // the 401 interceptor in lib/api/client.ts silently refreshes from the
-  // cookie and retries, restoring the session. Only an explicit logout stops
-  // the query from running.
-  const [loggedOut, setLoggedOut] = useState(false);
+  // So the session is resolved once from the cookie before /auth/me runs.
+  // Firing it unconditionally meant a signed-out visitor always got a 401,
+  // which the browser logs as a red console error -- unsuppressable from JS,
+  // since it is emitted at the network layer. Asking first avoids the request
+  // entirely, and a signed-in visitor arrives with a token so /auth/me
+  // succeeds first time rather than 401-ing and retrying.
+  //
+  // 'unknown' until that resolves, so the app shows its loading state instead
+  // of briefly deciding the visitor is signed out.
+  const [session, setSession] = useState<'unknown' | 'none' | 'active'>('unknown');
+
+  useEffect(() => {
+    let cancelled = false;
+    resolveSession()
+      .then((hasSession) => {
+        if (!cancelled) setSession(hasSession ? 'active' : 'none');
+      })
+      .catch(() => {
+        if (!cancelled) setSession('none');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const {
     data: user = null,
@@ -45,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   } = useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: authService.getMe,
-    enabled: !loggedOut,
+    enabled: session === 'active',
     retry: false,
     staleTime: 10 * 60 * 1000,
   });
@@ -53,7 +73,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: async () => {
-      setLoggedOut(false);
+      setSession('active');
       try {
         await customerCartService.merge();
         clearGuestId();
@@ -68,7 +88,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      setLoggedOut(true);
+      setSession('none');
       queryClient.setQueryData(queryKeys.auth.me(), null);
       queryClient.clear();
       if (typeof window !== 'undefined') {
@@ -77,7 +97,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const isInitializing = !loggedOut && isLoading;
+  const isInitializing = session === 'unknown' || (session === 'active' && isLoading);
   const isStaffUser = !!user && user.roles.some((r) => STAFF_ROLES.includes(r));
 
   const value: AuthContextType = {
@@ -87,7 +107,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isInitializing,
     login: async (credentials) => loginMutation.mutateAsync(credentials),
     completeTokenLogin: async () => {
-      setLoggedOut(false);
+      setSession('active');
       try {
         await customerCartService.merge();
         clearGuestId();
