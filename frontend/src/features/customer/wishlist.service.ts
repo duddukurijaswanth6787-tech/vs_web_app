@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/api/client';
+import { apiClient, hasClientAccessToken } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 import axios from 'axios';
 
@@ -21,10 +21,10 @@ export interface WishlistDto {
   [key: string]: unknown;
 }
 
-const hasToken = () => {
-  if (typeof window === 'undefined') return false;
-  return !!localStorage.getItem('vd_access_token');
-};
+// localStorage('vd_access_token') is never written any more -- the access
+// token is memory-only and the refresh token is an httpOnly cookie. Reading
+// the old key made every signed-in customer look like a guest here.
+const hasToken = () => hasClientAccessToken();
 
 const getGuestWishlist = (): WishlistItemDto[] => {
   if (typeof window === 'undefined') return [];

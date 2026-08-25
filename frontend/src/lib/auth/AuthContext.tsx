@@ -25,12 +25,18 @@ const STAFF_ROLES = ['admin', 'super_admin', 'staff', 'pos_operator', 'pos_staff
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const queryClient = useQueryClient();
-  const [hasToken, setHasToken] = useState<boolean | undefined>(() => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('vd_refresh_token');
-    }
-    return undefined;
-  });
+  // The refresh token is an httpOnly cookie (see auth-cookie.util.ts), so JS
+  // cannot read it -- the client has no way to know up-front whether a session
+  // exists and must ask the server. This used to seed from
+  // localStorage('vd_refresh_token'), which nothing writes any more: it read
+  // false on every load, gated the /auth/me query off, and logged the user out
+  // on every full page load or direct URL visit.
+  //
+  // So /auth/me now runs on mount. If the access token is missing or expired
+  // the 401 interceptor in lib/api/client.ts silently refreshes from the
+  // cookie and retries, restoring the session. Only an explicit logout stops
+  // the query from running.
+  const [loggedOut, setLoggedOut] = useState(false);
 
   const {
     data: user = null,
@@ -39,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   } = useQuery({
     queryKey: queryKeys.auth.me(),
     queryFn: authService.getMe,
-    enabled: hasToken === true,
+    enabled: !loggedOut,
     retry: false,
     staleTime: 10 * 60 * 1000,
   });
@@ -47,7 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const loginMutation = useMutation({
     mutationFn: authService.login,
     onSuccess: async () => {
-      setHasToken(true);
+      setLoggedOut(false);
       try {
         await customerCartService.merge();
         clearGuestId();
@@ -62,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logoutMutation = useMutation({
     mutationFn: authService.logout,
     onSuccess: () => {
-      setHasToken(false);
+      setLoggedOut(true);
       queryClient.setQueryData(queryKeys.auth.me(), null);
       queryClient.clear();
       if (typeof window !== 'undefined') {
@@ -71,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const isInitializing = hasToken === undefined || (hasToken && isLoading);
+  const isInitializing = !loggedOut && isLoading;
   const isStaffUser = !!user && user.roles.some((r) => STAFF_ROLES.includes(r));
 
   const value: AuthContextType = {
@@ -81,7 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isInitializing,
     login: async (credentials) => loginMutation.mutateAsync(credentials),
     completeTokenLogin: async () => {
-      setHasToken(true);
+      setLoggedOut(false);
       try {
         await customerCartService.merge();
         clearGuestId();

@@ -60,6 +60,11 @@ export const setClientTokens = (tokens: AuthTokens | null) => {
   currentAccessToken = tokens?.accessToken || null;
 };
 
+// True when this tab currently holds an access token in memory. Callers that
+// used to probe localStorage('vd_access_token') must use this instead -- that
+// key is no longer written by anything.
+export const hasClientAccessToken = (): boolean => !!currentAccessToken;
+
 export const getClientRefreshToken = (): string | null => {
   // Refresh token is in an httpOnly cookie; client JS never sees it.
   // Backend reads it from the cookie on /auth/refresh requests.
@@ -80,9 +85,6 @@ apiClient.interceptors.request.use(
       }
     }
 
-    if (!currentAccessToken && typeof window !== 'undefined') {
-      currentAccessToken = localStorage.getItem('vd_access_token');
-    }
     if (currentAccessToken && config.headers) {
       config.headers.Authorization = `Bearer ${currentAccessToken}`;
     }
