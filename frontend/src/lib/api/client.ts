@@ -65,6 +65,42 @@ export const setClientTokens = (tokens: AuthTokens | null) => {
   // token in an httpOnly cookie, which we never read -- it's sent
   // automatically on /api/v1/auth/* requests via credentials: include.
   currentAccessToken = tokens?.accessToken || null;
+  // A fresh login supersedes any earlier "this visitor has no session"
+  // conclusion, and a logout means we should not keep trying to bootstrap
+  // one. Either way the bootstrap question is now settled.
+  bootstrapSettled = true;
+};
+
+// The access token is memory-only, so a full page load starts with nothing --
+// but the httpOnly refresh cookie may still describe a live session. Without
+// this, every query on a cold load fires token-less, 401s, and only then
+// triggers the refresh: a burst of failed requests (5+ on the profile page)
+// before anything succeeds. Resolving the token once, up front, collapses
+// that into a single /auth/refresh.
+//
+// bootstrapSettled means "we know whether a session exists" -- true after a
+// login, a logout, or one completed bootstrap attempt (successful or not),
+// so a genuinely logged-out visitor retries this at most once per page load.
+let bootstrapSettled = false;
+let bootstrapPromise: Promise<void> | null = null;
+
+const bootstrapAccessToken = (): Promise<void> => {
+  if (!bootstrapPromise) {
+    bootstrapPromise = axios
+      .post(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true })
+      .then((res) => {
+        const token = res.data?.data?.accessToken;
+        if (token) currentAccessToken = token;
+      })
+      // A failure here is the normal path for a signed-out visitor, not an
+      // error worth surfacing -- requests simply proceed unauthenticated.
+      .catch(() => undefined)
+      .finally(() => {
+        bootstrapSettled = true;
+        bootstrapPromise = null;
+      });
+  }
+  return bootstrapPromise;
 };
 
 // True when this tab currently holds an access token in memory. Callers that
@@ -80,7 +116,22 @@ export const getClientRefreshToken = (): string | null => {
 
 // Intercept outgoing requests to attach JWT Authorization Bearer header
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  async (config: InternalAxiosRequestConfig) => {
+    // Resolve the session once before the first token-less request goes out.
+    // Skipped for the auth endpoints themselves -- /auth/refresh bootstrapping
+    // itself would recurse, and login/register/otp are how a session is
+    // created in the first place, so they have nothing to wait for.
+    const url = config.url || '';
+    const isAuthEntryPoint =
+      url.includes('/auth/refresh') ||
+      url.includes('/auth/login') ||
+      url.includes('/auth/register') ||
+      url.includes('/auth/google') ||
+      url.includes('/auth/otp');
+    if (!currentAccessToken && !bootstrapSettled && !isAuthEntryPoint) {
+      await bootstrapAccessToken();
+    }
+
     // LAN-dev convenience only: rewrite to <phone-hostname>:4000 so teammates on
     // the same network can hit the local backend. Never applies once
     // NEXT_PUBLIC_API_BASE_URL is set (UAT/production), since that value is
