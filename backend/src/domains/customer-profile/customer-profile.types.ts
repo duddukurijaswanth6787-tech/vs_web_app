@@ -92,6 +92,8 @@ export class UpdateProfileDto {
   @Min(0)
   preferredPriceMax?: number;
   @ApiPropertyOptional() @IsOptional() @IsString() profileImage?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() companyName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() gstin?: string;
 }
 
 export class ProfileResponse {

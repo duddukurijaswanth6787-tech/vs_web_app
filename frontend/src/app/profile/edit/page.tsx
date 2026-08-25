@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Phone, Calendar, Globe, DollarSign, Image as ImageIcon, ShieldAlert, Save, Tag, Sparkles, SlidersHorizontal, Check } from 'lucide-react';
+import { ArrowLeft, User, Phone, Calendar, Globe, DollarSign, Save, Tag, Sparkles, SlidersHorizontal, Check } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerProfile } from '@/features/customer/hooks';
@@ -35,8 +35,6 @@ export default function ProfileEditPage() {
     dateOfBirth: '',
     preferredLanguage: 'English',
     preferredCurrency: 'INR',
-    emergencyContact: '',
-    avatarUrl: '',
     companyName: '',
     gstin: '',
     preferredCategories: [] as string[],
@@ -63,8 +61,6 @@ export default function ProfileEditPage() {
         dateOfBirth: (data.dateOfBirth as string) || '',
         preferredLanguage: (data.preferredLanguage as string) || 'English',
         preferredCurrency: (data.preferredCurrency as string) || 'INR',
-        emergencyContact: (data.emergencyContact as string) || '',
-        avatarUrl: (data.avatarUrl as string) || '',
         companyName: String(d.companyName || ''),
         gstin: String(d.gstin || ''),
         preferredCategories: Array.isArray(d.preferredCategories) ? d.preferredCategories : [],
@@ -194,35 +190,19 @@ export default function ProfileEditPage() {
             </label>
           </div>
 
-          {/* DOB & Emergency Contact */}
-          <div className="grid grid-cols-2 gap-3">
-            <label className="block space-y-1">
-              <span className="font-semibold text-neutral-700">Date of Birth</span>
-              <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2">
-                <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                <input
-                  type="date"
-                  value={form.dateOfBirth}
-                  onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full"
-                />
-              </div>
-            </label>
-
-            <label className="block space-y-1">
-              <span className="font-semibold text-neutral-700">Emergency Contact</span>
-              <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2">
-                <ShieldAlert className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
-                <input
-                  type="tel"
-                  placeholder="Emergency phone"
-                  value={form.emergencyContact}
-                  onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full"
-                />
-              </div>
-            </label>
-          </div>
+          {/* Date of Birth */}
+          <label className="block space-y-1">
+            <span className="font-semibold text-neutral-700">Date of Birth</span>
+            <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2">
+              <Calendar className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <input
+                type="date"
+                value={form.dateOfBirth}
+                onChange={(e) => setForm({ ...form, dateOfBirth: e.target.value })}
+                className="flex-1 text-xs outline-none w-full"
+              />
+            </div>
+          </label>
 
           {/* B2B Wholesale Info */}
           <div className="border-t border-neutral-100 pt-3 space-y-3">
