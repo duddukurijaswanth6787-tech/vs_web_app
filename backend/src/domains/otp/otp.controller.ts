@@ -17,7 +17,7 @@ import {
   FirebasePhoneLoginDto,
 } from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
-import { setRefreshTokenCookie } from '@domains/auth/auth-cookie.util';
+import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
 
 @ApiTags('OTP Auth')
 @Controller('auth/otp')
@@ -58,7 +58,7 @@ export class OtpController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(result, 'OTP login successful');
+    return ResponseBuilder.success(withoutRefreshToken(result), 'OTP login successful');
   }
 
   @Post('firebase-login')
@@ -78,6 +78,6 @@ export class OtpController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(result, 'OTP login successful');
+    return ResponseBuilder.success(withoutRefreshToken(result), 'OTP login successful');
   }
 }

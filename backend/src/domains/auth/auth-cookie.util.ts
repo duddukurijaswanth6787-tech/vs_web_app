@@ -27,3 +27,17 @@ export function setRefreshTokenCookie(res: Response, token: string) {
 export function clearRefreshTokenCookie(res: Response) {
   res.clearCookie(REFRESH_TOKEN_COOKIE, { path: '/api/v1/auth' });
 }
+
+// No client in this codebase reads refreshToken from the response body: the
+// web app reads the httpOnly cookie exclusively, and shopora-mobile (the
+// only other consumer) only ever reads accessToken. Leaving it in the JSON
+// body served no purpose but exposing a long-lived credential to anything
+// with page access (XSS, browser history/logs) -- the opposite of what the
+// httpOnly cookie migration was for. Controllers still read
+// result.refreshToken directly (before calling this) to set the cookie.
+export function withoutRefreshToken<T extends { refreshToken?: string }>(
+  result: T,
+): Omit<T, 'refreshToken'> {
+  const { refreshToken: _refreshToken, ...rest } = result;
+  return rest;
+}
