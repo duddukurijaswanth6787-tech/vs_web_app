@@ -27,6 +27,7 @@ import {
   useCustomerCart,
   useCartMutations,
   useWishlistMutations,
+  useFeatureEnabled,
 } from '@/features/customer/hooks';
 import { formatInr, PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -37,6 +38,7 @@ import type { CartItemDto } from '@/features/customer/cart.service';
 const COUPON_STORAGE_KEY = 'vd_coupon_code';
 
 export default function CartPage() {
+  const returnsEnabled = useFeatureEnabled('returns');
   const router = useRouter();
   const { data: cart, isLoading, error, refetch } = useCustomerCart();
   const { updateQuantity, removeItem } = useCartMutations();
@@ -155,6 +157,7 @@ export default function CartPage() {
               <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">100% Safe & Secure</p>
             </div>
           </div>
+          {returnsEnabled && (
           <div className="flex flex-col items-center justify-center gap-1 border-x border-sky-200/50 px-1">
             <RotateCcw className="w-4 h-4 text-[#0284c7]" />
             <div>
@@ -162,6 +165,7 @@ export default function CartPage() {
               <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">7 Days Return</p>
             </div>
           </div>
+          )}
           <div className="flex flex-col items-center justify-center gap-1">
             <Gift className="w-4 h-4 text-[#0284c7]" />
             <div>
@@ -504,12 +508,14 @@ export default function CartPage() {
                     </div>
                     <span>Secure Payment</span>
                   </div>
+                  {returnsEnabled && (
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <RotateCcw className="w-3.5 h-3.5" />
                     </div>
                     <span>Easy Returns</span>
                   </div>
+                  )}
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <ShieldCheck className="w-3.5 h-3.5" />

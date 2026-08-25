@@ -14,9 +14,11 @@ import {
   Headphones,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useFeatureEnabled } from '@/features/customer/hooks';
 
 export function StorefrontFooter() {
   const { isAuthenticated } = useAuth();
+  const returnsEnabled = useFeatureEnabled('returns');
   return (
     <footer className="w-full font-sans">
       {/* Main Footer Content */}
@@ -74,7 +76,7 @@ export function StorefrontFooter() {
                 <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/track-order" className="hover:text-white transition-colors">Track Order</Link></li>
-                <li><Link href="/returns" className="hover:text-white transition-colors">My Returns</Link></li>
+                {returnsEnabled && <li><Link href="/returns" className="hover:text-white transition-colors">My Returns</Link></li>}
                 <li><Link href="/cancellation-refund-policy" className="hover:text-white transition-colors">Cancellation & Refund Policy</Link></li>
                 <li><Link href="/shipping" className="hover:text-white transition-colors">Shipping Info</Link></li>
                 <li><Link href="/faqs" className="hover:text-white transition-colors">FAQs & Size Guide</Link></li>

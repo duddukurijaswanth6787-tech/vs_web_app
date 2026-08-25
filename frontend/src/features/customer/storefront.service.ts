@@ -1,6 +1,7 @@
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 import type { ProductResponse } from '@/features/catalog/products/product.types';
+import type { FeatureToggle } from '@/features/storefront/storefront.types';
 
 export interface PublicSettingsDto {
   storeName?: string;
@@ -68,9 +69,12 @@ export const customerStorefrontService = {
     return res.data.data!;
   },
 
-  getFeatures: async (): Promise<Record<string, boolean>> => {
-    const res = await apiClient.get<StandardResponse<Record<string, boolean>>>('/features');
-    return res.data.data!;
+  // The backend returns featureToggle.findMany() -- an array of rows, not a
+  // key->bool map. The old Record<string, boolean> signature was simply wrong;
+  // it went unnoticed because nothing consumed this until returns gating.
+  getFeatures: async (): Promise<FeatureToggle[]> => {
+    const res = await apiClient.get<StandardResponse<FeatureToggle[]>>('/features');
+    return res.data.data ?? [];
   },
 
   subscribeNewsletter: async (email: string, source = 'storefront'): Promise<{ subscribed: boolean; message?: string }> => {

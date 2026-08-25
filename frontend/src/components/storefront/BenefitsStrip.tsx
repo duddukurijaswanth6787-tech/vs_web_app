@@ -2,19 +2,23 @@
 
 import React from 'react';
 import { Truck, RotateCcw, ShieldCheck, Banknote, Gift } from 'lucide-react';
+import { useFeatureEnabled } from '@/features/customer/hooks';
 
 export function BenefitsStrip() {
+  const returnsEnabled = useFeatureEnabled('returns');
   const benefits = [
     {
       icon: Truck,
       title: 'Free Shipping',
       description: 'On orders above ₹999',
     },
-    {
-      icon: RotateCcw,
-      title: 'Easy Returns',
-      description: '10 days return policy',
-    },
+    ...(returnsEnabled
+      ? [{
+          icon: RotateCcw,
+          title: 'Easy Returns',
+          description: '10 days return policy',
+        }]
+      : []),
     {
       icon: ShieldCheck,
       title: 'Secure Payment',

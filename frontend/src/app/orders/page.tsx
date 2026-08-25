@@ -7,12 +7,13 @@ import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
-import { useCustomerOrders } from '@/features/customer/hooks';
+import { useCustomerOrders, useFeatureEnabled } from '@/features/customer/hooks';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import type { OrderDto } from '@/features/customer/orders.service';
 
 export default function OrdersPage() {
+  const returnsEnabled = useFeatureEnabled('returns');
   const { isAuthenticated, isInitializing } = useAuth();
   const { data, isLoading, error } = useCustomerOrders({}, isAuthenticated);
 
@@ -70,9 +71,11 @@ export default function OrdersPage() {
               <Link href={`/orders/track/${order.orderNumber}`} className="text-neutral-600">
                 Track
               </Link>
+              {returnsEnabled && (
               <Link href={`/orders/return/${order.orderNumber}`} className="text-neutral-600">
                 Return
               </Link>
+              )}
               <Link href={`/orders/review/${order.orderNumber}`} className="text-neutral-600">
                 Review
               </Link>

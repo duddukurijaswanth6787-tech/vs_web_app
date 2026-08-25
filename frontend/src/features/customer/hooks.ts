@@ -47,6 +47,39 @@ export function usePublicSettings() {
   });
 }
 
+export function useStorefrontFeatures() {
+  return useQuery({
+    queryKey: ['storefront-features'],
+    queryFn: () => customerStorefrontService.getFeatures(),
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+/**
+ * Resolves one toggle out of the feature list.
+ *
+ * Defaults to FALSE for both "still loading" and "row missing" — the unsafe
+ * default is the one that shows a customer a feature the store has switched
+ * off. Kept as a plain function so the default can be tested without a
+ * React Query provider (see hooks.feature-enabled.test.ts).
+ */
+export function isFeatureOn(
+  features: FeatureToggle[] | undefined,
+  key: string,
+): boolean {
+  return features?.find((f) => f.key === key)?.enabled ?? false;
+}
+
+/**
+ * Reads one super-admin feature toggle (Admin → Storefront → Feature Toggles).
+ * The features query is SSR-prefetched, so the real value is normally
+ * hydrated on first paint rather than flashing the false default.
+ */
+export function useFeatureEnabled(key: string): boolean {
+  const { data } = useStorefrontFeatures();
+  return isFeatureOn(data, key);
+}
+
 export function useStorefrontBanners() {
   return useQuery({
     queryKey: ['banners'],

@@ -14,6 +14,7 @@ const keys = {
   banners: ['banners'] as const,
   coupons: ['customer', 'coupons'] as const,
   reels: ['social', 'public-reels'] as const,
+  features: ['storefront-features'] as const,
 };
 
 // Throws on failure rather than swallowing to null: prefetchQuery marks a
@@ -56,6 +57,13 @@ export async function prefetchStorefrontData(queryClient: QueryClient) {
     queryClient.prefetchQuery({
       queryKey: keys.reels,
       queryFn: () => apiFetch('/social/reels?limit=20'),
+      staleTime: 5 * 60 * 1000,
+    }),
+    // Prefetched so feature-gated sections (e.g. returns) render at their real
+    // visibility on first paint instead of popping in after hydration.
+    queryClient.prefetchQuery({
+      queryKey: keys.features,
+      queryFn: () => apiFetch('/features'),
       staleTime: 5 * 60 * 1000,
     }),
   ]);

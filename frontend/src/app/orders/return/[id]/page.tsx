@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useCustomerOrder } from '@/features/customer/hooks';
+import { useCustomerOrder, useFeatureEnabled } from '@/features/customer/hooks';
 import { customerOrdersService } from '@/features/customer/orders.service';
 import { getApiErrorMessage } from '@/utils/api-error';
 import type { OrderItemDto } from '@/features/customer/orders.service';
@@ -15,6 +15,7 @@ export default function OrderReturnPage() {
   const orderNumber = String(params.id || '');
   const router = useRouter();
   const { isAuthenticated, isInitializing } = useAuth();
+  const returnsEnabled = useFeatureEnabled('returns');
   const { data: order } = useCustomerOrder(orderNumber, isAuthenticated);
   const [reason, setReason] = useState('Size issue');
   const [description, setDescription] = useState('');
@@ -46,6 +47,17 @@ export default function OrderReturnPage() {
       setLoading(false);
     }
   };
+
+  // Checked before the auth gate: when returns are switched off there is no
+  // point sending someone to log in for a form they cannot submit.
+  if (!returnsEnabled) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <p className="text-sm text-neutral-600">Returns are not available at the moment.</p>
+        <Link href="/orders" className="text-xs font-bold text-[#0284c7]">Back to My Orders</Link>
+      </div>
+    );
+  }
 
   if (!isInitializing && !isAuthenticated) {
     return (

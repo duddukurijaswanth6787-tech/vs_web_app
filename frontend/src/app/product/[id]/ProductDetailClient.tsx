@@ -34,6 +34,7 @@ import {
   useCustomerProducts,
   useProductReviews,
   useActiveCoupons,
+  useFeatureEnabled,
 } from '@/features/customer/hooks';
 import { useTrackRecentlyViewed } from '@/features/recently-viewed/recently-viewed.hooks';
 import { useVariants } from '@/features/catalog/variants/variant.hooks';
@@ -53,6 +54,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { resolveMediaUrl, isLocalOrPlaceholder, withVariant } from '@/lib/media-url';
 
 export function ProductDetailClient() {
+  const returnsEnabled = useFeatureEnabled('returns');
   const params = useParams();
   const idOrSlug = String(params.id || '');
   const router = useRouter();
@@ -739,7 +741,7 @@ export function ProductDetailClient() {
                         <li>Delivery by Tuesday</li>
                         <li>Free Standard Delivery</li>
                         <li>Cash on Delivery (COD)</li>
-                        <li>Easy Returns & Exchange</li>
+                        {returnsEnabled && <li>Easy Returns & Exchange</li>}
                       </ul>
                     </div>
                   )}
@@ -749,17 +751,19 @@ export function ProductDetailClient() {
                 </div>
 
                 {/* Service Icons Grid (Mock style) */}
-                <div className="grid grid-cols-4 gap-2.5 border-t border-neutral-100 pt-5 text-center">
+                <div className={`grid ${returnsEnabled ? 'grid-cols-4' : 'grid-cols-3'} gap-2.5 border-t border-neutral-100 pt-5 text-center`}>
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Truck className="w-4 h-4" /></div>
                     <p className="text-[9px] font-bold text-neutral-800 leading-tight">Delivery</p>
                     <p className="text-[7px] font-medium text-neutral-400 leading-none">2-5 working days</p>
                   </div>
+                  {returnsEnabled && (
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><RefreshCw className="w-4 h-4" /></div>
                     <p className="text-[9px] font-bold text-neutral-800 leading-tight">Easy Returns</p>
                     <p className="text-[7px] font-medium text-neutral-400 leading-none">7 days return policy</p>
                   </div>
+                  )}
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Award className="w-4 h-4" /></div>
                     <p className="text-[9px] font-bold text-neutral-800 leading-tight">COD Available</p>

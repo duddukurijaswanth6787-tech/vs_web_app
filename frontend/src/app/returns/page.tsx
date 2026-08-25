@@ -6,7 +6,7 @@ import { ArrowLeft, RotateCcw } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
-import { useMyReturns, useCancelReturn } from '@/features/customer/hooks';
+import { useMyReturns, useCancelReturn, useFeatureEnabled } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -20,6 +20,7 @@ const STATUS_STYLES: Record<string, string> = {
 
 export default function ReturnsPage() {
   const { isAuthenticated, isInitializing } = useAuth();
+  const returnsEnabled = useFeatureEnabled('returns');
   const { data, isLoading, error } = useMyReturns({}, isAuthenticated);
   const cancelReturn = useCancelReturn();
   const [cancellingId, setCancellingId] = useState<string | null>(null);
@@ -42,6 +43,18 @@ export default function ReturnsPage() {
       setCancellingId(null);
     }
   };
+
+  // Guards the direct URL, not just the nav links -- hiding the entry points
+  // alone still leaves /returns reachable by typed URL or stale bookmark.
+  if (!returnsEnabled) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
+        <RotateCcw className="w-10 h-10 text-neutral-300" />
+        <p className="text-sm text-neutral-600">Returns are not available at the moment.</p>
+        <Link href="/" className="text-xs font-bold text-[#0284c7]">Back to Home</Link>
+      </div>
+    );
+  }
 
   if (!isInitializing && !isAuthenticated) {
     return (
