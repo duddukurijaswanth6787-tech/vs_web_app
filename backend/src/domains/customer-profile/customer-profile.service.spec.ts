@@ -69,6 +69,34 @@ describe('CustomerProfileService profile auto-creation', () => {
     expect(repo.update).toHaveBeenCalledWith('profile-1', { phone: '07660922416' });
   });
 
+  it('returns the identity fields from the User row, so the edit form can prefill', async () => {
+    // firstName/lastName/email live on User, not CustomerProfile. Omitting
+    // them left every name and email box in the edit form blank.
+    const { service, repo } = buildService({ profileExists: true });
+    repo.findByUserId.mockResolvedValue({
+      id: 'profile-1',
+      userId: 'user-1',
+      phone: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      user: {
+        firstName: 'Duddukuri',
+        lastName: 'Jaswanth',
+        email: 'jaswanth@example.com',
+        phone: '07660922416',
+      },
+    });
+
+    const profile = await service.getProfile('user-1');
+
+    expect(profile.firstName).toBe('Duddukuri');
+    expect(profile.lastName).toBe('Jaswanth');
+    expect(profile.email).toBe('jaswanth@example.com');
+    // Falls back to the number captured at OTP signup when the profile row
+    // has none of its own, so a phone-login customer sees it prefilled.
+    expect(profile.phone).toBe('07660922416');
+  });
+
   it('converts dateOfBirth to a Date, since Prisma rejects the date-only string', async () => {
     // <input type="date"> submits 'YYYY-MM-DD'. Passing that straight through
     // threw PrismaClientValidationError, which the exception mapper turned

@@ -97,6 +97,10 @@ export class UpdateProfileDto {
 export class ProfileResponse {
   @ApiProperty() id!: string;
   @ApiProperty() userId!: string;
+  // Sourced from the related User row, not the profile row itself.
+  @ApiPropertyOptional() firstName?: string;
+  @ApiPropertyOptional() lastName?: string;
+  @ApiPropertyOptional() email?: string;
   @ApiPropertyOptional() phone?: string;
   @ApiPropertyOptional() gender?: string;
   @ApiPropertyOptional() dateOfBirth?: Date;

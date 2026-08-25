@@ -16,7 +16,15 @@ export class CustomerProfileService {
     return {
       id: p.id,
       userId: p.userId,
-      phone: p.phone ?? undefined,
+      // Identity lives on the User row. Without these the edit form had
+      // nothing to prefill its name/email fields with, so they rendered blank
+      // even for a fully populated account.
+      firstName: p.user?.firstName ?? undefined,
+      lastName: p.user?.lastName ?? undefined,
+      email: p.user?.email ?? undefined,
+      // Prefer the profile's own phone, falling back to the one captured at
+      // OTP signup, so a phone-login customer sees their number prefilled.
+      phone: p.phone ?? p.user?.phone ?? undefined,
       gender: p.gender ?? undefined,
       dateOfBirth: p.dateOfBirth ?? undefined,
       preferredLanguage: p.preferredLanguage ?? undefined,
