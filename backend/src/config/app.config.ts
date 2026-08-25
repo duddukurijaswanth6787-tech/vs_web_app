@@ -163,8 +163,22 @@ export default registerAs('app', () => ({
   },
   httpLog: {
     enabled: process.env.HTTP_LOG_ENABLED !== 'false',
-    requestBody: process.env.HTTP_LOG_REQUEST_BODY !== 'false',
-    responseBody: process.env.HTTP_LOG_RESPONSE_BODY !== 'false',
+    // Full bodies default off in production (must opt in) and on everywhere
+    // else (must opt out), mirroring the swagger flag above. Logging every
+    // request and response body verbatim is fine locally, but on a live
+    // storefront -- where a single catalog or homepage response is a large
+    // JSON array -- it saturated Railway's 500 logs/sec cap and started
+    // dropping messages, which costs the diagnostics these logs exist for.
+    // Sensitive keys are redacted either way (http-log-serializer.ts), so
+    // this is about volume, not exposure.
+    requestBody:
+      process.env.HTTP_LOG_REQUEST_BODY === 'true' ||
+      (process.env.HTTP_LOG_REQUEST_BODY !== 'false' &&
+        (process.env.NODE_ENV || 'development') !== 'production'),
+    responseBody:
+      process.env.HTTP_LOG_RESPONSE_BODY === 'true' ||
+      (process.env.HTTP_LOG_RESPONSE_BODY !== 'false' &&
+        (process.env.NODE_ENV || 'development') !== 'production'),
     maxBodyLength: parseInt(
       process.env.HTTP_LOG_MAX_BODY_LENGTH || '10000',
       10,
