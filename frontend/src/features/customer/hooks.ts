@@ -81,6 +81,20 @@ export function useFeatureEnabled(key: string): boolean {
   return isFeatureOn(data, key);
 }
 
+/**
+ * Loyalty balance lives on its own endpoint, and the backend gates it with
+ * featureGate.assertEnabled('loyalty') -- so this stays disabled while the
+ * toggle is off rather than firing a request that is guaranteed to 403.
+ */
+export function useLoyaltyBalance(enabled = true) {
+  return useQuery({
+    queryKey: ['customer', 'loyalty-balance'],
+    queryFn: () => customerMeService.getLoyaltyBalance(),
+    enabled,
+    staleTime: 60 * 1000,
+  });
+}
+
 export function useStorefrontBanners() {
   return useQuery({
     queryKey: ['banners'],

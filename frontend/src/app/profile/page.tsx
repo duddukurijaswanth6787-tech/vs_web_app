@@ -38,6 +38,8 @@ import {
   useCustomerAddresses,
   useCustomerOrders,
   useActiveCoupons,
+  useLoyaltyBalance,
+  useFeatureEnabled,
 } from '@/features/customer/hooks';
 
 function GuestAccountView() {
@@ -213,6 +215,8 @@ function AuthenticatedAccountView() {
   const { data: ordersData } = useCustomerOrders();
   const { data: couponsData } = useActiveCoupons();
   const couponsCount = Array.isArray(couponsData) ? couponsData.length : 0;
+  const loyaltyEnabled = useFeatureEnabled('loyalty');
+  const { data: loyalty } = useLoyaltyBalance(loyaltyEnabled);
 
   const profRec = (profile || {}) as Record<string, unknown>;
   const userRec = (user || {}) as Record<string, unknown>;
@@ -227,8 +231,11 @@ function AuthenticatedAccountView() {
   const email = /^otp_\d+@vasanthi\.local$/i.test(rawEmail) ? '' : rawEmail;
   const rawPhone = String(profRec.phone || userRec.phone || '');
   const phone = rawPhone ? (rawPhone.startsWith('+') ? rawPhone : `+91 ${rawPhone}`) : '';
-  const points = Number(profRec.loyaltyPoints ?? userRec.loyaltyPoints ?? 0);
-  const tier = String(profRec.tier || userRec.tier || 'Member');
+  // profRec/userRec never carried these -- there is no loyaltyPoints or tier
+  // column on the user or profile row, so the old lookup silently resolved to
+  // 0 / 'Member' for every customer. Points live on LoyaltyAccount.
+  const points = loyalty?.pointsBalance ?? 0;
+  const tier = loyalty?.tier || 'Member';
   const avatarUrl = profile?.avatarUrl || String(userRec.avatarUrl || '') || '';
 
   const wishlistRec = (wishlistData || {}) as Record<string, unknown>;
@@ -331,6 +338,7 @@ function AuthenticatedAccountView() {
             </div>
 
             {/* Loyalty Points Section */}
+            {loyaltyEnabled && (
             <div className="text-right border-l border-white/20 pl-4 shrink-0 space-y-1">
               <p className="text-[10px] uppercase font-bold tracking-wider text-sky-200">Loyalty Points</p>
               <div className="flex items-center justify-end gap-1.5 text-amber-300">
@@ -342,6 +350,7 @@ function AuthenticatedAccountView() {
                 <span>{tier}</span>
               </div>
             </div>
+            )}
           </div>
 
           {/* Quick Stat Bar (Orders, Wishlist, Coupons, Addresses) */}

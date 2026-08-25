@@ -1,6 +1,15 @@
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 
+export interface LoyaltyBalanceDto {
+  customerId: string;
+  pointsBalance: number;
+  lifetimeEarned: number;
+  lifetimeRedeemed: number;
+  tier: string;
+  isActive: boolean;
+}
+
 export interface AddressDto {
   id: string;
   fullName?: string;
@@ -56,5 +65,12 @@ export const customerMeService = {
 
   deleteAddress: async (id: string): Promise<void> => {
     await apiClient.delete(`/me/addresses/${id}`);
+  },
+
+  // Loyalty lives in its own LoyaltyAccount table, not on the profile or user
+  // row -- /me has never carried a points field, so it has to be read here.
+  getLoyaltyBalance: async (): Promise<LoyaltyBalanceDto> => {
+    const res = await apiClient.get<StandardResponse<LoyaltyBalanceDto>>('/loyalty/balance');
+    return res.data.data!;
   },
 };
