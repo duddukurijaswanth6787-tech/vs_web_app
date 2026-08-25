@@ -503,6 +503,14 @@ export const adminNavigation: NavGroup[] = [
       { id: 'storefront-seo', title: 'SEO', href: '/admin/storefront/seo', icon: Search, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-newsletter', title: 'Newsletter', href: '/admin/storefront/newsletter', icon: Newspaper, permissions: ['storefront.view'], implemented: true },
       { id: 'storefront-maintenance', title: 'Maintenance', href: '/admin/storefront/maintenance', icon: Wrench, permissions: ['storefront.manage'], implemented: true },
+      // These four pages shipped without nav entries, so the only route to
+      // them was the tile grid on /admin/storefront (and Categories/Footer had
+      // no link at all). Feature Toggles is where returns/loyalty visibility is
+      // controlled -- unreachable from the sidebar meant unusable in practice.
+      { id: 'storefront-features', title: 'Feature Toggles', href: '/admin/storefront/features', icon: ToggleLeft, permissions: ['storefront.manage'], implemented: true },
+      { id: 'storefront-homepage', title: 'Homepage', href: '/admin/storefront/homepage', icon: Layout, permissions: ['storefront.manage'], implemented: true },
+      { id: 'storefront-categories', title: 'Category Display', href: '/admin/storefront/categories', icon: LayoutGrid, permissions: ['storefront.manage'], implemented: true },
+      { id: 'storefront-footer', title: 'Footer', href: '/admin/storefront/footer', icon: FolderOpen, permissions: ['storefront.manage'], implemented: true },
     ],
   },
   {
