@@ -25,28 +25,28 @@ export const siteOpenGraph = {
   type: "website" as const,
   locale: "en_IN",
   siteName: "Vasanthi's Signature",
-  title: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Sarees",
-  description: "Official Online Store for Vasanthi's Signature - Premium Sarees, Lehengas & Handcrafted Designer Wear",
+  title: "Vasanthi's Signature | Women's Ethnic Wear & Designer Fashion",
+  description: "Official Online Store for Vasanthi's Signature - Premium women's ethnic wear, designer fashion, and handcrafted collections.",
   images: ["/brand/logo-full.png"],
 };
 
 export const metadata: Metadata = {
   metadataBase: new URL("https://vasanthissignature.in"),
   title: {
-    default: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Sarees",
+    default: "Vasanthi's Signature | Women's Ethnic Wear & Designer Fashion",
     template: "%s | Vasanthi's Signature",
   },
-  description: "Official Online Store for Vasanthi's Signature - Discover premium handcrafted sarees, designer lehengas, bridal ethnic wear, and luxury outfits.",
+  description: "Official Online Store for Vasanthi's Signature - Premium women's ethnic wear, designer fashion, and handcrafted collections.",
   keywords: [
     "Vasanthi's Signature",
     "vasanthissignature",
     "vasanthi signature",
     "vasanthissignature.in",
-    "Luxury Ethnic Wear",
-    "Designer Sarees",
-    "Bridal Sarees",
-    "Lehengas",
-    "Indian Festive Wear",
+    "Women's Ethnic Wear",
+    "Designer Fashion",
+    "Indian Designer Clothing",
+    "Ethnic Fashion",
+    "Women's Fashion",
   ],
   alternates: {
     canonical: "https://vasanthissignature.in",
