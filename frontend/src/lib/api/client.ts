@@ -3,21 +3,15 @@ import { AuthTokens } from '@/types/auth.types';
 
 const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (envUrl) {
-    if (envUrl.includes('api.vasanthisignature.in') || envUrl.includes('api.vasanthis-signature.in')) {
-      return 'https://vsss-production.up.railway.app/api/v1';
-    }
-    return envUrl;
-  }
+  if (envUrl) return envUrl;
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
-    const protocol = window.location.protocol;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://vsss-production.up.railway.app/api/v1';
+      return 'https://api.vasanthissignature.in/api/v1';
     }
     return '/api/v1';
   }
-  return 'https://vsss-production.up.railway.app/api/v1';
+  return 'https://api.vasanthissignature.in/api/v1';
 };
 export const apiClient = axios.create({
   baseURL: getApiBaseUrl(),
@@ -36,9 +30,10 @@ export const getUnprefixedBaseUrl = (): string => {
   return base.replace(/\/api\/v1\/?$/, '');
 };
 
-// Memory token cache to avoid scattered localStorage reads
+// Memory-only access token cache. Refresh token is stored in an httpOnly
+// cookie by the backend -- never accessible to JS, and automatically sent
+// on requests to /api/v1/auth/* due to credentials: include in apiClient config.
 let currentAccessToken: string | null = null;
-let currentRefreshToken: string | null = null;
 
 // Synchronization lock to ensure a single-flight refresh request
 let isRefreshing = false;
@@ -53,34 +48,22 @@ const onRefreshed = (token: string | null) => {
   refreshSubscribers = [];
 };
 
-// Initialize tokens from localStorage (safe check for SSR environment)
+// No-op: tokens no longer come from localStorage
 export const initializeClientTokens = () => {
-  if (typeof window !== 'undefined') {
-    currentAccessToken = localStorage.getItem('vd_access_token');
-    currentRefreshToken = localStorage.getItem('vd_refresh_token');
-  }
+  // Access token is memory-only; refresh token lives in httpOnly cookie
 };
 
 export const setClientTokens = (tokens: AuthTokens | null) => {
+  // Store only the access token in memory. The backend set the refresh
+  // token in an httpOnly cookie, which we never read -- it's sent
+  // automatically on /api/v1/auth/* requests via credentials: include.
   currentAccessToken = tokens?.accessToken || null;
-  currentRefreshToken = tokens?.refreshToken || null;
-
-  if (typeof window !== 'undefined') {
-    if (tokens) {
-      localStorage.setItem('vd_access_token', tokens.accessToken);
-      localStorage.setItem('vd_refresh_token', tokens.refreshToken);
-    } else {
-      localStorage.removeItem('vd_access_token');
-      localStorage.removeItem('vd_refresh_token');
-    }
-  }
 };
 
 export const getClientRefreshToken = (): string | null => {
-  if (!currentRefreshToken && typeof window !== 'undefined') {
-    currentRefreshToken = localStorage.getItem('vd_refresh_token');
-  }
-  return currentRefreshToken;
+  // Refresh token is in an httpOnly cookie; client JS never sees it.
+  // Backend reads it from the cookie on /auth/refresh requests.
+  return null;
 };
 
 // Intercept outgoing requests to attach JWT Authorization Bearer header
@@ -156,19 +139,11 @@ apiClient.interceptors.response.use(
       originalRequest._retry = true;
       isRefreshing = true;
 
-      const refreshToken = getClientRefreshToken();
-
-      if (!refreshToken) {
-        isRefreshing = false;
-        onRefreshed(null);
-        handleAuthFailure();
-        return Promise.reject(error);
-      }
-
       try {
-        // ponytail: call refresh token API directly via base axios client to avoid header interception loops
-        const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {
-          refreshToken,
+        // ponytail: call refresh token API directly via base axios client to avoid header interception loops.
+        // Refresh token is in an httpOnly cookie; server reads it automatically, so body is empty.
+        const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {}, {
+          withCredentials: true,
         });
 
         const newTokens = response.data?.data;

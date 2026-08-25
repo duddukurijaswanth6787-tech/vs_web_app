@@ -1,4 +1,4 @@
-import { apiClient, setClientTokens, getClientRefreshToken } from '@/lib/api/client';
+import { apiClient, setClientTokens } from '@/lib/api/client';
 import { AuthTokens, UserProfile } from '@/types/auth.types';
 import { StandardResponse } from '@/types/api.types';
 import { customerWishlistService } from '@/features/customer/wishlist.service';
@@ -14,13 +14,11 @@ export const authService = {
   },
 
   logout: async (): Promise<void> => {
-    const refreshToken = getClientRefreshToken();
-    if (refreshToken) {
-      try {
-        await apiClient.post('/auth/logout', { refreshToken });
-      } catch {
-        // Silently catch so that frontend logout completes regardless
-      }
+    try {
+      // Refresh token is in httpOnly cookie; server reads it automatically
+      await apiClient.post('/auth/logout', {});
+    } catch {
+      // Silently catch so that frontend logout completes regardless
     }
     setClientTokens(null);
   },
