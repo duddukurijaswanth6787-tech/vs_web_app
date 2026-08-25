@@ -149,7 +149,7 @@ export default function ProfileAddAddressPage() {
                   onClick={() => setForm((f) => ({ ...f, label }))}
                   className={`py-2 px-3 rounded-xl border text-xs font-bold flex items-center justify-center gap-1.5 transition-all ${
                     form.label === label
-                      ? 'border-[#0284c7] bg-rose-50/70 text-[#0284c7]'
+                      ? 'border-[#0284c7] bg-sky-50/70 text-[#0284c7]'
                       : 'border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                   }`}
                 >
@@ -162,7 +162,7 @@ export default function ProfileAddAddressPage() {
 
           {/* Full Name */}
           <label className="block space-y-1">
-            <span className="text-xs font-semibold text-neutral-700">Full Name <span className="text-rose-600">*</span></span>
+            <span className="text-xs font-semibold text-neutral-700">Full Name <span className="text-sky-600">*</span></span>
             <input
               value={form.fullName}
               onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
@@ -179,7 +179,7 @@ export default function ProfileAddAddressPage() {
 
           {/* Phone */}
           <label className="block space-y-1">
-            <span className="text-xs font-semibold text-neutral-700">Mobile Number <span className="text-rose-600">*</span></span>
+            <span className="text-xs font-semibold text-neutral-700">Mobile Number <span className="text-sky-600">*</span></span>
             <input
               value={form.phone}
               onChange={(e) => setForm((f) => ({ ...f, phone: e.target.value }))}
@@ -198,7 +198,7 @@ export default function ProfileAddAddressPage() {
 
           {/* Address Line 1 */}
           <label className="block space-y-1">
-            <span className="text-xs font-semibold text-neutral-700">Flat, House no., Building, Street <span className="text-rose-600">*</span></span>
+            <span className="text-xs font-semibold text-neutral-700">Flat, House no., Building, Street <span className="text-sky-600">*</span></span>
             <input
               value={form.addressLine1}
               onChange={(e) => setForm((f) => ({ ...f, addressLine1: e.target.value }))}
@@ -228,7 +228,7 @@ export default function ProfileAddAddressPage() {
               customer only has to type the address once instead of hunting
               down their own city/state spelling every time. */}
           <label className="block space-y-1">
-            <span className="text-xs font-semibold text-neutral-700">PIN Code <span className="text-rose-600">*</span></span>
+            <span className="text-xs font-semibold text-neutral-700">PIN Code <span className="text-sky-600">*</span></span>
             <div className="relative">
               <input
                 value={form.postalCode}
@@ -259,7 +259,7 @@ export default function ProfileAddAddressPage() {
           {/* City & State Grid — auto-filled from the PIN above, still editable */}
           <div className="grid grid-cols-2 gap-3">
             <label className="block space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">City <span className="text-rose-600">*</span></span>
+              <span className="text-xs font-semibold text-neutral-700">City <span className="text-sky-600">*</span></span>
               <input
                 value={form.city}
                 onChange={(e) => setForm((f) => ({ ...f, city: e.target.value }))}
@@ -275,7 +275,7 @@ export default function ProfileAddAddressPage() {
             </label>
 
             <label className="block space-y-1">
-              <span className="text-xs font-semibold text-neutral-700">State <span className="text-rose-600">*</span></span>
+              <span className="text-xs font-semibold text-neutral-700">State <span className="text-sky-600">*</span></span>
               <input
                 value={form.state}
                 onChange={(e) => setForm((f) => ({ ...f, state: e.target.value }))}

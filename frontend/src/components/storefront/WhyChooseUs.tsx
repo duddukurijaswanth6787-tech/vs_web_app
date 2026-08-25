@@ -67,12 +67,12 @@ export function WhyChooseUs() {
               <button
                 type="button"
                 onClick={() => toggleAccordion(index)}
-                className="w-full flex items-center justify-between p-4 sm:p-5 text-left transition-colors hover:bg-rose-50/30"
+                className="w-full flex items-center justify-between p-4 sm:p-5 text-left transition-colors hover:bg-sky-50/30"
                 aria-expanded={isOpen}
               >
                 <div className="flex items-center gap-3.5 pr-2">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    isOpen ? 'bg-[#0284c7] text-white' : 'bg-rose-50 text-[#0284c7] border border-rose-100'
+                    isOpen ? 'bg-[#0284c7] text-white' : 'bg-sky-50 text-[#0284c7] border border-sky-100'
                   }`}>
                     <Icon className="w-5 h-5" />
                   </div>
@@ -83,7 +83,7 @@ export function WhyChooseUs() {
 
                 {/* Arrow Icon: Expand/Collapse Indicator */}
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${
-                  isOpen ? 'bg-rose-100 text-[#0284c7] rotate-180' : 'bg-neutral-100 text-neutral-500'
+                  isOpen ? 'bg-sky-100 text-[#0284c7] rotate-180' : 'bg-neutral-100 text-neutral-500'
                 }`}>
                   <ChevronDown className="w-4 h-4" />
                 </div>
@@ -91,7 +91,7 @@ export function WhyChooseUs() {
 
               {/* Accordion Content / Panel */}
               {isOpen && (
-                <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-1 text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed border-t border-rose-100/60 animate-fade-in sm:pl-[3.75rem]">
+                <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-1 text-xs sm:text-sm text-neutral-600 font-medium leading-relaxed border-t border-sky-100/60 animate-fade-in sm:pl-[3.75rem]">
                   {item.answer}
                 </div>
               )}

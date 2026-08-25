@@ -234,7 +234,7 @@ export default function PrintersConfigPage() {
                     e.stopPropagation();
                     handleDisconnectUsb();
                   }}
-                  className="text-xs font-bold text-rose-700 hover:text-rose-900"
+                  className="text-xs font-bold text-sky-700 hover:text-sky-900"
                 >
                   Disconnect
                 </button>
@@ -254,7 +254,7 @@ export default function PrintersConfigPage() {
             )}
 
             {usbError && (
-              <p className="text-[11px] font-medium text-rose-700 mt-2 leading-relaxed">{usbError}</p>
+              <p className="text-[11px] font-medium text-sky-700 mt-2 leading-relaxed">{usbError}</p>
             )}
           </div>
         </div>
@@ -308,7 +308,7 @@ export default function PrintersConfigPage() {
           </div>
 
           {testPrintError && (
-            <div className="flex items-center gap-2 text-xs font-bold text-rose-700 bg-rose-50 border border-rose-200 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-2 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2">
               <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
               <span>{testPrintError}</span>
             </div>

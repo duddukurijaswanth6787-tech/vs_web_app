@@ -33,7 +33,7 @@ function CollectionCard({ item }: { item: CollectionItem }) {
         <h3 className="text-sm font-bold font-serif text-white tracking-wide drop-shadow-sm">
           {item.name}
         </h3>
-        <p className="text-[10px] text-rose-200 font-semibold uppercase tracking-widest drop-shadow-xs">
+        <p className="text-[10px] text-sky-200 font-semibold uppercase tracking-widest drop-shadow-xs">
           Collection
         </p>
       </div>

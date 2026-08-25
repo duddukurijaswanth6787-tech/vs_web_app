@@ -113,7 +113,7 @@ const TYPE_COLORS: Record<string, string> = {
   review: 'text-yellow-600',
   banner: 'text-cyan-600',
   invoice: 'text-indigo-600',
-  offer: 'text-rose-600',
+  offer: 'text-sky-600',
   faq: 'text-teal-600',
   page: 'text-neutral-600',
 };

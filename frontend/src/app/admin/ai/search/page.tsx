@@ -169,7 +169,7 @@ export default function AdminAiSearchPage() {
                     <span className="text-xs font-bold text-neutral-700 block">Matching Products:</span>
                     <div className="flex flex-wrap gap-2">
                       {suggestions.products.map((p) => (
-                        <span key={p.id} className="bg-rose-50 border border-rose-200 text-[#0284c7] text-xs font-bold px-3 py-1 rounded-full">
+                        <span key={p.id} className="bg-sky-50 border border-sky-200 text-[#0284c7] text-xs font-bold px-3 py-1 rounded-full">
                           {p.name} &middot; ₹{p.price.toLocaleString('en-IN')}
                         </span>
                       ))}
@@ -233,7 +233,7 @@ function PopularSearchesSection() {
                 <span className="text-xs font-bold text-neutral-900 block">&quot;{item.query}&quot;</span>
                 <span className="text-[10px] text-neutral-500 block">Last searched: {new Date(item.lastSearchedAt || Date.now()).toLocaleDateString()}</span>
               </div>
-              <span className="text-xs font-bold text-[#0284c7] bg-rose-50 border border-rose-200 px-2.5 py-1 rounded-full">
+              <span className="text-xs font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-full">
                 {item.count} searches
               </span>
             </div>

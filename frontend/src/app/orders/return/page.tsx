@@ -160,7 +160,7 @@ function OrderReturnForm() {
                   key={pref.id}
                   className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-all ${
                     refundPreference === pref.id
-                      ? 'border-[#0284c7] bg-rose-50/40'
+                      ? 'border-[#0284c7] bg-sky-50/40'
                       : 'border-neutral-200 bg-white hover:border-neutral-300'
                   }`}
                 >

@@ -103,7 +103,7 @@ export function HeroSection() {
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
-        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-rose-100/80 bg-[#EAF4FF]">
+        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-sky-100/80 bg-[#EAF4FF]">
           
           {/* Background Image & Gradient Overlay */}
           <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">

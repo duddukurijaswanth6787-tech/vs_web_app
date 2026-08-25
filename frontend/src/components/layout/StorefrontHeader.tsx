@@ -266,7 +266,7 @@ export function StorefrontHeader() {
                     height={803}
                     className="h-10 w-auto object-contain"
                   />
-                  <span className="text-[10px] font-semibold text-rose-800 uppercase tracking-widest">
+                  <span className="text-[10px] font-semibold text-sky-800 uppercase tracking-widest">
                     Women&apos;s Boutique
                   </span>
                 </div>
@@ -355,7 +355,7 @@ export function StorefrontHeader() {
                     <Heart className="w-4 h-4 text-neutral-500" />
                     <span>Wishlist</span>
                   </div>
-                  <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  <span className="bg-sky-100 text-sky-800 text-[10px] font-bold px-2 py-0.5 rounded-full">
                     {wishlistCount}
                   </span>
                 </Link>

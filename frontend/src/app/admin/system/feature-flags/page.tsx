@@ -93,11 +93,11 @@ export default function FeatureFlagsPage() {
       {/* Header Banner */}
       <div className="bg-gradient-to-r from-[#0284c7] to-[#500014] rounded-3xl p-6 text-white shadow-xl flex items-center justify-between">
         <div className="space-y-1">
-          <div className="flex items-center gap-2 text-rose-200 text-xs font-bold uppercase tracking-wider">
+          <div className="flex items-center gap-2 text-sky-200 text-xs font-bold uppercase tracking-wider">
             <Shield className="w-4 h-4" /> Super Admin System Control
           </div>
           <h1 className="text-2xl font-bold font-serif">Storefront Feature Switches & Master Controls</h1>
-          <p className="text-xs text-rose-100/90 max-w-2xl">
+          <p className="text-xs text-sky-100/90 max-w-2xl">
             Control which features, buttons, and workflows are active on the customer storefront. Toggling switches here updates the user website in real time without code deployments.
           </p>
         </div>

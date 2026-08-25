@@ -93,7 +93,7 @@ export default function ProfileAddressListPage() {
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold text-neutral-900">{addr.fullName}</span>
                 {Boolean(addr.label) && (
-                  <span className="text-[10px] font-extrabold uppercase bg-rose-50 text-[#0284c7] px-2 py-0.5 rounded-md">
+                  <span className="text-[10px] font-extrabold uppercase bg-sky-50 text-[#0284c7] px-2 py-0.5 rounded-md">
                     {String(addr.label)}
                   </span>
                 )}

@@ -48,7 +48,7 @@ export function OrderStatusBadge({ status }: { status: string }) {
     case 'CANCELLED':
       return <Badge className="bg-red-50 text-red-700 border border-red-200">Cancelled</Badge>;
     case 'RETURN_REQUESTED':
-      return <Badge className="bg-rose-50 text-rose-700 border border-rose-200">Return Requested</Badge>;
+      return <Badge className="bg-sky-50 text-sky-700 border border-sky-200">Return Requested</Badge>;
     case 'RETURN_APPROVED':
       return <Badge className="bg-orange-50 text-orange-700 border border-orange-200">Return Approved</Badge>;
     case 'RETURN_REJECTED':

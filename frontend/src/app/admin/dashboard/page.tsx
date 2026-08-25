@@ -132,7 +132,7 @@ export default function DashboardPage() {
         <KpiCard title="Out of Stock" value={summary?.outOfStockProducts ?? 0} icon={Ban} desc="Unavailable items" color="text-red-600 bg-red-50 border-red-100" />
         <KpiCard title="Pending Reviews" value={summary?.pendingReviews ?? 0} icon={Star} desc="Awaiting moderation" color="text-amber-600 bg-amber-50 border-amber-100" />
         <KpiCard title="Returns" value={summary?.returnsCount ?? 0} icon={RotateCcw} desc="Return requests" color="text-orange-600 bg-orange-50 border-orange-100" />
-        <KpiCard title="Cancelled" value={summary?.cancelledOrders ?? 0} icon={Ban} desc="Cancelled orders" color="text-rose-600 bg-rose-50 border-rose-100" />
+        <KpiCard title="Cancelled" value={summary?.cancelledOrders ?? 0} icon={Ban} desc="Cancelled orders" color="text-sky-600 bg-sky-50 border-sky-100" />
       </div>
 
       {/* Sales Charts */}

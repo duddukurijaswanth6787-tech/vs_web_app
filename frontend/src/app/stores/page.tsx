@@ -40,19 +40,19 @@ export default function StoresPage() {
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
-        <div className="bg-[#2D0812] text-white rounded-3xl p-6 sm:p-8 space-y-2">
+        <div className="bg-[#051426] text-white rounded-3xl p-6 sm:p-8 space-y-2">
           <span className="text-xs uppercase tracking-widest text-amber-300 font-bold">EXPERIENCE LUXURY IN PERSON</span>
           <h2 className="text-2xl font-bold font-serif">Visit Our Boutiques</h2>
-          <p className="text-xs text-rose-100/80 leading-relaxed">
+          <p className="text-xs text-sky-100/80 leading-relaxed">
             Step into our sanctuary of bridal silks, custom drapes, and bespoke couture fitting salons.
           </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {STORES.map((store) => (
-            <div key={store.id} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-4 shadow-xs hover:border-rose-200 transition-colors">
+            <div key={store.id} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-4 shadow-xs hover:border-sky-200 transition-colors">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-rose-50 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 px-2.5 py-0.5 rounded-full">
                   {store.city} Store
                 </span>
                 <h3 className="font-serif font-bold text-base text-neutral-900">{store.name}</h3>

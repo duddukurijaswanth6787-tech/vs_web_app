@@ -25,13 +25,13 @@ export default function CancellationRefundPolicyPage() {
         </div>
 
         {/* Page Hero Header */}
-        <div className="bg-gradient-to-br from-rose-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-br from-sky-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
           <div className="relative z-10 space-y-3">
             <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
               <RefreshCw className="w-4 h-4" /> Cancellations, Returns & Refunds
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Cancellation & Refund Policy</h1>
-            <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100/80 max-w-2xl leading-relaxed">
               How order cancellations, returns, and refunds work at <strong className="text-amber-300">Vasanthi&apos;s Signature</strong>.
             </p>
           </div>

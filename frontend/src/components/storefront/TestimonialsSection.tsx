@@ -73,7 +73,7 @@ export function TestimonialsSection() {
               key={item.id}
               className="bg-white border border-neutral-200/80 rounded-2xl p-5 sm:p-6 shadow-2xs space-y-3 relative flex flex-col justify-between hover:shadow-md transition-all w-[280px] sm:w-[320px] md:w-auto shrink-0 snap-start"
             >
-              <Quote className="w-8 h-8 text-rose-100 absolute top-4 right-4 -z-0" />
+              <Quote className="w-8 h-8 text-sky-100 absolute top-4 right-4 -z-0" />
 
               <div className="space-y-2.5 z-10 relative">
                 {/* Star Rating */}

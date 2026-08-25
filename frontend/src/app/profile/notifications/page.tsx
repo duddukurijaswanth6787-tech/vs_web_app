@@ -84,7 +84,7 @@ export default function NotificationsPage() {
               }
             }}
             className={`w-full text-left bg-white border rounded-2xl p-4 ${
-              n.isRead ? 'border-neutral-200' : 'border-[#0284c7]/30 bg-rose-50/40'
+              n.isRead ? 'border-neutral-200' : 'border-[#0284c7]/30 bg-sky-50/40'
             }`}
           >
             <p className="text-sm font-bold">{n.title || n.subject || 'Notification'}</p>

@@ -129,7 +129,7 @@ function CustomerLoginForm() {
       <main suppressHydrationWarning className="max-w-md mx-auto px-4 py-8 flex-1 w-full space-y-6">
         <div className="text-center space-y-1">
           <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-14 w-auto object-contain mx-auto mb-3" />
-          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
             Welcome Back
           </span>
           <h2 className="text-2xl font-bold font-serif text-neutral-900 pt-2">Login to Your Account</h2>

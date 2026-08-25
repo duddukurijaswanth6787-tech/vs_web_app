@@ -25,16 +25,16 @@ export default function TermsOfServicePage() {
         </div>
 
         {/* Page Hero Header */}
-        <div className="bg-gradient-to-br from-rose-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-br from-sky-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
           <div className="relative z-10 space-y-3">
             <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
               <Scale className="w-4 h-4" /> Legal Terms & Conditions
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Terms of Service</h1>
-            <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100/80 max-w-2xl leading-relaxed">
               Welcome to <strong className="text-amber-300">Vasanthi&apos;s Signature</strong> (<a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>). By accessing our website, making a purchase, or creating an account, you agree to comply with the following Terms & Conditions.
             </p>
-            <div className="pt-2 text-[11px] text-rose-200/70 font-mono">
+            <div className="pt-2 text-[11px] text-sky-200/70 font-mono">
               Effective Date: August 9, 2026 • Governed by the Laws of India
             </div>
           </div>

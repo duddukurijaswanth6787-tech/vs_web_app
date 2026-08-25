@@ -30,7 +30,7 @@ export function RecentlyViewedCarousel() {
           type="button"
           onClick={() => clearMutation.mutate()}
           disabled={clearMutation.isPending}
-          className="text-xs font-bold text-neutral-500 hover:text-rose-700 flex items-center gap-1 cursor-pointer transition-colors"
+          className="text-xs font-bold text-neutral-500 hover:text-sky-700 flex items-center gap-1 cursor-pointer transition-colors"
         >
           <Trash2 className="w-3.5 h-3.5" />
           <span>Clear History</span>

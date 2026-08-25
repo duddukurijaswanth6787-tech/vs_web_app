@@ -50,7 +50,7 @@ export default function StaffPackingPortalPage() {
     <div className="w-full min-h-screen bg-neutral-900 text-white font-sans antialiased pb-20 sm:pb-0">
       <header className="bg-neutral-950 border-b border-neutral-800 px-4 py-3 flex items-center justify-between">
         <div>
-          <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider">
+          <h1 className="text-sm font-bold text-sky-400 uppercase tracking-wider">
             Packing Station
           </h1>
           <span className="text-[10px] text-neutral-400">
@@ -77,7 +77,7 @@ export default function StaffPackingPortalPage() {
               onClick={() => setActiveId(String(job.id))}
               className={`text-left p-3 rounded-2xl border ${
                 String(active?.id || '') === String(job.id)
-                  ? 'border-rose-500 bg-rose-950/30'
+                  ? 'border-sky-500 bg-sky-950/30'
                   : 'border-neutral-700 bg-neutral-800'
               }`}
             >
@@ -90,12 +90,12 @@ export default function StaffPackingPortalPage() {
         <div className="bg-neutral-800 rounded-3xl border border-neutral-700/80 p-6 space-y-4 shadow-xl">
           <div className="flex items-center justify-between border-b border-neutral-700 pb-3">
             <h2 className="text-sm font-bold text-white flex items-center gap-2">
-              <Package className="w-5 h-5 text-rose-400" />
+              <Package className="w-5 h-5 text-sky-400" />
               <span>Packing Job Details</span>
             </h2>
             <button
               onClick={() => run('label')}
-              className="bg-rose-700 hover:bg-rose-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5"
+              className="bg-sky-700 hover:bg-sky-800 text-white text-xs font-bold px-3.5 py-2 rounded-xl flex items-center gap-1.5"
             >
               <Printer className="w-3.5 h-3.5" />
               Print Label

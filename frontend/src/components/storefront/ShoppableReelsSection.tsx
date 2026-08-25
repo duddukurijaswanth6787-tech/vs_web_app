@@ -95,7 +95,7 @@ export function ShoppableReelsSection() {
               </h3>
               <div className="flex items-center gap-3 text-[10px] text-white/80 font-medium pt-1">
                 <div className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 fill-rose-500 text-rose-500" />
+                  <Heart className="w-3 h-3 fill-sky-500 text-sky-500" />
                   <span>{reel.likes}</span>
                 </div>
                 <div className="flex items-center gap-1">

@@ -23,7 +23,7 @@ export default function StorefrontNotFound() {
 
       {/* Main 440 Error Container */}
       <main suppressHydrationWarning className="max-w-md mx-auto px-4 py-16 flex-1 w-full text-center space-y-6 flex flex-col items-center justify-center">
-        <div className="w-20 h-20 rounded-full bg-rose-50 text-[#0284c7] flex items-center justify-center mx-auto text-3xl font-extrabold font-serif border border-rose-200">
+        <div className="w-20 h-20 rounded-full bg-sky-50 text-[#0284c7] flex items-center justify-center mx-auto text-3xl font-extrabold font-serif border border-sky-200">
           404
         </div>
 

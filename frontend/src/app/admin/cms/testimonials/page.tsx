@@ -95,7 +95,7 @@ export default function TestimonialsAdminPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-neutral-200/80 shadow-2xs">
         <div>
-          <div className="flex items-center gap-2 text-rose-700 font-bold text-xs uppercase tracking-wider mb-1">
+          <div className="flex items-center gap-2 text-sky-700 font-bold text-xs uppercase tracking-wider mb-1">
             <Sparkles className="w-4 h-4" />
             <span>Content Management</span>
           </div>
@@ -175,13 +175,13 @@ export default function TestimonialsAdminPage() {
                         onClick={() => toggleFeatured(item)}
                         className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer ${
                           item.isFeatured
-                            ? 'bg-rose-50 text-rose-800 border-rose-200'
+                            ? 'bg-sky-50 text-sky-800 border-sky-200'
                             : 'bg-neutral-100 text-neutral-500 border-neutral-200'
                         }`}
                       >
                         {item.isFeatured ? (
                           <>
-                            <CheckCircle2 className="w-3 h-3 text-rose-600" />
+                            <CheckCircle2 className="w-3 h-3 text-sky-600" />
                             <span>Featured</span>
                           </>
                         ) : (
@@ -209,7 +209,7 @@ export default function TestimonialsAdminPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(item.id)}
-                        className="p-1.5 rounded-lg border border-rose-200 text-rose-600 hover:bg-rose-50 hover:text-rose-900 transition-all"
+                        className="p-1.5 rounded-lg border border-sky-200 text-sky-600 hover:bg-sky-50 hover:text-sky-900 transition-all"
                         title="Delete"
                       >
                         <Trash2 className="w-3.5 h-3.5" />

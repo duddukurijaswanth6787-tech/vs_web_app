@@ -67,7 +67,7 @@ export default function OffersPage() {
             <p className="text-xs text-neutral-500">No active offers right now</p>
           )}
           {offerList.map((offer) => (
-            <div key={offer.id} className="bg-white border border-rose-100 rounded-2xl p-4">
+            <div key={offer.id} className="bg-white border border-sky-100 rounded-2xl p-4">
               <h3 className="text-sm font-bold text-[#0284c7]">{offer.name || offer.title}</h3>
               <p className="text-xs text-neutral-600 mt-1">{offer.description}</p>
             </div>
@@ -95,7 +95,7 @@ export default function OffersPage() {
                   </p>
                 )}
               </div>
-              <span className="text-xs font-bold bg-rose-50 text-[#0284c7] px-2 py-1 rounded-lg">
+              <span className="text-xs font-bold bg-sky-50 text-[#0284c7] px-2 py-1 rounded-lg">
                 {c.type === 'PERCENTAGE' ? `${c.value}%` : formatInr(Number(c.value))}
               </span>
             </div>

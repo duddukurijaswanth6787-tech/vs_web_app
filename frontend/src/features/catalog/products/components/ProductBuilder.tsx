@@ -622,7 +622,7 @@ export default function ProductBuilder({
 
   /** Stock status shown next to each size, mirroring the inventory screen. */
   const stockStatus = (stock: number, minStock?: number) => {
-    if (stock <= 0) return { label: 'OUT', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+    if (stock <= 0) return { label: 'OUT', className: 'bg-sky-50 text-sky-700 border-sky-200' };
     if (minStock != null && minStock > 0 && stock <= minStock) {
       return { label: 'LOW', className: 'bg-amber-50 text-amber-700 border-amber-200' };
     }
@@ -1007,7 +1007,7 @@ export default function ProductBuilder({
         {/* TOP STATUS BAR & HEADER */}
         <div className="bg-white rounded-2xl p-4 sm:p-6 border border-neutral-200 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center border border-rose-100 shadow-2xs font-serif text-lg sm:text-xl font-bold shrink-0">
+            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-xl sm:rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center border border-sky-100 shadow-2xs font-serif text-lg sm:text-xl font-bold shrink-0">
               ❖
             </div>
             <div>
@@ -1293,7 +1293,7 @@ export default function ProductBuilder({
               {/* Name */}
               <div className="md:col-span-2 space-y-1.5">
                 <label className="text-xs font-bold text-neutral-800">
-                  Product Name / Title <span className="text-rose-600">*</span>
+                  Product Name / Title <span className="text-sky-600">*</span>
                 </label>
                 <input
                   type="text"
@@ -1302,7 +1302,7 @@ export default function ProductBuilder({
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
                 {methods.formState.errors.name && (
-                  <p className="text-[11px] font-semibold text-rose-600">
+                  <p className="text-[11px] font-semibold text-sky-600">
                     {methods.formState.errors.name.message}
                   </p>
                 )}
@@ -1323,7 +1323,7 @@ export default function ProductBuilder({
                   ))}
                 </select>
                 {methods.formState.errors.brandId && (
-                  <p className="text-[11px] font-semibold text-rose-600">
+                  <p className="text-[11px] font-semibold text-sky-600">
                     {methods.formState.errors.brandId.message}
                   </p>
                 )}
@@ -1406,7 +1406,7 @@ export default function ProductBuilder({
               {/* Primary category */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-800">
-                  Primary Category <span className="text-rose-600">*</span>
+                  Primary Category <span className="text-sky-600">*</span>
                 </label>
                 <select
                   value={primaryCategoryId}
@@ -1511,7 +1511,7 @@ export default function ProductBuilder({
                   {collections.map((collection) => (
                     <span
                       key={collection}
-                      className="inline-flex items-center gap-1.5 bg-rose-50 text-[#0284c7] border border-rose-100 rounded-full px-3 py-1.5 text-[11px] font-bold"
+                      className="inline-flex items-center gap-1.5 bg-sky-50 text-[#0284c7] border border-sky-100 rounded-full px-3 py-1.5 text-[11px] font-bold"
                     >
                       {collection}
                       <button
@@ -1580,7 +1580,7 @@ export default function ProductBuilder({
               {/* Base Price / MRP */}
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-800">
-                  MRP / Base Price (₹) <span className="text-rose-600">*</span>
+                  MRP / Base Price (₹) <span className="text-sky-600">*</span>
                 </label>
                 <input
                   type="number"
@@ -1689,7 +1689,7 @@ export default function ProductBuilder({
               </div>
 
               {/* Calculated Discount Pill Badge */}
-              <div className="md:col-span-3 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl flex items-center justify-between">
+              <div className="md:col-span-3 bg-sky-50/80 border border-sky-100 p-4 rounded-2xl flex items-center justify-between">
                 <div className="space-y-0.5">
                   <h4 className="text-xs font-bold text-[#0284c7]">Calculated Customer Discount</h4>
                   <p className="text-[11px] text-neutral-600">
@@ -1697,7 +1697,7 @@ export default function ProductBuilder({
                   </p>
                 </div>
                 {Boolean(watchedValues?.basePrice && Number(watchedValues.basePrice) > 0 && watchedValues?.salePrice && Number(watchedValues.salePrice) < Number(watchedValues.basePrice)) ? (
-                  <span className="text-xs font-bold text-rose-700 bg-rose-100 px-3.5 py-1.5 rounded-full border border-rose-200">
+                  <span className="text-xs font-bold text-sky-700 bg-sky-100 px-3.5 py-1.5 rounded-full border border-sky-200">
                     {Math.round(((Number(watchedValues.basePrice) - Number(watchedValues.salePrice)) / Number(watchedValues.basePrice)) * 100)}% OFF
                   </span>
                 ) : (
@@ -1806,7 +1806,7 @@ export default function ProductBuilder({
 
               {/* Live preview */}
               {promoPreviewRows.length > 0 && (
-                <div className="space-y-2.5 bg-rose-50/80 border border-rose-100 p-4 rounded-2xl">
+                <div className="space-y-2.5 bg-sky-50/80 border border-sky-100 p-4 rounded-2xl">
                   <div>
                     <h4 className="text-xs font-bold text-[#0284c7]">Preview — what a customer would actually pay</h4>
                     <p className="text-[10px] text-neutral-600 mt-0.5">
@@ -1815,7 +1815,7 @@ export default function ProductBuilder({
                   </div>
                   <div className="space-y-1.5">
                     {promoPreviewRows.map((row) => (
-                      <div key={row.key} className="flex items-center justify-between gap-3 bg-white rounded-xl border border-rose-100/80 px-3.5 py-2.5">
+                      <div key={row.key} className="flex items-center justify-between gap-3 bg-white rounded-xl border border-sky-100/80 px-3.5 py-2.5">
                         <div className="min-w-0">
                           <p className="text-[11px] font-bold font-mono text-neutral-900 truncate">{row.label}</p>
                           <p className="text-[9px] text-neutral-400 truncate">{row.sub}</p>
@@ -1870,7 +1870,7 @@ export default function ProductBuilder({
             </div>
 
             {/* Add Custom Color & Fabric Texture Swatch */}
-            <div className="p-5 bg-rose-50/50 rounded-2xl border border-rose-200/80 space-y-4">
+            <div className="p-5 bg-sky-50/50 rounded-2xl border border-sky-200/80 space-y-4">
               <div className="flex items-center justify-between">
                 <h4 className="text-xs font-bold text-[#0284c7] uppercase tracking-wider flex items-center gap-1.5">
                   <Plus className="w-4 h-4" />
@@ -2005,7 +2005,7 @@ export default function ProductBuilder({
                       onClick={() => setActiveColorTab(group.id)}
                       className={`flex items-center gap-2 px-4 py-2.5 rounded-xl border text-xs font-bold transition-all shrink-0 ${
                         activeColorTab === group.id
-                          ? 'border-[#0284c7] bg-rose-50 text-[#0284c7] shadow-2xs'
+                          ? 'border-[#0284c7] bg-sky-50 text-[#0284c7] shadow-2xs'
                           : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
                       }`}
                     >
@@ -2031,7 +2031,7 @@ export default function ProductBuilder({
 
                 {/* Media Manager for Active Color Group */}
                 {colorGroups.find((c) => c.id === activeColorTab) && (
-                  <div className="p-6 bg-rose-50/40 rounded-2xl border border-rose-100 space-y-4">
+                  <div className="p-6 bg-sky-50/40 rounded-2xl border border-sky-100 space-y-4">
                     {(() => {
                       const cur = colorGroups.find((c) => c.id === activeColorTab)!;
                       return (
@@ -2057,7 +2057,7 @@ export default function ProductBuilder({
                             <button
                               type="button"
                               onClick={() => removeColorGroup(cur.id)}
-                              className="text-xs font-bold text-rose-600 hover:underline flex items-center gap-1"
+                              className="text-xs font-bold text-sky-600 hover:underline flex items-center gap-1"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                               <span>Delete Color Group</span>
@@ -2089,7 +2089,7 @@ export default function ProductBuilder({
                                   <button
                                     type="button"
                                     onClick={() => removeSwatchImage(cur.id)}
-                                    className="text-xs font-bold text-rose-600 hover:underline ml-2"
+                                    className="text-xs font-bold text-sky-600 hover:underline ml-2"
                                   >
                                     Remove
                                   </button>
@@ -2099,7 +2099,7 @@ export default function ProductBuilder({
                               )}
                             </div>
 
-                            <label className="cursor-pointer text-xs font-bold text-[#0284c7] bg-rose-50 hover:bg-rose-100 border border-rose-200 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all">
+                            <label className="cursor-pointer text-xs font-bold text-[#0284c7] bg-sky-50 hover:bg-sky-100 border border-sky-200 px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 transition-all">
                               <Upload className="w-3.5 h-3.5" />
                               <span>Upload Custom Swatch Image</span>
                               <input
@@ -2129,9 +2129,9 @@ export default function ProductBuilder({
                               handleLocalImageUpload(cur.id, e.dataTransfer.files);
                             }}
                             onClick={() => fileInputRef.current?.click()}
-                            className="border-2 border-dashed border-rose-200 hover:border-[#0284c7] bg-white hover:bg-rose-50/40 rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group"
+                            className="border-2 border-dashed border-sky-200 hover:border-[#0284c7] bg-white hover:bg-sky-50/40 rounded-2xl p-6 text-center cursor-pointer transition-all space-y-2 group"
                           >
-                            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 transition-transform">
+                            <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center mx-auto shadow-2xs group-hover:scale-110 transition-transform">
                               <Upload className="w-6 h-6 text-[#0284c7]" />
                             </div>
                             <div>
@@ -2354,7 +2354,7 @@ export default function ProductBuilder({
                           })
                         );
                       }}
-                      className="text-xs font-bold text-[#0284c7] bg-rose-50 border border-rose-200 px-3 py-1.5 rounded-xl hover:bg-rose-100 transition-all"
+                      className="text-xs font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl hover:bg-sky-100 transition-all"
                     >
                       ⚡ Add Standard Sizes (S, M, L, XL, XXL, 3XL)
                     </button>
@@ -2440,7 +2440,7 @@ export default function ProductBuilder({
                           <button
                             type="button"
                             onClick={() => removeSizeFromColorGroup(group.id, sz.size)}
-                            className="text-neutral-400 hover:text-rose-600 p-1.5"
+                            className="text-neutral-400 hover:text-sky-600 p-1.5"
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -2502,7 +2502,7 @@ export default function ProductBuilder({
                     <div key={attribute.id} className="space-y-1.5">
                       <label className="text-xs font-bold text-neutral-800">
                         {attribute.name}
-                        {attribute.isRequired && <span className="text-rose-600"> *</span>}
+                        {attribute.isRequired && <span className="text-sky-600"> *</span>}
                       </label>
 
                       {hasOptions ? (

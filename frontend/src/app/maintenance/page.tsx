@@ -36,12 +36,12 @@ export default function MaintenancePage() {
           <p className="text-sm text-red-600">{getApiErrorMessage(error, 'Unable to load store settings')}</p>
         )}
 
-        <div className="w-20 h-20 rounded-full bg-rose-100 text-[#0284c7] flex items-center justify-center mx-auto border border-rose-200">
+        <div className="w-20 h-20 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center mx-auto border border-sky-200">
           <Clock className="w-8 h-8 text-[#0284c7]" />
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-rose-50 px-3 py-1 rounded-full border border-rose-100">
+          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
             {inMaintenance ? 'Store Under Maintenance' : 'Store Status'}
           </span>
           <h2 className="text-2xl font-bold font-serif text-neutral-900 pt-2">

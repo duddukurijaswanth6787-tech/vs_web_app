@@ -190,7 +190,7 @@ export default function LoyaltyAdminPage() {
         </form>
 
         {customerBalance && (
-          <div className="bg-rose-50/50 border border-rose-200 rounded-xl p-3 text-xs text-neutral-800 flex items-center justify-between">
+          <div className="bg-sky-50/50 border border-sky-200 rounded-xl p-3 text-xs text-neutral-800 flex items-center justify-between">
             <div>
               <span className="font-bold block">Customer {customerBalance.customerId}</span>
               <span className="text-neutral-500">Active Tier: <span className="font-bold text-[#0284c7]">{customerBalance.tier}</span></span>

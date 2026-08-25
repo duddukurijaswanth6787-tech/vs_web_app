@@ -192,7 +192,7 @@ export default function SizeChartsPage() {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div className="flex items-center gap-3">
-          <div className="w-11 h-11 rounded-2xl bg-rose-50 text-[#0284c7] flex items-center justify-center border border-rose-100">
+          <div className="w-11 h-11 rounded-2xl bg-sky-50 text-[#0284c7] flex items-center justify-center border border-sky-100">
             <Ruler className="w-5 h-5" />
           </div>
           <div>
@@ -209,7 +209,7 @@ export default function SizeChartsPage() {
               className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
                 message.startsWith('✓')
                   ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
-                  : 'text-rose-600 bg-rose-50 border-rose-200'
+                  : 'text-sky-600 bg-sky-50 border-sky-200'
               }`}
             >
               {message}
@@ -264,7 +264,7 @@ export default function SizeChartsPage() {
                       <button
                         type="button"
                         onClick={() => handleDelete(template)}
-                        className="text-neutral-400 hover:text-rose-600 p-1"
+                        className="text-neutral-400 hover:text-sky-600 p-1"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />
@@ -412,7 +412,7 @@ export default function SizeChartsPage() {
                           <button
                             type="button"
                             onClick={() => removeColumn(column)}
-                            className="text-neutral-300 hover:text-rose-600"
+                            className="text-neutral-300 hover:text-sky-600"
                           >
                             <X className="w-3 h-3" />
                           </button>
@@ -441,7 +441,7 @@ export default function SizeChartsPage() {
                         <button
                           type="button"
                           onClick={() => setRows((prev) => prev.filter((r) => r.size !== row.size))}
-                          className="text-neutral-300 hover:text-rose-600"
+                          className="text-neutral-300 hover:text-sky-600"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
                         </button>

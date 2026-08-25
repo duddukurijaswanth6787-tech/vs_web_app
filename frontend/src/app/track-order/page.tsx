@@ -71,7 +71,7 @@ export default function TrackOrderPage() {
           </form>
 
           {error && (
-            <div className="bg-rose-50 border border-rose-100 rounded-xl p-3 flex items-start gap-2 text-rose-700 text-xs">
+            <div className="bg-sky-50 border border-sky-100 rounded-xl p-3 flex items-start gap-2 text-sky-700 text-xs">
               <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
               <span>{error}</span>
             </div>
@@ -80,7 +80,7 @@ export default function TrackOrderPage() {
 
         {/* Tracking Result View */}
         {result && (
-          <div className="bg-white border border-rose-100 rounded-3xl p-6 space-y-4 shadow-xs animate-in fade-in duration-200">
+          <div className="bg-white border border-sky-100 rounded-3xl p-6 space-y-4 shadow-xs animate-in fade-in duration-200">
             <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div>
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Status Update</span>
@@ -106,7 +106,7 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="flex items-center gap-3 text-xs">
-                <div className="w-7 h-7 rounded-full bg-rose-50 text-[#0284c7] flex items-center justify-center font-bold">
+                <div className="w-7 h-7 rounded-full bg-sky-50 text-[#0284c7] flex items-center justify-center font-bold">
                   <Truck className="w-4 h-4" />
                 </div>
                 <div>

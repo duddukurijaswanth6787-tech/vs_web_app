@@ -23,7 +23,7 @@ export function ReviewPromptBanner() {
 
   return (
     <>
-      <div className="bg-gradient-to-r from-amber-50 via-rose-50 to-pink-50 border border-amber-200/80 rounded-3xl p-4 shadow-xs relative overflow-hidden space-y-3 animate-in fade-in duration-300">
+      <div className="bg-gradient-to-r from-amber-50 via-sky-50 to-pink-50 border border-amber-200/80 rounded-3xl p-4 shadow-xs relative overflow-hidden space-y-3 animate-in fade-in duration-300">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-1.5 text-xs font-extrabold text-[#0284c7] uppercase tracking-wide">
             <Sparkles className="w-4 h-4 text-amber-500 fill-amber-300 animate-pulse" />

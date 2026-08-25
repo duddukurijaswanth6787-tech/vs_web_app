@@ -78,7 +78,7 @@ function ProductCardItem({
             onToggleWishlist(product.id);
           }}
           className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors z-20 ${
-            isWishlisted ? 'bg-rose-600 text-white' : 'bg-white/80 hover:bg-white text-neutral-700'
+            isWishlisted ? 'bg-sky-600 text-white' : 'bg-white/80 hover:bg-white text-neutral-700'
           }`}
         >
           <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-white' : ''}`} />

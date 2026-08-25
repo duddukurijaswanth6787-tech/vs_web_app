@@ -512,14 +512,14 @@ export default function DesktopPosPage() {
               onClick={() => setSyncModalOpen(true)}
               className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
                 offlineSync.needsReviewCount > 0
-                  ? 'bg-rose-50 hover:bg-rose-100 text-rose-800 border-rose-200'
+                  ? 'bg-sky-50 hover:bg-sky-100 text-sky-800 border-sky-200'
                   : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200'
               }`}
             >
               {offlineSync.isSyncing ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
               ) : offlineSync.needsReviewCount > 0 ? (
-                <AlertTriangle className="w-4 h-4 text-rose-600" />
+                <AlertTriangle className="w-4 h-4 text-sky-600" />
               ) : (
                 <CloudUpload className="w-4 h-4" />
               )}
@@ -615,7 +615,7 @@ export default function DesktopPosPage() {
               {cart.length > 0 && (
                 <button
                   onClick={() => setCart([])}
-                  className="text-xs text-rose-600 hover:text-rose-800 font-semibold flex items-center gap-1"
+                  className="text-xs text-sky-600 hover:text-sky-800 font-semibold flex items-center gap-1"
                 >
                   <Trash2 className="w-3.5 h-3.5" />
                   <span>Clear All</span>
@@ -626,7 +626,7 @@ export default function DesktopPosPage() {
             {/* Item List */}
             {cart.length === 0 ? (
               <div className="p-12 text-center space-y-3">
-                <div className="w-12 h-12 rounded-full bg-rose-50 text-[#0284c7] flex items-center justify-center mx-auto">
+                <div className="w-12 h-12 rounded-full bg-sky-50 text-[#0284c7] flex items-center justify-center mx-auto">
                   <Barcode className="w-6 h-6" />
                 </div>
                 <h3 className="text-sm font-bold text-neutral-800">Cart is Empty</h3>
@@ -654,7 +654,7 @@ export default function DesktopPosPage() {
                         <p className="text-[11px] text-neutral-500 font-medium truncate">
                           {item.variantTitle || 'Standard'} {item.sku ? `• ${item.sku}` : ''}
                         </p>
-                        <p className="text-[10px] text-rose-800 font-semibold">
+                        <p className="text-[10px] text-sky-800 font-semibold">
                           ₹{item.unitPrice} / unit
                         </p>
                       </div>
@@ -686,7 +686,7 @@ export default function DesktopPosPage() {
                       </div>
                       <button
                         onClick={() => removeItem(index)}
-                        className="text-[10px] text-neutral-400 hover:text-rose-600 transition-colors mt-0.5"
+                        className="text-[10px] text-neutral-400 hover:text-sky-600 transition-colors mt-0.5"
                       >
                         Remove
                       </button>
@@ -789,7 +789,7 @@ export default function DesktopPosPage() {
                 </button>
               </div>
               {openShiftMutation.isError && (
-                <p className="text-xs font-medium text-rose-700">
+                <p className="text-xs font-medium text-sky-700">
                   {getApiErrorMessage(openShiftMutation.error, 'Could not open the shift.')}
                 </p>
               )}
@@ -862,7 +862,7 @@ export default function DesktopPosPage() {
                       <span>₹{Math.round((Number(cashTendered) - grandTotal) * 100) / 100}</span>
                     </div>
                   ) : (
-                    <p className="text-[11px] font-semibold text-rose-700">
+                    <p className="text-[11px] font-semibold text-sky-700">
                       Short by ₹{Math.round((grandTotal - Number(cashTendered)) * 100) / 100}.
                     </p>
                   )
@@ -898,8 +898,8 @@ export default function DesktopPosPage() {
             </div>
 
             {saleError && (
-              <div className="bg-rose-50 border border-rose-200 text-rose-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
-                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-rose-600" />
+              <div className="bg-sky-50 border border-sky-200 text-sky-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
+                <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-sky-600" />
                 <span>{saleError}</span>
               </div>
             )}
@@ -966,7 +966,7 @@ export default function DesktopPosPage() {
               />
 
               {handoffError && (
-                <p className="text-xs font-medium text-rose-700">{handoffError}</p>
+                <p className="text-xs font-medium text-sky-700">{handoffError}</p>
               )}
 
               <button
@@ -1157,9 +1157,9 @@ export default function DesktopPosPage() {
                             : sale.status === 'SYNCING'
                               ? 'bg-blue-100 text-blue-800'
                               : sale.status === 'NEEDS_REVIEW'
-                                ? 'bg-rose-100 text-rose-800'
+                                ? 'bg-sky-100 text-sky-800'
                                 : sale.status === 'FAILED'
-                                  ? 'bg-rose-100 text-rose-800'
+                                  ? 'bg-sky-100 text-sky-800'
                                   : 'bg-amber-100 text-amber-800'
                         }`}
                       >
@@ -1170,10 +1170,10 @@ export default function DesktopPosPage() {
                     </div>
 
                     {sale.status === 'NEEDS_REVIEW' && sale.shortages && sale.shortages.length > 0 && (
-                      <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 space-y-1">
-                        <div className="text-[10px] font-bold text-rose-800">Stock changed while offline:</div>
+                      <div className="bg-sky-50 border border-sky-200 rounded-lg p-2 space-y-1">
+                        <div className="text-[10px] font-bold text-sky-800">Stock changed while offline:</div>
                         {sale.shortages.map((s, i) => (
-                          <div key={i} className="text-[10px] text-rose-700 flex justify-between">
+                          <div key={i} className="text-[10px] text-sky-700 flex justify-between">
                             <span className="truncate max-w-[220px]">{s.productName}{s.variantTitle ? ` (${s.variantTitle})` : ''}</span>
                             <span>wanted {s.requested}, only {s.available} left</span>
                           </div>
@@ -1182,7 +1182,7 @@ export default function DesktopPosPage() {
                     )}
 
                     {sale.status === 'FAILED' && sale.errorMessage && (
-                      <div className="bg-rose-50 border border-rose-200 rounded-lg p-2 text-[10px] text-rose-700">
+                      <div className="bg-sky-50 border border-sky-200 rounded-lg p-2 text-[10px] text-sky-700">
                         {sale.errorMessage}
                       </div>
                     )}
@@ -1207,7 +1207,7 @@ export default function DesktopPosPage() {
                               offlineSync.dismissSale(sale.localId);
                             }
                           }}
-                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white border border-rose-300 text-rose-700 hover:bg-rose-50 transition-colors"
+                          className="text-[10px] font-bold px-2.5 py-1 rounded-lg bg-white border border-sky-300 text-sky-700 hover:bg-sky-50 transition-colors"
                         >
                           Discard
                         </button>

@@ -95,7 +95,7 @@ export default function AiRecommendationsAdminPage() {
           disabled={loading}
           className="px-4 py-2 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
         >
-          <Cpu className="w-4 h-4 text-rose-200" />
+          <Cpu className="w-4 h-4 text-sky-200" />
           <span>{loading ? 'Working…' : 'Re-compute Recommendations'}</span>
         </button>
       </div>

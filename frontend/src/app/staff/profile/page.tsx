@@ -89,11 +89,11 @@ export default function StaffProfilePage() {
     <div className="w-full min-h-screen bg-neutral-900 text-white font-sans antialiased pb-20 sm:pb-0">
       <header className="bg-neutral-950 border-b border-neutral-800 px-4 py-3">
         <div className="max-w-2xl mx-auto flex items-center justify-between">
-          <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+          <h1 className="text-sm font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
             <UserCircle className="w-4 h-4" />
             My Profile
           </h1>
-          <button onClick={() => logout()} className="text-[10px] font-bold text-neutral-400 hover:text-rose-400 flex items-center gap-1">
+          <button onClick={() => logout()} className="text-[10px] font-bold text-neutral-400 hover:text-sky-400 flex items-center gap-1">
             <LogOut className="w-3.5 h-3.5" /> Sign out
           </button>
         </div>
@@ -108,7 +108,7 @@ export default function StaffProfilePage() {
           <p className="text-xs text-neutral-400">{user?.email}</p>
           <div className="flex flex-wrap gap-1.5 pt-1">
             {user?.roles.map((r) => (
-              <span key={r} className="bg-rose-950/50 text-rose-300 border border-rose-800/60 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+              <span key={r} className="bg-sky-950/50 text-sky-300 border border-sky-800/60 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
                 {r.replace('_', ' ')}
               </span>
             ))}
@@ -118,7 +118,7 @@ export default function StaffProfilePage() {
         {/* Shift management */}
         <div className="bg-neutral-800 rounded-2xl border border-neutral-700/80 p-4 space-y-3">
           <h2 className="text-xs font-bold flex items-center gap-2">
-            <Clock className="w-4 h-4 text-rose-400" />
+            <Clock className="w-4 h-4 text-sky-400" />
             Personal Till Shift
           </h2>
 
@@ -150,13 +150,13 @@ export default function StaffProfilePage() {
                   min={0}
                   value={closingCashCounted}
                   onChange={(e) => setClosingCashCounted(Number(e.target.value) || 0)}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
                 />
               </label>
               <button
                 type="submit"
                 disabled={closeShiftMutation.isPending}
-                className="w-full bg-rose-700 hover:bg-rose-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
+                className="w-full bg-sky-700 hover:bg-sky-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
               >
                 {closeShiftMutation.isPending ? 'Closing...' : 'Close Shift'}
               </button>
@@ -169,7 +169,7 @@ export default function StaffProfilePage() {
                   type="text"
                   value={terminalId}
                   onChange={(e) => setTerminalId(e.target.value)}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
                   required
                 />
               </label>
@@ -180,13 +180,13 @@ export default function StaffProfilePage() {
                   min={0}
                   value={openingCash}
                   onChange={(e) => setOpeningCash(Number(e.target.value) || 0)}
-                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+                  className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
                 />
               </label>
               <button
                 type="submit"
                 disabled={openShiftMutation.isPending}
-                className="w-full bg-rose-700 hover:bg-rose-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
+                className="w-full bg-sky-700 hover:bg-sky-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
               >
                 {openShiftMutation.isPending ? 'Opening...' : 'Open Shift'}
               </button>
@@ -197,7 +197,7 @@ export default function StaffProfilePage() {
         {/* Password change */}
         <div className="bg-neutral-800 rounded-2xl border border-neutral-700/80 p-4 space-y-3">
           <h2 className="text-xs font-bold flex items-center gap-2">
-            <KeyRound className="w-4 h-4 text-rose-400" />
+            <KeyRound className="w-4 h-4 text-sky-400" />
             Change Password
           </h2>
 
@@ -215,7 +215,7 @@ export default function StaffProfilePage() {
               placeholder="Current password"
               value={currentPassword}
               onChange={(e) => setCurrentPassword(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
             />
             <input
               type="password"
@@ -223,7 +223,7 @@ export default function StaffProfilePage() {
               placeholder="New password (min. 8 characters)"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
             />
             <input
               type="password"
@@ -231,7 +231,7 @@ export default function StaffProfilePage() {
               placeholder="Confirm new password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-rose-600"
+              className="w-full bg-neutral-900 border border-neutral-700 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-600"
             />
             <button
               type="submit"

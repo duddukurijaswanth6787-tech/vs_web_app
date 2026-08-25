@@ -67,7 +67,7 @@ export default function CustomerReviewsPage() {
         </div>
 
         {/* Rating Summary Card */}
-        <div className="bg-white border border-rose-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div className="bg-white border border-sky-100 rounded-3xl p-6 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-6">
           <div className="text-center sm:text-left space-y-1">
             <div className="flex items-center justify-center sm:justify-start gap-1">
               {[...Array(5)].map((_, i) => (
@@ -79,11 +79,11 @@ export default function CustomerReviewsPage() {
           </div>
 
           <div className="flex flex-wrap gap-4 justify-center">
-            <div className="bg-rose-50/60 border border-rose-100 rounded-2xl px-4 py-3 text-center">
+            <div className="bg-sky-50/60 border border-sky-100 rounded-2xl px-4 py-3 text-center">
               <p className="text-lg font-bold text-[#0284c7]">98%</p>
               <p className="text-[11px] text-neutral-600 font-medium">Satisfaction Rate</p>
             </div>
-            <div className="bg-rose-50/60 border border-rose-100 rounded-2xl px-4 py-3 text-center">
+            <div className="bg-sky-50/60 border border-sky-100 rounded-2xl px-4 py-3 text-center">
               <p className="text-lg font-bold text-[#0284c7]">100%</p>
               <p className="text-[11px] text-neutral-600 font-medium">Authentic Silk</p>
             </div>

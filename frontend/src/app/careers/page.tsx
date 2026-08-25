@@ -24,10 +24,10 @@ export default function CareersPage() {
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
-        <div className="bg-gradient-to-r from-[#42101F] to-[#2D0812] text-white rounded-3xl p-6 sm:p-8 space-y-3">
+        <div className="bg-gradient-to-r from-[#0A2138] to-[#051426] text-white rounded-3xl p-6 sm:p-8 space-y-3">
           <span className="text-xs uppercase tracking-widest text-amber-300 font-bold">JOIN OUR ATELIER</span>
           <h2 className="text-2xl font-serif font-bold">Shape the Future of Luxury Indian Fashion</h2>
-          <p className="text-xs text-rose-100/80 leading-relaxed max-w-xl">
+          <p className="text-xs text-sky-100/80 leading-relaxed max-w-xl">
             We are always seeking passionate designers, craftsmen, retail specialists, and digital innovators who share our dedication to perfection.
           </p>
         </div>
@@ -36,8 +36,8 @@ export default function CareersPage() {
           <h3 className="text-base font-serif font-bold text-[#0284c7]">Current Openings</h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {OPEN_POSITIONS.map((pos, idx) => (
-              <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-2 shadow-xs hover:border-rose-200 transition-colors">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-rose-800 bg-rose-50 px-2 py-0.5 rounded-md">
+              <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-2 shadow-xs hover:border-sky-200 transition-colors">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-sky-800 bg-sky-50 px-2 py-0.5 rounded-md">
                   {pos.type} · {pos.location}
                 </span>
                 <h4 className="font-bold text-sm text-neutral-900">{pos.title}</h4>

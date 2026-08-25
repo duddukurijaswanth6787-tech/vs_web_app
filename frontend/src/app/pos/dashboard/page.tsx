@@ -246,7 +246,7 @@ export default function PosDashboardPage() {
                   Cancel
                 </button>
                 {closeShiftMutation.isError && (
-                  <p className="w-full text-xs font-medium text-rose-700">
+                  <p className="w-full text-xs font-medium text-sky-700">
                     {getApiErrorMessage(closeShiftMutation.error, 'Could not close the shift.')}
                   </p>
                 )}

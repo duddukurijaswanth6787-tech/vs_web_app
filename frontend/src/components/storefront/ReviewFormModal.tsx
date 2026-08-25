@@ -166,7 +166,7 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
             </div>
 
             {/* Loyalty Point Bonus Banner */}
-            <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-rose-50 border border-amber-200/70 rounded-2xl p-3 text-xs text-amber-900">
+            <div className="flex items-center gap-2 bg-gradient-to-r from-amber-50 to-sky-50 border border-amber-200/70 rounded-2xl p-3 text-xs text-amber-900">
               <Gift className="w-5 h-5 text-amber-600 shrink-0" />
               <span>Submit your review to claim <strong>+50 Loyalty Reward Points</strong>!</span>
             </div>

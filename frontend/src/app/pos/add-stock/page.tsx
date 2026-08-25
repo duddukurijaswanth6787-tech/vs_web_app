@@ -253,7 +253,7 @@ export default function AddStockPage() {
                   <p className="text-xs text-neutral-500 font-medium truncate">
                     {selectedVariant.variantTitle || 'Standard'} • SKU: {selectedVariant.sku}
                   </p>
-                  <p className="text-xs font-bold text-rose-800 mt-1">
+                  <p className="text-xs font-bold text-sky-800 mt-1">
                     Selling Price: ₹{selectedVariant.price}
                   </p>
                 </div>
@@ -382,7 +382,7 @@ export default function AddStockPage() {
                       }`}
                     >
                       <div className="text-[11px] font-bold">{opt.title}</div>
-                      <div className={`text-[10px] ${labelSize === opt.value ? 'text-rose-100' : 'text-amber-700'}`}>
+                      <div className={`text-[10px] ${labelSize === opt.value ? 'text-sky-100' : 'text-amber-700'}`}>
                         {opt.dimensions}
                       </div>
                     </button>

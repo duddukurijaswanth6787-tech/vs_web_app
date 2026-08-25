@@ -25,16 +25,16 @@ export default function PrivacyPolicyPage() {
         </div>
 
         {/* Page Hero Header */}
-        <div className="bg-gradient-to-br from-rose-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-br from-sky-950 via-[#420A18] to-amber-950 text-white rounded-3xl p-6 sm:p-10 shadow-lg relative overflow-hidden">
           <div className="relative z-10 space-y-3">
             <div className="inline-flex items-center gap-2 bg-amber-400/10 border border-amber-400/20 text-amber-300 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider">
               <ShieldCheck className="w-4 h-4" /> Official Data Governance & Privacy
             </div>
             <h1 className="text-2xl sm:text-4xl font-bold font-serif tracking-tight">Privacy Policy</h1>
-            <p className="text-xs sm:text-sm text-rose-100/80 max-w-2xl leading-relaxed">
+            <p className="text-xs sm:text-sm text-sky-100/80 max-w-2xl leading-relaxed">
               At <strong className="text-amber-300">Vasanthi&apos;s Signature</strong> (accessible from <a href="https://vasanthissignature.in" className="underline font-bold text-white">https://vasanthissignature.in</a>), protecting your personal information and transparent data management is our highest commitment.
             </p>
-            <div className="pt-2 text-[11px] text-rose-200/70 font-mono">
+            <div className="pt-2 text-[11px] text-sky-200/70 font-mono">
               Last Updated: August 9, 2026 • Compliant with Indian IT Act 2000 & GDPR Standards
             </div>
           </div>

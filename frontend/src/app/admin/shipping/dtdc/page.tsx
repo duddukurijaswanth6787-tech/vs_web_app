@@ -166,7 +166,7 @@ export default function DtdcShippingAdminPage() {
         </form>
 
         {shipment && (
-          <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 text-xs space-y-1">
+          <div className="bg-sky-50 border border-sky-100 rounded-xl p-4 text-xs space-y-1">
             <p>
               <span className="font-bold">AWB:</span>{' '}
               <span className="font-mono text-[#0284c7]">{shipment.awbNumber}</span>

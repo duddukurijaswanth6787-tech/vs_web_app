@@ -56,7 +56,7 @@ export default function OrdersPage() {
                   {order.createdAt ? new Date(order.createdAt).toLocaleString() : ''}
                 </p>
               </div>
-              <span className="text-[11px] font-bold uppercase bg-rose-50 text-[#0284c7] px-2 py-1 rounded-lg">
+              <span className="text-[11px] font-bold uppercase bg-sky-50 text-[#0284c7] px-2 py-1 rounded-lg">
                 {order.status}
               </span>
             </div>

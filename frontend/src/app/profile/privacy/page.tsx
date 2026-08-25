@@ -24,7 +24,7 @@ export default function ProfilePrivacyPage() {
         </div>
 
         <div className="bg-white border border-neutral-200/90 rounded-3xl p-6 shadow-xs space-y-5">
-          <div className="flex items-center gap-3 p-4 bg-rose-50/60 border border-rose-100 rounded-2xl">
+          <div className="flex items-center gap-3 p-4 bg-sky-50/60 border border-sky-100 rounded-2xl">
             <ShieldCheck className="w-8 h-8 text-[#0284c7] shrink-0" />
             <div>
               <p className="text-sm font-bold text-[#0284c7]">Your Privacy is Protected</p>

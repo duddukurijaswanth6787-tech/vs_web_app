@@ -644,7 +644,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
           </button>
         </div>
 
-        {error && <div className="mt-3 rounded-xl bg-rose-50 border border-rose-200 p-3 text-xs text-rose-800 font-semibold">{error}</div>}
+        {error && <div className="mt-3 rounded-xl bg-sky-50 border border-sky-200 p-3 text-xs text-sky-800 font-semibold">{error}</div>}
 
         {/* Modal Main Body (Grid Layout: Form Left, Mobile Live Preview Right) */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 my-4 flex-1">
@@ -681,7 +681,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 {contentType === SocialPostContentType.REEL ? 'Upload MP4 Reel Video' : 'Upload Banner / Product Image'}
               </label>
               
-              <div className="border-2 border-dashed border-rose-200/90 hover:border-[#0284c7] bg-rose-50/30 rounded-2xl p-5 text-center transition relative group cursor-pointer">
+              <div className="border-2 border-dashed border-sky-200/90 hover:border-[#0284c7] bg-sky-50/30 rounded-2xl p-5 text-center transition relative group cursor-pointer">
                 <Upload className="w-8 h-8 text-[#0284c7] mx-auto mb-1.5 animate-bounce" />
                 <p className="text-xs font-bold text-neutral-800">
                   {mediaFile ? mediaFile.name : `Click or Drag & Drop ${contentType === 'REEL' ? 'MP4 Video' : 'JPEG/PNG Image'} here`}
@@ -743,7 +743,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                       key={tag}
                       type="button"
                       onClick={() => handleAddHashtag(tag)}
-                      className="px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-rose-100 hover:text-[#0284c7] text-[9px] font-mono text-neutral-600 transition"
+                      className="px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-sky-100 hover:text-[#0284c7] text-[9px] font-mono text-neutral-600 transition"
                     >
                       {tag}
                     </button>
@@ -759,7 +759,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                   <Tag className="w-3.5 h-3.5" />
                   <span>Attach Catalog Products (&quot;Shop the Look&quot;)</span>
                 </label>
-                <span className="text-[10px] bg-rose-100 text-[#0284c7] px-2 py-0.5 rounded-full font-bold">
+                <span className="text-[10px] bg-sky-100 text-[#0284c7] px-2 py-0.5 rounded-full font-bold">
                   {taggedProducts.length} attached
                 </span>
               </div>
@@ -792,7 +792,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                           onClick={() => (isTagged ? handleRemoveProductTag(prod.id) : handleAddProductTag(prod))}
                           className={`p-2 rounded-xl border text-left flex items-center justify-between gap-2 cursor-pointer transition ${
                             isTagged
-                              ? 'bg-rose-50 border-[#0284c7] ring-1 ring-[#0284c7]/30'
+                              ? 'bg-sky-50 border-[#0284c7] ring-1 ring-[#0284c7]/30'
                               : 'bg-white border-neutral-200 hover:border-neutral-300 hover:shadow-2xs'
                           }`}
                         >
@@ -813,7 +813,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                             className={`px-2 py-1 rounded-lg text-[9px] font-extrabold uppercase shrink-0 transition ${
                               isTagged
                                 ? 'bg-[#0284c7] text-white'
-                                : 'bg-neutral-100 hover:bg-rose-100 hover:text-[#0284c7] text-neutral-700'
+                                : 'bg-neutral-100 hover:bg-sky-100 hover:text-[#0284c7] text-neutral-700'
                             }`}
                           >
                             {isTagged ? 'Attached ✓' : '+ Attach'}
@@ -864,7 +864,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               {/* Overlay Top Bar */}
               <div className="relative z-10 p-3 flex items-center justify-between bg-gradient-to-b from-black/70 to-transparent text-[9px] font-bold">
                 <span className="flex items-center gap-1 text-white">
-                  <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping" />
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-ping" />
                   Reels
                 </span>
                 <span className="text-neutral-300">Vasanthi&apos;s Signature</span>
@@ -886,7 +886,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                       <RemoteImage src={taggedProducts[0].images?.[0]?.thumbnailUrl || taggedProducts[0].images?.[0]?.url || taggedProducts[0].primaryImageUrl || ''} alt="" width={20} height={20} className="w-5 h-5 object-cover rounded-md" />
                       <span className="text-[8px] font-extrabold line-clamp-1">{taggedProducts[0].name}</span>
                     </div>
-                    <span className="text-[8px] font-bold text-[#0284c7] bg-rose-100 px-1.5 py-0.5 rounded-md shrink-0">Shop</span>
+                    <span className="text-[8px] font-bold text-[#0284c7] bg-sky-100 px-1.5 py-0.5 rounded-md shrink-0">Shop</span>
                   </div>
                 )}
               </div>

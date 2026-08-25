@@ -77,7 +77,7 @@ export function FeaturedBrands() {
               className="group relative bg-white border border-neutral-200/80 hover:border-[#1769D2]/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center transition-all duration-300 hover:shadow-md hover:-translate-y-0.5"
             >
               {/* Logo or Initials Avatar */}
-              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-neutral-50 flex items-center justify-center p-2 mb-3 border border-neutral-100 group-hover:border-rose-200 transition-colors overflow-hidden">
+              <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-neutral-50 flex items-center justify-center p-2 mb-3 border border-neutral-100 group-hover:border-sky-200 transition-colors overflow-hidden">
                 {logoUrl ? (
                   <Image
                     src={withVariant(logoUrl, 'thumb')}

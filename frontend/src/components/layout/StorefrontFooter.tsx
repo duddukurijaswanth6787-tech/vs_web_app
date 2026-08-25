@@ -22,32 +22,32 @@ export function StorefrontFooter() {
       {/* Main Footer Content */}
 
       {/* 2. Main Footer Content (Tight Vertical Spacing on Mobile) */}
-      <div className="bg-[#2D0812] text-rose-100/90 pt-5 sm:pt-12 pb-20 lg:pb-10 px-4 sm:px-6 lg:px-8">
+      <div className="bg-[#051426] text-sky-100/90 pt-5 sm:pt-12 pb-20 lg:pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-[1440px] mx-auto space-y-4">
           {/* Top Row: Brand & Social Icons */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div>
               <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-10 w-auto object-contain" />
-              <p className="text-[11px] text-rose-200/70 hidden sm:block mt-1.5">
+              <p className="text-[11px] text-sky-200/70 hidden sm:block mt-1.5">
                 Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
               </p>
             </div>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-2 text-rose-200">
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+            <div className="flex items-center gap-2 text-sky-200">
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0A2138] hover:bg-sky-700 hover:text-white flex items-center justify-center transition-colors">
                 <Camera className="w-3.5 h-3.5" />
               </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0A2138] hover:bg-sky-700 hover:text-white flex items-center justify-center transition-colors">
                 <Globe className="w-3.5 h-3.5" />
               </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0A2138] hover:bg-sky-700 hover:text-white flex items-center justify-center transition-colors">
                 <MapPin className="w-3.5 h-3.5" />
               </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
-                <Play className="w-3.5 h-3.5 fill-rose-200" />
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0A2138] hover:bg-sky-700 hover:text-white flex items-center justify-center transition-colors">
+                <Play className="w-3.5 h-3.5 fill-sky-200" />
               </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#42101F] hover:bg-rose-700 hover:text-white flex items-center justify-center transition-colors">
+              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#0A2138] hover:bg-sky-700 hover:text-white flex items-center justify-center transition-colors">
                 <MessageCircle className="w-3.5 h-3.5" />
               </a>
             </div>
@@ -58,7 +58,7 @@ export function StorefrontFooter() {
             {/* Column 1: Shop */}
             <div className="space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Shop</h4>
-              <ul className="space-y-1 text-[11px] text-rose-200/70">
+              <ul className="space-y-1 text-[11px] text-sky-200/70">
                 <li><Link href="/categories/sarees" className="hover:text-white transition-colors">Sarees</Link></li>
                 <li><Link href="/categories/lehengas" className="hover:text-white transition-colors">Lehengas</Link></li>
                 <li><Link href="/categories/kurtis" className="hover:text-white transition-colors">Kurtis & Suits</Link></li>
@@ -70,7 +70,7 @@ export function StorefrontFooter() {
             {/* Column 2: Customer Care */}
             <div className="space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Customer Care</h4>
-              <ul className="space-y-1 text-[11px] text-rose-200/70">
+              <ul className="space-y-1 text-[11px] text-sky-200/70">
                 <li><Link href="/contact" className="hover:text-white transition-colors">Contact Us</Link></li>
                 <li><Link href="/pricing" className="hover:text-white transition-colors">Pricing</Link></li>
                 <li><Link href="/track-order" className="hover:text-white transition-colors">Track Order</Link></li>
@@ -84,7 +84,7 @@ export function StorefrontFooter() {
             {/* Column 3: About (Desktop/Tablet) */}
             <div className="hidden sm:block space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">About</h4>
-              <ul className="space-y-1 text-[11px] text-rose-200/70">
+              <ul className="space-y-1 text-[11px] text-sky-200/70">
                 <li><Link href="/about" className="hover:text-white transition-colors">Our Story</Link></li>
                 <li><Link href="/stores" className="hover:text-white transition-colors">Store Locator</Link></li>
                 <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
@@ -95,7 +95,7 @@ export function StorefrontFooter() {
             {/* Column 4: My Account (Desktop/Tablet) */}
             <div className="hidden sm:block space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">My Account</h4>
-              <ul className="space-y-1 text-[11px] text-rose-200/70">
+              <ul className="space-y-1 text-[11px] text-sky-200/70">
                 <li><Link href={isAuthenticated ? '/profile' : '/login'} className="hover:text-white transition-colors">{isAuthenticated ? 'My Account' : 'Login'}</Link></li>
                 <li><Link href="/orders" className="hover:text-white transition-colors">Orders</Link></li>
                 <li><Link href="/wishlist" className="hover:text-white transition-colors">Wishlist</Link></li>
@@ -109,21 +109,21 @@ export function StorefrontFooter() {
       </div>
 
       {/* 3. Secure Payments & Support Bar */}
-      <div className="bg-[#1C030A] border-t border-rose-950/60 py-2.5 px-4 sm:px-6 lg:px-8 text-rose-200/80 text-[10px]">
+      <div className="bg-[#020A18] border-t border-sky-950/60 py-2.5 px-4 sm:px-6 lg:px-8 text-sky-200/80 text-[10px]">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <div className="flex items-center gap-2 justify-center">
-            <Lock className="w-3 h-3 text-rose-400" />
+            <Lock className="w-3 h-3 text-sky-400" />
             <span className="font-bold text-white uppercase tracking-wide text-[9px]">SECURE PAYMENTS</span>
             <div className="flex items-center gap-1 ml-1">
-              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">VISA</span>
-              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">Mastercard</span>
-              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">RuPay</span>
-              <span className="bg-[#360814] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">UPI</span>
+              <span className="bg-[#06182D] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">VISA</span>
+              <span className="bg-[#06182D] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">Mastercard</span>
+              <span className="bg-[#06182D] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">RuPay</span>
+              <span className="bg-[#06182D] text-[8px] px-1.5 py-0.5 rounded-md font-semibold">UPI</span>
             </div>
           </div>
 
           <div className="flex items-center gap-1.5 justify-center">
-            <Headphones className="w-3 h-3 text-rose-400" />
+            <Headphones className="w-3 h-3 text-sky-400" />
             <span className="font-bold text-white uppercase tracking-wide text-[9px]">24/7 SUPPORT</span>
             <span className="font-bold text-amber-300">+91 98765 43210</span>
           </div>
@@ -132,7 +132,7 @@ export function StorefrontFooter() {
       </div>
 
       {/* 4. Bottom Legal Bar */}
-      <div className="bg-[#150207] border-t border-rose-950/80 py-2.5 px-4 sm:px-6 lg:px-8 text-rose-300/60 text-[10px]">
+      <div className="bg-[#01060F] border-t border-sky-950/80 py-2.5 px-4 sm:px-6 lg:px-8 text-sky-300/60 text-[10px]">
         <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
           <span>© 2026 Vasanthi&apos;s Signature. All rights reserved.</span>
 

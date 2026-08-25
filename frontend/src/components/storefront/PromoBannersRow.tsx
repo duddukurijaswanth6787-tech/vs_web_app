@@ -34,7 +34,7 @@ export function PromoBannersRow() {
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-2 sm:py-6 space-y-4 sm:space-y-8">
       {coupon && (
-        <div className="bg-[#F3F8FF] border border-rose-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
+        <div className="bg-[#F3F8FF] border border-sky-200/80 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-white flex items-center justify-center shrink-0 shadow-xs">
               <Tag className="w-5 h-5" />

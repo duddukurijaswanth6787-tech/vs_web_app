@@ -27,7 +27,7 @@ const reportTypes: { id: ReportType; title: string; group: string; icon: React.E
   { id: 'CATEGORIES', title: 'Categories', group: 'Catalog', icon: Layers, color: 'text-pink-600 bg-pink-50 border-pink-100' },
   { id: 'BRANDS', title: 'Brands', group: 'Catalog', icon: Tag, color: 'text-fuchsia-600 bg-fuchsia-50 border-fuchsia-100' },
   { id: 'CUSTOMER', title: 'Customers', group: 'People', icon: Users, color: 'text-teal-600 bg-teal-50 border-teal-100' },
-  { id: 'COUPONS', title: 'Coupons', group: 'Promotions', icon: Tag, color: 'text-rose-600 bg-rose-50 border-rose-100' },
+  { id: 'COUPONS', title: 'Coupons', group: 'Promotions', icon: Tag, color: 'text-sky-600 bg-sky-50 border-sky-100' },
   { id: 'REVIEWS', title: 'Reviews', group: 'People', icon: Star, color: 'text-yellow-600 bg-yellow-50 border-yellow-100' },
 ];
 

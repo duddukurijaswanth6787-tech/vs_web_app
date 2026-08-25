@@ -38,10 +38,10 @@ export default function PressPage() {
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
-        <div className="bg-[#2D0812] text-white rounded-3xl p-6 sm:p-8 space-y-2">
+        <div className="bg-[#051426] text-white rounded-3xl p-6 sm:p-8 space-y-2">
           <span className="text-xs uppercase tracking-widest text-amber-300 font-bold">EDITORIALS & RECOGNITION</span>
           <h2 className="text-2xl font-serif font-bold">In the Spotlight</h2>
-          <p className="text-xs text-rose-100/80 leading-relaxed max-w-xl">
+          <p className="text-xs text-sky-100/80 leading-relaxed max-w-xl">
             Explore editorial features, fashion week showcases, and press coverage of Vasanthi&apos;s Signature collections.
           </p>
         </div>
@@ -50,7 +50,7 @@ export default function PressPage() {
           <h3 className="text-base font-serif font-bold text-[#0284c7]">Featured Publications</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
             {PRESS_HIGHLIGHTS.map((item, idx) => (
-              <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-3 shadow-xs flex flex-col justify-between hover:border-rose-200 transition-colors">
+              <div key={idx} className="bg-white border border-neutral-200 rounded-2xl p-5 space-y-3 shadow-xs flex flex-col justify-between hover:border-sky-200 transition-colors">
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
                     <span className="font-serif font-bold text-xs text-[#0284c7] uppercase tracking-wider">{item.publisher}</span>

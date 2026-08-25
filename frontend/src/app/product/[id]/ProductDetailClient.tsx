@@ -443,9 +443,9 @@ export function ProductDetailClient() {
                     <button
                       type="button"
                       onClick={handleWishlist}
-                      className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md text-neutral-600 hover:text-rose-500 active:scale-95 transition-all"
+                      className="absolute top-4 right-4 w-9 h-9 rounded-full bg-white flex items-center justify-center shadow-md text-neutral-600 hover:text-sky-500 active:scale-95 transition-all"
                     >
-                      <Heart className={`w-4 h-4 ${isSaved ? 'text-rose-500 fill-current' : ''}`} />
+                      <Heart className={`w-4 h-4 ${isSaved ? 'text-sky-500 fill-current' : ''}`} />
                     </button>
 
                     {/* View Full Size Overlay button */}
@@ -523,7 +523,7 @@ export function ProductDetailClient() {
                 {/* Brand Tag, Title & Ratings */}
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0284c7] bg-rose-50 px-3 py-1 rounded-lg">
+                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0284c7] bg-sky-50 px-3 py-1 rounded-lg">
                       {product.brandName || 'VASANTHI DESIGNERS'}
                     </span>
                   </div>
@@ -549,7 +549,7 @@ export function ProductDetailClient() {
                     <span className="text-xs font-semibold text-neutral-400 line-through">{formatInr(original)}</span>
                   )}
                   {discount && (
-                    <span className="text-[10px] font-black text-rose-800 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
+                    <span className="text-[10px] font-black text-sky-800 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-md uppercase tracking-wider">
                       {discount} OFF
                     </span>
                   )}
@@ -665,7 +665,7 @@ export function ProductDetailClient() {
                       type="button"
                       disabled={addItem.isPending}
                       onClick={handleAddToCart}
-                      className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] active:scale-98 transition-all disabled:opacity-60 text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-rose-900/10"
+                      className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] active:scale-98 transition-all disabled:opacity-60 text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
                     >
                       <ShoppingBag className="w-4 h-4" />
                       {addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
@@ -690,7 +690,7 @@ export function ProductDetailClient() {
                     onClick={handleWishlist}
                     className="flex-1 border border-neutral-200 bg-white hover:bg-neutral-50 font-bold py-2.5 rounded-xl text-[10px] uppercase tracking-wider text-neutral-700 flex items-center justify-center gap-1.5 transition-all shadow-2xs"
                   >
-                    <Heart className={`w-3.5 h-3.5 ${isSaved ? 'text-rose-500 fill-current' : 'text-neutral-400'}`} />
+                    <Heart className={`w-3.5 h-3.5 ${isSaved ? 'text-sky-500 fill-current' : 'text-neutral-400'}`} />
                     Save to Wishlist
                   </button>
                   <button
@@ -1001,7 +1001,7 @@ export function ProductDetailClient() {
             )}
 
             {/* Bottom 100% Original Trust Badge Banner */}
-            <div className="border border-rose-100 bg-rose-50/30 rounded-2xl p-4 flex items-center justify-center gap-3 max-w-md mx-auto text-center mt-6 shadow-2xs">
+            <div className="border border-sky-100 bg-sky-50/30 rounded-2xl p-4 flex items-center justify-center gap-3 max-w-md mx-auto text-center mt-6 shadow-2xs">
               <Award className="w-6 h-6 text-[#0284c7] shrink-0" />
               <div className="text-left space-y-0.5">
                 <p className="text-xs font-black text-neutral-800 uppercase tracking-wider">100% Original Products</p>

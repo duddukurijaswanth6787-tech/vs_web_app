@@ -25,7 +25,7 @@ export function StaffPortalNav() {
             key={href}
             href={href}
             className={`flex-1 sm:flex-initial flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 py-2 sm:py-3 sm:px-4 text-[10px] sm:text-xs font-bold transition-colors ${
-              active ? 'text-rose-400' : 'text-neutral-400 hover:text-neutral-200'
+              active ? 'text-sky-400' : 'text-neutral-400 hover:text-neutral-200'
             }`}
           >
             <Icon className="w-4 h-4 sm:w-3.5 sm:h-3.5" />

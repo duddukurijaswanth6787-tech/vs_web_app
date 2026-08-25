@@ -80,7 +80,7 @@ export default function StaffWarehousePage() {
     <div className="w-full min-h-screen bg-neutral-900 text-white font-sans antialiased pb-20 sm:pb-0">
       <header className="bg-neutral-950 border-b border-neutral-800 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between gap-3">
-          <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2 shrink-0">
+          <h1 className="text-sm font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2 shrink-0">
             <WarehouseIcon className="w-4 h-4" />
             Warehouse Ops
           </h1>
@@ -156,7 +156,7 @@ export default function StaffWarehousePage() {
                   <button
                     onClick={() => setTransferModalVariantId(item.variantId)}
                     disabled={otherWarehouses.length === 0}
-                    className="flex-1 bg-rose-800/60 hover:bg-rose-800 disabled:opacity-40 text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5"
+                    className="flex-1 bg-sky-800/60 hover:bg-sky-800 disabled:opacity-40 text-[10px] font-bold py-2 rounded-lg flex items-center justify-center gap-1.5"
                   >
                     <ArrowLeftRight className="w-3 h-3" /> Transfer
                   </button>
@@ -173,7 +173,7 @@ export default function StaffWarehousePage() {
           <div className="bg-neutral-800 rounded-2xl border border-neutral-700 w-full max-w-sm p-5 space-y-3">
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold flex items-center gap-2">
-                <ArrowLeftRight className="w-4 h-4 text-rose-400" /> Transfer Stock
+                <ArrowLeftRight className="w-4 h-4 text-sky-400" /> Transfer Stock
               </h3>
               <button onClick={() => setTransferModalVariantId('')} className="text-neutral-400">
                 <X className="w-4 h-4" />
@@ -208,7 +208,7 @@ export default function StaffWarehousePage() {
               <button
                 type="submit"
                 disabled={transferMutation.isPending}
-                className="w-full bg-rose-700 hover:bg-rose-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
+                className="w-full bg-sky-700 hover:bg-sky-800 disabled:opacity-60 text-white text-xs font-bold py-2.5 rounded-xl"
               >
                 {transferMutation.isPending ? 'Transferring...' : 'Confirm Transfer'}
               </button>

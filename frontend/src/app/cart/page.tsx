@@ -147,7 +147,7 @@ export default function CartPage() {
         </div>
 
         {/* Mobile Top Trust Banner (3 Pillars Pill Row) */}
-        <div className="grid grid-cols-3 gap-2 bg-rose-50/60 border border-rose-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs">
+        <div className="grid grid-cols-3 gap-2 bg-sky-50/60 border border-sky-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs">
           <div className="flex flex-col items-center justify-center gap-1">
             <ShieldCheck className="w-4 h-4 text-[#0284c7]" />
             <div>
@@ -155,7 +155,7 @@ export default function CartPage() {
               <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">100% Safe & Secure</p>
             </div>
           </div>
-          <div className="flex flex-col items-center justify-center gap-1 border-x border-rose-200/50 px-1">
+          <div className="flex flex-col items-center justify-center gap-1 border-x border-sky-200/50 px-1">
             <RotateCcw className="w-4 h-4 text-[#0284c7]" />
             <div>
               <p className="font-bold text-[#0284c7]">Easy Returns</p>
@@ -180,7 +180,7 @@ export default function CartPage() {
         )}
 
         {error && (
-          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 text-xs text-rose-800 flex items-center justify-between shadow-xs">
+          <div className="bg-sky-50 border border-sky-200 rounded-2xl p-4 text-xs text-sky-800 flex items-center justify-between shadow-xs">
             <span>{getApiErrorMessage(error, 'Failed to load cart')}</span>
             <button
               onClick={() => refetch()}
@@ -194,7 +194,7 @@ export default function CartPage() {
         {/* Empty State */}
         {!isLoading && items.length === 0 && (
           <div className="bg-white border border-neutral-200/80 rounded-3xl p-10 text-center space-y-4 shadow-xs max-w-md mx-auto my-6">
-            <div className="w-14 h-14 bg-rose-50 text-[#0284c7] rounded-full flex items-center justify-center mx-auto">
+            <div className="w-14 h-14 bg-sky-50 text-[#0284c7] rounded-full flex items-center justify-center mx-auto">
               <ShoppingBag className="w-7 h-7" />
             </div>
             <h2 className="text-lg font-bold font-serif text-neutral-900">Your Cart is Empty</h2>
@@ -352,9 +352,9 @@ export default function CartPage() {
                             <button
                               type="button"
                               onClick={() => removeItem.mutate(item.id)}
-                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-rose-700 hover:text-red-700"
+                              className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-red-700"
                             >
-                              <Trash2 className="w-3.5 h-3.5 text-rose-600" />
+                              <Trash2 className="w-3.5 h-3.5 text-sky-600" />
                               <span>Remove</span>
                             </button>
                           </div>
@@ -369,7 +369,7 @@ export default function CartPage() {
               <div className="space-y-3">
                 <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-[#0284c7] flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center shrink-0">
                       <Tag className="w-4 h-4" />
                     </div>
                     <span className="text-xs sm:text-sm font-bold text-neutral-900">Have a coupon code?</span>
@@ -383,7 +383,7 @@ export default function CartPage() {
                       <button
                         type="button"
                         onClick={removeCoupon}
-                        className="text-[11px] font-bold text-neutral-500 hover:text-rose-700"
+                        className="text-[11px] font-bold text-neutral-500 hover:text-sky-700"
                       >
                         Remove
                       </button>
@@ -407,13 +407,13 @@ export default function CartPage() {
                     </form>
                   )}
                   {couponError && (
-                    <p className="text-[11px] font-semibold text-rose-700">{couponError}</p>
+                    <p className="text-[11px] font-semibold text-sky-700">{couponError}</p>
                   )}
                 </div>
 
                 <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
                   <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-rose-50 text-[#0284c7] flex items-center justify-center shrink-0">
+                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center shrink-0">
                       <Truck className="w-4 h-4" />
                     </div>
                     <span className="text-xs sm:text-sm font-bold text-neutral-900">
@@ -430,7 +430,7 @@ export default function CartPage() {
                   <div className="space-y-1 pl-12">
                     <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-[#0284c7] to-rose-600 rounded-full transition-all duration-500"
+                        className="h-full bg-gradient-to-r from-[#0284c7] to-sky-600 rounded-full transition-all duration-500"
                         style={{ width: `${freeShippingPercent}%` }}
                       />
                     </div>
@@ -478,7 +478,7 @@ export default function CartPage() {
                   )}
                 </div>
 
-                <div className="bg-rose-50/60 border border-rose-100 rounded-xl p-3.5 flex items-center justify-between">
+                <div className="bg-sky-50/60 border border-sky-100 rounded-xl p-3.5 flex items-center justify-between">
                   <div>
                     <span className="text-xs sm:text-sm font-bold text-neutral-900 block">Estimated Total</span>
                     <span className="text-[10px] text-neutral-500 font-medium">(Inclusive of all taxes)</span>

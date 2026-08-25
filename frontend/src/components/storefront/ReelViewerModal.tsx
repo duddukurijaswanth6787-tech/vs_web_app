@@ -140,7 +140,7 @@ export function ReelViewerModal({
               </button>
               <Link href="/cart" className="relative p-1.5 hover:bg-white/20 rounded-full">
                 <ShoppingBag className="w-5 h-5 text-white" />
-                <span className="absolute top-0 right-0 w-4 h-4 bg-rose-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
+                <span className="absolute top-0 right-0 w-4 h-4 bg-sky-600 text-white text-[9px] font-bold rounded-full flex items-center justify-center shadow-xs">
                   {cartCount}
                 </span>
               </Link>
@@ -204,7 +204,7 @@ export function ReelViewerModal({
                 <div className="w-9 h-9 rounded-full border-2 border-white overflow-hidden bg-[#0284c7] text-amber-300 font-serif font-bold text-xs flex items-center justify-center shadow-md">
                   VD
                 </div>
-                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-rose-600 text-white flex items-center justify-center shadow-xs">
+                <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-3.5 h-3.5 rounded-full bg-sky-600 text-white flex items-center justify-center shadow-xs">
                   <Plus className="w-2.5 h-2.5" />
                 </span>
               </div>
@@ -213,7 +213,7 @@ export function ReelViewerModal({
                 onClick={toggleLike}
                 className="flex flex-col items-center gap-0.5 text-white group cursor-pointer"
               >
-                <Heart className={`w-6.5 h-6.5 transition-all duration-300 ${isLiked ? 'fill-rose-500 text-rose-500 scale-125' : 'group-hover:scale-110'}`} />
+                <Heart className={`w-6.5 h-6.5 transition-all duration-300 ${isLiked ? 'fill-sky-500 text-sky-500 scale-125' : 'group-hover:scale-110'}`} />
                 <span className="text-[10px] font-bold">{currentReel.likes}</span>
               </button>
 
@@ -227,7 +227,7 @@ export function ReelViewerModal({
                 <span className="text-[10px] font-bold">{currentReel.shares}</span>
               </button>
 
-              <button className="p-1 text-white hover:text-rose-300 transition-colors">
+              <button className="p-1 text-white hover:text-sky-300 transition-colors">
                 <MoreHorizontal className="w-5 h-5" />
               </button>
             </div>
@@ -286,7 +286,7 @@ export function ReelViewerModal({
                       </div>
                     </div>
                   </div>
-                  <button onClick={() => setCartCount((prev) => prev + 1)} className="p-1.5 text-[#0284c7] border border-rose-200 bg-rose-50 rounded-xl">
+                  <button onClick={() => setCartCount((prev) => prev + 1)} className="p-1.5 text-[#0284c7] border border-sky-200 bg-sky-50 rounded-xl">
                     <ShoppingBag className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -347,7 +347,7 @@ export function ReelViewerModal({
           <div className="my-4 flex items-center justify-between">
             <h3 className="text-base font-extrabold text-neutral-900 font-serif flex items-center gap-2">
               <span>Shop the look</span>
-              <span className="text-xs font-bold text-rose-800 bg-rose-50 px-2.5 py-0.5 rounded-full">
+              <span className="text-xs font-bold text-sky-800 bg-sky-50 px-2.5 py-0.5 rounded-full">
                 {currentReel.taggedProducts.length} Items
               </span>
             </h3>
@@ -380,7 +380,7 @@ export function ReelViewerModal({
                       <span className="text-xs text-neutral-400 line-through">
                         ₹{prod.originalPrice.toLocaleString('en-IN')}
                       </span>
-                      <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
                         {prod.discount}
                       </span>
                     </div>

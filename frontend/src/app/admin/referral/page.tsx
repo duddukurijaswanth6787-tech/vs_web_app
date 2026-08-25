@@ -91,7 +91,7 @@ export default function ReferralAdminPage() {
                     <td className="p-3">
                       <button
                         onClick={() => handleUpdateReward(row.id)}
-                        className="px-3 py-1 bg-neutral-100 hover:bg-rose-50 hover:text-[#0284c7] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
+                        className="px-3 py-1 bg-neutral-100 hover:bg-sky-50 hover:text-[#0284c7] rounded-lg text-[11px] font-bold border border-neutral-200 transition-colors"
                       >
                         Update Reward
                       </button>

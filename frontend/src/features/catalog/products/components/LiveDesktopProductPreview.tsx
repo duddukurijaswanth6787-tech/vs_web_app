@@ -87,7 +87,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
           <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Eye className="w-4 h-4 text-rose-400" />
+              <Eye className="w-4 h-4 text-sky-400" />
               <span>LIVE CUSTOMER DESKTOP PREVIEW</span>
             </h3>
             <p className="text-[11px] text-neutral-400">
@@ -160,8 +160,8 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                       className="object-cover object-center group-hover:scale-105 transition-transform duration-500"
                     />
                   ) : (
-                    <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-rose-50/50 to-neutral-100 text-center space-y-3">
-                      <div className="w-14 h-14 rounded-2xl bg-white border border-rose-200 shadow-2xs flex items-center justify-center text-[#0284c7]">
+                    <div className="w-full h-full flex flex-col items-center justify-center p-6 bg-gradient-to-br from-sky-50/50 to-neutral-100 text-center space-y-3">
+                      <div className="w-14 h-14 rounded-2xl bg-white border border-sky-200 shadow-2xs flex items-center justify-center text-[#0284c7]">
                         <Eye className="w-7 h-7 text-[#0284c7]" />
                       </div>
                       <div className="space-y-1 max-w-xs">
@@ -181,7 +181,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                       </span>
                     )}
                     {hasDiscount && (
-                      <span className="bg-rose-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+                      <span className="bg-sky-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
                         -{discountPct}% OFF
                       </span>
                     )}
@@ -192,7 +192,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                     )}
                   </div>
 
-                  <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-rose-600 flex items-center justify-center shadow-md transition-all z-10">
+                  <button className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-sky-600 flex items-center justify-center shadow-md transition-all z-10">
                     <Heart className="w-5 h-5" />
                   </button>
                 </div>
@@ -250,7 +250,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                 </div>
 
                 {/* Price Section */}
-                <div className="p-4 bg-rose-50/60 rounded-2xl border border-rose-100 space-y-1">
+                <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-1">
                   <div className="flex items-baseline gap-3">
                     <span className="text-3xl font-extrabold text-[#0284c7] font-serif">
                       ₹{price.toLocaleString('en-IN')}
@@ -261,7 +261,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                       </span>
                     )}
                     {hasDiscount && (
-                      <span className="text-xs font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full border border-rose-200">
+                      <span className="text-xs font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full border border-sky-200">
                         {discountPct}% OFF
                       </span>
                     )}
@@ -419,7 +419,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                     className="object-cover group-hover:scale-108 transition-transform duration-500"
                   />
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-rose-50/50 to-neutral-100 text-center space-y-2">
+                  <div className="w-full h-full flex flex-col items-center justify-center p-4 bg-gradient-to-br from-sky-50/50 to-neutral-100 text-center space-y-2">
                     <Eye className="w-6 h-6 text-[#0284c7]" />
                     <span className="text-[10px] font-bold text-neutral-600">Product Card Preview</span>
                   </div>
@@ -431,7 +431,7 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                     </span>
                   )}
                   {hasDiscount && (
-                    <span className="bg-rose-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
+                    <span className="bg-sky-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs">
                       -{discountPct}%
                     </span>
                   )}

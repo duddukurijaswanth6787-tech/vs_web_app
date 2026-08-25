@@ -56,11 +56,11 @@ export default function StaffSupportPage() {
       <header className="bg-neutral-950 border-b border-neutral-800 px-4 py-3">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           {active ? (
-            <button onClick={() => setActiveId('')} className="flex items-center gap-2 text-sm font-bold text-rose-400">
+            <button onClick={() => setActiveId('')} className="flex items-center gap-2 text-sm font-bold text-sky-400">
               <ArrowLeft className="w-4 h-4" /> Back to Queue
             </button>
           ) : (
-            <h1 className="text-sm font-bold text-rose-400 uppercase tracking-wider flex items-center gap-2">
+            <h1 className="text-sm font-bold text-sky-400 uppercase tracking-wider flex items-center gap-2">
               <Headset className="w-4 h-4" />
               Support Desk
             </h1>
@@ -84,7 +84,7 @@ export default function StaffSupportPage() {
                   key={s || 'ALL'}
                   onClick={() => setStatusFilter(s)}
                   className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-bold uppercase border ${
-                    statusFilter === s ? 'bg-rose-700 border-rose-700 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
+                    statusFilter === s ? 'bg-sky-700 border-sky-700 text-white' : 'bg-neutral-800 border-neutral-700 text-neutral-400'
                   }`}
                 >
                   {s || 'All'}
@@ -106,7 +106,7 @@ export default function StaffSupportPage() {
                   className="w-full text-left bg-neutral-800 hover:bg-neutral-800/70 rounded-2xl border border-neutral-700/80 p-3.5 transition-colors"
                 >
                   <div className="flex items-center justify-between gap-2">
-                    <span className="text-xs font-bold font-mono text-rose-400">{t.ticketNumber}</span>
+                    <span className="text-xs font-bold font-mono text-sky-400">{t.ticketNumber}</span>
                     <span className="text-[10px] font-bold uppercase text-neutral-400">{t.status.replace('_', ' ')}</span>
                   </div>
                   <p className="text-xs font-semibold mt-1">{t.subject}</p>
@@ -121,7 +121,7 @@ export default function StaffSupportPage() {
           <div className="space-y-4">
             <div className="bg-neutral-800 rounded-2xl border border-neutral-700/80 p-4 space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold font-mono text-rose-400">{active.ticketNumber}</span>
+                <span className="text-xs font-bold font-mono text-sky-400">{active.ticketNumber}</span>
                 <select
                   value={active.status}
                   onChange={(e) => handleStatusChange(e.target.value)}
@@ -145,7 +145,7 @@ export default function StaffSupportPage() {
                 <div
                   key={r.id}
                   className={`max-w-[85%] rounded-2xl p-3 text-xs ${
-                    r.isStaff ? 'ml-auto bg-rose-900/40 border border-rose-800/60' : 'bg-neutral-800 border border-neutral-700/80'
+                    r.isStaff ? 'ml-auto bg-sky-900/40 border border-sky-800/60' : 'bg-neutral-800 border border-neutral-700/80'
                   }`}
                 >
                   <p>{r.message}</p>
@@ -165,12 +165,12 @@ export default function StaffSupportPage() {
                 value={replyMessage}
                 onChange={(e) => setReplyMessage(e.target.value)}
                 placeholder="Type a reply..."
-                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-rose-600"
+                className="flex-1 bg-neutral-800 border border-neutral-700 rounded-xl px-3 py-2.5 text-xs text-white focus:outline-none focus:border-sky-600"
               />
               <button
                 type="submit"
                 disabled={replyMutation.isPending || !replyMessage.trim()}
-                className="bg-rose-700 hover:bg-rose-800 disabled:opacity-60 text-white px-4 rounded-xl flex items-center justify-center"
+                className="bg-sky-700 hover:bg-sky-800 disabled:opacity-60 text-white px-4 rounded-xl flex items-center justify-center"
               >
                 <Send className="w-4 h-4" />
               </button>

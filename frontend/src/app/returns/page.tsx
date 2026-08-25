@@ -12,7 +12,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 const STATUS_STYLES: Record<string, string> = {
   REQUESTED: 'bg-amber-50 text-amber-700',
   APPROVED: 'bg-blue-50 text-blue-700',
-  REJECTED: 'bg-rose-50 text-rose-700',
+  REJECTED: 'bg-sky-50 text-sky-700',
   PICKED_UP: 'bg-blue-50 text-blue-700',
   REFUNDED: 'bg-emerald-50 text-emerald-700',
   CANCELLED: 'bg-neutral-100 text-neutral-500',
@@ -104,7 +104,7 @@ export default function ReturnsPage() {
                   type="button"
                   disabled={cancellingId === retId}
                   onClick={() => onCancel(retId)}
-                  className="text-rose-700 disabled:opacity-50"
+                  className="text-sky-700 disabled:opacity-50"
                 >
                   {cancellingId === retId ? 'Cancelling…' : 'Cancel Return'}
                 </button>
