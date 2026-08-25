@@ -29,7 +29,7 @@ export function StorefrontFooter() {
           {/* Top Row: Brand & Social Icons */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div>
-              <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-10 w-auto object-contain" />
+              <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-16 sm:h-20 w-auto object-contain" />
               <p className="text-[11px] text-sky-200/70 hidden sm:block mt-1.5">
                 Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
               </p>

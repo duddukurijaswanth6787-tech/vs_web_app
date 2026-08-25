@@ -15,6 +15,7 @@ import { customerReviewsService, CreateReviewPayload } from '@/features/customer
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { brandService } from '@/features/catalog/brands/brand.service';
 import { ProductQueryDto } from '@/features/catalog/products/product.types';
+import type { FeatureToggle } from '@/features/storefront/storefront.types';
 
 export const customerKeys = {
   all: ['customer'] as const,
