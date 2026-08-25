@@ -57,43 +57,6 @@ export class UpdateProfileDto {
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() preferredLanguage?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() preferredCurrency?: string;
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferredCategories?: string[];
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferredBrands?: string[];
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferredSizes?: string[];
-  @ApiPropertyOptional()
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
-  preferredColors?: string[];
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  preferredPriceMin?: number;
-  @ApiPropertyOptional()
-  @IsOptional()
-  @Type(() => Number)
-  @IsNumber()
-  @Min(0)
-  preferredPriceMax?: number;
-  @ApiPropertyOptional() @IsOptional() @IsString() profileImage?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() companyName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() gstin?: string;
 }
 
 export class ProfileResponse {
