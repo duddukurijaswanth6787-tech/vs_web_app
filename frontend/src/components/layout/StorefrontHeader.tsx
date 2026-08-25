@@ -205,7 +205,7 @@ export function StorefrontHeader() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-                className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#0284c7]/20 placeholder:text-neutral-400"
+                className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
               />
             </div>
             <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0" aria-label="Wishlist">
@@ -239,7 +239,7 @@ export function StorefrontHeader() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-            className="w-full bg-neutral-50 border border-neutral-200/80 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#0284c7]/20 placeholder:text-neutral-400"
+            className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
           />
         </div>
       </div>

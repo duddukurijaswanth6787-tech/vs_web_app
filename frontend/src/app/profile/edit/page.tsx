@@ -89,7 +89,7 @@ export default function ProfileEditPage() {
                   required
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full"
+                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
                 />
               </div>
             </label>
@@ -117,7 +117,7 @@ export default function ProfileEditPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full"
+                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
                 />
               </div>
             </label>
@@ -127,7 +127,7 @@ export default function ProfileEditPage() {
               <select
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:border-[#0284c7] bg-white font-medium text-neutral-800"
+                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] bg-white font-medium text-neutral-800 transition-all hover:border-neutral-300"
               >
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
@@ -154,7 +154,7 @@ export default function ProfileEditPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60 transition-all shadow-md flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:ring-offset-2 active:scale-95 text-white text-sm font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2 mt-4"
           >
             <Save className="w-4 h-4" />
             <span>{loading ? 'Saving…' : 'Save Details'}</span>
