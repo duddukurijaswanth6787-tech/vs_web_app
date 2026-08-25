@@ -34,7 +34,7 @@ export class StorageService {
     const key = StorageUtils.generateKey(
       options.folder,
       options.entityId,
-      options.originalName,
+      options.mimeType,
     );
     const result = await this.provider.write(key, data, options.mimeType);
     this.loggerService.log(
@@ -64,7 +64,7 @@ export class StorageService {
     const key = StorageUtils.generateKey(
       options.folder,
       options.entityId,
-      options.originalName,
+      options.mimeType,
     );
     const baseKey = key.replace(/\.[^.]+$/, '');
 

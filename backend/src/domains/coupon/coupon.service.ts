@@ -1,4 +1,6 @@
 import { Injectable } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
+import { PrismaService } from '@database/prisma.service';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { CouponRepository } from './coupon.repository';
@@ -18,6 +20,7 @@ export class CouponService {
   constructor(
     private readonly couponRepository: CouponRepository,
     private readonly auditService: AuditService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private toResponse(c: any): CouponResponse {
@@ -176,9 +179,11 @@ export class CouponService {
       price: number;
       quantity: number;
     }[] = [],
+    client?: Prisma.TransactionClient,
   ) {
     const coupon = await this.couponRepository.findByCode(
       code.trim().toUpperCase(),
+      client,
     );
     if (!coupon) throw new BusinessException('Coupon not found', 'COUPON_001');
     if (!coupon.isActive)
@@ -191,7 +196,11 @@ export class CouponService {
       throw new BusinessException('Coupon has expired', 'COUPON_005');
 
     if (coupon.usageLimit) {
-      const totalUsage = await this.couponRepository.getUsageCount(coupon.id);
+      const totalUsage = await this.couponRepository.getUsageCount(
+        coupon.id,
+        undefined,
+        client,
+      );
       if (totalUsage >= coupon.usageLimit)
         throw new BusinessException('Coupon usage limit reached', 'COUPON_006');
     }
@@ -199,6 +208,7 @@ export class CouponService {
     const customerUsage = await this.couponRepository.getUsageCount(
       coupon.id,
       userId,
+      client,
     );
     if (customerUsage >= coupon.perCustomerLimit)
       throw new BusinessException(
@@ -268,23 +278,41 @@ export class CouponService {
     userId: string,
     dto: ApplyCouponDto,
   ): Promise<CouponApplyResponse> {
-    const { coupon, discountAmount, freeShipping } = await this.checkCoupon(
-      userId,
-      dto.code,
-      dto.orderAmount,
-      dto.items,
-    );
+    // Lock the coupon row for the whole check-then-record sequence so two
+    // concurrent redemptions of the same coupon can't both read the
+    // pre-increment usage count and both pass the usage-limit check.
+    const { coupon, discountAmount, freeShipping } =
+      await this.prisma.$transaction(async (tx) => {
+        await this.couponRepository.lockCouponByCode(
+          dto.code.trim().toUpperCase(),
+          tx,
+        );
+        const checked = await this.checkCoupon(
+          userId,
+          dto.code,
+          dto.orderAmount,
+          dto.items,
+          tx,
+        );
 
-    await this.couponRepository.createUsage({
-      coupon: { connect: { id: coupon.id } },
-      orderId: dto.orderId,
-      customerId: userId,
-      discountAmount,
-    });
+        await this.couponRepository.createUsage(
+          {
+            coupon: { connect: { id: checked.coupon.id } },
+            orderId: dto.orderId,
+            customerId: userId,
+            discountAmount: checked.discountAmount,
+          },
+          tx,
+        );
 
-    await this.couponRepository.update(coupon.id, {
-      usedCount: { increment: 1 },
-    });
+        await this.couponRepository.update(
+          checked.coupon.id,
+          { usedCount: { increment: 1 } },
+          tx,
+        );
+
+        return checked;
+      });
 
     await this.auditService.log({
       action: 'COUPON_APPLIED',

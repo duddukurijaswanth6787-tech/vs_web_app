@@ -102,7 +102,13 @@ export default registerAs('app', () => ({
     ),
   },
   features: {
-    swagger: process.env.ENABLE_SWAGGER !== 'false',
+    // Public API docs default off in production (must opt in) and on
+    // everywhere else (must opt out) -- an unset var must not expose the
+    // full API surface on a public deployment.
+    swagger:
+      process.env.ENABLE_SWAGGER === 'true' ||
+      (process.env.ENABLE_SWAGGER !== 'false' &&
+        (process.env.NODE_ENV || 'development') !== 'production'),
     redis: process.env.ENABLE_REDIS !== 'false',
     bullmq: process.env.ENABLE_BULLMQ !== 'false',
     email: process.env.ENABLE_EMAIL === 'true',

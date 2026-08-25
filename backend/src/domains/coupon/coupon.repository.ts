@@ -51,8 +51,17 @@ export class CouponRepository {
     return this.prisma.coupon.findUnique({ where: { id } });
   }
 
-  async findByCode(code: string) {
-    return this.prisma.coupon.findUnique({ where: { code } });
+  async findByCode(code: string, client: Prisma.TransactionClient = this.prisma) {
+    return client.coupon.findUnique({ where: { code } });
+  }
+
+  /**
+   * Locks the coupon row for the duration of the caller's transaction, so
+   * concurrent applyCoupon calls for the same coupon serialize instead of
+   * both reading the pre-increment usage count and passing the limit check.
+   */
+  async lockCouponByCode(code: string, tx: Prisma.TransactionClient) {
+    await tx.$queryRaw`SELECT id FROM "coupons" WHERE code = ${code} FOR UPDATE`;
   }
 
   async findActiveCoupons() {
@@ -72,17 +81,28 @@ export class CouponRepository {
     return this.prisma.coupon.create({ data });
   }
 
-  async update(id: string, data: Prisma.CouponUpdateInput) {
-    return this.prisma.coupon.update({ where: { id }, data });
+  async update(
+    id: string,
+    data: Prisma.CouponUpdateInput,
+    client: Prisma.TransactionClient = this.prisma,
+  ) {
+    return client.coupon.update({ where: { id }, data });
   }
 
-  async createUsage(data: Prisma.CouponUsageCreateInput) {
-    return this.prisma.couponUsage.create({ data });
+  async createUsage(
+    data: Prisma.CouponUsageCreateInput,
+    client: Prisma.TransactionClient = this.prisma,
+  ) {
+    return client.couponUsage.create({ data });
   }
 
-  async getUsageCount(couponId: string, customerId?: string) {
+  async getUsageCount(
+    couponId: string,
+    customerId?: string,
+    client: Prisma.TransactionClient = this.prisma,
+  ) {
     const where: Prisma.CouponUsageWhereInput = { couponId };
     if (customerId) where.customerId = customerId;
-    return this.prisma.couponUsage.count({ where });
+    return client.couponUsage.count({ where });
   }
 }
