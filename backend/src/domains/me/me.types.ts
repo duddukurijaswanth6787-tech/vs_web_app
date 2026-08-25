@@ -17,6 +17,13 @@ import {
 // ─── Profile ─────────────────────────────────────────────
 
 export class UpdateMeDto {
+  // CustomerProfileService.updateProfile() already splits these two off and
+  // writes them to the User row, but they were missing here -- so the global
+  // ValidationPipe (whitelist + forbidNonWhitelisted) rejected the request
+  // before the service ever saw them, and the profile form could not save a
+  // name.
+  @ApiPropertyOptional() @IsOptional() @IsString() firstName?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() lastName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
