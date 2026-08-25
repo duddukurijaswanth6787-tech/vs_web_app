@@ -4,12 +4,13 @@ import {
   Get,
   Body,
   Req,
+  Res,
   UseGuards,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { GoogleAuthService } from './services/google-auth.service';
 import {
@@ -23,6 +24,11 @@ import {
 import { JwtAuthGuard, CurrentUser } from './guards/jwt-auth.guard';
 import type { JwtPayload } from './services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import {
+  REFRESH_TOKEN_COOKIE,
+  setRefreshTokenCookie,
+  clearRefreshTokenCookie,
+} from './auth-cookie.util';
 
 @ApiTags('Authentication')
 @Controller('auth')
@@ -43,24 +49,34 @@ export class AuthController {
 
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
-  async register(@Body() dto: RegisterDto, @Req() req: Request) {
+  async register(
+    @Body() dto: RegisterDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.register(
       dto,
       req.ip,
       req.headers['user-agent'],
     );
+    setRefreshTokenCookie(res, result.refreshToken);
     return ResponseBuilder.created(result, 'Registration successful');
   }
 
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate user and return tokens' })
-  async login(@Body() dto: LoginDto, @Req() req: Request) {
+  async login(
+    @Body() dto: LoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.login(
       dto,
       req.ip,
       req.headers['user-agent'],
     );
+    setRefreshTokenCookie(res, result.refreshToken);
     return ResponseBuilder.success(result, 'Login successful');
   }
 
@@ -78,12 +94,17 @@ export class AuthController {
   @ApiOperation({
     summary: 'Authenticate or register customer with Google Sign-In',
   })
-  async googleAuth(@Body() dto: GoogleLoginDto, @Req() req: Request) {
+  async googleAuth(
+    @Body() dto: GoogleLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
     const result = await this.authService.googleLogin(
       dto,
       req.ip,
       req.headers['user-agent'],
     );
+    setRefreshTokenCookie(res, result.refreshToken);
     return ResponseBuilder.success(result, 'Google login successful');
   }
 
@@ -92,26 +113,37 @@ export class AuthController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Revoke refresh token' })
-  async logout(@Body() dto: RefreshDto) {
-    await this.authService.logout(dto.refreshToken);
+  async logout(
+    @Body() dto: RefreshDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = dto.refreshToken || req.cookies?.[REFRESH_TOKEN_COOKIE];
+    if (token) await this.authService.logout(token);
+    clearRefreshTokenCookie(res);
     return ResponseBuilder.success(null, 'Logout successful');
   }
 
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  async refresh(@Body() dto: RefreshDto, @Req() req: Request) {
-    const result = await this.authService.refresh(
-      dto.refreshToken,
-      req.ip,
-      req.headers['user-agent'],
-    );
+  async refresh(
+    @Body() dto: RefreshDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const token = req.cookies?.[REFRESH_TOKEN_COOKIE] || dto.refreshToken;
+    const result = token
+      ? await this.authService.refresh(token, req.ip, req.headers['user-agent'])
+      : null;
     if (!result) {
+      clearRefreshTokenCookie(res);
       return ResponseBuilder.success(
         null as unknown as AuthTokensResponse,
         'Invalid or expired refresh token',
       );
     }
+    setRefreshTokenCookie(res, result.refreshToken);
     return ResponseBuilder.success(result, 'Token refreshed');
   }
 

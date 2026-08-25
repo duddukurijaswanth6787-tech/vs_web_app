@@ -3,11 +3,12 @@ import {
   Post,
   Body,
   Req,
+  Res,
   HttpCode,
   HttpStatus,
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { OtpService } from './otp.service';
 import {
   SendOtpDto,
@@ -16,6 +17,7 @@ import {
   FirebasePhoneLoginDto,
 } from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import { setRefreshTokenCookie } from '@domains/auth/auth-cookie.util';
 
 @ApiTags('OTP Auth')
 @Controller('auth/otp')
@@ -45,15 +47,18 @@ export class OtpController {
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login or register with OTP' })
-  async login(@Body() dto: OtpLoginDto, @Req() req: Request) {
-    return ResponseBuilder.success(
-      await this.otpService.loginWithOtp(
-        dto,
-        req.ip,
-        req.headers['user-agent'],
-      ),
-      'OTP login successful',
+  async login(
+    @Body() dto: OtpLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.otpService.loginWithOtp(
+      dto,
+      req.ip,
+      req.headers['user-agent'],
     );
+    setRefreshTokenCookie(res, result.refreshToken);
+    return ResponseBuilder.success(result, 'OTP login successful');
   }
 
   @Post('firebase-login')
@@ -62,14 +67,17 @@ export class OtpController {
     summary:
       'Login or register with a phone number verified via Firebase Phone Auth (client already confirmed the SMS code with Firebase)',
   })
-  async firebaseLogin(@Body() dto: FirebasePhoneLoginDto, @Req() req: Request) {
-    return ResponseBuilder.success(
-      await this.otpService.loginWithFirebasePhone(
-        dto,
-        req.ip,
-        req.headers['user-agent'],
-      ),
-      'OTP login successful',
+  async firebaseLogin(
+    @Body() dto: FirebasePhoneLoginDto,
+    @Req() req: Request,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const result = await this.otpService.loginWithFirebasePhone(
+      dto,
+      req.ip,
+      req.headers['user-agent'],
     );
+    setRefreshTokenCookie(res, result.refreshToken);
+    return ResponseBuilder.success(result, 'OTP login successful');
   }
 }

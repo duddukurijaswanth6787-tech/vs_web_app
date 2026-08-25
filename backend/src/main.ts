@@ -4,6 +4,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import compression from 'compression';
+import cookieParser from 'cookie-parser';
 import { json, urlencoded } from 'express';
 import helmet from 'helmet';
 import { LoggerService } from '@common/logger/logger.service';
@@ -110,6 +111,7 @@ async function bootstrap() {
   );
   app.use(urlencoded({ extended: true, limit: urlencodedLimit }));
 
+  app.use(cookieParser());
   app.use(compression());
 
   app.setGlobalPrefix('api/v1', {

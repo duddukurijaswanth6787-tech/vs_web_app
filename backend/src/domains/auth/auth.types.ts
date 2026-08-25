@@ -65,9 +65,12 @@ export class GoogleLoginDto {
 }
 
 export class RefreshDto {
-  @ApiProperty()
+  // Optional: web clients send the refresh token via the httpOnly vd_rt
+  // cookie instead. Mobile clients (no cookie jar) still pass it in the body.
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsString()
-  refreshToken!: string;
+  refreshToken?: string;
 }
 
 export class ChangePasswordDto {
