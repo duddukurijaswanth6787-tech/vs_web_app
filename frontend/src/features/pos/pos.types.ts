@@ -213,3 +213,49 @@ export interface ShiftListResponse {
   data: PosShift[];
   meta: { page: number; limit: number; total: number; totalPages: number; hasNext: boolean; hasPrevious: boolean };
 }
+
+// ─── Returns (over the counter) ──────────────────────────
+
+export type PosRefundMethod = 'CASH' | 'UPI' | 'CARD' | 'ORIGINAL';
+
+export interface ReturnableSaleItem {
+  orderItemId: string;
+  productName: string;
+  variantTitle?: string;
+  sku: string;
+  quantity: number;
+  alreadyReturned: number;
+  returnableQuantity: number;
+  /** What one unit is worth back, net of the line's discount and tax. */
+  unitRefund: number;
+}
+
+export interface ReturnableSale {
+  orderId: string;
+  orderNumber: string;
+  soldAt: string;
+  paymentMethod: string;
+  grandTotal: number;
+  customerPhone?: string;
+  items: ReturnableSaleItem[];
+}
+
+export interface CreateReturnPayload {
+  orderNumber: string;
+  items: { orderItemId: string; quantity: number }[];
+  refundMethod: PosRefundMethod;
+  reason: string;
+  terminalId?: string;
+  notes?: string;
+}
+
+export interface PosReturnResult {
+  success: boolean;
+  returnNumber: string;
+  refundNumber: string;
+  refundMethod: string;
+  refundAmount: number;
+  orderNumber: string;
+  terminalId: string;
+  itemsReturned: number;
+}

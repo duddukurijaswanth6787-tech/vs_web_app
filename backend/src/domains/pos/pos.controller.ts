@@ -31,6 +31,7 @@ import {
   GenerateBatchStickersDto,
   PreviewReceiptDto,
   OpenPosShiftDto,
+  CreatePosReturnDto,
   ClosePosShiftDto,
 } from './pos.types';
 import type { Response } from 'express';
@@ -132,6 +133,29 @@ export class PosController {
   })
   async lookupCustomer(@Query('phone') phone: string) {
     return this.posService.lookupCustomer(phone || '');
+  }
+
+  @Get('returns/lookup')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Look up an in-store sale and what is still returnable on it',
+  })
+  async lookupSaleForReturn(@Query('orderNumber') orderNumber: string) {
+    return this.posService.lookupSaleForReturn(orderNumber || '');
+  }
+
+  @Post('returns')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Take goods back at the counter: restock, refund, and record it',
+  })
+  async createReturn(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreatePosReturnDto,
+  ) {
+    return this.posService.createReturn(user.sub, dto);
   }
 
   @Post('shifts/open')

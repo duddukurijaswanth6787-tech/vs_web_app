@@ -286,6 +286,53 @@ export class OrderWorkflowService {
     });
   }
 
+  /**
+   * Puts returned goods back on the shelf.
+   *
+   * Takes the caller's transaction rather than opening its own: a return also
+   * records the return itself and the refund, and stock that went back while
+   * the refund failed to record would leave the shop counting goods it has
+   * already been paid to keep.
+   *
+   * Unlike a deduction there is nothing to guard against -- adding stock
+   * cannot go negative -- so each row is a plain increment.
+   */
+  async restockReturnedItems(
+    tx: Prisma.TransactionClient,
+    params: {
+      orderId: string;
+      orderNumber: string;
+      items: { variantId: string | null; quantity: number }[];
+      userId?: string;
+      reason?: string;
+    },
+  ) {
+    for (const item of params.items) {
+      if (!item.variantId || item.quantity <= 0) continue;
+
+      const rows = await tx.$queryRaw<InventoryRow[]>`
+        UPDATE "inventory"
+        SET "availableQuantity" = "availableQuantity" + ${item.quantity}
+        WHERE "variantId" = ${item.variantId}
+        RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
+      `;
+      // No inventory row means the variant was never stocked here; the return
+      // is still valid, there is simply no shelf count to correct.
+      if (rows.length === 0) continue;
+
+      await this.logMovement(tx, rows[0], {
+        variantId: item.variantId,
+        movementType: 'RETURN',
+        quantity: item.quantity,
+        previousAvailable: rows[0].availableQuantity - item.quantity,
+        referenceType: 'ORDER',
+        referenceId: params.orderId,
+        reason: params.reason || `Order ${params.orderNumber} items returned`,
+        performedBy: params.userId || 'SYSTEM',
+      });
+    }
+  }
+
   async releaseInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },

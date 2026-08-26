@@ -7,6 +7,7 @@ import {
   IsBoolean,
   IsEnum,
   IsIn,
+  IsInt,
   ValidateNested,
   Min,
 } from 'class-validator';
@@ -154,6 +155,60 @@ export class AdoptHandoffTokenDto {
  * is created.
  */
 export const DEFAULT_TERMINAL_ID = 'COUNTER_1';
+
+/** How the money goes back to the customer at the till. */
+export enum PosRefundMethodType {
+  CASH = 'CASH',
+  UPI = 'UPI',
+  CARD = 'CARD',
+  /** Whatever the sale was paid with. */
+  ORIGINAL = 'ORIGINAL',
+}
+
+export class PosReturnItemDto {
+  @ApiProperty({ description: 'OrderItem being returned' })
+  @IsString()
+  orderItemId!: string;
+
+  @ApiProperty({ minimum: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  quantity!: number;
+}
+
+export class CreatePosReturnDto {
+  @ApiProperty({ description: 'Order number from the customer receipt' })
+  @IsString()
+  orderNumber!: string;
+
+  @ApiProperty({ type: [PosReturnItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosReturnItemDto)
+  items!: PosReturnItemDto[];
+
+  @ApiProperty({ enum: PosRefundMethodType })
+  @IsEnum(PosRefundMethodType)
+  refundMethod!: PosRefundMethodType;
+
+  @ApiProperty()
+  @IsString()
+  reason!: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Register the refund is paid out from. Decides which drawer the cash comes out of at close.',
+  })
+  @IsOptional()
+  @IsString()
+  terminalId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
 
 export class CompletePosSaleDto {
   @ApiPropertyOptional({

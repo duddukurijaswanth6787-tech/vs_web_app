@@ -26,6 +26,8 @@ import {
   OpenPosShiftDto,
   ClosePosShiftDto,
   DEFAULT_TERMINAL_ID,
+  CreatePosReturnDto,
+  PosRefundMethodType,
 } from './pos.types';
 
 @Injectable()
@@ -482,6 +484,215 @@ export class PosService {
       orderNumber: dto.orderNumber,
       html,
       escposBase64: escposBuffer.toString('base64'),
+    };
+  }
+
+  /**
+   * A past sale, with each line's returnable quantity worked out, so the till
+   * can show what is actually still takeable back.
+   */
+  async lookupSaleForReturn(orderNumber: string) {
+    const found = await this.repository.findSaleForReturn(orderNumber.trim());
+    if (!found) {
+      throw new NotFoundException(`No sale found for ${orderNumber}`);
+    }
+
+    const { order, returnedByItem } = found;
+    if (order.channel !== 'POS_SHOPORA') {
+      // A refund is tied to a drawer through its order's terminal, and an
+      // online order has no terminal -- paying that out at the till would
+      // take cash the shift never expects to be missing.
+      throw new BusinessException(
+        `${orderNumber} was not sold in store. Online orders are returned through Admin → Returns.`,
+        'POS_RETURN_NOT_IN_STORE',
+      );
+    }
+
+    return {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      soldAt: order.createdAt,
+      paymentMethod: order.paymentMethod,
+      grandTotal: Number(order.grandTotal),
+      customerPhone: order.customer?.phone ?? undefined,
+      items: order.items.map((i) => {
+        const returned = returnedByItem.get(i.id) ?? 0;
+        return {
+          orderItemId: i.id,
+          productName: i.productName,
+          variantTitle: i.variantTitle ?? undefined,
+          sku: i.sku,
+          quantity: i.quantity,
+          alreadyReturned: returned,
+          returnableQuantity: Math.max(i.quantity - returned, 0),
+          unitRefund: this.unitRefundValue(i),
+        };
+      }),
+    };
+  }
+
+  /**
+   * What one unit of a line is worth back to the customer.
+   *
+   * Taken from the line's own totals rather than the list price, so a
+   * discount given at the till is not refunded as if it had been paid, and
+   * tax collected on the line does go back.
+   */
+  private unitRefundValue(item: {
+    quantity: number;
+    unitPrice: any;
+    discountAmount: any;
+    taxAmount: any;
+  }): number {
+    if (item.quantity <= 0) return 0;
+    const lineTotal =
+      Number(item.unitPrice) * item.quantity -
+      Number(item.discountAmount ?? 0) +
+      Number(item.taxAmount ?? 0);
+    return Math.max(lineTotal / item.quantity, 0);
+  }
+
+  /**
+   * Takes goods back over the counter: restocks them, refunds the customer,
+   * and records both against the register so the drawer still reconciles.
+   */
+  async createReturn(cashierId: string, dto: CreatePosReturnDto) {
+    const found = await this.repository.findSaleForReturn(dto.orderNumber.trim());
+    if (!found) {
+      throw new NotFoundException(`No sale found for ${dto.orderNumber}`);
+    }
+    const { order, returnedByItem } = found;
+
+    if (order.channel !== 'POS_SHOPORA') {
+      throw new BusinessException(
+        `${dto.orderNumber} was not sold in store. Online orders are returned through Admin → Returns.`,
+        'POS_RETURN_NOT_IN_STORE',
+      );
+    }
+
+    const terminalId = dto.terminalId || DEFAULT_TERMINAL_ID;
+    // Cash for a refund comes out of a drawer, so there has to be an open
+    // shift to take it from -- otherwise the payout lands outside every
+    // report and the drawer reads short at close with nothing to explain it.
+    const openShift = await this.repository.findOpenShiftForTerminal(terminalId);
+    if (!openShift) {
+      throw new BusinessException(
+        `No open shift on ${terminalId}. Open a shift before refunding so the payout is reconciled at close.`,
+        'POS_SHIFT_REQUIRED',
+      );
+    }
+
+    const itemsById = new Map(order.items.map((i) => [i.id, i]));
+    const priced: {
+      orderItemId: string;
+      variantId: string | null;
+      quantity: number;
+    }[] = [];
+    let refundAmount = 0;
+
+    for (const line of dto.items) {
+      const item = itemsById.get(line.orderItemId);
+      if (!item) {
+        throw new BusinessException(
+          `Item ${line.orderItemId} is not part of ${order.orderNumber}`,
+          'POS_RETURN_ITEM_NOT_ON_SALE',
+        );
+      }
+      const returnable =
+        item.quantity - (returnedByItem.get(item.id) ?? 0);
+      if (line.quantity > returnable) {
+        // Without this the same item could be refunded repeatedly, paying out
+        // more than the customer ever handed over.
+        throw new BusinessException(
+          `Only ${returnable} of ${item.productName} can still be returned on ${order.orderNumber}`,
+          'POS_RETURN_QUANTITY_EXCEEDED',
+        );
+      }
+      refundAmount += this.unitRefundValue(item) * line.quantity;
+      priced.push({
+        orderItemId: item.id,
+        variantId: item.variantId,
+        quantity: line.quantity,
+      });
+    }
+
+    if (priced.length === 0) {
+      throw new BusinessException(
+        'Select at least one item to return',
+        'POS_RETURN_EMPTY',
+      );
+    }
+
+    const payment = order.payments[0];
+    if (!payment) {
+      throw new BusinessException(
+        `No payment recorded against ${order.orderNumber}, so there is nothing to refund`,
+        'POS_RETURN_NO_PAYMENT',
+      );
+    }
+
+    let refundMethod: string = dto.refundMethod;
+    if (dto.refundMethod === PosRefundMethodType.ORIGINAL) {
+      if (!order.paymentMethod) {
+        // The drawer is reconciled from the refund's method, so guessing here
+        // would either take cash the shift never expects to be missing or
+        // hide a payout that did leave the till. Make the cashier say.
+        throw new BusinessException(
+          `${order.orderNumber} has no recorded payment method. Choose how to refund instead.`,
+          'POS_RETURN_METHOD_UNKNOWN',
+        );
+      }
+      refundMethod = order.paymentMethod;
+    }
+
+    const stamp = Date.now().toString(36).toUpperCase();
+    const { returnRequest, refund } = await this.repository.createPosReturn({
+      orderId: order.id,
+      orderNumber: order.orderNumber,
+      paymentId: payment.id,
+      returnNumber: `RET-${order.orderNumber}-${stamp}`,
+      refundNumber: `REF-${order.orderNumber}-${stamp}`,
+      reason: dto.reason,
+      notes: dto.notes,
+      refundMethod,
+      refundAmount: Math.round(refundAmount * 100) / 100,
+      cashierId,
+      items: priced,
+      restock: (tx) =>
+        this.workflow.restockReturnedItems(tx, {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          items: priced,
+          userId: cashierId,
+          reason: `Returned at ${terminalId} against ${order.orderNumber}`,
+        }),
+    });
+
+    await this.auditService.log({
+      action: 'POS_RETURN_COMPLETED',
+      module: 'pos',
+      resource: 'return_request',
+      resourceId: returnRequest.id,
+      userId: cashierId,
+      newValue: {
+        orderNumber: order.orderNumber,
+        terminalId,
+        shiftId: openShift.id,
+        refundMethod,
+        refundAmount: Number(refund.amount),
+        items: priced,
+      },
+    });
+
+    return {
+      success: true,
+      returnNumber: returnRequest.returnNumber,
+      refundNumber: refund.refundNumber,
+      refundMethod,
+      refundAmount: Number(refund.amount),
+      orderNumber: order.orderNumber,
+      terminalId,
+      itemsReturned: priced.reduce((sum, i) => sum + i.quantity, 0),
     };
   }
 

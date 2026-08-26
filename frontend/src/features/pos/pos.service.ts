@@ -18,6 +18,9 @@ import {
   ShiftReport,
   PosDaySummary,
   ShiftListResponse,
+  ReturnableSale,
+  CreateReturnPayload,
+  PosReturnResult,
 } from './pos.types';
 
 export const posService = {
@@ -92,6 +95,24 @@ export const posService = {
    */
   async openShift(payload: OpenShiftPayload): Promise<PosShift> {
     const res = await apiClient.post<StandardResponse<PosShift>>('/pos/shifts/open', payload);
+    return res.data.data!;
+  },
+
+  /**
+   * Look up an in-store sale and what is still returnable on it.
+   */
+  async lookupSaleForReturn(orderNumber: string): Promise<ReturnableSale> {
+    const res = await apiClient.get<StandardResponse<ReturnableSale>>('/pos/returns/lookup', {
+      params: { orderNumber },
+    });
+    return res.data.data!;
+  },
+
+  /**
+   * Take goods back at the counter: restock, refund, and record it.
+   */
+  async createReturn(payload: CreateReturnPayload): Promise<PosReturnResult> {
+    const res = await apiClient.post<StandardResponse<PosReturnResult>>('/pos/returns', payload);
     return res.data.data!;
   },
 

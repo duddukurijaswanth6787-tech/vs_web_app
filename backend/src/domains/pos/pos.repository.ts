@@ -415,6 +415,104 @@ export class PosRepository {
     });
   }
 
+  /**
+   * A past sale with everything needed to take items back over the counter:
+   * the line items, the payment the refund attaches to, and how much of each
+   * line has already gone back.
+   *
+   * Rejected returns are excluded from the returned tally -- goods that were
+   * refused are still the customer's, so those quantities remain returnable.
+   */
+  async findSaleForReturn(orderNumber: string) {
+    const order = await this.prisma.order.findUnique({
+      where: { orderNumber },
+      include: {
+        items: true,
+        payments: { orderBy: { createdAt: 'desc' } },
+        customer: { select: { id: true, phone: true } },
+      },
+    });
+    if (!order) return null;
+
+    const alreadyReturned = await this.prisma.returnItem.groupBy({
+      by: ['orderItemId'],
+      _sum: { quantity: true },
+      where: {
+        orderItem: { orderId: order.id },
+        returnRequest: { status: { notIn: ['REJECTED', 'CANCELLED'] } },
+      },
+    });
+
+    const returnedByItem = new Map(
+      alreadyReturned.map((r) => [r.orderItemId, r._sum.quantity ?? 0]),
+    );
+
+    return { order, returnedByItem };
+  }
+
+  /**
+   * Records a completed over-the-counter return: the return itself, the
+   * refund, and the restock, in one transaction. Either the shop has the
+   * goods back and the customer has their money, or neither happened.
+   */
+  async createPosReturn(params: {
+    orderId: string;
+    orderNumber: string;
+    paymentId: string;
+    returnNumber: string;
+    refundNumber: string;
+    reason: string;
+    notes?: string;
+    refundMethod: string;
+    refundAmount: number;
+    cashierId: string;
+    items: { orderItemId: string; variantId: string | null; quantity: number }[];
+    restock: (tx: Prisma.TransactionClient) => Promise<void>;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const returnRequest = await tx.returnRequest.create({
+        data: {
+          orderId: params.orderId,
+          returnNumber: params.returnNumber,
+          reason: params.reason,
+          // Not a request awaiting approval: the customer is at the counter,
+          // the goods are back, and the money has been handed over.
+          status: 'COMPLETED',
+          adminNotes: params.notes,
+          createdBy: params.cashierId,
+          refundPreference: params.refundMethod,
+          items: {
+            create: params.items.map((i) => ({
+              orderItemId: i.orderItemId,
+              quantity: i.quantity,
+              reason: params.reason,
+            })),
+          },
+        },
+        include: { items: true },
+      });
+
+      const refund = await tx.refund.create({
+        data: {
+          paymentId: params.paymentId,
+          orderId: params.orderId,
+          refundNumber: params.refundNumber,
+          amount: params.refundAmount,
+          reason: params.reason,
+          status: 'COMPLETED',
+          // Read back by getCashMovementForWindow to work out what should be
+          // left in the drawer, so a cash refund has to say so here.
+          method: params.refundMethod,
+          createdBy: params.cashierId,
+        },
+      });
+
+      await params.restock(tx);
+
+      return { returnRequest, refund };
+    });
+  }
+
   async findInventoryQuantities(
     variantIds: string[],
   ): Promise<Map<string, { availableQuantity: number; allowBackorder: boolean }>> {

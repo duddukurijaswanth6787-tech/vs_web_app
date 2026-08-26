@@ -25,6 +25,7 @@ import {
   AlertTriangle,
   Clock,
   Usb,
+  RotateCcw,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -545,6 +546,14 @@ export default function DesktopPosPage() {
             <Smartphone className="w-4 h-4 text-amber-700 animate-pulse" />
             <span>Receive Mobile Session (Handoff)</span>
           </button>
+
+          <Link
+            href="/pos/returns"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200 transition-colors"
+          >
+            <RotateCcw className="w-4 h-4" />
+            <span>Returns</span>
+          </Link>
 
           <Link
             href="/pos/printers"

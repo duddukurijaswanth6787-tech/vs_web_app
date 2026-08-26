@@ -10,6 +10,7 @@ import {
   PreviewReceiptPayload,
   OpenShiftPayload,
   CloseShiftPayload,
+  CreateReturnPayload,
 } from './pos.types';
 
 export const posKeys = {
@@ -123,5 +124,30 @@ export function usePosDaySummary(date?: string) {
   return useQuery({
     queryKey: [...posKeys.all, 'day-summary', date],
     queryFn: () => posService.getPosDaySummary(date),
+  });
+}
+
+/**
+ * A past in-store sale and what is still returnable on it. Only runs once an
+ * order number has actually been entered.
+ */
+export function useReturnableSale(orderNumber: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'returnable-sale', orderNumber],
+    queryFn: () => posService.lookupSaleForReturn(orderNumber),
+    enabled: !!orderNumber,
+    retry: false,
+  });
+}
+
+export function useCreatePosReturn() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateReturnPayload) => posService.createReturn(payload),
+    onSuccess: () => {
+      // The refund changes what the drawer should hold, so the shift figures
+      // on screen are stale the moment it lands.
+      queryClient.invalidateQueries({ queryKey: posKeys.all });
+    },
   });
 }
