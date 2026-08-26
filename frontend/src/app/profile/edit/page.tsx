@@ -5,8 +5,9 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Calendar, Save } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
-import { useCustomerProfile } from '@/features/customer/hooks';
+import { useCustomerProfile, customerKeys } from '@/features/customer/hooks';
 import { customerMeService } from '@/features/customer/me.service';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -14,6 +15,7 @@ export default function ProfileEditPage() {
   const router = useRouter();
   const { isAuthenticated, isInitializing, refetchUser } = useAuth();
   const { data } = useCustomerProfile(isAuthenticated);
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState({
     firstName: '',
@@ -25,20 +27,26 @@ export default function ProfileEditPage() {
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [prevData, setPrevData] = useState(data);
+  // Tracks "have we filled the form from the server yet", NOT the identity of
+  // `data`. Keying off identity meant that whenever React Query already had the
+  // profile cached -- i.e. every time the customer returned to Edit after a
+  // save -- `useState(data)` seeded prevData with that same object, the
+  // `data !== prevData` check was false on the first render, and the form
+  // rendered blank over a perfectly good profile.
+  const [hydrated, setHydrated] = useState(false);
 
-  if (data !== prevData) {
-    setPrevData(data);
-    if (data) {
-      const d = data as unknown as Record<string, unknown>;
-      setForm({
-        firstName: data.firstName || '',
-        lastName: data.lastName || '',
-        phone: data.phone || '',
-        gender: (data.gender as string) || 'FEMALE',
-        dateOfBirth: (data.dateOfBirth as string) || '',
-      });
-    }
+  if (!hydrated && data) {
+    setHydrated(true);
+    setForm({
+      firstName: data.firstName || '',
+      lastName: data.lastName || '',
+      phone: data.phone || '',
+      gender: (data.gender as string) || 'FEMALE',
+      // The API sends a full ISO timestamp ('2001-05-12T00:00:00.000Z');
+      // <input type="date"> accepts only 'YYYY-MM-DD' and silently renders
+      // blank for anything else, so the saved date looked lost.
+      dateOfBirth: data.dateOfBirth ? String(data.dateOfBirth).slice(0, 10) : '',
+    });
   }
 
   if (!isInitializing && !isAuthenticated) {
@@ -57,6 +65,10 @@ export default function ProfileEditPage() {
     setError('');
     try {
       await customerMeService.updateProfile(form);
+      // refetchUser() only refreshes the auth user; the ['customer','profile']
+      // cache this form reads from would still hold the pre-save values, so
+      // reopening Edit prefilled the old ones.
+      await queryClient.invalidateQueries({ queryKey: customerKeys.profile() });
       await refetchUser();
       router.push('/profile');
     } catch (err) {
