@@ -11,7 +11,7 @@ import { useCmsPage } from '@/features/customer/hooks';
 export default function TermsOfServicePage() {
   const { data, isLoading } = useCmsPage('terms');
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <StorefrontHeader />
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">

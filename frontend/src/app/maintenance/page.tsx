@@ -23,7 +23,7 @@ export default function MaintenancePage() {
   const inMaintenance = settings?.maintenanceMode !== false;
 
   return (
-    <div className="w-full min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="w-full min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 text-center shadow-2xs">
         <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] tracking-tight">
           {storeName}

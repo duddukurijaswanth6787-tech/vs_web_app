@@ -36,7 +36,7 @@ export default function SizeGuidePage() {
   const contentHtml = data?.content || (isFetched && !data?.content ? FALLBACK_HTML : '');
 
   return (
-    <div className="w-full min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+    <div className="w-full min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-2xs">
         <div className="flex items-center gap-3">
           <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">

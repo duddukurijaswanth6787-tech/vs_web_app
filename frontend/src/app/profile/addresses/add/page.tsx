@@ -116,7 +116,7 @@ export default function ProfileAddAddressPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <StorefrontHeader />
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1">

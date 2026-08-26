@@ -46,7 +46,7 @@ export default function NotificationsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <StorefrontHeader />
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">

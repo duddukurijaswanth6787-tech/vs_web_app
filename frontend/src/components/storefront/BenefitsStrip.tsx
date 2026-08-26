@@ -37,7 +37,7 @@ export function BenefitsStrip() {
   ];
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3">
+    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-3 bg-[var(--benefits-bg)] text-[var(--benefits-text)]">
       <div className="bg-[#F5FAFF] border border-sky-100 rounded-2xl p-3.5 sm:p-5 flex overflow-x-auto gap-4 scrollbar-none snap-x snap-mandatory md:grid md:grid-cols-5 md:overflow-visible items-center justify-between text-left shadow-2xs">
         {benefits.map((item, index) => {
           const Icon = item.icon;

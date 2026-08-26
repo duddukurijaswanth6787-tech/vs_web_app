@@ -49,7 +49,7 @@ function ProductCardItem({
   const origVal = Number(product.originalPrice ?? p.compareAtPrice ?? p.basePrice ?? 0);
 
   return (
-    <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-white rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300">
+    <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-[var(--product-card-bg)] text-[var(--product-card-text)] rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300">
       <Link href={`/product/${product.slug || product.id}`} className="relative aspect-[3/4] overflow-hidden bg-neutral-100 block group">
         <Image
           src={imageSrc}
@@ -86,12 +86,12 @@ function ProductCardItem({
       </Link>
       <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5">
         <Link href={`/product/${product.slug || product.id}`}>
-          <h3 className="text-sm font-semibold text-neutral-900 line-clamp-1 hover:text-[#1769D2] transition-colors">
+          <h3 className="text-sm font-semibold line-clamp-1 hover:text-[var(--brand-primary)] transition-colors">
             {cardTitle}
           </h3>
         </Link>
         <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-extrabold text-neutral-900">
+          <span className="text-sm font-extrabold text-[var(--product-price)]">
             ₹{priceVal.toLocaleString('en-IN')}
           </span>
           {origVal > priceVal && (

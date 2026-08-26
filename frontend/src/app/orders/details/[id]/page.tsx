@@ -18,7 +18,7 @@ export default function OrderDetailsPage() {
   if (error || !order) return <div className="p-6 text-red-600">{getApiErrorMessage(error, 'Order not found')}</div>;
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] p-4 max-w-2xl mx-auto space-y-6">
+    <div className="min-h-screen bg-[var(--page-bg)] p-4 max-w-2xl mx-auto space-y-6">
       <header className="flex items-center gap-3 py-2">
         <Link href="/orders" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />

@@ -99,7 +99,7 @@ export function HeroSection() {
   const next = () => setIndex((i) => (banners.length ? (i + 1) % banners.length : 0));
 
   return (
-    <section className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
+    <section className="max-w-[1440px] mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 bg-[var(--hero-bg)] text-[var(--hero-text)]">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
         
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}

@@ -8,7 +8,7 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 export default function StorefrontNotFound() {
   return (
-    <div suppressHydrationWarning className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+    <div suppressHydrationWarning className="w-full max-w-full overflow-x-hidden min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
       
       {/* Header */}
       <header suppressHydrationWarning className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-2xs">

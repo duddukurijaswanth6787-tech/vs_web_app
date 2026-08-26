@@ -44,7 +44,7 @@ import {
 
 function GuestAccountView() {
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
       <StorefrontHeader />
 
       <main className="max-w-md lg:max-w-xl mx-auto w-full px-4 py-5 lg:py-16 flex-1 space-y-5">
@@ -295,7 +295,7 @@ function AuthenticatedAccountView() {
   }, [ordersList]);
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20 lg:pb-0">
       <StorefrontHeader />
 
       <main className="max-w-md lg:max-w-6xl mx-auto w-full px-4 py-5 lg:py-8 flex-1">
@@ -537,7 +537,7 @@ export default function ProfilePage() {
   // and a flash of the signed-in layout before falling back to the guest view.
   if (isInitializing) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#FDFBFB]">
+      <div className="min-h-screen flex items-center justify-center bg-[var(--page-bg)]">
         <div className="h-8 w-8 rounded-full border-2 border-neutral-200 border-t-[var(--brand-primary)] animate-spin" />
       </div>
     );

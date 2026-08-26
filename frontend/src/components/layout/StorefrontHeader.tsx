@@ -90,11 +90,11 @@ export function StorefrontHeader() {
   const announcementBgColor =
     (typedSettings?.announcementBarBgColor as string | undefined) ||
     (typedSettings?.announcement_bar_bg_color as string | undefined) ||
-    '#0284c7';
+    'var(--announcement-bg)';
   const announcementTextColor =
     (typedSettings?.announcementBarTextColor as string | undefined) ||
     (typedSettings?.announcement_bar_text_color as string | undefined) ||
-    '#FFFFFF';
+    'var(--announcement-text)';
 
   const { data: homepageData } = useHomepage();
   const announcementBarEnabled =
@@ -104,7 +104,7 @@ export function StorefrontHeader() {
       homepageData.sections.length === 0 ||
       homepageData.sections.some((s) => (s as Record<string, unknown>).key === 'announcement_bar'));
   return (
-    <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 shadow-xs">
+    <header className="sticky top-0 z-50 bg-[var(--header-bg)] text-[var(--header-text)] border-b border-[var(--header-border)] shadow-xs">
       {/* 01 TOP ANNOUNCEMENT BAR */}
       {announcementBarEnabled && (
         <div
@@ -402,7 +402,7 @@ export function StorefrontHeader() {
             {/* Bottom Promo Card Box (Matching Mobile Drawer Screenshot) */}
             <div className="p-4">
               <div className="bg-[var(--hero-bg)] border border-[var(--header-border)] rounded-2xl p-4 text-center space-y-2">
-                <div className="w-8 h-8 rounded-full bg-[var(--announcement-bg)] text-white flex items-center justify-center mx-auto">
+                <div className="w-8 h-8 rounded-full bg-[var(--brand-primary)] text-[var(--brand-on-primary)] flex items-center justify-center mx-auto">
                   <Percent className="w-4 h-4" />
                 </div>
                 <h4 className="text-base font-bold text-neutral-900 leading-tight">
@@ -411,7 +411,7 @@ export function StorefrontHeader() {
                 <p className="text-xs text-neutral-500">
                   On your first order
                 </p>
-                <button className="w-full bg-[var(--announcement-bg)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
+                <button className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-[var(--brand-on-primary)] text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
                   JOIN NOW
                 </button>
               </div>

@@ -20,7 +20,7 @@ export function TestimonialsSection() {
   }
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
+    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8 bg-[var(--testimonials-bg)] text-[var(--testimonials-text)]">
       {/* Header */}
       <div className="flex items-center justify-between gap-4 mb-3 sm:mb-6">
         <div>

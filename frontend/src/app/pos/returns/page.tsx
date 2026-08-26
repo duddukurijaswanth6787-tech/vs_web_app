@@ -113,7 +113,7 @@ export default function PosReturnsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] text-neutral-900">
       <header className="sticky top-0 z-40 bg-white border-b border-neutral-200 px-4 py-3 flex items-center gap-3">
         <Link href="/pos" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />

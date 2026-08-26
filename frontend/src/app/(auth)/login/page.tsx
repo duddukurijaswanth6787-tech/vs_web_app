@@ -117,7 +117,7 @@ function CustomerLoginForm() {
   };
 
   return (
-    <div suppressHydrationWarning className="w-full max-w-full overflow-x-hidden min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div suppressHydrationWarning className="w-full max-w-full overflow-x-hidden min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <header suppressHydrationWarning className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between shadow-2xs">
         <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />

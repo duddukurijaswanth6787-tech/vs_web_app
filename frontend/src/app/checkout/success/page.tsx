@@ -16,7 +16,7 @@ function CheckoutSuccessPageContent() {
   const { data: order } = useCustomerOrder(orderNumber, !!orderNumber && isAuthenticated);
 
   return (
-    <div className="min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <main className="max-w-md mx-auto w-full px-4 py-16 flex-1 text-center space-y-4">
         <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto" />
         <h1 className="text-2xl font-bold font-serif text-[var(--brand-primary)]">Order Placed</h1>
