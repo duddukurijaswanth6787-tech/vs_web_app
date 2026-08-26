@@ -79,7 +79,7 @@ function CheckoutPageContent() {
           <Link href="/cart" className="p-1 rounded-lg hover:bg-neutral-100">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-lg font-bold font-serif text-[#0284c7]">Checkout</h1>
+          <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Checkout</h1>
         </div>
         <div className="flex items-center gap-1 text-xs text-emerald-700 font-semibold bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
           <Lock className="w-3 h-3" /> Secure
@@ -91,12 +91,12 @@ function CheckoutPageContent() {
         <section className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-3">
           <div className="flex items-center justify-between border-b pb-2">
             <h2 className="font-bold text-neutral-800 flex items-center gap-1.5 text-sm">
-              <MapPin className="w-4 h-4 text-[#0284c7]" />
+              <MapPin className="w-4 h-4 text-[var(--brand-primary)]" />
               <span>Shipping Address</span>
             </h2>
             <Link
               href="/checkout/address/edit"
-              className="text-xs font-bold text-[#0284c7] hover:underline flex items-center gap-1"
+              className="text-xs font-bold text-[var(--brand-primary)] hover:underline flex items-center gap-1"
             >
               <Plus className="w-3 h-3" /> Add New
             </Link>
@@ -106,7 +106,7 @@ function CheckoutPageContent() {
             <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 space-y-1">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-neutral-900">{selectedAddress.fullName}</span>
-                <span className="text-[10px] font-bold bg-[#0284c7] text-white px-2 py-0.5 rounded-md uppercase">
+                <span className="text-[10px] font-bold bg-[var(--brand-primary)] text-white px-2 py-0.5 rounded-md uppercase">
                   {selectedAddress.label || 'Home'}
                 </span>
               </div>
@@ -119,7 +119,7 @@ function CheckoutPageContent() {
           ) : (
             <div className="p-4 text-center text-neutral-500">
               No shipping address found.{' '}
-              <Link href="/checkout/address/edit" className="text-[#0284c7] font-bold underline">
+              <Link href="/checkout/address/edit" className="text-[var(--brand-primary)] font-bold underline">
                 Add an address
               </Link>
             </div>
@@ -129,7 +129,7 @@ function CheckoutPageContent() {
         {/* Courier & Delivery Slot Options */}
         <section className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-3">
           <h2 className="font-bold text-neutral-800 flex items-center gap-1.5 text-sm border-b pb-2">
-            <Truck className="w-4 h-4 text-[#0284c7]" />
+            <Truck className="w-4 h-4 text-[var(--brand-primary)]" />
             <span>Preferred Delivery Slot & Instructions</span>
           </h2>
 
@@ -143,7 +143,7 @@ function CheckoutPageContent() {
                   key={slot.id}
                   className={`flex items-center gap-2 p-2.5 rounded-xl border cursor-pointer transition-all ${
                     preferredDeliverySlot === slot.id
-                      ? 'border-[#0284c7] bg-[#0284c7]/5 font-bold text-neutral-900'
+                      ? 'border-[var(--brand-primary)] bg-[var(--brand-primary)]/5 font-bold text-neutral-900'
                       : 'border-neutral-200 hover:bg-neutral-50 text-neutral-700'
                   }`}
                 >
@@ -152,7 +152,7 @@ function CheckoutPageContent() {
                     name="deliverySlot"
                     checked={preferredDeliverySlot === slot.id}
                     onChange={() => setPreferredDeliverySlot(slot.id)}
-                    className="accent-[#0284c7]"
+                    className="accent-[var(--brand-primary)]"
                   />
                   <span>{slot.label}</span>
                 </label>
@@ -167,7 +167,7 @@ function CheckoutPageContent() {
               placeholder="e.g. Leave with gate security / Do not bend saree box"
               value={deliveryInstructions}
               onChange={(e) => setDeliveryInstructions(e.target.value)}
-              className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+              className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
             />
           </div>
         </section>
@@ -176,14 +176,14 @@ function CheckoutPageContent() {
         <section className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Gift className="w-4 h-4 text-[#0284c7]" />
+              <Gift className="w-4 h-4 text-[var(--brand-primary)]" />
               <span className="font-bold text-neutral-800 text-sm">Add Complimentary Gift Wrapping</span>
             </div>
             <button
               type="button"
               onClick={() => setIsGift(!isGift)}
               className={`w-10 h-6 rounded-full transition-colors p-0.5 cursor-pointer ${
-                isGift ? 'bg-[#0284c7]' : 'bg-neutral-300'
+                isGift ? 'bg-[var(--brand-primary)]' : 'bg-neutral-300'
               }`}
             >
               <div
@@ -202,7 +202,7 @@ function CheckoutPageContent() {
                 placeholder="Write your gift message here (e.g., Happy Wedding Anniversary!)..."
                 value={giftWrapMessage}
                 onChange={(e) => setGiftWrapMessage(e.target.value)}
-                className="w-full p-2.5 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                className="w-full p-2.5 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
               />
             </div>
           )}
@@ -211,7 +211,7 @@ function CheckoutPageContent() {
         {/* Special Order Notes */}
         <section className="bg-white rounded-2xl p-4 border border-neutral-200 shadow-2xs space-y-2">
           <h2 className="font-bold text-neutral-800 flex items-center gap-1.5 text-sm">
-            <MessageSquare className="w-4 h-4 text-[#0284c7]" />
+            <MessageSquare className="w-4 h-4 text-[var(--brand-primary)]" />
             <span>Special Order Notes</span>
           </h2>
           <input
@@ -219,7 +219,7 @@ function CheckoutPageContent() {
             placeholder="Blouse stitching / custom length request..."
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+            className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
           />
         </section>
 
@@ -253,7 +253,7 @@ function CheckoutPageContent() {
             </div>
             <div className="flex justify-between font-bold text-base pt-2 border-t border-neutral-200">
               <span>Grand Total</span>
-              <span className="text-[#0284c7]">{formatInr(Number(preview.data.grandTotal))}</span>
+              <span className="text-[var(--brand-primary)]">{formatInr(Number(preview.data.grandTotal))}</span>
             </div>
 
             {orderError && (
@@ -265,7 +265,7 @@ function CheckoutPageContent() {
             <button
               onClick={onPlaceOrder}
               disabled={placeOrder.isPending}
-              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
+              className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
             >
               <Lock className="w-4 h-4" />
               <span>{placeOrder.isPending ? 'Placing Order...' : 'Confirm & Place Order (Cash on Delivery)'}</span>

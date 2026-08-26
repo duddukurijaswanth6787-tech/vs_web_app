@@ -185,11 +185,11 @@ export default function AddStockPage() {
       {/* Top Header */}
       <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-amber-300 flex items-center justify-center font-bold text-lg shadow-2xs">
+          <div className="w-10 h-10 rounded-xl bg-[var(--brand-primary)] text-amber-300 flex items-center justify-center font-bold text-lg shadow-2xs">
             📦
           </div>
           <div>
-            <h1 className="text-xl font-bold font-serif text-[#0284c7] leading-none">
+            <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] leading-none">
               + Add Stock & Print Barcode Labels
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
@@ -208,20 +208,20 @@ export default function AddStockPage() {
               1. Scan or Search Variant
             </label>
             <div className="relative">
-              <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[#0284c7]" />
+              <Barcode className="absolute left-3.5 top-1/2 -translate-y-1/2 w-5 h-5 text-[var(--brand-primary)]" />
               <input
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
                 placeholder="Scan barcode or type SKU (e.g. 890100000005)..."
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-11 pr-4 py-2.5 text-xs text-neutral-900 font-mono font-medium focus:outline-none focus:border-[#0284c7]"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-11 pr-4 py-2.5 text-xs text-neutral-900 font-mono font-medium focus:outline-none focus:border-[var(--brand-primary)]"
                 autoFocus
               />
             </div>
             <button
               type="submit"
               disabled={scanMutation.isPending}
-              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
+              className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2"
             >
               {scanMutation.isPending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -292,7 +292,7 @@ export default function AddStockPage() {
                   min={1}
                   value={quantityReceived}
                   onChange={(e) => setQuantityReceived(Number(e.target.value) || 0)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-neutral-900 focus:outline-none focus:border-[#0284c7]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                   required
                 />
               </div>
@@ -304,7 +304,7 @@ export default function AddStockPage() {
                 <select
                   value={location}
                   onChange={(e) => setLocation(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                 >
                   <option value="Main Store">Main Store (Banjara Hills)</option>
                   <option value="Hyderabad Warehouse">Hyderabad Central Warehouse</option>
@@ -319,7 +319,7 @@ export default function AddStockPage() {
                   type="text"
                   value={supplier}
                   onChange={(e) => setSupplier(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
 
@@ -331,7 +331,7 @@ export default function AddStockPage() {
                   type="text"
                   value={invoiceNumber}
                   onChange={(e) => setInvoiceNumber(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7]"
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
             </div>
@@ -344,7 +344,7 @@ export default function AddStockPage() {
                 rows={2}
                 value={notes}
                 onChange={(e) => setNotes(e.target.value)}
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[#0284c7] resize-none"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)] resize-none"
               />
             </div>
 
@@ -364,7 +364,7 @@ export default function AddStockPage() {
                   type="checkbox"
                   checked={printLabels}
                   onChange={(e) => setPrintLabels(e.target.checked)}
-                  className="w-4 h-4 accent-[#0284c7] rounded"
+                  className="w-4 h-4 accent-[var(--brand-primary)] rounded"
                 />
               </div>
 
@@ -377,7 +377,7 @@ export default function AddStockPage() {
                       onClick={() => setLabelSize(opt.value)}
                       className={`text-left p-2.5 rounded-lg border transition-all ${
                         labelSize === opt.value
-                          ? 'bg-[#0284c7] border-[#0284c7] text-white'
+                          ? 'bg-[var(--brand-primary)] border-[var(--brand-primary)] text-white'
                           : 'bg-white border-amber-200 text-amber-900 hover:bg-amber-50'
                       }`}
                     >
@@ -399,7 +399,7 @@ export default function AddStockPage() {
             <button
               type="submit"
               disabled={!selectedVariant || stockInMutation.isPending || batchStickersMutation.isPending}
-              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white py-3.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
+              className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 disabled:opacity-50"
             >
               {stockInMutation.isPending || batchStickersMutation.isPending ? (
                 <RefreshCw className="w-4 h-4 animate-spin" />
@@ -455,7 +455,7 @@ export default function AddStockPage() {
               <button
                 onClick={triggerLabelPrint}
                 disabled={labelPrinting}
-                className="flex-1 bg-[#0284c7] hover:bg-[#0B3B78] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
               >
                 <Printer className="w-4 h-4" />
                 <span>{labelPrinting ? 'Printing…' : `Print All ${quantityReceived} Sticker Labels`}</span>

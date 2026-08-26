@@ -54,7 +54,7 @@ export default function OrderReturnPage() {
     return (
       <div className="min-h-screen flex flex-col items-center justify-center gap-3 px-4 text-center">
         <p className="text-sm text-neutral-600">Returns are not available at the moment.</p>
-        <Link href="/orders" className="text-xs font-bold text-[#0284c7]">Back to My Orders</Link>
+        <Link href="/orders" className="text-xs font-bold text-[var(--brand-primary)]">Back to My Orders</Link>
       </div>
     );
   }
@@ -62,7 +62,7 @@ export default function OrderReturnPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href={`/login?redirect=/orders/return/${orderNumber}`} className="text-sm font-bold text-[#0284c7]">
+        <Link href={`/login?redirect=/orders/return/${orderNumber}`} className="text-sm font-bold text-[var(--brand-primary)]">
           Login to request return
         </Link>
       </div>
@@ -92,7 +92,7 @@ export default function OrderReturnPage() {
             <label className="block text-sm font-bold mb-2">Description</label>
             <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border p-3 rounded-xl h-32" placeholder="Tell us more..." />
           </div>
-          <button disabled={loading} type="submit" className="w-full bg-[#0284c7] text-white py-3 rounded-xl font-bold">
+          <button disabled={loading} type="submit" className="w-full bg-[var(--brand-primary)] text-white py-3 rounded-xl font-bold">
             {loading ? 'Submitting...' : 'Submit Return Request'}
           </button>
           {error && <p className="text-red-600 text-sm">{error}</p>}

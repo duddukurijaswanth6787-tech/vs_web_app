@@ -3,13 +3,14 @@
 import React, { useEffect, useState } from 'react';
 import { useDashboard } from '@/features/storefront/storefront.hooks';
 import { PageLoader } from '@/components/feedback/FeedbackStates';
-import { Store, Layout, ToggleLeft, Link2, Share2, Newspaper, Wrench, Eye, Settings, ExternalLink, Activity } from 'lucide-react';
+import { Store, Layout, ToggleLeft, Link2, Share2, Newspaper, Wrench, Eye, Settings, ExternalLink, Activity, Palette } from 'lucide-react';
 import Link from 'next/link';
 import { apiClient } from '@/lib/api/client';
 
 const quickActions = [
   { label: 'Store Information', href: '/admin/storefront/store', icon: Settings, color: 'bg-blue-50 text-blue-700 border-blue-200' },
   { label: 'Homepage', href: '/admin/storefront/homepage', icon: Layout, color: 'bg-purple-50 text-purple-700 border-purple-200' },
+  { label: 'Colours & Theme', href: '/admin/storefront/theme', icon: Palette, color: 'bg-sky-50 text-sky-700 border-sky-200' },
   { label: 'Feature Toggles', href: '/admin/storefront/features', icon: ToggleLeft, color: 'bg-amber-50 text-amber-700 border-amber-200' },
   { label: 'Preview Store', href: '/', icon: ExternalLink, color: 'bg-green-50 text-green-700 border-green-200' },
 ];

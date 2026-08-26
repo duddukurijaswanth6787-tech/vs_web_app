@@ -36,7 +36,7 @@ export default function StoresPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Store Locator</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Store Locator</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
@@ -52,7 +52,7 @@ export default function StoresPage() {
           {STORES.map((store) => (
             <div key={store.id} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-4 shadow-xs hover:border-sky-200 transition-colors">
               <div className="space-y-1">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#0284c7] bg-sky-50 px-2.5 py-0.5 rounded-full">
+                <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--brand-primary)] bg-sky-50 px-2.5 py-0.5 rounded-full">
                   {store.city} Store
                 </span>
                 <h3 className="font-serif font-bold text-base text-neutral-900">{store.name}</h3>
@@ -60,15 +60,15 @@ export default function StoresPage() {
 
               <div className="space-y-2.5 text-xs text-neutral-600">
                 <div className="flex items-start gap-2.5">
-                  <MapPin className="w-4 h-4 text-[#0284c7] shrink-0 mt-0.5" />
+                  <MapPin className="w-4 h-4 text-[var(--brand-primary)] shrink-0 mt-0.5" />
                   <span>{store.address}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <Phone className="w-4 h-4 text-[#0284c7] shrink-0" />
+                  <Phone className="w-4 h-4 text-[var(--brand-primary)] shrink-0" />
                   <span className="font-mono">{store.phone}</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <Clock className="w-4 h-4 text-[#0284c7] shrink-0" />
+                  <Clock className="w-4 h-4 text-[var(--brand-primary)] shrink-0" />
                   <span>{store.hours}</span>
                 </div>
               </div>
@@ -78,7 +78,7 @@ export default function StoresPage() {
                   href={store.mapUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 bg-[#0284c7] text-white text-xs font-bold py-2.5 rounded-xl text-center hover:bg-[#0B3B78] flex items-center justify-center gap-1.5"
+                  className="flex-1 bg-[var(--brand-primary)] text-white text-xs font-bold py-2.5 rounded-xl text-center hover:bg-[var(--brand-primary-dark)] flex items-center justify-center gap-1.5"
                 >
                   <Navigation className="w-3.5 h-3.5" />
                   <span>Get Directions</span>

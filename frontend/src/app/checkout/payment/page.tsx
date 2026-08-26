@@ -39,7 +39,7 @@ function CheckoutPaymentPageContent() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/checkout/payment" className="text-sm font-bold text-[#0284c7]">
+        <Link href="/login?redirect=/checkout/payment" className="text-sm font-bold text-[var(--brand-primary)]">
           Login required
         </Link>
       </div>
@@ -120,7 +120,7 @@ function CheckoutPaymentPageContent() {
         <Link href="/checkout/address" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Payment</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Payment</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-3">
@@ -151,7 +151,7 @@ function CheckoutPaymentPageContent() {
             </div>
             <div className="flex justify-between font-bold text-base pt-1.5 border-t border-neutral-100">
               <span>Total</span>
-              <span className="text-[#0284c7]">{formatInr(Number(preview.grandTotal))}</span>
+              <span className="text-[var(--brand-primary)]">{formatInr(Number(preview.grandTotal))}</span>
             </div>
           </div>
         )}
@@ -163,7 +163,7 @@ function CheckoutPaymentPageContent() {
             type="button"
             onClick={() => setSelected(m.code)}
             className={`w-full text-left bg-white border rounded-2xl p-4 ${
-              selected === m.code ? 'border-[#0284c7] bg-sky-50/40' : 'border-neutral-200'
+              selected === m.code ? 'border-[var(--brand-primary)] bg-sky-50/40' : 'border-neutral-200'
             }`}
           >
             <p className="text-sm font-bold">{m.title}</p>
@@ -175,7 +175,7 @@ function CheckoutPaymentPageContent() {
           type="button"
           disabled={isBusy || !addressId}
           onClick={onPay}
-          className="w-full bg-[#0284c7] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
+          className="w-full bg-[var(--brand-primary)] text-white text-sm font-bold py-3 rounded-xl disabled:opacity-60"
         >
           {verifying ? 'Confirming payment…' : placeOrder.isPending ? 'Processing…' : 'Confirm & Place Order'}
         </button>

@@ -134,7 +134,7 @@ export function ProductGridSection({
           </h2>
           {subtitle && <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">{subtitle}</p>}
         </div>
-        <Link href={viewAllHref} className="text-xs font-semibold text-[#1769D2] hover:text-[#0B3B78] flex items-center gap-1">
+        <Link href={viewAllHref} className="text-xs font-semibold text-[#1769D2] hover:text-[var(--brand-primary-dark)] flex items-center gap-1">
           <span>View All</span>
           <ArrowRight className="w-3.5 h-3.5" />
         </Link>

@@ -31,7 +31,7 @@ export function TestimonialsSection() {
         <div className="flex items-center gap-3">
           <Link
             href="/reviews"
-            className="text-xs sm:text-sm font-bold text-[#0284c7] hover:underline inline-flex items-center gap-1"
+            className="text-xs sm:text-sm font-bold text-[var(--brand-primary)] hover:underline inline-flex items-center gap-1"
           >
             <span>View All Reviews</span>
             <span>→</span>

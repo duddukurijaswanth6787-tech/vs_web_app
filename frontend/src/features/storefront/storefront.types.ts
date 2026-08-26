@@ -204,3 +204,19 @@ export interface StorefrontDashboard {
   newsletterSubscribers: number;
   maintenanceMode: boolean;
 }
+
+// ─── Theme (per-section colours, super admin) ────────────
+
+export interface ThemeSection {
+  key: string;
+  label: string;
+  tokens: { token: string; label: string }[];
+}
+
+export interface StorefrontTheme {
+  /** Saved colours over the built-in defaults -- every token has a value. */
+  colors: Record<string, string>;
+  /** The built-in palette, for "reset this one". */
+  defaults: Record<string, string>;
+  sections: ThemeSection[];
+}

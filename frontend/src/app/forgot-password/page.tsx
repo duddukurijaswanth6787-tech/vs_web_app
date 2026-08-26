@@ -34,7 +34,7 @@ export default function ForgotPasswordPage() {
         <Link href="/login" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Forgot Password</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Forgot Password</h1>
         <div className="w-6" />
       </header>
 
@@ -59,7 +59,7 @@ export default function ForgotPasswordPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
+            className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] disabled:opacity-60 text-white text-sm font-bold py-3 rounded-xl"
           >
             {loading ? 'Sending…' : 'Send Reset Link'}
           </button>

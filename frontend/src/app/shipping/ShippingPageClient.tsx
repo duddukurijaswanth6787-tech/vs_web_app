@@ -15,7 +15,7 @@ export default function ShippingPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Shipping & Delivery Policy</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Shipping & Delivery Policy</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-8">
@@ -31,10 +31,10 @@ export default function ShippingPage() {
         {/* Tracking Callout */}
         <div className="bg-white border border-neutral-200 rounded-2xl p-6 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="space-y-1 text-center sm:text-left">
-            <h3 className="font-serif font-bold text-base text-[#0284c7]">Have a shipment on the way?</h3>
+            <h3 className="font-serif font-bold text-base text-[var(--brand-primary)]">Have a shipment on the way?</h3>
             <p className="text-xs text-neutral-600">Enter your order ID or tracking number to check shipment status.</p>
           </div>
-          <Link href="/track-order" className="bg-[#0284c7] text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[#0B3B78] shrink-0">
+          <Link href="/track-order" className="bg-[var(--brand-primary)] text-white text-xs font-bold px-6 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] shrink-0">
             Track Your Order
           </Link>
         </div>

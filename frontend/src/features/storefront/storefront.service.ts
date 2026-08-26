@@ -1,3 +1,4 @@
+import type { StorefrontTheme } from './storefront.types';
 import { apiClient } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 import type {
@@ -129,5 +130,26 @@ export const storefrontService = {
       newsletterSubscribers: (newsletter as { meta?: { total?: number } } | undefined)?.meta?.total ?? 0,
       maintenanceMode: settings?.maintenanceMode ?? false,
     };
+  },
+};
+
+export const themeService = {
+  async get(): Promise<StorefrontTheme> {
+    const res = await apiClient.get<StandardResponse<StorefrontTheme>>('/admin/storefront/theme');
+    return res.data.data!;
+  },
+  async update(colors: Record<string, string>): Promise<StorefrontTheme> {
+    const res = await apiClient.patch<StandardResponse<StorefrontTheme>>(
+      '/admin/storefront/theme',
+      { colors },
+    );
+    return res.data.data!;
+  },
+  async reset(): Promise<StorefrontTheme> {
+    const res = await apiClient.post<StandardResponse<StorefrontTheme>>(
+      '/admin/storefront/theme/reset',
+      {},
+    );
+    return res.data.data!;
   },
 };

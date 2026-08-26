@@ -5,6 +5,7 @@ import "./globals.css";
 import { VDQueryProvider } from "@/lib/query/provider";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { prefetchStorefrontData } from "@/lib/query/prefetch";
+import { fetchThemeCss } from "@/lib/theme/server-theme";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -91,6 +92,10 @@ export default async function RootLayout({
   // settings, banners, coupons, reels.
   await prefetchStorefrontData(queryClient);
 
+  // Fetched on the server so the first paint already uses the shop's own
+  // colours -- doing this in the browser would paint the defaults and repaint.
+  const themeCss = await fetchThemeCss();
+
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "WebSite",
@@ -106,6 +111,14 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        {/* Overrides the :root defaults in globals.css. Every value is
+            validated as a hex colour server-side before it gets here. */}
+        {themeCss && (
+          <style
+            id="vd-storefront-theme"
+            dangerouslySetInnerHTML={{ __html: themeCss }}
+          />
+        )}
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`} suppressHydrationWarning>
         <VDQueryProvider dehydratedState={dehydrate(queryClient)}>

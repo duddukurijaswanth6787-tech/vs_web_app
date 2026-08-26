@@ -23,7 +23,7 @@ export default function SupportTicketsPage() {
       <main className="max-w-4xl mx-auto p-6">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold font-serif">Support Tickets</h1>
-          <Link href="/account/support/new" className="bg-[#0284c7] text-white px-4 py-2 rounded-lg flex items-center gap-2">
+          <Link href="/account/support/new" className="bg-[var(--brand-primary)] text-white px-4 py-2 rounded-lg flex items-center gap-2">
             <Plus className="w-4 h-4" /> New Ticket
           </Link>
         </div>

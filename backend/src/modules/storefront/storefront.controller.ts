@@ -25,6 +25,8 @@ import {
 } from './storefront.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { ThemeService } from './theme.service';
+import { UpdateStorefrontThemeDto } from './theme.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -34,7 +36,42 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 @ApiBearerAuth()
 @Controller('admin/storefront')
 export class StorefrontController {
-  constructor(private readonly storefrontService: StorefrontService) {}
+  constructor(
+    private readonly storefrontService: StorefrontService,
+    private readonly themeService: ThemeService,
+  ) {}
+
+  // Colours are branding, not day-to-day shop operation: restricted to
+  // super_admin even though the rest of this controller allows admin too.
+  @Get('theme')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Per-section storefront colours (super admin)' })
+  async getTheme() {
+    return ResponseBuilder.success(await this.themeService.getTheme());
+  }
+
+  @Patch('theme')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Set per-section storefront colours (super admin)' })
+  async updateTheme(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: UpdateStorefrontThemeDto,
+  ) {
+    return ResponseBuilder.success(
+      await this.themeService.updateColors(user.sub, dto.colors ?? {}),
+      'Theme updated',
+    );
+  }
+
+  @Post('theme/reset')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Restore all colours to defaults (super admin)' })
+  async resetTheme(@CurrentUser() user: JwtPayload) {
+    return ResponseBuilder.success(
+      await this.themeService.resetAll(user.sub),
+      'Theme reset to defaults',
+    );
+  }
 
   @Get('settings')
   @ApiOperation({ summary: 'Get website settings' })

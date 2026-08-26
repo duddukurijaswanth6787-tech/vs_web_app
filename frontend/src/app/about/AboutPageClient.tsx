@@ -15,7 +15,7 @@ export default function AboutPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Our Story</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Our Story</h1>
       </header>
 
       <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-10">
@@ -41,7 +41,7 @@ export default function AboutPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <Link href="/collections" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#0B3B78]">
+          <Link href="/collections" className="bg-[var(--brand-primary)] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)]">
             Explore the Collection
           </Link>
         </div>

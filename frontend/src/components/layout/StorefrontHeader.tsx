@@ -168,7 +168,7 @@ export function StorefrontHeader() {
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-7 text-sm font-medium text-neutral-700">
-            <Link href="/" className="hover:text-[#0284c7] transition-colors font-bold text-[#0284c7] whitespace-nowrap">
+            <Link href="/" className="hover:text-[var(--brand-primary)] transition-colors font-bold text-[var(--brand-primary)] whitespace-nowrap">
               Home
             </Link>
             {navCategories && navCategories.length > 0 ? (
@@ -176,17 +176,17 @@ export function StorefrontHeader() {
                 <Link
                   key={cat.id || cat.slug}
                   href={`/categories/${cat.slug}`}
-                  className="hover:text-[#0284c7] transition-colors whitespace-nowrap font-medium text-neutral-700"
+                  className="hover:text-[var(--brand-primary)] transition-colors whitespace-nowrap font-medium text-neutral-700"
                 >
                   {cat.name}
                 </Link>
               ))
             ) : (
               <>
-                <Link href="/categories/new-arrivals" className="hover:text-[#0284c7] transition-colors whitespace-nowrap">
+                <Link href="/categories/new-arrivals" className="hover:text-[var(--brand-primary)] transition-colors whitespace-nowrap">
                   New Arrivals
                 </Link>
-                <Link href="/categories/collections" className="hover:text-[#0284c7] transition-colors whitespace-nowrap">
+                <Link href="/categories/collections" className="hover:text-[var(--brand-primary)] transition-colors whitespace-nowrap">
                   Collections
                 </Link>
               </>
@@ -205,24 +205,24 @@ export function StorefrontHeader() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-                className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
+                className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-9 pr-3 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
               />
             </div>
-            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0" aria-label="Wishlist">
+            <Link href="/wishlist" className="relative p-1.5 text-neutral-800 hover:text-[var(--brand-primary)] transition-colors shrink-0" aria-label="Wishlist">
               <Heart className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#0284c7] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[var(--brand-primary)] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {wishlistCount}
               </span>
             </Link>
 
-            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0" aria-label="Cart">
+            <Link href="/cart" className="relative p-1.5 text-neutral-800 hover:text-[var(--brand-primary)] transition-colors shrink-0" aria-label="Cart">
               <ShoppingBag className="w-5.5 h-5.5 sm:w-6 sm:h-6" />
-              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[#0284c7] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
+              <span className="absolute -top-0.5 -right-0.5 min-w-[16px] h-[16px] px-1 bg-[var(--brand-primary)] text-white text-[9px] font-extrabold rounded-full flex items-center justify-center border border-white">
                 {cartCount}
               </span>
             </Link>
 
-            <Link href="/profile" className="hidden sm:block p-1.5 text-neutral-800 hover:text-[#0284c7] transition-colors shrink-0">
+            <Link href="/profile" className="hidden sm:block p-1.5 text-neutral-800 hover:text-[var(--brand-primary)] transition-colors shrink-0">
               <User className="w-6 h-6" />
             </Link>
           </div>
@@ -239,7 +239,7 @@ export function StorefrontHeader() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
-            className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
+            className="w-full bg-white border border-neutral-200 rounded-full py-2 pl-10 pr-4 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] transition-all placeholder:text-neutral-400 hover:border-neutral-300"
           />
         </div>
       </div>
@@ -257,7 +257,7 @@ export function StorefrontHeader() {
           <div className="relative w-[85%] max-w-sm bg-white h-[100dvh] max-h-[100dvh] shadow-2xl flex flex-col justify-between overflow-y-auto overscroll-contain z-10 animate-in slide-in-from-left duration-300 pb-20">
             <div>
               {/* Drawer Top Header Row */}
-              <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[#EAF4FF]">
+              <div className="p-4 flex items-center justify-between border-b border-neutral-100 bg-[var(--hero-bg)]">
                 <div className="flex items-center gap-2.5">
                   <Image
                     src="/brand/logo-full.png"
@@ -285,9 +285,9 @@ export function StorefrontHeader() {
                 <Link
                   href="/"
                   onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-[#F3F8FF] text-[#0284c7] font-bold text-sm"
+                  className="flex items-center gap-3.5 px-4 py-3 rounded-xl bg-[#F3F8FF] text-[var(--brand-primary)] font-bold text-sm"
                 >
-                  <Home className="w-4.5 h-4.5 fill-[#0284c7]" />
+                  <Home className="w-4.5 h-4.5 fill-[var(--brand-primary)]" />
                   <span>Home</span>
                 </Link>
 
@@ -301,7 +301,7 @@ export function StorefrontHeader() {
                       className="flex items-center justify-between px-4 py-3 text-neutral-800 hover:bg-neutral-50 rounded-xl text-sm font-semibold transition-colors"
                     >
                       <div className="flex items-center gap-3.5">
-                        <Shirt className="w-4.5 h-4.5 text-[#0284c7]" />
+                        <Shirt className="w-4.5 h-4.5 text-[var(--brand-primary)]" />
                         <span>{cat.name}</span>
                       </div>
                       <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -314,7 +314,7 @@ export function StorefrontHeader() {
                     className="flex items-center justify-between px-4 py-3 text-neutral-600 hover:bg-neutral-50 rounded-xl text-sm font-medium transition-colors"
                   >
                     <div className="flex items-center gap-3.5">
-                      <Tag className="w-4.5 h-4.5 text-[#0284c7]" />
+                      <Tag className="w-4.5 h-4.5 text-[var(--brand-primary)]" />
                       <span>All Categories</span>
                     </div>
                     <ChevronRight className="w-4 h-4 text-neutral-400" />
@@ -401,8 +401,8 @@ export function StorefrontHeader() {
 
             {/* Bottom Promo Card Box (Matching Mobile Drawer Screenshot) */}
             <div className="p-4">
-              <div className="bg-[#EAF4FF] border border-[#DCEBFA] rounded-2xl p-4 text-center space-y-2">
-                <div className="w-8 h-8 rounded-full bg-[#1769D2] text-white flex items-center justify-center mx-auto">
+              <div className="bg-[var(--hero-bg)] border border-[var(--header-border)] rounded-2xl p-4 text-center space-y-2">
+                <div className="w-8 h-8 rounded-full bg-[var(--announcement-bg)] text-white flex items-center justify-center mx-auto">
                   <Percent className="w-4 h-4" />
                 </div>
                 <h4 className="text-base font-bold text-neutral-900 leading-tight">
@@ -411,7 +411,7 @@ export function StorefrontHeader() {
                 <p className="text-xs text-neutral-500">
                   On your first order
                 </p>
-                <button className="w-full bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
+                <button className="w-full bg-[var(--announcement-bg)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold py-2.5 px-4 rounded-xl tracking-wide shadow-xs transition-colors">
                   JOIN NOW
                 </button>
               </div>

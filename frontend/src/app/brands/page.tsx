@@ -20,7 +20,7 @@ export default function BrandsPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Brands</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Brands</h1>
       </header>
 
       <main className="max-w-5xl mx-auto w-full px-4 py-6 flex-1">

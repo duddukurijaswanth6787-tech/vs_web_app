@@ -37,14 +37,14 @@ export default function TrackOrderPage() {
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Track Your Order</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Track Your Order</h1>
       </header>
 
       <main className="max-w-xl mx-auto w-full px-4 py-8 flex-1 space-y-6">
         {/* Search Card */}
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-4 shadow-xs">
           <div className="space-y-1">
-            <h2 className="text-base font-serif font-bold text-[#0284c7]">Enter Shipment Details</h2>
+            <h2 className="text-base font-serif font-bold text-[var(--brand-primary)]">Enter Shipment Details</h2>
             <p className="text-xs text-neutral-600">Enter your Order Number (e.g. ORD-1001) or Courier Tracking AWB.</p>
           </div>
 
@@ -56,7 +56,7 @@ export default function TrackOrderPage() {
                 placeholder="Order ID / Tracking Number"
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
-                className="w-full text-xs pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-hidden focus:border-[#0284c7]"
+                className="w-full text-xs pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-hidden focus:border-[var(--brand-primary)]"
               />
               <Search className="w-4 h-4 text-neutral-400 absolute left-3.5 top-3.5" />
             </div>
@@ -64,7 +64,7 @@ export default function TrackOrderPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-[#0284c7] text-white text-xs font-bold py-3 rounded-xl hover:bg-[#0B3B78] disabled:opacity-50 transition-colors"
+              className="w-full bg-[var(--brand-primary)] text-white text-xs font-bold py-3 rounded-xl hover:bg-[var(--brand-primary-dark)] disabled:opacity-50 transition-colors"
             >
               {loading ? 'Searching...' : 'Track Package'}
             </button>
@@ -84,7 +84,7 @@ export default function TrackOrderPage() {
             <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
               <div>
                 <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider">Status Update</span>
-                <h3 className="font-bold text-sm text-[#0284c7]">{String(result.status || 'Dispatched')}</h3>
+                <h3 className="font-bold text-sm text-[var(--brand-primary)]">{String(result.status || 'Dispatched')}</h3>
               </div>
               {Boolean(result.awb) && (
                 <div className="text-right">
@@ -106,7 +106,7 @@ export default function TrackOrderPage() {
               </div>
 
               <div className="flex items-center gap-3 text-xs">
-                <div className="w-7 h-7 rounded-full bg-sky-50 text-[#0284c7] flex items-center justify-center font-bold">
+                <div className="w-7 h-7 rounded-full bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold">
                   <Truck className="w-4 h-4" />
                 </div>
                 <div>
@@ -120,7 +120,7 @@ export default function TrackOrderPage() {
 
         <div className="text-center text-xs text-neutral-500 space-y-1">
           <p>Need assistance with your delivery?</p>
-          <Link href="/contact" className="text-[#0284c7] font-bold hover:underline">
+          <Link href="/contact" className="text-[var(--brand-primary)] font-bold hover:underline">
             Contact Customer Support
           </Link>
         </div>

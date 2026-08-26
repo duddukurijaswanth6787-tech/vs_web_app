@@ -62,7 +62,7 @@ export function ReviewModal({ productId, isOpen, onClose, onSuccess }: ReviewMod
         >
           <X className="w-5 h-5" />
         </button>
-        <h4 className="text-base font-bold font-serif text-[#0284c7]">Write a Customer Review</h4>
+        <h4 className="text-base font-bold font-serif text-[var(--brand-primary)]">Write a Customer Review</h4>
         
         {errorMsg && (
           <div className="flex items-center gap-2 p-3 bg-red-50 border border-red-200 text-red-700 text-xs font-medium rounded-xl">
@@ -101,7 +101,7 @@ export function ReviewModal({ productId, isOpen, onClose, onSuccess }: ReviewMod
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             placeholder="e.g. Gorgeous Kanjeevaram Saree & Excellent Fit!"
-            className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[#0284c7] transition-colors"
+            className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[var(--brand-primary)] transition-colors"
           />
         </div>
 
@@ -113,7 +113,7 @@ export function ReviewModal({ productId, isOpen, onClose, onSuccess }: ReviewMod
             value={comment}
             onChange={(e) => setComment(e.target.value)}
             placeholder="Share your experience with this garment's fabric quality, fit, color vibrancy, and style..."
-            className="w-full text-xs border border-neutral-200 rounded-xl p-3 outline-none focus:border-[#0284c7] transition-colors resize-none"
+            className="w-full text-xs border border-neutral-200 rounded-xl p-3 outline-none focus:border-[var(--brand-primary)] transition-colors resize-none"
           />
         </div>
 
@@ -124,14 +124,14 @@ export function ReviewModal({ productId, isOpen, onClose, onSuccess }: ReviewMod
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
             placeholder="https://example.com/saree-review-photo.jpg"
-            className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[#0284c7] transition-colors"
+            className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[var(--brand-primary)] transition-colors"
           />
         </div>
 
         <button
           type="submit"
           disabled={createReviewMutation.isPending}
-          className="w-full bg-[#0284c7] text-white text-xs font-bold py-3 px-4 rounded-xl hover:bg-[#0B3B78] transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full bg-[var(--brand-primary)] text-white text-xs font-bold py-3 px-4 rounded-xl hover:bg-[var(--brand-primary-dark)] transition-colors shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
         >
           {createReviewMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
           <span>{createReviewMutation.isPending ? 'Submitting Review...' : 'Submit Review'}</span>

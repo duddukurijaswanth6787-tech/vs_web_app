@@ -25,7 +25,7 @@ export default function MaintenancePage() {
   return (
     <div className="w-full min-h-screen bg-[#FDFBFB] flex flex-col font-sans antialiased text-neutral-900">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 text-center shadow-2xs">
-        <h1 className="text-xl font-bold font-serif text-[#0284c7] tracking-tight">
+        <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] tracking-tight">
           {storeName}
         </h1>
       </header>
@@ -36,12 +36,12 @@ export default function MaintenancePage() {
           <p className="text-sm text-red-600">{getApiErrorMessage(error, 'Unable to load store settings')}</p>
         )}
 
-        <div className="w-20 h-20 rounded-full bg-sky-100 text-[#0284c7] flex items-center justify-center mx-auto border border-sky-200">
-          <Clock className="w-8 h-8 text-[#0284c7]" />
+        <div className="w-20 h-20 rounded-full bg-sky-100 text-[var(--brand-primary)] flex items-center justify-center mx-auto border border-sky-200">
+          <Clock className="w-8 h-8 text-[var(--brand-primary)]" />
         </div>
 
         <div className="space-y-2">
-          <span className="text-xs font-bold text-[#0284c7] uppercase tracking-wider bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
+          <span className="text-xs font-bold text-[var(--brand-primary)] uppercase tracking-wider bg-sky-50 px-3 py-1 rounded-full border border-sky-100">
             {inMaintenance ? 'Store Under Maintenance' : 'Store Status'}
           </span>
           <h2 className="text-2xl font-bold font-serif text-neutral-900 pt-2">
@@ -57,16 +57,16 @@ export default function MaintenancePage() {
             <h3 className="font-bold text-neutral-900 text-center">Need Assistance?</h3>
             {phone && (
               <p className="text-neutral-600 flex items-center gap-2 justify-center">
-                <Phone className="w-3.5 h-3.5 text-[#0284c7]" />
-                <a href={`tel:${phone}`} className="font-bold text-[#0284c7]">
+                <Phone className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
+                <a href={`tel:${phone}`} className="font-bold text-[var(--brand-primary)]">
                   {phone}
                 </a>
               </p>
             )}
             {email && (
               <p className="text-neutral-600 flex items-center gap-2 justify-center">
-                <Mail className="w-3.5 h-3.5 text-[#0284c7]" />
-                <a href={`mailto:${email}`} className="font-bold text-[#0284c7]">
+                <Mail className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
+                <a href={`mailto:${email}`} className="font-bold text-[var(--brand-primary)]">
                   {email}
                 </a>
               </p>
@@ -78,7 +78,7 @@ export default function MaintenancePage() {
         {!inMaintenance && (
           <Link
             href="/"
-            className="inline-flex items-center gap-2 bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl"
+            className="inline-flex items-center gap-2 bg-[var(--brand-primary)] text-white text-xs font-bold px-5 py-2.5 rounded-xl"
           >
             <Home className="w-3.5 h-3.5" /> Continue Shopping
           </Link>

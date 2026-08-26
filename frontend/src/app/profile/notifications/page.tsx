@@ -38,7 +38,7 @@ export default function NotificationsPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/notifications" className="text-sm font-bold text-[#0284c7]">
+        <Link href="/login?redirect=/profile/notifications" className="text-sm font-bold text-[var(--brand-primary)]">
           Login required
         </Link>
       </div>
@@ -53,11 +53,11 @@ export default function NotificationsPage() {
           <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-lg font-bold font-serif text-[#0284c7]">Notifications</h1>
+          <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Notifications</h1>
         </div>
         <button
           type="button"
-          className="text-xs font-bold text-[#0284c7]"
+          className="text-xs font-bold text-[var(--brand-primary)]"
           onClick={async () => {
             await customerNotificationService.markAllRead();
             qc.invalidateQueries({ queryKey: customerKeys.notifications });
@@ -84,7 +84,7 @@ export default function NotificationsPage() {
               }
             }}
             className={`w-full text-left bg-white border rounded-2xl p-4 ${
-              n.isRead ? 'border-neutral-200' : 'border-[#0284c7]/30 bg-sky-50/40'
+              n.isRead ? 'border-neutral-200' : 'border-[var(--brand-primary)]/30 bg-sky-50/40'
             }`}
           >
             <p className="text-sm font-bold">{n.title || n.subject || 'Notification'}</p>

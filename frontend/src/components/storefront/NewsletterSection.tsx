@@ -20,7 +20,7 @@ export function NewsletterSection() {
 
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-8">
-      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[#0B3B78] via-[#1769D2] to-[#1257B5] text-white p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-[#DCEBFA]/40 min-h-[180px]">
+      <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-[var(--brand-primary-dark)] via-[#1769D2] to-[#1257B5] text-white p-6 sm:p-10 flex flex-col md:flex-row items-center justify-between gap-6 shadow-md border border-[#DCEBFA]/40 min-h-[180px]">
         
         {/* Left Content */}
         <div className="space-y-3 max-w-lg z-10 text-center md:text-left">
@@ -43,7 +43,7 @@ export function NewsletterSection() {
             />
             <button
               type="submit"
-              className="bg-[#0B3B78] hover:bg-[#072449] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 sm:px-6 py-3 rounded-xl transition-all shadow-md shrink-0 hover:scale-105"
+              className="bg-[var(--brand-primary-dark)] hover:bg-[#072449] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 sm:px-6 py-3 rounded-xl transition-all shadow-md shrink-0 hover:scale-105"
             >
               Subscribe
             </button>

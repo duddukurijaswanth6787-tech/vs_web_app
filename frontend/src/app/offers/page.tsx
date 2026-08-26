@@ -61,14 +61,14 @@ export default function OffersPage() {
 
         <section className="space-y-3">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <Tag className="w-4 h-4 text-[#0284c7]" /> Active Offers
+            <Tag className="w-4 h-4 text-[var(--brand-primary)]" /> Active Offers
           </h2>
           {offerList.length === 0 && !offers.isLoading && (
             <p className="text-xs text-neutral-500">No active offers right now</p>
           )}
           {offerList.map((offer) => (
             <div key={offer.id} className="bg-white border border-sky-100 rounded-2xl p-4">
-              <h3 className="text-sm font-bold text-[#0284c7]">{offer.name || offer.title}</h3>
+              <h3 className="text-sm font-bold text-[var(--brand-primary)]">{offer.name || offer.title}</h3>
               <p className="text-xs text-neutral-600 mt-1">{offer.description}</p>
             </div>
           ))}
@@ -76,7 +76,7 @@ export default function OffersPage() {
 
         <section className="space-y-3">
           <h2 className="text-sm font-bold flex items-center gap-2">
-            <Ticket className="w-4 h-4 text-[#0284c7]" /> Coupons
+            <Ticket className="w-4 h-4 text-[var(--brand-primary)]" /> Coupons
           </h2>
           {couponList.length === 0 && !coupons.isLoading && (
             <p className="text-xs text-neutral-500">No coupons available</p>
@@ -84,10 +84,10 @@ export default function OffersPage() {
           {couponList.map((c) => (
             <div
               key={c.id}
-              className="bg-white border border-dashed border-[#0284c7]/40 rounded-2xl p-4 flex items-center justify-between gap-3"
+              className="bg-white border border-dashed border-[var(--brand-primary)]/40 rounded-2xl p-4 flex items-center justify-between gap-3"
             >
               <div>
-                <p className="text-sm font-extrabold tracking-wider text-[#0284c7]">{c.code}</p>
+                <p className="text-sm font-extrabold tracking-wider text-[var(--brand-primary)]">{c.code}</p>
                 <p className="text-xs text-neutral-600 mt-1">{c.name || c.description}</p>
                 {c.minOrderAmount && (
                   <p className="text-[11px] text-neutral-400 mt-1">
@@ -95,7 +95,7 @@ export default function OffersPage() {
                   </p>
                 )}
               </div>
-              <span className="text-xs font-bold bg-sky-50 text-[#0284c7] px-2 py-1 rounded-lg">
+              <span className="text-xs font-bold bg-sky-50 text-[var(--brand-primary)] px-2 py-1 rounded-lg">
                 {c.type === 'PERCENTAGE' ? `${c.value}%` : formatInr(Number(c.value))}
               </span>
             </div>

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiOperation } from '@nestjs/swagger';
 import { StorefrontPublicService } from './storefront-public.service';
+import { ThemeService } from './theme.service';
 import { ProductsService } from '@domains/products/products.service';
 import { NewsletterSubscribeDto } from './storefront.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -19,7 +20,15 @@ export class StorefrontPublicController {
   constructor(
     private readonly storefrontPublicService: StorefrontPublicService,
     private readonly productsService: ProductsService,
+    private readonly themeService: ThemeService,
   ) {}
+
+  @Get('storefront/theme')
+  @Public()
+  @ApiOperation({ summary: 'Per-section storefront colours' })
+  async getTheme() {
+    return ResponseBuilder.success(await this.themeService.getTheme());
+  }
 
   @Get(['settings/public', 'public/settings'])
   @Public()

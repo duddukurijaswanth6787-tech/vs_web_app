@@ -59,7 +59,7 @@ export function ShoppableReelsSection() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-900 tracking-tight flex items-center gap-2">
-            <Sparkles className="w-5 h-5 text-[#0284c7]" />
+            <Sparkles className="w-5 h-5 text-[var(--brand-primary)]" />
             <span>Instagram Reels & Shoppable Feeds</span>
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">

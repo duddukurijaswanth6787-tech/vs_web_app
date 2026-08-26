@@ -15,7 +15,7 @@ export default function ReferralPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/referral" className="text-sm font-bold text-[#0284c7]">
+        <Link href="/login?redirect=/profile/referral" className="text-sm font-bold text-[var(--brand-primary)]">
           Login required
         </Link>
       </div>
@@ -31,7 +31,7 @@ export default function ReferralPage() {
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Referral</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Referral</h1>
       </header>
 
       <main className="max-w-md mx-auto w-full px-4 py-6 flex-1 space-y-4">
@@ -39,12 +39,12 @@ export default function ReferralPage() {
         {error && <p className="text-sm text-red-600">{getApiErrorMessage(error)}</p>}
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 text-center space-y-3">
           <p className="text-xs text-neutral-500">Your referral code</p>
-          <p className="text-2xl font-black tracking-widest text-[#0284c7]">{String(code) || '—'}</p>
+          <p className="text-2xl font-black tracking-widest text-[var(--brand-primary)]">{String(code) || '—'}</p>
           {code && (
             <button
               type="button"
               onClick={() => navigator.clipboard.writeText(String(code))}
-              className="inline-flex items-center gap-1 text-xs font-bold text-[#0284c7]"
+              className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)]"
             >
               <Copy className="w-3.5 h-3.5" /> Copy
             </button>

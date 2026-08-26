@@ -176,7 +176,7 @@ export function HeroSection() {
                   className={
                     main.ctaStyle === 'transparent'
                       ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#1769D2] text-[#1769D2] hover:bg-[#1769D2] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
-                      : 'inline-flex items-center justify-center bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
+                      : 'inline-flex items-center justify-center bg-[#1769D2] hover:bg-[var(--brand-primary-dark)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
                   }
                 >
                   {main.buttonText || 'SHOP NOW'}

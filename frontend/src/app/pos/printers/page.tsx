@@ -149,11 +149,11 @@ export default function PrintersConfigPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 p-3 sm:p-6 font-sans">
       <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs mb-6 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-[#0284c7] text-amber-300 flex items-center justify-center font-bold text-lg shadow-2xs">
+          <div className="w-10 h-10 rounded-xl bg-[var(--brand-primary)] text-amber-300 flex items-center justify-center font-bold text-lg shadow-2xs">
             🖨️
           </div>
           <div>
-            <h1 className="text-xl font-bold font-serif text-[#0284c7] leading-none">
+            <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] leading-none">
               Thermal Printers & Barcode Label Setup
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
@@ -182,13 +182,13 @@ export default function PrintersConfigPage() {
             onClick={() => setPrintMode('BROWSER')}
             className={`bg-white p-5 rounded-2xl border-2 cursor-pointer transition-all ${
               printMode === 'BROWSER'
-                ? 'border-[#0284c7] ring-2 ring-[#0284c7]/10 shadow-sm'
+                ? 'border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10 shadow-sm'
                 : 'border-neutral-200 hover:border-neutral-300'
             }`}
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 1 (Standard)</span>
-              {printMode === 'BROWSER' && <CheckCircle2 className="w-5 h-5 text-[#0284c7]" />}
+              {printMode === 'BROWSER' && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
             </div>
             <h3 className="text-sm font-bold text-neutral-900 mb-1">Universal Browser Print</h3>
             <p className="text-xs text-neutral-600 leading-relaxed">
@@ -201,14 +201,14 @@ export default function PrintersConfigPage() {
               !usbSupported
                 ? 'border-neutral-200 opacity-60'
                 : printMode === 'ESCPOS'
-                  ? 'border-[#0284c7] ring-2 ring-[#0284c7]/10 shadow-sm cursor-pointer'
+                  ? 'border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10 shadow-sm cursor-pointer'
                   : 'border-neutral-200 hover:border-neutral-300 cursor-pointer'
             }`}
             onClick={() => usbSupported && usbConnected && setPrintMode('ESCPOS')}
           >
             <div className="flex items-center justify-between mb-3">
               <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 2 (Direct Hardware)</span>
-              {printMode === 'ESCPOS' && usbConnected && <CheckCircle2 className="w-5 h-5 text-[#0284c7]" />}
+              {printMode === 'ESCPOS' && usbConnected && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
             </div>
             <h3 className="text-sm font-bold text-neutral-900 mb-1">USB Direct-Connect (WebUSB)</h3>
             <p className="text-xs text-neutral-600 leading-relaxed mb-3">
@@ -268,7 +268,7 @@ export default function PrintersConfigPage() {
           <button
             onClick={handleTestPrintReceipt}
             disabled={previewReceiptMutation.isPending}
-            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+            className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
           >
             <Printer className="w-4 h-4" />
             <span>Test Print Thermal Invoice Receipt</span>

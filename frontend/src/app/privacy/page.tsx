@@ -17,11 +17,11 @@ export default function PrivacyPolicyPage() {
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-8">
         {/* Navigation Breadcrumb */}
         <div className="flex items-center gap-2 text-xs font-semibold text-neutral-500">
-          <Link href="/" className="hover:text-[#0284c7] flex items-center gap-1 transition-colors">
+          <Link href="/" className="hover:text-[var(--brand-primary)] flex items-center gap-1 transition-colors">
             <ArrowLeft className="w-3.5 h-3.5" /> Back to Home
           </Link>
           <span>/</span>
-          <span className="text-[#0284c7]">Privacy Policy</span>
+          <span className="text-[var(--brand-primary)]">Privacy Policy</span>
         </div>
 
         {/* Page Hero Header */}

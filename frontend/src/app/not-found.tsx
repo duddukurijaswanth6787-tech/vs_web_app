@@ -15,7 +15,7 @@ export default function StorefrontNotFound() {
         <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-xl font-bold font-serif text-[#0284c7] tracking-tight">
+        <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] tracking-tight">
           Vasanthi&apos;s Signature
         </h1>
         <div className="w-6" />
@@ -23,7 +23,7 @@ export default function StorefrontNotFound() {
 
       {/* Main 440 Error Container */}
       <main suppressHydrationWarning className="max-w-md mx-auto px-4 py-16 flex-1 w-full text-center space-y-6 flex flex-col items-center justify-center">
-        <div className="w-20 h-20 rounded-full bg-sky-50 text-[#0284c7] flex items-center justify-center mx-auto text-3xl font-extrabold font-serif border border-sky-200">
+        <div className="w-20 h-20 rounded-full bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center mx-auto text-3xl font-extrabold font-serif border border-sky-200">
           404
         </div>
 
@@ -38,7 +38,7 @@ export default function StorefrontNotFound() {
 
         <Link
           href="/"
-          className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-extrabold px-6 py-3.5 rounded-2xl transition-all shadow-md flex items-center gap-2"
+          className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-extrabold px-6 py-3.5 rounded-2xl transition-all shadow-md flex items-center gap-2"
         >
           <Home className="w-4 h-4" />
           <span>Back to Storefront Home</span>

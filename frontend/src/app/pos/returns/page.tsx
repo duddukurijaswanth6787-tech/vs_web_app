@@ -118,7 +118,7 @@ export default function PosReturnsPage() {
         <Link href="/pos" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold text-[#0284c7]">Returns</h1>
+        <h1 className="text-lg font-bold text-[var(--brand-primary)]">Returns</h1>
         {terminalResolved && (
           <span className="ml-auto text-xs text-neutral-500">{terminalId}</span>
         )}
@@ -137,11 +137,11 @@ export default function PosReturnsPage() {
             value={orderInput}
             onChange={(e) => setOrderInput(e.target.value)}
             placeholder="Scan or type the order number from the receipt"
-            className="flex-1 rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[#0284c7]/30"
+            className="flex-1 rounded-xl border border-neutral-300 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-[var(--brand-primary)]/30"
           />
           <button
             type="submit"
-            className="px-5 rounded-xl bg-[#0284c7] text-white text-sm font-bold flex items-center gap-2"
+            className="px-5 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold flex items-center gap-2"
           >
             <Search className="w-4 h-4" /> Find
           </button>
@@ -269,7 +269,7 @@ export default function PosReturnsPage() {
                 disabled={
                   returnMutation.isPending || selected.length === 0 || shiftRequired
                 }
-                className="px-6 py-3 rounded-xl bg-[#0284c7] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50"
+                className="px-6 py-3 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50"
               >
                 <RotateCcw className="w-4 h-4" />
                 {returnMutation.isPending ? 'Refunding…' : 'Complete Return'}

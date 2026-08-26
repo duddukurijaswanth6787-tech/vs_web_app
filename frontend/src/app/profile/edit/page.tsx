@@ -54,7 +54,7 @@ export default function ProfileEditPage() {
   if (!isInitializing && !isAuthenticated) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/profile/edit" className="text-sm font-bold text-[#0284c7]">
+        <Link href="/login?redirect=/profile/edit" className="text-sm font-bold text-[var(--brand-primary)]">
           Login required
         </Link>
       </div>
@@ -92,7 +92,7 @@ export default function ProfileEditPage() {
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[#0284c7]">Edit Personal Details</h1>
+        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Edit Personal Details</h1>
       </header>
 
       <main className="max-w-lg mx-auto w-full px-4 py-6 flex-1">
@@ -109,7 +109,7 @@ export default function ProfileEditPage() {
                   required
                   value={form.firstName}
                   onChange={(e) => setForm({ ...form, firstName: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
+                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[var(--brand-primary)]/20 rounded px-1"
                 />
               </div>
             </label>
@@ -137,7 +137,7 @@ export default function ProfileEditPage() {
                 type="email"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
-                className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
+                className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[var(--brand-primary)]/20 rounded px-1"
               />
             </div>
             <span className="block text-[11px] text-neutral-500">
@@ -156,7 +156,7 @@ export default function ProfileEditPage() {
                   type="tel"
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
+                  className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[var(--brand-primary)]/20 rounded px-1"
                 />
               </div>
             </label>
@@ -166,7 +166,7 @@ export default function ProfileEditPage() {
               <select
                 value={form.gender}
                 onChange={(e) => setForm({ ...form, gender: e.target.value })}
-                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:ring-2 focus:ring-[#0284c7] focus:border-[#0284c7] bg-white font-medium text-neutral-800 transition-all hover:border-neutral-300"
+                className="w-full text-xs border border-neutral-200 rounded-xl px-2.5 py-2 outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-[var(--brand-primary)] bg-white font-medium text-neutral-800 transition-all hover:border-neutral-300"
               >
                 <option value="FEMALE">Female</option>
                 <option value="MALE">Male</option>
@@ -193,7 +193,7 @@ export default function ProfileEditPage() {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-[#0284c7] hover:bg-[#0B3B78] focus:outline-none focus:ring-2 focus:ring-[#0284c7] focus:ring-offset-2 active:scale-95 text-white text-sm font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2 mt-4"
+            className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] focus:outline-none focus:ring-2 focus:ring-[var(--brand-primary)] focus:ring-offset-2 active:scale-95 text-white text-sm font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md flex items-center justify-center gap-2 mt-4"
           >
             <Save className="w-4 h-4" />
             <span>{loading ? 'Saving…' : 'Save Details'}</span>

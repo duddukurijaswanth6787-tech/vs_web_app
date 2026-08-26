@@ -52,7 +52,7 @@ export function MobileBottomNav() {
       >
         <div className={`w-12 h-12 rounded-full flex items-center justify-center border-2 border-amber-300 shadow-lg transition-all duration-300 ${
           isNewArrivals
-            ? 'bg-gradient-to-tr from-[#0B3B78] via-[#1769D2] to-[#4A90E2] text-amber-300 scale-110 shadow-blue-900/40 ring-4 ring-[#1769D2]/20'
+            ? 'bg-gradient-to-tr from-[var(--brand-primary-dark)] via-[#1769D2] to-[#4A90E2] text-amber-300 scale-110 shadow-blue-900/40 ring-4 ring-[#1769D2]/20'
             : 'bg-gradient-to-tr from-[#1769D2] to-[#4A90E2] text-white hover:scale-105 shadow-neutral-400/30'
         }`}>
           <Sparkles className={`w-6 h-6 ${isNewArrivals ? 'fill-amber-300 text-amber-300 animate-pulse' : 'text-amber-200'}`} />

@@ -57,7 +57,7 @@ export function FeaturedBrands() {
 
         <Link
           href="/brands"
-          className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#1769D2] hover:text-[#0B3B78] transition-colors"
+          className="hidden sm:flex items-center gap-1.5 text-xs font-bold text-[#1769D2] hover:text-[var(--brand-primary-dark)] transition-colors"
         >
           <span>View All Brands</span>
           <ArrowRight className="w-3.5 h-3.5" />

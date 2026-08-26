@@ -42,14 +42,14 @@ export default function SizeGuidePage() {
           <Link href="/" className="p-1 text-neutral-800 hover:bg-neutral-100 rounded-lg transition-colors">
             <ArrowLeft className="w-5 h-5" />
           </Link>
-          <h1 className="text-xl font-bold font-serif text-[#0284c7] tracking-tight">{title}</h1>
+          <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] tracking-tight">{title}</h1>
         </div>
       </header>
 
       <main className="max-w-3xl mx-auto px-4 sm:px-8 py-8 space-y-6 flex-1 w-full">
         <div className="bg-white rounded-3xl border border-neutral-200/80 p-6 space-y-4 shadow-2xs">
           <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
-            <Ruler className="w-5 h-5 text-[#0284c7]" />
+            <Ruler className="w-5 h-5 text-[var(--brand-primary)]" />
             <h2 className="text-base font-bold text-neutral-900">{title}</h2>
           </div>
 

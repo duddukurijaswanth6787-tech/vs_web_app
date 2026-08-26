@@ -21,7 +21,7 @@ export function SizeChartModal({ isOpen, onClose }: SizeChartModalProps) {
         >
           <X className="w-5 h-5 text-neutral-500" />
         </button>
-        <h4 className="text-base font-bold font-serif text-[#0284c7] flex items-center gap-2">
+        <h4 className="text-base font-bold font-serif text-[var(--brand-primary)] flex items-center gap-2">
           <Info className="w-4 h-4" /> Size Chart & Measurements (Inches)
         </h4>
         <div className="overflow-hidden border border-neutral-200 rounded-xl text-xs">

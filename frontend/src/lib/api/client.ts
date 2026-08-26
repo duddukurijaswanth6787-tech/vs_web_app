@@ -1,7 +1,7 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthTokens } from '@/types/auth.types';
 
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (envUrl) return envUrl;
   if (typeof window !== 'undefined') {

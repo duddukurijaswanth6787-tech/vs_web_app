@@ -1,4 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { themeService } from './storefront.service';
 import { storefrontService } from './storefront.service';
 import type {
   UpdateWebsiteSettingsDto,
@@ -165,4 +166,36 @@ export function useRemoveNewsletter() {
 
 export function useDashboard() {
   return useQuery({ queryKey: storefrontKeys.dashboard(), queryFn: () => storefrontService.getDashboard(), staleTime: 30_000 });
+}
+
+/**
+ * Per-section storefront colours. Super-admin only on the server; the page
+ * also checks the role so a non-super-admin sees a message rather than a
+ * failing request.
+ */
+export function useStorefrontTheme() {
+  return useQuery({
+    queryKey: ['admin', 'storefront', 'theme'],
+    queryFn: () => themeService.get(),
+  });
+}
+
+export function useUpdateStorefrontTheme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (colors: Record<string, string>) => themeService.update(colors),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'storefront', 'theme'] });
+    },
+  });
+}
+
+export function useResetStorefrontTheme() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => themeService.reset(),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['admin', 'storefront', 'theme'] });
+    },
+  });
 }

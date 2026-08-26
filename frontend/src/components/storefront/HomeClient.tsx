@@ -147,7 +147,7 @@ export function HomeClient() {
       {showScrollTop && (
         <button
           onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-          className="fixed bottom-20 md:bottom-8 right-6 z-40 w-11 h-11 rounded-full bg-[#1769D2] hover:bg-[#0B3B78] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 border border-white/20"
+          className="fixed bottom-20 md:bottom-8 right-6 z-40 w-11 h-11 rounded-full bg-[#1769D2] hover:bg-[var(--brand-primary-dark)] text-white flex items-center justify-center shadow-lg hover:scale-110 transition-all duration-300 border border-white/20"
           aria-label="Scroll to top"
         >
           <ChevronUp className="w-6 h-6" />

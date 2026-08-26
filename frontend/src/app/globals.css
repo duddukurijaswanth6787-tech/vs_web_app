@@ -15,6 +15,40 @@
   --muted-text: #829ab1;
   --hover-blue: #1257b5;
   --success-stock: #16825d;
+
+  /* ── Storefront theme (super admin, per section) ──────────────────
+     Defaults only. The live values come from the API and are injected
+     as a :root override in layout.tsx, so changing a colour in
+     Admin → Storefront → Theme repaints the site without a deploy.
+     Keep these in step with THEME_TOKENS in the backend's
+     modules/storefront/theme.types.ts -- that file is the source of
+     truth for which sections exist. */
+  --brand-primary: #0284c7;
+  --brand-primary-dark: #0B3B78;
+  --brand-on-primary: #ffffff;
+  --page-bg: #FDFBFB;
+  --announcement-bg: #0284c7;
+  --announcement-text: #ffffff;
+  --header-bg: #ffffff;
+  --header-text: #171717;
+  --header-border: #e5e5e5;
+  --hero-bg: #EAF4FF;
+  --hero-text: #171717;
+  --category-bg: #ffffff;
+  --category-text: #171717;
+  --product-card-bg: #ffffff;
+  --product-card-text: #171717;
+  --product-price: #0284c7;
+  --benefits-bg: #EAF4FF;
+  --benefits-text: #171717;
+  --testimonials-bg: #ffffff;
+  --testimonials-text: #171717;
+  --newsletter-bg: #0A2138;
+  --newsletter-text: #ffffff;
+  --footer-bg: #0A2138;
+  --footer-text: #DCEBFA;
+  --footer-heading: #ffffff;
+  --footer-link-hover: #ffffff;
 }
 
 @theme inline {

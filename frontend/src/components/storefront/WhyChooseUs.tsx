@@ -60,7 +60,7 @@ export function WhyChooseUs() {
             <div
               key={index}
               className={`bg-white border rounded-2xl overflow-hidden transition-all duration-300 ${
-                isOpen ? 'border-[#0284c7]/40 shadow-sm ring-1 ring-[#0284c7]/20' : 'border-neutral-200/80 shadow-2xs hover:border-neutral-300'
+                isOpen ? 'border-[var(--brand-primary)]/40 shadow-sm ring-1 ring-[var(--brand-primary)]/20' : 'border-neutral-200/80 shadow-2xs hover:border-neutral-300'
               }`}
             >
               {/* Accordion Header / Trigger */}
@@ -72,7 +72,7 @@ export function WhyChooseUs() {
               >
                 <div className="flex items-center gap-3.5 pr-2">
                   <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors ${
-                    isOpen ? 'bg-[#0284c7] text-white' : 'bg-sky-50 text-[#0284c7] border border-sky-100'
+                    isOpen ? 'bg-[var(--brand-primary)] text-white' : 'bg-sky-50 text-[var(--brand-primary)] border border-sky-100'
                   }`}>
                     <Icon className="w-5 h-5" />
                   </div>
@@ -83,7 +83,7 @@ export function WhyChooseUs() {
 
                 {/* Arrow Icon: Expand/Collapse Indicator */}
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 transition-transform duration-300 ${
-                  isOpen ? 'bg-sky-100 text-[#0284c7] rotate-180' : 'bg-neutral-100 text-neutral-500'
+                  isOpen ? 'bg-sky-100 text-[var(--brand-primary)] rotate-180' : 'bg-neutral-100 text-neutral-500'
                 }`}>
                   <ChevronDown className="w-4 h-4" />
                 </div>

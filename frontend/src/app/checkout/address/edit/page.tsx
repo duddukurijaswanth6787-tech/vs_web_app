@@ -99,7 +99,7 @@ function EditAddressForm() {
         <Link href="/checkout/address" className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-neutral-700" />
         </Link>
-        <h1 className="text-base font-bold font-serif text-[#0284c7]">
+        <h1 className="text-base font-bold font-serif text-[var(--brand-primary)]">
           {addressId ? 'Edit Shipping Address' : 'Add New Address'}
         </h1>
       </header>
@@ -126,7 +126,7 @@ function EditAddressForm() {
             {/* Address Type (Enum HOME, WORK, OTHER) */}
             <div>
               <label className="block font-bold text-neutral-700 mb-1 flex items-center gap-1">
-                <Tag className="w-3.5 h-3.5 text-[#0284c7]" />
+                <Tag className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
                 <span>Address Type / Label</span>
               </label>
               <div className="flex gap-2">
@@ -141,7 +141,7 @@ function EditAddressForm() {
                     onClick={() => setForm({ ...form, label: type.label, addressType: type.id })}
                     className={`px-3 py-1.5 rounded-xl border font-bold text-xs transition-all cursor-pointer ${
                       form.addressType === type.id
-                        ? 'bg-[#0284c7] text-white border-[#0284c7]'
+                        ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
                         : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
                     }`}
                   >
@@ -161,7 +161,7 @@ function EditAddressForm() {
                   value={form.fullName}
                   onChange={(e) => setForm({ ...form, fullName: e.target.value })}
                   placeholder="Recipient Name"
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
               <div>
@@ -172,7 +172,7 @@ function EditAddressForm() {
                   value={form.phone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                   placeholder="10-digit mobile"
-                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                  className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
             </div>
@@ -201,7 +201,7 @@ function EditAddressForm() {
                 value={form.addressLine1}
                 onChange={(e) => setForm({ ...form, addressLine1: e.target.value })}
                 placeholder="House No, Street Name, Area"
-                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
               />
             </div>
 
@@ -213,7 +213,7 @@ function EditAddressForm() {
                 value={form.addressLine2}
                 onChange={(e) => setForm({ ...form, addressLine2: e.target.value })}
                 placeholder="Locality / Sector"
-                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
               />
             </div>
 
@@ -225,7 +225,7 @@ function EditAddressForm() {
                 value={form.landmark}
                 onChange={(e) => setForm({ ...form, landmark: e.target.value })}
                 placeholder="Near Temple, Opposite Metro Station..."
-                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                className="w-full px-3 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
               />
             </div>
 
@@ -239,7 +239,7 @@ function EditAddressForm() {
                   value={form.city}
                   onChange={(e) => setForm({ ...form, city: e.target.value })}
                   placeholder="Hyderabad"
-                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
               <div>
@@ -250,7 +250,7 @@ function EditAddressForm() {
                   value={form.state}
                   onChange={(e) => setForm({ ...form, state: e.target.value })}
                   placeholder="Telangana"
-                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
               <div>
@@ -261,7 +261,7 @@ function EditAddressForm() {
                   value={form.postalCode}
                   onChange={(e) => setForm({ ...form, postalCode: e.target.value })}
                   placeholder="500001"
-                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[#0284c7]"
+                  className="w-full px-2.5 py-2 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
             </div>
@@ -274,7 +274,7 @@ function EditAddressForm() {
                   id="isDefaultShipping"
                   checked={form.isDefaultShipping}
                   onChange={(e) => setForm({ ...form, isDefaultShipping: e.target.checked })}
-                  className="rounded border-neutral-300 text-[#0284c7] focus:ring-[#0284c7]"
+                  className="rounded border-neutral-300 text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
                 />
                 <label htmlFor="isDefaultShipping" className="font-bold text-neutral-800 cursor-pointer">
                   Set as default shipping address
@@ -287,7 +287,7 @@ function EditAddressForm() {
                   id="isDefaultBilling"
                   checked={form.isDefaultBilling}
                   onChange={(e) => setForm({ ...form, isDefaultBilling: e.target.checked })}
-                  className="rounded border-neutral-300 text-[#0284c7] focus:ring-[#0284c7]"
+                  className="rounded border-neutral-300 text-[var(--brand-primary)] focus:ring-[var(--brand-primary)]"
                 />
                 <label htmlFor="isDefaultBilling" className="font-bold text-neutral-800 cursor-pointer">
                   Set as default billing address
@@ -298,7 +298,7 @@ function EditAddressForm() {
             <button
               type="submit"
               disabled={updateMutation.isPending}
-              className="w-full bg-[#0284c7] hover:bg-[#0B3B78] text-white font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-4"
+              className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white font-bold py-3 rounded-xl transition-all shadow-md disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer mt-4"
             >
               <Save className="w-4 h-4" />
               <span>{updateMutation.isPending ? 'Saving Address...' : 'Save Address'}</span>

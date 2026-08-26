@@ -26,7 +26,7 @@ export default function NewTicketPage() {
         <form onSubmit={handleSubmit(onSubmit)} className="bg-white p-6 rounded-xl shadow-sm border space-y-4">
           <input {...register('subject')} placeholder="Subject" className="w-full border p-2 rounded" required />
           <textarea {...register('description')} placeholder="Description" className="w-full border p-2 rounded h-32" required />
-          <button type="submit" className="bg-[#0284c7] text-white px-6 py-2 rounded-lg">Submit</button>
+          <button type="submit" className="bg-[var(--brand-primary)] text-white px-6 py-2 rounded-lg">Submit</button>
         </form>
       </main>
       <MobileBottomNav />

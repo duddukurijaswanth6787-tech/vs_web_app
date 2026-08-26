@@ -36,7 +36,7 @@ export default function OrderDetailsPage() {
         ))}
         <div className="border-t pt-4 flex justify-between font-bold text-lg">
           <span>Total</span>
-          <span className="text-[#0284c7]">{formatInr(Number(order.grandTotal))}</span>
+          <span className="text-[var(--brand-primary)]">{formatInr(Number(order.grandTotal))}</span>
         </div>
       </div>
     </div>

@@ -83,7 +83,7 @@ export function FeaturedCollections() {
         </div>
         <Link
           href="/categories"
-          className="inline-flex items-center justify-center bg-[#1769D2] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-xs transition-all hover:scale-105 shrink-0 self-start md:self-auto"
+          className="inline-flex items-center justify-center bg-[#1769D2] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold uppercase tracking-wider px-5 py-3 rounded-xl shadow-xs transition-all hover:scale-105 shrink-0 self-start md:self-auto"
         >
           <span>Explore Collection</span>
           <span className="ml-1">→</span>
