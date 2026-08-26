@@ -13,6 +13,13 @@ import { StorageService } from '@infrastructure/storage/storage.service';
 /**
  * Helper to ensure an async health check function resolves within a timeout.
  */
+/**
+ * Deliberately generous: the database check is the only one that can fail this
+ * endpoint, and a failed healthcheck fails the whole deploy. Distinguishing a
+ * slow database from a dead one matters more here than answering quickly.
+ */
+const DB_PING_TIMEOUT_MS = 10_000;
+
 function withTimeout<T>(
   promise: Promise<T>,
   timeoutMs: number,
@@ -52,7 +59,18 @@ export class HealthController {
     return this.health.check([
       // Database health diagnostic
       async () => {
-        const isUp = await withTimeout(this.prismaService.ping(), 2000, false);
+        // 2s was too tight to survive a rollover: this is the only check that
+        // can fail the endpoint, and Railway gates deploys on it. A new
+        // container's first SELECT 1 has to open a connection and complete a
+        // TLS handshake before it can run, so a momentarily slow -- not
+        // broken -- database failed the healthcheck and the deploy with it,
+        // while the previous container carried on serving. A genuine outage
+        // still fails well inside Railway's 4-minute retry window.
+        const isUp = await withTimeout(
+          this.prismaService.ping(),
+          DB_PING_TIMEOUT_MS,
+          false,
+        );
         return {
           database: {
             status: isUp ? 'up' : 'down',
