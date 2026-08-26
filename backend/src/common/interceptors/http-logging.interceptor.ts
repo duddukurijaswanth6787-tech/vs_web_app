@@ -15,6 +15,25 @@ import {
   HttpLoggingContext,
 } from '../logging/http-log-context';
 
+/**
+ * A routine 200 that returned quickly tells you nothing you would go looking
+ * for, and on a live storefront those are almost all of the traffic. Failures
+ * and slow requests are the ones worth the log line.
+ */
+export function isResponseWorthLogging({
+  logSuccess,
+  statusCode,
+  durationMs,
+  slowMs,
+}: {
+  logSuccess: boolean;
+  statusCode: number;
+  durationMs: number;
+  slowMs: number;
+}): boolean {
+  return logSuccess || statusCode >= 400 || durationMs >= slowMs;
+}
+
 @Injectable()
 export class HttpLoggingInterceptor implements NestInterceptor {
   constructor(
@@ -57,8 +76,21 @@ export class HttpLoggingInterceptor implements NestInterceptor {
       false,
     );
     const shouldLog = isLogEnabled && (!isHealthPath || isHealthLogged);
+    const logSuccess = this.configService.get<boolean>(
+      'app.httpLog.successRequests',
+      true,
+    );
+    const slowMs = this.configService.get<number>(
+      'app.monitoring.slowRequestThreshold',
+      1000,
+    );
 
-    if (shouldLog && !logCtx.incomingLogged) {
+    // The incoming line is only emitted up front when logging everything.
+    // Otherwise it would defeat the point: whether a request is worth logging
+    // is not known until it has a status and a duration. Nothing is lost --
+    // the response line below carries the same fields, and a request that
+    // dies before producing one is logged by the global exception filter.
+    if (shouldLog && logSuccess && !logCtx.incomingLogged) {
       this.loggerService.logHttpRequest(logCtx, request);
       logCtx.incomingLogged = true;
     }
@@ -72,6 +104,17 @@ export class HttpLoggingInterceptor implements NestInterceptor {
             const durationMs = Number(durationNs) / 1_000_000;
             const statusCode = response.statusCode || 200;
             const statusText = http.STATUS_CODES[statusCode] || '';
+
+            if (
+              !isResponseWorthLogging({
+                logSuccess,
+                statusCode,
+                durationMs,
+                slowMs,
+              })
+            ) {
+              return;
+            }
 
             this.loggerService.logHttpResponse(
               logCtx,

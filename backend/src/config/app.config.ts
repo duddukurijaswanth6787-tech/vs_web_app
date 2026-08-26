@@ -184,6 +184,16 @@ export default registerAs('app', () => ({
       10,
     ),
     healthRequests: process.env.HTTP_LOG_HEALTH_REQUESTS === 'true',
+    // Every request logged a request+response pair. One storefront page load
+    // fans out to a dozen API calls, so a handful of concurrent visitors was
+    // enough to pass Railway's 500 logs/sec cap -- at which point Railway
+    // drops messages, and the ones lost in a burst are exactly the ones worth
+    // reading. In production only failures and slow requests are logged;
+    // set HTTP_LOG_SUCCESS=true to get the full stream back while debugging.
+    successRequests:
+      process.env.HTTP_LOG_SUCCESS === 'true' ||
+      (process.env.HTTP_LOG_SUCCESS !== 'false' &&
+        (process.env.NODE_ENV || 'development') !== 'production'),
   },
   rag: {
     enabled: process.env.RAG_ENABLED !== 'false',

@@ -195,6 +195,9 @@ export const envValidationSchema = Joi.object({
   HTTP_LOG_RESPONSE_BODY: Joi.boolean().default(true),
   HTTP_LOG_MAX_BODY_LENGTH: Joi.number().integer().min(0).default(10000),
   HTTP_LOG_HEALTH_REQUESTS: Joi.boolean().default(false),
+  HTTP_LOG_SUCCESS: Joi.boolean().description(
+    'Log successful, fast requests too. Defaults off in production to stay under the platform log rate cap.',
+  ),
 
   // RAG Configuration
   RAG_ENABLED: Joi.boolean().default(true),
