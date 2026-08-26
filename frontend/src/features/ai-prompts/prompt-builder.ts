@@ -41,16 +41,47 @@ function format(value: unknown): string {
 }
 
 /**
+ * Turns an attribute slug into a template variable name.
+ *
+ * The catalog carries two families of attribute for the same concepts -- the
+ * variant/filter set (`fabric`, `sleeve-type`, `neck-type`) and the customer
+ * specification set (`spec-fabric`, `spec-sleeve`, `spec-neck`) -- and a
+ * template author should not have to know or care which one a shop happens to
+ * use. Both collapse to the same variable, and hyphens become underscores
+ * because a hyphen is not valid in `{{...}}`.
+ */
+export function attributeVariableKey(slug: string | undefined, name: string): string {
+  const base = (slug || name).toLowerCase().trim();
+  return base
+    .replace(/^spec-/, '')
+    .replace(/-type$/, '')
+    .replace(/[^a-z0-9]+/g, '_')
+    .replace(/^_+|_+$/g, '');
+}
+
+/**
  * Keeps only the fields that carry information, in the order given.
  * Order is the caller's, so the prompt reads the way a person would describe
  * the garment rather than in whatever order the form stores it.
+ *
+ * Duplicate labels collapse to the first one with a value. Both attribute
+ * families are offered to this function, so a product with Fabric filled in on
+ * each would otherwise print `Fabric:` twice and invite the model to reconcile
+ * them.
  */
 export function collectFields(
   candidates: { label: string; key: string; value: unknown }[],
 ): PromptField[] {
-  return candidates
-    .filter((f) => hasValue(f.value))
-    .map((f) => ({ label: f.label, key: f.key, value: format(f.value) }));
+  const seen = new Set<string>();
+  const out: PromptField[] = [];
+  for (const f of candidates) {
+    if (!hasValue(f.value)) continue;
+    const dedupeOn = f.label.trim().toLowerCase();
+    if (seen.has(dedupeOn)) continue;
+    seen.add(dedupeOn);
+    out.push({ label: f.label, key: f.key, value: format(f.value) });
+  }
+  return out;
 }
 
 /** The PRODUCT INFORMATION block: one `Label: value` line per populated field. */

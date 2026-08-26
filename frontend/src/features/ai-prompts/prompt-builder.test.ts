@@ -1,4 +1,5 @@
 import {
+  attributeVariableKey,
   collectFields,
   hasValue,
   missingRecommended,
@@ -212,5 +213,86 @@ describe('missingRecommended', () => {
     );
 
     expect(missing).toEqual([]);
+  });
+});
+
+/**
+ * The catalog seeds two attribute families for the same concepts: the
+ * variant/filter set (fabric, sleeve-type, neck-type) and the customer
+ * specification set (spec-fabric, spec-sleeve, spec-neck). A template author
+ * should not have to know which one a shop happens to use, and a product with
+ * both filled in must not print the same label twice.
+ */
+describe('real catalog attribute slugs', () => {
+  it.each([
+    ['fabric', 'Fabric', 'fabric'],
+    ['spec-fabric', 'Fabric', 'fabric'],
+    ['pattern', 'Pattern', 'pattern'],
+    ['spec-pattern', 'Pattern', 'pattern'],
+    ['fit', 'Fit', 'fit'],
+    ['spec-fit', 'Fit', 'fit'],
+    ['sleeve-type', 'Sleeve Type', 'sleeve'],
+    ['spec-sleeve', 'Sleeve', 'sleeve'],
+    ['neck-type', 'Neck Type', 'neck'],
+    ['spec-neck', 'Neck', 'neck'],
+    ['occasion', 'Occasion', 'occasion'],
+    ['spec-occasion', 'Occasion', 'occasion'],
+    ['wash-care', 'Wash Care', 'wash_care'],
+    ['attr-season', 'Season', 'attr_season'],
+  ])('maps %s to {{%s}}', (slug, name, expected) => {
+    expect(attributeVariableKey(slug, name)).toBe(expected);
+  });
+
+  it('never produces a hyphen, which {{...}} cannot contain', () => {
+    for (const slug of ['sleeve-type', 'neck-type', 'wash-care', 'spec-fabric']) {
+      expect(attributeVariableKey(slug, slug)).not.toContain('-');
+    }
+  });
+
+  it('resolves {{sleeve}} from the real sleeve-type slug', () => {
+    const prompt = renderPrompt({
+      template: 'Sleeve is {{sleeve}}. {{product_fields}}',
+      rules: '',
+      fields: collectFields([
+        {
+          label: 'Sleeve Type',
+          key: attributeVariableKey('sleeve-type', 'Sleeve Type'),
+          value: 'Full Sleeve',
+        },
+      ]),
+      accuracyRule: ACCURACY,
+    });
+
+    expect(prompt).toContain('Sleeve is Full Sleeve.');
+  });
+
+  it('prints one Fabric line when both attribute families are filled in', () => {
+    const fields = collectFields([
+      { label: 'Fabric', key: attributeVariableKey('fabric', 'Fabric'), value: 'Rayon' },
+      { label: 'Fabric', key: attributeVariableKey('spec-fabric', 'Fabric'), value: 'Cotton' },
+    ]);
+
+    expect(fields).toHaveLength(1);
+    expect(renderFieldBlock(fields)).toBe('Fabric: Rayon');
+  });
+
+  it('falls back to the second family when the first is empty', () => {
+    const fields = collectFields([
+      { label: 'Fabric', key: 'fabric', value: '   ' },
+      { label: 'Fabric', key: 'fabric', value: 'Cotton' },
+    ]);
+
+    expect(renderFieldBlock(fields)).toBe('Fabric: Cotton');
+  });
+
+  it('collapses the duplicate Occasion the form carries twice', () => {
+    // The builder keeps its own `occasion` state and the catalog also seeds an
+    // Occasion attribute.
+    const fields = collectFields([
+      { label: 'Occasion', key: 'occasion', value: 'Festive' },
+      { label: 'Occasion', key: 'occasion', value: 'Party' },
+    ]);
+
+    expect(fields).toHaveLength(1);
   });
 });

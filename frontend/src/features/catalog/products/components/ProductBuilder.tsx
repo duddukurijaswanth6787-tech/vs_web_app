@@ -17,6 +17,7 @@ import type { AttributeResponse } from '@/features/catalog/attributes/attribute.
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import { AiContentAssistant } from '@/features/ai-prompts/AiContentAssistant';
+import { attributeVariableKey } from '@/features/ai-prompts/prompt-builder';
 import { useCoupons } from '@/features/coupons/coupon.hooks';
 import { couponService } from '@/features/coupons/coupon.service';
 import type { CouponResponse } from '@/features/coupons/coupon.types';
@@ -516,7 +517,7 @@ export default function ProductBuilder({
     // from the attribute map by their own names.
     const attributeFields = productAttributes.map((a) => ({
       label: a.name,
-      key: a.slug ?? a.name.toLowerCase().replace(/\s+/g, '_'),
+      key: attributeVariableKey(a.slug, a.name),
       value: attributeValues[a.id],
     }));
 
