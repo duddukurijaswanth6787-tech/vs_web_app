@@ -10,6 +10,7 @@ import { QueuesModule } from '@infrastructure/queues/queues.module';
 import { StorageModule } from '@infrastructure/storage/storage.module';
 import { CorrelationIdMiddleware } from '@common/middleware/correlation-id.middleware';
 import { SecurityModule } from '@common/security/security.module';
+import { AiPromptModule } from '../modules/ai-prompts/ai-prompt.module';
 import { HttpLoggingInterceptor } from '@common/interceptors/http-logging.interceptor';
 import { GlobalResponseInterceptor } from '@common/interceptors/global-response.interceptor';
 import { StartupModule } from '@common/startup/startup.module';
@@ -112,6 +113,7 @@ import { PosModule } from '@domains/pos/pos.module';
 
     // Global Security Module (contains global throttler guard registration)
     SecurityModule,
+    AiPromptModule,
 
     // Startup Dashboard
     StartupModule,

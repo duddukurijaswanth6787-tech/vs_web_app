@@ -529,6 +529,7 @@ export const adminNavigation: NavGroup[] = [
   {
     group: 'AI & RAG',
     items: [
+      { id: 'ai-prompt-templates', title: 'AI Prompt Templates', href: '/admin/ai/prompts', icon: Sparkles, roles: ['super_admin'], implemented: true },
       {
         id: 'rag-overview',
         title: 'RAG Overview',

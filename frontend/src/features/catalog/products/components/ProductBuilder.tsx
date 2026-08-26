@@ -16,6 +16,7 @@ import { useSizeCharts } from '@/features/catalog/size-charts/size-chart.hooks';
 import type { AttributeResponse } from '@/features/catalog/attributes/attribute.types';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
+import { AiContentAssistant } from '@/features/ai-prompts/AiContentAssistant';
 import { useCoupons } from '@/features/coupons/coupon.hooks';
 import { couponService } from '@/features/coupons/coupon.service';
 import type { CouponResponse } from '@/features/coupons/coupon.types';
@@ -327,6 +328,7 @@ export default function ProductBuilder({
   const setAttributeValue = (attributeId: string, value: string) =>
     setAttributeValues((prev) => ({ ...prev, [attributeId]: value }));
 
+
   // Reusable size charts — measurements are entered once per garment shape and
   // attached here, rather than retyped on every product.
   const { data: sizeChartData } = useSizeCharts({ limit: 100, status: 'ACTIVE' });
@@ -501,6 +503,47 @@ export default function ProductBuilder({
    * sent as the media title on save.
    */
   const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
+
+  // Everything the AI Content Assistant may put in a prompt, in the order a
+  // person would describe the garment. Empty entries are dropped downstream by
+  // collectFields -- nothing here needs to check for blanks.
+  const aiWatch = useWatch({ control: methods.control });
+  const aiCandidates = useMemo(() => {
+    const values = (aiWatch ?? {}) as Record<string, unknown>;
+    const nameOf = (id: string) => categories.find((c) => c.id === id)?.name;
+    // Fashion attributes (fabric, pattern, fit, sleeve, neck, material) are
+    // configured under Catalog -> Attributes, not columns, so they are read
+    // from the attribute map by their own names.
+    const attributeFields = productAttributes.map((a) => ({
+      label: a.name,
+      key: a.slug ?? a.name.toLowerCase().replace(/\s+/g, '_'),
+      value: attributeValues[a.id],
+    }));
+
+    return [
+      { label: 'Product Name', key: 'product_name', value: values.name },
+      { label: 'Category', key: 'category', value: nameOf(primaryCategoryId) },
+      { label: 'Subcategory', key: 'subcategory', value: nameOf(subCategoryId) },
+      {
+        label: 'Brand',
+        key: 'brand',
+        value: brands.find((b: { id: string; name: string }) => b.id === values.brandId)?.name,
+      },
+      { label: 'Colour', key: 'color', value: colorGroups.map((g) => g.name) },
+      ...attributeFields,
+      { label: 'Occasion', key: 'occasion', value: occasion },
+      { label: 'Season', key: 'season', value: values.season },
+      { label: 'Collection', key: 'collection', value: values.collections },
+      { label: 'Tags', key: 'tags', value: tags },
+      { label: 'Existing Short Description', key: 'short_description', value: values.shortDescription },
+      { label: 'Existing Description', key: 'description', value: values.description },
+    ];
+  }, [aiWatch, categories, primaryCategoryId, subCategoryId, brands, colorGroups, productAttributes, attributeValues, occasion, tags]);
+
+  const aiReferenceImages = useMemo(
+    () => colorGroups.flatMap((g) => [g.swatchImage, ...g.images].filter(Boolean) as string[]),
+    [colorGroups],
+  );
 
   /** Move an image within its color group — position 0 is that color's primary. */
   const moveImage = (colorGroupId: string, imgIdx: number, direction: -1 | 1) => {
@@ -2532,6 +2575,11 @@ export default function ProductBuilder({
                 })}
               </div>
             )}
+
+            <AiContentAssistant
+              candidates={aiCandidates}
+              referenceImages={aiReferenceImages}
+            />
           </div>
         )}
 
