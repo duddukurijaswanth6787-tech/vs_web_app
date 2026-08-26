@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
+  IsEmail,
   IsOptional,
   IsNumber,
   IsArray,
@@ -54,6 +55,9 @@ export class CreateProfileDto {
 export class UpdateProfileDto {
   @ApiPropertyOptional() @IsOptional() @IsString() firstName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() lastName?: string;
+  // Written to the User row, not the profile row -- see updateProfile, which
+  // also guards uniqueness since login resolves an account by this.
+  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;

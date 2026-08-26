@@ -11,6 +11,7 @@ import {
   Max,
   IsArray,
   IsDateString,
+  IsEmail,
   IsNumber,
 } from 'class-validator';
 
@@ -40,6 +41,9 @@ export class UpdateMeDto {
   // name.
   @ApiPropertyOptional() @IsOptional() @IsString() firstName?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() lastName?: string;
+  // Email is what login resolves an account by, so it is validated as an
+  // address rather than free text -- a typo here is a locked-out customer.
+  @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;

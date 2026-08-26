@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, User, Phone, Calendar, Save } from 'lucide-react';
+import { ArrowLeft, User, Phone, Mail, Calendar, Save } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -20,6 +20,7 @@ export default function ProfileEditPage() {
   const [form, setForm] = useState({
     firstName: '',
     lastName: '',
+    email: '',
     phone: '',
     gender: 'FEMALE',
     dateOfBirth: '',
@@ -40,6 +41,7 @@ export default function ProfileEditPage() {
     setForm({
       firstName: data.firstName || '',
       lastName: data.lastName || '',
+      email: data.email || '',
       phone: data.phone || '',
       gender: (data.gender as string) || 'FEMALE',
       // The API sends a full ISO timestamp ('2001-05-12T00:00:00.000Z');
@@ -64,7 +66,13 @@ export default function ProfileEditPage() {
     setLoading(true);
     setError('');
     try {
-      await customerMeService.updateProfile(form);
+      // An empty email would fail @IsEmail() on the way in; omitting the field
+      // instead leaves the stored address untouched, which is what a blank box
+      // means here.
+      const { email, ...restOfForm } = form;
+      await customerMeService.updateProfile(
+        email.trim() ? { ...restOfForm, email: email.trim() } : restOfForm,
+      );
       // refetchUser() only refreshes the auth user; the ['customer','profile']
       // cache this form reads from would still hold the pre-save values, so
       // reopening Edit prefilled the old ones.
@@ -118,6 +126,25 @@ export default function ProfileEditPage() {
               </div>
             </label>
           </div>
+
+          {/* Email -- this is the address the account signs in with, so the
+              form says so rather than letting it look like a contact detail. */}
+          <label className="block space-y-1">
+            <span className="font-semibold text-neutral-700">Email</span>
+            <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2">
+              <Mail className="w-3.5 h-3.5 text-neutral-400 shrink-0" />
+              <input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                className="flex-1 text-xs outline-none w-full focus:ring-2 focus:ring-[#0284c7]/20 rounded px-1"
+              />
+            </div>
+            <span className="block text-[11px] text-neutral-500">
+              You sign in with this address. Changing it means verifying the new
+              one before it counts as confirmed.
+            </span>
+          </label>
 
           {/* Phone & Gender */}
           <div className="grid grid-cols-2 gap-3">

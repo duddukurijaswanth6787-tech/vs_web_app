@@ -1,4 +1,5 @@
 import { Injectable } from '@nestjs/common';
+import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
 import { CustomerProfileRepository } from './customer-profile.repository';
@@ -79,7 +80,33 @@ export class CustomerProfileService {
   ): Promise<ProfileResponse> {
     const profile = await this.findOrCreateProfile(userId);
 
-    const { firstName, lastName, dateOfBirth, ...rest } = dto;
+    const { firstName, lastName, email, dateOfBirth, ...rest } = dto;
+
+    // Email is what login resolves an account by, and it is unique across
+    // users. Left unguarded, saving an address already registered elsewhere
+    // fails deep in Prisma as a P2002 the customer sees as an unexplained
+    // error, and an accepted duplicate would point two accounts at one login.
+    let nextEmail: string | undefined;
+    if (email !== undefined) {
+      const normalized = email.trim().toLowerCase();
+      const current = await this.prisma.user.findUnique({
+        where: { id: userId },
+        select: { email: true },
+      });
+      if (normalized !== current?.email) {
+        const taken = await this.prisma.user.findFirst({
+          where: { email: normalized, deletedAt: null, id: { not: userId } },
+          select: { id: true },
+        });
+        if (taken) {
+          throw new BusinessException(
+            'That email address is already registered to another account',
+            'EMAIL_TAKEN',
+          );
+        }
+        nextEmail = normalized;
+      }
+    }
 
     // <input type="date"> submits 'YYYY-MM-DD', and @IsDateString accepts it,
     // but Prisma's DateTime rejects the date-only form at runtime with
@@ -93,12 +120,21 @@ export class CustomerProfileService {
         ? { dateOfBirth: new Date(dateOfBirth) }
         : {}),
     };
-    if (firstName !== undefined || lastName !== undefined) {
+    if (
+      firstName !== undefined ||
+      lastName !== undefined ||
+      nextEmail !== undefined
+    ) {
       await this.prisma.user.update({
         where: { id: userId },
         data: {
           ...(firstName !== undefined ? { firstName } : {}),
           ...(lastName !== undefined ? { lastName } : {}),
+          // A new address has not been proven to belong to the customer, so
+          // it stops counting as verified until they confirm it.
+          ...(nextEmail !== undefined
+            ? { email: nextEmail, isEmailVerified: false }
+            : {}),
         },
       });
     }
