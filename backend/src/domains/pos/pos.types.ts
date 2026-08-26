@@ -146,6 +146,15 @@ export class AdoptHandoffTokenDto {
   handoffToken!: string;
 }
 
+/**
+ * Terminal a POS sale is billed against when the client does not name one.
+ * Sales are attributed to a shift by terminalId + time window (there is no
+ * shift foreign key on Order), so this value decides whose drawer the cash
+ * lands in -- it must stay in step with the fallback used when the order row
+ * is created.
+ */
+export const DEFAULT_TERMINAL_ID = 'COUNTER_1';
+
 export class CompletePosSaleDto {
   @ApiPropertyOptional({
     description: 'Checkout Session ID if initiated via Mobile Handoff',

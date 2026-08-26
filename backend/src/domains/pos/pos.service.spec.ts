@@ -8,7 +8,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
-import { PosPaymentMethodType } from './pos.types';
+import { DEFAULT_TERMINAL_ID, PosPaymentMethodType } from './pos.types';
 import { CheckoutSessionStatus } from '@prisma/client';
 
 describe('PosService (Phase 1 Backend)', () => {
@@ -29,6 +29,12 @@ describe('PosService (Phase 1 Backend)', () => {
       createPosOrder: jest.fn(),
       findOrderByOrderNumber: jest.fn(),
       findInventoryQuantities: jest.fn(),
+      // Billing requires an open shift. The existing cases here are all
+      // "a normal sale on a normal terminal", so the default is a shift
+      // that is open; the cases that care override it.
+      findOpenShift: jest
+        .fn()
+        .mockResolvedValue({ id: 'shift-1', terminalId: 'COUNTER_1' }),
     };
 
     gateway = {
@@ -206,6 +212,87 @@ describe('PosService (Phase 1 Backend)', () => {
       });
       expect(adopted.status).toBe(CheckoutSessionStatus.IN_PROGRESS_ON_WEB);
       expect(gateway.emitSessionAdopted).toHaveBeenCalled();
+    });
+  });
+
+  /**
+   * A sale is matched to a shift by terminalId + time window -- there is no
+   * shift foreign key on Order. So a sale billed with no shift open lands
+   * outside every X/Z report and its cash is never expected at close: the
+   * drawer reads over and nothing explains why.
+   *
+   * The rule used to live only in the web POS screen, leaving the mobile app
+   * and any direct API caller free to bill without one. These pin it to the
+   * service, where every client goes through it.
+   */
+  describe('completeSale shift enforcement', () => {
+    const sale = {
+      items: [
+        {
+          productId: 'prod-1',
+          productName: 'Kurti',
+          quantity: 1,
+          unitPrice: 699,
+        },
+      ],
+      paymentMethod: PosPaymentMethodType.CASH,
+      amountPaid: 699,
+    };
+
+    it('refuses to bill when the cashier has no shift open', async () => {
+      repository.findOpenShift.mockResolvedValue(null);
+
+      await expect(service.completeSale('cashier-1', sale)).rejects.toThrow(
+        /open a shift/i,
+      );
+      expect(repository.createPosOrder).not.toHaveBeenCalled();
+    });
+
+    it('checks the terminal the sale is actually billed against', async () => {
+      // Mobile sends no terminalId and inherits the default, so its takings
+      // land in that drawer -- the guard has to look at the same terminal.
+      repository.findOpenShift.mockResolvedValue(null);
+
+      await expect(service.completeSale('cashier-1', sale)).rejects.toThrow();
+      expect(repository.findOpenShift).toHaveBeenCalledWith(
+        'cashier-1',
+        DEFAULT_TERMINAL_ID,
+      );
+
+      repository.findOpenShift.mockClear();
+      repository.findOpenShift.mockResolvedValue(null);
+      await expect(
+        service.completeSale('cashier-1', { ...sale, terminalId: 'MOBILE_1' }),
+      ).rejects.toThrow();
+      expect(repository.findOpenShift).toHaveBeenCalledWith(
+        'cashier-1',
+        'MOBILE_1',
+      );
+    });
+
+    it('still bills an offline sale with no shift open', async () => {
+      // Shift state cannot be checked without the backend, and refusing to
+      // bill during an outage defeats the point of the offline queue.
+      repository.findOpenShift.mockResolvedValue(null);
+      repository.findInventoryQuantities.mockResolvedValue(new Map());
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'c-1' });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-offline-1',
+        orderNumber: 'ORD-OFFLINE-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 699,
+        items: [{ id: 'item-1' }],
+        createdAt: new Date(),
+      });
+
+      const res = await service.completeSale('cashier-1', {
+        ...sale,
+        isOfflineSync: true,
+      });
+
+      expect(res.success).toBe(true);
     });
   });
 

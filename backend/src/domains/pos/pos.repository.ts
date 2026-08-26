@@ -3,6 +3,7 @@ import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus, Prisma } from '@prisma/client';
 import {
   CreateCheckoutSessionDto,
+  DEFAULT_TERMINAL_ID,
   PosCartItemDto,
   PosCustomerInfoDto,
   PosPaymentMethodType,
@@ -336,7 +337,7 @@ export class PosRepository {
           status: 'CONFIRMED',
           channel: 'POS_SHOPORA',
           paymentMethod: params.paymentMethod,
-          terminalId: params.terminalId || 'COUNTER_1',
+          terminalId: params.terminalId || DEFAULT_TERMINAL_ID,
           subtotal: params.subtotal,
           discountTotal: params.discountTotal,
           taxTotal: params.taxTotal,

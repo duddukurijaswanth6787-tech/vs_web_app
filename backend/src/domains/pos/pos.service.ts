@@ -25,6 +25,7 @@ import {
   PosCustomerInfoDto,
   OpenPosShiftDto,
   ClosePosShiftDto,
+  DEFAULT_TERMINAL_ID,
 } from './pos.types';
 
 @Injectable()
@@ -271,6 +272,30 @@ export class PosService {
       throw new BadRequestException(
         'Cannot complete POS sale with an empty cart',
       );
+    }
+
+    // A sale is attributed to a shift by terminalId + time window, so a sale
+    // billed with no shift open falls outside every X/Z report and its cash
+    // is never expected at close -- the drawer comes up over and nobody can
+    // say why. This rule used to live only in the web POS screen, which left
+    // the mobile app and any direct API call free to bill without one. It
+    // belongs here, on the path all of them share.
+    //
+    // Offline sales stay exempt: shift state cannot be checked without the
+    // backend, and refusing to bill during an outage defeats the offline
+    // queue. Those replay through isOfflineSync.
+    if (!dto.isOfflineSync) {
+      const terminalId = dto.terminalId || DEFAULT_TERMINAL_ID;
+      const openShift = await this.repository.findOpenShift(
+        cashierId,
+        terminalId,
+      );
+      if (!openShift) {
+        throw new BusinessException(
+          `No open shift on ${terminalId}. Open a shift before billing so cash sales can be reconciled at close.`,
+          'POS_SHIFT_REQUIRED',
+        );
+      }
     }
 
     // Offline sync: stock may have moved while this terminal was
