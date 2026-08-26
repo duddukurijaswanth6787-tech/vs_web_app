@@ -15,12 +15,17 @@ import {
   ValidateTokenDto,
 } from './password-reset.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import {
+  ThrottleCredentials,
+  ThrottleOtpSend,
+} from '@common/security/throttle.decorators';
 
 @ApiTags('Password Reset')
 @Controller('password')
 export class PasswordResetController {
   constructor(private readonly passwordResetService: PasswordResetService) {}
 
+  @ThrottleOtpSend()
   @Post('forgot')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Request password reset (generates reset token)' })
@@ -29,6 +34,7 @@ export class PasswordResetController {
     return ResponseBuilder.success(result, result.message);
   }
 
+  @ThrottleCredentials()
   @Post('reset')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Reset password using reset token' })
@@ -42,6 +48,7 @@ export class PasswordResetController {
     return ResponseBuilder.success(result, result.message);
   }
 
+  @ThrottleCredentials()
   @Post('validate-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate reset token without consuming it' })

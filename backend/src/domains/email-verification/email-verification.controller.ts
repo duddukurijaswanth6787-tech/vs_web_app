@@ -12,6 +12,10 @@ import { VerifyEmailDto } from './email-verification.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
+import {
+  ThrottleOtpSend,
+  ThrottleOtpVerify,
+} from '@common/security/throttle.decorators';
 
 @ApiTags('Email Verification')
 @Controller('email-verification')
@@ -20,6 +24,7 @@ export class EmailVerificationController {
     private readonly emailVerificationService: EmailVerificationService,
   ) {}
 
+  @ThrottleOtpSend()
   @Post('send')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -31,6 +36,7 @@ export class EmailVerificationController {
     );
   }
 
+  @ThrottleOtpVerify()
   @Post('verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify email using verification token' })
@@ -40,6 +46,7 @@ export class EmailVerificationController {
     );
   }
 
+  @ThrottleOtpSend()
   @Post('resend')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -51,6 +58,7 @@ export class EmailVerificationController {
     );
   }
 
+  @ThrottleOtpVerify()
   @Post('validate-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Validate verification token without consuming it' })

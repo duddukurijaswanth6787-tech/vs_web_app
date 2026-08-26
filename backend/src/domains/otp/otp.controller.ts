@@ -18,12 +18,18 @@ import {
 } from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
+import {
+  ThrottleOtpSend,
+  ThrottleOtpVerify,
+  ThrottleCredentials,
+} from '@common/security/throttle.decorators';
 
 @ApiTags('OTP Auth')
 @Controller('auth/otp')
 export class OtpController {
   constructor(private readonly otpService: OtpService) {}
 
+  @ThrottleOtpSend()
   @Post('send')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send OTP to phone number' })
@@ -34,6 +40,7 @@ export class OtpController {
     );
   }
 
+  @ThrottleOtpVerify()
   @Post('verify')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify OTP code' })
@@ -44,6 +51,7 @@ export class OtpController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Login or register with OTP' })
@@ -61,6 +69,7 @@ export class OtpController {
     return ResponseBuilder.success(withoutRefreshToken(result), 'OTP login successful');
   }
 
+  @ThrottleCredentials()
   @Post('firebase-login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({

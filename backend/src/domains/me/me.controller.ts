@@ -43,6 +43,10 @@ import type { CartResponse } from '@domains/cart/cart.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
+import {
+  ThrottleOtpSend,
+  ThrottleOtpVerify,
+} from '@common/security/throttle.decorators';
 
 @ApiTags('Me')
 @Controller('me')
@@ -108,6 +112,7 @@ export class MeController {
   // an account by its number. So it is never written by PUT /me -- it changes
   // only through this request/confirm pair, and only once an OTP proves the
   // customer holds the number.
+  @ThrottleOtpSend()
   @Post('phone/change/request')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -123,6 +128,7 @@ export class MeController {
     );
   }
 
+  @ThrottleOtpVerify()
   @Post('phone/change/confirm')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

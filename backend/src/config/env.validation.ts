@@ -74,7 +74,7 @@ export const envValidationSchema = Joi.object({
   REDIS_DB: Joi.number().integer().min(0).default(0),
   BULLMQ_PREFIX: Joi.string().default('vasanthi'),
   THROTTLE_TTL: Joi.number().integer().min(1).default(60),
-  THROTTLE_LIMIT: Joi.number().integer().min(1).default(10),
+  THROTTLE_LIMIT: Joi.number().integer().min(1).default(120),
   // Wildcard/empty is fine for local dev; production must set an explicit,
   // comma-separated allowlist of real frontend origins, or the app refuses
   // to boot rather than silently running wide open (see main.ts's CORS setup).

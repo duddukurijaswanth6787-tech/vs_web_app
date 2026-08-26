@@ -25,6 +25,10 @@ import { JwtAuthGuard, CurrentUser } from './guards/jwt-auth.guard';
 import type { JwtPayload } from './services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import {
+  ThrottleCredentials,
+  ThrottleSignup,
+} from '@common/security/throttle.decorators';
+import {
   REFRESH_TOKEN_COOKIE,
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
@@ -39,6 +43,10 @@ export class AuthController {
     private readonly googleAuthService: GoogleAuthService,
   ) {}
 
+  // Unauthenticated by design (it bootstraps the first admin on an empty
+  // database and no-ops once one exists), which also makes it an open probe
+  // for whether this deployment has been provisioned yet.
+  @ThrottleCredentials()
   @Post('seed-admin')
   @Get('seed-admin')
   @HttpCode(HttpStatus.OK)
@@ -48,6 +56,7 @@ export class AuthController {
     return ResponseBuilder.success(result, 'Admin user seeded successfully');
   }
 
+  @ThrottleSignup()
   @Post('register')
   @ApiOperation({ summary: 'Register a new user account' })
   async register(
@@ -64,6 +73,7 @@ export class AuthController {
     return ResponseBuilder.created(withoutRefreshToken(result), 'Registration successful');
   }
 
+  @ThrottleCredentials()
   @Post('login')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Authenticate user and return tokens' })
@@ -90,6 +100,7 @@ export class AuthController {
     return ResponseBuilder.success({ clientId });
   }
 
+  @ThrottleCredentials()
   @Post('google')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -157,6 +168,7 @@ export class AuthController {
     return ResponseBuilder.success(result, 'User profile retrieved');
   }
 
+  @ThrottleCredentials()
   @Post('change-password')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -170,6 +182,7 @@ export class AuthController {
     return ResponseBuilder.success(null, 'Password changed successfully');
   }
 
+  @ThrottleCredentials()
   @Post('verify-token')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Verify JWT token validity' })

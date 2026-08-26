@@ -24,7 +24,14 @@ export default registerAs('app', () => ({
   },
   throttle: {
     ttl: parseInt(process.env.THROTTLE_TTL || '60', 10),
-    limit: parseInt(process.env.THROTTLE_LIMIT || '10', 10),
+    // Applies to every route, and one storefront page load fans out to a
+    // dozen API calls (/features, /settings/public, /categories/featured,
+    // /coupons/active, /cms/banners, ...). At the old default of 10 a
+    // customer browsing two pages inside a minute was rate-limited. The
+    // endpoints that actually need a tight limit -- login, OTP, password
+    // reset -- declare their own via common/security/throttle.decorators.ts,
+    // so this one no longer has to protect them by being small.
+    limit: parseInt(process.env.THROTTLE_LIMIT || '120', 10),
   },
   cors: {
     // Joi's validation schema (env.validation.ts) already guarantees this is

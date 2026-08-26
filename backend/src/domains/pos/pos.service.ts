@@ -42,7 +42,9 @@ export class PosService {
   ) {}
   async scanBarcode(
     dto: ScanBarcodeDto,
-    isOwnerOrManager = true,
+    // Defaults to withholding cost price: a caller that has not said who it
+    // is does not get margin data.
+    isOwnerOrManager = false,
   ): Promise<BarcodeScanResultResponse> {
     const variantMatch = await this.repository.findVariantByBarcode(
       dto.barcode,

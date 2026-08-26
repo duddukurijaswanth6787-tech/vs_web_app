@@ -42,19 +42,28 @@ export class PosController {
   constructor(private readonly posService: PosService) {}
 
   @Post('scan')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Scan Barcode or SKU for Instant Product Lookup' })
   @ApiResponse({ status: 200, type: BarcodeScanResultResponse })
   async scanBarcode(
+    @CurrentUser() user: JwtPayload,
     @Body() dto: ScanBarcodeDto,
   ): Promise<BarcodeScanResultResponse> {
-    return this.posService.scanBarcode(dto);
+    // scanBarcode() can return costPrice, which is margin data a cashier has
+    // no reason to see. The parameter existed for that, but defaulted to true
+    // and was never passed -- so it never actually withheld anything.
+    const isOwnerOrManager = (user.roles || []).some((r) =>
+      ['super_admin', 'admin'].includes(r),
+    );
+    return this.posService.scanBarcode(dto, isOwnerOrManager);
   }
 
   @Post('checkout-sessions')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Create Mobile-to-Desktop Checkout Handoff Session',
@@ -68,7 +77,8 @@ export class PosController {
   }
 
   @Post('checkout-sessions/adopt')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Adopt Handoff Token on Desktop Web POS' })
@@ -80,7 +90,8 @@ export class PosController {
   }
 
   @Post('sales/complete')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Complete POS Sale & Trigger Invoice Printing' })
@@ -92,6 +103,9 @@ export class PosController {
   }
 
   @Get('barcodes/generate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Generate Code128 / EAN / QR Barcode PNG Image Stream',
   })
@@ -106,6 +120,9 @@ export class PosController {
   }
 
   @Post('barcodes/batch-stickers')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
     summary: 'Generate N Copies of Barcode Sticker Labels (HTML & TSPL)',
@@ -115,7 +132,8 @@ export class PosController {
   }
 
   @Post('printers/preview-receipt')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
@@ -126,7 +144,8 @@ export class PosController {
   }
 
   @Get('customers/lookup')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Lookup Customer details & Order History by Phone Number',
@@ -136,7 +155,8 @@ export class PosController {
   }
 
   @Get('returns/lookup')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Look up an in-store sale and what is still returnable on it',
@@ -146,7 +166,8 @@ export class PosController {
   }
 
   @Post('returns')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Take goods back at the counter: restock, refund, and record it',
@@ -159,7 +180,8 @@ export class PosController {
   }
 
   @Post('shifts/open')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Open a new till/shift with a starting cash float' })
   async openShift(
@@ -170,7 +192,8 @@ export class PosController {
   }
 
   @Get('shifts/current')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get the current logged-in cashier\'s open shift' })
   async getCurrentShift(
@@ -181,7 +204,8 @@ export class PosController {
   }
 
   @Post('shifts/:id/close')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Close a shift: count cash, compute variance' })
   async closeShift(
