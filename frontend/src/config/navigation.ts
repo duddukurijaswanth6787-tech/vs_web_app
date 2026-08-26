@@ -49,6 +49,7 @@ import {
   Award,
   Truck,
   Timer,
+  Palette,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -306,6 +307,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'shopora-pos-returns',
+        title: 'Counter Returns',
+        href: '/pos/returns',
+        icon: Undo2,
+        permissions: ['pos:view'],
+        implemented: true,
+      },
+      {
         id: 'shopora-add-stock',
         title: 'Add Stock & Print Labels',
         href: '/pos/add-stock',
@@ -507,6 +516,10 @@ export const adminNavigation: NavGroup[] = [
       // them was the tile grid on /admin/storefront (and Categories/Footer had
       // no link at all). Feature Toggles is where returns/loyalty visibility is
       // controlled -- unreachable from the sidebar meant unusable in practice.
+      // Restricted to super_admin here to match the API, which refuses the
+      // theme endpoints for anyone else -- showing the link to an admin who
+      // cannot use it is just a dead end.
+      { id: 'storefront-theme', title: 'Colours & Theme', href: '/admin/storefront/theme', icon: Palette, roles: ['super_admin'], implemented: true },
       { id: 'storefront-features', title: 'Feature Toggles', href: '/admin/storefront/features', icon: ToggleLeft, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-homepage', title: 'Homepage', href: '/admin/storefront/homepage', icon: Layout, permissions: ['storefront.manage'], implemented: true },
       { id: 'storefront-categories', title: 'Category Display', href: '/admin/storefront/categories', icon: LayoutGrid, permissions: ['storefront.manage'], implemented: true },
