@@ -286,10 +286,12 @@ export class PosService {
     // queue. Those replay through isOfflineSync.
     if (!dto.isOfflineSync) {
       const terminalId = dto.terminalId || DEFAULT_TERMINAL_ID;
-      const openShift = await this.repository.findOpenShift(
-        cashierId,
-        terminalId,
-      );
+      // Checked against the terminal, not the cashier, because that is how
+      // the takings are counted: the cash goes into this register's drawer
+      // whoever rang it up. A cashier covering a register someone else opened
+      // is billing into a real, reconciled shift.
+      const openShift =
+        await this.repository.findOpenShiftForTerminal(terminalId);
       if (!openShift) {
         throw new BusinessException(
           `No open shift on ${terminalId}. Open a shift before billing so cash sales can be reconciled at close.`,
@@ -484,13 +486,20 @@ export class PosService {
   }
 
   async openShift(cashierId: string, dto: OpenPosShiftDto) {
-    const existing = await this.repository.findOpenShift(
-      cashierId,
+    // One open shift per terminal, whoever opened it. A shift's takings are
+    // every POS sale on its terminal within its window, so two overlapping
+    // shifts on one terminal would each be charged with the other's sales and
+    // both drawers would read over.
+    const existing = await this.repository.findOpenShiftForTerminal(
       dto.terminalId,
     );
     if (existing) {
+      const mine = existing.cashierId === cashierId;
+      const who = mine
+        ? 'You already have'
+        : `${[existing.cashier?.firstName, existing.cashier?.lastName].filter(Boolean).join(' ') || 'Another cashier'} already has`;
       throw new BadRequestException(
-        `You already have an open shift on ${dto.terminalId} since ${existing.openedAt.toLocaleString()}. Close it before opening a new one.`,
+        `${who} an open shift on ${dto.terminalId} since ${existing.openedAt.toLocaleString()}. Close it before opening a new one.`,
       );
     }
     const shift = await this.repository.createShift({

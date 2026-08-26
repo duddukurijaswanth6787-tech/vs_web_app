@@ -49,8 +49,7 @@ import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceip
 import { PendingSale } from '@/features/pos/offline/offline.types';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
-
-const TERMINAL_ID = 'COUNTER_1';
+import { useTerminalId } from '@/features/pos/terminal';
 
 export default function DesktopPosPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
@@ -108,10 +107,22 @@ export default function DesktopPosPage() {
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
   const lookupCustomerMutation = useLookupCustomer();
+  // This browser is its own register, so its shift and its sales are keyed to
+  // an id stored on the device. It resolves after mount (localStorage cannot
+  // be read while rendering on the server), and the shift lookup waits for it
+  // rather than reporting on the wrong register.
+  const { terminalId: TERMINAL_ID, isResolved: terminalResolved } = useTerminalId();
   const offlineSync = useOfflineSync(TERMINAL_ID);
-  const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(TERMINAL_ID);
+  const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(
+    TERMINAL_ID,
+    terminalResolved,
+  );
   const openShiftMutation = useOpenShift();
-  const shiftRequired = offlineSync.isBackendReachable && !shiftLoading && !currentShift;
+  const shiftRequired =
+    terminalResolved &&
+    offlineSync.isBackendReachable &&
+    !shiftLoading &&
+    !currentShift;
 
   const handleOpenShift = () => {
     const amount = parseFloat(openingCashInput);

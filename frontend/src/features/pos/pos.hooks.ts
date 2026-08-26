@@ -69,10 +69,17 @@ export function useLookupCustomer() {
   });
 }
 
-export function useCurrentShift(terminalId?: string) {
+/**
+ * Omitting terminalId asks for this cashier's open shift on any register.
+ * When a caller does pass one, `enabled` lets it wait until the device's
+ * terminal id has resolved -- querying before then would report on the wrong
+ * register.
+ */
+export function useCurrentShift(terminalId?: string, enabled = true) {
   return useQuery({
     queryKey: [...posKeys.all, 'current-shift', terminalId],
     queryFn: () => posService.getCurrentShift(terminalId),
+    enabled,
   });
 }
 

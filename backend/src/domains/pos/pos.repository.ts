@@ -431,6 +431,22 @@ export class PosRepository {
     );
   }
 
+  /**
+   * The open shift on a terminal, whoever opened it.
+   *
+   * A shift's takings are every POS sale on its terminal between openedAt and
+   * closedAt (see getCashMovementForWindow -- it filters by terminal, not by
+   * cashier). Two overlapping shifts on one terminal would therefore each
+   * count the other's sales, so a terminal may only have one open at a time.
+   */
+  async findOpenShiftForTerminal(terminalId: string) {
+    return this.prisma.posShift.findFirst({
+      where: { terminalId, status: 'OPEN' },
+      orderBy: { openedAt: 'desc' },
+      include: { cashier: { select: { firstName: true, lastName: true } } },
+    });
+  }
+
   async findOpenShift(cashierId: string, terminalId?: string) {
     return this.prisma.posShift.findFirst({
       where: {

@@ -26,6 +26,12 @@ export interface CompleteSaleCorePayload {
   amountPaid: number;
   customer?: PosMobileCustomer;
   notes?: string;
+  /**
+   * Register the sale bills against. Captured when the sale is queued, not
+   * when it syncs, so a sale rung up on this phone is still counted against
+   * this phone's shift however long it waits offline.
+   */
+  terminalId?: string;
 }
 
 /** A sale that was completed on the phone while the backend was unreachable, queued locally for sync. */

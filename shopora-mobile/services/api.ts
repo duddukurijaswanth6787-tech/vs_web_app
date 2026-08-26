@@ -310,6 +310,12 @@ export const posMobileService = {
     notes?: string;
     clientOrderNumber?: string;
     isOfflineSync?: boolean;
+    /**
+     * Register this sale bills against. Decides which shift's drawer the cash
+     * is counted in, so it has to be this device's own terminal -- omitting
+     * it falls back to the shared default on the server.
+     */
+    terminalId?: string;
   }) {
     const res = await posApiClient.post('/pos/sales/complete', {
       ...payload,

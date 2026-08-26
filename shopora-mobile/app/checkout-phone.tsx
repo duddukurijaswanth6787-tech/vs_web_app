@@ -20,8 +20,7 @@ import {
 } from '../services/api';
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
-
-const TERMINAL_ID = 'COUNTER_1';
+import { getTerminalId } from '../services/terminal';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -54,6 +53,9 @@ export default function MobilePaymentScreen() {
   // sales can be reconciled at close -- mirrors the same gate on the web
   // POS. Offline sales are exempt since shift state can't be checked
   // without the backend.
+  // This phone is its own register, so its shift and its sales are keyed to
+  // an id stored on the device rather than to the counter till.
+  const [terminalId, setTerminalId] = useState('');
   const [shiftChecked, setShiftChecked] = useState(false);
   const [hasOpenShift, setHasOpenShift] = useState(true);
   const [openingCashInput, setOpeningCashInput] = useState('');
@@ -61,13 +63,26 @@ export default function MobilePaymentScreen() {
   const [shiftError, setShiftError] = useState('');
 
   useEffect(() => {
+    let cancelled = false;
+    getTerminalId().then((id) => {
+      if (!cancelled) setTerminalId(id);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (!offlineSync.isBackendReachable) {
       setShiftChecked(true);
       return;
     }
+    // Wait for the device's terminal id: looking up the shared default would
+    // report on the counter's register, not this phone's.
+    if (!terminalId) return;
     let cancelled = false;
     posMobileService
-      .getCurrentShift(TERMINAL_ID)
+      .getCurrentShift(terminalId)
       .then((shift) => {
         if (!cancelled) setHasOpenShift(Boolean(shift));
       })
@@ -80,7 +95,7 @@ export default function MobilePaymentScreen() {
     return () => {
       cancelled = true;
     };
-  }, [offlineSync.isBackendReachable]);
+  }, [offlineSync.isBackendReachable, terminalId]);
 
   const shiftRequired = shiftChecked && offlineSync.isBackendReachable && !hasOpenShift;
 
@@ -90,7 +105,7 @@ export default function MobilePaymentScreen() {
     try {
       setOpeningShift(true);
       setShiftError('');
-      await posMobileService.openShift({ terminalId: TERMINAL_ID, openingCash: amount });
+      await posMobileService.openShift({ terminalId, openingCash: amount });
       setHasOpenShift(true);
       setOpeningCashInput('');
     } catch (err) {
@@ -121,6 +136,9 @@ export default function MobilePaymentScreen() {
         paymentMethod,
         amountPaid: grandTotal,
         customer,
+        // Bills to this phone's register, so the sale lands in the shift
+        // whose drawer actually holds the cash.
+        terminalId,
       });
 
       router.push({
@@ -143,7 +161,7 @@ export default function MobilePaymentScreen() {
         // The customer still gets a confirmation; the order itself is only
         // created once this syncs (see services/offline/useOfflineSync.ts).
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer },
+          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId },
           { items: cartItems, customer, paymentMethod, grandTotal },
         );
 

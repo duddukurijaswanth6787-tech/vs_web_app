@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   Wallet,
   Clock,
@@ -24,6 +24,7 @@ import {
   useShiftReport,
   usePosDaySummary,
 } from '@/features/pos/pos.hooks';
+import { useTerminalId } from '@/features/pos/terminal';
 import {
   ResponsiveContainer,
   BarChart,
@@ -57,7 +58,14 @@ export default function PosDashboardPage() {
   const { user } = useAuth();
   const canViewDashboard = hasPermission(user, 'pos:view');
 
-  const [terminalId, setTerminalId] = useState('COUNTER_1');
+  // Defaults to the register this browser is, rather than assuming the
+  // counter. Still editable, so a manager can inspect another terminal.
+  const { terminalId: deviceTerminalId, isResolved: terminalResolved } = useTerminalId();
+  const [terminalId, setTerminalId] = useState('');
+
+  useEffect(() => {
+    if (terminalResolved && !terminalId) setTerminalId(deviceTerminalId);
+  }, [terminalResolved, deviceTerminalId, terminalId]);
   const [openingCashInput, setOpeningCashInput] = useState('');
   const [closingCashInput, setClosingCashInput] = useState('');
   const [showCloseForm, setShowCloseForm] = useState(false);
@@ -65,7 +73,10 @@ export default function PosDashboardPage() {
   const [viewingShiftId, setViewingShiftId] = useState<string | null>(null);
   const [closeResult, setCloseResult] = useState<{ expected: number; counted: number; variance: number } | null>(null);
 
-  const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(terminalId);
+  const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(
+    terminalId,
+    !!terminalId,
+  );
   const openShiftMutation = useOpenShift();
   const closeShiftMutation = useCloseShift();
   const { data: daySummary, isLoading: summaryLoading } = usePosDaySummary(selectedDate);

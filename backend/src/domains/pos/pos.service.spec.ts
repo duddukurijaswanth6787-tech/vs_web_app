@@ -32,7 +32,9 @@ describe('PosService (Phase 1 Backend)', () => {
       // Billing requires an open shift. The existing cases here are all
       // "a normal sale on a normal terminal", so the default is a shift
       // that is open; the cases that care override it.
-      findOpenShift: jest
+      findOpenShift: jest.fn(),
+      createShift: jest.fn(),
+      findOpenShiftForTerminal: jest
         .fn()
         .mockResolvedValue({ id: 'shift-1', terminalId: 'COUNTER_1' }),
     };
@@ -225,6 +227,47 @@ describe('PosService (Phase 1 Backend)', () => {
    * and any direct API caller free to bill without one. These pin it to the
    * service, where every client goes through it.
    */
+  /**
+   * Each device is its own register. A shift's takings are every POS sale on
+   * its terminal within its window, so two overlapping shifts on one terminal
+   * would each be charged with the other's sales and both drawers read over.
+   */
+  describe('openShift', () => {
+    it('refuses a second shift on a terminal another cashier has open', async () => {
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+        cashierId: 'someone-else',
+        terminalId: 'COUNTER_1',
+        openedAt: new Date(),
+        cashier: { firstName: 'Priya', lastName: 'R' },
+      });
+
+      await expect(
+        service.openShift('cashier-1', {
+          terminalId: 'COUNTER_1',
+          openingCash: 500,
+        }),
+      ).rejects.toThrow(/Priya R already has an open shift/i);
+      expect(repository.createShift).not.toHaveBeenCalled();
+    });
+
+    it('opens when the register is free', async () => {
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
+      repository.createShift.mockResolvedValue({
+        id: 'shift-2',
+        terminalId: 'MOBILE_1',
+      });
+
+      await expect(
+        service.openShift('cashier-1', {
+          terminalId: 'MOBILE_1',
+          openingCash: 0,
+        }),
+      ).resolves.toBeDefined();
+      expect(repository.createShift).toHaveBeenCalled();
+    });
+  });
+
   describe('completeSale shift enforcement', () => {
     const sale = {
       items: [
@@ -239,8 +282,8 @@ describe('PosService (Phase 1 Backend)', () => {
       amountPaid: 699,
     };
 
-    it('refuses to bill when the cashier has no shift open', async () => {
-      repository.findOpenShift.mockResolvedValue(null);
+    it('refuses to bill when the terminal has no shift open', async () => {
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
 
       await expect(service.completeSale('cashier-1', sale)).rejects.toThrow(
         /open a shift/i,
@@ -249,31 +292,54 @@ describe('PosService (Phase 1 Backend)', () => {
     });
 
     it('checks the terminal the sale is actually billed against', async () => {
-      // Mobile sends no terminalId and inherits the default, so its takings
-      // land in that drawer -- the guard has to look at the same terminal.
-      repository.findOpenShift.mockResolvedValue(null);
+      // A client that sends no terminalId inherits the default, so its
+      // takings land in that drawer -- the guard has to look there too.
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
 
       await expect(service.completeSale('cashier-1', sale)).rejects.toThrow();
-      expect(repository.findOpenShift).toHaveBeenCalledWith(
-        'cashier-1',
+      expect(repository.findOpenShiftForTerminal).toHaveBeenCalledWith(
         DEFAULT_TERMINAL_ID,
       );
 
-      repository.findOpenShift.mockClear();
-      repository.findOpenShift.mockResolvedValue(null);
+      repository.findOpenShiftForTerminal.mockClear();
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
       await expect(
         service.completeSale('cashier-1', { ...sale, terminalId: 'MOBILE_1' }),
       ).rejects.toThrow();
-      expect(repository.findOpenShift).toHaveBeenCalledWith(
-        'cashier-1',
+      expect(repository.findOpenShiftForTerminal).toHaveBeenCalledWith(
         'MOBILE_1',
       );
+    });
+
+    it('bills against a shift a different cashier opened on that terminal', async () => {
+      // The cash goes into this register's drawer whoever rang it up, and
+      // that drawer is reconciled against the terminal's shift.
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+        cashierId: 'someone-else',
+        terminalId: DEFAULT_TERMINAL_ID,
+      });
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'c-1' });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 699,
+        items: [{ id: 'item-1' }],
+        createdAt: new Date(),
+      });
+
+      await expect(
+        service.completeSale('cashier-1', sale),
+      ).resolves.toMatchObject({ success: true });
     });
 
     it('still bills an offline sale with no shift open', async () => {
       // Shift state cannot be checked without the backend, and refusing to
       // bill during an outage defeats the point of the offline queue.
-      repository.findOpenShift.mockResolvedValue(null);
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
       repository.findInventoryQuantities.mockResolvedValue(new Map());
       repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'c-1' });
       repository.createPosOrder.mockResolvedValue({
