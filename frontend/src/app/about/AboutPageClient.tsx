@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { ArrowLeft, MapPin } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useCmsPage } from '@/features/customer/hooks';
@@ -41,12 +41,8 @@ export default function AboutPage() {
         </div>
 
         <div className="flex flex-wrap gap-4">
-          <Link href="/categories/sarees" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#0B3B78]">
-            Explore Sarees
-          </Link>
-          <Link href="/stores" className="border border-neutral-300 text-neutral-800 text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-neutral-50 flex items-center gap-1.5">
-            <MapPin className="w-4 h-4 text-[#0284c7]" />
-            <span>Visit Our Flagship Store</span>
+          <Link href="/collections" className="bg-[#0284c7] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[#0B3B78]">
+            Explore the Collection
           </Link>
         </div>
       </main>

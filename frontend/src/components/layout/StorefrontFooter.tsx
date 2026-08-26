@@ -31,7 +31,7 @@ export function StorefrontFooter() {
             <div>
               <Image src="/brand/logo-full.png" alt="Vasanthi's Signature" width={1400} height={803} className="h-16 sm:h-20 w-auto object-contain" />
               <p className="text-[11px] text-sky-200/70 hidden sm:block mt-1.5">
-                Pioneering haute couture sarees, lehengas, and luxury fashion since 2018.
+                Pioneering haute couture lehengas, kurtis, and luxury fashion since 2018.
               </p>
             </div>
 
@@ -61,7 +61,6 @@ export function StorefrontFooter() {
             <div className="space-y-1.5">
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">Shop</h4>
               <ul className="space-y-1 text-[11px] text-sky-200/70">
-                <li><Link href="/categories/sarees" className="hover:text-white transition-colors">Sarees</Link></li>
                 <li><Link href="/categories/lehengas" className="hover:text-white transition-colors">Lehengas</Link></li>
                 <li><Link href="/categories/kurtis" className="hover:text-white transition-colors">Kurtis & Suits</Link></li>
                 <li><Link href="/categories/dresses" className="hover:text-white transition-colors">Dresses</Link></li>
@@ -88,8 +87,6 @@ export function StorefrontFooter() {
               <h4 className="text-[11px] font-bold uppercase tracking-wider text-white">About</h4>
               <ul className="space-y-1 text-[11px] text-sky-200/70">
                 <li><Link href="/about" className="hover:text-white transition-colors">Our Story</Link></li>
-                <li><Link href="/stores" className="hover:text-white transition-colors">Store Locator</Link></li>
-                <li><Link href="/careers" className="hover:text-white transition-colors">Careers</Link></li>
                 <li><Link href="/press" className="hover:text-white transition-colors">Press</Link></li>
               </ul>
             </div>
