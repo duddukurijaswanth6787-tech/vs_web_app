@@ -95,25 +95,14 @@ export class AutoSeedService implements OnModuleInit {
       await this.prisma.$executeRawUnsafe(
         'ALTER TABLE products ADD COLUMN IF NOT EXISTS "colorGroup" TEXT;',
       );
-      await this.prisma.$executeRawUnsafe(`
-        CREATE TABLE IF NOT EXISTS testimonials (
-          id TEXT PRIMARY KEY DEFAULT gen_random_uuid()::text,
-          name TEXT NOT NULL,
-          title TEXT,
-          location TEXT,
-          rating INTEGER NOT NULL DEFAULT 5,
-          content TEXT NOT NULL,
-          avatarUrl TEXT,
-          isFeatured BOOLEAN NOT NULL DEFAULT false,
-          displayOrder INTEGER NOT NULL DEFAULT 0,
-          status TEXT NOT NULL DEFAULT 'ACTIVE',
-          createdBy TEXT,
-          updatedBy TEXT,
-          createdAt TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          updatedAt TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-          deletedAt TIMESTAMP(3)
-        );
-      `);
+      // The testimonials table used to be created here on every boot. It was
+      // built with the wrong column names (title/content instead of
+      // role/comment) and with the camelCase identifiers unquoted, so Postgres
+      // folded them to lowercase and Prisma could not find any of them. The
+      // catch below hid that for as long as it ran, while every testimonial
+      // read failed in production. It is a real migration now
+      // (20260826060000_formalize_testimonials_table), which is also what lets
+      // a fresh database get the table at all.
     } catch {
       // ignore DDL errors if column/table exists or role is unprivileged
     }
