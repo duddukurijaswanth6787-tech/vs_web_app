@@ -1,11 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  CostExplorerClient,
-  GetCostAndUsageCommand,
-  GetCostForecastCommand,
-  Granularity,
-} from '@aws-sdk/client-cost-explorer';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
 
 export interface AwsBillingServiceBreakdown {
@@ -37,10 +31,11 @@ export interface AwsBillingSummaryResponse {
 @Injectable()
 export class AwsBillingService {
   private readonly logger = new Logger(AwsBillingService.name);
-  private readonly costExplorerClient: CostExplorerClient;
   private readonly s3Client: S3Client;
   private readonly region: string;
   private readonly bucket: string;
+  private readonly accessKeyId: string;
+  private readonly secretAccessKey: string;
 
   constructor(private readonly configService: ConfigService) {
     this.region = this.configService.get<string>(
@@ -52,29 +47,23 @@ export class AwsBillingService {
       'vasanthi-signature-images',
     );
 
-    const accessKeyId = this.configService.get<string>(
+    this.accessKeyId = this.configService.get<string>(
       'app.storage.s3.accessKeyId',
       '',
     );
-    const secretAccessKey = this.configService.get<string>(
+    this.secretAccessKey = this.configService.get<string>(
       'app.storage.s3.secretAccessKey',
       '',
     );
 
-    // Cost Explorer API endpoint is always in us-east-1
-    this.costExplorerClient = new CostExplorerClient({
-      region: 'us-east-1',
-      ...(accessKeyId &&
-        secretAccessKey && {
-          credentials: { accessKeyId, secretAccessKey },
-        }),
-    });
-
     this.s3Client = new S3Client({
       region: this.region,
-      ...(accessKeyId &&
-        secretAccessKey && {
-          credentials: { accessKeyId, secretAccessKey },
+      ...(this.accessKeyId &&
+        this.secretAccessKey && {
+          credentials: {
+            accessKeyId: this.accessKeyId,
+            secretAccessKey: this.secretAccessKey,
+          },
         }),
     });
   }
@@ -85,15 +74,32 @@ export class AwsBillingService {
       .toISOString()
       .split('T')[0];
 
-    // End date must be strictly after start date (e.g. tomorrow or end of month)
     const tomorrow = new Date(now.getTime() + 86400000);
     const endDate = tomorrow.toISOString().split('T')[0];
-
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
       .toISOString()
       .split('T')[0];
 
+    // Try live AWS Cost Explorer SDK via dynamic import
     try {
+      const {
+        CostExplorerClient,
+        GetCostAndUsageCommand,
+        GetCostForecastCommand,
+        Granularity,
+      } = require('@aws-sdk/client-cost-explorer');
+
+      const costExplorerClient = new CostExplorerClient({
+        region: 'us-east-1',
+        ...(this.accessKeyId &&
+          this.secretAccessKey && {
+            credentials: {
+              accessKeyId: this.accessKeyId,
+              secretAccessKey: this.secretAccessKey,
+            },
+          }),
+      });
+
       const command = new GetCostAndUsageCommand({
         TimePeriod: { Start: startOfMonth, End: endDate },
         Granularity: Granularity.MONTHLY,
@@ -101,7 +107,7 @@ export class AwsBillingService {
         GroupBy: [{ Type: 'DIMENSION', Key: 'SERVICE' }],
       });
 
-      const response = await this.costExplorerClient.send(command);
+      const response = await costExplorerClient.send(command);
 
       let totalSpend = 0;
       let currency = 'USD';
@@ -128,7 +134,6 @@ export class AwsBillingService {
         }
       }
 
-      // Sort services highest cost first
       serviceBreakdown.sort((a, b) => b.amount - a.amount);
 
       let forecastedSpend = totalSpend;
@@ -139,17 +144,19 @@ export class AwsBillingService {
             Granularity: Granularity.MONTHLY,
             Metric: 'UNBLENDED_COST',
           });
-          const forecastRes = await this.costExplorerClient.send(forecastCmd);
-          const fAmount = parseFloat(
-            forecastRes.Total?.Amount ?? '0',
-          );
+          const forecastRes = await costExplorerClient.send(forecastCmd);
+          const fAmount = parseFloat(forecastRes.Total?.Amount ?? '0');
           forecastedSpend = Math.round((totalSpend + fAmount) * 100) / 100;
         }
       } catch {
-        // Forecast fallback to estimate based on elapsed days
-        const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+        const daysInMonth = new Date(
+          now.getFullYear(),
+          now.getMonth() + 1,
+          0,
+        ).getDate();
         const currentDay = Math.max(1, now.getDate());
-        forecastedSpend = Math.round(((totalSpend / currentDay) * daysInMonth) * 100) / 100;
+        forecastedSpend =
+          Math.round((totalSpend / currentDay) * daysInMonth * 100) / 100;
       }
 
       return {
@@ -168,10 +175,9 @@ export class AwsBillingService {
       };
     } catch (error: any) {
       this.logger.warn(
-        `AWS Cost Explorer API notice: ${error?.message || String(error)}`,
+        `AWS Cost Explorer SDK notice: ${error?.message || String(error)}`,
       );
 
-      // Inspect S3 bucket to show real resource stats when Cost Explorer is not yet activated
       let s3ObjectCount = 0;
       let s3TotalSize = 0;
       try {
@@ -184,7 +190,7 @@ export class AwsBillingService {
           0,
         );
       } catch {
-        // Ignore S3 inspect error
+        // Ignore S3 error
       }
 
       return {
