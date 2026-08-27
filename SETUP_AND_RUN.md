@@ -2,6 +2,14 @@
 
 This document provides complete step-by-step instructions to setup, configure, and run the **Vasanthi Designers** project on your personal laptop.
 
+## 🌐 Production Domain & Deployment URLs
+
+- **Primary Custom Domain**: **[https://vasanthissignature.in](https://vasanthissignature.in)**
+- **Admin Panel**: **[https://vasanthissignature.in/admin](https://vasanthissignature.in/admin)**
+- **AWS Billing Dashboard**: **[https://vasanthissignature.in/admin/aws-billing](https://vasanthissignature.in/admin/aws-billing)**
+- **Vercel Frontend Host**: `https://vs-web-app-frontend.vercel.app`
+- **Railway Backend API**: `https://api.vasanthissignature.in/api/v1` (`https://vsss-production.up.railway.app`)
+
 ---
 
 ## 📋 Table of Contents
