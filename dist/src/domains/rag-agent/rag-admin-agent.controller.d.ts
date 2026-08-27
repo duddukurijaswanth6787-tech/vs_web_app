@@ -4,7 +4,7 @@ import { CreateAgentDto, UpdateAgentDto, AgentStatusDto, AssignKnowledgeDto, Con
 export declare class RagAdminAgentController {
     private readonly agentService;
     constructor(agentService: RagAgentService);
-    findAll(page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             _count: {
                 conversations: number;
@@ -41,7 +41,7 @@ export declare class RagAdminAgentController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         knowledgeSources: ({
             knowledgeSource: {
                 id: string;
@@ -92,7 +92,7 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }>>;
-    create(dto: CreateAgentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(dto: CreateAgentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string;
@@ -115,7 +115,7 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }>>;
-    update(id: string, dto: UpdateAgentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    update(id: string, dto: UpdateAgentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string;
@@ -138,9 +138,9 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    restore(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    updateStatus(id: string, dto: AgentStatusDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restore(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    updateStatus(id: string, dto: AgentStatusDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string;
@@ -163,7 +163,7 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }>>;
-    assignKnowledgeSources(id: string, dto: AssignKnowledgeDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    assignKnowledgeSources(id: string, dto: AssignKnowledgeDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         knowledgeSources: ({
             knowledgeSource: {
                 id: string;
@@ -214,7 +214,7 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }) | null>>;
-    configureTools(id: string, dto: ConfigureToolsDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    configureTools(id: string, dto: ConfigureToolsDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string;
@@ -237,7 +237,7 @@ export declare class RagAdminAgentController {
         instructions: string | null;
         toolConfig: import("@prisma/client/runtime/client").JsonValue;
     }>>;
-    test(id: string, dto: TestAgentDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    test(id: string, dto: TestAgentDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         conversationId: string;
         messageId: string;
         answer: string;

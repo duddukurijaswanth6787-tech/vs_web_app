@@ -7,7 +7,7 @@ export declare class StorefrontController {
     private readonly storefrontService;
     private readonly themeService;
     constructor(storefrontService: StorefrontService, themeService: ThemeService);
-    getTheme(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getTheme(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         colors: {
             'brand-primary': "#0284c7";
             'brand-primary-dark': "#0B3B78";
@@ -73,7 +73,7 @@ export declare class StorefrontController {
             }[];
         }[];
     }>>;
-    updateTheme(user: JwtPayload, dto: UpdateStorefrontThemeDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateTheme(user: JwtPayload, dto: UpdateStorefrontThemeDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         colors: {
             'brand-primary': "#0284c7";
             'brand-primary-dark': "#0B3B78";
@@ -139,7 +139,7 @@ export declare class StorefrontController {
             }[];
         }[];
     }>>;
-    resetTheme(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    resetTheme(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         colors: {
             'brand-primary': "#0284c7";
             'brand-primary-dark': "#0B3B78";
@@ -205,7 +205,7 @@ export declare class StorefrontController {
             }[];
         }[];
     }>>;
-    getSettings(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getSettings(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         deletedAt: Date | null;
         createdAt: Date;
@@ -228,7 +228,7 @@ export declare class StorefrontController {
         metaDescription: string | null;
         metaKeywords: string | null;
     }>>;
-    updateSettings(dto: UpdateWebsiteSettingDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateSettings(dto: UpdateWebsiteSettingDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         deletedAt: Date | null;
         createdAt: Date;
@@ -251,7 +251,7 @@ export declare class StorefrontController {
         metaDescription: string | null;
         metaKeywords: string | null;
     }>>;
-    getHomepage(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getHomepage(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         displayOrder: number;
@@ -269,7 +269,7 @@ export declare class StorefrontController {
             key: string;
             data: UpdateHomepageSectionDto;
         }[];
-    }, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         displayOrder: number;
@@ -282,7 +282,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }[]>>;
-    reorderHomepage(dto: ReorderDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    reorderHomepage(dto: ReorderDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         displayOrder: number;
@@ -295,7 +295,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }[]>>;
-    getHomepageCategories(): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    getHomepageCategories(): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         category: {
             path: string;
             id: string;
@@ -329,7 +329,7 @@ export declare class StorefrontController {
         categoryId: string;
         enabled: boolean;
     })[]>>;
-    addHomepageCategory(dto: CreateHomepageCategoryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    addHomepageCategory(dto: CreateHomepageCategoryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         category: {
             path: string;
             id: string;
@@ -363,8 +363,8 @@ export declare class StorefrontController {
         categoryId: string;
         enabled: boolean;
     }>>;
-    removeHomepageCategory(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    reorderHomepageCategories(dto: ReorderDto): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    removeHomepageCategory(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    reorderHomepageCategories(dto: ReorderDto): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         category: {
             path: string;
             id: string;
@@ -398,7 +398,7 @@ export declare class StorefrontController {
         categoryId: string;
         enabled: boolean;
     })[]>>;
-    getFeatures(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getFeatures(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;
@@ -408,7 +408,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }[]>>;
-    updateFeature(key: string, dto: UpdateFeatureToggleDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateFeature(key: string, dto: UpdateFeatureToggleDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;
@@ -418,7 +418,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }>>;
-    bulkUpdateFeatures(dto: BulkFeatureToggleDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    bulkUpdateFeatures(dto: BulkFeatureToggleDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;
@@ -428,7 +428,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }[]>>;
-    getFooter(): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    getFooter(): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         links: {
             url: string;
             id: string;
@@ -449,7 +449,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     })[]>>;
-    addFooterLink(dto: CreateFooterLinkDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    addFooterLink(dto: CreateFooterLinkDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         displayOrder: number;
@@ -460,7 +460,7 @@ export declare class StorefrontController {
         footerSectionId: string;
         openInNewTab: boolean;
     }>>;
-    updateFooterLink(id: string, dto: UpdateFooterLinkDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateFooterLink(id: string, dto: UpdateFooterLinkDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         displayOrder: number;
@@ -471,8 +471,8 @@ export declare class StorefrontController {
         footerSectionId: string;
         openInNewTab: boolean;
     }>>;
-    deleteFooterLink(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    getSocialLinks(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    deleteFooterLink(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    getSocialLinks(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         icon: string | null;
@@ -483,7 +483,7 @@ export declare class StorefrontController {
         enabled: boolean;
         platform: import(".prisma/client").$Enums.SocialPlatform;
     }[]>>;
-    updateSocialLink(platform: string, dto: UpdateSocialLinkDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateSocialLink(platform: string, dto: UpdateSocialLinkDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         icon: string | null;
@@ -494,7 +494,7 @@ export declare class StorefrontController {
         enabled: boolean;
         platform: import(".prisma/client").$Enums.SocialPlatform;
     }>>;
-    getNewsletters(query: NewsletterQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getNewsletters(query: NewsletterQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             status: import(".prisma/client").$Enums.NewsletterStatus;
@@ -514,13 +514,13 @@ export declare class StorefrontController {
             hasPrevious: boolean;
         };
     }>>;
-    exportNewsletters(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    exportNewsletters(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         email: string;
         source: string | null;
         subscribedAt: Date;
     }[]>>;
-    removeNewsletter(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    getFeatureToggles(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    removeNewsletter(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    getFeatureToggles(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;
@@ -530,7 +530,7 @@ export declare class StorefrontController {
         key: string;
         enabled: boolean;
     }[]>>;
-    updateFeatureToggle(key: string, enabled: boolean): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateFeatureToggle(key: string, enabled: boolean): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;

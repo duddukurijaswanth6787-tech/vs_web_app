@@ -7,7 +7,7 @@ export declare class OrderController {
     private readonly prisma;
     constructor(orderService: OrderService, prisma: PrismaService);
     private resolveCustomerId;
-    findAll(query: OrderQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: OrderQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./order.types").OrderResponse[];
         meta: {
             page: number;
@@ -18,10 +18,10 @@ export declare class OrderController {
             hasPrevious: boolean;
         };
     }>>;
-    findByOrderNumber(orderNumber: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
-    findById(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
+    findByOrderNumber(orderNumber: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
+    findById(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
     updateStatus(id: string, body: {
         status: string;
         message?: string;
-    }, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
+    }, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
 }

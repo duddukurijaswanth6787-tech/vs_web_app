@@ -9,7 +9,7 @@ export declare class TaxController {
         isActive?: boolean;
         page?: number;
         limit?: number;
-    }): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./tax.types").TaxRuleResponse[];
         meta: {
             page: number;
@@ -20,8 +20,8 @@ export declare class TaxController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
-    create(dto: CreateTaxRuleDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
-    update(id: string, dto: UpdateTaxRuleDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
-    calculateTax(dto: CalculateTaxDto): Promise<import("@common/responses/response.builder").ResponsePayload<import("./tax.types").TaxCalculationResponse>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
+    create(dto: CreateTaxRuleDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
+    update(id: string, dto: UpdateTaxRuleDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./tax.types").TaxRuleResponse>>;
+    calculateTax(dto: CalculateTaxDto): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./tax.types").TaxCalculationResponse>>;
 }

@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class TestimonialsController {
     private readonly testimonialsService;
     constructor(testimonialsService: TestimonialsService);
-    findFeatured(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findFeatured(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         displayOrder: number;
@@ -21,7 +21,7 @@ export declare class TestimonialsController {
         avatarUrl: string | null;
         location: string | null;
     }[]>>;
-    findAll(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         displayOrder: number;
@@ -38,7 +38,7 @@ export declare class TestimonialsController {
         avatarUrl: string | null;
         location: string | null;
     }[]>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         displayOrder: number;
@@ -55,7 +55,7 @@ export declare class TestimonialsController {
         avatarUrl: string | null;
         location: string | null;
     }>>;
-    create(dto: CreateTestimonialDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(dto: CreateTestimonialDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         displayOrder: number;
@@ -72,7 +72,7 @@ export declare class TestimonialsController {
         avatarUrl: string | null;
         location: string | null;
     }>>;
-    update(id: string, dto: UpdateTestimonialDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    update(id: string, dto: UpdateTestimonialDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         displayOrder: number;
@@ -89,5 +89,5 @@ export declare class TestimonialsController {
         avatarUrl: string | null;
         location: string | null;
     }>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
 }

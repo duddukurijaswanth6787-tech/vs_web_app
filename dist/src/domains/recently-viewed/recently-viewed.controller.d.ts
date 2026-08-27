@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class RecentlyViewedController {
     private readonly recentlyViewedService;
     constructor(recentlyViewedService: RecentlyViewedService);
-    track(user: JwtPayload, dto: TrackViewDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    track(user: JwtPayload, dto: TrackViewDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         product: {
             id: string;
             slug: string;
@@ -18,7 +18,7 @@ export declare class RecentlyViewedController {
         customerId: string;
         viewedAt: Date;
     }>>;
-    list(user: JwtPayload, query: RecentlyViewedQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    list(user: JwtPayload, query: RecentlyViewedQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             product: {
                 id: string;
@@ -40,7 +40,7 @@ export declare class RecentlyViewedController {
             total: number;
         };
     }>>;
-    clear(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    clear(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         cleared: boolean;
     }>>;
 }

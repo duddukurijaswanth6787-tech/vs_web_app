@@ -4,8 +4,8 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class CheckoutController {
     private readonly checkoutService;
     constructor(checkoutService: CheckoutService);
-    preview(dto: CheckoutPreviewDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./checkout.types").CheckoutSummaryResponse>>;
-    placeOrder(dto: PlaceOrderDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    preview(dto: CheckoutPreviewDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./checkout.types").CheckoutSummaryResponse>>;
+    placeOrder(dto: PlaceOrderDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         items: {
             id: string;
             createdAt: Date;

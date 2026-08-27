@@ -9,7 +9,7 @@ export declare class ProductsController {
     private readonly authService;
     constructor(productsService: ProductsService, authService: AuthService);
     private isInternalRequest;
-    findAll(query: ProductQueryDto, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: ProductQueryDto, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./products.types").ProductResponse[];
         meta: {
             page: number;
@@ -28,26 +28,26 @@ export declare class ProductsController {
             totalPages: number;
         };
     }>>;
-    findById(id: string, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    create(dto: CreateProductDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    update(id: string, dto: UpdateProductDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    restore(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    publish(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    unpublish(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    feature(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    unfeature(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    assignCategories(id: string, dto: AssignCategoriesDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    removeCategory(id: string, categoryId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    assignAttributes(id: string, dto: AssignAttributesDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    removeAttribute(id: string, attributeId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    assignTags(id: string, dto: AssignTagsDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    removeTag(id: string, tag: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    assignCollections(id: string, dto: AssignCollectionsDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    removeCollection(id: string, collection: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    assignRelatedProducts(id: string, dto: AssignRelatedProductsDto): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    removeRelatedProduct(id: string, relatedProductId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
-    createColorGroup(id: string, dto: CreateColorGroupDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(id: string, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    create(dto: CreateProductDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    update(id: string, dto: UpdateProductDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restore(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    publish(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    unpublish(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    feature(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    unfeature(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    assignCategories(id: string, dto: AssignCategoriesDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    removeCategory(id: string, categoryId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    assignAttributes(id: string, dto: AssignAttributesDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    removeAttribute(id: string, attributeId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    assignTags(id: string, dto: AssignTagsDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    removeTag(id: string, tag: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    assignCollections(id: string, dto: AssignCollectionsDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    removeCollection(id: string, collection: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    assignRelatedProducts(id: string, dto: AssignRelatedProductsDto): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    removeRelatedProduct(id: string, relatedProductId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./products.types").ProductResponse>>;
+    createColorGroup(id: string, dto: CreateColorGroupDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         media: {
             url: string;
             id: string;
@@ -108,7 +108,7 @@ export declare class ProductsController {
         colorAttributeOptionId: string;
         sortOrder: number;
     }>>;
-    getColorGroups(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    getColorGroups(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         media: {
             url: string;
             id: string;
@@ -189,8 +189,8 @@ export declare class ProductsController {
         colorAttributeOptionId: string;
         sortOrder: number;
     })[]>>;
-    deleteColorGroup(id: string, groupId: string): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    syncColorGroups(id: string, dto: SyncColorGroupsDto): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    deleteColorGroup(id: string, groupId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    syncColorGroups(id: string, dto: SyncColorGroupsDto): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         media: {
             url: string;
             id: string;

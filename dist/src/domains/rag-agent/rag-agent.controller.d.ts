@@ -9,7 +9,7 @@ export declare class RagAgentController {
     private readonly repository;
     private readonly jwtService;
     constructor(orchestrator: RagOrchestratorService, repository: RagAgentRepository, jwtService: JwtService);
-    chat(dto: ChatRequestDto, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    chat(dto: ChatRequestDto, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         conversationId: string;
         messageId: string;
         answer: string;
@@ -34,7 +34,7 @@ export declare class RagAgentController {
         }[];
         responseTimeMs: number;
     }>>;
-    getConversations(user: JwtPayload, page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getConversations(user: JwtPayload, page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             agent: {
                 id: string;
@@ -80,7 +80,7 @@ export declare class RagAgentController {
             hasPrevious: boolean;
         };
     }>>;
-    getConversationDetails(id: string, user: JwtPayload, page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getConversationDetails(id: string, user: JwtPayload, page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             citations: {
                 id: string;
@@ -119,8 +119,8 @@ export declare class RagAgentController {
             hasPrevious: boolean;
         };
     }>>;
-    deleteConversation(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    submitFeedback(messageId: string, dto: SubmitFeedbackDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    deleteConversation(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    submitFeedback(messageId: string, dto: SubmitFeedbackDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

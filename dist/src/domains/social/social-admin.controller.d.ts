@@ -4,7 +4,7 @@ import { AdminSocialQueryDto, AdminReportsQueryDto, CreateSocialPostDto, UpdateS
 export declare class SocialAdminController {
     private readonly socialService;
     constructor(socialService: SocialService);
-    getPosts(query: AdminSocialQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPosts(query: AdminSocialQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             media: {
                 url: string;
@@ -57,7 +57,7 @@ export declare class SocialAdminController {
             hasPrevious: boolean;
         };
     }>>;
-    getAnalyticsSummary(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getAnalyticsSummary(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         totalPosts: number;
         totalLikes: number;
         totalComments: number;
@@ -109,14 +109,14 @@ export declare class SocialAdminController {
             authorId: string;
         })[];
     }>>;
-    getAnalyticsTimeline(days?: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getAnalyticsTimeline(days?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         date: string;
         likes: number;
         comments: number;
         shares: number;
         plays: number;
     }[]>>;
-    createPost(dto: CreateSocialPostDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    createPost(dto: CreateSocialPostDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         products: {
             id: string;
             displayOrder: number;
@@ -152,7 +152,7 @@ export declare class SocialAdminController {
         playCount: number;
         authorId: string;
     }>>;
-    getPostById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPostById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         viewerState: {
             liked: boolean;
             saved: boolean;
@@ -227,7 +227,7 @@ export declare class SocialAdminController {
         playCount: number;
         authorId: string;
     }>>;
-    updatePost(id: string, dto: UpdateSocialPostDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updatePost(id: string, dto: UpdateSocialPostDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         isFeatured: boolean;
         status: import(".prisma/client").$Enums.SocialPostStatus;
@@ -251,7 +251,7 @@ export declare class SocialAdminController {
         playCount: number;
         authorId: string;
     }>>;
-    updateStatus(id: string, dto: UpdatePostStatusDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateStatus(id: string, dto: UpdatePostStatusDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         isFeatured: boolean;
         status: import(".prisma/client").$Enums.SocialPostStatus;
@@ -275,7 +275,7 @@ export declare class SocialAdminController {
         playCount: number;
         authorId: string;
     }>>;
-    attachMedia(id: string, dto: PostMediaDto[], user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    attachMedia(id: string, dto: PostMediaDto[], user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         displayOrder: number;
@@ -293,7 +293,7 @@ export declare class SocialAdminController {
         largeUrl: string | null;
         s3Key: string;
     }[]>>;
-    tagProducts(id: string, dto: ProductTagDto[], user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    tagProducts(id: string, dto: ProductTagDto[], user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         displayOrder: number;
         createdAt: Date;
@@ -307,14 +307,14 @@ export declare class SocialAdminController {
     getUploadUrl(id: string, body: {
         mediaType: 'IMAGE' | 'VIDEO';
         extension: string;
-    }): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         uploadUrl: string;
         s3Key: string;
         url: string;
     }>>;
-    deletePost(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    restorePost(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    getReports(query: AdminReportsQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    deletePost(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restorePost(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    getReports(query: AdminReportsQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             post: {
                 id: string;
@@ -349,7 +349,7 @@ export declare class SocialAdminController {
             hasPrevious: boolean;
         };
     }>>;
-    resolveReport(id: string, dto: ResolveReportDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    resolveReport(id: string, dto: ResolveReportDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         status: import(".prisma/client").$Enums.SocialReportStatus;

@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class WarehouseController {
     private readonly warehouseService;
     constructor(warehouseService: WarehouseService);
-    findAll(query: WarehouseQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: WarehouseQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./warehouse.types").WarehouseResponse[];
         meta: {
             page: number;
@@ -15,7 +15,7 @@ export declare class WarehouseController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         inventories: ({
             variant: {
                 id: string;
@@ -68,7 +68,7 @@ export declare class WarehouseController {
         email: string | null;
         isDefault: boolean;
     }>>;
-    getLocations(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getLocations(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         status: string;
@@ -80,7 +80,7 @@ export declare class WarehouseController {
         shelf: string | null;
         bin: string | null;
     }[]>>;
-    getWarehouseInventory(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    getWarehouseInventory(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         variant: {
             id: string;
             sku: string;
@@ -99,8 +99,8 @@ export declare class WarehouseController {
         reorderLevel: number;
         warehouseId: string;
     })[]>>;
-    create(dto: CreateWarehouseDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./warehouse.types").WarehouseResponse>>;
-    update(id: string, dto: UpdateWarehouseDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(dto: CreateWarehouseDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./warehouse.types").WarehouseResponse>>;
+    update(id: string, dto: UpdateWarehouseDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         inventories: ({
             variant: {
                 id: string;
@@ -153,8 +153,8 @@ export declare class WarehouseController {
         email: string | null;
         isDefault: boolean;
     }>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    restore(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restore(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         inventories: ({
             variant: {
                 id: string;
@@ -207,7 +207,7 @@ export declare class WarehouseController {
         email: string | null;
         isDefault: boolean;
     }>>;
-    createLocation(id: string, dto: CreateLocationDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    createLocation(id: string, dto: CreateLocationDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         status: string;
@@ -219,7 +219,7 @@ export declare class WarehouseController {
         shelf: string | null;
         bin: string | null;
     }>>;
-    assignInventory(id: string, dto: AssignWarehouseInventoryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    assignInventory(id: string, dto: AssignWarehouseInventoryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -232,7 +232,7 @@ export declare class WarehouseController {
         reorderLevel: number;
         warehouseId: string;
     }>>;
-    updateInventoryCount(id: string, variantId: string, dto: UpdateWarehouseInventoryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateInventoryCount(id: string, variantId: string, dto: UpdateWarehouseInventoryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -245,7 +245,7 @@ export declare class WarehouseController {
         reorderLevel: number;
         warehouseId: string;
     }>>;
-    transferStock(dto: TransferStockDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    transferStock(dto: TransferStockDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         transferred: number;
         from: string;
         to: string;

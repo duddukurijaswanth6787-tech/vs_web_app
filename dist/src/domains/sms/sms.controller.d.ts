@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class SmsController {
     private readonly smsService;
     constructor(smsService: SmsService);
-    send(user: JwtPayload, dto: SendSmsDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    send(user: JwtPayload, dto: SendSmsDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         error: string | null;
         id: string;
         status: string;
@@ -16,7 +16,7 @@ export declare class SmsController {
         template: string;
         providerRef: string | null;
     }>>;
-    orderSms(user: JwtPayload, dto: SendOrderSmsDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    orderSms(user: JwtPayload, dto: SendOrderSmsDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         error: string | null;
         id: string;
         status: string;
@@ -28,7 +28,7 @@ export declare class SmsController {
         template: string;
         providerRef: string | null;
     }>>;
-    logs(page?: string, limit?: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    logs(page?: string, limit?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             error: string | null;
             id: string;

@@ -4,8 +4,8 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class LoyaltyController {
     private readonly loyaltyService;
     constructor(loyaltyService: LoyaltyService);
-    myBalance(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
-    myHistory(user: JwtPayload, query: LoyaltyHistoryQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    myBalance(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
+    myHistory(user: JwtPayload, query: LoyaltyHistoryQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             description: string | null;
@@ -25,8 +25,8 @@ export declare class LoyaltyController {
             totalPages: number;
         };
     }>>;
-    redeem(user: JwtPayload, dto: RedeemLoyaltyDto): Promise<import("@common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
-    adminStats(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    redeem(user: JwtPayload, dto: RedeemLoyaltyDto): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
+    adminStats(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         totalPointsIssued: number;
         totalPointsRedeemed: number;
         activeMembers: number;
@@ -35,7 +35,7 @@ export declare class LoyaltyController {
             count: any;
         }[];
     }>>;
-    adminBalance(customerId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
-    adminEarn(user: JwtPayload, dto: EarnLoyaltyDto): Promise<import("@common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
-    adminRedeem(user: JwtPayload, dto: AdminRedeemLoyaltyDto): Promise<import("@common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
+    adminBalance(customerId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
+    adminEarn(user: JwtPayload, dto: EarnLoyaltyDto): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
+    adminRedeem(user: JwtPayload, dto: AdminRedeemLoyaltyDto): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./loyalty.types").LoyaltyBalanceResponse>>;
 }

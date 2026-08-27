@@ -8,7 +8,7 @@ export declare class SocialController {
     private readonly jwtService;
     constructor(socialService: SocialService, jwtService: JwtService);
     private getOptionalUser;
-    getFeed(query: SocialFeedQueryDto, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getFeed(query: SocialFeedQueryDto, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             products: ({
                 product: {
@@ -90,7 +90,7 @@ export declare class SocialController {
             hasPrevious: boolean;
         };
     }>>;
-    getReels(query: SocialReelsQueryDto, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getReels(query: SocialReelsQueryDto, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             products: ({
                 product: {
@@ -172,7 +172,7 @@ export declare class SocialController {
             hasPrevious: boolean;
         };
     }>>;
-    getTrending(query: SocialReelsQueryDto, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getTrending(query: SocialReelsQueryDto, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             products: ({
                 product: {
@@ -254,7 +254,7 @@ export declare class SocialController {
             hasPrevious: boolean;
         };
     }>>;
-    getPostById(id: string, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPostById(id: string, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         viewerState: {
             liked: boolean;
             saved: boolean;
@@ -329,7 +329,7 @@ export declare class SocialController {
         playCount: number;
         authorId: string;
     }>>;
-    interact(id: string, dto: SocialInteractionDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    interact(id: string, dto: SocialInteractionDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         isFeatured: boolean;
         status: import(".prisma/client").$Enums.SocialPostStatus;
@@ -370,7 +370,7 @@ export declare class SocialController {
         sessionId: string | null;
         viewType: string;
     } | null>>;
-    addComment(id: string, dto: CreateCommentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    addComment(id: string, dto: CreateCommentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         parentId: string | null;
         deletedAt: Date | null;
@@ -380,7 +380,7 @@ export declare class SocialController {
         userId: string;
         postId: string;
     }>>;
-    getComments(id: string, query: SocialFeedQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getComments(id: string, query: SocialFeedQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             user: {
                 id: string;
@@ -424,7 +424,7 @@ export declare class SocialController {
             hasPrevious: boolean;
         };
     }>>;
-    updateComment(id: string, dto: CreateCommentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateComment(id: string, dto: CreateCommentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         parentId: string | null;
         deletedAt: Date | null;
@@ -434,8 +434,8 @@ export declare class SocialController {
         userId: string;
         postId: string;
     }>>;
-    deleteComment(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    reportPost(id: string, dto: CreateReportDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    deleteComment(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    reportPost(id: string, dto: CreateReportDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         description: string | null;
         status: import(".prisma/client").$Enums.SocialReportStatus;
@@ -448,7 +448,7 @@ export declare class SocialController {
         reviewedAt: Date | null;
         reviewedBy: string | null;
     }>>;
-    getSaved(query: SocialReelsQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getSaved(query: SocialReelsQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             products: ({
                 product: {

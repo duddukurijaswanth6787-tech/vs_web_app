@@ -5,7 +5,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class SessionController {
     private readonly sessionService;
     constructor(sessionService: SessionService);
-    findAll(user: JwtPayload, query: SessionQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(user: JwtPayload, query: SessionQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./session.types").SessionResponse[];
         meta: {
             page: number;
@@ -16,29 +16,29 @@ export declare class SessionController {
             hasPrevious: boolean;
         };
     }>>;
-    findCurrent(user: JwtPayload, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<import("./session.types").SessionResponse>>;
-    getStats(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findCurrent(user: JwtPayload, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./session.types").SessionResponse>>;
+    getStats(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         activeSessions: number;
         expiredSessions: number;
         revokedSessions: number;
     }>>;
-    findById(user: JwtPayload, id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./session.types").SessionResponse>>;
-    revokeCurrent(user: JwtPayload, req: Request): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(user: JwtPayload, id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./session.types").SessionResponse>>;
+    revokeCurrent(user: JwtPayload, req: Request): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    revoke(user: JwtPayload, id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    revoke(user: JwtPayload, id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    revokeOthers(user: JwtPayload, currentId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    revokeOthers(user: JwtPayload, currentId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    revokeAll(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    revokeAll(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    revokeExpired(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    revokeExpired(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    adminFindAll(userId: string, query: SessionQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    adminFindAll(userId: string, query: SessionQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./session.types").SessionResponse[];
         meta: {
             page: number;
@@ -49,7 +49,7 @@ export declare class SessionController {
             hasPrevious: boolean;
         };
     }>>;
-    adminRevokeAll(user: JwtPayload, targetUserId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    adminRevokeAll(user: JwtPayload, targetUserId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
 }

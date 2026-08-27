@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class AiAdminController {
     private readonly aiAdminService;
     constructor(aiAdminService: AiAdminService);
-    findTemplates(query: PromptTemplateQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findTemplates(query: PromptTemplateQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./ai-admin.types").PromptTemplateResponse[];
         meta: {
             page: number;
@@ -15,13 +15,13 @@ export declare class AiAdminController {
             hasPrevious: boolean;
         };
     }>>;
-    findTemplateById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
-    createTemplate(dto: CreatePromptTemplateDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
-    updateTemplate(id: string, dto: UpdatePromptTemplateDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
+    findTemplateById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
+    createTemplate(dto: CreatePromptTemplateDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
+    updateTemplate(id: string, dto: UpdatePromptTemplateDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-admin.types").PromptTemplateResponse>>;
     getUsageLogs(query: {
         page?: number;
         limit?: number;
-    }): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./ai-admin.types").AiUsageLogResponse[];
         meta: {
             page: number;

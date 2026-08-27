@@ -7,7 +7,7 @@ export declare class CustomerReviewsController {
     private readonly prisma;
     constructor(reviewService: ReviewService, prisma: PrismaService);
     private resolveCustomerId;
-    getProductReviews(productId: string, query: ProductReviewQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getProductReviews(productId: string, query: ProductReviewQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         summary: {
             averageRating: number;
             totalReviews: number;
@@ -38,8 +38,8 @@ export declare class CustomerReviewsController {
             hasPrevious: boolean;
         };
     }>>;
-    createReview(productId: string, dto: CustomerCreateReviewDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
-    getMyReviews(query: ProductReviewQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    createReview(productId: string, dto: CustomerCreateReviewDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
+    getMyReviews(query: ProductReviewQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./review.types").ReviewResponse[];
         meta: {
             page: number;
@@ -49,11 +49,11 @@ export declare class CustomerReviewsController {
             hasNext: boolean;
             hasPrevious: boolean;
         };
-    }> | import("@common/responses/response.builder").ResponsePayload<{
+    }> | import("../../common/responses/response.builder").ResponsePayload<{
         data: never[];
         meta: {};
     }>>;
-    getPendingReviews(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPendingReviews(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         productId: string;
         productTitle: string;
         productSlug: string;
@@ -62,8 +62,8 @@ export declare class CustomerReviewsController {
         orderNumber: string;
         deliveredAt?: Date | null;
     }[]>>;
-    updateReview(reviewId: string, dto: CustomerUpdateReviewDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
-    deleteReview(reviewId: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    markHelpful(reviewId: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
-    reportReview(reviewId: string, dto: ReportReviewDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
+    updateReview(reviewId: string, dto: CustomerUpdateReviewDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
+    deleteReview(reviewId: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    markHelpful(reviewId: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./review.types").ReviewResponse>>;
+    reportReview(reviewId: string, dto: ReportReviewDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
 }

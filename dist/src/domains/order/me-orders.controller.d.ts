@@ -13,10 +13,10 @@ export declare class MeOrdersController {
     private readonly auditService;
     constructor(orderService: OrderService, cancellationService: CancellationService, invoiceService: InvoiceService, prisma: PrismaService, auditService: AuditService);
     private resolveCustomerId;
-    findAll(query: OrderQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: OrderQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: never[];
         meta: {};
-    }> | import("@common/responses/response.builder").ResponsePayload<{
+    }> | import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./order.types").OrderResponse[];
         meta: {
             page: number;
@@ -27,8 +27,8 @@ export declare class MeOrdersController {
             hasPrevious: boolean;
         };
     }>>;
-    findByOrderNumber(orderNumber: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
-    tracking(orderNumber: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<{
+    findByOrderNumber(orderNumber: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<import("./order.types").OrderResponse>>;
+    tracking(orderNumber: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<{
         orderNumber: string;
         status: string;
         carrier: null;
@@ -41,12 +41,12 @@ export declare class MeOrdersController {
             time: string;
         }[];
     }>>;
-    invoice(orderNumber: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<{
+    invoice(orderNumber: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<{
         downloadUrl: null;
         fileName: null;
         mimeType: null;
         invoice: import("../invoice").InvoiceResponse;
-    }> | import("@common/responses/response.builder").ResponsePayload<{
+    }> | import("../../common/responses/response.builder").ResponsePayload<{
         downloadUrl: null;
         fileName: null;
         mimeType: null;
@@ -101,5 +101,5 @@ export declare class MeOrdersController {
     }>>;
     cancel(orderNumber: string, body: {
         reason: string;
-    }, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<import("../cancellation").CancellationResponse>>;
+    }, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<import("../cancellation").CancellationResponse>>;
 }

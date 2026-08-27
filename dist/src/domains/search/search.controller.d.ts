@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class SearchController {
     private readonly searchService;
     constructor(searchService: SearchService);
-    search(query: SearchProductsDto, user?: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    search(query: SearchProductsDto, user?: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: any;
             name: any;
@@ -113,7 +113,7 @@ export declare class SearchController {
             hasPrevious: boolean;
         };
     }>>;
-    autocomplete(dto: AutocompleteDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    autocomplete(dto: AutocompleteDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         products: {
             id: string;
             name: string;
@@ -122,7 +122,7 @@ export declare class SearchController {
         }[];
         suggestions: string[];
     }>>;
-    globalSearch(dto: GlobalSearchDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    globalSearch(dto: GlobalSearchDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         products: {
             basePrice: number;
             id: string;

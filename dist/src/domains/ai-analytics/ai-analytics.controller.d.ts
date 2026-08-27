@@ -3,7 +3,7 @@ import { AnalyticsQueryDto } from './ai-analytics.types';
 export declare class AiAnalyticsController {
     private readonly aiAnalyticsService;
     constructor(aiAnalyticsService: AiAnalyticsService);
-    getAnalytics(query: AnalyticsQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getAnalytics(query: AnalyticsQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         totalConversations: number;
         totalSearches: number;
         totalRecommendations: number;
@@ -22,11 +22,11 @@ export declare class AiAnalyticsController {
             totalCost: number;
         }[];
     }>>;
-    getPopularSearches(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPopularSearches(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         query: any;
         count: any;
     }[]>>;
-    getPopularProducts(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPopularProducts(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         productId: any;
         count: any;
     }[]>>;

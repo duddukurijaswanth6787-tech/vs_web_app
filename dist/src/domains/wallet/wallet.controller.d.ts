@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class WalletController {
     private readonly walletService;
     constructor(walletService: WalletService);
-    getWallet(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getWallet(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         customerId: string;
         balance: number;
@@ -12,7 +12,7 @@ export declare class WalletController {
         isActive: boolean;
         createdAt: Date;
     }>>;
-    getTransactions(user: JwtPayload, query: WalletTransactionQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getTransactions(user: JwtPayload, query: WalletTransactionQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             type: string;
@@ -32,7 +32,7 @@ export declare class WalletController {
             hasPrevious: boolean;
         };
     }>>;
-    credit(dto: CreditWalletDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    credit(dto: CreditWalletDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         balance: number;
         transaction: {
             id: string;
@@ -45,7 +45,7 @@ export declare class WalletController {
             createdAt: Date;
         };
     }>>;
-    debit(dto: DebitWalletDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    debit(dto: DebitWalletDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         balance: number;
         transaction: {
             id: string;
@@ -58,7 +58,7 @@ export declare class WalletController {
             createdAt: Date;
         };
     }>>;
-    getWalletAdmin(customerId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getWalletAdmin(customerId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         customerId: string;
         balance: number;
@@ -66,7 +66,7 @@ export declare class WalletController {
         isActive: boolean;
         createdAt: Date;
     }>>;
-    getTransactionsAdmin(customerId: string, query: WalletTransactionQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getTransactionsAdmin(customerId: string, query: WalletTransactionQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             type: string;
@@ -86,7 +86,7 @@ export declare class WalletController {
             hasPrevious: boolean;
         };
     }>>;
-    creditAdmin(customerId: string, dto: CreditWalletDto, admin: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    creditAdmin(customerId: string, dto: CreditWalletDto, admin: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         balance: number;
         transaction: {
             id: string;
@@ -97,7 +97,7 @@ export declare class WalletController {
             createdAt: Date;
         };
     }>>;
-    debitAdmin(customerId: string, dto: DebitWalletDto, admin: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    debitAdmin(customerId: string, dto: DebitWalletDto, admin: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         balance: number;
         transaction: {
             id: string;

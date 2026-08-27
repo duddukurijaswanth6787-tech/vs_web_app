@@ -8,7 +8,7 @@ export declare class ReturnRequestController {
     constructor(returnService: ReturnRequestService, prisma: PrismaService);
     private isAdmin;
     private resolveCustomerId;
-    findAll(query: ReturnQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: ReturnQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./return-request.types").ReturnRequestResponse[];
         meta: {
             page: number;
@@ -18,11 +18,11 @@ export declare class ReturnRequestController {
             hasNext: boolean;
             hasPrevious: boolean;
         };
-    }> | import("@common/responses/response.builder").ResponsePayload<{
+    }> | import("../../common/responses/response.builder").ResponsePayload<{
         data: never[];
         meta: {};
     }>>;
-    findById(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
-    create(dto: CreateReturnDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
-    updateStatus(id: string, dto: UpdateReturnStatusDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
+    findById(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
+    create(dto: CreateReturnDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
+    updateStatus(id: string, dto: UpdateReturnStatusDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
 }

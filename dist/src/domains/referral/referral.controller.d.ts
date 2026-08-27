@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class ReferralController {
     private readonly referralService;
     constructor(referralService: ReferralService);
-    myCode(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    myCode(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         createdAt: Date;
         updatedAt: Date;
@@ -16,7 +16,7 @@ export declare class ReferralController {
         rewardPoints: number;
         refereePoints: number;
     }>>;
-    apply(user: JwtPayload, dto: ApplyReferralDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    apply(user: JwtPayload, dto: ApplyReferralDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdAt: Date;
@@ -25,7 +25,7 @@ export declare class ReferralController {
         referrerReward: number;
         refereeReward: number;
     }>>;
-    rewards(user: JwtPayload, query: ReferralHistoryQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    rewards(user: JwtPayload, query: ReferralHistoryQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             status: string;
@@ -41,7 +41,7 @@ export declare class ReferralController {
             total: number;
         };
     }>>;
-    adminList(page?: string, limit?: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    adminList(page?: string, limit?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             code: string;
@@ -59,7 +59,7 @@ export declare class ReferralController {
             total: number;
         };
     }>>;
-    adminUpdate(id: string, dto: UpdateReferralRewardsDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    adminUpdate(id: string, dto: UpdateReferralRewardsDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         createdAt: Date;
         updatedAt: Date;

@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class CustomerAddressController {
     private readonly addressService;
     constructor(addressService: CustomerAddressService);
-    findAll(query: AddressQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: AddressQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./customer-address.types").AddressResponse[];
         meta: {
             page: number;
@@ -15,9 +15,9 @@ export declare class CustomerAddressController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
-    create(dto: CreateAddressDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
-    update(id: string, dto: UpdateAddressDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    findByCustomerIdAdmin(customerId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse[]>>;
+    findById(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
+    create(dto: CreateAddressDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
+    update(id: string, dto: UpdateAddressDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse>>;
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    findByCustomerIdAdmin(customerId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./customer-address.types").AddressResponse[]>>;
 }

@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class DtdcController {
     private readonly dtdcService;
     constructor(dtdcService: DtdcService);
-    create(user: JwtPayload, dto: CreateDtdcShipmentDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(user: JwtPayload, dto: CreateDtdcShipmentDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -25,7 +25,7 @@ export declare class DtdcController {
         bookedAt: Date | null;
         cancelledAt: Date | null;
     }>>;
-    byOrder(orderId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    byOrder(orderId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -46,7 +46,7 @@ export declare class DtdcController {
         bookedAt: Date | null;
         cancelledAt: Date | null;
     }[]>>;
-    track(awbOrId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    track(awbOrId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         tracking: {
             awbNumber: string | null;
             status: string;
@@ -82,12 +82,12 @@ export declare class DtdcController {
         bookedAt: Date | null;
         cancelledAt: Date | null;
     }>>;
-    label(awbOrId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    label(awbOrId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         awbNumber: string | null;
         labelUrl: string | null;
         status: string;
     }>>;
-    cancel(awbOrId: string, dto: CancelDtdcShipmentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    cancel(awbOrId: string, dto: CancelDtdcShipmentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;

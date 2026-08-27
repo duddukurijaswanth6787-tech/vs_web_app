@@ -4,7 +4,7 @@ import { CreateKnowledgeSourceDto, UpdateKnowledgeSourceDto, UploadUrlRequestDto
 export declare class RagKnowledgeController {
     private readonly knowledgeService;
     constructor(knowledgeService: RagKnowledgeService);
-    findAll(page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             name: string;
@@ -34,7 +34,7 @@ export declare class RagKnowledgeController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         status: string;
@@ -54,7 +54,7 @@ export declare class RagKnowledgeController {
         indexingError: string | null;
         lastIndexedAt: Date | null;
     }>>;
-    create(dto: CreateKnowledgeSourceDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(dto: CreateKnowledgeSourceDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         status: string;
@@ -74,7 +74,7 @@ export declare class RagKnowledgeController {
         indexingError: string | null;
         lastIndexedAt: Date | null;
     }>>;
-    update(id: string, dto: UpdateKnowledgeSourceDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    update(id: string, dto: UpdateKnowledgeSourceDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         status: string;
@@ -94,9 +94,9 @@ export declare class RagKnowledgeController {
         indexingError: string | null;
         lastIndexedAt: Date | null;
     }>>;
-    delete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    restore(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
-    getUploadUrl(dto: UploadUrlRequestDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restore(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    getUploadUrl(dto: UploadUrlRequestDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         sourceId: `${string}-${string}-${string}-${string}-${string}`;
         s3Key: string;
         uploadUrl: string;
@@ -106,7 +106,7 @@ export declare class RagKnowledgeController {
         fileName: string;
         mimeType: string;
         size: number;
-    }, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         status: string;
@@ -126,16 +126,16 @@ export declare class RagKnowledgeController {
         indexingError: string | null;
         lastIndexedAt: Date | null;
     }>>;
-    reindex(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    reindex(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         success: boolean;
     }>>;
-    getStatus(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getStatus(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         lastIndexedAt: Date | null;
         indexingError: string | null;
     }>>;
-    findChunks(id: string, page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findChunks(id: string, page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             createdAt: Date;

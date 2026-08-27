@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class EmailController {
     private readonly emailService;
     constructor(emailService: EmailService);
-    send(user: JwtPayload, dto: SendEmailDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    send(user: JwtPayload, dto: SendEmailDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         error: string | null;
         id: string;
         status: string;
@@ -16,7 +16,7 @@ export declare class EmailController {
         toEmail: string;
         providerRef: string | null;
     }>>;
-    logs(page?: string, limit?: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    logs(page?: string, limit?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             error: string | null;
             id: string;

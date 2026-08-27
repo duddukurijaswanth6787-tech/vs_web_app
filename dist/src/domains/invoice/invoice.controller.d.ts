@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class InvoiceController {
     private readonly invoiceService;
     constructor(invoiceService: InvoiceService);
-    findAll(query: InvoiceQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: InvoiceQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./invoice.types").InvoiceResponse[];
         meta: {
             page: number;
@@ -15,7 +15,7 @@ export declare class InvoiceController {
             hasPrevious: boolean;
         };
     }>>;
-    findByOrderId(orderId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse[]>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse>>;
-    create(dto: CreateInvoiceDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse>>;
+    findByOrderId(orderId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse[]>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse>>;
+    create(dto: CreateInvoiceDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./invoice.types").InvoiceResponse>>;
 }

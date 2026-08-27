@@ -4,7 +4,7 @@ import { ConvertQuotationDto, CreateQuotationDto, UpdateQuotationDto } from './q
 export declare class QuotationController {
     private readonly quotationService;
     constructor(quotationService: QuotationService);
-    list(status?: string, search?: string, page?: string, limit?: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    list(status?: string, search?: string, page?: string, limit?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             items: {
                 id: string;
@@ -56,7 +56,7 @@ export declare class QuotationController {
             hasNext: boolean;
         };
     }>>;
-    get(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    get(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         items: {
             id: string;
             createdAt: Date;
@@ -99,7 +99,7 @@ export declare class QuotationController {
         convertedOrderId: string | null;
         convertedAt: Date | null;
     }>>;
-    create(user: JwtPayload, dto: CreateQuotationDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(user: JwtPayload, dto: CreateQuotationDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         items: {
             id: string;
             createdAt: Date;
@@ -142,7 +142,7 @@ export declare class QuotationController {
         convertedOrderId: string | null;
         convertedAt: Date | null;
     }>>;
-    update(user: JwtPayload, id: string, dto: UpdateQuotationDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    update(user: JwtPayload, id: string, dto: UpdateQuotationDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         items: {
             id: string;
             createdAt: Date;
@@ -185,7 +185,7 @@ export declare class QuotationController {
         convertedOrderId: string | null;
         convertedAt: Date | null;
     }>>;
-    cancel(user: JwtPayload, id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    cancel(user: JwtPayload, id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         items: {
             id: string;
             createdAt: Date;
@@ -228,7 +228,7 @@ export declare class QuotationController {
         convertedOrderId: string | null;
         convertedAt: Date | null;
     }>>;
-    convert(user: JwtPayload, id: string, dto: ConvertQuotationDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    convert(user: JwtPayload, id: string, dto: ConvertQuotationDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         items: {
             id: string;
             createdAt: Date;

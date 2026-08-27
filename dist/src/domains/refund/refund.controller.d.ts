@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class RefundController {
     private readonly refundService;
     constructor(refundService: RefundService);
-    findAll(query: RefundQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: RefundQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./refund.types").RefundResponse[];
         meta: {
             page: number;
@@ -15,8 +15,8 @@ export declare class RefundController {
             hasPrevious: boolean;
         };
     }>>;
-    findByOrderId(orderId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse[]>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
-    create(dto: CreateRefundDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
-    updateStatus(id: string, dto: UpdateRefundDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
+    findByOrderId(orderId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse[]>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
+    create(dto: CreateRefundDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
+    updateStatus(id: string, dto: UpdateRefundDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./refund.types").RefundResponse>>;
 }

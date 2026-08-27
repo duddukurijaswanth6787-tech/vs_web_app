@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class AiRecommendationController {
     private readonly aiRecommendationService;
     constructor(aiRecommendationService: AiRecommendationService);
-    getRecommendations(query: RecommendationQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getRecommendations(query: RecommendationQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./ai-recommendation.types").RecommendationResponse[];
         meta: {
             page: number;
@@ -15,7 +15,7 @@ export declare class AiRecommendationController {
             hasPrevious: boolean;
         };
     }>>;
-    getHistory(query: RecommendationHistoryQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getHistory(query: RecommendationHistoryQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             createdAt: Date;
@@ -37,11 +37,11 @@ export declare class AiRecommendationController {
             hasPrevious: boolean;
         };
     }>>;
-    generateRecommendations(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-recommendation.types").RecommendationResponse[]>>;
+    generateRecommendations(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-recommendation.types").RecommendationResponse[]>>;
     adminGenerate(body: {
         customerUserId: string;
-    }): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-recommendation.types").RecommendationResponse[]>>;
-    adminList(customerUserId: string, query: RecommendationQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-recommendation.types").RecommendationResponse[]>>;
+    adminList(customerUserId: string, query: RecommendationQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./ai-recommendation.types").RecommendationResponse[];
         meta: {
             page: number;
@@ -52,5 +52,5 @@ export declare class AiRecommendationController {
             hasPrevious: boolean;
         };
     }>>;
-    trackClick(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null>>;
+    trackClick(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
 }

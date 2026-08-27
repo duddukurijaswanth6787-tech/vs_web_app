@@ -15,13 +15,13 @@ export declare class AppController {
         docs: string;
         apiVersion: string;
     };
-    getOmnichannelDirect(period?: AnalyticsPeriod): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OmnichannelSummary>>;
-    getOfflinePosDirect(period?: AnalyticsPeriod): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OfflinePosAnalytics>>;
-    getOnlineSalesDirect(period?: AnalyticsPeriod): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OnlineSalesAnalytics>>;
-    getInventoryVelocityDirect(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").InventoryVelocityAnalytics>>;
-    syncAnalyticsDirect(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OmnichannelSummary>>;
-    getAwsBilling(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
-    syncAwsBilling(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
-    getAdminAwsBilling(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
-    syncAdminAwsBilling(): Promise<import("@common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
+    getOmnichannelDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OmnichannelSummary>>;
+    getOfflinePosDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OfflinePosAnalytics>>;
+    getOnlineSalesDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OnlineSalesAnalytics>>;
+    getInventoryVelocityDirect(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").InventoryVelocityAnalytics>>;
+    syncAnalyticsDirect(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OmnichannelSummary>>;
+    getAwsBilling(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
+    syncAwsBilling(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
+    getAdminAwsBilling(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
+    syncAdminAwsBilling(): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/aws-billing/aws-billing.service").AwsBillingSummaryResponse>>;
 }

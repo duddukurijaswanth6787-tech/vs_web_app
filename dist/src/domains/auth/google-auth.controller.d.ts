@@ -5,10 +5,10 @@ export declare class UpdateGoogleAuthConfigDto {
 export declare class GoogleAuthAdminController {
     private readonly googleAuthService;
     constructor(googleAuthService: GoogleAuthService);
-    getConfig(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getConfig(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         clientId: string;
     }>>;
-    updateConfig(dto: UpdateGoogleAuthConfigDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    updateConfig(dto: UpdateGoogleAuthConfigDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         clientId: string;
     }>>;
 }

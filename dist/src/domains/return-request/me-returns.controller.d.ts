@@ -24,8 +24,8 @@ export declare class MeReturnsController {
     private readonly notificationService;
     constructor(returnRequestService: ReturnRequestService, prisma: PrismaService, auditService: AuditService, notificationService: NotificationService);
     private resolveCustomerId;
-    create(dto: CustomerCreateReturnDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
-    findAll(query: ReturnQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(dto: CustomerCreateReturnDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./return-request.types").ReturnRequestResponse>>;
+    findAll(query: ReturnQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             returnNumber: string;
@@ -49,7 +49,7 @@ export declare class MeReturnsController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(returnId: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<{
+    findById(returnId: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         returnNumber: string;
         status: string;
@@ -73,7 +73,7 @@ export declare class MeReturnsController {
         };
         createdAt: Date;
     }>>;
-    cancel(returnId: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<null> | import("@common/responses/response.builder").ResponsePayload<{
+    cancel(returnId: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null> | import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
     }>>;

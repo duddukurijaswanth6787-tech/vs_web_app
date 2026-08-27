@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class AiSearchController {
     private readonly aiSearchService;
     constructor(aiSearchService: AiSearchService);
-    search(dto: AiSearchDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    search(dto: AiSearchDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         historyId: string;
         query: string;
         resultCount: number;
@@ -22,8 +22,8 @@ export declare class AiSearchController {
             occasion: string | null;
         }[];
     }>>;
-    getSuggestions(q?: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-search.types").SearchSuggestionResponse>>;
-    getHistory(query: SearchHistoryQueryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getSuggestions(q?: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-search.types").SearchSuggestionResponse>>;
+    getHistory(query: SearchHistoryQueryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./ai-search.types").SearchHistoryResponse[];
         meta: {
             page: number;
@@ -34,6 +34,6 @@ export declare class AiSearchController {
             hasPrevious: boolean;
         };
     }>>;
-    getTrendingSearches(): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-search.types").TrendingSearchResponse[]>>;
-    getStats(): Promise<import("@common/responses/response.builder").ResponsePayload<import("./ai-search.types").SearchStatsResponse>>;
+    getTrendingSearches(): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-search.types").TrendingSearchResponse[]>>;
+    getStats(): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./ai-search.types").SearchStatsResponse>>;
 }

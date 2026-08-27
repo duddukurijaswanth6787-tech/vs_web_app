@@ -4,16 +4,16 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class EmailVerificationController {
     private readonly emailVerificationService;
     constructor(emailVerificationService: EmailVerificationService);
-    send(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    send(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    verify(dto: VerifyEmailDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    verify(dto: VerifyEmailDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    resend(user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    resend(user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         message: string;
     }>>;
-    validateToken(dto: VerifyEmailDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    validateToken(dto: VerifyEmailDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         valid: boolean;
     }>>;
 }

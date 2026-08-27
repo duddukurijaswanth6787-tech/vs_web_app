@@ -2,7 +2,7 @@ import { RagAgentRepository } from './rag-agent.repository';
 export declare class RagAnalyticsController {
     private readonly repository;
     constructor(repository: RagAgentRepository);
-    getSummary(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getSummary(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         totalAgents: number;
         activeAgents: number;
         totalKnowledgeSources: number;
@@ -13,7 +13,7 @@ export declare class RagAnalyticsController {
         successRate: number;
         averageRating: number;
     }>>;
-    getAgentAnalytics(agentId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getAgentAnalytics(agentId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         conversations: number;
         messages: number;
         successRate: number;
@@ -25,11 +25,11 @@ export declare class RagAnalyticsController {
             total: number;
         };
     }>>;
-    getIntents(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getIntents(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         intent: string;
         count: number;
     }[]>>;
-    getConversations(page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getConversations(page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             agent: {
                 id: string;
@@ -75,7 +75,7 @@ export declare class RagAnalyticsController {
             hasPrevious: boolean;
         };
     }>>;
-    getConversationDetails(id: string, page?: number, limit?: number): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getConversationDetails(id: string, page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         conversation: {
             agent: {
                 id: string;

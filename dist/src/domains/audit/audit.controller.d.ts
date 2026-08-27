@@ -3,7 +3,7 @@ import { AuditLogQueryDto } from './audit.types';
 export declare class AuditController {
     private readonly auditService;
     constructor(auditService: AuditService);
-    findAll(query: AuditLogQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: AuditLogQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: {
             id: string;
             status: string;
@@ -27,7 +27,7 @@ export declare class AuditController {
             hasPrevious: boolean;
         };
     }>>;
-    getStats(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getStats(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         total: number;
         today: number;
         uniqueUsers: number;
@@ -36,7 +36,7 @@ export declare class AuditController {
             count: number;
         }[];
     }>>;
-    getEntityHistory(resource: string, resourceId: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getEntityHistory(resource: string, resourceId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdAt: Date;
@@ -55,7 +55,7 @@ export declare class AuditController {
         userAgent: string | null;
         correlationId: string | null;
     }[]>>;
-    compareVersions(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    compareVersions(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         action: string;
         module: string;
@@ -71,5 +71,5 @@ export declare class AuditController {
         oldValue: Record<string, unknown>;
         newValue: Record<string, unknown>;
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./audit.types").AuditLogResponse>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./audit.types").AuditLogResponse>>;
 }

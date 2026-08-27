@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class InventoryController {
     private readonly inventoryService;
     constructor(inventoryService: InventoryService);
-    findAll(query: InventoryQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: InventoryQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./inventory.types").InventoryResponse[];
         meta: {
             page: number;
@@ -15,7 +15,7 @@ export declare class InventoryController {
             hasPrevious: boolean;
         };
     }>>;
-    getStockSummary(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getStockSummary(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         totalItems: number;
         inStock: number;
         lowStock: number;
@@ -23,7 +23,7 @@ export declare class InventoryController {
         totalAvailable: number;
         totalReserved: number;
     }>>;
-    findMovements(query: MovementQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findMovements(query: MovementQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./inventory.types").InventoryMovementResponse[];
         meta: {
             page: number;
@@ -34,15 +34,15 @@ export declare class InventoryController {
             hasPrevious: boolean;
         };
     }>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    findByVariantId(variantId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    create(dto: CreateInventoryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    update(id: string, dto: UpdateInventoryDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    increaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    decreaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    adjustStock(id: string, dto: AdjustStockDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    reserveStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    releaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    returnStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
-    damageStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    findByVariantId(variantId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    create(dto: CreateInventoryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    update(id: string, dto: UpdateInventoryDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    increaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    decreaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    adjustStock(id: string, dto: AdjustStockDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    reserveStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    releaseStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    returnStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
+    damageStock(id: string, dto: StockMovementDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./inventory.types").InventoryResponse>>;
 }

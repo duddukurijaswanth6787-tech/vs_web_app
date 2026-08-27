@@ -7,7 +7,7 @@ export declare class StorefrontPublicController {
     private readonly productsService;
     private readonly themeService;
     constructor(storefrontPublicService: StorefrontPublicService, productsService: ProductsService, themeService: ThemeService);
-    getTheme(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getTheme(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         colors: {
             'brand-primary': "#0284c7";
             'brand-primary-dark': "#0B3B78";
@@ -73,7 +73,7 @@ export declare class StorefrontPublicController {
             }[];
         }[];
     }>>;
-    getPublicSettings(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getPublicSettings(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         bannerAutoplayInterval: number;
         bannerAutoplayEnabled: boolean;
         announcementBarEnabled: boolean;
@@ -114,7 +114,7 @@ export declare class StorefrontPublicController {
         metaDescription: string | null;
         metaKeywords: string | null;
     }>>;
-    getHomepage(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getHomepage(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         sections: {
             id: string;
             description: string | null;
@@ -163,7 +163,7 @@ export declare class StorefrontPublicController {
             enabled: boolean;
         })[];
     }>>;
-    getFooter(): Promise<import("@common/responses/response.builder").ResponsePayload<({
+    getFooter(): Promise<import("../../common/responses/response.builder").ResponsePayload<({
         links: {
             url: string;
             id: string;
@@ -184,7 +184,7 @@ export declare class StorefrontPublicController {
         key: string;
         enabled: boolean;
     })[]>>;
-    getSocialLinks(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getSocialLinks(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         url: string;
         id: string;
         icon: string | null;
@@ -195,7 +195,7 @@ export declare class StorefrontPublicController {
         enabled: boolean;
         platform: import(".prisma/client").$Enums.SocialPlatform;
     }[]>>;
-    getFeatures(): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    getFeatures(): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         name: string;
         description: string | null;
@@ -205,7 +205,7 @@ export declare class StorefrontPublicController {
         key: string;
         enabled: boolean;
     }[]>>;
-    subscribe(dto: NewsletterSubscribeDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    subscribe(dto: NewsletterSubscribeDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: import(".prisma/client").$Enums.NewsletterStatus;
         createdAt: Date;
@@ -215,5 +215,5 @@ export declare class StorefrontPublicController {
         subscribedAt: Date;
         unsubscribedAt: Date | null;
     }>>;
-    getProductBySlug(slug: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("../../domains/products/products.types").ProductResponse>>;
+    getProductBySlug(slug: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("../../domains/products/products.types").ProductResponse>>;
 }

@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class PaymentController {
     private readonly paymentService;
     constructor(paymentService: PaymentService);
-    findAll(query: PaymentQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    findAll(query: PaymentQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: import("./payment.types").PaymentResponse[];
         meta: {
             page: number;
@@ -15,16 +15,16 @@ export declare class PaymentController {
             hasPrevious: boolean;
         };
     }>>;
-    getConfig(): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").RazorpayConfigResponse>>;
-    updateConfig(dto: UpdateRazorpayConfigDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").RazorpayConfigResponse>>;
-    findByOrderId(orderId: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse[]>>;
-    findById(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
-    create(dto: CreatePaymentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
+    getConfig(): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").RazorpayConfigResponse>>;
+    updateConfig(dto: UpdateRazorpayConfigDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").RazorpayConfigResponse>>;
+    findByOrderId(orderId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse[]>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
+    create(dto: CreatePaymentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
     updateStatus(id: string, body: {
         status: string;
-    }, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
-    verifyPayment(id: string, dto: VerifyPaymentDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
-    handleWebhook(body: any, signature: string, req: any): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    }, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
+    verifyPayment(id: string, dto: VerifyPaymentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<import("./payment.types").PaymentResponse>>;
+    handleWebhook(body: any, signature: string, req: any): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         status: string;
         reason: string;
         event?: undefined;

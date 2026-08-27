@@ -4,7 +4,7 @@ import type { JwtPayload } from "../auth/services/jwt.service";
 export declare class PackingController {
     private readonly packingService;
     constructor(packingService: PackingService);
-    queue(query: PackingQueueQueryDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    queue(query: PackingQueueQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         data: ({
             order: {
                 id: string;
@@ -34,7 +34,7 @@ export declare class PackingController {
             total: number;
         };
     }>>;
-    create(user: JwtPayload, dto: CreatePackingJobDto): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    create(user: JwtPayload, dto: CreatePackingJobDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -50,7 +50,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    get(id: string): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    get(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         order: {
             id: string;
             status: string;
@@ -103,7 +103,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    assign(id: string, dto: AssignPackingDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    assign(id: string, dto: AssignPackingDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -119,7 +119,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    start(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    start(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -135,7 +135,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    verify(id: string, dto: VerifyBarcodeDto, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    verify(id: string, dto: VerifyBarcodeDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -151,7 +151,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    label(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    label(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
@@ -167,7 +167,7 @@ export declare class PackingController {
         labelUrl: string | null;
         packedAt: Date | null;
     }>>;
-    complete(id: string, user: JwtPayload): Promise<import("@common/responses/response.builder").ResponsePayload<{
+    complete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
         id: string;
         status: string;
         createdBy: string | null;
