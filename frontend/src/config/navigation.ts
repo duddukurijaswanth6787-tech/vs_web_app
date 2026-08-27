@@ -307,6 +307,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'shopora-quotations',
+        title: 'Quotations',
+        href: '/admin/quotations',
+        icon: FileText,
+        permissions: ['quotations:view'],
+        implemented: true,
+      },
+      {
         id: 'shopora-pos-returns',
         title: 'Counter Returns',
         href: '/pos/returns',
