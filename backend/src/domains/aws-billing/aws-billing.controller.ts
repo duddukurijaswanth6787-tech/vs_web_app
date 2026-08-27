@@ -2,14 +2,12 @@ import { Controller, Get, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AwsBillingService } from './aws-billing.service';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('AWS Billing')
-@UseGuards(JwtAuthGuard, PermissionsGuard)
-@Permissions('dashboard:view')
+@UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller('aws-billing')
+@Controller(['aws-billing', 'admin/aws-billing'])
 export class AwsBillingController {
   constructor(private readonly awsBillingService: AwsBillingService) {}
 

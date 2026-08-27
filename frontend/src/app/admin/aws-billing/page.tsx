@@ -54,9 +54,20 @@ export default function AwsBillingPage() {
     setError(null);
 
     try {
-      const res = isSync
-        ? await apiClient.post('/aws-billing/sync')
-        : await apiClient.get('/aws-billing');
+      let res;
+      try {
+        res = isSync
+          ? await apiClient.post('/aws-billing/sync')
+          : await apiClient.get('/aws-billing');
+      } catch (firstErr: any) {
+        if (firstErr?.response?.status === 404) {
+          res = isSync
+            ? await apiClient.post('/admin/aws-billing/sync')
+            : await apiClient.get('/admin/aws-billing');
+        } else {
+          throw firstErr;
+        }
+      }
 
       if (res?.data?.data) {
         setData(res.data.data);
