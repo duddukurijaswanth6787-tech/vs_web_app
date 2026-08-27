@@ -1,0 +1,60 @@
+import { AuditService } from "../audit/audit.service";
+import { NotificationService } from "../notification/notification.service";
+import { EmailService } from "../email/email.service";
+import { OtpGatewayService } from "../otp-gateway/otp-gateway.service";
+import { PrismaService } from "../../database/prisma.service";
+import { Prisma } from '@prisma/client';
+export declare class OrderWorkflowService {
+    private readonly prisma;
+    private readonly auditService;
+    private readonly notificationService;
+    private readonly emailService;
+    private readonly otpGatewayService;
+    constructor(prisma: PrismaService, auditService: AuditService, notificationService: NotificationService, emailService: EmailService, otpGatewayService: OtpGatewayService);
+    notifyOrderConfirmed(orderId: string): Promise<void>;
+    validateTransition(currentStatus: string, nextStatus: string): void;
+    canCancel(status: string): boolean;
+    canReturn(status: string): boolean;
+    transition(orderId: string, nextStatus: string, userId: string, message?: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        channel: import(".prisma/client").$Enums.OrderChannel;
+        currency: string;
+        orderNumber: string;
+        customerId: string;
+        subtotal: Prisma.Decimal;
+        discountTotal: Prisma.Decimal;
+        taxTotal: Prisma.Decimal;
+        shippingCharge: Prisma.Decimal;
+        grandTotal: Prisma.Decimal;
+        paymentMethod: import(".prisma/client").$Enums.PosPaymentMethod | null;
+        terminalId: string | null;
+        notes: string | null;
+        deliveryInstructions: string | null;
+        preferredDeliverySlot: string | null;
+        isGift: boolean;
+        giftWrapMessage: string | null;
+        cancelReason: string | null;
+    }>;
+    private logMovement;
+    reserveInventory(orderId: string, userId?: string): Promise<void>;
+    restockReturnedItems(tx: Prisma.TransactionClient, params: {
+        orderId: string;
+        orderNumber: string;
+        items: {
+            variantId: string | null;
+            quantity: number;
+        }[];
+        userId?: string;
+        reason?: string;
+    }): Promise<void>;
+    releaseInventory(orderId: string, userId?: string): Promise<void>;
+    deductInventory(orderId: string, userId?: string): Promise<void>;
+    restoreInventory(orderId: string, userId?: string): Promise<void>;
+    generateOrderNumber(): Promise<string>;
+}

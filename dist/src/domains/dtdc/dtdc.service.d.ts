@@ -1,0 +1,117 @@
+import { ConfigService } from '@nestjs/config';
+import { PrismaService } from "../../database/prisma.service";
+import { AuditService } from "../audit/audit.service";
+import { CreateDtdcShipmentDto, CancelDtdcShipmentDto } from './dtdc.types';
+export declare class DtdcService {
+    private readonly prisma;
+    private readonly configService;
+    private readonly auditService;
+    private readonly logger;
+    constructor(prisma: PrismaService, configService: ConfigService, auditService: AuditService);
+    private isLive;
+    private mockAwb;
+    createShipment(dto: CreateDtdcShipmentDto, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>;
+    track(awbOrId: string): Promise<{
+        tracking: {
+            awbNumber: string | null;
+            status: string;
+            trackingUrl: string | null;
+            checkpoints: {
+                code: string;
+                at: Date | null;
+                description: string;
+            }[];
+        };
+        order: {
+            id: string;
+            status: string;
+            orderNumber: string;
+        };
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>;
+    getLabel(awbOrId: string): Promise<{
+        awbNumber: string | null;
+        labelUrl: string | null;
+        status: string;
+    }>;
+    cancel(awbOrId: string, dto: CancelDtdcShipmentDto, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>;
+    listByOrder(orderId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }[]>;
+}

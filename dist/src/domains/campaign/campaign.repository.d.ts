@@ -1,0 +1,102 @@
+import { PrismaService } from "../../database/prisma.service";
+import { Prisma } from '@prisma/client';
+export declare class CampaignRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findAll(params: {
+        type?: string;
+        channel?: string;
+        status?: string;
+        page: number;
+        limit: number;
+    }): Promise<{
+        data: {
+            id: string;
+            name: string;
+            description: string | null;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            type: string;
+            channel: string;
+            content: string | null;
+            subject: string | null;
+            audience: Prisma.JsonValue | null;
+            scheduledAt: Date | null;
+            sentAt: Date | null;
+            sentCount: number;
+            openCount: number;
+            clickCount: number;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>;
+    findById(id: string): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        type: string;
+        channel: string;
+        content: string | null;
+        subject: string | null;
+        audience: Prisma.JsonValue | null;
+        scheduledAt: Date | null;
+        sentAt: Date | null;
+        sentCount: number;
+        openCount: number;
+        clickCount: number;
+    } | null>;
+    create(data: Prisma.CampaignCreateInput): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        type: string;
+        channel: string;
+        content: string | null;
+        subject: string | null;
+        audience: Prisma.JsonValue | null;
+        scheduledAt: Date | null;
+        sentAt: Date | null;
+        sentCount: number;
+        openCount: number;
+        clickCount: number;
+    }>;
+    update(id: string, data: Prisma.CampaignUpdateInput): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        type: string;
+        channel: string;
+        content: string | null;
+        subject: string | null;
+        audience: Prisma.JsonValue | null;
+        scheduledAt: Date | null;
+        sentAt: Date | null;
+        sentCount: number;
+        openCount: number;
+        clickCount: number;
+    }>;
+}
