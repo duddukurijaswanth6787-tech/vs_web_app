@@ -296,6 +296,13 @@ export class BarcodeScanResultResponse {
   @ApiPropertyOptional() costPrice?: number;
   @ApiProperty() availableStock!: number;
   @ApiPropertyOptional() primaryImage?: string;
+  /** GST for this product, from Product.taxPercentage. The till used to
+   *  hardcode 5% because the scan never carried the real rate. */
+  @ApiPropertyOptional() taxPercent?: number;
+  /** List price, for the MRP line on a printed tag. */
+  @ApiPropertyOptional() mrp?: number;
+  /** Required on a GST invoice. */
+  @ApiPropertyOptional() hsnCode?: string;
 }
 
 export class CheckoutSessionResponse {
@@ -446,7 +453,8 @@ export class PreviewReceiptDto {
   cashierName?: string;
 
   @ApiPropertyOptional({
-    description: 'Payment gateway transaction/reference ID, if this sale went through one (e.g. UPI/card). Omitted for cash sales.',
+    description:
+      'Payment gateway transaction/reference ID, if this sale went through one (e.g. UPI/card). Omitted for cash sales.',
   })
   @IsOptional()
   @IsString()

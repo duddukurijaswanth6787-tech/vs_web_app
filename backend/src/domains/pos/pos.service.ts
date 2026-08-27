@@ -1,10 +1,12 @@
 import {
   Injectable,
+  Logger,
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
 import { PosRepository } from './pos.repository';
+import { computePosTotals } from './pos-totals';
 import { PosGateway } from './pos.gateway';
 import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
@@ -32,6 +34,8 @@ import {
 
 @Injectable()
 export class PosService {
+  private readonly logger = new Logger(PosService.name);
+
   constructor(
     private readonly repository: PosRepository,
     private readonly gateway: PosGateway,
@@ -101,6 +105,18 @@ export class PosService {
       costPrice,
       availableStock,
       primaryImage,
+      // The till used to hardcode 5% GST because the scan never told it the
+      // real rate. The shop already sets this per product and the online
+      // checkout already honours it; now the counter can too.
+      taxPercent: Number(variantMatch.product?.taxPercentage ?? 0),
+      // MRP for the printed tag. There is no separate mrp column: basePrice is
+      // the list price and salePrice the discounted one, so basePrice is what
+      // a customer would be charged without an offer -- the number that
+      // belongs on the label. Falls back to the selling price when a product
+      // carries no base price at all, so a tag never prints a blank MRP.
+      mrp: Number(variantMatch.product?.basePrice ?? price),
+      // Required on a GST invoice.
+      hsnCode: variantMatch.product?.hsnCode ?? undefined,
     };
   }
 
@@ -118,14 +134,24 @@ export class PosService {
     const sessionId = `SHOP-${new Date().getFullYear()}-${randomNum}`;
     const handoffToken = `${randomNum.slice(0, 3)}-${randomNum.slice(3)}`;
 
-    const subtotal = dto.items.reduce(
-      (sum, item) => sum + item.unitPrice * item.quantity,
-      0,
+    // Priced from each product's own GST rate, like the sale it becomes. A
+    // handoff session that quoted a flat 5% would show the customer one figure
+    // on the phone and charge another at the till.
+    const sessionTaxRates = await this.repository.findProductTaxRates(
+      dto.items.map((i) => i.productId).filter(Boolean),
     );
-    const taxTotal = dto.taxTotal || Math.round(subtotal * 0.05 * 100) / 100;
-    const discountTotal = dto.discountTotal || 0;
-    const grandTotal =
-      Math.round((subtotal + taxTotal - discountTotal) * 100) / 100;
+    const sessionTotals = computePosTotals(
+      dto.items.map((item) => ({
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        discountAmount: item.discountAmount,
+        taxPercent: sessionTaxRates.get(item.productId) ?? 0,
+      })),
+      dto.discountTotal || 0,
+    );
+    const subtotal = sessionTotals.subtotal;
+    const taxTotal = sessionTotals.taxTotal;
+    const grandTotal = sessionTotals.grandTotal;
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
 
     const session = await this.repository.createCheckoutSession(
@@ -344,13 +370,33 @@ export class PosService {
     // 1. Get Walk-in Customer profile if none supplied
     const customerProfile = await this.repository.findOrCreateWalkInCustomer();
 
-    const subtotal = itemsToProcess.reduce(
-      (sum, i) => sum + i.unitPrice * i.quantity,
-      0,
+    // GST is worked out here, from the rate on each product, rather than
+    // trusting whatever the till sent. Two reasons: a client that computes its
+    // own tax can be wrong or tampered with, and the mobile app already
+    // installed on the shop's phones still sends a flat 5% -- recomputing
+    // server-side corrects those bills without waiting for a new APK.
+    const taxRates = await this.repository.findProductTaxRates(
+      itemsToProcess.map((i) => i.productId).filter(Boolean),
     );
-    const calculatedTax = taxTotal || Math.round(subtotal * 0.05 * 100) / 100;
-    const grandTotal =
-      Math.round((subtotal + calculatedTax - discountTotal) * 100) / 100;
+    const totals = computePosTotals(
+      itemsToProcess.map((i) => ({
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        discountAmount: i.discountAmount,
+        taxPercent: taxRates.get(i.productId) ?? 0,
+      })),
+      discountTotal,
+    );
+    const subtotal = totals.subtotal;
+    const calculatedTax = totals.taxTotal;
+    const grandTotal = totals.grandTotal;
+    discountTotal = totals.discountTotal;
+
+    if (taxTotal && Math.abs(taxTotal - calculatedTax) > 0.01) {
+      this.logger.warn(
+        `Till sent tax ${taxTotal} but the products' own rates give ${calculatedTax}; billing the calculated figure.`,
+      );
+    }
 
     // 2. Generate unique order number (offline syncs replay the client's
     // own order number so retries hit the idempotent-replay path above
@@ -481,7 +527,8 @@ export class PosService {
 
   async previewReceipt(dto: PreviewReceiptDto) {
     const html = await this.printerService.generateHtmlInvoiceReceipt(dto);
-    const escposBuffer = await this.printerService.buildEscPosInvoiceReceipt(dto);
+    const escposBuffer =
+      await this.printerService.buildEscPosInvoiceReceipt(dto);
     return {
       orderNumber: dto.orderNumber,
       html,
@@ -559,7 +606,9 @@ export class PosService {
    * and records both against the register so the drawer still reconciles.
    */
   async createReturn(cashierId: string, dto: CreatePosReturnDto) {
-    const found = await this.repository.findSaleForReturn(dto.orderNumber.trim());
+    const found = await this.repository.findSaleForReturn(
+      dto.orderNumber.trim(),
+    );
     if (!found) {
       throw new NotFoundException(`No sale found for ${dto.orderNumber}`);
     }
@@ -576,7 +625,8 @@ export class PosService {
     // Cash for a refund comes out of a drawer, so there has to be an open
     // shift to take it from -- otherwise the payout lands outside every
     // report and the drawer reads short at close with nothing to explain it.
-    const openShift = await this.repository.findOpenShiftForTerminal(terminalId);
+    const openShift =
+      await this.repository.findOpenShiftForTerminal(terminalId);
     if (!openShift) {
       throw new BusinessException(
         `No open shift on ${terminalId}. Open a shift before refunding so the payout is reconciled at close.`,
@@ -600,8 +650,7 @@ export class PosService {
           'POS_RETURN_ITEM_NOT_ON_SALE',
         );
       }
-      const returnable =
-        item.quantity - (returnedByItem.get(item.id) ?? 0);
+      const returnable = item.quantity - (returnedByItem.get(item.id) ?? 0);
       if (line.quantity > returnable) {
         // Without this the same item could be refunded repeatedly, paying out
         // more than the customer ever handed over.

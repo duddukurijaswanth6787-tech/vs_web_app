@@ -68,6 +68,11 @@ export interface ScanBarcodeResult {
   costPrice?: number;
   availableStock: number;
   primaryImage?: string;
+  /** GST rate for this product; the line is billed at this rate. */
+  taxPercent?: number;
+  /** List price, printed as MRP on the tag. */
+  mrp?: number;
+  hsnCode?: string;
 }
 
 export interface CachedScanResult {
@@ -82,6 +87,11 @@ export interface CachedScanResult {
   costPrice?: number;
   availableStock: number;
   primaryImage?: string;
+  /** GST rate for this product; the line is billed at this rate. */
+  taxPercent?: number;
+  /** List price, printed as MRP on the tag. */
+  mrp?: number;
+  hsnCode?: string;
   cachedAt: string;
 }
 

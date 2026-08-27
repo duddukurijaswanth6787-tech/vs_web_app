@@ -21,6 +21,13 @@ export interface PosCartItem {
   taxAmount?: number;
   primaryImage?: string;
   availableStock?: number;
+  /** GST for this line, from Product.taxPercentage via the scan. The till
+   *  used to apply a flat 5% to everything. */
+  taxPercent?: number;
+  /** List price, for the MRP line on a printed tag. */
+  mrp?: number;
+  /** Required on a GST invoice. */
+  hsnCode?: string;
 }
 
 export interface PosCustomerInfo {
@@ -40,6 +47,12 @@ export interface ScanBarcodeResult {
   costPrice?: number;
   availableStock: number;
   primaryImage?: string;
+  /** GST rate for this product; the till bills at this rate per line. */
+  taxPercent?: number;
+  /** List price, printed as MRP on the tag. */
+  mrp?: number;
+  /** Required on a GST invoice. */
+  hsnCode?: string;
 }
 
 export interface CheckoutSessionData {

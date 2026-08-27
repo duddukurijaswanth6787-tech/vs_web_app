@@ -54,7 +54,7 @@ describe('PosService returns', () => {
         .mockResolvedValue({ id: 'shift-1', terminalId: 'COUNTER_1' }),
       createPosReturn: jest.fn(async (params: any) => {
         // Exercise the restock callback the way the real transaction does.
-        await params.restock({} as never);
+        await params.restock({});
         return {
           returnRequest: { id: 'ret-1', returnNumber: params.returnNumber },
           refund: {
@@ -92,7 +92,7 @@ describe('PosService returns', () => {
   it('refunds what was actually paid for the line, not the list price', async () => {
     // 2 x 1000, less 200 discount, plus 90 tax = 1890 for two, so 945 for one.
     // Refunding the 1000 list price would hand back money never taken.
-    const res = await service.createReturn('cashier-1', request() as never);
+    const res = await service.createReturn('cashier-1', request());
 
     expect(res.refundAmount).toBe(945);
   });
@@ -139,7 +139,7 @@ describe('PosService returns', () => {
   });
 
   it('restocks exactly what came back', async () => {
-    await service.createReturn('cashier-1', request() as never);
+    await service.createReturn('cashier-1', request());
 
     expect(workflow.restockReturnedItems).toHaveBeenCalledWith(
       expect.anything(),
@@ -155,7 +155,7 @@ describe('PosService returns', () => {
     // refund recorded as cash would make the drawer read short.
     await service.createReturn(
       'cashier-1',
-      request({ refundMethod: PosRefundMethodType.ORIGINAL }) as never,
+      request({ refundMethod: PosRefundMethodType.ORIGINAL }),
     );
 
     expect(repository.createPosReturn).toHaveBeenCalledWith(

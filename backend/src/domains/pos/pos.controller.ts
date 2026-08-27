@@ -17,7 +17,10 @@ import {
   ApiBearerAuth,
 } from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { PosService } from './pos.service';
 import {
@@ -195,7 +198,7 @@ export class PosController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get the current logged-in cashier\'s open shift' })
+  @ApiOperation({ summary: "Get the current logged-in cashier's open shift" })
   async getCurrentShift(
     @CurrentUser() user: JwtPayload,
     @Query('terminalId') terminalId?: string,
@@ -220,7 +223,10 @@ export class PosController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'List shifts (till reconciliation history) -- Till & Shift Dashboard access, gated by the pos:view permission' })
+  @ApiOperation({
+    summary:
+      'List shifts (till reconciliation history) -- Till & Shift Dashboard access, gated by the pos:view permission',
+  })
   async listShifts(
     @Query('page') page?: string,
     @Query('limit') limit?: string,
@@ -241,7 +247,10 @@ export class PosController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get the X-Report (open shift) or Z-Report (closed shift) for a shift -- Till & Shift Dashboard access, gated by the pos:view permission' })
+  @ApiOperation({
+    summary:
+      'Get the X-Report (open shift) or Z-Report (closed shift) for a shift -- Till & Shift Dashboard access, gated by the pos:view permission',
+  })
   async getShiftReport(@Param('id') id: string) {
     return this.posService.getShiftReport(id);
   }
@@ -250,7 +259,10 @@ export class PosController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Day-level POS summary: payment split, terminal & cashier performance, returns -- Till & Shift Dashboard access, gated by the pos:view permission' })
+  @ApiOperation({
+    summary:
+      'Day-level POS summary: payment split, terminal & cashier performance, returns -- Till & Shift Dashboard access, gated by the pos:view permission',
+  })
   async getPosAnalyticsSummary(@Query('date') date?: string) {
     return this.posService.getPosDaySummary(date);
   }

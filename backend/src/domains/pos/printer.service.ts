@@ -22,10 +22,39 @@ const FALLBACK_SETTINGS: StoreSettings = {
 };
 
 const BELOW_TWENTY = [
-  '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten',
-  'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen',
+  '',
+  'One',
+  'Two',
+  'Three',
+  'Four',
+  'Five',
+  'Six',
+  'Seven',
+  'Eight',
+  'Nine',
+  'Ten',
+  'Eleven',
+  'Twelve',
+  'Thirteen',
+  'Fourteen',
+  'Fifteen',
+  'Sixteen',
+  'Seventeen',
+  'Eighteen',
+  'Nineteen',
 ];
-const TENS = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'];
+const TENS = [
+  '',
+  '',
+  'Twenty',
+  'Thirty',
+  'Forty',
+  'Fifty',
+  'Sixty',
+  'Seventy',
+  'Eighty',
+  'Ninety',
+];
 
 @Injectable()
 export class PrinterService {
@@ -85,34 +114,71 @@ export class PrinterService {
   }
 
   private computeTotals(dto: PreviewReceiptDto) {
-    const subtotal = dto.items.reduce((s, i) => s + i.unitPrice * i.quantity, 0);
+    const subtotal = dto.items.reduce(
+      (s, i) => s + i.unitPrice * i.quantity,
+      0,
+    );
     const discountTotal = dto.discountTotal || 0;
     const taxableAmount = Math.max(0, subtotal - discountTotal);
     const taxTotal = dto.taxTotal || 0;
     const cgstAmount = Math.round((taxTotal / 2) * 100) / 100;
     const sgstAmount = taxTotal - cgstAmount;
     const gstRateHalf =
-      taxableAmount > 0 ? Math.round(((taxTotal / 2) / taxableAmount) * 1000) / 10 : 0;
-    return { subtotal, discountTotal, taxableAmount, taxTotal, cgstAmount, sgstAmount, gstRateHalf };
+      taxableAmount > 0
+        ? Math.round((taxTotal / 2 / taxableAmount) * 1000) / 10
+        : 0;
+    return {
+      subtotal,
+      discountTotal,
+      taxableAmount,
+      taxTotal,
+      cgstAmount,
+      sgstAmount,
+      gstRateHalf,
+    };
   }
 
   async generateHtmlInvoiceReceipt(dto: PreviewReceiptDto): Promise<string> {
     const store = await this.getStoreSettings();
-    const { subtotal, discountTotal, taxableAmount, taxTotal, cgstAmount, sgstAmount, gstRateHalf } =
-      this.computeTotals(dto);
+    const {
+      subtotal,
+      discountTotal,
+      taxableAmount,
+      taxTotal,
+      cgstAmount,
+      sgstAmount,
+      gstRateHalf,
+    } = this.computeTotals(dto);
 
     const [nameLine1, ...nameRest] = store.storeName.split(' ');
     const nameLine2 = nameRest.join(' ');
 
     const now = new Date();
-    const dateStr = now.toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric', timeZone: 'Asia/Kolkata' });
-    const timeStr = now.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', hour12: true, timeZone: 'Asia/Kolkata' });
+    const dateStr = now.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      timeZone: 'Asia/Kolkata',
+    });
+    const timeStr = now.toLocaleTimeString('en-IN', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: 'Asia/Kolkata',
+    });
 
     const customerName = dto.customer?.fullName || 'Walk-in Customer';
     const customerPhone = dto.customer?.phone || '';
 
-    const barcodeDataUrl = await this.barcodeService.generateBarcodeDataUrl(dto.orderNumber, 'code128', 2, 8);
-    const feedbackQrDataUrl = await this.barcodeService.generateQrCodeDataUrl(`https://${store.website}/contact`);
+    const barcodeDataUrl = await this.barcodeService.generateBarcodeDataUrl(
+      dto.orderNumber,
+      'code128',
+      2,
+      8,
+    );
+    const feedbackQrDataUrl = await this.barcodeService.generateQrCodeDataUrl(
+      `https://${store.website}/contact`,
+    );
 
     const itemsHtml = dto.items
       .map((item, idx) => {
@@ -237,9 +303,13 @@ export class PrinterService {
     <tr><td>Sub Total</td><td class="right">₹${subtotal.toFixed(2)}</td></tr>
     ${discountTotal ? `<tr class="discount-row"><td>Discount</td><td class="right">-₹${discountTotal.toFixed(2)}</td></tr>` : ''}
     <tr><td>Taxable Amount</td><td class="right">₹${taxableAmount.toFixed(2)}</td></tr>
-    ${taxTotal ? `
+    ${
+      taxTotal
+        ? `
     <tr><td>CGST (${gstRateHalf}%)</td><td class="right">₹${cgstAmount.toFixed(2)}</td></tr>
-    <tr><td>SGST (${gstRateHalf}%)</td><td class="right">₹${sgstAmount.toFixed(2)}</td></tr>` : ''}
+    <tr><td>SGST (${gstRateHalf}%)</td><td class="right">₹${sgstAmount.toFixed(2)}</td></tr>`
+        : ''
+    }
   </table>
 
   <div class="grand-total-box">
@@ -282,8 +352,15 @@ export class PrinterService {
 
   async buildEscPosInvoiceReceipt(dto: PreviewReceiptDto): Promise<Buffer> {
     const store = await this.getStoreSettings();
-    const { subtotal, discountTotal, taxableAmount, taxTotal, cgstAmount, sgstAmount, gstRateHalf } =
-      this.computeTotals(dto);
+    const {
+      subtotal,
+      discountTotal,
+      taxableAmount,
+      taxTotal,
+      cgstAmount,
+      sgstAmount,
+      gstRateHalf,
+    } = this.computeTotals(dto);
     const commands: number[] = [];
 
     const appendBytes = (bytes: number[]) => commands.push(...bytes);
@@ -310,26 +387,38 @@ export class PrinterService {
     appendLine(`Invoice : ${dto.orderNumber}`);
     appendLine(`Date    : ${new Date().toLocaleDateString('en-IN')}`);
     if (dto.cashierName) appendLine(`Cashier : ${dto.cashierName}`);
-    appendLine(`Customer: ${dto.customer?.fullName || 'Walk-in'}${dto.customer?.phone ? ` (${dto.customer.phone})` : ''}`);
+    appendLine(
+      `Customer: ${dto.customer?.fullName || 'Walk-in'}${dto.customer?.phone ? ` (${dto.customer.phone})` : ''}`,
+    );
     appendLine('--------------------------------');
 
     appendLine('Item          Qty   Price   Total');
     appendLine('--------------------------------');
     dto.items.forEach((item) => {
-      const name = item.productName.length > 12 ? item.productName.slice(0, 12) : item.productName.padEnd(12);
+      const name =
+        item.productName.length > 12
+          ? item.productName.slice(0, 12)
+          : item.productName.padEnd(12);
       const qty = String(item.quantity).padStart(3);
       const price = String(item.unitPrice.toFixed(0)).padStart(7);
-      const total = String((item.unitPrice * item.quantity).toFixed(0)).padStart(7);
+      const total = String(
+        (item.unitPrice * item.quantity).toFixed(0),
+      ).padStart(7);
       appendLine(`${name} ${qty} ${price} ${total}`);
     });
     appendLine('--------------------------------');
 
     appendLine(`Sub Total:            Rs.${subtotal.toFixed(2)}`);
-    if (discountTotal) appendLine(`Discount:            -Rs.${discountTotal.toFixed(2)}`);
+    if (discountTotal)
+      appendLine(`Discount:            -Rs.${discountTotal.toFixed(2)}`);
     appendLine(`Taxable Amount:       Rs.${taxableAmount.toFixed(2)}`);
     if (taxTotal) {
-      appendLine(`CGST (${gstRateHalf}%):          Rs.${cgstAmount.toFixed(2)}`);
-      appendLine(`SGST (${gstRateHalf}%):          Rs.${sgstAmount.toFixed(2)}`);
+      appendLine(
+        `CGST (${gstRateHalf}%):          Rs.${cgstAmount.toFixed(2)}`,
+      );
+      appendLine(
+        `SGST (${gstRateHalf}%):          Rs.${sgstAmount.toFixed(2)}`,
+      );
     }
     appendLine('--------------------------------');
     appendBytes([0x1b, 0x45, 0x01]); // Bold On
@@ -345,13 +434,21 @@ export class PrinterService {
     // Native ESC/POS QR code (GS ( k), pointed at the feedback page.
     appendBytes([0x1b, 0x61, 0x01]); // Align Center
     const qrData = `https://${store.website}/contact`;
-    const storeQr = (pL: number, pH: number, cn: number, fn: number, data: number[] = []) =>
-      appendBytes([0x1d, 0x28, 0x6b, pL, pH, 0x31, cn, fn, ...data]);
+    const storeQr = (
+      pL: number,
+      pH: number,
+      cn: number,
+      fn: number,
+      data: number[] = [],
+    ) => appendBytes([0x1d, 0x28, 0x6b, pL, pH, 0x31, cn, fn, ...data]);
     storeQr(3, 0, 0x31, 0x43, [0x06]); // module size 6
     storeQr(3, 0, 0x31, 0x45, [0x31]); // error correction level M
     const qrBytes = Buffer.from(qrData, 'utf8');
     const storeLen = qrBytes.length + 3;
-    storeQr(storeLen & 0xff, (storeLen >> 8) & 0xff, 0x31, 0x50, [0x30, ...qrBytes]); // store data
+    storeQr(storeLen & 0xff, (storeLen >> 8) & 0xff, 0x31, 0x50, [
+      0x30,
+      ...qrBytes,
+    ]); // store data
     appendBytes([0x1d, 0x28, 0x6b, 0x03, 0x00, 0x31, 0x51, 0x30]); // print QR
     appendLine('SCAN FOR FEEDBACK');
     appendLine('--------------------------------');

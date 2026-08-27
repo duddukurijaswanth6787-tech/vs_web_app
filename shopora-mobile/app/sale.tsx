@@ -89,6 +89,8 @@ export default function SaleProductScreen() {
           quantity: 1,
           primaryImage: data.primaryImage,
           availableStock: data.availableStock,
+          // Carried so the line is taxed at its own rate, not a flat 5%.
+          taxPercent: data.taxPercent,
         },
       ];
     });

@@ -40,8 +40,7 @@ describe('PosController authorization', () => {
       PosController.prototype as never as Record<string, object>
     )[name];
     const guards = Reflect.getMetadata('__guards__', handler) as
-      | unknown[]
-      | undefined;
+      unknown[] | undefined;
 
     // Two barcode routes previously had none at all, so assert presence
     // rather than trusting that a permission decorator implies a guard.

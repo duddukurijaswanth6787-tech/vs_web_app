@@ -26,6 +26,9 @@ describe('PosService (Phase 1 Backend)', () => {
       findCheckoutSessionById: jest.fn(),
       updateCheckoutSessionStatus: jest.fn(),
       findOrCreateWalkInCustomer: jest.fn(),
+      // Real rates come from the product; an empty map means 0% here, which
+      // keeps these tests about ordering and stock rather than tax.
+      findProductTaxRates: jest.fn().mockResolvedValue(new Map()),
       createPosOrder: jest.fn(),
       findOrderByOrderNumber: jest.fn(),
       findInventoryQuantities: jest.fn(),
@@ -392,7 +395,10 @@ describe('PosService (Phase 1 Backend)', () => {
       });
 
       expect(res.success).toBe(true);
-      expect(workflow.deductInventory).toHaveBeenCalledWith('order-pos-1', 'cashier-1');
+      expect(workflow.deductInventory).toHaveBeenCalledWith(
+        'order-pos-1',
+        'cashier-1',
+      );
       expect(gateway.emitSaleCompleted).toHaveBeenCalled();
       expect(gateway.emitTriggerPrint).toHaveBeenCalled();
       expect(auditService.log).toHaveBeenCalledWith(
@@ -416,7 +422,12 @@ describe('PosService (Phase 1 Backend)', () => {
         clientOrderNumber: 'OFF-COUNTER_1-abc123',
         isOfflineSync: true,
         items: [
-          { productId: 'prod-1', productName: 'Kurti', quantity: 2, unitPrice: 699 },
+          {
+            productId: 'prod-1',
+            productName: 'Kurti',
+            quantity: 2,
+            unitPrice: 699,
+          },
         ],
         paymentMethod: PosPaymentMethodType.UPI,
         amountPaid: 1500,
@@ -430,7 +441,9 @@ describe('PosService (Phase 1 Backend)', () => {
 
     it('should throw a POS_STOCK_CONFLICT BusinessException when offline-sync stock is insufficient', async () => {
       repository.findOrderByOrderNumber.mockResolvedValue(null);
-      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'cust-walkin' });
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({
+        id: 'cust-walkin',
+      });
       repository.findInventoryQuantities.mockResolvedValue(
         new Map([['var-1', { availableQuantity: 1, allowBackorder: false }]]),
       );
@@ -452,13 +465,17 @@ describe('PosService (Phase 1 Backend)', () => {
       });
 
       await expect(attempt).rejects.toThrow(BusinessException);
-      await expect(attempt).rejects.toMatchObject({ errorCode: 'POS_STOCK_CONFLICT' });
+      await expect(attempt).rejects.toMatchObject({
+        errorCode: 'POS_STOCK_CONFLICT',
+      });
       expect(repository.createPosOrder).not.toHaveBeenCalled();
     });
 
     it('should proceed when offline-sync stock is sufficient', async () => {
       repository.findOrderByOrderNumber.mockResolvedValue(null);
-      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'cust-walkin' });
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({
+        id: 'cust-walkin',
+      });
       repository.findInventoryQuantities.mockResolvedValue(
         new Map([['var-1', { availableQuantity: 10, allowBackorder: false }]]),
       );

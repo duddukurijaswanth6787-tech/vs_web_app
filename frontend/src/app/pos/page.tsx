@@ -48,6 +48,7 @@ import { useOfflineSync, isNetworkFailure } from '@/features/pos/offline/useOffl
 import { offlineScanCacheDb, normalizeScanCacheKey } from '@/features/pos/offline/offlineDb';
 import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceipt';
 import { PendingSale } from '@/features/pos/offline/offline.types';
+import { computeCartTotals } from '@/features/pos/pos-totals';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
 import { useTerminalId } from '@/features/pos/terminal';
@@ -159,9 +160,10 @@ export default function DesktopPosPage() {
     barcodeInputRef.current?.focus();
   }, []);
 
-  const subtotal = cart.reduce((sum, item) => sum + item.unitPrice * item.quantity, 0);
-  const taxTotal = Math.round(subtotal * 0.05 * 100) / 100; // 5% GST
-  const grandTotal = Math.max(0, Math.round((subtotal + taxTotal - discountTotal) * 100) / 100);
+  // GST at each product's own rate, charged after the discount. This used to
+  // be a flat 5% applied before the discount was taken off, which
+  // under-collected on 12% goods and overcharged tax on every discounted bill.
+  const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, discountTotal);
 
   const addScannedItemToCart = (data: {
     productId: string;
@@ -172,6 +174,9 @@ export default function DesktopPosPage() {
     price: number;
     primaryImage?: string;
     availableStock: number;
+    taxPercent?: number;
+    mrp?: number;
+    hsnCode?: string;
   }) => {
     setStockCapNotice('');
     setCart((prev) => {
@@ -201,6 +206,10 @@ export default function DesktopPosPage() {
           quantity: 1,
           primaryImage: data.primaryImage,
           availableStock: data.availableStock,
+          // Carried from the scan so the line is taxed at its own rate.
+          taxPercent: data.taxPercent,
+          mrp: data.mrp,
+          hsnCode: data.hsnCode,
         },
       ];
     });
@@ -908,7 +917,7 @@ export default function DesktopPosPage() {
                 />
               </div>
               <div className="flex justify-between text-neutral-600">
-                <span>GST Tax (5%)</span>
+                <span>GST</span>
                 <span className="font-semibold text-neutral-900">₹{taxTotal}</span>
               </div>
               <div className="border-t border-neutral-100 pt-2 flex justify-between items-center text-base font-bold text-[var(--brand-primary)]">

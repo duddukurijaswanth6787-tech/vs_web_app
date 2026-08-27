@@ -11,6 +11,7 @@ import {
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { Smartphone, Monitor, ArrowRight, User, Search } from 'lucide-react-native';
 import { posMobileService, PosMobileCartItem, PosMobileCustomer, isAuthenticated } from '../services/api';
+import { computeMobileTotals } from '../services/pos-totals';
 
 export default function CheckoutModeScreen() {
   const router = useRouter();
@@ -38,9 +39,20 @@ export default function CheckoutModeScreen() {
     console.error('Failed to parse cart items:', e);
   }
 
-  const subtotal = Number(subtotalStr || '0');
-  const taxTotal = Math.round(subtotal * 0.05 * 100) / 100;
-  const grandTotal = subtotal + taxTotal;
+  // GST at each product's own rate, not a flat 5%. Falls back to the
+  // subtotal passed in when the cart could not be parsed, so a display bug
+  // never becomes a billing one -- the server recomputes either way.
+  const totals = computeMobileTotals(
+    cartItems.map((i: any) => ({
+      quantity: i.quantity,
+      unitPrice: i.unitPrice,
+      discountAmount: i.discountAmount,
+      taxPercent: i.taxPercent,
+    })),
+  );
+  const subtotal = cartItems.length ? totals.subtotal : Number(subtotalStr || '0');
+  const taxTotal = totals.taxTotal;
+  const grandTotal = cartItems.length ? totals.grandTotal : subtotal;
 
   const handleLookupCustomer = async () => {
     const cleanPhone = phone.replace(/\D/g, '');

@@ -176,6 +176,27 @@ export class PosRepository {
     });
   }
 
+  /**
+   * GST rate per product, for pricing a till sale.
+   *
+   * Read at bill time rather than taken from the client: the phones in the
+   * shop still send a flat 5%, and a rate that decides tax must not be
+   * something the caller can choose.
+   */
+  async findProductTaxRates(
+    productIds: string[],
+  ): Promise<Map<string, number>> {
+    const unique = Array.from(new Set(productIds.filter(Boolean)));
+    if (!unique.length) return new Map();
+
+    const rows = await this.prisma.product.findMany({
+      where: { id: { in: unique } },
+      select: { id: true, taxPercentage: true },
+    });
+
+    return new Map(rows.map((r) => [r.id, Number(r.taxPercentage ?? 0)]));
+  }
+
   async findOrCreateWalkInCustomer() {
     let user = await this.prisma.user.findFirst({
       where: { email: 'walkin@vasanthidesigners.com' },
@@ -466,7 +487,11 @@ export class PosRepository {
     refundMethod: string;
     refundAmount: number;
     cashierId: string;
-    items: { orderItemId: string; variantId: string | null; quantity: number }[];
+    items: {
+      orderItemId: string;
+      variantId: string | null;
+      quantity: number;
+    }[];
     restock: (tx: Prisma.TransactionClient) => Promise<void>;
   }) {
     return this.prisma.$transaction(async (tx) => {
@@ -515,16 +540,25 @@ export class PosRepository {
 
   async findInventoryQuantities(
     variantIds: string[],
-  ): Promise<Map<string, { availableQuantity: number; allowBackorder: boolean }>> {
+  ): Promise<
+    Map<string, { availableQuantity: number; allowBackorder: boolean }>
+  > {
     if (variantIds.length === 0) return new Map();
     const rows = await this.prisma.inventory.findMany({
       where: { variantId: { in: variantIds } },
-      select: { variantId: true, availableQuantity: true, allowBackorder: true },
+      select: {
+        variantId: true,
+        availableQuantity: true,
+        allowBackorder: true,
+      },
     });
     return new Map(
       rows.map((r) => [
         r.variantId,
-        { availableQuantity: r.availableQuantity, allowBackorder: r.allowBackorder },
+        {
+          availableQuantity: r.availableQuantity,
+          allowBackorder: r.allowBackorder,
+        },
       ]),
     );
   }
@@ -745,7 +779,10 @@ export class PosRepository {
     });
     const cashierMap = new Map(cashiers.map((c) => [c.id, c]));
 
-    const refundsByTerminal = new Map<string, { count: number; amount: number }>();
+    const refundsByTerminal = new Map<
+      string,
+      { count: number; amount: number }
+    >();
     for (const r of refunds) {
       const key = r.order.terminalId || 'COUNTER_1';
       const existing = refundsByTerminal.get(key);
@@ -769,8 +806,10 @@ export class PosRepository {
         terminalId: t.terminalId,
         revenue: Number(t._sum.grandTotal ?? 0),
         orderCount: t._count,
-        refundsCount: refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.count ?? 0,
-        refundsAmount: refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.amount ?? 0,
+        refundsCount:
+          refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.count ?? 0,
+        refundsAmount:
+          refundsByTerminal.get(t.terminalId || 'COUNTER_1')?.amount ?? 0,
       })),
       byCashier: byCashier
         .filter((c) => c.createdBy)
@@ -778,7 +817,9 @@ export class PosRepository {
           const user = cashierMap.get(c.createdBy!);
           return {
             cashierId: c.createdBy,
-            cashierName: user ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Unknown',
+            cashierName: user
+              ? `${user.firstName} ${user.lastName || ''}`.trim()
+              : 'Unknown',
             revenue: Number(c._sum.grandTotal ?? 0),
             orderCount: c._count,
           };

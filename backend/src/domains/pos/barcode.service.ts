@@ -366,9 +366,7 @@ export class BarcodeService {
     const stickerInner = match ? match[1] : '';
 
     const stickerPages = Array.from({ length: dto.quantity })
-      .map(
-        () => `<div class="sticker-page">${stickerInner}</div>`,
-      )
+      .map(() => `<div class="sticker-page">${stickerInner}</div>`)
       .join('\n');
 
     const css = this.buildStickerCss(labelSize, true);
