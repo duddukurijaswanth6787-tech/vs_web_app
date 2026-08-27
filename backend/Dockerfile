@@ -10,7 +10,7 @@ COPY prisma ./prisma/
 
 RUN npm ci
 
-# Force fresh build layer timestamp 202608272312
+RUN echo "Bust Cache: 2026-08-27T23:19:00Z" > /usr/src/app/cache_bust.txt
 COPY . .
 
 RUN npx prisma generate
