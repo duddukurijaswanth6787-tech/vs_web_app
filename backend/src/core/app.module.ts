@@ -87,7 +87,7 @@ import { PushNotificationModule } from '@domains/push-notification/push-notifica
 import { DtdcModule } from '@domains/dtdc/dtdc.module';
 import { PosModule } from '@domains/pos/pos.module';
 import { QuotationModule } from '@domains/quotation/quotation.module';
-import { AwsBillingModule } from '../domains/aws-billing/aws-billing.module';
+import { AwsBillingModule } from '@domains/aws-billing/aws-billing.module';
 
 /**
  * Root Application Module coordinates core global services (config, database, caching, health, queues).

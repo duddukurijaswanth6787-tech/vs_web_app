@@ -1,4 +1,4 @@
-console.log('[STARTUP] Executing main.ts module script...');
+console.log('[STARTUP] Executing main.ts module script v1.0.1 (AWS Billing Enabled)...');
 
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
