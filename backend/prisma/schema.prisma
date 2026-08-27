@@ -466,6 +466,7 @@ model Product {
   sizeChartTemplate       SizeChartTemplate?       @relation(fields: [sizeChartTemplateId], references: [id])
   customerRecommendations CustomerRecommendation[]
   orderItems              OrderItem[]
+  quotationItems          QuotationItem[]
   attributeValues         ProductAttribute[]
   categories              ProductCategory[]
   colorGroups             ProductColorGroup[]
@@ -574,6 +575,7 @@ model ProductVariant {
   colorGroupId      String?
   inventory         Inventory?
   orderItems        OrderItem[]
+  quotationItems    QuotationItem[]
   media             ProductMedia[]
   colorGroup        ProductColorGroup?          @relation(fields: [colorGroupId], references: [id])
   product           Product                     @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -852,6 +854,7 @@ model CustomerProfile {
   giftCardsPurchased      GiftCard[]               @relation("GiftCardPurchaser")
   loyaltyAccount          LoyaltyAccount?
   orders                  Order[]
+  quotations              Quotation[]
   ragConversations        RagConversation[]
   recentlyViewed          RecentlyViewedProduct[]
   referralCode            ReferralCode?
@@ -962,42 +965,42 @@ model ShoppingCartItem {
 }
 
 model Order {
-  id             String               @id @default(uuid())
-  orderNumber    String               @unique
-  customerId     String
-  status         String               @default("PENDING")
-  subtotal       Decimal
-  discountTotal  Decimal              @default(0)
-  taxTotal       Decimal              @default(0)
-  shippingCharge Decimal              @default(0)
-  grandTotal     Decimal              @default(0)
-  currency       String               @default("INR")
-  channel        OrderChannel         @default(ONLINE_STORE)
-  paymentMethod  PosPaymentMethod?
-  terminalId     String?
-  notes          String?
+  id                    String               @id @default(uuid())
+  orderNumber           String               @unique
+  customerId            String
+  status                String               @default("PENDING")
+  subtotal              Decimal
+  discountTotal         Decimal              @default(0)
+  taxTotal              Decimal              @default(0)
+  shippingCharge        Decimal              @default(0)
+  grandTotal            Decimal              @default(0)
+  currency              String               @default("INR")
+  channel               OrderChannel         @default(ONLINE_STORE)
+  paymentMethod         PosPaymentMethod?
+  terminalId            String?
+  notes                 String?
   deliveryInstructions  String?
   preferredDeliverySlot String?
   isGift                Boolean              @default(false)
   giftWrapMessage       String?
-  cancelReason   String?
-  createdBy      String?
-  updatedBy      String?
-  deletedAt      DateTime?
-  createdAt      DateTime             @default(now())
-  updatedAt      DateTime             @updatedAt
-  cancellation   CancellationRequest?
-  dtdcShipments  DtdcShipment[]
-  invoices       Invoice[]
-  addresses      OrderAddress[]
-  items          OrderItem[]
-  timeline       OrderTimeline[]
-  customer       CustomerProfile      @relation(fields: [customerId], references: [id])
-  packingJobs    PackingJob[]
-  payments       Payment[]
-  refunds        Refund[]
-  returnRequests ReturnRequest[]
-  checkoutSession CheckoutSession?    @relation("CheckoutSessionOrder")
+  cancelReason          String?
+  createdBy             String?
+  updatedBy             String?
+  deletedAt             DateTime?
+  createdAt             DateTime             @default(now())
+  updatedAt             DateTime             @updatedAt
+  cancellation          CancellationRequest?
+  dtdcShipments         DtdcShipment[]
+  invoices              Invoice[]
+  addresses             OrderAddress[]
+  items                 OrderItem[]
+  timeline              OrderTimeline[]
+  customer              CustomerProfile      @relation(fields: [customerId], references: [id])
+  packingJobs           PackingJob[]
+  payments              Payment[]
+  refunds               Refund[]
+  returnRequests        ReturnRequest[]
+  checkoutSession       CheckoutSession?     @relation("CheckoutSessionOrder")
 
   @@index([customerId])
   @@index([status])
@@ -1006,6 +1009,7 @@ model Order {
   @@index([createdAt])
   @@map("orders")
 }
+
 model CheckoutSession {
   id            String                @id @default(uuid())
   sessionId     String                @unique
@@ -1038,18 +1042,18 @@ model CheckoutSession {
 /// shift. Powers the cash-in-drawer reconciliation and Z/X-Report on the
 /// POS Till & Shift Dashboard.
 model PosShift {
-  id                    String    @id @default(uuid())
-  terminalId            String
-  cashierId             String
-  status                String    @default("OPEN") // OPEN | CLOSED
-  openingCash           Decimal   @default(0)
-  closingCashExpected   Decimal?
-  closingCashCounted    Decimal?
-  variance              Decimal?
-  notes                 String?
-  openedAt              DateTime  @default(now())
-  closedAt              DateTime?
-  cashier               User      @relation(fields: [cashierId], references: [id])
+  id                  String    @id @default(uuid())
+  terminalId          String
+  cashierId           String
+  status              String    @default("OPEN") // OPEN | CLOSED
+  openingCash         Decimal   @default(0)
+  closingCashExpected Decimal?
+  closingCashCounted  Decimal?
+  variance            Decimal?
+  notes               String?
+  openedAt            DateTime  @default(now())
+  closedAt            DateTime?
+  cashier             User      @relation(fields: [cashierId], references: [id])
 
   @@index([cashierId])
   @@index([terminalId])
@@ -1057,7 +1061,6 @@ model PosShift {
   @@index([openedAt])
   @@map("pos_shifts")
 }
-
 
 model OrderItem {
   id             String          @id @default(uuid())
@@ -1785,7 +1788,6 @@ model AiMessage {
   @@index([role])
   @@map("ai_messages")
 }
-
 
 model RecommendationHistory {
   id                    String   @id @default(uuid())
@@ -2909,20 +2911,20 @@ enum PosPaymentMethod {
 /// A reusable set of body measurements per size, attached to many products so
 /// the numbers are entered once per garment shape rather than per product.
 model SizeChartTemplate {
-  id          String           @id @default(uuid())
+  id          String         @id @default(uuid())
   name        String
-  slug        String           @unique
+  slug        String         @unique
   description String?
   /// Kurta, Saree Blouse, Lehenga … — what shape this chart describes.
   garmentType String?
   /// Measurement unit the rows are expressed in.
-  unit        String           @default("inch")
-  status      String           @default("ACTIVE")
+  unit        String         @default("inch")
+  status      String         @default("ACTIVE")
   createdBy   String?
   updatedBy   String?
   deletedAt   DateTime?
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
   rows        SizeChartRow[]
   products    Product[]
 
@@ -2971,3 +2973,85 @@ model Testimonial {
   @@map("testimonials")
 }
 
+/// A priced offer for a bulk in-store sale, made before any money or stock moves.
+///
+/// Deliberately not an Order: nothing here reserves inventory. A quote can sit
+/// with a customer for days, and holding stock for every one of them would
+/// starve the shop floor of goods it could actually sell. Stock is taken only
+/// when the quote is converted.
+model Quotation {
+  id               String           @id @default(uuid())
+  quotationNumber  String           @unique
+  customerId       String?
+  /// Kept alongside customerId so a walk-in buyer needs no account.
+  customerName     String
+  customerPhone    String?
+  customerEmail    String?
+  status           QuotationStatus  @default(DRAFT)
+  subtotal         Decimal          @default(0)
+  discountTotal    Decimal          @default(0)
+  taxTotal         Decimal          @default(0)
+  grandTotal       Decimal          @default(0)
+  currency         String           @default("INR")
+  /// Percentage applied to the whole quote, on top of any per-line discount.
+  notes            String?
+  termsText        String?
+  validUntil       DateTime?
+  /// Set once the quote becomes a real sale; also what makes conversion
+  /// idempotent, since a quote carrying an order is never converted twice.
+  convertedOrderId String?          @unique
+  convertedAt      DateTime?
+  terminalId       String?
+  createdBy        String?
+  updatedBy        String?
+  deletedAt        DateTime?
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  customer         CustomerProfile? @relation(fields: [customerId], references: [id])
+  items            QuotationItem[]
+
+  @@index([status])
+  @@index([customerId])
+  @@index([quotationNumber])
+  @@index([createdAt])
+  @@map("quotations")
+}
+
+model QuotationItem {
+  id              String          @id @default(uuid())
+  quotationId     String
+  productId       String
+  variantId       String?
+  /// Name and SKU are copied, not looked up: a quote must still print the
+  /// terms it was agreed on after the product has been renamed or deleted.
+  productName     String
+  variantTitle    String?
+  sku             String
+  quantity        Int
+  unitPrice       Decimal
+  /// Per-line bulk discount, as a percentage of the line.
+  discountPercent Decimal         @default(0)
+  discountAmount  Decimal         @default(0)
+  taxPercent      Decimal         @default(0)
+  taxAmount       Decimal         @default(0)
+  totalPrice      Decimal         @default(0)
+  createdAt       DateTime        @default(now())
+  quotation       Quotation       @relation(fields: [quotationId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id])
+  variant         ProductVariant? @relation(fields: [variantId], references: [id])
+
+  @@index([quotationId])
+  @@index([productId])
+  @@map("quotation_items")
+}
+
+enum QuotationStatus {
+  DRAFT
+  SENT
+  ACCEPTED
+  CONVERTED
+  CANCELLED
+  EXPIRED
+
+  @@map("quotation_status")
+}
