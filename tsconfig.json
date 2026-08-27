@@ -1,0 +1,37 @@
+{
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "declaration": true,
+    "removeComments": true,
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "target": "ES2023",
+    "sourceMap": true,
+    "outDir": "./dist",
+    "baseUrl": "./",
+    "paths": {
+      "@common/*": ["dist/src/common/*", "src/common/*"],
+      "@config/*": ["dist/src/config/*", "src/config/*"],
+      "@core/*": ["dist/src/core/*", "src/core/*"],
+      "@database/*": ["dist/src/database/*", "src/database/*"],
+      "@domains/*": ["dist/src/domains/*", "src/domains/*"],
+      "@shared/*": ["dist/src/shared/*", "src/shared/*"],
+      "@infrastructure/*": ["dist/src/infrastructure/*", "src/infrastructure/*"]
+    },
+    "incremental": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true,
+    "noImplicitAny": true,
+    "strictBindCallApply": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true
+  }
+}
