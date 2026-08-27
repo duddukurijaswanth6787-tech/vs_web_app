@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log('[STARTUP] Executing main.ts module script v1.0.1 (AWS Billing Enabled)...');
+console.log('[STARTUP] Executing main.ts module script v1.0.2 (Omnichannel & Inventory Velocity Analytics Active)...');
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
