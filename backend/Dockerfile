@@ -10,6 +10,7 @@ COPY prisma ./prisma/
 
 RUN npm ci
 
+# Force fresh build layer timestamp 202608272312
 COPY . .
 
 RUN npx prisma generate
