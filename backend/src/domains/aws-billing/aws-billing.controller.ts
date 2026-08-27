@@ -7,7 +7,7 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 @ApiTags('AWS Billing')
 @UseGuards(JwtAuthGuard)
 @ApiBearerAuth()
-@Controller(['aws-billing', 'admin/aws-billing'])
+@Controller('aws-billing')
 export class AwsBillingController {
   constructor(private readonly awsBillingService: AwsBillingService) {}
 
