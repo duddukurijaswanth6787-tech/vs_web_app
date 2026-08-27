@@ -18,6 +18,13 @@ export class AwsBillingController {
     return ResponseBuilder.success(summary, 'AWS billing summary fetched successfully');
   }
 
+  @Get('summary')
+  @ApiOperation({ summary: 'Get AWS Billing Summary Alias' })
+  async getBillingSummaryAlias() {
+    const summary = await this.awsBillingService.getBillingSummary();
+    return ResponseBuilder.success(summary, 'AWS billing summary fetched successfully');
+  }
+
   @Post('sync')
   @ApiOperation({ summary: 'Sync AWS Billing Data' })
   async syncBillingData() {
