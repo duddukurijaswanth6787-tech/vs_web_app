@@ -64,7 +64,7 @@ export interface ProductVelocityItem {
   categoryName: string;
   currentStock: number;
   unitsSold: number;
-  dailyVelocity: number;
+  dailyVelocity: number; // units sold per day
   estimatedDaysRemaining: number;
   classification: 'FAST_MOVING' | 'REGULAR' | 'SLOW_MOVING';
   stockoutRisk: 'CRITICAL' | 'WARNING' | 'HEALTHY';

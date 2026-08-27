@@ -87,6 +87,7 @@ import { PushNotificationModule } from '@domains/push-notification/push-notifica
 import { DtdcModule } from '@domains/dtdc/dtdc.module';
 import { PosModule } from '@domains/pos/pos.module';
 import { QuotationModule } from '@domains/quotation/quotation.module';
+import { AnalyticsModule } from '@domains/analytics/analytics.module';
 import { AwsBillingModule } from '@domains/aws-billing/aws-billing.module';
 
 /**
@@ -232,6 +233,7 @@ import { AwsBillingModule } from '@domains/aws-billing/aws-billing.module';
     PosModule,
     QuotationModule,
     AwsBillingModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [
