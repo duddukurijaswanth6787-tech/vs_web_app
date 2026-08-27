@@ -48,7 +48,11 @@ async function bootstrap() {
       requestOrigin: string | undefined,
       callback: (err: Error | null, origin?: any) => void,
     ) => {
-      if (corsAllowAny || !requestOrigin || corsOrigins.includes(requestOrigin)) {
+      if (
+        corsAllowAny ||
+        !requestOrigin ||
+        corsOrigins.includes(requestOrigin)
+      ) {
         callback(null, requestOrigin || true);
         return;
       }
@@ -113,6 +117,14 @@ async function bootstrap() {
 
   app.use(cookieParser());
   app.use(compression());
+
+  // Crawlers and browsers ask every host for these two. This is an API, so
+  // answer once here rather than let each request fall through to the 404
+  // handler and fill the logs with errors that are not errors.
+  app.use('/robots.txt', (_req: any, res: any) => {
+    res.type('text/plain').send('User-agent: *\nDisallow: /\n');
+  });
+  app.use('/favicon.ico', (_req: any, res: any) => res.status(204).end());
 
   app.setGlobalPrefix('api/v1', {
     exclude: ['/', 'health', 'api/docs'],

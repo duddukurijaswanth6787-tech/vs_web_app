@@ -53,6 +53,55 @@ export class ValidationException extends BaseException {
 }
 
 /**
+ * Exceptions thrown when a route or record does not exist.
+ *
+ * Kept separate from DatabaseException: a request for a URL that was never
+ * mapped never reached the database, and logging it as a database fault sends
+ * whoever reads the logs looking for an outage that is not there.
+ */
+export class ResourceNotFoundException extends BaseException {
+  constructor(
+    message: string,
+    errorCode: string,
+    metadata?: Record<string, unknown>,
+  ) {
+    super(message, errorCode, HttpStatus.NOT_FOUND, metadata);
+  }
+}
+
+/**
+ * Exceptions thrown when the server itself failed.
+ *
+ * An unhandled error is our fault, so it must surface as 5xx: a 4xx tells the
+ * caller their request was bad, hides real crashes from any dashboard that
+ * counts 5xx, and stops clients retrying something that was worth retrying.
+ */
+export class InternalServerException extends BaseException {
+  constructor(
+    message: string,
+    errorCode: string,
+    metadata?: Record<string, unknown>,
+  ) {
+    super(message, errorCode, HttpStatus.INTERNAL_SERVER_ERROR, metadata);
+  }
+}
+
+/**
+ * Wraps a framework HttpException that already carried the right status,
+ * so mapping it into our envelope does not change what the caller sees.
+ */
+export class PassthroughHttpException extends BaseException {
+  constructor(
+    message: string,
+    errorCode: string,
+    status: HttpStatus,
+    metadata?: Record<string, unknown>,
+  ) {
+    super(message, errorCode, status, metadata);
+  }
+}
+
+/**
  * Exceptions thrown during database operations.
  */
 export class DatabaseException extends BaseException {
@@ -239,15 +288,17 @@ export class GlobalExceptionMapper {
         return new AuthorizationException(message, 'AUTH_002', metadata);
       }
       if (status === HttpStatus.NOT_FOUND) {
-        return new DatabaseException(
+        return new ResourceNotFoundException(
           message,
           'RESOURCE_NOT_FOUND',
-          HttpStatus.NOT_FOUND,
           metadata,
         );
       }
 
-      return new BusinessException(message, errorCode, metadata);
+      // Keep the status the thrower chose. Collapsing everything to 422 turned
+      // a BadRequestException into "unprocessable" and, worse, an
+      // InternalServerErrorException into a 4xx that no error dashboard counts.
+      return new PassthroughHttpException(message, errorCode, status, metadata);
     }
 
     if (exception instanceof Error) {
@@ -256,9 +307,12 @@ export class GlobalExceptionMapper {
         process.env.APP_ENV === 'production'
           ? 'An unexpected error occurred.'
           : exception.message;
-      return new BusinessException(cleanMsg, 'SYSTEM_001');
+      return new InternalServerException(cleanMsg, 'SYSTEM_001');
     }
 
-    return new BusinessException('An unexpected error occurred', 'SYSTEM_001');
+    return new InternalServerException(
+      'An unexpected error occurred',
+      'SYSTEM_001',
+    );
   }
 }
