@@ -127,6 +127,14 @@ export function useFeaturedCategories() {
     queryKey: customerKeys.all,
     queryFn: async () => {
       try {
+        const tree = await categoryService.getTree();
+        if (Array.isArray(tree) && tree.length > 0) {
+          return tree;
+        }
+      } catch {
+        // fallback
+      }
+      try {
         const featured = await categoryService.findFeatured();
         if (Array.isArray(featured) && featured.length > 0) {
           return featured;
@@ -137,10 +145,7 @@ export function useFeaturedCategories() {
       const list = await categoryService.findAll({ isVisible: true, limit: 20 });
       return Array.isArray(list) ? list : (list as any)?.data || [];
     },
-    // Matches the server-side prefetch in lib/query/prefetch.ts -- staleTime: 0
-    // meant this was refetched on every mount, including every time the header
-    // remounts on navigation, even though categories rarely change mid-session.
-    staleTime: 30 * 60 * 1000,
+    staleTime: 1 * 60 * 1000,
   });
 }
 
