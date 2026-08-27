@@ -6,12 +6,29 @@ import { OrderResponse } from '@/features/orders/order.types';
 import { ShoppingCart, CheckCircle, Clock, AlertCircle } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid } from 'recharts';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
+import {
+  AnalyticsControls,
+  rangeToDates,
+  type DateRange,
+} from '@/features/analytics/AnalyticsControls';
+import {
+  CHANNEL_COLORS,
+  CHANNEL_LABELS,
+  formatCurrency,
+  type ChannelFilter,
+  type Granularity,
+} from '@/features/analytics/channel';
 
-type Period = '7days' | '30days';
+interface ChannelBreakdownRow {
+  channel: string;
+  orders: number;
+  revenue: number;
+}
 
 interface OrderReportData {
   totalOrders: number;
   statusBreakdown: Record<string, number>;
+  channelBreakdown?: ChannelBreakdownRow[];
   orders: OrderResponse[];
 }
 
@@ -24,16 +41,12 @@ const formatAge = (createdAt: string) => {
 };
 
 export default function OrderAnalyticsPage() {
-  const [range, setRange] = useState<Period>('30days');
+  const [range, setRange] = useState<DateRange>('30days');
+  const [granularity, setGranularity] = useState<Granularity>('daily');
+  const [channel, setChannel] = useState<ChannelFilter>('ALL');
 
-  const now = new Date();
-  const startDate = new Date();
-  startDate.setDate(now.getDate() - (range === '7days' ? 7 : 30));
-
-  const { data, isLoading, error, refetch } = useOrderReport(
-    startDate.toISOString().slice(0, 10),
-    now.toISOString().slice(0, 10)
-  );
+  const { startDate, endDate } = rangeToDates(range);
+  const { data, isLoading, error, refetch } = useOrderReport(startDate, endDate, channel);
 
   if (isLoading) return <SectionLoader message="Loading order metrics..." />;
   if (error) return <PageError title="Load Failure" message="Could not fetch order report." retry={refetch} />;
@@ -43,6 +56,12 @@ export default function OrderAnalyticsPage() {
     statusBreakdown: {},
     orders: [],
   }) as OrderReportData;
+
+  const channelRows = (reportData.channelBreakdown ?? []).map((row) => ({
+    ...row,
+    label: CHANNEL_LABELS[row.channel] ?? row.channel,
+    color: CHANNEL_COLORS[row.channel as keyof typeof CHANNEL_COLORS] ?? '#a3a3a3',
+  }));
 
   // Breakdowns
   const breakdown = reportData.statusBreakdown || {};
@@ -65,15 +84,36 @@ export default function OrderAnalyticsPage() {
             Analyze order pipelines, status transitions, and lifecycle bottlenecks.
           </p>
         </div>
-        <select
-          value={range}
-          onChange={(e) => setRange(e.target.value as Period)}
-          className="text-xs border border-neutral-250 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-950 bg-white"
-        >
-          <option value="7days">Last 7 Days</option>
-          <option value="30days">Last 30 Days</option>
-        </select>
+        <AnalyticsControls
+          range={range}
+          onRangeChange={setRange}
+          granularity={granularity}
+          onGranularityChange={setGranularity}
+          channel={channel}
+          onChannelChange={setChannel}
+        />
       </div>
+
+      {channelRows.length > 0 && (
+        <div className="grid gap-4 sm:grid-cols-2">
+          {channelRows.map((row) => (
+            <div key={row.channel} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: row.color }}
+                  aria-hidden="true"
+                />
+                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  {row.label}
+                </span>
+              </div>
+              <h3 className="text-2xl font-bold text-neutral-900 mt-3">{row.orders} orders</h3>
+              <p className="text-xs text-neutral-500 mt-1">{formatCurrency(row.revenue)} revenue</p>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* KPI Panel */}
       <div className="grid gap-4 md:grid-cols-4">

@@ -7,65 +7,47 @@ import {
   TrendingUp,
   ShoppingBag,
   ArrowUpRight,
-  Calendar,
+  Store,
+  Globe,
 } from 'lucide-react';
 import {
-  ResponsiveContainer,
-  AreaChart,
-  Area,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  Tooltip as ChartTooltip,
-  CartesianGrid,
-  Cell,
-} from 'recharts';
+  AnalyticsControls,
+  rangeToDates,
+  type DateRange,
+} from '@/features/analytics/AnalyticsControls';
+import { ChannelTrendChart } from '@/features/analytics/ChannelTrendChart';
+import {
+  CHANNEL_COLORS,
+  formatCurrency,
+  type ChannelFilter,
+  type Granularity,
+  type SalesSeriesPoint,
+} from '@/features/analytics/channel';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
-
-type DateRange = '7days' | '30days' | '90days';
 
 interface SalesReportData {
   totalRevenue: number;
   totalOrders: number;
   orders: OrderResponse[];
+  series?: SalesSeriesPoint[];
+  onlineRevenue?: number;
+  offlineRevenue?: number;
+  onlineOrders?: number;
+  offlineOrders?: number;
 }
-
-const CHANNEL_LABELS: Record<string, string> = {
-  ONLINE_STORE: 'Online Store',
-  POS_SHOPORA: 'In-Store (POS)',
-};
-const CHANNEL_COLORS: Record<string, string> = {
-  ONLINE_STORE: '#171717',
-  POS_SHOPORA: '#0284c7',
-};
-
-const formatCurrency = (val: number) => {
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
-    maximumFractionDigits: 0,
-  }).format(val);
-};
 
 export default function SalesAnalyticsPage() {
   const [dateRange, setDateRange] = useState<DateRange>('30days');
+  const [granularity, setGranularity] = useState<Granularity>('daily');
+  const [channel, setChannel] = useState<ChannelFilter>('ALL');
 
-  // Derive start/end date strings
-  const now = new Date();
-  const startDate = new Date();
-  if (dateRange === '7days') {
-    startDate.setDate(now.getDate() - 7);
-  } else if (dateRange === '90days') {
-    startDate.setDate(now.getDate() - 90);
-  } else {
-    startDate.setDate(now.getDate() - 30);
-  }
-
-  const startDateStr = startDate.toISOString().slice(0, 10);
-  const endDateStr = now.toISOString().slice(0, 10);
-
-  const { data, isLoading, error, refetch } = useSalesReport(startDateStr, endDateStr);
+  const { startDate, endDate } = rangeToDates(dateRange);
+  const { data, isLoading, error, refetch } = useSalesReport(
+    startDate,
+    endDate,
+    granularity,
+    channel,
+  );
 
   if (isLoading) return <SectionLoader message="Loading sales analytics..." />;
   if (error) return <PageError title="Load Failure" message="Could not fetch sales report." retry={refetch} />;
@@ -76,42 +58,38 @@ export default function SalesAnalyticsPage() {
     orders: [],
   }) as SalesReportData;
 
-  // Calculate stats
+  // The server buckets and splits the series, so the browser no longer has to
+  // hold every order in the range to draw a chart.
+  const series = reportData.series ?? [];
+
   const avgOrderValue = reportData.totalOrders > 0
     ? reportData.totalRevenue / reportData.totalOrders
     : 0;
 
-  // Map chart points
-  const sortedOrders = [...(reportData.orders || [])].sort(
-    (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
-  );
-
-  const dailyAggregation = new Map<string, number>();
-  sortedOrders.forEach((o) => {
-    const day = new Date(o.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' });
-    dailyAggregation.set(day, (dailyAggregation.get(day) ?? 0) + Number(o.grandTotal));
-  });
-
-  const chartPoints = Array.from(dailyAggregation.entries()).map(([name, value]) => ({
-    name,
-    sales: value,
-  }));
-
-  const channelAggregation = new Map<string, number>();
-  sortedOrders.forEach((o) => {
-    const channel = o.channel || 'ONLINE_STORE';
-    channelAggregation.set(channel, (channelAggregation.get(channel) ?? 0) + Number(o.grandTotal));
-  });
-  const channelPoints = Array.from(channelAggregation.entries()).map(([channel, value]) => ({
-    channel,
-    name: CHANNEL_LABELS[channel] || channel,
-    sales: value,
-  }));
+  const onlineRevenue = reportData.onlineRevenue ?? 0;
+  const offlineRevenue = reportData.offlineRevenue ?? 0;
 
   const kpis = [
     { title: 'Gross Revenue', value: formatCurrency(reportData.totalRevenue), icon: TrendingUp, color: 'text-emerald-600 bg-emerald-50 border-emerald-100' },
     { title: 'Total Orders', value: `${reportData.totalOrders} Orders`, icon: ShoppingBag, color: 'text-blue-600 bg-blue-50 border-blue-100' },
     { title: 'Average Order Value', value: formatCurrency(avgOrderValue), icon: ArrowUpRight, color: 'text-purple-600 bg-purple-50 border-purple-100' },
+  ];
+
+  const channelCards = [
+    {
+      label: 'Online Store',
+      icon: Globe,
+      revenue: onlineRevenue,
+      orders: reportData.onlineOrders ?? 0,
+      color: CHANNEL_COLORS.ONLINE_STORE,
+    },
+    {
+      label: 'In-Store (POS)',
+      icon: Store,
+      revenue: offlineRevenue,
+      orders: reportData.offlineOrders ?? 0,
+      color: CHANNEL_COLORS.POS_SHOPORA,
+    },
   ];
 
   return (
@@ -124,18 +102,14 @@ export default function SalesAnalyticsPage() {
             Track business growth, orders, and average ticket size.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Calendar className="h-4 w-4 text-neutral-400" />
-          <select
-            value={dateRange}
-            onChange={(e) => setDateRange(e.target.value as DateRange)}
-            className="text-xs border border-neutral-250 rounded px-2.5 py-1.5 focus:outline-none focus:ring-1 focus:ring-neutral-950 bg-white"
-          >
-            <option value="7days">Last 7 Days</option>
-            <option value="30days">Last 30 Days</option>
-            <option value="90days">Last 90 Days</option>
-          </select>
-        </div>
+        <AnalyticsControls
+          range={dateRange}
+          onRangeChange={setDateRange}
+          granularity={granularity}
+          onGranularityChange={setGranularity}
+          channel={channel}
+          onChannelChange={setChannel}
+        />
       </div>
 
       {/* KPI Cards */}
@@ -156,76 +130,51 @@ export default function SalesAnalyticsPage() {
         })}
       </div>
 
-      {/* Sales Line Graph */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-bold text-neutral-900 mb-4">Revenue Trend Over Time</h3>
-        <div className="h-80 w-full">
-          {chartPoints.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartPoints} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <defs>
-                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#171717" stopOpacity={0.1}/>
-                    <stop offset="95%" stopColor="#171717" stopOpacity={0}/>
-                  </linearGradient>
-                </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
-                <XAxis dataKey="name" stroke="#a3a3a3" fontSize={11} tickLine={false} />
-                <YAxis
-                  stroke="#a3a3a3"
-                  fontSize={11}
-                  tickLine={false}
-                  tickFormatter={(v) => `₹${v}`}
+      {/* Per-channel totals. Labelled and iconed, so the two are told apart
+          without relying on the colour of the dot beside them. */}
+      <div className="grid gap-4 sm:grid-cols-2">
+        {channelCards.map((c) => {
+          const Icon = c.icon;
+          const share = reportData.totalRevenue > 0
+            ? Math.round((c.revenue / reportData.totalRevenue) * 100)
+            : 0;
+          return (
+            <div key={c.label} className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <span
+                  className="inline-block h-2.5 w-2.5 rounded-full shrink-0"
+                  style={{ backgroundColor: c.color }}
+                  aria-hidden="true"
                 />
-                <ChartTooltip
-                  formatter={(val: unknown) => [formatCurrency(val as number), 'Sales']}
-                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="sales"
-                  stroke="#171717"
-                  strokeWidth={2}
-                  fillOpacity={1}
-                  fill="url(#colorSales)"
-                />
-              </AreaChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center">
-              <p className="text-sm text-neutral-400">No sales recorded for this date range.</p>
+                <Icon className="h-4 w-4 text-neutral-400" aria-hidden="true" />
+                <span className="text-xs font-semibold text-neutral-500 uppercase tracking-wider">
+                  {c.label}
+                </span>
+                <span className="ml-auto text-xs text-neutral-400">{share}% of revenue</span>
+              </div>
+              <h3 className="text-2xl font-bold text-neutral-900 mt-3">
+                {formatCurrency(c.revenue)}
+              </h3>
+              <p className="text-xs text-neutral-500 mt-1">{c.orders} orders</p>
             </div>
-          )}
-        </div>
+          );
+        })}
       </div>
 
-      {/* Sales by Channel Bar Graph */}
-      <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-        <h3 className="text-base font-bold text-neutral-900 mb-4">Sales by Channel (Online vs In-Store)</h3>
-        <div className="h-64 w-full">
-          {channelPoints.length > 0 ? (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={channelPoints} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f5" />
-                <XAxis dataKey="name" stroke="#a3a3a3" fontSize={11} tickLine={false} />
-                <YAxis stroke="#a3a3a3" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
-                <ChartTooltip
-                  formatter={(val: unknown) => [formatCurrency(val as number), 'Sales']}
-                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '8px' }}
-                />
-                <Bar dataKey="sales" radius={[6, 6, 0, 0]} maxBarSize={80}>
-                  {channelPoints.map((p) => (
-                    <Cell key={p.channel} fill={CHANNEL_COLORS[p.channel] || '#a3a3a3'} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          ) : (
-            <div className="h-full flex flex-col items-center justify-center">
-              <p className="text-sm text-neutral-400">No sales recorded for this date range.</p>
-            </div>
-          )}
-        </div>
+      <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm">
+        <h3 className="text-base font-bold text-neutral-900">Revenue by Channel</h3>
+        <p className="text-xs text-neutral-500 mt-1 mb-4">
+          Online store against the shop counter, grouped {granularity}.
+        </p>
+        <ChannelTrendChart series={series} channel={channel} measure="revenue" />
+      </div>
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm">
+        <h3 className="text-base font-bold text-neutral-900">Order Count by Channel</h3>
+        <p className="text-xs text-neutral-500 mt-1 mb-4">
+          How many sales each channel made, rather than how much they were worth.
+        </p>
+        <ChannelTrendChart series={series} channel={channel} measure="orders" />
       </div>
 
       {/* Orders Table */}

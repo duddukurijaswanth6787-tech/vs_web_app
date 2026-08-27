@@ -2,10 +2,28 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { reportsService } from './reports.service';
 import { GenerateReportDto } from './reports.types';
 
-export function useSalesReport(startDate?: string, endDate?: string) {
+export function useSalesReport(
+  startDate?: string,
+  endDate?: string,
+  granularity?: string,
+  channel?: string,
+) {
   return useQuery({
-    queryKey: ['sales-report', startDate, endDate],
-    queryFn: () => reportsService.getSalesReport(startDate, endDate),
+    // Every input is part of the key, or switching to Weekly would keep
+    // serving the daily buckets already in cache.
+    queryKey: ['sales-report', startDate, endDate, granularity, channel],
+    queryFn: () => reportsService.getSalesReport(startDate, endDate, granularity, channel),
+  });
+}
+
+export function useInventoryMovementReport(
+  startDate?: string,
+  endDate?: string,
+  granularity?: string,
+) {
+  return useQuery({
+    queryKey: ['inventory-movement-report', startDate, endDate, granularity],
+    queryFn: () => reportsService.getInventoryMovementReport(startDate, endDate, granularity),
   });
 }
 
@@ -30,10 +48,10 @@ export function useCustomerReport() {
   });
 }
 
-export function useOrderReport(startDate?: string, endDate?: string) {
+export function useOrderReport(startDate?: string, endDate?: string, channel?: string) {
   return useQuery({
-    queryKey: ['order-report', startDate, endDate],
-    queryFn: () => reportsService.getOrderReport(startDate, endDate),
+    queryKey: ['order-report', startDate, endDate, channel],
+    queryFn: () => reportsService.getOrderReport(startDate, endDate, channel),
   });
 }
 

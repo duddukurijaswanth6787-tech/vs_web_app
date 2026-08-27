@@ -1,7 +1,14 @@
 'use client';
 
 import React from 'react';
-import { useInventoryReport } from '@/features/reports';
+import { useInventoryReport, useInventoryMovementReport } from '@/features/reports';
+import {
+  AnalyticsControls,
+  rangeToDates,
+  type DateRange,
+} from '@/features/analytics/AnalyticsControls';
+import { StockMovementChart } from '@/features/analytics/StockMovementChart';
+import type { Granularity, MovementSeriesPoint } from '@/features/analytics/channel';
 import { Package, AlertTriangle, XOctagon, CheckCircle } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
@@ -49,7 +56,14 @@ const STOCK_STATUS_COLORS: Record<string, string> = {
 };
 
 export default function InventoryAnalyticsPage() {
+  const [range, setRange] = React.useState<DateRange>('30days');
+  const [granularity, setGranularity] = React.useState<Granularity>('daily');
+
   const { data, isLoading, error, refetch } = useInventoryReport();
+  const { startDate, endDate } = rangeToDates(range);
+  // The inventory table only holds today's quantity, so the trend comes from
+  // the movement ledger instead.
+  const movements = useInventoryMovementReport(startDate, endDate, granularity);
 
   if (isLoading) return <SectionLoader message="Loading inventory reports..." />;
   if (error) return <PageError title="Load Failure" message="Could not fetch inventory report." retry={refetch} />;
@@ -60,6 +74,9 @@ export default function InventoryAnalyticsPage() {
     outOfStock: 0,
     items: [],
   }) as InventoryReportData;
+
+  const movementSeries = ((movements.data?.data as { series?: MovementSeriesPoint[] } | undefined)
+    ?.series ?? []) as MovementSeriesPoint[];
 
   const activeStock = reportData.totalItems - reportData.lowStock - reportData.outOfStock;
 
@@ -78,11 +95,31 @@ export default function InventoryAnalyticsPage() {
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Inventory Analytics</h1>
-        <p className="text-sm text-neutral-500 mt-1">
-          Monitor warehouse quantities, safety stock levels, and items needing reorder.
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight text-neutral-900">Inventory Analytics</h1>
+          <p className="text-sm text-neutral-500 mt-1">
+            Monitor warehouse quantities, safety stock levels, and items needing reorder.
+          </p>
+        </div>
+        <AnalyticsControls
+          range={range}
+          onRangeChange={setRange}
+          granularity={granularity}
+          onGranularityChange={setGranularity}
+        />
+      </div>
+
+      <div className="rounded-xl border border-neutral-200 bg-white p-4 sm:p-6 shadow-sm">
+        <h3 className="text-base font-bold text-neutral-900">Stock Movement</h3>
+        <p className="text-xs text-neutral-500 mt-1 mb-4">
+          Units received against units sold or written off, grouped {granularity}.
         </p>
+        <StockMovementChart
+          series={movementSeries}
+          loading={movements.isLoading}
+          failed={!!movements.error}
+        />
       </div>
 
       {/* KPI Panel */}

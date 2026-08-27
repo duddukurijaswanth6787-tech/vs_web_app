@@ -5,9 +5,26 @@ import { StandardResponse, PaginatedResponse } from '@/types/api.types';
 type ApiResponse<T> = StandardResponse<T>;
 
 export const reportsService = {
-  async getSalesReport(startDate?: string, endDate?: string): Promise<ReportResponse> {
+  async getSalesReport(
+    startDate?: string,
+    endDate?: string,
+    granularity?: string,
+    channel?: string,
+  ): Promise<ReportResponse> {
     const res = await apiClient.get<ApiResponse<ReportResponse>>('/reports/sales', {
-      params: { startDate, endDate },
+      // 'ALL' is the absence of a filter, not a channel the backend knows.
+      params: { startDate, endDate, granularity, channel: channel === 'ALL' ? undefined : channel },
+    });
+    return res.data.data!;
+  },
+
+  async getInventoryMovementReport(
+    startDate?: string,
+    endDate?: string,
+    granularity?: string,
+  ): Promise<ReportResponse> {
+    const res = await apiClient.get<ApiResponse<ReportResponse>>('/reports/inventory/movements', {
+      params: { startDate, endDate, granularity },
     });
     return res.data.data!;
   },
@@ -27,9 +44,13 @@ export const reportsService = {
     return res.data.data!;
   },
 
-  async getOrderReport(startDate?: string, endDate?: string): Promise<ReportResponse> {
+  async getOrderReport(
+    startDate?: string,
+    endDate?: string,
+    channel?: string,
+  ): Promise<ReportResponse> {
     const res = await apiClient.get<ApiResponse<ReportResponse>>('/reports/orders', {
-      params: { startDate, endDate },
+      params: { startDate, endDate, channel: channel === 'ALL' ? undefined : channel },
     });
     return res.data.data!;
   },
