@@ -86,6 +86,7 @@ import { EmailModule } from '@domains/email/email.module';
 import { PushNotificationModule } from '@domains/push-notification/push-notification.module';
 import { DtdcModule } from '@domains/dtdc/dtdc.module';
 import { PosModule } from '@domains/pos/pos.module';
+import { QuotationModule } from '@domains/quotation/quotation.module';
 
 /**
  * Root Application Module coordinates core global services (config, database, caching, health, queues).
@@ -228,6 +229,7 @@ import { PosModule } from '@domains/pos/pos.module';
     PushNotificationModule,
     DtdcModule,
     PosModule,
+    QuotationModule,
   ],
   controllers: [AppController],
   providers: [
