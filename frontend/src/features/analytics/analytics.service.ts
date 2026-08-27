@@ -34,4 +34,9 @@ export const analyticsService = {
     const res = await apiClient.get<StandardResponse<InventoryVelocityAnalytics>>('/analytics/inventory-velocity');
     return res.data.data!;
   },
+
+  syncAnalytics: async (): Promise<boolean> => {
+    await apiClient.post('/analytics/sync');
+    return true;
+  },
 };

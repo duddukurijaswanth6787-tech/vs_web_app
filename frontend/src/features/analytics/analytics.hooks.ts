@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { analyticsService } from './analytics.service';
 import { AnalyticsPeriod } from './analytics.types';
 
@@ -6,7 +6,7 @@ export function useOmnichannelAnalytics(period: AnalyticsPeriod = 'monthly') {
   return useQuery({
     queryKey: ['analytics-omnichannel', period],
     queryFn: () => analyticsService.getOmnichannel(period),
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000, // 10s fresh window for live updates
   });
 }
 
@@ -14,7 +14,7 @@ export function useOfflinePosAnalytics(period: AnalyticsPeriod = 'monthly') {
   return useQuery({
     queryKey: ['analytics-offline-pos', period],
     queryFn: () => analyticsService.getOfflinePos(period),
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
   });
 }
 
@@ -22,7 +22,7 @@ export function useOnlineSalesAnalytics(period: AnalyticsPeriod = 'monthly') {
   return useQuery({
     queryKey: ['analytics-online-sales', period],
     queryFn: () => analyticsService.getOnlineSales(period),
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
   });
 }
 
@@ -30,7 +30,20 @@ export function useInventoryVelocityAnalytics() {
   return useQuery({
     queryKey: ['analytics-inventory-velocity'],
     queryFn: () => analyticsService.getInventoryVelocity(),
-    staleTime: 60 * 1000,
+    staleTime: 10 * 1000,
+  });
+}
+
+export function useSyncAnalytics() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => analyticsService.syncAnalytics(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['analytics-omnichannel'] });
+      qc.invalidateQueries({ queryKey: ['analytics-offline-pos'] });
+      qc.invalidateQueries({ queryKey: ['analytics-online-sales'] });
+      qc.invalidateQueries({ queryKey: ['analytics-inventory-velocity'] });
+    },
   });
 }
 
