@@ -9,6 +9,11 @@ import {
   ReportResponse,
   ExportJobResponse,
 } from './report.types';
+import {
+  buildSalesSeries,
+  parseChannel,
+  parseGranularity,
+} from './sales-series';
 
 @Injectable()
 export class ReportService {
@@ -23,6 +28,8 @@ export class ReportService {
   async generateSalesReport(
     startDate?: string,
     endDate?: string,
+    granularity?: string,
+    channel?: string,
   ): Promise<ReportResponse> {
     const where: any = { deletedAt: null };
     if (startDate || endDate) {
@@ -30,6 +37,11 @@ export class ReportService {
       if (startDate) where.createdAt.gte = new Date(startDate);
       if (endDate) where.createdAt.lte = new Date(endDate);
     }
+
+    // Only ever one of the two known channels, so an unrecognised query string
+    // widens to "both" rather than reaching the database.
+    const channelFilter = parseChannel(channel);
+    if (channelFilter) where.channel = channelFilter;
 
     const [orders, revenueAgg] = await Promise.all([
       this.prisma.order.findMany({
@@ -47,12 +59,93 @@ export class ReportService {
       this.prisma.order.aggregate({ _sum: { grandTotal: true }, where }),
     ]);
 
+    const to = endDate ? new Date(endDate) : new Date();
+    const from = startDate
+      ? new Date(startDate)
+      : new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+    const series = buildSalesSeries(
+      orders,
+      parseGranularity(granularity),
+      from,
+      to,
+    );
+
+    const onlineRevenue = series.reduce((sum, p) => sum + p.onlineRevenue, 0);
+    const offlineRevenue = series.reduce((sum, p) => sum + p.offlineRevenue, 0);
+
     return {
       type: 'SALES',
       data: {
         totalRevenue: Number(revenueAgg._sum.grandTotal ?? 0),
         totalOrders: orders.length,
         orders,
+        granularity: parseGranularity(granularity),
+        channel: channelFilter ?? 'ALL',
+        series,
+        onlineRevenue,
+        offlineRevenue,
+        onlineOrders: series.reduce((sum, p) => sum + p.onlineOrders, 0),
+        offlineOrders: series.reduce((sum, p) => sum + p.offlineOrders, 0),
+      },
+      generatedAt: new Date(),
+    };
+  }
+
+  /**
+   * Stock in vs stock out per period, from the movement ledger.
+   *
+   * The inventory table only knows today's quantity, so movements are the only
+   * record of how it got there -- and they are what makes a trend chart
+   * possible at all.
+   */
+  async generateInventoryMovementSeries(
+    startDate?: string,
+    endDate?: string,
+    granularity?: string,
+  ): Promise<ReportResponse> {
+    const to = endDate ? new Date(endDate) : new Date();
+    const from = startDate
+      ? new Date(startDate)
+      : new Date(to.getTime() - 30 * 24 * 60 * 60 * 1000);
+
+    const movements = await this.prisma.inventoryMovement.findMany({
+      where: { createdAt: { gte: from, lte: to } },
+      select: { createdAt: true, quantity: true, movementType: true },
+      orderBy: { createdAt: 'asc' },
+    });
+
+    // A movement's sign tells stock arriving from stock leaving; the ledger
+    // stores IN and OUT as separate types rather than negative numbers.
+    const asOrders = movements.map((m) => ({
+      createdAt: m.createdAt,
+      grandTotal: Math.abs(m.quantity),
+      channel: /OUT|SALE|DEDUCT|DAMAGE/i.test(m.movementType)
+        ? 'POS_SHOPORA'
+        : 'ONLINE_STORE',
+    }));
+
+    const series = buildSalesSeries(
+      asOrders,
+      parseGranularity(granularity),
+      from,
+      to,
+    ).map((p) => ({
+      bucket: p.bucket,
+      label: p.label,
+      stockIn: p.onlineRevenue,
+      stockOut: p.offlineRevenue,
+      movementsIn: p.onlineOrders,
+      movementsOut: p.offlineOrders,
+      net: p.onlineRevenue - p.offlineRevenue,
+    }));
+
+    return {
+      type: 'INVENTORY_MOVEMENT',
+      data: {
+        granularity: parseGranularity(granularity),
+        series,
+        totalIn: series.reduce((s, p) => s + p.stockIn, 0),
+        totalOut: series.reduce((s, p) => s + p.stockOut, 0),
       },
       generatedAt: new Date(),
     };
@@ -138,7 +231,12 @@ export class ReportService {
 
     const totals = new Map<
       string,
-      { categoryId: string; categoryName: string; revenue: number; unitsSold: number }
+      {
+        categoryId: string;
+        categoryName: string;
+        revenue: number;
+        unitsSold: number;
+      }
     >();
     let uncategorizedRevenue = 0;
     let uncategorizedUnits = 0;
@@ -217,6 +315,7 @@ export class ReportService {
   async generateOrderReport(
     startDate?: string,
     endDate?: string,
+    channel?: string,
   ): Promise<ReportResponse> {
     const where: any = { deletedAt: null };
     if (startDate || endDate) {
@@ -224,6 +323,9 @@ export class ReportService {
       if (startDate) where.createdAt.gte = new Date(startDate);
       if (endDate) where.createdAt.lte = new Date(endDate);
     }
+
+    const channelFilter = parseChannel(channel);
+    if (channelFilter) where.channel = channelFilter;
 
     const [orders, statusCounts] = await Promise.all([
       this.prisma.order.findMany({
@@ -238,6 +340,13 @@ export class ReportService {
       this.prisma.order.groupBy({ by: ['status'], _count: true, where }),
     ]);
 
+    const channelCounts = await this.prisma.order.groupBy({
+      by: ['channel'],
+      _count: true,
+      _sum: { grandTotal: true },
+      where,
+    });
+
     return {
       type: 'ORDER',
       data: {
@@ -245,6 +354,12 @@ export class ReportService {
         statusBreakdown: Object.fromEntries(
           statusCounts.map((s) => [s.status, s._count]),
         ),
+        channelBreakdown: channelCounts.map((c) => ({
+          channel: c.channel,
+          orders: c._count,
+          revenue: Number(c._sum.grandTotal ?? 0),
+        })),
+        channel: channelFilter ?? 'ALL',
         orders,
       },
       generatedAt: new Date(),

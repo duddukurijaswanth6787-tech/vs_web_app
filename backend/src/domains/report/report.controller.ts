@@ -11,7 +11,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { ReportService } from './report.service';
 import { GenerateReportDto } from './report.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -28,9 +31,16 @@ export class ReportController {
   async getSalesReport(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('granularity') granularity?: string,
+    @Query('channel') channel?: string,
   ) {
     return ResponseBuilder.success(
-      await this.reportService.generateSalesReport(startDate, endDate),
+      await this.reportService.generateSalesReport(
+        startDate,
+        endDate,
+        granularity,
+        channel,
+      ),
     );
   }
 
@@ -38,7 +48,9 @@ export class ReportController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('reports:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get sales revenue/units broken down by product category' })
+  @ApiOperation({
+    summary: 'Get sales revenue/units broken down by product category',
+  })
   async getProductCategoryBreakdown() {
     return ResponseBuilder.success(
       await this.reportService.getProductCategoryBreakdown(),
@@ -53,6 +65,25 @@ export class ReportController {
   async getInventoryReport() {
     return ResponseBuilder.success(
       await this.reportService.generateInventoryReport(),
+    );
+  }
+
+  @Get('inventory/movements')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('reports:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Stock in vs stock out over time' })
+  async getInventoryMovementSeries(
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
+    @Query('granularity') granularity?: string,
+  ) {
+    return ResponseBuilder.success(
+      await this.reportService.generateInventoryMovementSeries(
+        startDate,
+        endDate,
+        granularity,
+      ),
     );
   }
 
@@ -75,9 +106,10 @@ export class ReportController {
   async getOrderReport(
     @Query('startDate') startDate?: string,
     @Query('endDate') endDate?: string,
+    @Query('channel') channel?: string,
   ) {
     return ResponseBuilder.success(
-      await this.reportService.generateOrderReport(startDate, endDate),
+      await this.reportService.generateOrderReport(startDate, endDate, channel),
     );
   }
 
