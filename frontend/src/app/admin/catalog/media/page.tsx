@@ -10,7 +10,7 @@ import {
 import { libraryService } from '@/features/catalog/media/library.service';
 import type { LibraryMedia } from '@/features/catalog/media/library.types';
 import { useAuth } from '@/hooks/useAuth';
-import { categorizeApiError } from '@/lib/api-error-handler';
+import { getApiErrorMessage } from '@/utils/api-error';
 import { resolveMediaUrl } from '@/lib/media-url';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 import {
@@ -97,7 +97,9 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
 
         success++;
       } catch (err) {
-        setError(`Failed to upload ${file.name}: ${categorizeApiError(err)}`);
+        // categorizeApiError returns an object; interpolating it printed
+        // "[object Object]" and hid every upload failure behind it.
+        setError(`Failed to upload ${file.name}: ${getApiErrorMessage(err, 'Upload failed')}`);
       }
     }
 
@@ -108,7 +110,7 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-lg mx-4" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-6 w-full max-w-lg mx-4 max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-sm font-bold text-neutral-900">Upload Media</h3>
           <button onClick={onClose} className="text-neutral-400 hover:text-neutral-600"><X className="w-5 h-5" /></button>
@@ -117,7 +119,7 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
         <input ref={inputRef} type="file" multiple onChange={handleSelect} className="hidden" accept="image/*,video/*,.pdf,.doc,.docx,.csv,.xlsx,.zip" />
 
         {!files.length ? (
-          <div className="border-2 border-dashed border-neutral-200 rounded-xl p-12 text-center cursor-pointer hover:border-neutral-400" onClick={() => inputRef.current?.click()}>
+          <div className="border-2 border-dashed border-neutral-200 rounded-xl p-8 sm:p-12 text-center cursor-pointer hover:border-neutral-400" onClick={() => inputRef.current?.click()}>
             <Upload className="w-10 h-10 text-neutral-300 mx-auto mb-3" />
             <p className="text-sm text-neutral-500">Drop files or click to browse</p>
           </div>
@@ -135,7 +137,12 @@ function UploadModal({ folderId, onClose, onDone }: UploadModalProps) {
           </div>
         )}
 
-        {error && <p className="text-xs text-red-600 mb-3 flex items-center gap-1"><AlertCircle className="w-3 h-3" />{error}</p>}
+        {error && (
+          <p className="text-xs text-red-600 mb-3 flex items-start gap-1.5 break-words">
+            <AlertCircle className="w-3 h-3 shrink-0 mt-0.5" />
+            <span className="min-w-0">{error}</span>
+          </p>
+        )}
 
         <div className="flex gap-2 justify-end">
           {files.length > 0 && (
@@ -401,12 +408,12 @@ export default function MediaLibraryPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
-          <h1 className="text-xl font-bold text-neutral-900 font-sans tracking-tight">Media Library</h1>
+          <h1 className="text-lg sm:text-xl font-bold text-neutral-900 font-sans tracking-tight">Media Library</h1>
           <p className="text-xs text-neutral-400 mt-1">Manage uploaded images, videos and documents</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')} className="p-2 border border-neutral-200 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50">
             {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
           </button>
@@ -418,8 +425,10 @@ export default function MediaLibraryPage() {
         </div>
       </div>
 
-      <div className="flex gap-6">
-        <div className="w-56 shrink-0">
+      {/* Below lg the folder rail sat beside the grid at a fixed 224px, which on
+          a 360px phone left the thumbnails about 100px wide. Stack it instead. */}
+      <div className="flex flex-col lg:flex-row gap-4 lg:gap-6">
+        <div className="w-full lg:w-56 lg:shrink-0">
           <div className="bg-white rounded-2xl border border-neutral-200 p-4 shadow-sm space-y-2">
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider">Folders</h3>
@@ -449,7 +458,7 @@ export default function MediaLibraryPage() {
                   <span className="ml-auto text-[10px] text-neutral-400">{f._count.media}</span>
                 </button>
                 {canUpload && (
-                  <button onClick={() => handleDeleteFolder(f.id, f.name)} className="opacity-0 group-hover:opacity-100 p-1 text-neutral-400 hover:text-red-600 transition-opacity">
+                  <button onClick={() => handleDeleteFolder(f.id, f.name)} aria-label={`Delete folder ${f.name}`} className="opacity-100 lg:opacity-0 lg:group-hover:opacity-100 focus-visible:opacity-100 p-1 text-neutral-400 hover:text-red-600 transition-opacity">
                     <X className="w-3 h-3" />
                   </button>
                 )}
@@ -459,19 +468,21 @@ export default function MediaLibraryPage() {
         </div>
 
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="relative flex-1">
+          {/* Search keeps a full row on phones; the filters wrap underneath it
+              rather than being crushed to a few characters wide. */}
+          <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4">
+            <div className="relative w-full sm:flex-1 sm:min-w-50">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
               <input value={search} onChange={(e) => handleSearch(e.target.value)} placeholder="Search files by name..." className="w-full bg-white border border-neutral-200 rounded-xl pl-9 pr-4 py-2.5 text-xs focus:outline-none focus:border-neutral-400" />
               {search && <button onClick={() => { setSearch(''); setDebouncedSearch(''); setPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400"><X className="w-4 h-4" /></button>}
             </div>
-              <select value={mimeFilter} onChange={(e) => { setMimeFilter(e.target.value); setPage(1); }} className="bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
+            <select value={mimeFilter} onChange={(e) => { setMimeFilter(e.target.value); setPage(1); }} aria-label="Filter by type" className="flex-1 sm:flex-none bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
               <option value="">All Types</option>
               <option value="image/">Images</option>
               <option value="video/">Videos</option>
               <option value="application/">Documents</option>
             </select>
-            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} className="bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
+            <select value={sortBy} onChange={(e) => setSortBy(e.target.value)} aria-label="Sort by" className="flex-1 sm:flex-none bg-white border border-neutral-200 rounded-xl px-3 py-2.5 text-xs focus:outline-none">
               <option value="createdAt">Date</option>
               <option value="originalFilename">Name</option>
               <option value="size">Size</option>
@@ -483,7 +494,7 @@ export default function MediaLibraryPage() {
           </div>
 
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-3 mb-4 bg-neutral-50 rounded-xl px-4 py-2.5 border border-neutral-200">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-3 mb-4 bg-neutral-50 rounded-xl px-3 sm:px-4 py-2.5 border border-neutral-200">
               <span className="text-xs font-medium text-neutral-700">{selectedIds.size} selected</span>
               <button onClick={() => { if (confirm(`Delete ${selectedIds.size} items?`)) { bulkDelete.mutate(Array.from(selectedIds)); setSelectedIds(new Set()); } }} className="px-3 py-1.5 bg-red-50 text-red-700 rounded-lg text-xs font-medium hover:bg-red-100 border border-red-200">
                 Delete Selected
@@ -543,7 +554,10 @@ export default function MediaLibraryPage() {
                       const next = new Set(selectedIds);
                       if (checked) { next.delete(m.id); } else { next.add(m.id); }
                       setSelectedIds(next);
-                    }} className="absolute top-2 left-2 bg-white/90 rounded-md p-0.5 opacity-0 group-hover:opacity-100 transition-opacity hover:bg-white">
+                    }} aria-label={checked ? `Deselect ${m.originalFilename}` : `Select ${m.originalFilename}`}
+                      /* Hover-only made this unreachable on a touch screen: there
+                         was no way to multi-select from a phone at all. */
+                      className={`absolute top-2 left-2 bg-white/90 rounded-md p-1.5 lg:p-0.5 transition-opacity hover:bg-white lg:group-hover:opacity-100 focus-visible:opacity-100 ${checked ? 'opacity-100' : 'opacity-100 lg:opacity-0'}`}>
                       {checked ? <CheckSquare className="w-4 h-4 text-blue-600" /> : <Square className="w-4 h-4 text-neutral-500" />}
                     </button>
                   </div>
@@ -551,8 +565,10 @@ export default function MediaLibraryPage() {
               })}
             </div>
           ) : (
-            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-hidden">
-              <table className="w-full text-xs">
+            // overflow-hidden clipped the last columns off-screen on a phone
+            // instead of letting the table scroll sideways.
+            <div className="bg-white rounded-2xl border border-neutral-200 shadow-sm overflow-x-auto">
+              <table className="w-full text-xs min-w-125">
                 <thead className="bg-neutral-50 border-b border-neutral-200">
                   <tr>
                     <th className="text-left px-4 py-3 font-bold text-neutral-500">Preview</th>
@@ -584,7 +600,7 @@ export default function MediaLibraryPage() {
           )}
 
           {data?.meta && data.meta.totalPages > 1 && (
-            <div className="flex items-center justify-between mt-4 bg-white rounded-xl border border-neutral-200 px-4 py-3 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-2 mt-4 bg-white rounded-xl border border-neutral-200 px-3 sm:px-4 py-3 shadow-sm">
               <p className="text-xs text-neutral-500">{data.meta.total} items</p>
               <div className="flex gap-1">
                 <button disabled={page <= 1} onClick={() => setPage((p) => p - 1)} className="px-3 py-1.5 border border-neutral-200 rounded-lg text-xs disabled:opacity-30 hover:bg-neutral-50">Prev</button>
