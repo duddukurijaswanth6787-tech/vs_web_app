@@ -342,6 +342,48 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
+  /**
+   * POST /pos/shifts/:id/close — count the drawer and close the till.
+   *
+   * The app could open a shift but not close one, so a cashier working from
+   * the phone had to find a web POS to reconcile their own drawer.
+   */
+  async closeShift(shiftId: string, payload: { closingCashCounted: number; notes?: string }) {
+    const res = await posApiClient.post(`/pos/shifts/${shiftId}/close`, payload);
+    return unwrap<any>(res);
+  },
+
+  /** GET /pos/shifts/:id/report — the X/Z read for a shift. */
+  async getShiftReport(shiftId: string) {
+    const res = await posApiClient.get(`/pos/shifts/${shiftId}/report`);
+    return unwrap<any>(res);
+  },
+
+  /** GET /pos/returns/lookup — find a sale by the number on the receipt. */
+  async lookupReturnableSale(orderNumber: string) {
+    const res = await posApiClient.get('/pos/returns/lookup', {
+      params: { orderNumber },
+    });
+    return unwrap<any>(res);
+  },
+
+  /**
+   * POST /pos/returns — refund items and put them back into stock.
+   *
+   * Refunds were web-only: a counter running on phones had no way to take one
+   * back, which is the other half of selling.
+   */
+  async createReturn(payload: {
+    orderNumber: string;
+    items: { orderItemId: string; quantity: number }[];
+    refundMethod: string;
+    reason: string;
+    terminalId?: string;
+  }) {
+    const res = await posApiClient.post('/pos/returns', payload);
+    return unwrap<any>(res);
+  },
+
 };
 
 // ─── Dashboard: home screen stats ─────────────────────────────────────────────

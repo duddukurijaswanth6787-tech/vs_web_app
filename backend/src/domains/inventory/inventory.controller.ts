@@ -19,7 +19,10 @@ import {
   MovementQueryDto,
 } from './inventory.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -28,9 +31,22 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
 
-  // ─── Public ────────────────────────────────────────────
+  // ─── Reads ─────────────────────────────────────────────
+  //
+  // These were public. They are not storefront data: findAll enumerates every
+  // stock level the business holds, and findMovements is the internal ledger,
+  // carrying each write-off with its reason, remarks and the staff member who
+  // performed it. Anyone who knew the URL could read both, because the only
+  // globally registered guard is the rate limiter, not authentication.
+  //
+  // Nothing public consumed them -- every caller is an admin or staff screen,
+  // and the storefront reads availability through the product endpoints -- so
+  // they now sit behind inventory:view, a permission that already existed.
 
   @Get()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
   @ApiOperation({
     summary: 'List inventory with filtering, pagination, sorting',
   })
@@ -39,6 +55,9 @@ export class InventoryController {
   }
 
   @Get('summary')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get stock summary statistics' })
   async getStockSummary() {
     return ResponseBuilder.success(
@@ -47,6 +66,9 @@ export class InventoryController {
   }
 
   @Get('movements')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'List inventory movements with filtering' })
   async findMovements(@Query() query: MovementQueryDto) {
     return ResponseBuilder.success(
@@ -55,12 +77,18 @@ export class InventoryController {
   }
 
   @Get(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get inventory by ID' })
   async findById(@Param('id') id: string) {
     return ResponseBuilder.success(await this.inventoryService.findById(id));
   }
 
   @Get('variant/:variantId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get inventory by variant ID' })
   async findByVariantId(@Param('variantId') variantId: string) {
     return ResponseBuilder.success(

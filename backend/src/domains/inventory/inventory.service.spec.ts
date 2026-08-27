@@ -63,10 +63,16 @@ describe('InventoryService', () => {
       };
       jest.spyOn(repository, 'findById').mockResolvedValue(inv as any);
 
-      await service.adjustStock('inv-1', { quantity: 47, reason: 'Physical count' }, 'user-1');
+      await service.adjustStock(
+        'inv-1',
+        { quantity: 47, reason: 'Physical count' },
+        'user-1',
+      );
 
       // 47 is the new total, not "add 47 to the existing 20".
-      expect(repository.updateStock).toHaveBeenCalledWith('inv-1', { availableQuantity: 47 });
+      expect(repository.updateStock).toHaveBeenCalledWith('inv-1', {
+        availableQuantity: 47,
+      });
       expect(repository.createMovement).toHaveBeenCalledWith(
         expect.objectContaining({
           movementType: 'ADJUSTMENT',
@@ -91,9 +97,15 @@ describe('InventoryService', () => {
       };
       jest.spyOn(repository, 'findById').mockResolvedValue(inv as any);
 
-      await service.adjustStock('inv-1', { quantity: 5, reason: 'Damaged batch found' }, 'user-1');
+      await service.adjustStock(
+        'inv-1',
+        { quantity: 5, reason: 'Damaged batch found' },
+        'user-1',
+      );
 
-      expect(repository.updateStock).toHaveBeenCalledWith('inv-1', { availableQuantity: 5 });
+      expect(repository.updateStock).toHaveBeenCalledWith('inv-1', {
+        availableQuantity: 5,
+      });
       expect(repository.createMovement).toHaveBeenCalledWith(
         expect.objectContaining({
           quantity: -15,

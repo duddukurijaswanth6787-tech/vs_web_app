@@ -18,6 +18,8 @@ import {
   LogIn,
   LogOut,
   Store,
+  RotateCcw,
+  LockKeyhole,
 } from 'lucide-react-native';
 import {
   dashboardService,
@@ -163,6 +165,32 @@ export default function ShoporaHomeScreen() {
           </View>
           <Text style={styles.actionCardTitleDark}>+ Add Stock</Text>
           <Text style={styles.actionCardSubDark}>Receive & print labels</Text>
+        </TouchableOpacity>
+
+        {/* 4. RETURNS -- the other half of selling; was web-POS only. */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/returns')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#fff1f2' }]}>
+            <RotateCcw size={24} color="#be123c" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>Returns</Text>
+          <Text style={styles.actionCardSubDark}>Refund & restock</Text>
+        </TouchableOpacity>
+
+        {/* 5. CLOSE SHIFT -- the app could open one but never close it. */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/close-shift')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#eff6ff' }]}>
+            <LockKeyhole size={24} color="#1d4ed8" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>Close Shift</Text>
+          <Text style={styles.actionCardSubDark}>Count drawer & reconcile</Text>
         </TouchableOpacity>
 
         {/* 4. SCAN / INSPECT PRODUCT */}
