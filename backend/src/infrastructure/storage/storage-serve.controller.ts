@@ -24,7 +24,10 @@ import type { Request, Response } from 'express';
 import { StorageService } from './storage.service';
 import { StorageUtils } from './storage.utils';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 const VARIANT_WIDTHS: Record<string, number> = {

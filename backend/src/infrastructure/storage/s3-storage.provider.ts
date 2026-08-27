@@ -18,6 +18,9 @@ export class S3StorageProvider implements StorageProvider {
   private readonly bucket: string;
   private readonly publicUrl: string;
   private readonly signedUrlExpiry: number;
+  private readonly region: string;
+  private readonly endpoint?: string;
+  private readonly forcePathStyle: boolean;
 
   constructor(private readonly configService: ConfigService) {
     const region = this.configService.get<string>(
@@ -54,6 +57,9 @@ export class S3StorageProvider implements StorageProvider {
     });
 
     this.bucket = this.configService.get<string>('app.storage.s3.bucket', '');
+    this.region = region;
+    this.endpoint = endpoint;
+    this.forcePathStyle = forcePathStyle;
     this.publicUrl = this.configService.get<string>(
       'app.storage.s3.publicUrl',
       '',
@@ -137,7 +143,16 @@ export class S3StorageProvider implements StorageProvider {
     if (this.publicUrl) {
       return `${this.publicUrl}/${filePath}`;
     }
-    return `https://${this.bucket}.s3.amazonaws.com/${filePath}`;
+    // The region-less `<bucket>.s3.amazonaws.com` form only resolves for
+    // regions that existed before 2019. Buckets in newer ones -- ap-south-2
+    // among them -- are unreachable there, so address the bucket regionally.
+    if (this.endpoint) {
+      const base = this.endpoint.replace(/\/+$/, '');
+      return this.forcePathStyle
+        ? `${base}/${this.bucket}/${filePath}`
+        : `${base.replace('://', `://${this.bucket}.`)}/${filePath}`;
+    }
+    return `https://${this.bucket}.s3.${this.region}.amazonaws.com/${filePath}`;
   }
 
   async getSignedUploadUrl(

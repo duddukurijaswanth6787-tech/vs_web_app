@@ -28,7 +28,7 @@ export class StorageUtils {
     mimeType?: string,
   ): string {
     const uuid = crypto.randomUUID();
-    const ext = mimeType ? MIME_EXTENSIONS[mimeType] ?? '' : '';
+    const ext = mimeType ? (MIME_EXTENSIONS[mimeType] ?? '') : '';
     const parts = [folder, entityId, `${uuid}${ext}`].filter(Boolean);
     return parts.join('/');
   }
