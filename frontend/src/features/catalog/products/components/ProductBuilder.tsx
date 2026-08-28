@@ -1040,8 +1040,8 @@ export default function ProductBuilder({
 
       let created: ProductResponse;
       if (productId) {
-        // Strip categoryIds from update payload because PATCH /products/:id rejects categoryIds
-        const { categoryIds: catIds, ...updatePayload } = payload as Record<string, unknown>;
+        // Strip categoryIds and primaryImageUrl from update payload because PATCH /products/:id forbids them
+        const { categoryIds: catIds, primaryImageUrl: pUrl, ...updatePayload } = payload as Record<string, unknown>;
         created = await productService.update(productId, updatePayload as UpdateProductDto);
         if (catIds && Array.isArray(catIds) && catIds.length > 0) {
           await productService.assignCategories(productId, { categoryIds: catIds as string[] }).catch(() => null);
