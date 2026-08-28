@@ -2224,9 +2224,6 @@ export default function ProductBuilder({
                       </button>
                     )}
                   </div>
-                  <p className="text-[10px] text-neutral-500 font-medium">
-                    Tip: You can also click <span className="text-[#0284c7] font-bold">💳 SET CARD VIEW</span> on any photo thumbnail below to select it instantly!
-                  </p>
                 </div>
               </div>
             </div>
@@ -2549,35 +2546,19 @@ export default function ProductBuilder({
                                   </button>
                                 </div>
 
-                                <div className="absolute bottom-9 left-2 right-2 flex flex-col gap-1 z-10">
-                                  {img === productCardImageUrl ? (
-                                    <span className="bg-[#0284c7] text-white text-[8px] font-bold px-1.5 py-0.5 rounded text-center shadow-2xs">
-                                      💳 CARD VIEW
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setCardViewImage(img, cur.id)}
-                                      className="bg-black/80 hover:bg-[#0284c7] text-white text-[8px] font-bold px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100 text-center shadow-2xs"
-                                    >
-                                      💳 SET CARD VIEW
-                                    </button>
-                                  )}
-
-                                  {idx === 0 ? (
-                                    <span className="bg-emerald-700 text-white text-[8px] font-bold px-1.5 py-0.5 rounded text-center shadow-2xs">
-                                      PRIMARY
-                                    </span>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={() => setPrimaryImage(cur.id, idx)}
-                                      className="bg-black/70 hover:bg-emerald-700 text-white text-[8px] font-bold px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100 text-center"
-                                    >
-                                      SET PRIMARY
-                                    </button>
-                                  )}
-                                </div>
+                                {idx === 0 ? (
+                                  <span className="absolute bottom-9 left-2 bg-[#0284c7] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
+                                    PRIMARY
+                                  </span>
+                                ) : (
+                                  <button
+                                    type="button"
+                                    onClick={() => setPrimaryImage(cur.id, idx)}
+                                    className="absolute bottom-9 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
+                                  >
+                                    SET PRIMARY
+                                  </button>
+                                )}
 
                                 {/* Shot type */}
                                 <select
