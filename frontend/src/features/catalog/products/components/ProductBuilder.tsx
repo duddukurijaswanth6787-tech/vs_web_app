@@ -1111,19 +1111,22 @@ export default function ProductBuilder({
       // Persist the color/size matrix as real variants. The backend assigns the
       // SKU and barcode on POST /variants, so nothing here is sellable or
       // scannable until this runs.
-      const [attributeList, existingVariants] = await Promise.all([
+      const [attributeList, existingVariants, existingInventoryList] = await Promise.all([
         attributeService
           .findAllAttributes({ limit: 100 })
           .catch(() => ({ data: [] as AttributeResponse[] })),
         variantService
-          // ProductVariantQueryDto caps `limit` at 100 (@Max(100)) — 200 was
-          // silently rejected by this call's own .catch(), which meant
-          // existingVariants was always empty and re-saving an existing
-          // product created duplicate variants instead of skipping them.
           .findAll({ productId: created.id, limit: 100 })
+          .catch(() => null),
+        inventoryService
+          .findAll({ limit: 100 })
           .catch(() => null),
       ]);
       const attributes = attributeList?.data ?? [];
+      const existingInvMap = new Map<string, string>();
+      (existingInventoryList?.data || []).forEach((inv) => {
+        if (inv.variantId && inv.id) existingInvMap.set(inv.variantId, inv.id);
+      });
 
       // Build a map of wanted active variant titles -> sizeRow details
       const wantedVariantsMap = new Map<string, { group: ColorVariantGroup; sizeRow: ColorVariantGroup['sizes'][number] }>();
@@ -1154,6 +1157,29 @@ export default function ProductBuilder({
         }
       }
 
+      // Helper function to update or create inventory record without 422 errors
+      const syncVariantInventory = async (vId: string, sizeRow: ColorVariantGroup['sizes'][number]) => {
+        const existingInvId = existingInvMap.get(vId);
+        if (existingInvId) {
+          await inventoryService
+            .update(existingInvId, {
+              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+            })
+            .catch(() => null);
+        } else {
+          const newInv = await inventoryService
+            .create({
+              variantId: vId,
+              availableQuantity: Math.max(0, sizeRow.stock),
+              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+            })
+            .catch(() => null);
+          if (newInv?.id) existingInvMap.set(vId, newInv.id);
+        }
+      };
+
       // 2) Create or Update wanted variants & stock
       const issued: IssuedVariant[] = [];
       const variantIdsByGroup: Record<string, string[]> = {};
@@ -1169,16 +1195,10 @@ export default function ProductBuilder({
           const existingVar = existingVariantsByTitle.get(titleKey);
 
           if (existingVar) {
-            // Already exists -> Safely update/sync inventory stock without 422 errors
+            // Already exists -> Safely sync inventory without GET /inventory/variant 422 errors
             variantIdsByGroup[group.id].push(existingVar.id);
-            if (sizeRow.stock >= 0) {
-              await inventoryService
-                .stockIn(existingVar.id, sizeRow.stock, 'Product update stock sync', {
-                  minimumStock: sizeRow.minStock,
-                  reorderLevel: sizeRow.reorderLevel,
-                })
-                .catch(() => null);
-            }
+            await syncVariantInventory(existingVar.id, sizeRow);
+
             issued.push({
               sku: existingVar.sku,
               barcode: existingVar.barcode,
@@ -1204,15 +1224,7 @@ export default function ProductBuilder({
 
             if (!variant?.id) continue;
             variantIdsByGroup[group.id].push(variant.id);
-
-            if (sizeRow.stock > 0) {
-              await inventoryService
-                .stockIn(variant.id, sizeRow.stock, 'New variant stock creation', {
-                  minimumStock: sizeRow.minStock,
-                  reorderLevel: sizeRow.reorderLevel,
-                })
-                .catch(() => null);
-            }
+            await syncVariantInventory(variant.id, sizeRow);
 
             issued.push({
               sku: variant.sku,
