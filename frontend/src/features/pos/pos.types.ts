@@ -276,3 +276,15 @@ export interface PosReturnResult {
   terminalId: string;
   itemsReturned: number;
 }
+
+/** A cart parked at the till, listed so the counter can pick it back up. */
+export interface HeldSession {
+  sessionId: string;
+  handoffToken: string;
+  deviceId?: string;
+  customer?: PosCustomerInfo;
+  itemsCount: number;
+  grandTotal: number;
+  expiresAt: string;
+  createdAt: string;
+}

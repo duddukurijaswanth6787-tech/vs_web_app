@@ -21,6 +21,7 @@ import {
   ReturnableSale,
   CreateReturnPayload,
   PosReturnResult,
+  HeldSession,
 } from './pos.types';
 
 export const posService = {
@@ -30,6 +31,19 @@ export const posService = {
   async scanBarcode(barcode: string): Promise<ScanBarcodeResult> {
     const res = await apiClient.post<StandardResponse<ScanBarcodeResult>>('/pos/scan', { barcode });
     return res.data.data!;
+  },
+
+  /** Carts parked at this till, waiting to be picked back up. */
+  async listHeldSessions(terminalId?: string): Promise<HeldSession[]> {
+    const res = await apiClient.get<StandardResponse<HeldSession[]>>('/pos/checkout-sessions/held', {
+      params: terminalId ? { terminalId } : undefined,
+    });
+    return res.data.data ?? [];
+  },
+
+  /** Discard a parked cart the customer never came back for. */
+  async discardHeldSession(sessionId: string): Promise<void> {
+    await apiClient.delete(`/pos/checkout-sessions/${sessionId}`);
   },
 
   /**
@@ -54,6 +68,9 @@ export const posService = {
     notes?: string;
     shopId?: string;
     deviceId?: string;
+    discountTotal?: number;
+    /** Park the cart at this till instead of handing it to a phone. */
+    hold?: boolean;
   }): Promise<CheckoutSessionData> {
     const res = await apiClient.post<StandardResponse<CheckoutSessionData>>('/pos/checkout-sessions', payload);
     return res.data.data!;

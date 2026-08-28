@@ -128,6 +128,7 @@ export class PosRepository {
     taxTotal: number,
     grandTotal: number,
     expiresAt: Date,
+    status: CheckoutSessionStatus = CheckoutSessionStatus.WAITING_FOR_WEB,
   ) {
     return this.prisma.checkoutSession.create({
       data: {
@@ -144,9 +145,27 @@ export class PosRepository {
         discountTotal: dto.discountTotal || 0,
         taxTotal,
         grandTotal,
-        status: CheckoutSessionStatus.WAITING_FOR_WEB,
+        status,
         expiresAt,
       },
+    });
+  }
+
+  /**
+   * Carts parked at the till and still waiting to be picked back up.
+   *
+   * Held carts are DRAFT; a phone handoff is WAITING_FOR_WEB, so the two never
+   * show up in each other's lists.
+   */
+  async findHeldSessions(deviceId?: string) {
+    return this.prisma.checkoutSession.findMany({
+      where: {
+        status: CheckoutSessionStatus.DRAFT,
+        expiresAt: { gt: new Date() },
+        ...(deviceId ? { deviceId } : {}),
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 50,
     });
   }
 

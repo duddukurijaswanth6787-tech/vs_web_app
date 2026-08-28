@@ -180,7 +180,12 @@ export class PosService {
     const subtotal = sessionTotals.subtotal;
     const taxTotal = sessionTotals.taxTotal;
     const grandTotal = sessionTotals.grandTotal;
-    const expiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
+    // A phone handoff is picked up in a minute or two; a cart parked at the
+    // counter has to survive until the customer comes back from trying
+    // something on, so it gets the rest of the trading day.
+    const expiresAt = new Date(
+      Date.now() + (dto.hold ? 12 * 60 : 30) * 60 * 1000,
+    );
 
     const session = await this.repository.createCheckoutSession(
       sessionId,
@@ -191,6 +196,9 @@ export class PosService {
       taxTotal,
       grandTotal,
       expiresAt,
+      dto.hold
+        ? CheckoutSessionStatus.DRAFT
+        : CheckoutSessionStatus.WAITING_FOR_WEB,
     );
 
     const responsePayload: CheckoutSessionResponse = {
@@ -236,7 +244,9 @@ export class PosService {
 
     if (
       session.status !== CheckoutSessionStatus.WAITING_FOR_WEB &&
-      session.status !== CheckoutSessionStatus.IN_PROGRESS_ON_WEB
+      session.status !== CheckoutSessionStatus.IN_PROGRESS_ON_WEB &&
+      // A cart parked at the till is resumed through this same path.
+      session.status !== CheckoutSessionStatus.DRAFT
     ) {
       throw new BadRequestException(
         `Checkout session is already in state: ${session.status}`,
@@ -270,6 +280,39 @@ export class PosService {
     return sessionPayload;
   }
 
+  /** Carts parked at this till, newest first, for the counter to pick back up. */
+  async listHeldSessions(deviceId?: string) {
+    const sessions = await this.repository.findHeldSessions(deviceId);
+    return sessions.map((session) => ({
+      sessionId: session.sessionId,
+      handoffToken: session.handoffToken,
+      deviceId: session.deviceId,
+      customer: session.customer as unknown as PosCustomerInfoDto | undefined,
+      itemsCount: Array.isArray(session.cart) ? session.cart.length : 0,
+      grandTotal: Number(session.grandTotal),
+      expiresAt: session.expiresAt,
+      createdAt: session.createdAt,
+    }));
+  }
+
+  /** Drop a parked cart the customer never came back for. */
+  async cancelHeldSession(sessionId: string) {
+    const session = await this.repository.findCheckoutSessionById(sessionId);
+    if (!session) {
+      throw new NotFoundException(`No held cart found for ${sessionId}`);
+    }
+    if (session.status === CheckoutSessionStatus.COMPLETED) {
+      throw new BadRequestException(
+        `${sessionId} has already been billed and cannot be discarded.`,
+      );
+    }
+    await this.repository.updateCheckoutSessionStatus(
+      sessionId,
+      CheckoutSessionStatus.CANCELLED,
+    );
+    return { success: true, sessionId };
+  }
+
   async completeSale(cashierId: string, dto: CompletePosSaleDto) {
     // Idempotent replay: an offline sale can be retried (e.g. the network
     // dropped after the server committed but before the client saw the
@@ -292,6 +335,10 @@ export class PosService {
             grandTotal: Number(existing.grandTotal),
             itemsCount: existing.items.length,
             createdAt: existing.createdAt,
+            // Change was already handed over when this sale first went
+            // through; a replay must not tell the till to open the drawer.
+            changeDue: 0,
+            tenders: undefined,
           },
           printReady: true,
         };

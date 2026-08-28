@@ -2,6 +2,7 @@ import {
   Controller,
   Post,
   Get,
+  Delete,
   Body,
   Query,
   Param,
@@ -100,6 +101,24 @@ export class PosController {
     @Body() dto: CreateCheckoutSessionDto,
   ): Promise<CheckoutSessionResponse> {
     return this.posService.createCheckoutSession(user.sub, dto);
+  }
+
+  @Get('checkout-sessions/held')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List Carts Parked at the Till' })
+  async listHeldSessions(@Query('terminalId') terminalId?: string) {
+    return this.posService.listHeldSessions(terminalId);
+  }
+
+  @Delete('checkout-sessions/:sessionId')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Discard a Parked Cart' })
+  async cancelHeldSession(@Param('sessionId') sessionId: string) {
+    return this.posService.cancelHeldSession(sessionId);
   }
 
   @Post('checkout-sessions/adopt')

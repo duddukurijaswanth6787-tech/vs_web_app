@@ -21,6 +21,7 @@ describe('PosService (Phase 1 Backend)', () => {
   beforeEach(async () => {
     repository = {
       findVariantByBarcode: jest.fn(),
+      findHeldSessions: jest.fn().mockResolvedValue([]),
       searchVariantsByName: jest.fn().mockResolvedValue([]),
       createCheckoutSession: jest.fn(),
       findCheckoutSessionByToken: jest.fn(),
@@ -211,6 +212,95 @@ describe('PosService (Phase 1 Backend)', () => {
       expect(session.sessionId).toContain('SHOP-2026-');
       expect(session.handoffToken).toHaveLength(7); // "123-456"
       expect(session.grandTotal).toBe(1467.9);
+    });
+  });
+
+  describe('held carts', () => {
+    it('parks a cart as DRAFT with an expiry that lasts the shift', async () => {
+      repository.createCheckoutSession.mockImplementation(
+        async (
+          sessionId: string,
+          handoffToken: string,
+          _cashierId: string,
+          _dto: unknown,
+          subtotal: number,
+          taxTotal: number,
+          grandTotal: number,
+          expiresAt: Date,
+          status: string,
+        ) => ({
+          id: 'sess-hold',
+          sessionId,
+          handoffToken,
+          status,
+          subtotal,
+          discountTotal: 0,
+          taxTotal,
+          grandTotal,
+          expiresAt,
+          createdAt: new Date(),
+        }),
+      );
+
+      await service.createCheckoutSession('cashier-1', {
+        hold: true,
+        items: [
+          {
+            productId: 'prod-1',
+            productName: 'Kurti',
+            quantity: 1,
+            unitPrice: 699,
+          },
+        ],
+      });
+
+      const call = repository.createCheckoutSession.mock.calls[0];
+      const expiresAt: Date = call[7];
+      expect(call[8]).toBe(CheckoutSessionStatus.DRAFT);
+      // Well past the 30 minutes a phone handoff gets.
+      expect(expiresAt.getTime() - Date.now()).toBeGreaterThan(60 * 60 * 1000);
+    });
+
+    it('resumes a parked cart through the same adopt path', async () => {
+      const future = new Date(Date.now() + 100000);
+      repository.findCheckoutSessionByToken.mockResolvedValue({
+        id: 'sess-hold',
+        sessionId: 'SHOP-2026-999999',
+        handoffToken: '999-999',
+        status: CheckoutSessionStatus.DRAFT,
+        expiresAt: future,
+        cart: [],
+        customer: null,
+      });
+      repository.updateCheckoutSessionStatus.mockResolvedValue({
+        id: 'sess-hold',
+        sessionId: 'SHOP-2026-999999',
+        handoffToken: '999-999',
+        status: CheckoutSessionStatus.IN_PROGRESS_ON_WEB,
+        subtotal: 699,
+        discountTotal: 0,
+        taxTotal: 35,
+        grandTotal: 734,
+        cart: [],
+        customer: null,
+        expiresAt: future,
+        createdAt: new Date(),
+      });
+
+      const resumed = await service.adoptHandoffSession({
+        handoffToken: '999-999',
+      });
+      expect(resumed.status).toBe(CheckoutSessionStatus.IN_PROGRESS_ON_WEB);
+    });
+
+    it('refuses to discard a cart that has already been billed', async () => {
+      repository.findCheckoutSessionById.mockResolvedValue({
+        sessionId: 'SHOP-2026-999999',
+        status: CheckoutSessionStatus.COMPLETED,
+      });
+      await expect(
+        service.cancelHeldSession('SHOP-2026-999999'),
+      ).rejects.toThrow(/already been billed/);
     });
   });
 

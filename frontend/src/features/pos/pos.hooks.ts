@@ -50,10 +50,39 @@ export function useAdoptHandoffSession() {
   });
 }
 
-export function useCreateCheckoutSession() {
+/** Carts parked at this till. Refetched whenever one is held or resumed. */
+export function useHeldSessions(terminalId?: string, enabled = true) {
+  return useQuery({
+    queryKey: [...posKeys.sessions(), 'held', terminalId ?? 'all'],
+    queryFn: () => posService.listHeldSessions(terminalId),
+    enabled,
+  });
+}
+
+export function useDiscardHeldSession() {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (payload: { items: PosCartItem[]; customer?: PosCustomerInfo; notes?: string }) =>
-      posService.createCheckoutSession(payload),
+    mutationFn: (sessionId: string) => posService.discardHeldSession(sessionId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: posKeys.sessions() });
+    },
+  });
+}
+
+export function useCreateCheckoutSession() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: {
+      items: PosCartItem[];
+      customer?: PosCustomerInfo;
+      notes?: string;
+      deviceId?: string;
+      discountTotal?: number;
+      hold?: boolean;
+    }) => posService.createCheckoutSession(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: posKeys.sessions() });
+    },
   });
 }
 

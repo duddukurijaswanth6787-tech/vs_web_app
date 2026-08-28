@@ -139,6 +139,16 @@ export class CreateCheckoutSessionDto {
   @IsNumber()
   @IsOptional()
   taxTotal?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Park this cart at the till instead of handing it to a phone. Held ' +
+      'carts are listed for the counter to pick back up and last the shift ' +
+      'rather than the 30 minutes a handoff gets.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  hold?: boolean;
 }
 
 export class AdoptHandoffTokenDto {

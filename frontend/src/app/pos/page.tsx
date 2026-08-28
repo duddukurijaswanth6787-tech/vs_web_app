@@ -38,6 +38,9 @@ import {
   useCurrentShift,
   useOpenShift,
   useSearchPosProducts,
+  useCreateCheckoutSession,
+  useHeldSessions,
+  useDiscardHeldSession,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -118,6 +121,8 @@ export default function DesktopPosPage() {
 
   const scanMutation = useScanBarcode();
   const adoptMutation = useAdoptHandoffSession();
+  const holdMutation = useCreateCheckoutSession();
+  const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
   const lookupCustomerMutation = useLookupCustomer();
@@ -126,6 +131,9 @@ export default function DesktopPosPage() {
   // be read while rendering on the server), and the shift lookup waits for it
   // rather than reporting on the wrong register.
   const { terminalId: TERMINAL_ID, isResolved: terminalResolved } = useTerminalId();
+  // Only this till's parked bills: another counter's held cart is not this
+  // cashier's to resume.
+  const heldSessions = useHeldSessions(TERMINAL_ID, terminalResolved);
   const offlineSync = useOfflineSync(TERMINAL_ID);
   const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(
     TERMINAL_ID,
@@ -337,6 +345,68 @@ export default function DesktopPosPage() {
         }
         setHandoffModalOpen(false);
         setHandoffPin('');
+      },
+    });
+  };
+
+  // Parking a cart reuses the checkout-session record the phone handoff
+  // already runs on: same cart, same customer, same totals, just kept at the
+  // till until the customer comes back.
+  const handleHoldSale = () => {
+    if (cart.length === 0) return;
+    setSaleError('');
+    const heldItems = cart.map(({ productId, productName, variantId, sku, variantTitle, quantity, unitPrice, discountAmount, taxAmount }) => ({
+      productId,
+      productName,
+      variantId,
+      sku,
+      variantTitle,
+      quantity,
+      unitPrice,
+      discountAmount,
+      taxAmount,
+    }));
+
+    holdMutation.mutate(
+      {
+        items: heldItems,
+        customer,
+        discountTotal,
+        deviceId: TERMINAL_ID,
+        hold: true,
+      },
+      {
+        onSuccess: () => {
+          setCart([]);
+          setActiveSession(null);
+          setDiscountTotal(0);
+          setCashTendered('');
+          setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+          barcodeInputRef.current?.focus();
+        },
+        onError: (err) => {
+          setSaleError(getApiErrorMessage(err, 'Could not hold this bill.'));
+        },
+      },
+    );
+  };
+
+  const handleResumeHeld = (handoffToken: string) => {
+    setSaleError('');
+    adoptMutation.mutate(handoffToken, {
+      onSuccess: (data) => {
+        setActiveSession(data);
+        if (data.items && data.items.length > 0) {
+          setCart(data.items);
+        }
+        if (data.customer) {
+          setCustomer(data.customer);
+        }
+        setDiscountTotal(data.discountTotal || 0);
+        heldSessions.refetch();
+      },
+      onError: (err) => {
+        setSaleError(getApiErrorMessage(err, 'Could not resume that held bill.'));
       },
     });
   };
@@ -643,6 +713,51 @@ export default function DesktopPosPage() {
         {/* LEFT COLUMN: Barcode Scanner & Live Item Cart Table (8 Cols) */}
         <div className="md:col-span-7 xl:col-span-8 space-y-4">
           
+          {/* Bills parked at this till */}
+          {(heldSessions.data?.length ?? 0) > 0 && (
+            <div className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                Held Bills ({heldSessions.data!.length})
+              </span>
+              <div className="space-y-1.5">
+                {heldSessions.data!.map((held) => (
+                  <div
+                    key={held.sessionId}
+                    className="flex items-center justify-between gap-2 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2"
+                  >
+                    <span className="min-w-0">
+                      <span className="block text-xs font-bold text-neutral-900 truncate">
+                        {held.customer?.fullName || 'Walk-in Customer'}
+                      </span>
+                      <span className="block text-[11px] text-neutral-500 font-medium">
+                        {held.itemsCount} item{held.itemsCount === 1 ? '' : 's'} &middot; ₹{held.grandTotal.toFixed(2)}
+                      </span>
+                    </span>
+                    <span className="flex items-center gap-1.5 shrink-0">
+                      <button
+                        type="button"
+                        onClick={() => handleResumeHeld(held.handoffToken)}
+                        disabled={adoptMutation.isPending}
+                        className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white px-3 py-1.5 rounded-lg text-[11px] font-bold disabled:opacity-50"
+                      >
+                        Resume
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => discardHeldMutation.mutate(held.sessionId)}
+                        disabled={discardHeldMutation.isPending}
+                        title="Discard this held bill"
+                        className="text-neutral-400 hover:text-neutral-700 p-1.5 disabled:opacity-50"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Barcode Search Box */}
           <form onSubmit={handleScanSubmit} className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs flex items-center gap-3">
             <div className="relative flex-1">
@@ -1099,6 +1214,16 @@ export default function DesktopPosPage() {
               )}
               <span>{offlineSync.isBackendReachable ? 'Complete Sale & Print Invoice' : 'Save Offline & Print Slip'}</span>
             </button>
+            <button
+              onClick={handleHoldSale}
+              disabled={cart.length === 0 || holdMutation.isPending || !offlineSync.isBackendReachable}
+              className="w-full border border-neutral-300 text-neutral-700 hover:bg-neutral-50 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 disabled:opacity-50"
+              title={offlineSync.isBackendReachable ? 'Park this bill and serve the next customer' : 'Holding a bill needs the backend'}
+            >
+              <Clock className="w-4 h-4" />
+              <span>{holdMutation.isPending ? 'Holding...' : 'Hold Bill'}</span>
+            </button>
+
             {!offlineSync.isBackendReachable && (
               <p className="text-[10px] text-amber-800 text-center font-medium">
                 Backend unreachable — this sale will be queued locally and synced automatically once the connection returns.
