@@ -67,7 +67,16 @@ export function resolveMediaUrl(url?: string | null): string {
 
 export function isLocalOrPlaceholder(url?: string | null): boolean {
   if (!url) return false;
-  return url.startsWith('/') || url.startsWith('data:') || url.includes('localhost') || url.includes('127.0.0.1') || url.includes('placehold.co') || url.includes('unsplash.com');
+  return (
+    url.startsWith('/') ||
+    url.startsWith('data:') ||
+    url.includes('localhost') ||
+    url.includes('127.0.0.1') ||
+    url.includes('placehold.co') ||
+    url.includes('unsplash.com') ||
+    url.includes('library/images') ||
+    url.includes('railway.app')
+  );
 }
 
 export const VARIANT_SIZES = { thumb: 150, medium: 600, large: 1200 } as const;
