@@ -471,26 +471,36 @@ export default function ProductBuilder({
     let idx = 1;
     colorMap.forEach((data, cName) => {
       const colorCode = getColorCodeHelper(cName);
-      const groupSizes = STANDARD_SIZES.map((sz) => {
-        const matchingVar = variants.find((v) => {
+      const hasExistingVariants = variants.length > 0;
+      let groupSizes: Array<{ size: string; stock: number; available: boolean; sku: string }> = [];
+
+      if (hasExistingVariants) {
+        const matchingVariantsForColor = variants.filter((v) => {
           const vTitle = (v.title || '').toLowerCase().trim();
           const parts = vTitle.split('/').map((s) => s.trim());
-          const colorMatch = parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
-          const sizeMatch = parts[1] ? parts[1] === sz.toLowerCase().trim() : vTitle.endsWith(` / ${sz.toLowerCase().trim()}`);
-          return colorMatch && sizeMatch;
+          return parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
         });
 
-        const hasExistingVariants = variants.length > 0;
-        const isAvailable = matchingVar ? true : !hasExistingVariants;
-        const stockQty = matchingVar?.availableQuantity ?? (hasExistingVariants ? 0 : 10);
+        groupSizes = matchingVariantsForColor.map((v) => {
+          const parts = (v.title || '').split('/').map((s) => s.trim());
+          const sz = parts[1] || 'Free Size';
+          return {
+            size: sz,
+            stock: v.availableQuantity ?? 10,
+            available: true,
+            sku: v.sku || `${colorCode}-${sz}`,
+          };
+        });
+      }
 
-        return {
+      if (groupSizes.length === 0) {
+        groupSizes = STANDARD_SIZES.map((sz) => ({
           size: sz,
-          stock: stockQty,
-          available: isAvailable,
-          sku: matchingVar?.sku || `${colorCode}-${sz}`,
-        };
-      });
+          stock: 10,
+          available: true,
+          sku: `${colorCode}-${sz}`,
+        }));
+      }
 
       groups.push({
         id: `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
