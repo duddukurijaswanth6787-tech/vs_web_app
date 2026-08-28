@@ -473,13 +473,21 @@ export default function ProductBuilder({
       const colorCode = getColorCodeHelper(cName);
       const groupSizes = STANDARD_SIZES.map((sz) => {
         const matchingVar = variants.find((v) => {
-          const vTitle = (v.title || '').toLowerCase();
-          return vTitle.includes(cName.toLowerCase()) && vTitle.includes(sz.toLowerCase());
+          const vTitle = (v.title || '').toLowerCase().trim();
+          const parts = vTitle.split('/').map((s) => s.trim());
+          const colorMatch = parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
+          const sizeMatch = parts[1] ? parts[1] === sz.toLowerCase().trim() : vTitle.endsWith(` / ${sz.toLowerCase().trim()}`);
+          return colorMatch && sizeMatch;
         });
+
+        const hasExistingVariants = variants.length > 0;
+        const isAvailable = matchingVar ? true : !hasExistingVariants;
+        const stockQty = matchingVar?.availableQuantity ?? (hasExistingVariants ? 0 : 10);
+
         return {
           size: sz,
-          stock: matchingVar?.availableQuantity ?? 10,
-          available: true,
+          stock: stockQty,
+          available: isAvailable,
           sku: matchingVar?.sku || `${colorCode}-${sz}`,
         };
       });
@@ -1009,9 +1017,16 @@ export default function ProductBuilder({
     setSaveMessage(null);
     setIssuedVariants([]);
     try {
+      // If a custom card cover image is uploaded (base64 data URL), upload it to server first
+      let finalCardCoverUrl = productCardImageUrl;
+      if (productCardImageUrl && productCardImageUrl.startsWith('data:')) {
+        const blob = dataUrlToBlob(productCardImageUrl);
+        const uploadedCard = await productService.uploadImage(blob, `card-cover-${Date.now()}.png`);
+        finalCardCoverUrl = uploadedCard.url;
+        setProductCardImageUrl(finalCardCoverUrl);
+      }
+
       // Organisation lives outside the react-hook-form schema, so merge it in.
-      // CreateProductDto accepts categoryIds, tags, collections and occasion
-      // directly, and the API rejects unknown properties outright.
       const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
       const payload = {
         ...values,
@@ -1020,6 +1035,7 @@ export default function ProductBuilder({
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
+        ...(finalCardCoverUrl ? { primaryImageUrl: finalCardCoverUrl } : {}),
       };
 
       let created: ProductResponse;
@@ -1046,12 +1062,17 @@ export default function ProductBuilder({
           .catch(() => null);
       }
 
-      // Flatten every staged image across all color groups into one gallery,
-      // upload real files, and attach them as product media. Media ids are kept
-      // per color group so they can be bound to that group further down.
+      // Prevent duplicate image creation on Edit mode by tracking existing media
+      const existingMedia = created.images || [];
+      const existingMediaMap = new Map<string, string>();
+      existingMedia.forEach((m) => {
+        if (m.url && m.id) existingMediaMap.set(m.url, String(m.id));
+      });
+
       let displayOrder = 0;
       let primarySet = false;
       const mediaIdsByGroup: Record<string, string[]> = {};
+
       for (const group of colorGroups) {
         mediaIdsByGroup[group.id] = [];
         const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
@@ -1062,16 +1083,28 @@ export default function ProductBuilder({
             const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
             url = uploaded.url;
           }
+
+          // If image already exists in database, skip re-calling addMedia!
+          const existingId = existingMediaMap.get(url);
+          if (existingId) {
+            mediaIdsByGroup[group.id].push(existingId);
+            continue;
+          }
+
+          const isImgPrimary = !primarySet || (finalCardCoverUrl ? url === finalCardCoverUrl : false);
           const media = await productService.addMedia({
             productId: created.id,
             url,
-            isPrimary: !primarySet,
+            isPrimary: isImgPrimary,
             displayOrder: displayOrder++,
             color: group.name,
             ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
           });
-          if (media?.id) mediaIdsByGroup[group.id].push(String(media.id));
-          primarySet = true;
+          if (media?.id) {
+            mediaIdsByGroup[group.id].push(String(media.id));
+            existingMediaMap.set(url, String(media.id));
+          }
+          if (isImgPrimary) primarySet = true;
         }
       }
 
