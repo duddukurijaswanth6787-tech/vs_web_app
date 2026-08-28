@@ -199,6 +199,15 @@ export interface ShiftReport {
   generatedAt: string;
   windowStart: string;
   windowEnd: string;
+  openingCash: number;
+  cashSales: number;
+  cashRefunds: number;
+  /** Petty cash added to the drawer during the shift. */
+  cashIn: number;
+  /** Petty cash taken out of the drawer during the shift. */
+  cashOut: number;
+  /** What the drawer should hold, by the same arithmetic the close uses. */
+  expectedCash: number;
   byMethod: Array<{ method: string; revenue: number; count: number }>;
   orderCount: number;
   refundsCount: number;
@@ -287,4 +296,20 @@ export interface HeldSession {
   grandTotal: number;
   expiresAt: string;
   createdAt: string;
+}
+
+/** Cash moved in or out of the drawer for something other than a sale. */
+export interface PosCashMovement {
+  id: string;
+  direction: 'IN' | 'OUT';
+  amount: number;
+  reason: string;
+  createdAt: string;
+}
+
+export interface PosCashMovementList {
+  movements: PosCashMovement[];
+  cashIn: number;
+  cashOut: number;
+  net: number;
 }

@@ -677,6 +677,41 @@ export class PosRepository {
     });
   }
 
+  /**
+   * Cash moved in or out of the drawer during a shift, other than by a sale.
+   */
+  async createCashMovement(params: {
+    shiftId: string;
+    terminalId: string;
+    cashierId: string;
+    direction: 'IN' | 'OUT';
+    amount: number;
+    reason: string;
+  }) {
+    return this.prisma.posCashMovement.create({ data: params });
+  }
+
+  async findCashMovementsForShift(shiftId: string) {
+    return this.prisma.posCashMovement.findMany({
+      where: { shiftId },
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /** Net effect of the shift's cash movements on what should be in the drawer. */
+  async sumCashMovementsForShift(shiftId: string) {
+    const rows = await this.prisma.posCashMovement.groupBy({
+      by: ['direction'],
+      _sum: { amount: true },
+      where: { shiftId },
+    });
+    const total = (direction: string) =>
+      Number(rows.find((r) => r.direction === direction)?._sum.amount ?? 0);
+    const cashIn = total('IN');
+    const cashOut = total('OUT');
+    return { cashIn, cashOut, net: cashIn - cashOut };
+  }
+
   async closeShift(
     id: string,
     data: {

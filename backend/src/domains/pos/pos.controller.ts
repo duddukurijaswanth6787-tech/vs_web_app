@@ -37,6 +37,8 @@ import {
   OpenPosShiftDto,
   CreatePosReturnDto,
   ClosePosShiftDto,
+  PosCashMovementDto,
+  DEFAULT_TERMINAL_ID,
 } from './pos.types';
 import type { Response } from 'express';
 
@@ -283,6 +285,35 @@ export class PosController {
       terminalId,
       cashierId,
     });
+  }
+
+  @Post('shifts/cash-movements')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Record Cash Paid Into or Out of the Drawer (Petty Cash)',
+  })
+  async recordCashMovement(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: PosCashMovementDto,
+    @Query('terminalId') terminalId?: string,
+  ) {
+    return this.posService.recordCashMovement(
+      user.sub,
+      terminalId || DEFAULT_TERMINAL_ID,
+      dto,
+    );
+  }
+
+  @Get('shifts/:id/cash-movements')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List Drawer Cash Movements for a Shift' })
+  async listCashMovements(@Param('id') id: string) {
+    return this.posService.listCashMovements(id);
   }
 
   @Get('shifts/:id/report')

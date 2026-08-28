@@ -22,6 +22,8 @@ import {
   CreateReturnPayload,
   PosReturnResult,
   HeldSession,
+  PosCashMovement,
+  PosCashMovementList,
 } from './pos.types';
 
 export const posService = {
@@ -31,6 +33,27 @@ export const posService = {
   async scanBarcode(barcode: string): Promise<ScanBarcodeResult> {
     const res = await apiClient.post<StandardResponse<ScanBarcodeResult>>('/pos/scan', { barcode });
     return res.data.data!;
+  },
+
+  /** Record cash paid into or out of the drawer (petty cash, banking). */
+  async recordCashMovement(
+    terminalId: string,
+    payload: { direction: 'IN' | 'OUT'; amount: number; reason: string },
+  ): Promise<PosCashMovement> {
+    const res = await apiClient.post<StandardResponse<PosCashMovement>>(
+      '/pos/shifts/cash-movements',
+      payload,
+      { params: { terminalId } },
+    );
+    return res.data.data!;
+  },
+
+  /** Every drawer movement recorded against a shift. */
+  async listCashMovements(shiftId: string): Promise<PosCashMovementList> {
+    const res = await apiClient.get<StandardResponse<PosCashMovementList>>(
+      `/pos/shifts/${shiftId}/cash-movements`,
+    );
+    return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
   /** Carts parked at this till, waiting to be picked back up. */

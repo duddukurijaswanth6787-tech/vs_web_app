@@ -1054,12 +1054,34 @@ model PosShift {
   openedAt            DateTime  @default(now())
   closedAt            DateTime?
   cashier             User      @relation(fields: [cashierId], references: [id])
+  cashMovements       PosCashMovement[]
 
   @@index([cashierId])
   @@index([terminalId])
   @@index([status])
   @@index([openedAt])
   @@map("pos_shifts")
+}
+
+/// Money taken out of or put into the drawer during a shift for something
+/// other than a sale -- paying a delivery boy, a petty-cash float, banking
+/// surplus notes mid-day. Without these the expected cash at close never
+/// matches what is actually counted.
+model PosCashMovement {
+  id         String   @id @default(uuid())
+  shiftId    String
+  terminalId String
+  cashierId  String
+  /// IN (money added to the drawer) or OUT (money removed).
+  direction  String
+  amount     Decimal
+  reason     String
+  createdAt  DateTime @default(now())
+  shift      PosShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+
+  @@index([shiftId])
+  @@index([terminalId])
+  @@map("pos_cash_movements")
 }
 
 model OrderItem {

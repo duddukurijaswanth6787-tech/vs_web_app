@@ -22,6 +22,8 @@ import {
   useCloseShift,
   useShiftsList,
   useShiftReport,
+  useCashMovements,
+  useRecordCashMovement,
   usePosDaySummary,
 } from '@/features/pos/pos.hooks';
 import { useTerminalId } from '@/features/pos/terminal';
@@ -72,6 +74,9 @@ export default function PosDashboardPage() {
   const [selectedDate, setSelectedDate] = useState(todayStr());
   const [viewingShiftId, setViewingShiftId] = useState<string | null>(null);
   const [closeResult, setCloseResult] = useState<{ expected: number; counted: number; variance: number } | null>(null);
+  const [cashDirection, setCashDirection] = useState<'IN' | 'OUT'>('OUT');
+  const [cashAmountInput, setCashAmountInput] = useState('');
+  const [cashReasonInput, setCashReasonInput] = useState('');
 
   const { data: currentShift, isLoading: shiftLoading } = useCurrentShift(
     terminalId,
@@ -79,9 +84,11 @@ export default function PosDashboardPage() {
   );
   const openShiftMutation = useOpenShift();
   const closeShiftMutation = useCloseShift();
+  const cashMovementMutation = useRecordCashMovement();
   const { data: daySummary, isLoading: summaryLoading } = usePosDaySummary(selectedDate);
   const { data: shiftsList } = useShiftsList({ limit: 10 });
   const { data: reportData } = useShiftReport(viewingShiftId || undefined);
+  const { data: cashMovements } = useCashMovements(currentShift?.id);
 
   const handleOpenShift = () => {
     const amount = parseFloat(openingCashInput);
@@ -89,6 +96,27 @@ export default function PosDashboardPage() {
     openShiftMutation.mutate(
       { terminalId, openingCash: amount },
       { onSuccess: () => setOpeningCashInput('') },
+    );
+  };
+
+  // Paying a delivery boy out of the till, or dropping a float in, moves the
+  // drawer as surely as a sale does. Recorded here so the close still balances.
+  const handleCashMovement = () => {
+    const amount = parseFloat(cashAmountInput);
+    if (isNaN(amount) || amount <= 0 || !cashReasonInput.trim()) return;
+    cashMovementMutation.mutate(
+      {
+        terminalId,
+        direction: cashDirection,
+        amount,
+        reason: cashReasonInput.trim(),
+      },
+      {
+        onSuccess: () => {
+          setCashAmountInput('');
+          setCashReasonInput('');
+        },
+      },
     );
   };
 
@@ -116,7 +144,7 @@ export default function PosDashboardPage() {
     if (!reportData) return;
     const win = window.open('', '_blank');
     if (!win) return;
-    const { shift, reportType, byMethod, orderCount, refundsCount, refundsAmount, windowStart, windowEnd } = reportData;
+    const { shift, reportType, byMethod, orderCount, refundsCount, refundsAmount, windowStart, windowEnd, cashIn, cashOut, expectedCash } = reportData;
     const html = `
       <html><head><title>${reportType === 'X_REPORT' ? 'X-Report' : 'Z-Report'} - ${shift.terminalId}</title>
       <style>
@@ -143,6 +171,9 @@ export default function PosDashboardPage() {
         <p>Refunds: ${refundsCount} (${formatCurrency(refundsAmount)})</p>
         <hr/>
         <p>Opening Cash: ${formatCurrency(Number(shift.openingCash))}</p>
+        ${cashIn ? `<p>Cash Paid In: ${formatCurrency(cashIn)}</p>` : ''}
+        ${cashOut ? `<p>Cash Paid Out: ${formatCurrency(cashOut)}</p>` : ''}
+        ${shift.status === 'OPEN' ? `<p style="font-weight:bold">Cash Expected Now: ${formatCurrency(expectedCash ?? 0)}</p>` : ''}
         ${shift.status === 'CLOSED' ? `
           <p>Expected Cash: ${formatCurrency(Number(shift.closingCashExpected || 0))}</p>
           <p>Counted Cash: ${formatCurrency(Number(shift.closingCashCounted || 0))}</p>
@@ -221,6 +252,74 @@ export default function PosDashboardPage() {
               <div className="ml-auto flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 text-[10px] font-bold uppercase">
                 <Clock className="w-3 h-3" /> Shift Open
               </div>
+            </div>
+
+            <div className="bg-neutral-50 rounded-xl p-4 border border-neutral-100 space-y-3">
+              <p className="text-[10px] font-bold text-neutral-500 uppercase">Cash In / Out</p>
+              <div className="flex flex-wrap items-end gap-3">
+                <div className="flex rounded-lg overflow-hidden border border-neutral-250">
+                  {(['OUT', 'IN'] as const).map((dir) => (
+                    <button
+                      key={dir}
+                      type="button"
+                      onClick={() => setCashDirection(dir)}
+                      className={`px-3 py-1.5 text-xs font-bold ${
+                        cashDirection === dir
+                          ? 'bg-[var(--brand-primary)] text-white'
+                          : 'bg-white text-neutral-600 hover:bg-neutral-100'
+                      }`}
+                    >
+                      {dir === 'OUT' ? 'Paid Out' : 'Paid In'}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="number"
+                  min="0"
+                  value={cashAmountInput}
+                  onChange={(e) => setCashAmountInput(e.target.value)}
+                  placeholder="Amount"
+                  className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm w-32 focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]"
+                />
+                <input
+                  type="text"
+                  value={cashReasonInput}
+                  onChange={(e) => setCashReasonInput(e.target.value)}
+                  placeholder="Reason (e.g. paid courier)"
+                  className="border border-neutral-250 rounded-lg px-3 py-1.5 text-sm flex-1 min-w-48 focus:outline-none focus:ring-1 focus:ring-[var(--brand-primary)]"
+                />
+                <button
+                  onClick={handleCashMovement}
+                  disabled={
+                    cashMovementMutation.isPending ||
+                    !cashAmountInput ||
+                    !cashReasonInput.trim()
+                  }
+                  className="bg-neutral-900 text-white text-xs font-bold px-4 py-2 rounded-lg hover:bg-neutral-800 disabled:opacity-50"
+                >
+                  {cashMovementMutation.isPending ? 'Recording...' : 'Record'}
+                </button>
+              </div>
+              {cashMovementMutation.isError && (
+                <p className="text-xs font-medium text-sky-700">
+                  {getApiErrorMessage(cashMovementMutation.error, 'Could not record that cash movement.')}
+                </p>
+              )}
+              {cashMovements && cashMovements.movements.length > 0 && (
+                <div className="space-y-1 pt-1 border-t border-neutral-200">
+                  <p className="text-[11px] font-bold text-neutral-600 pt-2">
+                    In {formatCurrency(cashMovements.cashIn)} &middot; Out {formatCurrency(cashMovements.cashOut)}
+                  </p>
+                  {cashMovements.movements.slice(0, 5).map((m) => (
+                    <p key={m.id} className="text-[11px] text-neutral-600 font-medium">
+                      <span className={m.direction === 'IN' ? 'text-emerald-700' : 'text-sky-700'}>
+                        {m.direction === 'IN' ? '+' : '-'}{formatCurrency(m.amount)}
+                      </span>{' '}
+                      {m.reason}
+                    </p>
+                  ))}
+                </div>
+              )}
             </div>
 
             {!showCloseForm ? (

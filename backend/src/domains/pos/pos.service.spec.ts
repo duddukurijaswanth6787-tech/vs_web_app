@@ -22,6 +22,16 @@ describe('PosService (Phase 1 Backend)', () => {
     repository = {
       findVariantByBarcode: jest.fn(),
       findHeldSessions: jest.fn().mockResolvedValue([]),
+      findShiftById: jest.fn(),
+      closeShift: jest.fn(),
+      getCashMovementForWindow: jest
+        .fn()
+        .mockResolvedValue({ cashSales: 0, cashRefunds: 0 }),
+      sumCashMovementsForShift: jest
+        .fn()
+        .mockResolvedValue({ cashIn: 0, cashOut: 0, net: 0 }),
+      createCashMovement: jest.fn(),
+      findCashMovementsForShift: jest.fn().mockResolvedValue([]),
       searchVariantsByName: jest.fn().mockResolvedValue([]),
       createCheckoutSession: jest.fn(),
       findCheckoutSessionByToken: jest.fn(),
@@ -212,6 +222,54 @@ describe('PosService (Phase 1 Backend)', () => {
       expect(session.sessionId).toContain('SHOP-2026-');
       expect(session.handoffToken).toHaveLength(7); // "123-456"
       expect(session.grandTotal).toBe(1467.9);
+    });
+  });
+
+  describe('drawer cash movements', () => {
+    it('counts petty cash in and out towards the expected drawer at close', async () => {
+      repository.findShiftById.mockResolvedValue({
+        id: 'shift-1',
+        terminalId: 'COUNTER_1',
+        status: 'OPEN',
+        openingCash: 2000,
+        openedAt: new Date(Date.now() - 3600_000),
+      });
+      repository.getCashMovementForWindow.mockResolvedValue({
+        cashSales: 5000,
+        cashRefunds: 500,
+      });
+      repository.sumCashMovementsForShift.mockResolvedValue({
+        cashIn: 1000,
+        cashOut: 300,
+        net: 700,
+      });
+      repository.closeShift.mockImplementation(
+        async (_id: string, data: Record<string, number>) => data,
+      );
+
+      await service.closeShift('shift-1', 'cashier-1', {
+        closingCashCounted: 7200,
+      });
+
+      // 2000 opening + 5000 cash sales - 500 refunds + 1000 in - 300 out
+      expect(repository.closeShift).toHaveBeenCalledWith(
+        'shift-1',
+        expect.objectContaining({
+          closingCashExpected: 7200,
+          variance: 0,
+        }),
+      );
+    });
+
+    it('refuses a drawer movement when no shift is open at the terminal', async () => {
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
+      await expect(
+        service.recordCashMovement('cashier-1', 'COUNTER_1', {
+          direction: 'OUT',
+          amount: 200,
+          reason: 'paid delivery boy',
+        }),
+      ).rejects.toThrow(/no drawer/);
     });
   });
 

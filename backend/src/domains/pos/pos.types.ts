@@ -8,6 +8,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsNotEmpty,
   ValidateNested,
   Min,
 } from 'class-validator';
@@ -445,6 +446,31 @@ export class ClosePosShiftDto {
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+/** Money in or out of the drawer for something other than a sale. */
+export class PosCashMovementDto {
+  @ApiProperty({
+    enum: ['IN', 'OUT'],
+    description:
+      'IN when notes are added to the drawer, OUT when they are taken out.',
+  })
+  @IsIn(['IN', 'OUT'])
+  direction!: 'IN' | 'OUT';
+
+  @ApiProperty({ description: 'Amount moved. Always positive.' })
+  @IsNumber()
+  @Min(0.01)
+  amount!: number;
+
+  @ApiProperty({
+    description:
+      'Why the money moved -- "paid delivery boy", "banked surplus". ' +
+      'Required: an unexplained drawer movement is indistinguishable from theft.',
+  })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
 }
 
 export class PreviewReceiptDto {

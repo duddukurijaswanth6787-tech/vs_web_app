@@ -50,6 +50,36 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Drawer movements recorded against a shift. */
+export function useCashMovements(shiftId?: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'cash-movements', shiftId],
+    queryFn: () => posService.listCashMovements(shiftId!),
+    enabled: !!shiftId,
+  });
+}
+
+export function useRecordCashMovement() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (params: {
+      terminalId: string;
+      direction: 'IN' | 'OUT';
+      amount: number;
+      reason: string;
+    }) =>
+      posService.recordCashMovement(params.terminalId, {
+        direction: params.direction,
+        amount: params.amount,
+        reason: params.reason,
+      }),
+    onSuccess: () => {
+      // The drawer expectation and the X-report both move with this.
+      queryClient.invalidateQueries({ queryKey: posKeys.all });
+    },
+  });
+}
+
 /** Carts parked at this till. Refetched whenever one is held or resumed. */
 export function useHeldSessions(terminalId?: string, enabled = true) {
   return useQuery({

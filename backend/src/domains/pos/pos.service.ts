@@ -29,6 +29,7 @@ import {
   OpenPosShiftDto,
   ClosePosShiftDto,
   DEFAULT_TERMINAL_ID,
+  PosCashMovementDto,
   CreatePosReturnDto,
   PosRefundMethodType,
 } from './pos.types';
@@ -884,6 +885,83 @@ export class PosService {
     return this.repository.findOpenShift(cashierId, terminalId);
   }
 
+  /**
+   * Records cash moved in or out of the open drawer at a terminal.
+   *
+   * Tied to the shift rather than the terminal so the movement lands in the
+   * count the cashier who made it has to answer for at close.
+   */
+  async recordCashMovement(
+    cashierId: string,
+    terminalId: string,
+    dto: PosCashMovementDto,
+  ) {
+    const shift = await this.repository.findOpenShiftForTerminal(
+      terminalId || DEFAULT_TERMINAL_ID,
+    );
+    if (!shift) {
+      throw new BadRequestException(
+        'No shift is open at this terminal, so there is no drawer to move cash in or out of.',
+      );
+    }
+
+    const amount = Math.round((Number(dto.amount) || 0) * 100) / 100;
+    if (amount <= 0) {
+      throw new BadRequestException('Cash movement amount must be positive.');
+    }
+
+    const movement = await this.repository.createCashMovement({
+      shiftId: shift.id,
+      terminalId: shift.terminalId,
+      cashierId,
+      direction: dto.direction,
+      amount,
+      reason: dto.reason.trim(),
+    });
+
+    await this.auditService.log({
+      action: 'POS_CASH_MOVEMENT',
+      module: 'pos',
+      resource: 'pos_shift',
+      resourceId: shift.id,
+      userId: cashierId,
+      newValue: {
+        direction: dto.direction,
+        amount,
+        reason: dto.reason,
+        terminalId: shift.terminalId,
+      },
+    });
+
+    const totals = await this.repository.sumCashMovementsForShift(shift.id);
+    return {
+      id: movement.id,
+      shiftId: shift.id,
+      direction: movement.direction,
+      amount: Number(movement.amount),
+      reason: movement.reason,
+      createdAt: movement.createdAt,
+      shiftTotals: totals,
+    };
+  }
+
+  /** Every drawer movement recorded against a shift, newest first. */
+  async listCashMovements(shiftId: string) {
+    const movements =
+      await this.repository.findCashMovementsForShift(shiftId);
+    const totals = await this.repository.sumCashMovementsForShift(shiftId);
+    return {
+      movements: movements.map((m) => ({
+        id: m.id,
+        direction: m.direction,
+        amount: Number(m.amount),
+        reason: m.reason,
+        createdAt: m.createdAt,
+      })),
+      ...totals,
+    };
+  }
+
   async closeShift(shiftId: string, cashierId: string, dto: ClosePosShiftDto) {
     const shift = await this.repository.findShiftById(shiftId);
     if (!shift) throw new NotFoundException('Shift not found');
@@ -897,8 +975,14 @@ export class PosService {
         shift.openedAt,
         new Date(),
       );
+    // Petty cash paid out and floats added in move the drawer just as much as
+    // a sale does. Leaving them out made every such shift close on a variance
+    // the cashier could not explain.
+    const { cashIn, cashOut } = await this.repository.sumCashMovementsForShift(
+      shift.id,
+    );
     const closingCashExpected =
-      Number(shift.openingCash) + cashSales - cashRefunds;
+      Number(shift.openingCash) + cashSales - cashRefunds + cashIn - cashOut;
     const variance = dto.closingCashCounted - closingCashExpected;
 
     const closed = await this.repository.closeShift(shiftId, {
@@ -958,11 +1042,28 @@ export class PosService {
     if (!shift) throw new NotFoundException('Shift not found');
 
     const windowEnd = shift.closedAt || new Date();
-    const breakdown = await this.repository.getShiftSalesBreakdown(
-      shift.terminalId,
-      shift.openedAt,
-      windowEnd,
-    );
+    const [breakdown, cashMovements, cashFromSales] = await Promise.all([
+      this.repository.getShiftSalesBreakdown(
+        shift.terminalId,
+        shift.openedAt,
+        windowEnd,
+      ),
+      this.repository.sumCashMovementsForShift(shift.id),
+      this.repository.getCashMovementForWindow(
+        shift.terminalId,
+        shift.openedAt,
+        windowEnd,
+      ),
+    ]);
+
+    // What the drawer should hold right now, by the same arithmetic the close
+    // uses -- so the cashier can check the count before committing to it.
+    const expectedCash =
+      Number(shift.openingCash) +
+      cashFromSales.cashSales -
+      cashFromSales.cashRefunds +
+      cashMovements.cashIn -
+      cashMovements.cashOut;
 
     return {
       shift,
@@ -970,6 +1071,12 @@ export class PosService {
       generatedAt: new Date(),
       windowStart: shift.openedAt,
       windowEnd,
+      openingCash: Number(shift.openingCash),
+      cashSales: cashFromSales.cashSales,
+      cashRefunds: cashFromSales.cashRefunds,
+      cashIn: cashMovements.cashIn,
+      cashOut: cashMovements.cashOut,
+      expectedCash: Math.round(expectedCash * 100) / 100,
       ...breakdown,
     };
   }
