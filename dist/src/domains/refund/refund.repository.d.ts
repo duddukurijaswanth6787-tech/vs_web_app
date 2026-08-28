@@ -1,0 +1,120 @@
+import { PrismaService } from "../../database/prisma.service";
+import { Prisma } from '@prisma/client';
+export declare class RefundRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findAll(params: {
+        orderId?: string;
+        status?: string;
+        page: number;
+        limit: number;
+    }): Promise<{
+        data: {
+            id: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            method: string | null;
+            orderId: string;
+            amount: Prisma.Decimal;
+            transactionId: string | null;
+            reason: string;
+            adminNotes: string | null;
+            paymentId: string;
+            refundNumber: string;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>;
+    findById(id: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        method: string | null;
+        orderId: string;
+        amount: Prisma.Decimal;
+        transactionId: string | null;
+        reason: string;
+        adminNotes: string | null;
+        paymentId: string;
+        refundNumber: string;
+    } | null>;
+    findByOrderId(orderId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        method: string | null;
+        orderId: string;
+        amount: Prisma.Decimal;
+        transactionId: string | null;
+        reason: string;
+        adminNotes: string | null;
+        paymentId: string;
+        refundNumber: string;
+    }[]>;
+    create(data: Prisma.RefundCreateInput): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        method: string | null;
+        orderId: string;
+        amount: Prisma.Decimal;
+        transactionId: string | null;
+        reason: string;
+        adminNotes: string | null;
+        paymentId: string;
+        refundNumber: string;
+    }>;
+    update(id: string, data: Prisma.RefundUpdateInput): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        method: string | null;
+        orderId: string;
+        amount: Prisma.Decimal;
+        transactionId: string | null;
+        reason: string;
+        adminNotes: string | null;
+        paymentId: string;
+        refundNumber: string;
+    }>;
+    findPaymentById(paymentId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        currency: string;
+        metadata: Prisma.JsonValue | null;
+        method: string;
+        provider: string;
+        orderId: string;
+        paymentNumber: string;
+        amount: Prisma.Decimal;
+        transactionId: string | null;
+        providerOrderId: string | null;
+        providerPaymentId: string | null;
+    } | null>;
+    generateRefundNumber(): Promise<string>;
+}

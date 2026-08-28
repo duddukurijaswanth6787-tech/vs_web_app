@@ -10,7 +10,7 @@
   },
   "scripts": {
     "prebuild": "prisma generate",
-    "build": "nest build",
+    "build": "nest build && tsc-alias",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "free-port": "node scripts/free-port.js",
@@ -19,8 +19,8 @@
     "start:dev:nest-cli": "nest start --watch",
     "prestart:debug": "node scripts/free-port.js",
     "start:debug": "nest start --debug --watch",
-    "start:prod": "node -r tsconfig-paths/register dist/src/main.js",
-    "start:migrate": "prisma migrate deploy && node -r tsconfig-paths/register dist/src/main.js",
+    "start:prod": "node dist/src/main.js",
+    "start:migrate": "(npx prisma migrate deploy || true) && node dist/src/main.js",
     "lint": "eslint \"{src,apps,libs,test}/**/*.ts\" --fix",
     "test": "jest",
     "test:watch": "jest --watch",
@@ -29,6 +29,7 @@
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
   "dependencies": {
+    "@aws-sdk/client-cost-explorer": "^3.1119.0",
     "@aws-sdk/client-s3": "^3.1084.0",
     "@aws-sdk/s3-request-presigner": "^3.1084.0",
     "@nestjs/bullmq": "^11.0.4",
@@ -103,6 +104,7 @@
     "ts-jest": "^29.2.5",
     "ts-loader": "^9.5.2",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.9.2",
     "typescript": "^5.7.3",
     "typescript-eslint": "^8.20.0"
   },

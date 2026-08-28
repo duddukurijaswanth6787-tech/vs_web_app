@@ -2,6 +2,7 @@ import type { NextConfig } from "next";
 import path from "path";
 
 const nextConfig: NextConfig = {
+  compress: true,
   allowedDevOrigins: [
     '192.168.1.23',
     '192.168.1.23:3005',
@@ -11,6 +12,8 @@ const nextConfig: NextConfig = {
     '0.0.0.0:3005',
   ],
   images: {
+    formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 2592000,
     dangerouslyAllowSVG: true,
     localPatterns: [
       {

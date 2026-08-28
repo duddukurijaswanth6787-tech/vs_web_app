@@ -1,0 +1,20 @@
+export declare const COMMERCE_CONSTANTS: {
+    readonly SKU_PREFIX: "VAS";
+    readonly BARCODE_PREFIX: "890";
+    readonly PRICE_PRECISION: 2;
+    readonly WEIGHT_PRECISION: 2;
+    readonly DIMENSION_PRECISION: 1;
+    readonly MAX_IMAGE_COUNT: 10;
+    readonly MAX_VIDEO_COUNT: 3;
+    readonly MAX_IMAGE_SIZE_MB: 5;
+    readonly MAX_VIDEO_SIZE_MB: 50;
+    readonly MAX_FILE_SIZE_MB: 10;
+    readonly LOW_STOCK_THRESHOLD: 10;
+    readonly MIN_STOCK_LEVEL: 0;
+    readonly MAX_STOCK_LEVEL: 999999;
+    readonly DEFAULT_PAGE_SIZE: 20;
+    readonly MAX_PAGE_SIZE: 100;
+    readonly SLUG_MAX_LENGTH: 200;
+    readonly SKU_LENGTH: 8;
+    readonly BARCODE_LENGTH: 12;
+};

@@ -1,0 +1,265 @@
+import type { JwtPayload } from "../auth/services/jwt.service";
+import { RagAgentService } from './rag-agent.service';
+import { CreateAgentDto, UpdateAgentDto, AgentStatusDto, AssignKnowledgeDto, ConfigureToolsDto, TestAgentDto } from './rag-agent.types';
+export declare class RagAdminAgentController {
+    private readonly agentService;
+    constructor(agentService: RagAgentService);
+    findAll(page?: number, limit?: number): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        data: ({
+            _count: {
+                conversations: number;
+            };
+        } & {
+            id: string;
+            name: string;
+            description: string;
+            status: string;
+            createdBy: string;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            isDefault: boolean;
+            avatarUrl: string | null;
+            agentKey: string;
+            systemPrompt: string;
+            modelProvider: string;
+            model: string;
+            temperature: import("@prisma/client-runtime-utils").Decimal;
+            maxTokens: number;
+            behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+            guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+            instructions: string | null;
+            toolConfig: import("@prisma/client/runtime/client").JsonValue;
+        })[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>>;
+    findById(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        knowledgeSources: ({
+            knowledgeSource: {
+                id: string;
+                name: string;
+                status: string;
+                createdBy: string;
+                updatedBy: string | null;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+                metadata: import("@prisma/client/runtime/client").JsonValue;
+                mimeType: string | null;
+                checksum: string | null;
+                sourceType: string;
+                sourceUrl: string | null;
+                s3Key: string | null;
+                originalFileName: string | null;
+                rawText: string | null;
+                indexingError: string | null;
+                lastIndexedAt: Date | null;
+            };
+        } & {
+            createdAt: Date;
+            priority: number;
+            knowledgeSourceId: string;
+            agentId: string;
+        })[];
+    } & {
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }>>;
+    create(dto: CreateAgentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }>>;
+    update(id: string, dto: UpdateAgentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }>>;
+    delete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    restore(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<null>>;
+    updateStatus(id: string, dto: AgentStatusDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }>>;
+    assignKnowledgeSources(id: string, dto: AssignKnowledgeDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<({
+        knowledgeSources: ({
+            knowledgeSource: {
+                id: string;
+                name: string;
+                status: string;
+                createdBy: string;
+                updatedBy: string | null;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+                metadata: import("@prisma/client/runtime/client").JsonValue;
+                mimeType: string | null;
+                checksum: string | null;
+                sourceType: string;
+                sourceUrl: string | null;
+                s3Key: string | null;
+                originalFileName: string | null;
+                rawText: string | null;
+                indexingError: string | null;
+                lastIndexedAt: Date | null;
+            };
+        } & {
+            createdAt: Date;
+            priority: number;
+            knowledgeSourceId: string;
+            agentId: string;
+        })[];
+    } & {
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }) | null>>;
+    configureTools(id: string, dto: ConfigureToolsDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        name: string;
+        description: string;
+        status: string;
+        createdBy: string;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        avatarUrl: string | null;
+        agentKey: string;
+        systemPrompt: string;
+        modelProvider: string;
+        model: string;
+        temperature: import("@prisma/client-runtime-utils").Decimal;
+        maxTokens: number;
+        behaviorConfig: import("@prisma/client/runtime/client").JsonValue;
+        guardrailConfig: import("@prisma/client/runtime/client").JsonValue;
+        instructions: string | null;
+        toolConfig: import("@prisma/client/runtime/client").JsonValue;
+    }>>;
+    test(id: string, dto: TestAgentDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        conversationId: string;
+        messageId: string;
+        answer: string;
+        intent: string;
+        confidence: number;
+        citations: {
+            index: number;
+            label: any;
+            sourceId: any;
+            excerpt: any;
+            relevanceScore: any;
+        }[];
+        products: never[];
+        toolsUsed: {
+            name: any;
+            status: any;
+        }[];
+        suggestedActions: {
+            type: string;
+            label: string;
+            entityId: string;
+        }[];
+        responseTimeMs: number;
+    }>>;
+}

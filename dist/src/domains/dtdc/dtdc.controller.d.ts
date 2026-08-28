@@ -1,0 +1,111 @@
+import { DtdcService } from './dtdc.service';
+import { CreateDtdcShipmentDto, CancelDtdcShipmentDto } from './dtdc.types';
+import type { JwtPayload } from "../auth/services/jwt.service";
+export declare class DtdcController {
+    private readonly dtdcService;
+    constructor(dtdcService: DtdcService);
+    create(user: JwtPayload, dto: CreateDtdcShipmentDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>>;
+    byOrder(orderId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }[]>>;
+    track(awbOrId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        tracking: {
+            awbNumber: string | null;
+            status: string;
+            trackingUrl: string | null;
+            checkpoints: {
+                code: string;
+                at: Date | null;
+                description: string;
+            }[];
+        };
+        order: {
+            id: string;
+            status: string;
+            orderNumber: string;
+        };
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>>;
+    label(awbOrId: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        awbNumber: string | null;
+        labelUrl: string | null;
+        status: string;
+    }>>;
+    cancel(awbOrId: string, dto: CancelDtdcShipmentDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        orderId: string;
+        labelUrl: string | null;
+        serviceType: string;
+        weightKg: import("@prisma/client-runtime-utils").Decimal | null;
+        pieces: number;
+        awbNumber: string | null;
+        trackingUrl: string | null;
+        consigneeName: string | null;
+        consigneePhone: string | null;
+        consigneePincode: string | null;
+        rawRequest: import("@prisma/client/runtime/client").JsonValue | null;
+        rawResponse: import("@prisma/client/runtime/client").JsonValue | null;
+        bookedAt: Date | null;
+        cancelledAt: Date | null;
+    }>>;
+}

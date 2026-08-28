@@ -1,0 +1,150 @@
+import { PrismaService } from "../../database/prisma.service";
+import { CacheService } from "../../infrastructure/redis";
+import { NewsletterSubscribeDto } from './storefront.types';
+export declare class StorefrontPublicService {
+    private readonly prisma;
+    private readonly cache;
+    constructor(prisma: PrismaService, cache: CacheService);
+    getPublicSettings(): Promise<{
+        bannerAutoplayInterval: number;
+        bannerAutoplayEnabled: boolean;
+        announcementBarEnabled: boolean;
+        announcementBarMobileEnabled: boolean;
+        announcementBarText: string;
+        announcementBarLink: string;
+        announcementBarLinkText: string;
+        announcementBarBgColor: string;
+        announcementBarTextColor: string;
+        announcement_bar_enabled: boolean;
+        announcement_bar_text: string;
+        announcement_bar_mobile_enabled: boolean;
+        announcement_bar_link: string;
+        announcement_bar_link_text: string;
+        announcement_bar_bg_color: string;
+        announcement_bar_text_color: string;
+        banner_autoplay_interval: number;
+        banner_autoplay_enabled: boolean;
+        id: string;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        logo: string | null;
+        storeName: string;
+        storeDescription: string | null;
+        favicon: string | null;
+        supportEmail: string | null;
+        supportPhone: string | null;
+        whatsappNumber: string | null;
+        supportHours: string | null;
+        companyAddress: string | null;
+        currency: string;
+        timezone: string;
+        language: string;
+        copyrightText: string | null;
+        maintenanceMode: boolean;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        metaKeywords: string | null;
+    }>;
+    getHomepage(): Promise<{
+        sections: {
+            id: string;
+            description: string | null;
+            displayOrder: number;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            startDate: Date | null;
+            endDate: Date | null;
+            key: string;
+            enabled: boolean;
+        }[];
+        categories: ({
+            category: {
+                path: string;
+                id: string;
+                slug: string;
+                name: string;
+                description: string | null;
+                icon: string | null;
+                image: string | null;
+                bannerImage: string | null;
+                parentId: string | null;
+                level: number;
+                displayOrder: number;
+                isFeatured: boolean;
+                isVisible: boolean;
+                isMenuVisible: boolean;
+                seoTitle: string | null;
+                seoDescription: string | null;
+                seoKeywords: string | null;
+                status: string;
+                createdBy: string | null;
+                updatedBy: string | null;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+            };
+        } & {
+            id: string;
+            displayOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+            categoryId: string;
+            enabled: boolean;
+        })[];
+    }>;
+    getFooter(): Promise<({
+        links: {
+            url: string;
+            id: string;
+            displayOrder: number;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            enabled: boolean;
+            footerSectionId: string;
+            openInNewTab: boolean;
+        }[];
+    } & {
+        id: string;
+        displayOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        key: string;
+        enabled: boolean;
+    })[]>;
+    getSocialLinks(): Promise<{
+        url: string;
+        id: string;
+        icon: string | null;
+        displayOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string | null;
+        enabled: boolean;
+        platform: import(".prisma/client").$Enums.SocialPlatform;
+    }[]>;
+    getFeatures(): Promise<{
+        id: string;
+        name: string;
+        description: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        category: import(".prisma/client").$Enums.FeatureCategory;
+        key: string;
+        enabled: boolean;
+    }[]>;
+    subscribeToNewsletter(dto: NewsletterSubscribeDto): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.NewsletterStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        email: string;
+        source: string | null;
+        subscribedAt: Date;
+        unsubscribedAt: Date | null;
+    }>;
+}

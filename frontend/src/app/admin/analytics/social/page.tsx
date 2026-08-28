@@ -134,7 +134,7 @@ export default function SocialAnalyticsPage() {
                     <td className="py-3 font-medium">{post.likeCount}</td>
                     <td className="py-3 font-medium">{post.commentCount}</td>
                     <td className="py-3 font-medium">{post.saveCount}</td>
-                    <td className="py-3 font-medium">{post.viewCount + post.playCount}</td>
+                    <td className="py-3 font-medium">{(post.viewCount || 0) + (post.playCount || 0)}</td>
                     <td className="py-3 text-right">
                       <Link
                         href={`/admin/social`}

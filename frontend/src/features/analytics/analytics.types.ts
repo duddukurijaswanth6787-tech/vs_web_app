@@ -1,61 +1,86 @@
-export interface RagAnalyticsSummary {
-  conversationsCount: number;
-  messagesCount: number;
-  averageLatency: number;
-  errorRate: number;
-  toolExecutions: number;
-  knowledgeRetrievals: number;
-  citations: number;
-  agentPerformance?: Array<{
-    agentKey: string;
-    name: string;
-    requestCount: number;
+export type AnalyticsPeriod = 'daily' | 'weekly' | 'monthly' | 'yearly';
+
+export interface OmnichannelSummary {
+  period: AnalyticsPeriod;
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  offlineSales: {
+    revenue: number;
+    ordersCount: number;
+    sharePercentage: number;
+  };
+  onlineSales: {
+    revenue: number;
+    ordersCount: number;
+    sharePercentage: number;
+  };
+  trend: {
+    labels: string[];
+    offlineRevenue: number[];
+    onlineRevenue: number[];
+  };
+}
+
+export interface OfflinePosAnalytics {
+  period: AnalyticsPeriod;
+  totalRevenue: number;
+  totalTransactions: number;
+  averageBasketValue: number;
+  byPaymentMethod: Array<{
+    method: string;
+    amount: number;
+    count: number;
+    percentage: number;
+  }>;
+  dailyTrend: Array<{
+    date: string;
+    revenue: number;
+    transactions: number;
+  }>;
+}
+
+export interface OnlineSalesAnalytics {
+  period: AnalyticsPeriod;
+  totalRevenue: number;
+  totalOrders: number;
+  averageOrderValue: number;
+  paymentGatewayBreakdown: Array<{
+    provider: string;
+    amount: number;
     successRate: number;
-    avgLatency: number;
-    errorCount: number;
   }>;
-  toolPerformance?: Array<{
-    toolName: string;
-    executionCount: number;
-    successCount: number;
-    failureCount: number;
-    avgDuration: number;
+  shippingStatusBreakdown: Array<{
+    status: string;
+    count: number;
   }>;
+  returnRatePercentage: number;
 }
 
-export interface SocialPostAnalytics {
-  id: string;
-  caption: string;
-  contentType: string;
-  likeCount: number;
-  commentCount: number;
-  shareCount: number;
-  saveCount: number;
-  viewCount: number;
-  playCount: number;
-  media?: Array<{ id: string; url: string; mediaType: string }>;
+export interface ProductVelocityItem {
+  productId: string;
+  name: string;
+  sku: string;
+  categoryName: string;
+  currentStock: number;
+  unitsSold: number;
+  dailyVelocity: number;
+  estimatedDaysRemaining: number;
+  classification: 'FAST_MOVING' | 'REGULAR' | 'SLOW_MOVING';
+  stockoutRisk: 'CRITICAL' | 'WARNING' | 'HEALTHY';
 }
 
-export interface SocialAnalyticsSummary {
-  totalPosts: number;
-  totalLikes: number;
-  totalComments: number;
-  totalSaves: number;
-  totalShares: number;
-  totalViews: number;
-  totalPlays: number;
-  topPosts: SocialPostAnalytics[];
-}
-
-export interface RagIntentCount {
-  intent: string;
-  count: number;
-}
-
-export interface SocialEngagementTimelinePoint {
-  date: string;
-  likes: number;
-  comments: number;
-  shares: number;
-  plays: number;
+export interface InventoryVelocityAnalytics {
+  totalCatalogProducts: number;
+  totalStockUnits: number;
+  fastMovingCount: number;
+  slowMovingCount: number;
+  criticalStockoutsCount: number;
+  topVelocityProducts: ProductVelocityItem[];
+  slowVelocityProducts: ProductVelocityItem[];
+  categoryStockDistribution: Array<{
+    categoryName: string;
+    totalStock: number;
+    unitsSold: number;
+  }>;
 }

@@ -13,6 +13,7 @@ import {
   Undo2,
   XCircle,
   CreditCard,
+  Cloud,
   Receipt,
   Gift,
   Flame,
@@ -27,6 +28,7 @@ import {
   Brain,
   MessageSquare,
   BarChart3,
+  TrendingUp,
   Users,
   MessageSquareHeart,
   Mail,
@@ -93,6 +95,13 @@ export const adminNavigation: NavGroup[] = [
   {
     group: 'ANALYTICS',
     items: [
+      {
+        id: 'omnichannel-analytics',
+        title: 'Omnichannel & Velocity',
+        href: '/admin/analytics',
+        icon: TrendingUp,
+        implemented: true,
+      },
       {
         id: 'analytics-sales',
         title: 'Sales Analytics',
@@ -713,6 +722,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'System Health',
         href: '/admin/system/health',
         icon: Activity,
+        implemented: true,
+      },
+      {
+        id: 'aws-billing',
+        title: 'AWS Billing & Storage',
+        href: '/admin/aws-billing',
+        icon: Cloud,
         implemented: true,
       },
     ],

@@ -1,0 +1,187 @@
+import { PrismaService } from "../../database/prisma.service";
+import { AuditService } from "../audit/audit.service";
+import { CreatePackingJobDto, VerifyBarcodeDto, PackingQueueQueryDto, AssignPackingDto } from './packing.types';
+export declare class PackingService {
+    private readonly prisma;
+    private readonly auditService;
+    constructor(prisma: PrismaService, auditService: AuditService);
+    createJob(dto: CreatePackingJobDto, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    getQueue(query: PackingQueueQueryDto): Promise<{
+        data: ({
+            order: {
+                id: string;
+                status: string;
+                orderNumber: string;
+                grandTotal: import("@prisma/client-runtime-utils").Decimal;
+            };
+        } & {
+            id: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            barcode: string | null;
+            orderNumber: string;
+            notes: string | null;
+            orderId: string;
+            verifiedAt: Date | null;
+            assignedTo: string | null;
+            labelUrl: string | null;
+            packedAt: Date | null;
+        })[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+        };
+    }>;
+    assign(jobId: string, dto: AssignPackingDto, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    startPacking(jobId: string, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    verifyBarcode(jobId: string, dto: VerifyBarcodeDto, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    generateLabel(jobId: string, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    complete(jobId: string, userId: string): Promise<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+    getById(jobId: string): Promise<{
+        order: {
+            id: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            channel: import(".prisma/client").$Enums.OrderChannel;
+            currency: string;
+            orderNumber: string;
+            customerId: string;
+            subtotal: import("@prisma/client-runtime-utils").Decimal;
+            discountTotal: import("@prisma/client-runtime-utils").Decimal;
+            taxTotal: import("@prisma/client-runtime-utils").Decimal;
+            shippingCharge: import("@prisma/client-runtime-utils").Decimal;
+            grandTotal: import("@prisma/client-runtime-utils").Decimal;
+            paymentMethod: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            terminalId: string | null;
+            notes: string | null;
+            deliveryInstructions: string | null;
+            preferredDeliverySlot: string | null;
+            isGift: boolean;
+            giftWrapMessage: string | null;
+            cancelReason: string | null;
+        };
+        scans: {
+            id: string;
+            createdAt: Date;
+            barcode: string;
+            message: string | null;
+            scanType: string;
+            success: boolean;
+            scannedBy: string | null;
+            packingJobId: string;
+        }[];
+    } & {
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>;
+}

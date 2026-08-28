@@ -1,4 +1,4 @@
-console.log('[STARTUP] Executing main.ts module script...');
+console.log('[STARTUP] Executing main.ts module script v1.0.2 (Omnichannel & Inventory Velocity Analytics Active)...');
 
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';

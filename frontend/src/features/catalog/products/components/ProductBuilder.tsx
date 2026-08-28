@@ -53,6 +53,7 @@ import {
   Store,
   Globe,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -589,6 +590,15 @@ export default function ProductBuilder({
   // Add custom size to active color group
   const [newSizeInput, setNewSizeInput] = useState('');
 
+  /** Helper to generate a smart, unique, human-readable SKU ID for color + size variants */
+  const buildSmartVariantSku = (colorName: string, sizeName: string) => {
+    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || 'VSS').toString().trim();
+    const parentCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) || 'VSS';
+    const colorCode = colorName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'COL';
+    const sizeCode = sizeName.trim().toUpperCase();
+    return `${parentCode}-${colorCode}-${sizeCode}`;
+  };
+
   const addSizeToColorGroup = (colorGroupId: string) => {
     if (!newSizeInput.trim()) return;
     setColorGroups((prev) =>
@@ -604,7 +614,7 @@ export default function ProductBuilder({
                 size: newSizeInput.trim().toUpperCase(),
                 stock: 10,
                 available: true,
-                sku: `${group.name.substring(0, 3).toUpperCase()}-${newSizeInput.trim().toUpperCase()}`,
+                sku: buildSmartVariantSku(group.name, newSizeInput.trim().toUpperCase()),
               },
             ],
           };
@@ -643,12 +653,12 @@ export default function ProductBuilder({
     );
   };
 
-  /** Update any numeric field on one size row (min stock, reorder level …). */
+  /** Update any numeric or string field on one size row (min stock, reorder level, sku …). */
   const updateSizeField = (
     colorGroupId: string,
     sizeName: string,
-    field: 'minStock' | 'reorderLevel',
-    value: number,
+    field: 'minStock' | 'reorderLevel' | 'sku',
+    value: number | string,
   ) => {
     setColorGroups((prev) =>
       prev.map((group) =>
@@ -1732,6 +1742,52 @@ export default function ProductBuilder({
                 </div>
               </div>
 
+              {/* GST & Tax Configuration */}
+              <div className="md:col-span-3 pt-3 border-t border-neutral-100 space-y-3">
+                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">GST &amp; Tax Configuration</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* GST % */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">GST %</label>
+                    <select
+                      {...methods.register('taxPercentage')}
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
+                    >
+                      {[0, 3, 5, 12, 18, 28].map((rate) => (
+                        <option key={rate} value={rate}>
+                          {rate}%
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* HSN code */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">HSN Code</label>
+                    <input
+                      type="text"
+                      {...methods.register('hsnCode')}
+                      placeholder="e.g. 6204"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
+                    />
+                    <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
+                  </div>
+
+                  {/* Tax inclusive */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
+                    <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+                      <input
+                        type="checkbox"
+                        {...methods.register('taxInclusive')}
+                        className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
+                      />
+                      <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* Calculated Discount Pill Badge */}
               <div className="md:col-span-3 bg-sky-50/80 border border-sky-100 p-4 rounded-2xl flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -1978,45 +2034,6 @@ export default function ProductBuilder({
                 </div>
               </div>
 
-              {/* GST % */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">GST %</label>
-                <select
-                  {...methods.register('taxPercentage')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
-                >
-                  {[0, 3, 5, 12, 18, 28].map((rate) => (
-                    <option key={rate} value={rate}>
-                      {rate}%
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* HSN code */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">HSN Code</label>
-                <input
-                  type="text"
-                  {...methods.register('hsnCode')}
-                  placeholder="e.g. 6204"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
-                />
-                <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
-              </div>
-
-              {/* Tax inclusive */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
-                <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
-                  <input
-                    type="checkbox"
-                    {...methods.register('taxInclusive')}
-                    className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
-                  />
-                  <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
-                </label>
-              </div>
 
               {/* Submit Button */}
               <div className="flex items-center justify-between pt-1">
@@ -2297,14 +2314,34 @@ export default function ProductBuilder({
         {/* TAB 4: COLOR-WISE SIZES & STOCK */}
         {activeTab === 'sizes' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <Ruler className="w-5 h-5 text-[#0284c7]" />
-                <span>Color-Wise Sizes, Stock & SKU Management</span>
-              </h3>
-              <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                Configure size availability and inventory per color group
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Ruler className="w-5 h-5 text-[#0284c7]" />
+                  <span>Color-Wise Sizes, Stock &amp; SKU Management</span>
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                  Configure size availability, inventory, and unique barcode SKU IDs per color group
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setColorGroups((prev) =>
+                    prev.map((g) => ({
+                      ...g,
+                      sizes: g.sizes.map((s) => ({
+                        ...s,
+                        sku: buildSmartVariantSku(g.name, s.size),
+                      })),
+                    }))
+                  );
+                }}
+                className="text-xs font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-3.5 py-2 rounded-xl hover:bg-sky-100 transition-all flex items-center gap-1.5 shadow-2xs"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Auto-Generate All SKU IDs</span>
+              </button>
             </div>
 
             {/* Size chart template */}
@@ -2390,7 +2427,7 @@ export default function ProductBuilder({
                                   size: sz,
                                   stock: 15,
                                   available: true,
-                                  sku: `${g.name.substring(0, 3).toUpperCase()}-${sz}`,
+                                  sku: buildSmartVariantSku(g.name, sz),
                                 })),
                               };
                             }
@@ -2427,9 +2464,16 @@ export default function ProductBuilder({
                             <span className="text-xs font-bold text-neutral-900 block">
                               Size {sz.size}
                             </span>
-                            <span className="text-[10px] text-neutral-400 font-mono">
-                              SKU: {sz.sku}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] font-bold text-sky-700 font-mono">SKU:</span>
+                              <input
+                                type="text"
+                                value={sz.sku || ''}
+                                onChange={(e) => updateSizeField(group.id, sz.size, 'sku', e.target.value.toUpperCase())}
+                                placeholder="SKU-ID"
+                                className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-32 shadow-2xs"
+                              />
+                            </div>
                           </div>
                         </div>
 

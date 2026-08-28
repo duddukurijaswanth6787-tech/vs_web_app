@@ -1,0 +1,208 @@
+import { PrismaService } from "../../database/prisma.service";
+import { Prisma } from '@prisma/client';
+export declare class CmsRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findBanners(params: {
+        placement?: string;
+        isActive?: boolean;
+        page: number;
+        limit: number;
+    }): Promise<{
+        data: {
+            id: string;
+            description: string | null;
+            displayOrder: number;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            isActive: boolean;
+            startDate: Date | null;
+            endDate: Date | null;
+            imageUrl: string;
+            placement: string;
+            mobileImageUrl: string | null;
+            linkUrl: string | null;
+            ctaEnabled: boolean;
+            ctaStyle: string;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>;
+    findBannerById(id: string): Promise<{
+        id: string;
+        description: string | null;
+        displayOrder: number;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        startDate: Date | null;
+        endDate: Date | null;
+        imageUrl: string;
+        placement: string;
+        mobileImageUrl: string | null;
+        linkUrl: string | null;
+        ctaEnabled: boolean;
+        ctaStyle: string;
+    } | null>;
+    createBanner(data: Prisma.BannerCreateInput): Promise<{
+        id: string;
+        description: string | null;
+        displayOrder: number;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        startDate: Date | null;
+        endDate: Date | null;
+        imageUrl: string;
+        placement: string;
+        mobileImageUrl: string | null;
+        linkUrl: string | null;
+        ctaEnabled: boolean;
+        ctaStyle: string;
+    }>;
+    updateBanner(id: string, data: Prisma.BannerUpdateInput): Promise<{
+        id: string;
+        description: string | null;
+        displayOrder: number;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        isActive: boolean;
+        startDate: Date | null;
+        endDate: Date | null;
+        imageUrl: string;
+        placement: string;
+        mobileImageUrl: string | null;
+        linkUrl: string | null;
+        ctaEnabled: boolean;
+        ctaStyle: string;
+    }>;
+    findPages(params: {
+        search?: string;
+        status?: string;
+        page: number;
+        limit: number;
+    }): Promise<{
+        data: {
+            id: string;
+            slug: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            title: string;
+            metaTitle: string | null;
+            metaDescription: string | null;
+            content: string | null;
+        }[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>;
+    findPageById(id: string): Promise<{
+        id: string;
+        slug: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        content: string | null;
+    } | null>;
+    findPageBySlug(slug: string): Promise<{
+        id: string;
+        slug: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        content: string | null;
+    } | null>;
+    createPage(data: Prisma.CmsPageCreateInput): Promise<{
+        id: string;
+        slug: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        content: string | null;
+    }>;
+    updatePage(id: string, data: Prisma.CmsPageUpdateInput): Promise<{
+        id: string;
+        slug: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        metaTitle: string | null;
+        metaDescription: string | null;
+        content: string | null;
+    }>;
+    findSections(): Promise<{
+        id: string;
+        slug: string;
+        name: string;
+        displayOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+        type: string;
+        isActive: boolean;
+        content: Prisma.JsonValue | null;
+    }[]>;
+    createSection(data: Prisma.CmsSectionCreateInput): Promise<{
+        id: string;
+        slug: string;
+        name: string;
+        displayOrder: number;
+        createdAt: Date;
+        updatedAt: Date;
+        type: string;
+        isActive: boolean;
+        content: Prisma.JsonValue | null;
+    }>;
+}

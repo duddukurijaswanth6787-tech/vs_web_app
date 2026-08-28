@@ -1,0 +1,1 @@
+export declare const PERMISSION_GROUPS: readonly ["Dashboard", "Users", "Staff", "Products", "Categories", "Brands", "Inventory", "Orders", "Payments", "Reports", "Settings", "Coupons", "Reviews", "Customers", "Pos"];

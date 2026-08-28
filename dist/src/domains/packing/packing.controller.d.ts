@@ -1,0 +1,186 @@
+import { PackingService } from './packing.service';
+import { CreatePackingJobDto, VerifyBarcodeDto, PackingQueueQueryDto, AssignPackingDto } from './packing.types';
+import type { JwtPayload } from "../auth/services/jwt.service";
+export declare class PackingController {
+    private readonly packingService;
+    constructor(packingService: PackingService);
+    queue(query: PackingQueueQueryDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        data: ({
+            order: {
+                id: string;
+                status: string;
+                orderNumber: string;
+                grandTotal: import("@prisma/client-runtime-utils").Decimal;
+            };
+        } & {
+            id: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            barcode: string | null;
+            orderNumber: string;
+            notes: string | null;
+            orderId: string;
+            verifiedAt: Date | null;
+            assignedTo: string | null;
+            labelUrl: string | null;
+            packedAt: Date | null;
+        })[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+        };
+    }>>;
+    create(user: JwtPayload, dto: CreatePackingJobDto): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    get(id: string): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        order: {
+            id: string;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            channel: import(".prisma/client").$Enums.OrderChannel;
+            currency: string;
+            orderNumber: string;
+            customerId: string;
+            subtotal: import("@prisma/client-runtime-utils").Decimal;
+            discountTotal: import("@prisma/client-runtime-utils").Decimal;
+            taxTotal: import("@prisma/client-runtime-utils").Decimal;
+            shippingCharge: import("@prisma/client-runtime-utils").Decimal;
+            grandTotal: import("@prisma/client-runtime-utils").Decimal;
+            paymentMethod: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            terminalId: string | null;
+            notes: string | null;
+            deliveryInstructions: string | null;
+            preferredDeliverySlot: string | null;
+            isGift: boolean;
+            giftWrapMessage: string | null;
+            cancelReason: string | null;
+        };
+        scans: {
+            id: string;
+            createdAt: Date;
+            barcode: string;
+            message: string | null;
+            scanType: string;
+            success: boolean;
+            scannedBy: string | null;
+            packingJobId: string;
+        }[];
+    } & {
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    assign(id: string, dto: AssignPackingDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    start(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    verify(id: string, dto: VerifyBarcodeDto, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    label(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+    complete(id: string, user: JwtPayload): Promise<import("../../common/responses/response.builder").ResponsePayload<{
+        id: string;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        createdAt: Date;
+        updatedAt: Date;
+        barcode: string | null;
+        orderNumber: string;
+        notes: string | null;
+        orderId: string;
+        verifiedAt: Date | null;
+        assignedTo: string | null;
+        labelUrl: string | null;
+        packedAt: Date | null;
+    }>>;
+}

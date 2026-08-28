@@ -1,0 +1,248 @@
+import { PrismaService } from "../../database/prisma.service";
+export declare class StaffRepository {
+    private readonly prisma;
+    constructor(prisma: PrismaService);
+    findAll(params: {
+        search?: string;
+        department?: string;
+        designation?: string;
+        employmentStatus?: string;
+        page: number;
+        limit: number;
+        sortBy: string;
+        sortOrder: 'asc' | 'desc';
+    }): Promise<{
+        data: ({
+            user: {
+                id: string;
+                createdAt: Date;
+                phone: string | null;
+                email: string;
+                accountStatus: import(".prisma/client").$Enums.AccountStatus;
+                firstName: string;
+                lastName: string | null;
+            };
+        } & {
+            id: string;
+            createdBy: string;
+            createdAt: Date;
+            updatedAt: Date;
+            address: string | null;
+            userId: string;
+            department: import(".prisma/client").$Enums.StaffDepartment;
+            designation: import(".prisma/client").$Enums.StaffDesignation;
+            employmentStatus: string;
+            employeeId: string;
+            joinedAt: Date | null;
+            emergencyContact: string | null;
+            jobTitle: string | null;
+            profileImage: string | null;
+            reportingManagerId: string | null;
+        })[];
+        meta: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+            hasNext: boolean;
+            hasPrevious: boolean;
+        };
+    }>;
+    findById(id: string): Promise<({
+        user: {
+            id: string;
+            createdAt: Date;
+            phone: string | null;
+            email: string;
+            accountStatus: import(".prisma/client").$Enums.AccountStatus;
+            firstName: string;
+            lastName: string | null;
+            lastLoginAt: Date | null;
+        };
+        reportingManager: {
+            id: string;
+            employeeId: string;
+            jobTitle: string | null;
+        } | null;
+    } & {
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    }) | null>;
+    findByUserId(userId: string): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    } | null>;
+    findByEmployeeId(employeeId: string): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    } | null>;
+    generateEmployeeId(): Promise<string>;
+    create(data: {
+        userId: string;
+        department: string;
+        designation: string;
+        employeeId: string;
+        jobTitle?: string;
+        reportingManagerId?: string;
+        joinedAt?: Date;
+        emergencyContact?: string;
+        address?: string;
+        createdBy: string;
+    }): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    }>;
+    update(id: string, data: {
+        department?: string;
+        designation?: string;
+        jobTitle?: string;
+        reportingManagerId?: string;
+        emergencyContact?: string;
+        address?: string;
+        profileImage?: string;
+    }): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    }>;
+    updateEmploymentStatus(id: string, status: string): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    }>;
+    updateUser(userId: string, data: {
+        accountStatus?: string;
+        firstName?: string;
+        lastName?: string;
+        phone?: string;
+        loginAttempts?: number;
+        lockoutUntil?: Date | null;
+        deletedAt?: Date | null;
+    }): Promise<{
+        id: string;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        country: string;
+        phone: string | null;
+        email: string;
+        gender: import(".prisma/client").$Enums.Gender | null;
+        language: string;
+        metadata: import("@prisma/client/runtime/client").JsonValue | null;
+        googleId: string | null;
+        facebookId: string | null;
+        appleId: string | null;
+        passwordHash: string;
+        userType: import(".prisma/client").$Enums.UserType;
+        accountStatus: import(".prisma/client").$Enums.AccountStatus;
+        firstName: string;
+        lastName: string | null;
+        avatar: string | null;
+        lastLoginAt: Date | null;
+        loginAttempts: number;
+        lockoutUntil: Date | null;
+        isEmailVerified: boolean;
+        isPhoneVerified: boolean;
+    }>;
+    updateStaffProfile(id: string, data: {
+        department?: string;
+        designation?: string;
+        jobTitle?: string;
+        reportingManagerId?: string;
+        emergencyContact?: string;
+        address?: string;
+        profileImage?: string;
+    }): Promise<{
+        id: string;
+        createdBy: string;
+        createdAt: Date;
+        updatedAt: Date;
+        address: string | null;
+        userId: string;
+        department: import(".prisma/client").$Enums.StaffDepartment;
+        designation: import(".prisma/client").$Enums.StaffDesignation;
+        employmentStatus: string;
+        employeeId: string;
+        joinedAt: Date | null;
+        emergencyContact: string | null;
+        jobTitle: string | null;
+        profileImage: string | null;
+        reportingManagerId: string | null;
+    }>;
+}
