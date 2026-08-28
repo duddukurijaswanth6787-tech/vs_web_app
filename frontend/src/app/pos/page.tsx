@@ -26,6 +26,7 @@ import {
   Clock,
   Usb,
   RotateCcw,
+  Wallet,
 } from 'lucide-react';
 import Link from 'next/link';
 import {
@@ -66,6 +67,13 @@ export default function DesktopPosPage() {
   });
   const [discountTotal, setDiscountTotal] = useState(0);
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>('UPI');
+  // Split bills: what the customer handed over on each tender. Kept as strings
+  // so the boxes can be left blank rather than showing a stubborn 0.
+  const [splitTenders, setSplitTenders] = useState<Record<'CASH' | 'UPI' | 'CARD', string>>({
+    CASH: '',
+    UPI: '',
+    CARD: '',
+  });
   const [activeSession, setActiveSession] = useState<CheckoutSessionData | null>(null);
 
   // Modals
@@ -168,6 +176,17 @@ export default function DesktopPosPage() {
   // be a flat 5% applied before the discount was taken off, which
   // under-collected on 12% goods and overcharged tax on every discounted bill.
   const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, discountTotal);
+
+  const splitEntries = (['CASH', 'UPI', 'CARD'] as const)
+    .map((method) => ({ method, amount: Number(splitTenders[method]) || 0 }))
+    .filter((t) => t.amount > 0);
+  const splitTendered = Math.round(splitEntries.reduce((sum, t) => sum + t.amount, 0) * 100) / 100;
+  const splitShortfall = Math.round(Math.max(0, grandTotal - splitTendered) * 100) / 100;
+  const splitExcess = Math.round(Math.max(0, splitTendered - grandTotal) * 100) / 100;
+  const splitCash = Number(splitTenders.CASH) || 0;
+  // Change only ever comes out of the cash drawer -- the server enforces the
+  // same rule, this just stops the cashier finding out after the fact.
+  const splitChangeBlocked = splitExcess > splitCash + 0.005;
 
   useEffect(() => {
     const typed = barcodeInput.trim();
@@ -336,6 +355,16 @@ export default function DesktopPosPage() {
       setSaleError('Enter cash tendered of at least the total payable before completing this sale.');
       return;
     }
+    if (paymentMethod === 'SPLIT') {
+      if (splitShortfall > 0) {
+        setSaleError(`Split payment is short by Rs.${splitShortfall.toFixed(2)}.`);
+        return;
+      }
+      if (splitChangeBlocked) {
+        setSaleError('Change can only be given against cash. Reduce the card or UPI amount.');
+        return;
+      }
+    }
     setSaleError('');
 
     // The backend's completeSale/previewReceipt DTOs reject unknown
@@ -360,6 +389,7 @@ export default function DesktopPosPage() {
         items: saleItems,
         paymentMethod,
         amountPaid: grandTotal,
+        splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
         customer,
         discountTotal,
         taxTotal,
@@ -432,6 +462,7 @@ export default function DesktopPosPage() {
           setActiveSession(null);
           setDiscountTotal(0);
           setCashTendered('');
+          setSplitTenders({ CASH: '', UPI: '', CARD: '' });
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -448,6 +479,7 @@ export default function DesktopPosPage() {
               items: saleItems,
               paymentMethod,
               amountPaid: grandTotal,
+              splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
               customer,
               discountTotal,
               taxTotal,
@@ -474,6 +506,7 @@ export default function DesktopPosPage() {
           setActiveSession(null);
           setDiscountTotal(0);
           setCashTendered('');
+          setSplitTenders({ CASH: '', UPI: '', CARD: '' });
         },
       },
     );
@@ -887,7 +920,7 @@ export default function DesktopPosPage() {
           <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
             <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Select Payment Method</span>
             
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
                 type="button"
                 onClick={() => setPaymentMethod('UPI')}
@@ -927,7 +960,60 @@ export default function DesktopPosPage() {
                 <span>Card</span>
               </button>
 
+              <button
+                type="button"
+                onClick={() => setPaymentMethod('SPLIT')}
+                className={`p-3 rounded-xl border text-xs font-bold flex flex-col items-center gap-1.5 transition-all ${
+                  paymentMethod === 'SPLIT'
+                    ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)] shadow-xs'
+                    : 'bg-neutral-50 hover:bg-neutral-100 text-neutral-700 border-neutral-200'
+                }`}
+              >
+                <Wallet className="w-5 h-5" />
+                <span>Split</span>
+              </button>
+
             </div>
+
+            {paymentMethod === 'SPLIT' && (
+              <div className="pt-1 space-y-2 border-t border-neutral-100">
+                <p className="pt-2 text-[11px] font-semibold text-neutral-600">
+                  Enter what the customer paid on each tender. Each is recorded separately.
+                </p>
+                {(['CASH', 'UPI', 'CARD'] as const).map((method) => (
+                  <div key={method} className="flex items-center justify-between gap-2">
+                    <span className="text-[11px] font-semibold text-neutral-600 shrink-0">{method}</span>
+                    <input
+                      type="number"
+                      min={0}
+                      value={splitTenders[method]}
+                      onChange={(e) =>
+                        setSplitTenders((prev) => ({ ...prev, [method]: e.target.value }))
+                      }
+                      placeholder="0"
+                      className="w-28 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-xs font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+                    />
+                  </div>
+                ))}
+                {splitShortfall > 0 ? (
+                  <p className="text-[11px] font-semibold text-sky-700">
+                    Short by ₹{splitShortfall.toFixed(2)} of ₹{grandTotal.toFixed(2)}.
+                  </p>
+                ) : splitChangeBlocked ? (
+                  <p className="text-[11px] font-semibold text-amber-700">
+                    ₹{splitExcess.toFixed(2)} over, but only ₹{splitCash.toFixed(2)} is cash. Change
+                    can only be given against cash.
+                  </p>
+                ) : splitExcess > 0 ? (
+                  <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
+                    <span>Change Due</span>
+                    <span>₹{splitExcess.toFixed(2)}</span>
+                  </div>
+                ) : splitTendered > 0 ? (
+                  <p className="text-[11px] font-semibold text-emerald-700">Tenders cover the bill exactly.</p>
+                ) : null}
+              </div>
+            )}
 
             {paymentMethod === 'CASH' && (
               <div className="pt-1 space-y-2 border-t border-neutral-100">
@@ -997,7 +1083,8 @@ export default function DesktopPosPage() {
                 cart.length === 0 ||
                 completeSaleMutation.isPending ||
                 shiftRequired ||
-                (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal))
+                (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal)) ||
+                (paymentMethod === 'SPLIT' && (splitShortfall > 0 || splitChangeBlocked))
               }
               className={`w-full text-white py-3.5 rounded-xl text-sm font-bold transition-all shadow-md flex items-center justify-center gap-2 disabled:opacity-50 ${
                 offlineSync.isBackendReachable ? 'bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)]' : 'bg-amber-700 hover:bg-amber-800'

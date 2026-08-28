@@ -75,6 +75,8 @@ export interface CompletePosSalePayload {
   items?: PosCartItem[];
   paymentMethod: PosPaymentMethod;
   amountPaid: number;
+  /** Set when paymentMethod is SPLIT: one entry per tender the customer paid with. */
+  splitPayments?: { method: PosPaymentMethod; amount: number }[];
   customer?: PosCustomerInfo;
   terminalId?: string;
   shopId?: string;
@@ -98,6 +100,8 @@ export interface PosSaleResult {
     status: string;
     grandTotal: number;
     itemsCount: number;
+    /** Change owed back on a split bill, worked out server-side. */
+    changeDue?: number;
     createdAt: string;
   };
   printReady: boolean;

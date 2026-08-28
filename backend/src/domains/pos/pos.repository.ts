@@ -377,6 +377,11 @@ export class PosRepository {
     taxTotal: number;
     grandTotal: number;
     paymentMethod: PosPaymentMethodType;
+    /**
+     * One row per tender. A split bill records each part separately so the
+     * cash drawer and the card settlement each reconcile on their own.
+     */
+    payments?: { method: string; amount: number }[];
     terminalId?: string;
     notes?: string;
     items: PosCartItemDto[];
@@ -438,16 +443,20 @@ export class PosRepository {
             })),
           },
           payments: {
-            create: [
-              {
-                paymentNumber: `PAY-${params.orderNumber}`,
-                method: params.paymentMethod,
-                provider: 'POS_TERMINAL',
-                status: 'COMPLETED',
-                amount: params.grandTotal,
-                createdBy: params.cashierId,
-              },
-            ],
+            create: (params.payments?.length
+              ? params.payments
+              : [{ method: params.paymentMethod, amount: params.grandTotal }]
+            ).map((p, index, all) => ({
+              paymentNumber:
+                all.length > 1
+                  ? `PAY-${params.orderNumber}-${index + 1}`
+                  : `PAY-${params.orderNumber}`,
+              method: p.method,
+              provider: 'POS_TERMINAL',
+              status: 'COMPLETED',
+              amount: p.amount,
+              createdBy: params.cashierId,
+            })),
           },
           timeline: {
             create: [
@@ -704,14 +713,16 @@ export class PosRepository {
     to: Date,
   ): Promise<{ cashSales: number; cashRefunds: number }> {
     const [salesAgg, refunds] = await Promise.all([
-      this.prisma.order.aggregate({
-        _sum: { grandTotal: true },
+      // Counted from the payment rows, not from order.paymentMethod: a split
+      // bill is one order but two tenders, and only the cash part belongs in
+      // the drawer expectation the cashier counts against at close.
+      this.prisma.payment.aggregate({
+        _sum: { amount: true },
         where: {
-          terminalId,
-          channel: 'POS_SHOPORA',
-          paymentMethod: 'CASH',
-          deletedAt: null,
+          method: 'CASH',
+          status: 'COMPLETED',
           createdAt: { gte: from, lte: to },
+          order: { terminalId, channel: 'POS_SHOPORA', deletedAt: null },
         },
       }),
       this.prisma.refund.findMany({
@@ -724,22 +735,23 @@ export class PosRepository {
       }),
     ]);
     return {
-      cashSales: Number(salesAgg._sum.grandTotal ?? 0),
+      cashSales: Number(salesAgg._sum.amount ?? 0),
       cashRefunds: refunds.reduce((sum, r) => sum + Number(r.amount), 0),
     };
   }
 
   async getShiftSalesBreakdown(terminalId: string, from: Date, to: Date) {
     const [byMethod, orderCount, refunds] = await Promise.all([
-      this.prisma.order.groupBy({
-        by: ['paymentMethod'],
-        _sum: { grandTotal: true },
+      // Per tender, so a split bill shows up under both methods it was paid
+      // with rather than under a meaningless "SPLIT" bucket.
+      this.prisma.payment.groupBy({
+        by: ['method'],
+        _sum: { amount: true },
         _count: true,
         where: {
-          terminalId,
-          channel: 'POS_SHOPORA',
-          deletedAt: null,
+          status: 'COMPLETED',
           createdAt: { gte: from, lte: to },
+          order: { terminalId, channel: 'POS_SHOPORA', deletedAt: null },
         },
       }),
       this.prisma.order.count({
@@ -760,8 +772,8 @@ export class PosRepository {
     ]);
     return {
       byMethod: byMethod.map((m) => ({
-        method: m.paymentMethod,
-        revenue: Number(m._sum.grandTotal ?? 0),
+        method: m.method,
+        revenue: Number(m._sum.amount ?? 0),
         count: m._count,
       })),
       orderCount,
@@ -779,11 +791,15 @@ export class PosRepository {
 
     const [byMethod, byTerminal, byCashier, refunds, totalAgg] =
       await Promise.all([
-        this.prisma.order.groupBy({
-          by: ['paymentMethod'],
-          _sum: { grandTotal: true },
+        this.prisma.payment.groupBy({
+          by: ['method'],
+          _sum: { amount: true },
           _count: true,
-          where: orderWhere,
+          where: {
+            status: 'COMPLETED',
+            createdAt: { gte: from, lte: to },
+            order: { channel: 'POS_SHOPORA', deletedAt: null },
+          },
         }),
         this.prisma.order.groupBy({
           by: ['terminalId'],
@@ -839,8 +855,8 @@ export class PosRepository {
       totalRevenue: Number(totalAgg._sum.grandTotal ?? 0),
       totalOrders: totalAgg._count,
       byMethod: byMethod.map((m) => ({
-        method: m.paymentMethod,
-        revenue: Number(m._sum.grandTotal ?? 0),
+        method: m.method,
+        revenue: Number(m._sum.amount ?? 0),
         count: m._count,
       })),
       byTerminal: byTerminal.map((t) => ({

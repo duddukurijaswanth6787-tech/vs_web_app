@@ -7,6 +7,7 @@ import {
 import { BusinessException } from '@common/exceptions';
 import { PosRepository } from './pos.repository';
 import { computePosTotals } from './pos-totals';
+import { allocateTenders } from './pos-tenders';
 import { PosGateway } from './pos.gateway';
 import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
@@ -425,6 +426,25 @@ export class PosService {
       );
     }
 
+    // Split tenders are validated against the total the server just worked
+    // out, never the one the till sent -- otherwise a tampered payload could
+    // settle a Rs.5000 bill with Rs.100 of tenders.
+    let tenderAllocations:
+      | { method: string; amount: number }[]
+      | undefined;
+    let changeDue = 0;
+    if (dto.splitPayments?.length) {
+      try {
+        const split = allocateTenders(dto.splitPayments, grandTotal);
+        tenderAllocations = split.allocations;
+        changeDue = split.changeDue;
+      } catch (err) {
+        throw new BadRequestException(
+          err instanceof Error ? err.message : 'Invalid split payment',
+        );
+      }
+    }
+
     // 2. Generate unique order number (offline syncs replay the client's
     // own order number so retries hit the idempotent-replay path above
     // instead of creating a duplicate order)
@@ -441,6 +461,7 @@ export class PosService {
       taxTotal: calculatedTax,
       grandTotal,
       paymentMethod: dto.paymentMethod,
+      payments: tenderAllocations,
       terminalId: dto.terminalId,
       notes: dto.notes,
       items: itemsToProcess,
@@ -484,6 +505,10 @@ export class PosService {
       grandTotal: Number(order.grandTotal),
       itemsCount: order.items.length,
       createdAt: order.createdAt,
+      // Only ever non-zero on a split bill; the single-tender path works its
+      // own change out at the till.
+      changeDue,
+      tenders: tenderAllocations,
     };
 
     // 6. Broadcast Real-time Events (Sale Completed & Print Invoice)

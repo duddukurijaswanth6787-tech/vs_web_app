@@ -442,6 +442,79 @@ describe('PosService (Phase 1 Backend)', () => {
       );
     });
 
+    it('records a split bill as one payment row per tender, change taken from cash', async () => {
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({
+        id: 'cust-walkin',
+      });
+      repository.findProductTaxRates.mockResolvedValue(
+        new Map([['prod-1', 0]]),
+      );
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-pos-2',
+        orderNumber: 'ORD-SPLIT-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'SPLIT',
+        status: 'CONFIRMED',
+        grandTotal: 1398,
+        items: [{ id: 'item-1' }],
+        createdAt: new Date(),
+      });
+
+      const res = await service.completeSale('cashier-1', {
+        items: [
+          {
+            productId: 'prod-1',
+            productName: 'Kurti',
+            quantity: 2,
+            unitPrice: 699,
+          },
+        ],
+        paymentMethod: PosPaymentMethodType.SPLIT,
+        amountPaid: 1500,
+        splitPayments: [
+          { method: PosPaymentMethodType.CARD, amount: 1000 },
+          { method: PosPaymentMethodType.CASH, amount: 500 },
+        ],
+      });
+
+      expect(res.success).toBe(true);
+      expect(res.order.changeDue).toBe(102);
+      expect(repository.createPosOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payments: [
+            { method: 'CARD', amount: 1000 },
+            { method: 'CASH', amount: 398 },
+          ],
+        }),
+      );
+    });
+
+    it('rejects a split that does not cover the bill the server calculated', async () => {
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({
+        id: 'cust-walkin',
+      });
+      repository.findProductTaxRates.mockResolvedValue(
+        new Map([['prod-1', 0]]),
+      );
+
+      await expect(
+        service.completeSale('cashier-1', {
+          items: [
+            {
+              productId: 'prod-1',
+              productName: 'Kurti',
+              quantity: 2,
+              unitPrice: 699,
+            },
+          ],
+          paymentMethod: PosPaymentMethodType.SPLIT,
+          amountPaid: 1398,
+          splitPayments: [{ method: PosPaymentMethodType.CASH, amount: 100 }],
+        }),
+      ).rejects.toThrow(/short by/);
+      expect(repository.createPosOrder).not.toHaveBeenCalled();
+    });
+
     it('should replay an existing order instead of creating a duplicate when clientOrderNumber already exists', async () => {
       repository.findOrderByOrderNumber.mockResolvedValue({
         id: 'order-pos-1',

@@ -210,6 +210,20 @@ export class CreatePosReturnDto {
   notes?: string;
 }
 
+export class PosSplitTenderDto {
+  @ApiProperty({
+    enum: PosPaymentMethodType,
+    description: 'How this part of the bill was paid.',
+  })
+  @IsEnum(PosPaymentMethodType)
+  method!: PosPaymentMethodType;
+
+  @ApiProperty({ description: 'Amount handed over on this tender.' })
+  @IsNumber()
+  @Min(0)
+  amount!: number;
+}
+
 export class CompletePosSaleDto {
   @ApiPropertyOptional({
     description: 'Checkout Session ID if initiated via Mobile Handoff',
@@ -236,6 +250,18 @@ export class CompletePosSaleDto {
   @IsNumber()
   @Min(0)
   amountPaid!: number;
+
+  @ApiPropertyOptional({
+    type: [PosSplitTenderDto],
+    description:
+      'Tenders when paymentMethod is SPLIT. Each is recorded as its own ' +
+      'payment so the drawer count and card settlement both reconcile.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosSplitTenderDto)
+  splitPayments?: PosSplitTenderDto[];
 
   @ApiPropertyOptional({ type: PosCustomerInfoDto })
   @IsOptional()
