@@ -53,6 +53,7 @@ import {
   Store,
   Globe,
   Layers,
+  Sparkles,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -589,6 +590,15 @@ export default function ProductBuilder({
   // Add custom size to active color group
   const [newSizeInput, setNewSizeInput] = useState('');
 
+  /** Helper to generate a smart, unique, human-readable SKU ID for color + size variants */
+  const buildSmartVariantSku = (colorName: string, sizeName: string) => {
+    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || 'VSS').toString().trim();
+    const parentCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) || 'VSS';
+    const colorCode = colorName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'COL';
+    const sizeCode = sizeName.trim().toUpperCase();
+    return `${parentCode}-${colorCode}-${sizeCode}`;
+  };
+
   const addSizeToColorGroup = (colorGroupId: string) => {
     if (!newSizeInput.trim()) return;
     setColorGroups((prev) =>
@@ -604,7 +614,7 @@ export default function ProductBuilder({
                 size: newSizeInput.trim().toUpperCase(),
                 stock: 10,
                 available: true,
-                sku: `${group.name.substring(0, 3).toUpperCase()}-${newSizeInput.trim().toUpperCase()}`,
+                sku: buildSmartVariantSku(group.name, newSizeInput.trim().toUpperCase()),
               },
             ],
           };
@@ -643,12 +653,12 @@ export default function ProductBuilder({
     );
   };
 
-  /** Update any numeric field on one size row (min stock, reorder level …). */
+  /** Update any numeric or string field on one size row (min stock, reorder level, sku …). */
   const updateSizeField = (
     colorGroupId: string,
     sizeName: string,
-    field: 'minStock' | 'reorderLevel',
-    value: number,
+    field: 'minStock' | 'reorderLevel' | 'sku',
+    value: number | string,
   ) => {
     setColorGroups((prev) =>
       prev.map((group) =>
@@ -2304,14 +2314,34 @@ export default function ProductBuilder({
         {/* TAB 4: COLOR-WISE SIZES & STOCK */}
         {activeTab === 'sizes' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
-            <div>
-              <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                <Ruler className="w-5 h-5 text-[#0284c7]" />
-                <span>Color-Wise Sizes, Stock & SKU Management</span>
-              </h3>
-              <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                Configure size availability and inventory per color group
-              </p>
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                  <Ruler className="w-5 h-5 text-[#0284c7]" />
+                  <span>Color-Wise Sizes, Stock &amp; SKU Management</span>
+                </h3>
+                <p className="text-xs text-neutral-500 font-medium mt-0.5">
+                  Configure size availability, inventory, and unique barcode SKU IDs per color group
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setColorGroups((prev) =>
+                    prev.map((g) => ({
+                      ...g,
+                      sizes: g.sizes.map((s) => ({
+                        ...s,
+                        sku: buildSmartVariantSku(g.name, s.size),
+                      })),
+                    }))
+                  );
+                }}
+                className="text-xs font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-3.5 py-2 rounded-xl hover:bg-sky-100 transition-all flex items-center gap-1.5 shadow-2xs"
+              >
+                <Sparkles className="w-4 h-4" />
+                <span>Auto-Generate All SKU IDs</span>
+              </button>
             </div>
 
             {/* Size chart template */}
@@ -2397,7 +2427,7 @@ export default function ProductBuilder({
                                   size: sz,
                                   stock: 15,
                                   available: true,
-                                  sku: `${g.name.substring(0, 3).toUpperCase()}-${sz}`,
+                                  sku: buildSmartVariantSku(g.name, sz),
                                 })),
                               };
                             }
@@ -2434,9 +2464,16 @@ export default function ProductBuilder({
                             <span className="text-xs font-bold text-neutral-900 block">
                               Size {sz.size}
                             </span>
-                            <span className="text-[10px] text-neutral-400 font-mono">
-                              SKU: {sz.sku}
-                            </span>
+                            <div className="flex items-center gap-1.5 mt-0.5">
+                              <span className="text-[10px] font-bold text-sky-700 font-mono">SKU:</span>
+                              <input
+                                type="text"
+                                value={sz.sku || ''}
+                                onChange={(e) => updateSizeField(group.id, sz.size, 'sku', e.target.value.toUpperCase())}
+                                placeholder="SKU-ID"
+                                className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-32 shadow-2xs"
+                              />
+                            </div>
                           </div>
                         </div>
 
