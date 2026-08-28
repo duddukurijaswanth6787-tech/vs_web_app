@@ -1169,15 +1169,13 @@ export default function ProductBuilder({
           const existingVar = existingVariantsByTitle.get(titleKey);
 
           if (existingVar) {
-            // Already exists -> Update stock and variant details
+            // Already exists -> Safely update/sync inventory stock without 422 errors
             variantIdsByGroup[group.id].push(existingVar.id);
             if (sizeRow.stock >= 0) {
               await inventoryService
-                .create({
-                  variantId: existingVar.id,
-                  availableQuantity: sizeRow.stock,
-                  ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-                  ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+                .stockIn(existingVar.id, sizeRow.stock, 'Product update stock sync', {
+                  minimumStock: sizeRow.minStock,
+                  reorderLevel: sizeRow.reorderLevel,
                 })
                 .catch(() => null);
             }
@@ -1209,11 +1207,9 @@ export default function ProductBuilder({
 
             if (sizeRow.stock > 0) {
               await inventoryService
-                .create({
-                  variantId: variant.id,
-                  availableQuantity: sizeRow.stock,
-                  ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-                  ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+                .stockIn(variant.id, sizeRow.stock, 'New variant stock creation', {
+                  minimumStock: sizeRow.minStock,
+                  reorderLevel: sizeRow.reorderLevel,
                 })
                 .catch(() => null);
             }
