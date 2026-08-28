@@ -41,9 +41,10 @@ function ProductCardItem({
   isWishlisted: boolean;
   onToggleWishlist: (id: string) => void;
 }) {
+  const [imgError, setImgError] = useState(false);
   const p = product as unknown as Record<string, unknown>;
   const rawImage = String(p.productCardImageUrl || p.cardImageUrl || p.primaryImageUrl || product.image || (Array.isArray(p.images) ? String((p.images[0] as Record<string, unknown>)?.url || '') : '') || '') || PLACEHOLDER_IMAGE;
-  const imageSrc = withVariant(rawImage, 'medium') || PLACEHOLDER_IMAGE;
+  const imageSrc = imgError ? PLACEHOLDER_IMAGE : (withVariant(rawImage, 'medium') || PLACEHOLDER_IMAGE);
   const cardTitle = product.title || String(p.name || '') || 'Product';
   const priceVal = Number(product.price ?? p.salePrice ?? p.basePrice ?? 0);
   const origVal = Number(product.originalPrice ?? p.compareAtPrice ?? p.basePrice ?? 0);
@@ -60,7 +61,8 @@ function ProductCardItem({
           priority={idx < 2}
           loading={idx < 2 ? 'eager' : 'lazy'}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
-          unoptimized={isLocalOrPlaceholder(rawImage)}
+          unoptimized={isLocalOrPlaceholder(imageSrc)}
+          onError={() => setImgError(true)}
           className="object-cover group-hover:scale-108 transition-transform duration-500"
         />
         <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-20">

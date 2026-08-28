@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useFeaturedCategories } from '@/features/customer/hooks';
@@ -20,15 +20,13 @@ type CategoryItem = {
 
 export function CategoryCircles() {
   const { data: catData, isLoading } = useFeaturedCategories();
+  const [failedImages, setFailedImages] = useState<Record<string, boolean>>({});
 
   const categories: CategoryItem[] = useMemo(() => {
     if (!catData) return [];
     const typed = catData as { data?: unknown[] } | unknown[];
     const list = Array.isArray(typed) ? typed : Array.isArray((typed as { data?: unknown[] })?.data) ? (typed as { data?: unknown[] }).data! : [];
 
-    // Root-level, non-archived categories only. Whatever admin has created
-    // (or nothing) is what the storefront shows — no hardcoded fallback that
-    // lets categories exist on the customer side that admin can't manage.
     const mainCategories = list.filter((cat) => {
       const c = cat as Record<string, unknown>;
       return !c.parentId && c.status !== 'ARCHIVED';
@@ -36,15 +34,8 @@ export function CategoryCircles() {
 
     return mainCategories.map((cat) => {
       const c = cat as Record<string, unknown>;
-      // Prefer `icon` first — the admin has two separate upload slots
-      // (Icon 128×128, Image 800×800), and Icon is the one sized exactly
-      // right for this 100px circular display. Full-size `image` and other
-      // legacy field names remain as fallbacks so nothing that used to work
-      // stops working.
       const rawImg = String(c.icon || c.image || c.imageUrl || c.primaryImageUrl || '');
       const slug = String(c.slug || '');
-      // See CategoriesPageClient: no stock-photo fallback, an unset image
-      // renders as an explicit Empty circle instead of a borrowed model shot.
       const hasImage = !!rawImg && !rawImg.includes('data:image/svg');
       const finalUrl = hasImage ? rawImg : '';
       return {
@@ -56,8 +47,6 @@ export function CategoryCircles() {
     });
   }, [catData]);
 
-  // Hide the whole section if there's nothing to show — a "Shop by Category"
-  // heading with no circles under it reads as broken, not empty-on-purpose.
   if (!isLoading && categories.length === 0) {
     return null;
   }
@@ -93,7 +82,8 @@ export function CategoryCircles() {
       ) : (
         <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-3 pt-1 scrollbar-none snap-x snap-mandatory">
           {categories.map((cat) => {
-            const src = cat.imageUrl ? withVariant(cat.imageUrl, 'thumb') : '';
+            const hasFailed = failedImages[cat.id];
+            const src = (cat.imageUrl && !hasFailed) ? withVariant(cat.imageUrl, 'thumb') : '';
 
             return (
               <Link
@@ -111,6 +101,7 @@ export function CategoryCircles() {
                         fill
                         sizes="100px"
                         unoptimized={isLocalOrPlaceholder(src)}
+                        onError={() => setFailedImages((prev) => ({ ...prev, [cat.id]: true }))}
                         className="object-cover group-hover:scale-110 transition-transform duration-500"
                       />
                     ) : (
