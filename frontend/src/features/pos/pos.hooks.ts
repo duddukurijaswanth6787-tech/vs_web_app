@@ -24,6 +24,22 @@ export function useScanBarcode() {
   });
 }
 
+/**
+ * Name/SKU lookup for the till's search box.
+ *
+ * Idle until two characters are typed: a single letter matches most of the
+ * catalogue and is never what the cashier meant.
+ */
+export function useSearchPosProducts(query: string) {
+  const trimmed = query.trim();
+  return useQuery({
+    queryKey: [...posKeys.all, 'search', trimmed],
+    queryFn: () => posService.searchProducts(trimmed),
+    enabled: trimmed.length >= 2,
+    staleTime: 30_000,
+  });
+}
+
 export function useAdoptHandoffSession() {
   const queryClient = useQueryClient();
   return useMutation({

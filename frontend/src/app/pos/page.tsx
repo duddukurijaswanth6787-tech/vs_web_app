@@ -36,6 +36,7 @@ import {
   useLookupCustomer,
   useCurrentShift,
   useOpenShift,
+  useSearchPosProducts,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -55,6 +56,9 @@ import { useTerminalId } from '@/features/pos/terminal';
 
 export default function DesktopPosPage() {
   const [barcodeInput, setBarcodeInput] = useState('');
+  // Typed name/SKU lookup, so an item whose barcode sticker has peeled off can
+  // still be sold. A pure-digit value is a scanned barcode, not a name.
+  const [searchTerm, setSearchTerm] = useState('');
   const [cart, setCart] = useState<PosCartItem[]>([]);
   const [customer, setCustomer] = useState<PosCustomerInfo>({
     fullName: 'Walk-in Customer',
@@ -165,6 +169,20 @@ export default function DesktopPosPage() {
   // under-collected on 12% goods and overcharged tax on every discounted bill.
   const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, discountTotal);
 
+  useEffect(() => {
+    const typed = barcodeInput.trim();
+    const looksLikeBarcode = /^\d+$/.test(typed);
+    if (typed.length < 2 || looksLikeBarcode) {
+      setSearchTerm('');
+      return;
+    }
+    const timer = setTimeout(() => setSearchTerm(typed), 250);
+    return () => clearTimeout(timer);
+  }, [barcodeInput]);
+
+  const productSearch = useSearchPosProducts(searchTerm);
+  const suggestions = searchTerm ? (productSearch.data ?? []) : [];
+
   const addScannedItemToCart = (data: {
     productId: string;
     productName: string;
@@ -214,6 +232,7 @@ export default function DesktopPosPage() {
       ];
     });
     setBarcodeInput('');
+    setSearchTerm('');
     barcodeInputRef.current?.focus();
   };
 
@@ -600,9 +619,48 @@ export default function DesktopPosPage() {
                 type="text"
                 value={barcodeInput}
                 onChange={(e) => setBarcodeInput(e.target.value)}
-                placeholder="Scan barcode or type SKU (e.g. 890100000005)..."
+                placeholder="Scan barcode, or type a product name or SKU..."
                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-11 pr-4 py-2.5 text-xs sm:text-sm text-neutral-900 font-mono font-medium focus:outline-none focus:border-[var(--brand-primary)] focus:ring-2 focus:ring-[var(--brand-primary)]/10"
               />
+
+              {searchTerm && (
+                <div className="absolute z-30 left-0 right-0 top-full mt-1.5 bg-white border border-neutral-200 rounded-xl shadow-lg max-h-72 overflow-y-auto">
+                  {productSearch.isPending ? (
+                    <div className="px-4 py-3 text-xs text-neutral-500 font-medium">Searching...</div>
+                  ) : suggestions.length === 0 ? (
+                    <div className="px-4 py-3 text-xs text-neutral-500 font-medium">
+                      No product matches &quot;{searchTerm}&quot;.
+                    </div>
+                  ) : (
+                    suggestions.map((item) => {
+                      const outOfStock = item.availableStock <= 0;
+                      return (
+                        <button
+                          key={item.variantId || item.productId}
+                          type="button"
+                          disabled={outOfStock}
+                          onClick={() => addScannedItemToCart(item)}
+                          className="w-full text-left px-4 py-2.5 hover:bg-neutral-50 border-b border-neutral-100 last:border-b-0 flex items-center justify-between gap-3 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          <span className="min-w-0">
+                            <span className="block text-xs font-bold text-neutral-900 truncate">
+                              {item.productName}
+                              {item.variantTitle ? ` - ${item.variantTitle}` : ''}
+                            </span>
+                            <span className="block text-[11px] text-neutral-500 font-mono truncate">
+                              {item.sku || item.barcode || '--'} &middot;{' '}
+                              {outOfStock ? 'Out of stock' : `${item.availableStock} in stock`}
+                            </span>
+                          </span>
+                          <span className="text-xs font-bold text-neutral-900 shrink-0">
+                            Rs.{item.price.toFixed(2)}
+                          </span>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+              )}
             </div>
             <button
               type="submit"

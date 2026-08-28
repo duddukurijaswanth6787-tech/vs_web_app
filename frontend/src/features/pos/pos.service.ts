@@ -33,6 +33,19 @@ export const posService = {
   },
 
   /**
+   * Find sellable products by typed name or SKU.
+   *
+   * Returns the same shape as scanBarcode, so the till builds the cart line
+   * one way whichever route the item came in by.
+   */
+  async searchProducts(query: string, limit = 8): Promise<ScanBarcodeResult[]> {
+    const res = await apiClient.get<StandardResponse<ScanBarcodeResult[]>>('/pos/products/search', {
+      params: { q: query, limit },
+    });
+    return res.data.data ?? [];
+  },
+
+  /**
    * Create a mobile-to-desktop handoff checkout session
    */
   async createCheckoutSession(payload: {

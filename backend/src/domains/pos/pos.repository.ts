@@ -177,6 +177,47 @@ export class PosRepository {
   }
 
   /**
+   * Variants matching a typed name, for the till's product search.
+   *
+   * Returns the same shape as findVariantByBarcode so the caller can map it
+   * through the one scan-result builder -- a second mapping would be a second
+   * place for stock, price or the GST rate to be got wrong.
+   *
+   * Restricted to store-sellable products for the same reason the scan is:
+   * an online-only line has no business on the counter screen.
+   */
+  async searchVariantsByName(query: string, limit = 10) {
+    const trimmed = query.trim();
+    if (trimmed.length < 2) return [];
+
+    return this.prisma.productVariant.findMany({
+      where: {
+        deletedAt: null,
+        product: {
+          channel: { in: ['STORE', 'BOTH'] },
+          deletedAt: null,
+          OR: [
+            { name: { contains: trimmed, mode: 'insensitive' } },
+            { sku: { contains: trimmed, mode: 'insensitive' } },
+          ],
+        },
+      },
+      include: {
+        product: {
+          include: {
+            media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+          },
+        },
+        inventory: true,
+        attributeValues: { include: { attribute: true, option: true } },
+        media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+      },
+      take: Math.min(25, Math.max(1, limit)),
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * GST rate per product, for pricing a till sale.
    *
    * Read at bill time rather than taken from the client: the phones in the

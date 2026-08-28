@@ -21,6 +21,7 @@ describe('PosService (Phase 1 Backend)', () => {
   beforeEach(async () => {
     repository = {
       findVariantByBarcode: jest.fn(),
+      searchVariantsByName: jest.fn().mockResolvedValue([]),
       createCheckoutSession: jest.fn(),
       findCheckoutSessionByToken: jest.fn(),
       findCheckoutSessionById: jest.fn(),
@@ -136,6 +137,41 @@ describe('PosService (Phase 1 Backend)', () => {
         false,
       );
       expect(result.costPrice).toBeUndefined();
+    });
+  });
+
+  describe('searchProducts', () => {
+    it('returns the same shape as a scan, including GST rate and stock', async () => {
+      repository.searchVariantsByName.mockResolvedValue([
+        {
+          id: 'var-123',
+          productId: 'prod-456',
+          sku: 'KUR-BLU-L-005',
+          barcode: '890100000005',
+          title: 'Blue / L',
+          salePriceOverride: 1299,
+          costPrice: 700,
+          inventory: { availableQuantity: 5, reservedQuantity: 2 },
+          product: {
+            name: 'Kurti',
+            basePrice: 1499,
+            taxPercentage: 12,
+            hsnCode: '6204',
+          },
+        },
+      ]);
+
+      const [item] = await service.searchProducts('kur', false);
+      expect(item.variantId).toBe('var-123');
+      expect(item.price).toBe(1299);
+      // Reserved stock is not sellable.
+      expect(item.availableStock).toBe(3);
+      // The whole point: a searched item must carry its own GST rate, or the
+      // till falls back to the flat 5% that was just removed.
+      expect(item.taxPercent).toBe(12);
+      expect(item.mrp).toBe(1499);
+      expect(item.hsnCode).toBe('6204');
+      expect(item.costPrice).toBeUndefined();
     });
   });
 

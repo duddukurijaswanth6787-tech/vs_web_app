@@ -60,6 +60,20 @@ export class PosService {
       );
     }
 
+    return this.toScanResult(variantMatch, isOwnerOrManager);
+  }
+
+  /**
+   * Builds a scan result from a variant row.
+   *
+   * Shared by the barcode scan and the name search so stock, price and the GST
+   * rate are derived once. A second mapping is where the flat-5% bug would
+   * come back.
+   */
+  private toScanResult(
+    variantMatch: any,
+    isOwnerOrManager: boolean,
+  ): BarcodeScanResultResponse {
     const availableStock = variantMatch.inventory
       ? Math.max(
           0,
@@ -88,8 +102,8 @@ export class PosService {
       variantMatch.title ||
       (variantMatch.attributeValues
         ? variantMatch.attributeValues
-            .map((av) => av.option?.label || av.value)
-            .filter((val): val is string => Boolean(val))
+            .map((av: any) => av.option?.label || av.value)
+            .filter((val: unknown): val is string => Boolean(val))
             .join(' / ')
         : undefined);
 
@@ -111,13 +125,26 @@ export class PosService {
       taxPercent: Number(variantMatch.product?.taxPercentage ?? 0),
       // MRP for the printed tag. There is no separate mrp column: basePrice is
       // the list price and salePrice the discounted one, so basePrice is what
-      // a customer would be charged without an offer -- the number that
-      // belongs on the label. Falls back to the selling price when a product
-      // carries no base price at all, so a tag never prints a blank MRP.
+      // a customer would be charged without an offer.
       mrp: Number(variantMatch.product?.basePrice ?? price),
       // Required on a GST invoice.
       hsnCode: variantMatch.product?.hsnCode ?? undefined,
     };
+  }
+
+  /**
+   * Finds sellable items by typed name or SKU, for the till's search box.
+   *
+   * The counter could only add a product by scanning it, so an item whose
+   * sticker had peeled off could not be sold at all.
+   */
+  async searchProducts(
+    query: string,
+    isOwnerOrManager = false,
+    limit = 10,
+  ): Promise<BarcodeScanResultResponse[]> {
+    const rows = await this.repository.searchVariantsByName(query, limit);
+    return rows.map((row) => this.toScanResult(row, isOwnerOrManager));
   }
 
   async createCheckoutSession(

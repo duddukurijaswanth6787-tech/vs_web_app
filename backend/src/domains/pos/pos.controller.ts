@@ -64,6 +64,29 @@ export class PosController {
     return this.posService.scanBarcode(dto, isOwnerOrManager);
   }
 
+  @Get('products/search')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Search Sellable Products by Name or SKU' })
+  @ApiResponse({ status: 200, type: [BarcodeScanResultResponse] })
+  async searchProducts(
+    @CurrentUser() user: JwtPayload,
+    @Query('q') q?: string,
+    @Query('limit') limit?: string,
+  ): Promise<BarcodeScanResultResponse[]> {
+    // Same margin rule as the scan: only owners and managers see cost price.
+    const isOwnerOrManager = (user.roles || []).some((r) =>
+      ['super_admin', 'admin'].includes(r),
+    );
+    const parsedLimit = Number(limit);
+    return this.posService.searchProducts(
+      q || '',
+      isOwnerOrManager,
+      Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10,
+    );
+  }
+
   @Post('checkout-sessions')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
