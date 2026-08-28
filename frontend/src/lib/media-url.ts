@@ -77,9 +77,7 @@ export type ImageVariant = keyof typeof VARIANT_SIZES;
  * Append a variant query to a storage proxy URL so the backend serves
  * the pre-generated WebP variant instead of the full-size PNG.
  */
-export function withVariant(url: string, variant: ImageVariant): string {
+export function withVariant(url: string, _variant?: ImageVariant): string {
   if (!url || url.includes('placehold.co') || url.includes('data:') || url.includes('unsplash.com')) return url;
-  const resolved = resolveMediaUrl(url);
-  const separator = resolved.includes('?') ? '&' : '?';
-  return `${resolved}${separator}variant=${variant}`;
+  return resolveMediaUrl(url);
 }
