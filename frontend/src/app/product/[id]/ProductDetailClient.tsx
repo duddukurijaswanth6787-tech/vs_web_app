@@ -163,12 +163,36 @@ export function ProductDetailClient() {
     return colorGroups.map((g) => g.name);
   }, [colorGroups]);
 
+  const currentColorGroup = useMemo(() => {
+    return colorGroups.find((g) => g.name.toLowerCase() === selectedColor.toLowerCase()) || colorGroups[0];
+  }, [colorGroups, selectedColor]);
+
   const availableSizes = useMemo(() => {
     const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', 'FREE SIZE'];
     const sizes = new Set<string>();
 
+    // 1) Read sizes from currentColorGroup if saved directly
+    if (currentColorGroup?.sizes && currentColorGroup.sizes.length > 0) {
+      currentColorGroup.sizes.forEach((s) => {
+        if (s.available) sizes.add(s.size);
+      });
+    }
+
+    // 2) Filter variantsData for current selected color
     if (variantsData?.data) {
+      const activeColor = selectedColor || currentColorGroup?.name || '';
       variantsData.data.forEach((v) => {
+        if (v.status === 'INACTIVE' || (v as unknown as { isAvailable?: boolean }).isAvailable === false) {
+          return;
+        }
+
+        const vTitle = String(v.title || '').toLowerCase().trim();
+        const colorMatch = activeColor
+          ? vTitle.startsWith(`${activeColor.toLowerCase().trim()} /`) || vTitle.includes(activeColor.toLowerCase().trim())
+          : true;
+
+        if (!colorMatch) return;
+
         v.attributeValues?.forEach((av) => {
           if (av.attributeName?.toLowerCase() === 'size' && av.value) {
             sizes.add(av.value);
@@ -192,11 +216,7 @@ export function ProductDetailClient() {
       if (idxB !== -1) return 1;
       return a.localeCompare(b);
     });
-  }, [variantsData]);
-
-  const currentColorGroup = useMemo(() => {
-    return colorGroups.find((g) => g.name.toLowerCase() === selectedColor.toLowerCase()) || colorGroups[0];
-  }, [colorGroups, selectedColor]);
+  }, [variantsData, currentColorGroup, selectedColor]);
 
   const visibleImages = useMemo<string[]>(() => {
     if (!product) return [PLACEHOLDER_IMAGE];
@@ -221,11 +241,11 @@ export function ProductDetailClient() {
     setActiveImage(0);
   }
 
-  // Set default selections once loaded (default Priority 1 color group)
+  // Set default selections once loaded
   if (availableColors.length > 0 && !selectedColor) {
     setSelectedColor(availableColors[0]);
   }
-  if (availableSizes.length > 0 && !selectedSize) {
+  if (availableSizes.length > 0 && (!selectedSize || !availableSizes.includes(selectedSize))) {
     setSelectedSize(availableSizes[0]);
   }
 
@@ -235,10 +255,10 @@ export function ProductDetailClient() {
     return variantsData.data.find(v => {
       const colorMatch = v.attributeValues?.some(
         av => av.attributeName.toLowerCase() === 'color' && av.value === selectedColor
-      );
+      ) || String(v.title || '').toLowerCase().startsWith(`${(selectedColor || '').toLowerCase()} /`);
       const sizeMatch = v.attributeValues?.some(
         av => av.attributeName.toLowerCase() === 'size' && av.value === selectedSize
-      );
+      ) || String(v.title || '').toLowerCase().endsWith(`/ ${(selectedSize || '').toLowerCase()}`);
       return colorMatch && sizeMatch;
     });
   }, [variantsData, selectedColor, selectedSize]);
@@ -247,28 +267,46 @@ export function ProductDetailClient() {
   const original = matchingVariant?.priceOverride ?? product?.basePrice ?? 0;
   const discount = discountLabel(original, matchingVariant?.salePriceOverride ?? product?.salePrice);
 
-  // Real, currently-active coupons — never invent codes that don't exist.
+  // Real, currently-active coupons from global API and attached product coupons
   const { data: activeCouponsData } = useActiveCoupons();
   const pdpOffers = useMemo(() => {
-    const list = Array.isArray(activeCouponsData) ? activeCouponsData : [];
-    return list.slice(0, 2).map((c) => {
-      const coupon = c as Record<string, unknown>;
-      const type = String(coupon.type || '');
-      const value = coupon.value;
+    const listFromApi = Array.isArray(activeCouponsData) ? activeCouponsData : [];
+    const pRecord = product as unknown as Record<string, unknown>;
+    const listFromProduct = Array.isArray(pRecord?.coupons)
+      ? (pRecord.coupons as unknown[])
+      : Array.isArray(pRecord?.offers)
+      ? (pRecord.offers as unknown[])
+      : [];
+
+    const merged = [...listFromProduct, ...listFromApi];
+    const uniqueByCode = new Map<string, Record<string, unknown>>();
+
+    merged.forEach((item) => {
+      if (!item) return;
+      const c = item as Record<string, unknown>;
+      const code = String(c.code || c.couponCode || c.offerCode || '');
+      if (code && !uniqueByCode.has(code)) {
+        uniqueByCode.set(code, c);
+      }
+    });
+
+    return Array.from(uniqueByCode.values()).slice(0, 3).map((c) => {
+      const type = String(c.type || c.discountType || '');
+      const value = c.value || c.discountValue || 0;
       const label =
         type === 'PERCENTAGE'
           ? `${value}% OFF`
           : type === 'FREE_SHIPPING'
-            ? 'Free Shipping'
-            : `Flat ₹${value} OFF`;
-      const minOrder = coupon.minOrderAmount ? Number(coupon.minOrderAmount) : undefined;
+          ? 'Free Shipping'
+          : `Flat ₹${value} OFF`;
+      const minOrder = c.minOrderAmount ? Number(c.minOrderAmount) : undefined;
       return {
-        code: String(coupon.code || ''),
+        code: String(c.code || c.couponCode || ''),
         label,
         detail: minOrder ? `Min purchase ₹${minOrder}.` : 'On all orders.',
       };
     });
-  }, [activeCouponsData]);
+  }, [activeCouponsData, product]);
 
   // Simulated dynamic stock
   const stockText = useMemo(() => {
