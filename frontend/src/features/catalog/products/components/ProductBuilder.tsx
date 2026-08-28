@@ -1732,6 +1732,52 @@ export default function ProductBuilder({
                 </div>
               </div>
 
+              {/* GST & Tax Configuration */}
+              <div className="md:col-span-3 pt-3 border-t border-neutral-100 space-y-3">
+                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">GST &amp; Tax Configuration</h4>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  {/* GST % */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">GST %</label>
+                    <select
+                      {...methods.register('taxPercentage')}
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
+                    >
+                      {[0, 3, 5, 12, 18, 28].map((rate) => (
+                        <option key={rate} value={rate}>
+                          {rate}%
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* HSN code */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">HSN Code</label>
+                    <input
+                      type="text"
+                      {...methods.register('hsnCode')}
+                      placeholder="e.g. 6204"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
+                    />
+                    <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
+                  </div>
+
+                  {/* Tax inclusive */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
+                    <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
+                      <input
+                        type="checkbox"
+                        {...methods.register('taxInclusive')}
+                        className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
+                      />
+                      <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
               {/* Calculated Discount Pill Badge */}
               <div className="md:col-span-3 bg-sky-50/80 border border-sky-100 p-4 rounded-2xl flex items-center justify-between">
                 <div className="space-y-0.5">
@@ -1978,45 +2024,6 @@ export default function ProductBuilder({
                 </div>
               </div>
 
-              {/* GST % */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">GST %</label>
-                <select
-                  {...methods.register('taxPercentage')}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
-                >
-                  {[0, 3, 5, 12, 18, 28].map((rate) => (
-                    <option key={rate} value={rate}>
-                      {rate}%
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* HSN code */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">HSN Code</label>
-                <input
-                  type="text"
-                  {...methods.register('hsnCode')}
-                  placeholder="e.g. 6204"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
-                />
-                <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
-              </div>
-
-              {/* Tax inclusive */}
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
-                <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
-                  <input
-                    type="checkbox"
-                    {...methods.register('taxInclusive')}
-                    className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
-                  />
-                  <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
-                </label>
-              </div>
 
               {/* Submit Button */}
               <div className="flex items-center justify-between pt-1">
