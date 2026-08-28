@@ -47,10 +47,12 @@ function ProductCardItem({
   const cardTitle = product.title || String(p.name || '') || 'Product';
   const priceVal = Number(product.price ?? p.salePrice ?? p.basePrice ?? 0);
   const origVal = Number(product.originalPrice ?? p.compareAtPrice ?? p.basePrice ?? 0);
+  const brandName = String(product.brand || p.brandName || "VASANTHI'S SIGNATURE");
+  const discountPct = origVal > priceVal ? Math.round(((origVal - priceVal) / origVal) * 100) : 0;
 
   return (
-    <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-[var(--product-card-bg)] text-[var(--product-card-text)] rounded-2xl border border-neutral-200/70 overflow-hidden shadow-xs hover:shadow-md transition-all duration-300">
-      <Link href={`/product/${product.slug || product.id}`} className="relative aspect-[3/4] overflow-hidden bg-neutral-100 block group">
+    <div className="w-[160px] sm:w-48 lg:w-full shrink-0 snap-start flex flex-col bg-white text-neutral-900 rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-lg transition-all duration-300 group">
+      <Link href={`/product/${product.slug || product.id}`} className="relative aspect-[4/5] overflow-hidden bg-neutral-100 block">
         <Image
           src={imageSrc}
           alt={cardTitle}
@@ -59,17 +61,21 @@ function ProductCardItem({
           loading={idx < 2 ? 'eager' : 'lazy'}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
           unoptimized={isLocalOrPlaceholder(rawImage)}
-          className="object-cover group-hover:scale-105 transition-transform duration-500"
+          className="object-cover group-hover:scale-108 transition-transform duration-500"
         />
-        {product.isBestSeller ? (
-          <span className="absolute top-2.5 left-2.5 bg-amber-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs z-20">
-            BEST SELLER
-          </span>
-        ) : product.isNew !== false ? (
-          <span className="absolute top-2.5 left-2.5 bg-[#1769D2] text-white text-[9px] font-extrabold px-2 py-0.5 rounded-md uppercase tracking-wider shadow-xs z-20">
-            NEW
-          </span>
-        ) : null}
+        <div className="absolute top-2.5 left-2.5 flex flex-col gap-1.5 z-20">
+          {product.isNew !== false && (
+            <span className="bg-neutral-900 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
+              NEW
+            </span>
+          )}
+          {discountPct > 0 && (
+            <span className="bg-sky-600 text-white text-[9px] font-bold px-2.5 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
+              -{discountPct}%
+            </span>
+          )}
+        </div>
+
         <button
           type="button"
           onClick={(e) => {
@@ -77,28 +83,42 @@ function ProductCardItem({
             e.stopPropagation();
             onToggleWishlist(product.id);
           }}
-          className={`absolute top-2.5 right-2.5 w-7 h-7 rounded-full flex items-center justify-center backdrop-blur-md transition-colors z-20 ${
+          className={`absolute top-2.5 right-2.5 w-8 h-8 rounded-full flex items-center justify-center backdrop-blur-md transition-all shadow-2xs z-20 ${
             isWishlisted ? 'bg-sky-600 text-white' : 'bg-white/80 hover:bg-white text-neutral-700'
           }`}
         >
-          <Heart className={`w-3.5 h-3.5 ${isWishlisted ? 'fill-white' : ''}`} />
+          <Heart className={`w-4 h-4 ${isWishlisted ? 'fill-white text-sky-600' : ''}`} />
         </button>
       </Link>
-      <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5">
-        <Link href={`/product/${product.slug || product.id}`}>
-          <h3 className="text-sm font-semibold line-clamp-1 hover:text-[var(--brand-primary)] transition-colors">
-            {cardTitle}
-          </h3>
-        </Link>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          <span className="text-sm font-extrabold text-[var(--product-price)]">
-            ₹{priceVal.toLocaleString('en-IN')}
+
+      <div className="p-3 flex flex-col flex-1 justify-between space-y-1.5 text-left">
+        <div>
+          <span className="text-[10px] font-bold text-[#0284c7] uppercase tracking-wider block mb-0.5 truncate">
+            {brandName}
           </span>
-          {origVal > priceVal && (
-            <span className="text-xs text-neutral-400 line-through">
-              ₹{origVal.toLocaleString('en-IN')}
+          <Link href={`/product/${product.slug || product.id}`}>
+            <h3 className="text-xs font-bold text-neutral-900 line-clamp-1 hover:text-[#0284c7] transition-colors leading-snug">
+              {cardTitle}
+            </h3>
+          </Link>
+        </div>
+
+        <div className="flex items-center justify-between pt-1">
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-sm font-extrabold text-[#0284c7]">
+              ₹{priceVal.toLocaleString('en-IN')}
             </span>
-          )}
+            {origVal > priceVal && (
+              <span className="text-xs text-neutral-400 line-through">
+                ₹{origVal.toLocaleString('en-IN')}
+              </span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1 text-[11px] font-bold text-neutral-700">
+            <span className="text-amber-400 text-xs">★</span>
+            <span>5.0</span>
+          </div>
         </div>
       </div>
     </div>
