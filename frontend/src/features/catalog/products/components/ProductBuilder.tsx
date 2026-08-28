@@ -639,16 +639,22 @@ export default function ProductBuilder({
     );
   };
 
-  /** Promote an image to position 0, which is what makes it the primary. */
+  /** Promote an image to position 0 and make its color group primary. */
   const setPrimaryImage = (colorGroupId: string, imgIdx: number) => {
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id !== colorGroupId || imgIdx === 0) return group;
+    setColorGroups((prev) => {
+      const groupIdx = prev.findIndex((g) => g.id === colorGroupId);
+      if (groupIdx === -1) return prev;
+
+      const updated = prev.map((group) => {
+        if (group.id !== colorGroupId) return group;
         const images = [...group.images];
         const [picked] = images.splice(imgIdx, 1);
         return { ...group, images: [picked, ...images] };
-      }),
-    );
+      });
+
+      const [primaryGroup] = updated.splice(groupIdx, 1);
+      return [primaryGroup, ...updated];
+    });
   };
 
   const removeImageFromColorGroup = (colorGroupId: string, imgIdx: number) => {
@@ -1001,7 +1007,7 @@ export default function ProductBuilder({
       const mediaIdsByGroup: Record<string, string[]> = {};
       for (const group of colorGroups) {
         mediaIdsByGroup[group.id] = [];
-        const groupImages = [group.swatchImage, ...group.images].filter(Boolean) as string[];
+        const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
         for (const img of groupImages) {
           let url = img;
           if (img.startsWith('data:')) {

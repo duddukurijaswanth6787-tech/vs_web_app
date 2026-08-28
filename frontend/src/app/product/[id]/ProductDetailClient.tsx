@@ -206,10 +206,8 @@ export function ProductDetailClient() {
   }, [colorGroups, selectedColor]);
 
   const visibleImages = useMemo<string[]>(() => {
-    if (currentColorGroup?.images?.length) {
-      return currentColorGroup.images;
-    }
-    return images;
+    const rawList = currentColorGroup?.images?.length ? currentColorGroup.images : images;
+    return Array.from(new Set(rawList.filter(Boolean)));
   }, [currentColorGroup, images]);
 
   const [activeImage, setActiveImage] = useState(0);
