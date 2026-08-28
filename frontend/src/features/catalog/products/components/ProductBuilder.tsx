@@ -9,6 +9,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { productSchema, ProductFormValues, ProductResponse, AttributeType, CreateProductDto, UpdateProductDto } from '../product.types';
 import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
+import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import { inventoryService } from '@/features/inventory/inventory.service';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
@@ -515,6 +516,46 @@ export default function ProductBuilder({
 
     return groups;
   });
+
+  // Fetch existing product variants when editing to reconstruct ONLY kept sizes
+  const { data: fetchedVariantsData } = useVariants(productId ? { productId, limit: 100 } : {});
+
+  useEffect(() => {
+    if (!productId || !fetchedVariantsData?.data) return;
+    const variants = fetchedVariantsData.data;
+    if (variants.length === 0) return;
+
+    setColorGroups((prevGroups) => {
+      if (!prevGroups.length) return prevGroups;
+      return prevGroups.map((group) => {
+        const cName = group.name.toLowerCase().trim();
+        const matchingForColor = variants.filter((v) => {
+          const vTitle = (v.title || '').toLowerCase().trim();
+          const parts = vTitle.split('/').map((s) => s.trim());
+          return parts[0] ? parts[0] === cName || vTitle.includes(cName) : false;
+        });
+
+        if (matchingForColor.length === 0) return group;
+
+        const colorCode = getColorCodeHelper(group.name);
+        const keptSizes = matchingForColor.map((v) => {
+          const parts = (v.title || '').split('/').map((s) => s.trim());
+          const sz = parts[1] || 'Free Size';
+          return {
+            size: sz,
+            stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
+            available: true,
+            sku: v.sku || `${colorCode}-${sz}`,
+          };
+        });
+
+        return {
+          ...group,
+          sizes: keptSizes,
+        };
+      });
+    });
+  }, [productId, fetchedVariantsData]);
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
