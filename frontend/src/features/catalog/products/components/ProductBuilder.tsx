@@ -400,7 +400,7 @@ export default function ProductBuilder({
         size: sz,
         stock: 10,
         available: true,
-        sku: `${cName.substring(0, 3).toUpperCase()}-${sz}`,
+        sku: buildSmartVariantSku(cName, sz),
       })),
     };
 
@@ -590,13 +590,32 @@ export default function ProductBuilder({
   // Add custom size to active color group
   const [newSizeInput, setNewSizeInput] = useState('');
 
+  /** Generates a distinct color abbreviation to avoid SKU collisions (e.g. "Color 1" -> "COL1", "Color 2" -> "COL2", "Navy Blue" -> "NBLU") */
+  const getColorCode = (colorName: string) => {
+    const clean = (colorName || 'Color 1').trim();
+    // Match "Color 1", "Color 2", "Colour 1", etc.
+    const numMatch = clean.match(/colou?r\s*(\d+)/i);
+    if (numMatch) {
+      return `COL${numMatch[1]}`;
+    }
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      const firstChar = words[0][0].toUpperCase();
+      const secondWord = words[1].toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+      return `${firstChar}${secondWord}`;
+    }
+    const code = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length <= 4) return code || 'COL';
+    return code.substring(0, 4);
+  };
+
   /** Helper to generate a smart, unique, human-readable SKU ID for color + size variants */
   const buildSmartVariantSku = (colorName: string, sizeName: string) => {
-    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || 'VSS').toString().trim();
-    const parentCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) || 'VSS';
-    const colorCode = colorName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'COL';
-    const sizeCode = sizeName.trim().toUpperCase();
-    return `${parentCode}-${colorCode}-${sizeCode}`;
+    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || '').toString().trim();
+    const parentCode = rawCode ? rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) : '';
+    const colorCode = getColorCode(colorName);
+    const cleanSize = sizeName.trim().toUpperCase().replace(/\s+/g, '');
+    return parentCode ? `${parentCode}-${colorCode}-${cleanSize}` : `${colorCode}-${cleanSize}`;
   };
 
   const addSizeToColorGroup = (colorGroupId: string) => {
