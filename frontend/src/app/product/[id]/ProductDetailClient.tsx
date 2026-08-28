@@ -112,29 +112,60 @@ export function ProductDetailClient() {
     return Array.from(new Set(list.length ? list : [PLACEHOLDER_IMAGE]));
   }, [product]);
 
-  // Extract unique colors and sizes from variants
+  // Extract unique colors and sizes from variants & product media
   const availableColors = useMemo(() => {
-    if (!variantsData?.data) return [];
     const colors = new Set<string>();
-    variantsData.data.forEach(v => {
-      v.attributeValues?.forEach(av => {
-        if (av.attributeName.toLowerCase() === 'color' && av.value) {
-          colors.add(av.value);
+
+    // 1) From variantsData (attributeValues or title "Color / Size")
+    if (variantsData?.data) {
+      variantsData.data.forEach(v => {
+        v.attributeValues?.forEach(av => {
+          if (av.attributeName?.toLowerCase() === 'color' && av.value) {
+            colors.add(av.value);
+          }
+        });
+        if (v.title && v.title.includes('/')) {
+          const colFromTitle = v.title.split('/')[0].trim();
+          if (colFromTitle) colors.add(colFromTitle);
         }
       });
-    });
+    }
+
+    // 2) From product.images (group images by color name!)
+    if (product?.images) {
+      product.images.forEach(img => {
+        if (img.color) colors.add(img.color);
+      });
+    }
+
+    // 3) From product.colorGroups
+    const rawGroups = (product as unknown as Record<string, unknown>)?.colorGroups;
+    if (Array.isArray(rawGroups)) {
+      rawGroups.forEach((g: unknown) => {
+        const groupObj = g as { name?: string };
+        if (groupObj?.name) colors.add(groupObj.name);
+      });
+    }
+
     return Array.from(colors);
-  }, [variantsData]);
+  }, [variantsData, product]);
 
   const availableSizes = useMemo(() => {
     if (!variantsData?.data) return [];
     const sizes = new Set<string>();
     variantsData.data.forEach(v => {
       v.attributeValues?.forEach(av => {
-        if (av.attributeName.toLowerCase() === 'size' && av.value) {
+        if (av.attributeName?.toLowerCase() === 'size' && av.value) {
           sizes.add(av.value);
         }
       });
+      if (v.title && v.title.includes('/')) {
+        const parts = v.title.split('/');
+        if (parts[1]) {
+          const szFromTitle = parts[1].trim();
+          if (szFromTitle) sizes.add(szFromTitle);
+        }
+      }
     });
     return Array.from(sizes);
   }, [variantsData]);

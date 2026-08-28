@@ -370,9 +370,87 @@ export default function ProductBuilder({
   };
 
   // Color Groups State (with Images & Sizes per Color)
-  const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(
-    ((initialData as unknown as Record<string, unknown>)?.colorGroups as ColorVariantGroup[]) || []
-  );
+  const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(() => {
+    if (!initialData) return [];
+
+    // 1. Direct colorGroups on initialData if saved
+    const rawGroups = (initialData as unknown as Record<string, unknown>)?.colorGroups;
+    if (Array.isArray(rawGroups) && rawGroups.length > 0) {
+      return rawGroups as ColorVariantGroup[];
+    }
+
+    // 2. Derive from initialData.images and initialData.variants when editing
+    const images = initialData.images || [];
+    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; availableQuantity?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
+    const primaryUrl = initialData.primaryImageUrl;
+
+    const colorMap = new Map<string, { swatch?: string; images: string[] }>();
+
+    images.forEach((img) => {
+      const cName = img.color || 'Color 1';
+      const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || img.url;
+      if (!colorMap.has(cName)) {
+        colorMap.set(cName, { swatch, images: [] });
+      }
+      if (img.url) {
+        colorMap.get(cName)!.images.push(img.url);
+      }
+    });
+
+    // Check variants for color attribute or title ("Color / Size")
+    variants.forEach((v) => {
+      let colorName = '';
+      if (v.attributeValues) {
+        const colorAttr = v.attributeValues.find(
+          (av) => av.attributeName?.toLowerCase() === 'color' || av.attribute?.slug === 'color'
+        );
+        if (colorAttr?.value) colorName = colorAttr.value;
+      }
+      if (!colorName && v.title && v.title.includes('/')) {
+        colorName = v.title.split('/')[0].trim();
+      }
+      if (colorName && !colorMap.has(colorName)) {
+        colorMap.set(colorName, { swatch: primaryUrl, images: primaryUrl ? [primaryUrl] : [] });
+      }
+    });
+
+    if (colorMap.size === 0) {
+      const defaultImgs = images.map((i) => i.url).filter(Boolean);
+      if (primaryUrl && !defaultImgs.includes(primaryUrl)) {
+        defaultImgs.unshift(primaryUrl);
+      }
+      colorMap.set('Color 1', { swatch: primaryUrl || defaultImgs[0], images: defaultImgs });
+    }
+
+    const groups: ColorVariantGroup[] = [];
+    let idx = 1;
+    colorMap.forEach((data, cName) => {
+      const groupSizes = STANDARD_SIZES.map((sz) => {
+        const matchingVar = variants.find((v) => {
+          const vTitle = (v.title || '').toLowerCase();
+          return vTitle.includes(cName.toLowerCase()) && vTitle.includes(sz.toLowerCase());
+        });
+        return {
+          size: sz,
+          stock: matchingVar?.availableQuantity ?? 10,
+          available: true,
+          sku: matchingVar?.sku || `${cName.substring(0, 3).toUpperCase()}-${sz}`,
+        };
+      });
+
+      groups.push({
+        id: `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        name: cName,
+        hex: idx === 1 ? '#e8c4b8' : '#1e3a8a',
+        swatchImage: data.swatch,
+        images: data.images.length > 0 ? data.images : (primaryUrl ? [primaryUrl] : []),
+        sizes: groupSizes,
+      });
+      idx++;
+    });
+
+    return groups;
+  });
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
