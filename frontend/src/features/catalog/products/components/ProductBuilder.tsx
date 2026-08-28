@@ -189,6 +189,24 @@ const buildVariantAttributeValues = (
   return entries;
 };
 
+/** Generates a distinct color abbreviation to avoid SKU collisions (e.g. "Color 1" -> "COL1", "Color 2" -> "COL2", "Navy Blue" -> "NBLU") */
+export const getColorCodeHelper = (colorName: string) => {
+  const clean = (colorName || 'Color 1').trim();
+  const numMatch = clean.match(/colou?r\s*(\d+)/i);
+  if (numMatch) {
+    return `COL${numMatch[1]}`;
+  }
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const firstChar = words[0][0].toUpperCase();
+    const secondWord = words[1].toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+    return `${firstChar}${secondWord}`;
+  }
+  const code = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length <= 4) return code || 'COL';
+  return code.substring(0, 4);
+};
+
 export default function ProductBuilder({
   productId,
   initialData,
@@ -425,6 +443,7 @@ export default function ProductBuilder({
     const groups: ColorVariantGroup[] = [];
     let idx = 1;
     colorMap.forEach((data, cName) => {
+      const colorCode = getColorCodeHelper(cName);
       const groupSizes = STANDARD_SIZES.map((sz) => {
         const matchingVar = variants.find((v) => {
           const vTitle = (v.title || '').toLowerCase();
@@ -434,7 +453,7 @@ export default function ProductBuilder({
           size: sz,
           stock: matchingVar?.availableQuantity ?? 10,
           available: true,
-          sku: matchingVar?.sku || `${cName.substring(0, 3).toUpperCase()}-${sz}`,
+          sku: matchingVar?.sku || `${colorCode}-${sz}`,
         };
       });
 
