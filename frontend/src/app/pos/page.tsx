@@ -304,6 +304,21 @@ export default function DesktopPosPage() {
     });
   };
 
+  // A per-line discount, for haggling over one garment rather than the whole
+  // bill. Capped at the line value so a discount can never make a line
+  // negative, and the server recomputes tax on what is left after it.
+  const setLineDiscount = (index: number, value: string) => {
+    setStockCapNotice('');
+    setCart((prev) =>
+      prev.map((item, i) => {
+        if (i !== index) return item;
+        const lineValue = item.unitPrice * item.quantity;
+        const requested = Math.max(0, Number(value) || 0);
+        return { ...item, discountAmount: Math.min(requested, lineValue) };
+      }),
+    );
+  };
+
   const updateQuantity = (index: number, delta: number) => {
     setStockCapNotice('');
     setCart((prev) => {
@@ -892,6 +907,18 @@ export default function DesktopPosPage() {
                         <p className="text-[10px] text-sky-800 font-semibold">
                           ₹{item.unitPrice} / unit
                         </p>
+                        <label className="mt-1 flex items-center gap-1.5">
+                          <span className="text-[10px] font-semibold text-neutral-500">Disc ₹</span>
+                          <input
+                            type="number"
+                            min={0}
+                            max={item.unitPrice * item.quantity}
+                            value={item.discountAmount ?? ''}
+                            onChange={(e) => setLineDiscount(index, e.target.value)}
+                            placeholder="0"
+                            className="w-16 bg-neutral-50 border border-neutral-200 rounded-md px-1.5 py-0.5 text-[11px] font-bold text-right focus:outline-none focus:border-[var(--brand-primary)]"
+                          />
+                        </label>
                       </div>
                     </div>
 
@@ -917,8 +944,13 @@ export default function DesktopPosPage() {
                     {/* Total Price & Delete */}
                     <div className="text-right shrink-0">
                       <div className="text-xs font-bold text-neutral-900">
-                        ₹{item.unitPrice * item.quantity}
+                        ₹{Math.round((item.unitPrice * item.quantity - (item.discountAmount || 0)) * 100) / 100}
                       </div>
+                      {(item.discountAmount || 0) > 0 && (
+                        <div className="text-[10px] text-neutral-400 line-through">
+                          ₹{item.unitPrice * item.quantity}
+                        </div>
+                      )}
                       <button
                         onClick={() => removeItem(index)}
                         className="text-[10px] text-neutral-400 hover:text-sky-600 transition-colors mt-0.5"
