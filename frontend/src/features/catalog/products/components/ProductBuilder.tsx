@@ -1125,13 +1125,36 @@ export default function ProductBuilder({
       ]);
       const attributes = attributeList?.data ?? [];
 
-      // Saving twice must not duplicate variants, so skip pairs already stored.
-      const existingTitles = new Set(
-        (existingVariants?.data ?? [])
-          .map((v) => String(v.title ?? '').toLowerCase().trim())
-          .filter(Boolean),
-      );
+      // Build a map of wanted active variant titles -> sizeRow details
+      const wantedVariantsMap = new Map<string, { group: ColorVariantGroup; sizeRow: ColorVariantGroup['sizes'][number] }>();
+      for (const group of colorGroups) {
+        for (const sizeRow of group.sizes) {
+          if (sizeRow.available) {
+            const titleKey = `${group.name} / ${sizeRow.size}`.toLowerCase().trim();
+            wantedVariantsMap.set(titleKey, { group, sizeRow });
+          }
+        }
+      }
 
+      // Check existing variants in database
+      const dbVariantsList = existingVariants?.data ?? [];
+      const existingVariantsByTitle = new Map<string, (typeof dbVariantsList)[0]>();
+      dbVariantsList.forEach((v) => {
+        const titleKey = String(v.title ?? '').toLowerCase().trim();
+        if (titleKey) existingVariantsByTitle.set(titleKey, v);
+      });
+
+      // 1) Delete or Deactivate variants that admin deleted/removed from colorGroups
+      for (const existingVar of dbVariantsList) {
+        const titleKey = String(existingVar.title ?? '').toLowerCase().trim();
+        if (titleKey && !wantedVariantsMap.has(titleKey)) {
+          await variantService.delete(existingVar.id).catch(() => {
+            return variantService.deactivate(existingVar.id).catch(() => null);
+          });
+        }
+      }
+
+      // 2) Create or Update wanted variants & stock
       const issued: IssuedVariant[] = [];
       const variantIdsByGroup: Record<string, string[]> = {};
       let variantOrder = 0;
@@ -1141,44 +1164,70 @@ export default function ProductBuilder({
         for (const sizeRow of group.sizes) {
           if (!sizeRow.available) continue;
           const title = `${group.name} / ${sizeRow.size}`;
-          if (existingTitles.has(title.toLowerCase())) continue;
+          const titleKey = title.toLowerCase().trim();
 
-          const variant = await variantService.create({
-            productId: created.id,
-            title,
-            sku: sizeRow.sku || undefined,
-            priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
-            costPrice: values.costPrice ? Number(values.costPrice) : undefined,
-            displayOrder: variantOrder,
-            isDefault: variantOrder === 0 && existingTitles.size === 0,
-            attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
-          });
-          variantOrder++;
+          const existingVar = existingVariantsByTitle.get(titleKey);
 
-          if (!variant?.id) continue;
-          variantIdsByGroup[group.id].push(variant.id);
+          if (existingVar) {
+            // Already exists -> Update stock and variant details
+            variantIdsByGroup[group.id].push(existingVar.id);
+            if (sizeRow.stock >= 0) {
+              await inventoryService
+                .create({
+                  variantId: existingVar.id,
+                  availableQuantity: sizeRow.stock,
+                  ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+                  ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+                })
+                .catch(() => null);
+            }
+            issued.push({
+              sku: existingVar.sku,
+              barcode: existingVar.barcode,
+              title,
+              stock: sizeRow.stock,
+              price: sizeRow.price
+                ? Number(sizeRow.price)
+                : Number(values.salePrice || values.basePrice || 0),
+            });
+          } else {
+            // Create new variant
+            const variant = await variantService.create({
+              productId: created.id,
+              title,
+              sku: sizeRow.sku || undefined,
+              priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
+              costPrice: values.costPrice ? Number(values.costPrice) : undefined,
+              displayOrder: variantOrder,
+              isDefault: variantOrder === 0 && existingVariantsByTitle.size === 0,
+              attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
+            });
+            variantOrder++;
 
-          // Opening stock for the new variant.
-          if (sizeRow.stock > 0) {
-            await inventoryService
-              .create({
-                variantId: variant.id,
-                availableQuantity: sizeRow.stock,
-                ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-                ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
-              })
-              .catch(() => null);
+            if (!variant?.id) continue;
+            variantIdsByGroup[group.id].push(variant.id);
+
+            if (sizeRow.stock > 0) {
+              await inventoryService
+                .create({
+                  variantId: variant.id,
+                  availableQuantity: sizeRow.stock,
+                  ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+                  ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+                })
+                .catch(() => null);
+            }
+
+            issued.push({
+              sku: variant.sku,
+              barcode: variant.barcode,
+              title,
+              stock: sizeRow.stock,
+              price: sizeRow.price
+                ? Number(sizeRow.price)
+                : Number(values.salePrice || values.basePrice || 0),
+            });
           }
-
-          issued.push({
-            sku: variant.sku,
-            barcode: variant.barcode,
-            title,
-            stock: sizeRow.stock,
-            price: sizeRow.price
-              ? Number(sizeRow.price)
-              : Number(values.salePrice || values.basePrice || 0),
-          });
         }
       }
 
