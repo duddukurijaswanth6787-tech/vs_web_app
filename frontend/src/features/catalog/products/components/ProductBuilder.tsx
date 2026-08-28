@@ -387,6 +387,33 @@ export default function ProductBuilder({
     setCollectionInput('');
   };
 
+  // Dedicated Storefront Product Card View Image state
+  const [productCardImageUrl, setProductCardImageUrl] = useState<string>(
+    () => ((initialData as unknown as Record<string, unknown>)?.productCardImageUrl as string) || initialData?.primaryImageUrl || ''
+  );
+
+  const setCardViewImage = (url: string, colorGroupId?: string) => {
+    setProductCardImageUrl(url);
+    if (colorGroupId) {
+      setColorGroups((prev) => {
+        const groupIdx = prev.findIndex((g) => g.id === colorGroupId);
+        if (groupIdx === -1) return prev;
+        const updated = prev.map((group) => {
+          if (group.id !== colorGroupId) return group;
+          const images = [...group.images];
+          const imgIdx = images.indexOf(url);
+          if (imgIdx > 0) {
+            const [picked] = images.splice(imgIdx, 1);
+            images.unshift(picked);
+          }
+          return { ...group, images };
+        });
+        const [primaryGroup] = updated.splice(groupIdx, 1);
+        return [primaryGroup, ...updated];
+      });
+    }
+  };
+
   // Color Groups State (with Images & Sizes per Color)
   const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(() => {
     if (!initialData) return [];
@@ -517,20 +544,21 @@ export default function ProductBuilder({
 
   // Add Image URL to active color group
   const [imageUrlInput, setImageUrlInput] = useState('');
-  const addImageToColorGroup = (colorGroupId: string) => {
-    if (!imageUrlInput.trim()) return;
+  const addImageToColorGroup = (colorGroupId: string, customUrl?: string) => {
+    const urlToAdd = (customUrl || imageUrlInput).trim();
+    if (!urlToAdd) return;
     setColorGroups((prev) =>
       prev.map((group) => {
         if (group.id === colorGroupId) {
           return {
             ...group,
-            images: [...group.images, imageUrlInput.trim()],
+            images: [...group.images, urlToAdd],
           };
         }
         return group;
       })
     );
-    setImageUrlInput('');
+    if (!customUrl) setImageUrlInput('');
   };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -2118,15 +2146,88 @@ export default function ProductBuilder({
         {/* TAB 3: COLOR GROUPS & COLOR-SPECIFIC MEDIA */}
         {activeTab === 'colors' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-[#0284c7]" />
-                  <span>Color Groups & Color-Specific Media Gallery</span>
-                </h3>
-                <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                  Add color variants and upload dedicated image lists for each color
-                </p>
+            {/* DEDICATED STOREFRONT PRODUCT CARD VIEW IMAGE SELECTOR */}
+            <div className="p-5 bg-sky-50/80 rounded-2xl border border-sky-200/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#0284c7] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                    💳
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                      Storefront Product Card View Image (Catalog Cover Photo)
+                    </h4>
+                    <p className="text-[11px] text-neutral-500 font-medium">
+                      Select or upload the exact image to display on Customer Storefront Product Cards (Homepage, Catalog Grid, Search).
+                    </p>
+                  </div>
+                </div>
+                {productCardImageUrl && (
+                  <span className="text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                    ✓ Custom Card Image Active
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 bg-white p-3.5 rounded-xl border border-neutral-200 shadow-2xs">
+                {productCardImageUrl ? (
+                  <div className="relative w-20 h-24 rounded-lg overflow-hidden border border-neutral-300 shadow-2xs shrink-0 bg-neutral-100">
+                    <Image
+                      src={productCardImageUrl}
+                      alt="Product Card View Cover"
+                      fill
+                      unoptimized={isLocalOrPlaceholder(productCardImageUrl)}
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-20 h-24 rounded-lg border-2 border-dashed border-sky-200 bg-sky-50/50 flex items-center justify-center text-xs text-sky-700 text-center p-2 font-bold shrink-0">
+                    Auto Primary
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Storefront Card Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const url = ev.target?.result as string;
+                              if (url) {
+                                setCardViewImage(url);
+                                if (activeColorTab) {
+                                  addImageToColorGroup(activeColorTab, url);
+                                }
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {productCardImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setProductCardImageUrl('')}
+                        className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold px-3 py-2 rounded-xl transition-all"
+                      >
+                        Reset to Default Primary
+                      </button>
+                    )}
+                  </div>
+                  <p className="text-[10px] text-neutral-500 font-medium">
+                    Tip: You can also click <span className="text-[#0284c7] font-bold">💳 SET CARD VIEW</span> on any photo thumbnail below to select it instantly!
+                  </p>
+                </div>
               </div>
             </div>
 
@@ -2448,19 +2549,35 @@ export default function ProductBuilder({
                                   </button>
                                 </div>
 
-                                {idx === 0 ? (
-                                  <span className="absolute bottom-9 left-2 bg-[#0284c7] text-white text-[9px] font-bold px-2 py-0.5 rounded-md">
-                                    PRIMARY
-                                  </span>
-                                ) : (
-                                  <button
-                                    type="button"
-                                    onClick={() => setPrimaryImage(cur.id, idx)}
-                                    className="absolute bottom-9 left-2 bg-black/70 text-white text-[9px] font-bold px-2 py-0.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity"
-                                  >
-                                    SET PRIMARY
-                                  </button>
-                                )}
+                                <div className="absolute bottom-9 left-2 right-2 flex flex-col gap-1 z-10">
+                                  {img === productCardImageUrl ? (
+                                    <span className="bg-[#0284c7] text-white text-[8px] font-bold px-1.5 py-0.5 rounded text-center shadow-2xs">
+                                      💳 CARD VIEW
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setCardViewImage(img, cur.id)}
+                                      className="bg-black/80 hover:bg-[#0284c7] text-white text-[8px] font-bold px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100 text-center shadow-2xs"
+                                    >
+                                      💳 SET CARD VIEW
+                                    </button>
+                                  )}
+
+                                  {idx === 0 ? (
+                                    <span className="bg-emerald-700 text-white text-[8px] font-bold px-1.5 py-0.5 rounded text-center shadow-2xs">
+                                      PRIMARY
+                                    </span>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={() => setPrimaryImage(cur.id, idx)}
+                                      className="bg-black/70 hover:bg-emerald-700 text-white text-[8px] font-bold px-1.5 py-0.5 rounded transition-all opacity-0 group-hover:opacity-100 text-center"
+                                    >
+                                      SET PRIMARY
+                                    </button>
+                                  )}
+                                </div>
 
                                 {/* Shot type */}
                                 <select

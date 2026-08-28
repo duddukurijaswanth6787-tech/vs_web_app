@@ -42,7 +42,7 @@ function ProductCardItem({
   onToggleWishlist: (id: string) => void;
 }) {
   const p = product as unknown as Record<string, unknown>;
-  const rawImage = String(p.primaryImageUrl || product.image || (Array.isArray(p.images) ? String((p.images[0] as Record<string, unknown>)?.url || '') : '') || '') || PLACEHOLDER_IMAGE;
+  const rawImage = String(p.productCardImageUrl || p.cardImageUrl || p.primaryImageUrl || product.image || (Array.isArray(p.images) ? String((p.images[0] as Record<string, unknown>)?.url || '') : '') || '') || PLACEHOLDER_IMAGE;
   const imageSrc = withVariant(rawImage, 'medium') || PLACEHOLDER_IMAGE;
   const cardTitle = product.title || String(p.name || '') || 'Product';
   const priceVal = Number(product.price ?? p.salePrice ?? p.basePrice ?? 0);
