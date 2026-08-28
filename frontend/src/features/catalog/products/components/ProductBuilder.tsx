@@ -887,6 +887,30 @@ export default function ProductBuilder({
 
   const canPublish = validationIssues.length === 0;
 
+  /** Map validation or API error text to the target builder tab so clicking navigates directly there */
+  const getTabForIssue = (issueText: string): 'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo' => {
+    const lower = issueText.toLowerCase();
+    if (lower.includes('category') || lower.includes('organisation') || lower.includes('collection') || lower.includes('tag')) {
+      return 'organisation';
+    }
+    if (lower.includes('name') || lower.includes('brand') || lower.includes('description') || lower.includes('gender')) {
+      return 'basic';
+    }
+    if (lower.includes('price') || lower.includes('mrp') || lower.includes('tax') || lower.includes('hsn') || lower.includes('cost')) {
+      return 'pricing';
+    }
+    if (lower.includes('color') || lower.includes('colour') || lower.includes('image') || lower.includes('swatch') || lower.includes('media')) {
+      return 'colors';
+    }
+    if (lower.includes('size') || lower.includes('stock') || lower.includes('sku') || lower.includes('barcode')) {
+      return 'sizes';
+    }
+    if (lower.includes('attribute') || lower.includes('fabric') || lower.includes('material')) {
+      return 'attributes';
+    }
+    return 'seo';
+  };
+
   const livePreviewData: LivePreviewData = useMemo(() => {
     return {
       name: watchedValues.name || 'Women\'s Ethnic Wear',
@@ -919,9 +943,11 @@ export default function ProductBuilder({
     // Saving a draft is always allowed so partial work is never lost, but a
     // product with outstanding issues must not reach the storefront.
     if (values.isPublished && validationIssues.length > 0) {
-      setActiveTab('seo');
+      const firstIssue = validationIssues[0];
+      const targetTab = getTabForIssue(firstIssue);
+      setActiveTab(targetTab);
       setSaveMessage(
-        `✕ Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'} to fix.`,
+        `✕ Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'} to fix: ${firstIssue}`,
       );
       return;
     }
@@ -943,9 +969,17 @@ export default function ProductBuilder({
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
       };
 
-      const created = productId
-        ? await productService.update(productId, payload as UpdateProductDto)
-        : await productService.create(payload as CreateProductDto);
+      let created: ProductResponse;
+      if (productId) {
+        // Strip categoryIds from update payload because PATCH /products/:id rejects categoryIds
+        const { categoryIds: catIds, ...updatePayload } = payload as Record<string, unknown>;
+        created = await productService.update(productId, updatePayload as UpdateProductDto);
+        if (catIds && Array.isArray(catIds) && catIds.length > 0) {
+          await productService.assignCategories(productId, { categoryIds: catIds as string[] }).catch(() => null);
+        }
+      } else {
+        created = await productService.create(payload as CreateProductDto);
+      }
 
       // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;
       // blank values are dropped so an unset attribute is not stored as "".
@@ -1105,7 +1139,12 @@ export default function ProductBuilder({
       if (onSaveSuccess) onSaveSuccess(created.id);
       if (issued.length === 0) setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
-      setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to save product'));
+      let rawErr = getApiErrorMessage(err, 'Failed to save product');
+      if (rawErr.includes('property') && rawErr.includes('should not exist')) {
+        rawErr = rawErr.replace(/property\s+([a-zA-Z0-9_]+)\s+should not exist/gi, 'Property "$1" is read-only on update.');
+      }
+      setSaveMessage('✕ ' + rawErr);
+      setActiveTab(getTabForIssue(rawErr));
     } finally {
       setIsSubmitting(false);
     }
@@ -1178,20 +1217,38 @@ export default function ProductBuilder({
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
             {saveMessage && (
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-fade-in">
-                {saveMessage}
-              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTab(getTabForIssue(saveMessage))}
+                className={`text-xs font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  saveMessage.startsWith('✓')
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100 shadow-2xs'
+                }`}
+              >
+                <span>{saveMessage}</span>
+                {!saveMessage.startsWith('✓') && (
+                  <span className="text-[10px] underline font-bold ml-1 text-red-600">(Click to fix)</span>
+                )}
+              </button>
             )}
 
             {!canPublish && (
               <button
                 type="button"
-                onClick={() => setActiveTab('seo')}
-                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors min-h-[38px]"
+                onClick={() => {
+                  const firstIssue = validationIssues[0];
+                  if (firstIssue) {
+                    setActiveTab(getTabForIssue(firstIssue));
+                  } else {
+                    setActiveTab('basic');
+                  }
+                }}
+                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors min-h-[38px] cursor-pointer shadow-2xs"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>
-                  {validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'}
+                  {validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'} (Click to fix)
                 </span>
               </button>
             )}
