@@ -112,64 +112,6 @@ export function ProductDetailClient() {
     return Array.from(new Set(list.length ? list : [PLACEHOLDER_IMAGE]));
   }, [product]);
 
-  // Extract unique colors and sizes from variants & product media
-  const availableColors = useMemo(() => {
-    const colors = new Set<string>();
-
-    // 1) From variantsData (attributeValues or title "Color / Size")
-    if (variantsData?.data) {
-      variantsData.data.forEach(v => {
-        v.attributeValues?.forEach(av => {
-          if (av.attributeName?.toLowerCase() === 'color' && av.value) {
-            colors.add(av.value);
-          }
-        });
-        if (v.title && v.title.includes('/')) {
-          const colFromTitle = v.title.split('/')[0].trim();
-          if (colFromTitle) colors.add(colFromTitle);
-        }
-      });
-    }
-
-    // 2) From product.images (group images by color name!)
-    if (product?.images) {
-      product.images.forEach(img => {
-        if (img.color) colors.add(img.color);
-      });
-    }
-
-    // 3) From product.colorGroups
-    const rawGroups = (product as unknown as Record<string, unknown>)?.colorGroups;
-    if (Array.isArray(rawGroups)) {
-      rawGroups.forEach((g: unknown) => {
-        const groupObj = g as { name?: string };
-        if (groupObj?.name) colors.add(groupObj.name);
-      });
-    }
-
-    return Array.from(colors);
-  }, [variantsData, product]);
-
-  const availableSizes = useMemo(() => {
-    if (!variantsData?.data) return [];
-    const sizes = new Set<string>();
-    variantsData.data.forEach(v => {
-      v.attributeValues?.forEach(av => {
-        if (av.attributeName?.toLowerCase() === 'size' && av.value) {
-          sizes.add(av.value);
-        }
-      });
-      if (v.title && v.title.includes('/')) {
-        const parts = v.title.split('/');
-        if (parts[1]) {
-          const szFromTitle = parts[1].trim();
-          if (szFromTitle) sizes.add(szFromTitle);
-        }
-      }
-    });
-    return Array.from(sizes);
-  }, [variantsData]);
-
   // Extract color groups (with image gallery, swatch, and sizes for each color)
   const colorGroups = useMemo(() => {
     const rawGroups = (product as unknown as Record<string, unknown>)?.colorGroups;
@@ -184,7 +126,23 @@ export function ProductDetailClient() {
       }>;
     }
 
-    const availableCols = availableColors.length > 0 ? availableColors : ['Color 1'];
+    // Fallback: Group product.images by color name
+    const colors = new Set<string>();
+    if (product?.images) {
+      product.images.forEach((img) => {
+        if (img.color) colors.add(img.color);
+      });
+    }
+    if (variantsData?.data) {
+      variantsData.data.forEach((v) => {
+        if (v.title && v.title.includes('/')) {
+          const colFromTitle = v.title.split('/')[0].trim();
+          if (colFromTitle) colors.add(colFromTitle);
+        }
+      });
+    }
+
+    const availableCols = Array.from(colors).length > 0 ? Array.from(colors) : ['Color 1'];
     return availableCols.map((colorName, idx) => {
       const colorImages = product?.images
         ?.filter((img) => img.color && img.color.toLowerCase() === colorName.toLowerCase())
@@ -196,19 +154,65 @@ export function ProductDetailClient() {
         hex: idx === 0 ? '#e8c4b8' : '#1e3a8a',
         swatchImage: finalImgs[0],
         images: finalImgs,
-        sizes: availableSizes.map((sz) => ({ size: sz, stock: 15, available: true })),
+        sizes: [],
       };
     });
-  }, [product, availableColors, availableSizes, images]);
+  }, [product, variantsData, images]);
+
+  const availableColors = useMemo(() => {
+    return colorGroups.map((g) => g.name);
+  }, [colorGroups]);
+
+  const availableSizes = useMemo(() => {
+    const SIZE_ORDER = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', 'FREE SIZE'];
+    const sizes = new Set<string>();
+
+    if (variantsData?.data) {
+      variantsData.data.forEach((v) => {
+        v.attributeValues?.forEach((av) => {
+          if (av.attributeName?.toLowerCase() === 'size' && av.value) {
+            sizes.add(av.value);
+          }
+        });
+        if (v.title && v.title.includes('/')) {
+          const parts = v.title.split('/');
+          if (parts[1]) {
+            const szFromTitle = parts[1].trim();
+            if (szFromTitle) sizes.add(szFromTitle);
+          }
+        }
+      });
+    }
+
+    return Array.from(sizes).sort((a, b) => {
+      const idxA = SIZE_ORDER.indexOf(a.toUpperCase().trim());
+      const idxB = SIZE_ORDER.indexOf(b.toUpperCase().trim());
+      if (idxA !== -1 && idxB !== -1) return idxA - idxB;
+      if (idxA !== -1) return -1;
+      if (idxB !== -1) return 1;
+      return a.localeCompare(b);
+    });
+  }, [variantsData]);
 
   const currentColorGroup = useMemo(() => {
-    return colorGroups.find(g => g.name.toLowerCase() === selectedColor.toLowerCase()) || colorGroups[0];
+    return colorGroups.find((g) => g.name.toLowerCase() === selectedColor.toLowerCase()) || colorGroups[0];
   }, [colorGroups, selectedColor]);
 
   const visibleImages = useMemo<string[]>(() => {
-    const rawList = currentColorGroup?.images?.length ? currentColorGroup.images : images;
-    return Array.from(new Set(rawList.filter(Boolean)));
-  }, [currentColorGroup, images]);
+    if (!product) return [PLACEHOLDER_IMAGE];
+    if (currentColorGroup?.images && currentColorGroup.images.length > 0) {
+      return Array.from(new Set(currentColorGroup.images.filter(Boolean)));
+    }
+    if (product.images && product.images.length > 0) {
+      const colorMatch = currentColorGroup?.name;
+      const filtered = product.images
+        .filter((img) => !colorMatch || !img.color || img.color.toLowerCase().trim() === colorMatch.toLowerCase().trim())
+        .map((img) => img.url)
+        .filter((u): u is string => Boolean(u));
+      if (filtered.length > 0) return Array.from(new Set(filtered));
+    }
+    return Array.from(new Set(images.filter(Boolean)));
+  }, [product, currentColorGroup, images]);
 
   const [activeImage, setActiveImage] = useState(0);
   const [prevSelectedColor, setPrevSelectedColor] = useState(selectedColor);
@@ -217,7 +221,7 @@ export function ProductDetailClient() {
     setActiveImage(0);
   }
 
-  // Set default selections once loaded
+  // Set default selections once loaded (default Priority 1 color group)
   if (availableColors.length > 0 && !selectedColor) {
     setSelectedColor(availableColors[0]);
   }
@@ -762,9 +766,9 @@ export function ProductDetailClient() {
                         <span>Delivery Available at {pinCode}!</span>
                       </div>
                       <ul className="grid grid-cols-2 gap-x-4 gap-y-1 pl-6 text-[10px] text-neutral-500 font-semibold list-disc">
-                        <li>Delivery by Tuesday</li>
+                        <li>Express Delivery</li>
                         <li>Free Standard Delivery</li>
-                        <li>Cash on Delivery (COD)</li>
+                        <li>100% Quality Inspected</li>
                         {returnsEnabled && <li>Easy Returns & Exchange</li>}
                       </ul>
                     </div>
@@ -774,11 +778,11 @@ export function ProductDetailClient() {
                   )}
                 </div>
 
-                {/* Service Icons Grid (Mock style) */}
+                {/* Service Icons Grid */}
                 <div className={`grid ${returnsEnabled ? 'grid-cols-4' : 'grid-cols-3'} gap-2.5 border-t border-neutral-100 pt-5 text-center`}>
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Truck className="w-4 h-4" /></div>
-                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">Delivery</p>
+                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">Fast Delivery</p>
                     <p className="text-[7px] font-medium text-neutral-400 leading-none">2-5 working days</p>
                   </div>
                   {returnsEnabled && (
@@ -790,8 +794,8 @@ export function ProductDetailClient() {
                   )}
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Award className="w-4 h-4" /></div>
-                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">COD Available</p>
-                    <p className="text-[7px] font-medium text-neutral-400 leading-none">Pay on delivery</p>
+                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">100% Authentic</p>
+                    <p className="text-[7px] font-medium text-neutral-400 leading-none">Quality Guaranteed</p>
                   </div>
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><ShieldCheck className="w-4 h-4" /></div>
