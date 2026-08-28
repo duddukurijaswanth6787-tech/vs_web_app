@@ -171,7 +171,7 @@ export function ProductGridSection({
         </div>
       ) : (
         <>
-          {/* Mobile Scroll Section */}
+          {/* Mobile & Tablet Layout */}
           <div className="flex lg:hidden overflow-x-auto gap-3.5 px-4 pb-2.5 pt-1 snap-x snap-mandatory scrollbar-none">
             {displayProducts.map((product, idx) => (
               <ProductCardItem
@@ -184,8 +184,18 @@ export function ProductGridSection({
             ))}
           </div>
 
-          {/* Desktop Grid Section */}
-          <div className="hidden lg:grid lg:grid-cols-6 lg:gap-5 px-12">
+          {/* Desktop Responsive Grid Section */}
+          <div className={`hidden lg:grid gap-6 px-4 sm:px-8 lg:px-0 ${
+            displayProducts.length === 1
+              ? 'grid-cols-1 max-w-sm'
+              : displayProducts.length === 2
+              ? 'grid-cols-2 max-w-2xl'
+              : displayProducts.length === 3
+              ? 'grid-cols-3 max-w-4xl'
+              : displayProducts.length === 4
+              ? 'grid-cols-4'
+              : 'grid-cols-5 xl:grid-cols-6'
+          }`}>
             {displayProducts.map((product, idx) => (
               <ProductCardItem
                 key={product.id}
