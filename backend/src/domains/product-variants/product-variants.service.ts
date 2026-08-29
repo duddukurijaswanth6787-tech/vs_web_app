@@ -224,7 +224,16 @@ export class ProductVariantsService {
       await this.variantsRepository.clearDefaultForProduct(variant.productId);
     }
 
-    await this.variantsRepository.update(id, { ...dto, updatedBy: userId });
+    let updateBarcode = dto.barcode;
+    if (dto.barcode && dto.barcode !== variant.barcode) {
+      updateBarcode = await this.ensureUniqueBarcode(dto.barcode);
+    }
+    const { barcode, ...restDto } = dto;
+    await this.variantsRepository.update(id, {
+      ...restDto,
+      ...(updateBarcode ? { barcode: updateBarcode } : {}),
+      updatedBy: userId,
+    });
     await this.auditService.log({
       action: 'VARIANT_UPDATED',
       module: 'product-variants',
