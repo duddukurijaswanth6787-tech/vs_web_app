@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
+// Live scannable SKU barcode & QR sticker generator
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
