@@ -34,6 +34,7 @@ import {
   Store,
   Globe,
   Layers,
+  QrCode,
 } from 'lucide-react-native';
 import {
   catalogService,
@@ -97,6 +98,7 @@ const STEPS = [
   { key: 'attributes', label: 'Details', Icon: ListChecks },
   { key: 'seo', label: 'Review', Icon: Tag },
   { key: 'channel', label: 'Where to Sell', Icon: Store },
+  { key: 'barcodes', label: 'Barcodes', Icon: QrCode },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]['key'];
