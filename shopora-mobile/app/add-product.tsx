@@ -90,15 +90,14 @@ const IMAGE_TYPES = ['Front', 'Back', 'Side', 'Detail', 'Fabric', 'Model', 'Size
 const STANDARD_SIZES = ['XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL', '4XL', '5XL', 'Free Size'];
 
 const STEPS = [
-  { key: 'basic', label: 'Basic', Icon: Package },
-  { key: 'organisation', label: 'Category', Icon: FolderTree },
-  { key: 'pricing', label: 'Pricing', Icon: IndianRupee },
-  { key: 'colors', label: 'Colours', Icon: Palette },
-  { key: 'sizes', label: 'Sizes', Icon: Ruler },
-  { key: 'attributes', label: 'Details', Icon: ListChecks },
-  { key: 'seo', label: 'Review', Icon: Tag },
-  { key: 'channel', label: 'Where to Sell', Icon: Store },
-  { key: 'barcodes', label: 'Barcodes', Icon: QrCode },
+  { key: 'basic', label: '1. Basic Details', Icon: Package },
+  { key: 'organisation', label: '2. Category & Org', Icon: FolderTree },
+  { key: 'pricing', label: '3. Pricing & Taxes', Icon: IndianRupee },
+  { key: 'colors', label: '4. Colours & Media', Icon: Palette },
+  { key: 'sizes', label: '5. Sizes & Stock', Icon: Ruler },
+  { key: 'attributes', label: '6. Attributes', Icon: ListChecks },
+  { key: 'seo', label: '7. Badges & SEO', Icon: Tag },
+  { key: 'barcodes', label: '8. Barcode Stickers', Icon: QrCode },
 ] as const;
 
 type StepKey = (typeof STEPS)[number]['key'];
@@ -1796,15 +1795,8 @@ export default function AddProductScreen() {
               />
             </View>
 
-          </View>
-        )}
-
-        {/* ── STEP 6: WHERE TO SELL ── the last decision before Save, since Save
-            is what creates the product and issues its barcodes (hands off to
-            /label-preview). Stock is one shared pool either way. */}
-        {step === 'channel' && (
-          <View>
-            <Text style={styles.sectionTitle}>Where should this product be sold?</Text>
+            {/* ── WHERE TO SELL ── */}
+            <Text style={[styles.sectionTitle, { marginTop: 16 }]}>Where should this product be sold?</Text>
             <Text style={styles.helperText}>
               Stock stays the same either way — this only controls where the product is offered for sale.
             </Text>
@@ -1901,6 +1893,24 @@ export default function AddProductScreen() {
                   </Text>
                 </>
               )}
+            </TouchableOpacity>
+          </View>
+        )}
+
+        {step === 'barcodes' && (
+          <View style={{ alignItems: 'center', paddingVertical: 24 }}>
+            <QrCode size={48} color="#0284c7" style={{ marginBottom: 12 }} />
+            <Text style={styles.sectionTitle}>SKU Barcode Label & Sticker Generator</Text>
+            <Text style={styles.helperText}>
+              Print or share barcode product tag stickers for physical garment attachment.
+            </Text>
+
+            <TouchableOpacity
+              style={[styles.primaryBtn, { width: '100%', marginTop: 20 }]}
+              onPress={() => router.push('/label-preview')}
+            >
+              <QrCode size={18} color="#ffffff" style={{ marginRight: 8 }} />
+              <Text style={styles.primaryBtnText}>OPEN BARCODE STICKERS GENERATOR</Text>
             </TouchableOpacity>
           </View>
         )}
