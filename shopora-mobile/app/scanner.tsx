@@ -265,11 +265,7 @@ export default function DedicatedScannerScreen() {
             enableTorch={enableTorch}
             onBarcodeScanned={scanned ? undefined : handleBarcodeScanned}
             barcodeScannerSettings={{
-              // Every barcode label this store prints (see backend BarcodeService)
-              // is Code128 -- restricting detection to just that format means the
-              // camera's native decoder isn't wasting each frame testing five
-              // other symbologies, which is the main lever for faster scans.
-              barcodeTypes: ['code128'],
+              barcodeTypes: ['code128', 'code39', 'code93', 'ean13', 'ean8', 'upc_a', 'upc_e', 'qr', 'pdf417', 'aztec', 'datamatrix', 'itf14', 'codabar'],
             }}
           />
 

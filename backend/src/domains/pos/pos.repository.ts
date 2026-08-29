@@ -57,6 +57,41 @@ export class PosRepository {
 
     if (variant) return variant;
 
+    // 1b. Fallback: Search directly on ProductVariant (exact barcode, sku, id) without channel filter
+    const fallbackVariant = await this.prisma.productVariant.findFirst({
+      where: {
+        OR: [
+          { barcode: { equals: trimmed, mode: 'insensitive' } },
+          { sku: { equals: trimmed, mode: 'insensitive' } },
+          { id: trimmed },
+        ],
+        deletedAt: null,
+      },
+      include: {
+        product: {
+          include: {
+            media: {
+              where: { isPrimary: true, deletedAt: null },
+              take: 1,
+            },
+          },
+        },
+        inventory: true,
+        attributeValues: {
+          include: {
+            attribute: true,
+            option: true,
+          },
+        },
+        media: {
+          where: { isPrimary: true, deletedAt: null },
+          take: 1,
+        },
+      },
+    });
+
+    if (fallbackVariant) return fallbackVariant;
+
     // 2. Fallback search by Product SKU, barcode, slug, or name (case-insensitive)
     const product = await this.prisma.product.findFirst({
       where: {

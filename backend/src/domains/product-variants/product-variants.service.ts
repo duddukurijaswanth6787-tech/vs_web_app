@@ -104,6 +104,17 @@ export class ProductVariantsService {
     return sku;
   }
 
+  private async ensureUniqueBarcode(requested: string): Promise<string> {
+    const base = requested.trim();
+    let barcode = base;
+    let counter = 1;
+    while (await this.variantsRepository.findByBarcode(barcode)) {
+      barcode = `${base}-${counter}`;
+      counter++;
+    }
+    return barcode;
+  }
+
   private async generateUniqueBarcode(): Promise<string> {
     let barcode = BarcodeGenerator.generate();
     while (await this.variantsRepository.findByBarcode(barcode))
@@ -153,7 +164,9 @@ export class ProductVariantsService {
     const sku = dto.sku
       ? await this.ensureUniqueSku(dto.sku)
       : await this.generateUniqueSku();
-    const barcode = await this.generateUniqueBarcode();
+    const barcode = dto.barcode
+      ? await this.ensureUniqueBarcode(dto.barcode)
+      : await this.generateUniqueBarcode();
     const title = dto.title ?? sku;
 
     if (dto.isDefault) {
