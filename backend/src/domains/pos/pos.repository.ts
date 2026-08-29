@@ -21,14 +21,19 @@ export class PosRepository {
       channel: { in: ['STORE', 'BOTH'] },
     };
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+    const variantMatchConditions: Prisma.ProductVariantWhereInput[] = [
+      { barcode: { equals: trimmed, mode: 'insensitive' } },
+      { sku: { equals: trimmed, mode: 'insensitive' } },
+    ];
+    if (isUuid) {
+      variantMatchConditions.push({ id: trimmed });
+    }
+
     // 1. Search directly on ProductVariant (barcode, sku, id)
     const variant = await this.prisma.productVariant.findFirst({
       where: {
-        OR: [
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
-          { sku: { equals: trimmed, mode: 'insensitive' } },
-          { id: trimmed },
-        ],
+        OR: variantMatchConditions,
         deletedAt: null,
         product: sellableInStore,
       },
@@ -60,11 +65,7 @@ export class PosRepository {
     // 1b. Fallback: Search directly on ProductVariant (exact barcode, sku, id) without channel filter
     const fallbackVariant = await this.prisma.productVariant.findFirst({
       where: {
-        OR: [
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
-          { sku: { equals: trimmed, mode: 'insensitive' } },
-          { id: trimmed },
-        ],
+        OR: variantMatchConditions,
         deletedAt: null,
       },
       include: {
