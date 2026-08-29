@@ -214,7 +214,7 @@ export default function ProductBuilder({
   onSaveSuccess,
 }: ProductBuilderProps) {
   const [activeTab, setActiveTab] = useState<
-    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo'
+    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo' | 'barcodes'
   >('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -525,6 +525,18 @@ export default function ProductBuilder({
     const variants = fetchedVariantsData.data;
     if (variants.length === 0) return;
 
+    // Auto-populate barcode stickers panel for existing product variants
+    const pName = (initialData?.name || methods.getValues('name') || 'Product').toString();
+    const existingIssued: IssuedVariant[] = variants.map((v) => ({
+      sku: v.sku,
+      barcode: v.barcode || v.sku,
+      title: v.title || pName,
+      stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
+      price: v.priceOverride ? Number(v.priceOverride) : Number(methods.getValues('salePrice') || methods.getValues('basePrice') || 0),
+    }));
+    setIssuedVariants(existingIssued);
+    setLabelQtyBySku(Object.fromEntries(existingIssued.map((v) => [v.sku, Math.max(1, v.stock || 1)])));
+
     setColorGroups((prevGroups) => {
       if (!prevGroups.length) return prevGroups;
       return prevGroups.map((group) => {
@@ -555,7 +567,7 @@ export default function ProductBuilder({
         };
       });
     });
-  }, [productId, fetchedVariantsData]);
+  }, [productId, fetchedVariantsData, initialData?.name, methods]);
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
@@ -1680,6 +1692,19 @@ export default function ProductBuilder({
           >
             <Tag className="w-4 h-4" />
             <span>7. Badges, SEO &amp; Publish</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('barcodes')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeTab === 'barcodes'
+                ? 'bg-[#0284c7] text-white shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>8. Barcode Stickers &amp; Labels ({issuedVariants.length})</span>
           </button>
         </div>
 
@@ -3240,6 +3265,137 @@ export default function ProductBuilder({
                 <p className="text-[10px] text-neutral-400">Comma separated.</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'barcodes' && (
+          <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl border border-neutral-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-5">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-amber-400" />
+                  <span>SKU Barcode Label &amp; Sticker Generator</span>
+                </h3>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Generate, print, and download barcode product tag stickers for physical garment attachment.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 bg-neutral-800 p-1.5 rounded-xl border border-neutral-700">
+                  <span className="text-[11px] font-bold text-neutral-400 pl-2">Label Size:</span>
+                  {LABEL_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLabelSize(opt.value)}
+                      title={opt.description}
+                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
+                        labelSize === opt.value
+                          ? 'bg-amber-500 border-amber-500 text-neutral-950 shadow-sm'
+                          : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      {opt.title}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePrintAllLabels}
+                  disabled={issuedVariants.length === 0 || printingSku !== null}
+                  className="bg-[#0284c7] hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50 transition-all shadow-md"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print All {issuedVariants.length} Labels</span>
+                </button>
+              </div>
+            </div>
+
+            {issuedVariants.length === 0 ? (
+              <div className="p-8 text-center bg-neutral-800/50 border border-neutral-800 rounded-2xl space-y-3">
+                <QrCode className="w-10 h-10 text-neutral-500 mx-auto" />
+                <h4 className="text-sm font-bold text-neutral-300">No Barcode Variants Ready Yet</h4>
+                <p className="text-xs text-neutral-400 max-w-md mx-auto">
+                  Click &ldquo;Save &amp; Publish&rdquo; or save product specification to generate server-assigned barcode stickers for each SKU combination.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {issuedVariants.map((variant) => (
+                  <div
+                    key={variant.sku}
+                    className="bg-neutral-800/80 border border-neutral-700/80 rounded-2xl p-5 flex flex-col items-center text-center hover:border-neutral-600 transition-all shadow-sm"
+                  >
+                    <span className="text-xs font-bold text-amber-400">{variant.title}</span>
+                    <span className="text-[11px] font-mono text-neutral-300 mt-0.5">SKU: {variant.sku}</span>
+
+                    {variant.barcode ? (
+                      <div className="bg-white p-3 rounded-xl my-3 border border-neutral-300 w-full flex flex-col items-center justify-center">
+                        <div className="flex items-center justify-center gap-2 mb-1">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
+                            alt={`Barcode ${variant.barcode}`}
+                            className="h-12 object-contain"
+                          />
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
+                            alt={`QR ${variant.barcode}`}
+                            className="h-12 w-12 object-contain"
+                          />
+                        </div>
+                        <span className="text-[11px] font-mono tracking-widest text-neutral-900 font-bold">
+                          {variant.barcode}
+                        </span>
+                        <div className="text-[10px] text-neutral-600 font-bold mt-0.5">
+                          Price: ₹{variant.price}
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="text-xs text-neutral-500 my-6">Generating barcode...</span>
+                    )}
+
+                    <div className="flex items-center gap-2 mt-auto w-full pt-2">
+                      <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-700 rounded-xl px-2 py-1">
+                        <span className="text-[10px] font-bold text-neutral-400">Qty:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={labelQtyBySku[variant.sku] ?? 1}
+                          onChange={(e) =>
+                            setLabelQtyBySku((prev) => ({
+                              ...prev,
+                              [variant.sku]: Math.max(1, Number(e.target.value) || 1),
+                            }))
+                          }
+                          className="w-12 bg-transparent text-xs text-white font-bold text-center outline-none"
+                          title="Copies to print"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePrintLabel(variant)}
+                        disabled={!variant.barcode || printingSku === variant.sku}
+                        className="flex-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 transition-all shadow-sm"
+                      >
+                        {printingSku === variant.sku ? (
+                          <span>Printing…</span>
+                        ) : (
+                          <>
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Print Sticker</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
