@@ -93,12 +93,11 @@ export class PosRepository {
 
     if (fallbackVariant) return fallbackVariant;
 
-    // 2. Fallback search by Product SKU, barcode, slug, or name (case-insensitive)
+    // 2. Fallback search by Product SKU, slug, or name (case-insensitive)
     const product = await this.prisma.product.findFirst({
       where: {
         OR: [
           { sku: { equals: trimmed, mode: 'insensitive' } },
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
           { slug: { equals: trimmed, mode: 'insensitive' } },
           { name: { contains: trimmed, mode: 'insensitive' } },
         ],
@@ -136,7 +135,7 @@ export class PosRepository {
         productId: product.id,
         title: product.name,
         sku: product.sku || `SKU-${product.id.slice(0, 6)}`,
-        barcode: product.barcode || trimmed,
+        barcode: trimmed,
         priceOverride: product.basePrice,
         costPrice: product.costPrice,
         salePriceOverride: product.salePrice,
