@@ -368,11 +368,13 @@ export class GenerateBarcodeImageDto {
 
   @ApiPropertyOptional({ default: 2 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   scale?: number;
 
   @ApiPropertyOptional({ default: 10 })
   @IsOptional()
+  @Type(() => Number)
   @IsNumber()
   height?: number;
 }
