@@ -1363,24 +1363,156 @@ export default function ProductBuilder({
     if (!variant.barcode) return;
     setPrintingSku(variant.sku);
     try {
-      const res = await batchStickersMutation.mutateAsync({
-        productName,
-        variantTitle: variant.title,
-        sku: variant.sku,
-        barcode: variant.barcode,
-        price: variant.price,
-        quantity: Math.max(1, labelQtyBySku[variant.sku] || 1),
-        labelSize,
-      });
+      const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
+      const barcodeImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`;
+      const qrImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`;
+
+      const stickerCardsHtml = Array.from({ length: qty }).map(() => `
+        <div class="sticker-card">
+          <div class="header-diamond">❖</div>
+          <div class="store-title">VASANTHI DESIGNERS</div>
+          <div class="divider"></div>
+          <div class="product-title">${productName} | ${variant.title}</div>
+          <div class="sku-badge">${variant.sku}</div>
+          <div class="code-container">
+            <div class="barcode-box">
+              <img src="${barcodeImgUrl}" alt="barcode" />
+              <div class="barcode-num">${variant.barcode}</div>
+              <div class="sku-num">${variant.sku}</div>
+            </div>
+            <div class="dashed-line"></div>
+            <div class="qr-box">
+              <img src="${qrImgUrl}" alt="qr" />
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="price">₹${variant.price}</div>
+        </div>
+      `).join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Print Barcode Stickers - ${variant.sku}</title>
+          <style>
+            @page { size: auto; margin: 5mm; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              margin: 0;
+              padding: 10px;
+              background: #fff;
+            }
+            .grid {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 15px;
+              justify-content: flex-start;
+            }
+            .sticker-card {
+              width: 320px;
+              padding: 16px;
+              border: 2px dashed #737373;
+              border-radius: 20px;
+              text-align: center;
+              background: #ffffff;
+              box-sizing: border-box;
+              page-break-inside: avoid;
+            }
+            .header-diamond {
+              color: #0284c7;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            .store-title {
+              font-family: Georgia, serif;
+              font-size: 15px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              color: #171717;
+              margin-top: 2px;
+            }
+            .divider {
+              height: 1px;
+              background: #e5e5e5;
+              margin: 8px 0;
+            }
+            .product-title {
+              font-size: 12px;
+              font-weight: 700;
+              color: #262626;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .sku-badge {
+              display: inline-block;
+              background: #09090b;
+              color: #ffffff;
+              border-radius: 9999px;
+              padding: 4px 18px;
+              font-family: monospace;
+              font-size: 13px;
+              font-weight: 700;
+              letter-spacing: 1px;
+              margin: 8px 0;
+            }
+            .code-container {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin: 4px 0;
+            }
+            .barcode-box img {
+              height: 48px;
+              max-width: 140px;
+            }
+            .barcode-num {
+              font-family: monospace;
+              font-size: 10px;
+              font-weight: 600;
+              color: #404040;
+              margin-top: -2px;
+            }
+            .sku-num {
+              font-family: monospace;
+              font-size: 9px;
+              color: #737373;
+            }
+            .dashed-line {
+              height: 48px;
+              border-right: 1px dashed #d4d4d4;
+            }
+            .qr-box img {
+              width: 48px;
+              height: 48px;
+            }
+            .price {
+              font-size: 24px;
+              font-weight: 900;
+              color: #000000;
+              margin-top: 2px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="grid">
+            ${stickerCardsHtml}
+          </div>
+        </body>
+        </html>
+      `;
+
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        printWindow.document.write(res.html);
+        printWindow.document.write(html);
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {
           printWindow.print();
           printWindow.close();
-        }, 250);
+        }, 300);
       }
     } catch (err) {
       setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to generate labels'));
@@ -3198,24 +3330,52 @@ export default function ProductBuilder({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {issuedVariants.map((variant) => (
                   <div
                     key={variant.sku}
-                    className="bg-neutral-800/80 border border-neutral-700/80 rounded-2xl p-5 flex flex-col items-center text-center hover:border-neutral-600 transition-all shadow-sm"
+                    className="bg-white rounded-3xl p-5 border-2 border-dashed border-neutral-300 shadow-md text-neutral-900 font-sans flex flex-col items-center text-center relative overflow-hidden"
                   >
-                    <span className="text-xs font-bold text-amber-400">{variant.title}</span>
-                    <span className="text-[11px] font-mono text-neutral-300 mt-0.5">SKU: {variant.sku}</span>
+                    {/* Header: Blue Diamond + VASANTHI DESIGNERS */}
+                    <div className="flex items-center justify-center gap-1 text-center">
+                      <span className="text-[#0284c7] font-bold text-xs">❖</span>
+                    </div>
+                    <div className="text-sm font-extrabold tracking-wider uppercase text-neutral-900 font-serif">
+                      VASANTHI DESIGNERS
+                    </div>
+                    <div className="w-full border-b border-neutral-200 my-2" />
 
+                    {/* Product Title | Color / Size */}
+                    <div className="text-xs font-bold text-neutral-800 line-clamp-1">
+                      {productName} | {variant.title}
+                    </div>
+
+                    {/* Black SKU Pill Badge */}
+                    <div className="my-2.5 bg-neutral-950 text-white rounded-full px-5 py-1 text-xs font-mono font-bold tracking-widest shadow-xs">
+                      {variant.sku}
+                    </div>
+
+                    {/* Barcode + QR Code Side by Side */}
                     {variant.barcode ? (
-                      <div className="bg-white p-3 rounded-xl my-3 border border-neutral-300 w-full flex flex-col items-center justify-center">
-                        <div className="flex items-center justify-center gap-2 mb-1">
+                      <div className="flex items-center justify-center gap-3 my-1 py-1 w-full">
+                        <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
                             alt={`Barcode ${variant.barcode}`}
                             className="h-12 object-contain"
                           />
+                          <span className="text-[10px] font-mono text-neutral-700 tracking-wider font-semibold -mt-1">
+                            {variant.barcode}
+                          </span>
+                          <span className="text-[9px] font-mono text-neutral-500 tracking-wider">
+                            {variant.sku}
+                          </span>
+                        </div>
+
+                        <div className="h-12 border-r border-dashed border-neutral-300 mx-1" />
+
+                        <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
                             src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
@@ -3223,20 +3383,21 @@ export default function ProductBuilder({
                             className="h-12 w-12 object-contain"
                           />
                         </div>
-                        <span className="text-[11px] font-mono tracking-widest text-neutral-900 font-bold">
-                          {variant.barcode}
-                        </span>
-                        <div className="text-[10px] text-neutral-600 font-bold mt-0.5">
-                          Price: ₹{variant.price}
-                        </div>
                       </div>
                     ) : (
-                      <span className="text-xs text-neutral-500 my-6">Generating barcode...</span>
+                      <div className="text-xs text-neutral-400 my-4">Generating barcode...</div>
                     )}
 
-                    <div className="flex items-center gap-2 mt-auto w-full pt-2">
-                      <div className="flex items-center gap-1 bg-neutral-900 border border-neutral-700 rounded-xl px-2 py-1">
-                        <span className="text-[10px] font-bold text-neutral-400">Qty:</span>
+                    {/* Bottom Line Divider & Bold Price */}
+                    <div className="w-full border-b border-neutral-200 my-2" />
+                    <div className="text-2xl font-black text-black font-sans tracking-tight">
+                      ₹{variant.price}
+                    </div>
+
+                    {/* Print Controls at bottom */}
+                    <div className="flex items-center gap-2 mt-4 w-full pt-3 border-t border-neutral-100">
+                      <div className="flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-xl px-2.5 py-1.5">
+                        <span className="text-[10px] font-bold text-neutral-600">Qty:</span>
                         <input
                           type="number"
                           min={1}
@@ -3247,7 +3408,7 @@ export default function ProductBuilder({
                               [variant.sku]: Math.max(1, Number(e.target.value) || 1),
                             }))
                           }
-                          className="w-12 bg-transparent text-xs text-white font-bold text-center outline-none"
+                          className="w-10 bg-transparent text-xs text-neutral-900 font-bold text-center outline-none"
                           title="Copies to print"
                         />
                       </div>
@@ -3256,7 +3417,7 @@ export default function ProductBuilder({
                         type="button"
                         onClick={() => handlePrintLabel(variant)}
                         disabled={!variant.barcode || printingSku === variant.sku}
-                        className="flex-1 bg-amber-500 hover:bg-amber-400 text-neutral-950 text-xs font-bold py-2 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 transition-all shadow-sm"
+                        className="flex-1 bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 transition-all shadow-sm"
                       >
                         {printingSku === variant.sku ? (
                           <span>Printing…</span>
