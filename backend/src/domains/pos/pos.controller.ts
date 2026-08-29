@@ -150,9 +150,6 @@ export class PosController {
   }
 
   @Get('barcodes/generate')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('pos:view')
-  @ApiBearerAuth()
   @ApiOperation({
     summary: 'Generate Code128 / EAN / QR Barcode PNG Image Stream',
   })
