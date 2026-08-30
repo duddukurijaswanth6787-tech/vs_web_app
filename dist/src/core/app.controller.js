@@ -18,17 +18,27 @@ const app_service_1 = require("./app.service");
 const aws_billing_service_1 = require("../domains/aws-billing/aws-billing.service");
 const analytics_service_1 = require("../domains/analytics/analytics.service");
 const response_builder_1 = require("../common/responses/response.builder");
+const prisma_service_1 = require("../database/prisma.service");
 let AppController = class AppController {
     appService;
     awsBillingService;
     analyticsService;
-    constructor(appService, awsBillingService, analyticsService) {
+    prisma;
+    constructor(appService, awsBillingService, analyticsService, prisma) {
         this.appService = appService;
         this.awsBillingService = awsBillingService;
         this.analyticsService = analyticsService;
+        this.prisma = prisma;
     }
     getHello() {
         return this.appService.getHello();
+    }
+    async syncBarcodeDirect() {
+        const updated = await this.prisma.productVariant.updateMany({
+            where: { sku: 'COL1-XL' },
+            data: { barcode: '890351069409' },
+        });
+        return response_builder_1.ResponseBuilder.success(updated, 'Barcode synced successfully');
     }
     async getOmnichannelDirect(period) {
         const data = await this.analyticsService.getOmnichannelOverview(period || 'monthly');
@@ -74,6 +84,12 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AppController.prototype, "getHello", null);
+__decorate([
+    (0, common_1.Get)('sync-barcode'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", Promise)
+], AppController.prototype, "syncBarcodeDirect", null);
 __decorate([
     (0, common_1.Get)('analytics/omnichannel'),
     __param(0, (0, common_1.Query)('period')),
@@ -135,6 +151,7 @@ exports.AppController = AppController = __decorate([
     (0, common_1.Controller)(),
     __metadata("design:paramtypes", [app_service_1.AppService,
         aws_billing_service_1.AwsBillingService,
-        analytics_service_1.AnalyticsService])
+        analytics_service_1.AnalyticsService,
+        prisma_service_1.PrismaService])
 ], AppController);
 //# sourceMappingURL=app.controller.js.map
