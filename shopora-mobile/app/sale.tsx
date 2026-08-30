@@ -9,6 +9,8 @@ import {
   Alert,
   ActivityIndicator,
   ScrollView,
+  Modal,
+  Image,
 } from 'react-native';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import {
@@ -21,6 +23,8 @@ import {
   ArrowRight,
   Camera as CameraIcon,
   Printer,
+  X,
+  Info,
 } from 'lucide-react-native';
 import { posMobileService, PosMobileCartItem, getApiErrorMessage, isAuthenticated } from '../services/api';
 import { BarcodeScannerModal } from '../components/BarcodeScannerModal';
@@ -30,11 +34,37 @@ import { offlineScanCacheDb, normalizeScanCacheKey } from '../services/offline/o
 import { CachedScanResult, ScanBarcodeResult } from '../services/offline/offline.types';
 
 const SAMPLE_BARCODES = [
+  { label: 'Anarkali XL (890351069409)', code: '890351069409' },
+  { label: 'Anarkali M (890365090266)', code: '890365090266' },
+  { label: 'Anarkali L (890589337088)', code: '890589337088' },
+  { label: 'Anarkali S (890039458248)', code: '890039458248' },
   { label: 'Saree (890100000005)', code: '890100000005' },
   { label: 'Kurti (890100000001)', code: '890100000001' },
-  { label: 'SKU KUR-BLU-L-005', code: 'KUR-BLU-L-005' },
-  { label: 'Lehenga (890100000002)', code: '890100000002' },
 ];
+
+let globalCart: PosMobileCartItem[] = [];
+const cartListeners = new Set<() => void>();
+
+export function setGlobalCart(newCart: PosMobileCartItem[] | ((prev: PosMobileCartItem[]) => PosMobileCartItem[])) {
+  if (typeof newCart === 'function') {
+    globalCart = newCart(globalCart);
+  } else {
+    globalCart = newCart;
+  }
+  cartListeners.forEach((l) => l());
+}
+
+export function useGlobalCart() {
+  const [cart, setCart] = useState<PosMobileCartItem[]>(globalCart);
+  useEffect(() => {
+    const listener = () => setCart([...globalCart]);
+    cartListeners.add(listener);
+    return () => {
+      cartListeners.delete(listener);
+    };
+  }, []);
+  return [cart, setGlobalCart] as const;
+}
 
 export default function SaleProductScreen() {
   const router = useRouter();
@@ -43,10 +73,11 @@ export default function SaleProductScreen() {
   const timestampParam = params.timestamp as string;
 
   const [barcodeInput, setBarcodeInput] = useState('');
-  const [cart, setCart] = useState<PosMobileCartItem[]>([]);
+  const [cart, setCart] = useGlobalCart();
   const [loading, setLoading] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
   const [lastScannedTimestamp, setLastScannedTimestamp] = useState('');
+  const [selectedCartItem, setSelectedCartItem] = useState<PosMobileCartItem | null>(null);
 
   useFocusEffect(
     useCallback(() => {
@@ -63,9 +94,18 @@ export default function SaleProductScreen() {
 
   const addScannedItemToCart = (data: ScanBarcodeResult | CachedScanResult) => {
     setCart((prev) => {
-      const existingIndex = prev.findIndex(
-        (i) => i.variantId === data.variantId || (i.sku && i.sku === data.sku),
-      );
+      const existingIndex = prev.findIndex((i) => {
+        if (data.variantId && i.variantId) {
+          return i.variantId === data.variantId;
+        }
+        if (data.sku && i.sku) {
+          return i.sku.toLowerCase().trim() === data.sku.toLowerCase().trim();
+        }
+        if (data.barcode && i.barcode) {
+          return i.barcode.trim() === data.barcode.trim();
+        }
+        return false;
+      });
       if (existingIndex >= 0) {
         const existing = prev[existingIndex];
         const stock = existing.availableStock ?? 0;
@@ -84,6 +124,7 @@ export default function SaleProductScreen() {
           productName: data.productName,
           variantId: data.variantId,
           sku: data.sku,
+          barcode: data.barcode,
           variantTitle: data.variantTitle,
           unitPrice: data.price,
           quantity: 1,
@@ -121,7 +162,21 @@ export default function SaleProductScreen() {
         primaryImage: data.primaryImage,
         cachedAt: new Date().toISOString(),
       });
-    } catch (err: unknown) {
+    } catch (err: any) {
+      if (err?.response?.status === 401) {
+        Alert.alert(
+          'Session Expired',
+          'Your sign-in session has expired. Tap below to log in again.',
+          [
+            {
+              text: 'Sign In Now',
+              onPress: () => router.replace('/login?redirect=/sale'),
+            },
+          ],
+        );
+        return;
+      }
+
       if (isNetworkFailure(err)) {
         const cached = await offlineScanCacheDb.getCachedScanResult(cacheKey);
         if (cached) {
@@ -289,13 +344,16 @@ export default function SaleProductScreen() {
           contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 100 }}
           renderItem={({ item, index }) => (
             <View style={styles.cartCard}>
-              <View style={{ flex: 1 }}>
+              <TouchableOpacity style={{ flex: 1 }} onPress={() => setSelectedCartItem(item)}>
                 <Text style={styles.itemName}>{item.productName}</Text>
                 <Text style={styles.itemMeta}>
                   {item.variantTitle || 'Standard'} {item.sku ? `• ${item.sku}` : ''}
                 </Text>
                 <Text style={styles.itemPrice}>₹{item.unitPrice}</Text>
-              </View>
+                <Text style={{ fontSize: 11, color: '#0284c7', marginTop: 4, fontWeight: '600' }}>
+                  ℹ️ Tap for full details
+                </Text>
+              </TouchableOpacity>
 
               <View style={styles.qtyContainer}>
                 <TouchableOpacity
@@ -338,6 +396,98 @@ export default function SaleProductScreen() {
           </View>
         </View>
       )}
+
+      {/* Product Details Confirmation Modal */}
+      <Modal
+        visible={!!selectedCartItem}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setSelectedCartItem(null)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.detailsModalCard}>
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <Info size={20} color="#0284c7" style={{ marginRight: 8 }} />
+                <Text style={styles.modalHeaderTitle}>Product Details</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedCartItem(null)} style={{ padding: 4 }}>
+                <X size={22} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            {selectedCartItem && (
+              <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+                {selectedCartItem.primaryImage ? (
+                  <View style={styles.modalImageWrapper}>
+                    <Image
+                      source={{ uri: selectedCartItem.primaryImage }}
+                      style={styles.modalProductImage}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : null}
+
+                <Text style={styles.modalProductName}>{selectedCartItem.productName}</Text>
+                <Text style={styles.modalProductPrice}>₹{selectedCartItem.unitPrice}</Text>
+
+                <View style={styles.detailsGrid}>
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Variant / Size</Text>
+                    <Text style={styles.detailValue}>{selectedCartItem.variantTitle || 'Standard'}</Text>
+                  </View>
+
+                  {selectedCartItem.sku ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>SKU Code</Text>
+                      <Text style={styles.detailValue}>{selectedCartItem.sku}</Text>
+                    </View>
+                  ) : null}
+
+                  {selectedCartItem.barcode ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>Barcode Number</Text>
+                      <Text style={styles.detailValue}>{selectedCartItem.barcode}</Text>
+                    </View>
+                  ) : null}
+
+                  {selectedCartItem.availableStock !== undefined ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>In-Store Stock</Text>
+                      <Text style={[styles.detailValue, { color: '#059669', fontWeight: 'bold' }]}>
+                        {selectedCartItem.availableStock} Units Available
+                      </Text>
+                    </View>
+                  ) : null}
+
+                  {selectedCartItem.taxPercent !== undefined ? (
+                    <View style={styles.detailRow}>
+                      <Text style={styles.detailLabel}>GST Rate</Text>
+                      <Text style={styles.detailValue}>{selectedCartItem.taxPercent}% GST</Text>
+                    </View>
+                  ) : null}
+
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Quantity in Cart</Text>
+                    <Text style={styles.detailValue}>{selectedCartItem.quantity} Item(s)</Text>
+                  </View>
+
+                  <View style={styles.detailRow}>
+                    <Text style={styles.detailLabel}>Item Total</Text>
+                    <Text style={[styles.detailValue, { color: '#0284c7', fontWeight: 'bold', fontSize: 15 }]}>
+                      ₹{selectedCartItem.unitPrice * selectedCartItem.quantity}
+                    </Text>
+                  </View>
+                </View>
+              </ScrollView>
+            )}
+
+            <TouchableOpacity style={styles.modalDoneBtn} onPress={() => setSelectedCartItem(null)}>
+              <Text style={styles.modalDoneBtnText}>OK / Close</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
       {/* Fallback Camera Barcode Scanner Modal */}
       <BarcodeScannerModal
@@ -573,6 +723,97 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   checkoutBtnText: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  detailsModalCard: {
+    width: '100%',
+    maxWidth: 400,
+    backgroundColor: '#ffffff',
+    borderRadius: 20,
+    padding: 20,
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 10,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  modalHeaderTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  modalImageWrapper: {
+    alignItems: 'center',
+    marginVertical: 12,
+  },
+  modalProductImage: {
+    width: 140,
+    height: 140,
+    borderRadius: 12,
+    backgroundColor: '#f8fafc',
+  },
+  modalProductName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginTop: 12,
+  },
+  modalProductPrice: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#0284c7',
+    marginTop: 4,
+    marginBottom: 12,
+  },
+  detailsGrid: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 14,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingVertical: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  detailLabel: {
+    fontSize: 12,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  detailValue: {
+    fontSize: 12,
+    color: '#1e293b',
+    fontWeight: '600',
+  },
+  modalDoneBtn: {
+    backgroundColor: '#0284c7',
+    paddingVertical: 12,
+    borderRadius: 12,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  modalDoneBtnText: {
     fontSize: 14,
     fontWeight: 'bold',
     color: '#ffffff',

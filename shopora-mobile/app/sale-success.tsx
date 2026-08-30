@@ -11,6 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { CheckCircle2, ShoppingBag, RotateCcw, CloudUpload, Printer } from 'lucide-react-native';
 import { PosMobileCartItem, PosMobileCustomer, getCurrentUser } from '../services/api';
 import { bluetoothPrinterService } from '../services/bluetooth-printer';
+import { setGlobalCart } from './sale';
 
 const STORE_NAME = "VASANTHI'S SIGNATURE";
 const STORE_TAGLINE = 'Haute Couture & Boutique';
@@ -158,7 +159,10 @@ export default function SaleSuccessScreen() {
 
         <TouchableOpacity
           style={styles.newSaleBtn}
-          onPress={() => router.replace('/sale')}
+          onPress={() => {
+            setGlobalCart([]);
+            router.replace('/sale');
+          }}
         >
           <RotateCcw size={18} color="#ffffff" style={{ marginRight: 8 }} />
           <Text style={styles.newSaleBtnText}>START NEW SALE</Text>
@@ -166,7 +170,10 @@ export default function SaleSuccessScreen() {
 
         <TouchableOpacity
           style={styles.homeBtn}
-          onPress={() => router.replace('/')}
+          onPress={() => {
+            setGlobalCart([]);
+            router.replace('/');
+          }}
         >
           <ShoppingBag size={16} color="#0369a1" style={{ marginRight: 6 }} />
           <Text style={styles.homeBtnText}>Return to Dashboard</Text>
