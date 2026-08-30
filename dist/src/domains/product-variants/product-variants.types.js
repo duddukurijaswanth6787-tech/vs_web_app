@@ -16,6 +16,7 @@ const class_validator_1 = require("class-validator");
 class CreateVariantDto {
     productId;
     sku;
+    barcode;
     title;
     priceOverride;
     salePriceOverride;
@@ -41,6 +42,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateVariantDto.prototype, "sku", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateVariantDto.prototype, "barcode", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),
@@ -156,6 +163,7 @@ __decorate([
 ], VariantAttributeEntry.prototype, "value", void 0);
 class UpdateVariantDto {
     colorGroupId;
+    barcode;
     title;
     priceOverride;
     salePriceOverride;
@@ -175,6 +183,12 @@ __decorate([
     (0, class_validator_1.IsUUID)(),
     __metadata("design:type", String)
 ], UpdateVariantDto.prototype, "colorGroupId", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateVariantDto.prototype, "barcode", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)(),
     (0, class_validator_1.IsOptional)(),

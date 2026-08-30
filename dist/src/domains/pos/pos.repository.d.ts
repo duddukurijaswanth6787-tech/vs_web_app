@@ -3,6 +3,7 @@ import { CheckoutSessionStatus, Prisma } from '@prisma/client';
 import { CreateCheckoutSessionDto, PosCartItemDto, PosCustomerInfoDto, PosPaymentMethodType } from './pos.types';
 export declare class PosRepository {
     private readonly prisma;
+    private readonly logger;
     constructor(prisma: PrismaService);
     findVariantByBarcode(code: string): Promise<({
         product: {
@@ -407,7 +408,7 @@ export declare class PosRepository {
         inventory: null;
         attributeValues: never[];
     } | null>;
-    createCheckoutSession(sessionId: string, handoffToken: string, cashierId: string, dto: CreateCheckoutSessionDto, subtotal: number, taxTotal: number, grandTotal: number, expiresAt: Date): Promise<{
+    createCheckoutSession(sessionId: string, handoffToken: string, cashierId: string, dto: CreateCheckoutSessionDto, subtotal: number, taxTotal: number, grandTotal: number, expiresAt: Date, status?: CheckoutSessionStatus): Promise<{
         id: string;
         status: import(".prisma/client").$Enums.CheckoutSessionStatus;
         createdAt: Date;
@@ -426,6 +427,25 @@ export declare class PosRepository {
         handoffToken: string;
         cashierId: string;
     }>;
+    findHeldSessions(deviceId?: string): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.CheckoutSessionStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        customer: Prisma.JsonValue | null;
+        cart: Prisma.JsonValue;
+        expiresAt: Date;
+        subtotal: Prisma.Decimal;
+        discountTotal: Prisma.Decimal;
+        taxTotal: Prisma.Decimal;
+        grandTotal: Prisma.Decimal;
+        orderId: string | null;
+        sessionId: string;
+        shopId: string;
+        deviceId: string | null;
+        handoffToken: string;
+        cashierId: string;
+    }[]>;
     findCheckoutSessionByToken(handoffToken: string): Promise<{
         id: string;
         status: import(".prisma/client").$Enums.CheckoutSessionStatus;
@@ -483,6 +503,192 @@ export declare class PosRepository {
         handoffToken: string;
         cashierId: string;
     }>;
+    searchVariantsByName(query: string, limit?: number): Promise<({
+        product: {
+            media: {
+                url: string;
+                id: string;
+                displayOrder: number;
+                status: string;
+                createdBy: string | null;
+                updatedBy: string | null;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+                productId: string;
+                mediaType: string;
+                title: string | null;
+                altText: string | null;
+                thumbnailUrl: string | null;
+                isPrimary: boolean;
+                color: string | null;
+                variantId: string | null;
+                colorGroupId: string | null;
+            }[];
+        } & {
+            length: Prisma.Decimal | null;
+            id: string;
+            slug: string;
+            name: string;
+            description: string | null;
+            displayOrder: number;
+            isFeatured: boolean;
+            seoTitle: string | null;
+            seoDescription: string | null;
+            seoKeywords: string | null;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            sku: string;
+            barcode: string;
+            shortDescription: string | null;
+            brandId: string;
+            type: string;
+            visibility: string;
+            basePrice: Prisma.Decimal;
+            salePrice: Prisma.Decimal | null;
+            wholesalePrice: Prisma.Decimal | null;
+            costPrice: Prisma.Decimal | null;
+            taxPercentage: Prisma.Decimal | null;
+            discountType: string | null;
+            discountValue: Prisma.Decimal | null;
+            trackInventory: boolean;
+            allowBackorder: boolean;
+            minimumOrderQuantity: number;
+            maximumOrderQuantity: number;
+            weight: Prisma.Decimal | null;
+            width: Prisma.Decimal | null;
+            height: Prisma.Decimal | null;
+            isNewArrival: boolean;
+            isBestSeller: boolean;
+            isPublished: boolean;
+            publishedAt: Date | null;
+            canonicalUrl: string | null;
+            searchKeywords: string | null;
+            gender: string | null;
+            ageGroup: string | null;
+            occasion: string | null;
+            season: string | null;
+            tags: string[];
+            collections: string[];
+            highlights: string[];
+            isTrending: boolean;
+            taxInclusive: boolean;
+            hsnCode: string | null;
+            sizeChartTemplateId: string | null;
+            isLimitedStock: boolean;
+            isFestivePick: boolean;
+            isExclusive: boolean;
+            isOnlineOnly: boolean;
+            channel: string;
+            warrantyInfo: string | null;
+            careInstructions: string | null;
+        };
+        attributeValues: ({
+            attribute: {
+                id: string;
+                slug: string;
+                name: string;
+                description: string | null;
+                displayOrder: number;
+                status: string;
+                createdBy: string | null;
+                updatedBy: string | null;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+                type: string;
+                groupId: string;
+                isRequired: boolean;
+                isFilterable: boolean;
+                isSearchable: boolean;
+                isComparable: boolean;
+                isVariant: boolean;
+                usesSwatch: boolean;
+            };
+            option: {
+                id: string;
+                displayOrder: number;
+                status: string;
+                deletedAt: Date | null;
+                createdAt: Date;
+                updatedAt: Date;
+                value: string;
+                attributeId: string;
+                label: string;
+                metadata: Prisma.JsonValue | null;
+                swatchImageUrl: string | null;
+            } | null;
+        } & {
+            id: string;
+            variantId: string;
+            value: string | null;
+            attributeId: string;
+            attributeOptionId: string | null;
+        })[];
+        media: {
+            url: string;
+            id: string;
+            displayOrder: number;
+            status: string;
+            createdBy: string | null;
+            updatedBy: string | null;
+            deletedAt: Date | null;
+            createdAt: Date;
+            updatedAt: Date;
+            productId: string;
+            mediaType: string;
+            title: string | null;
+            altText: string | null;
+            thumbnailUrl: string | null;
+            isPrimary: boolean;
+            color: string | null;
+            variantId: string | null;
+            colorGroupId: string | null;
+        }[];
+        inventory: {
+            id: string;
+            createdAt: Date;
+            updatedAt: Date;
+            trackInventory: boolean;
+            allowBackorder: boolean;
+            variantId: string;
+            availableQuantity: number;
+            reservedQuantity: number;
+            damagedQuantity: number;
+            returnedQuantity: number;
+            minimumStock: number;
+            maximumStock: number;
+            reorderLevel: number;
+            stockStatus: string;
+        } | null;
+    } & {
+        length: Prisma.Decimal | null;
+        id: string;
+        displayOrder: number;
+        status: string;
+        createdBy: string | null;
+        updatedBy: string | null;
+        deletedAt: Date | null;
+        createdAt: Date;
+        updatedAt: Date;
+        isDefault: boolean;
+        sku: string;
+        barcode: string;
+        costPrice: Prisma.Decimal | null;
+        weight: Prisma.Decimal | null;
+        width: Prisma.Decimal | null;
+        height: Prisma.Decimal | null;
+        productId: string;
+        title: string;
+        colorGroupId: string | null;
+        priceOverride: Prisma.Decimal | null;
+        salePriceOverride: Prisma.Decimal | null;
+        isActive: boolean;
+    })[]>;
     findProductTaxRates(productIds: string[]): Promise<Map<string, number>>;
     findOrCreateWalkInCustomer(): Promise<{
         id: string;
@@ -538,6 +744,10 @@ export declare class PosRepository {
         taxTotal: number;
         grandTotal: number;
         paymentMethod: PosPaymentMethodType;
+        payments?: {
+            method: string;
+            amount: number;
+        }[];
         terminalId?: string;
         notes?: string;
         items: PosCartItemDto[];
@@ -854,6 +1064,38 @@ export declare class PosRepository {
         openedAt: Date;
         closedAt: Date | null;
     }) | null>;
+    createCashMovement(params: {
+        shiftId: string;
+        terminalId: string;
+        cashierId: string;
+        direction: 'IN' | 'OUT';
+        amount: number;
+        reason: string;
+    }): Promise<{
+        id: string;
+        createdAt: Date;
+        terminalId: string;
+        amount: Prisma.Decimal;
+        reason: string;
+        direction: string;
+        cashierId: string;
+        shiftId: string;
+    }>;
+    findCashMovementsForShift(shiftId: string): Promise<{
+        id: string;
+        createdAt: Date;
+        terminalId: string;
+        amount: Prisma.Decimal;
+        reason: string;
+        direction: string;
+        cashierId: string;
+        shiftId: string;
+    }[]>;
+    sumCashMovementsForShift(shiftId: string): Promise<{
+        cashIn: number;
+        cashOut: number;
+        net: number;
+    }>;
     closeShift(id: string, data: {
         closingCashExpected: number;
         closingCashCounted: number;
@@ -906,7 +1148,7 @@ export declare class PosRepository {
     }>;
     getShiftSalesBreakdown(terminalId: string, from: Date, to: Date): Promise<{
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];
@@ -918,7 +1160,7 @@ export declare class PosRepository {
         totalRevenue: number;
         totalOrders: number;
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];

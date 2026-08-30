@@ -15,6 +15,7 @@ const common_1 = require("@nestjs/common");
 const exceptions_1 = require("../../common/exceptions");
 const pos_repository_1 = require("./pos.repository");
 const pos_totals_1 = require("./pos-totals");
+const pos_tenders_1 = require("./pos-tenders");
 const pos_gateway_1 = require("./pos.gateway");
 const barcode_service_1 = require("./barcode.service");
 const printer_service_1 = require("./printer.service");
@@ -43,6 +44,9 @@ let PosService = PosService_1 = class PosService {
         if (!variantMatch) {
             throw new common_1.NotFoundException(`No product variant found for barcode or SKU "${dto.barcode}"`);
         }
+        return this.toScanResult(variantMatch, isOwnerOrManager);
+    }
+    toScanResult(variantMatch, isOwnerOrManager) {
         const availableStock = variantMatch.inventory
             ? Math.max(0, variantMatch.inventory.availableQuantity -
                 (variantMatch.inventory.reservedQuantity ?? 0))
@@ -82,6 +86,10 @@ let PosService = PosService_1 = class PosService {
             hsnCode: variantMatch.product?.hsnCode ?? undefined,
         };
     }
+    async searchProducts(query, isOwnerOrManager = false, limit = 10) {
+        const rows = await this.repository.searchVariantsByName(query, limit);
+        return rows.map((row) => this.toScanResult(row, isOwnerOrManager));
+    }
     async createCheckoutSession(cashierId, dto) {
         if (!dto.items || dto.items.length === 0) {
             throw new common_1.BadRequestException('Cannot create checkout session with empty cart items');
@@ -99,8 +107,10 @@ let PosService = PosService_1 = class PosService {
         const subtotal = sessionTotals.subtotal;
         const taxTotal = sessionTotals.taxTotal;
         const grandTotal = sessionTotals.grandTotal;
-        const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
-        const session = await this.repository.createCheckoutSession(sessionId, handoffToken, cashierId, dto, subtotal, taxTotal, grandTotal, expiresAt);
+        const expiresAt = new Date(Date.now() + (dto.hold ? 12 * 60 : 30) * 60 * 1000);
+        const session = await this.repository.createCheckoutSession(sessionId, handoffToken, cashierId, dto, subtotal, taxTotal, grandTotal, expiresAt, dto.hold
+            ? client_1.CheckoutSessionStatus.DRAFT
+            : client_1.CheckoutSessionStatus.WAITING_FOR_WEB);
         const responsePayload = {
             id: session.id,
             sessionId: session.sessionId,
@@ -127,7 +137,8 @@ let PosService = PosService_1 = class PosService {
             throw new common_1.BadRequestException('Checkout session has expired. Please re-initiate from mobile.');
         }
         if (session.status !== client_1.CheckoutSessionStatus.WAITING_FOR_WEB &&
-            session.status !== client_1.CheckoutSessionStatus.IN_PROGRESS_ON_WEB) {
+            session.status !== client_1.CheckoutSessionStatus.IN_PROGRESS_ON_WEB &&
+            session.status !== client_1.CheckoutSessionStatus.DRAFT) {
             throw new common_1.BadRequestException(`Checkout session is already in state: ${session.status}`);
         }
         const updated = await this.repository.updateCheckoutSessionStatus(session.sessionId, client_1.CheckoutSessionStatus.IN_PROGRESS_ON_WEB);
@@ -148,6 +159,30 @@ let PosService = PosService_1 = class PosService {
         this.gateway.emitSessionAdopted(updated.sessionId, sessionPayload);
         return sessionPayload;
     }
+    async listHeldSessions(deviceId) {
+        const sessions = await this.repository.findHeldSessions(deviceId);
+        return sessions.map((session) => ({
+            sessionId: session.sessionId,
+            handoffToken: session.handoffToken,
+            deviceId: session.deviceId,
+            customer: session.customer,
+            itemsCount: Array.isArray(session.cart) ? session.cart.length : 0,
+            grandTotal: Number(session.grandTotal),
+            expiresAt: session.expiresAt,
+            createdAt: session.createdAt,
+        }));
+    }
+    async cancelHeldSession(sessionId) {
+        const session = await this.repository.findCheckoutSessionById(sessionId);
+        if (!session) {
+            throw new common_1.NotFoundException(`No held cart found for ${sessionId}`);
+        }
+        if (session.status === client_1.CheckoutSessionStatus.COMPLETED) {
+            throw new common_1.BadRequestException(`${sessionId} has already been billed and cannot be discarded.`);
+        }
+        await this.repository.updateCheckoutSessionStatus(sessionId, client_1.CheckoutSessionStatus.CANCELLED);
+        return { success: true, sessionId };
+    }
     async completeSale(cashierId, dto) {
         if (dto.clientOrderNumber) {
             const existing = await this.repository.findOrderByOrderNumber(dto.clientOrderNumber);
@@ -164,6 +199,8 @@ let PosService = PosService_1 = class PosService {
                         grandTotal: Number(existing.grandTotal),
                         itemsCount: existing.items.length,
                         createdAt: existing.createdAt,
+                        changeDue: 0,
+                        tenders: undefined,
                     },
                     printReady: true,
                 };
@@ -242,6 +279,18 @@ let PosService = PosService_1 = class PosService {
         if (taxTotal && Math.abs(taxTotal - calculatedTax) > 0.01) {
             this.logger.warn(`Till sent tax ${taxTotal} but the products' own rates give ${calculatedTax}; billing the calculated figure.`);
         }
+        let tenderAllocations;
+        let changeDue = 0;
+        if (dto.splitPayments?.length) {
+            try {
+                const split = (0, pos_tenders_1.allocateTenders)(dto.splitPayments, grandTotal);
+                tenderAllocations = split.allocations;
+                changeDue = split.changeDue;
+            }
+            catch (err) {
+                throw new common_1.BadRequestException(err instanceof Error ? err.message : 'Invalid split payment');
+            }
+        }
         const orderNumber = dto.clientOrderNumber || (await this.workflow.generateOrderNumber());
         const order = await this.repository.createPosOrder({
             orderNumber,
@@ -252,6 +301,7 @@ let PosService = PosService_1 = class PosService {
             taxTotal: calculatedTax,
             grandTotal,
             paymentMethod: dto.paymentMethod,
+            payments: tenderAllocations,
             terminalId: dto.terminalId,
             notes: dto.notes,
             items: itemsToProcess,
@@ -276,6 +326,8 @@ let PosService = PosService_1 = class PosService {
             grandTotal: Number(order.grandTotal),
             itemsCount: order.items.length,
             createdAt: order.createdAt,
+            changeDue,
+            tenders: tenderAllocations,
         };
         this.gateway.emitSaleCompleted(activeSessionId, saleResult);
         this.gateway.emitTriggerPrint(dto.terminalId || 'COUNTER_1', {
@@ -500,6 +552,61 @@ let PosService = PosService_1 = class PosService {
     async getCurrentShift(cashierId, terminalId) {
         return this.repository.findOpenShift(cashierId, terminalId);
     }
+    async recordCashMovement(cashierId, terminalId, dto) {
+        const shift = await this.repository.findOpenShiftForTerminal(terminalId || pos_types_1.DEFAULT_TERMINAL_ID);
+        if (!shift) {
+            throw new common_1.BadRequestException('No shift is open at this terminal, so there is no drawer to move cash in or out of.');
+        }
+        const amount = Math.round((Number(dto.amount) || 0) * 100) / 100;
+        if (amount <= 0) {
+            throw new common_1.BadRequestException('Cash movement amount must be positive.');
+        }
+        const movement = await this.repository.createCashMovement({
+            shiftId: shift.id,
+            terminalId: shift.terminalId,
+            cashierId,
+            direction: dto.direction,
+            amount,
+            reason: dto.reason.trim(),
+        });
+        await this.auditService.log({
+            action: 'POS_CASH_MOVEMENT',
+            module: 'pos',
+            resource: 'pos_shift',
+            resourceId: shift.id,
+            userId: cashierId,
+            newValue: {
+                direction: dto.direction,
+                amount,
+                reason: dto.reason,
+                terminalId: shift.terminalId,
+            },
+        });
+        const totals = await this.repository.sumCashMovementsForShift(shift.id);
+        return {
+            id: movement.id,
+            shiftId: shift.id,
+            direction: movement.direction,
+            amount: Number(movement.amount),
+            reason: movement.reason,
+            createdAt: movement.createdAt,
+            shiftTotals: totals,
+        };
+    }
+    async listCashMovements(shiftId) {
+        const movements = await this.repository.findCashMovementsForShift(shiftId);
+        const totals = await this.repository.sumCashMovementsForShift(shiftId);
+        return {
+            movements: movements.map((m) => ({
+                id: m.id,
+                direction: m.direction,
+                amount: Number(m.amount),
+                reason: m.reason,
+                createdAt: m.createdAt,
+            })),
+            ...totals,
+        };
+    }
     async closeShift(shiftId, cashierId, dto) {
         const shift = await this.repository.findShiftById(shiftId);
         if (!shift)
@@ -508,7 +615,8 @@ let PosService = PosService_1 = class PosService {
             throw new common_1.BadRequestException('This shift is already closed');
         }
         const { cashSales, cashRefunds } = await this.repository.getCashMovementForWindow(shift.terminalId, shift.openedAt, new Date());
-        const closingCashExpected = Number(shift.openingCash) + cashSales - cashRefunds;
+        const { cashIn, cashOut } = await this.repository.sumCashMovementsForShift(shift.id);
+        const closingCashExpected = Number(shift.openingCash) + cashSales - cashRefunds + cashIn - cashOut;
         const variance = dto.closingCashCounted - closingCashExpected;
         const closed = await this.repository.closeShift(shiftId, {
             closingCashExpected,
@@ -557,13 +665,28 @@ let PosService = PosService_1 = class PosService {
         if (!shift)
             throw new common_1.NotFoundException('Shift not found');
         const windowEnd = shift.closedAt || new Date();
-        const breakdown = await this.repository.getShiftSalesBreakdown(shift.terminalId, shift.openedAt, windowEnd);
+        const [breakdown, cashMovements, cashFromSales] = await Promise.all([
+            this.repository.getShiftSalesBreakdown(shift.terminalId, shift.openedAt, windowEnd),
+            this.repository.sumCashMovementsForShift(shift.id),
+            this.repository.getCashMovementForWindow(shift.terminalId, shift.openedAt, windowEnd),
+        ]);
+        const expectedCash = Number(shift.openingCash) +
+            cashFromSales.cashSales -
+            cashFromSales.cashRefunds +
+            cashMovements.cashIn -
+            cashMovements.cashOut;
         return {
             shift,
             reportType: shift.status === 'OPEN' ? 'X_REPORT' : 'Z_REPORT',
             generatedAt: new Date(),
             windowStart: shift.openedAt,
             windowEnd,
+            openingCash: Number(shift.openingCash),
+            cashSales: cashFromSales.cashSales,
+            cashRefunds: cashFromSales.cashRefunds,
+            cashIn: cashMovements.cashIn,
+            cashOut: cashMovements.cashOut,
+            expectedCash: Math.round(expectedCash * 100) / 100,
             ...breakdown,
         };
     }

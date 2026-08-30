@@ -4,7 +4,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { OrderWorkflowService } from "../order/order-workflow.service";
 import { AuditService } from "../audit/audit.service";
-import { ScanBarcodeDto, CreateCheckoutSessionDto, AdoptHandoffTokenDto, CompletePosSaleDto, BarcodeScanResultResponse, CheckoutSessionResponse, GenerateBarcodeImageDto, GenerateBatchStickersDto, PreviewReceiptDto, OpenPosShiftDto, ClosePosShiftDto, CreatePosReturnDto } from './pos.types';
+import { ScanBarcodeDto, CreateCheckoutSessionDto, AdoptHandoffTokenDto, CompletePosSaleDto, BarcodeScanResultResponse, CheckoutSessionResponse, GenerateBarcodeImageDto, GenerateBatchStickersDto, PreviewReceiptDto, PosCustomerInfoDto, OpenPosShiftDto, ClosePosShiftDto, PosCashMovementDto, CreatePosReturnDto } from './pos.types';
 export declare class PosService {
     private readonly repository;
     private readonly gateway;
@@ -15,8 +15,24 @@ export declare class PosService {
     private readonly logger;
     constructor(repository: PosRepository, gateway: PosGateway, barcodeService: BarcodeService, printerService: PrinterService, workflow: OrderWorkflowService, auditService: AuditService);
     scanBarcode(dto: ScanBarcodeDto, isOwnerOrManager?: boolean): Promise<BarcodeScanResultResponse>;
+    private toScanResult;
+    searchProducts(query: string, isOwnerOrManager?: boolean, limit?: number): Promise<BarcodeScanResultResponse[]>;
     createCheckoutSession(cashierId: string, dto: CreateCheckoutSessionDto): Promise<CheckoutSessionResponse>;
     adoptHandoffSession(dto: AdoptHandoffTokenDto): Promise<CheckoutSessionResponse>;
+    listHeldSessions(deviceId?: string): Promise<{
+        sessionId: string;
+        handoffToken: string;
+        deviceId: string | null;
+        customer: PosCustomerInfoDto | undefined;
+        itemsCount: number;
+        grandTotal: number;
+        expiresAt: Date;
+        createdAt: Date;
+    }[]>;
+    cancelHeldSession(sessionId: string): Promise<{
+        success: boolean;
+        sessionId: string;
+    }>;
     completeSale(cashierId: string, dto: CompletePosSaleDto): Promise<{
         success: boolean;
         message: string;
@@ -29,6 +45,11 @@ export declare class PosService {
             grandTotal: number;
             itemsCount: number;
             createdAt: Date;
+            changeDue: number;
+            tenders: {
+                method: string;
+                amount: number;
+            }[] | undefined;
         };
         printReady: boolean;
     }>;
@@ -128,6 +149,31 @@ export declare class PosService {
         openedAt: Date;
         closedAt: Date | null;
     } | null>;
+    recordCashMovement(cashierId: string, terminalId: string, dto: PosCashMovementDto): Promise<{
+        id: string;
+        shiftId: string;
+        direction: string;
+        amount: number;
+        reason: string;
+        createdAt: Date;
+        shiftTotals: {
+            cashIn: number;
+            cashOut: number;
+            net: number;
+        };
+    }>;
+    listCashMovements(shiftId: string): Promise<{
+        cashIn: number;
+        cashOut: number;
+        net: number;
+        movements: {
+            id: string;
+            direction: string;
+            amount: number;
+            reason: string;
+            createdAt: Date;
+        }[];
+    }>;
     closeShift(shiftId: string, cashierId: string, dto: ClosePosShiftDto): Promise<{
         id: string;
         status: string;
@@ -178,7 +224,7 @@ export declare class PosService {
     }>;
     getShiftReport(shiftId: string): Promise<{
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];
@@ -208,12 +254,18 @@ export declare class PosService {
         generatedAt: Date;
         windowStart: Date;
         windowEnd: Date;
+        openingCash: number;
+        cashSales: number;
+        cashRefunds: number;
+        cashIn: number;
+        cashOut: number;
+        expectedCash: number;
     }>;
     getPosDaySummary(dateStr?: string): Promise<{
         totalRevenue: number;
         totalOrders: number;
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];

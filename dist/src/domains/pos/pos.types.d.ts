@@ -34,6 +34,7 @@ export declare class CreateCheckoutSessionDto {
     notes?: string;
     discountTotal?: number;
     taxTotal?: number;
+    hold?: boolean;
 }
 export declare class AdoptHandoffTokenDto {
     handoffToken: string;
@@ -57,11 +58,16 @@ export declare class CreatePosReturnDto {
     terminalId?: string;
     notes?: string;
 }
+export declare class PosSplitTenderDto {
+    method: PosPaymentMethodType;
+    amount: number;
+}
 export declare class CompletePosSaleDto {
     sessionId?: string;
     items?: PosCartItemDto[];
     paymentMethod: PosPaymentMethodType;
     amountPaid: number;
+    splitPayments?: PosSplitTenderDto[];
     customer?: PosCustomerInfoDto;
     terminalId?: string;
     shopId?: string;
@@ -124,6 +130,11 @@ export declare class OpenPosShiftDto {
 export declare class ClosePosShiftDto {
     closingCashCounted: number;
     notes?: string;
+}
+export declare class PosCashMovementDto {
+    direction: 'IN' | 'OUT';
+    amount: number;
+    reason: string;
 }
 export declare class PreviewReceiptDto {
     orderNumber: string;

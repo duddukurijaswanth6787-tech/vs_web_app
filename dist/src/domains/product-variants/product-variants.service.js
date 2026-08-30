@@ -103,6 +103,16 @@ let ProductVariantsService = class ProductVariantsService {
         }
         return sku;
     }
+    async ensureUniqueBarcode(requested) {
+        const base = requested.trim();
+        let barcode = base;
+        let counter = 1;
+        while (await this.variantsRepository.findByBarcode(barcode)) {
+            barcode = `${base}-${counter}`;
+            counter++;
+        }
+        return barcode;
+    }
     async generateUniqueBarcode() {
         let barcode = commerce_utils_1.BarcodeGenerator.generate();
         while (await this.variantsRepository.findByBarcode(barcode))
@@ -139,7 +149,9 @@ let ProductVariantsService = class ProductVariantsService {
         const sku = dto.sku
             ? await this.ensureUniqueSku(dto.sku)
             : await this.generateUniqueSku();
-        const barcode = await this.generateUniqueBarcode();
+        const barcode = dto.barcode
+            ? await this.ensureUniqueBarcode(dto.barcode)
+            : await this.generateUniqueBarcode();
         const title = dto.title ?? sku;
         if (dto.isDefault) {
             await this.variantsRepository.clearDefaultForProduct(dto.productId);
@@ -184,7 +196,16 @@ let ProductVariantsService = class ProductVariantsService {
         if (dto.isDefault && !variant.isDefault) {
             await this.variantsRepository.clearDefaultForProduct(variant.productId);
         }
-        await this.variantsRepository.update(id, { ...dto, updatedBy: userId });
+        let updateBarcode = dto.barcode;
+        if (dto.barcode && dto.barcode !== variant.barcode) {
+            updateBarcode = await this.ensureUniqueBarcode(dto.barcode);
+        }
+        const { barcode, ...restDto } = dto;
+        await this.variantsRepository.update(id, {
+            ...restDto,
+            ...(updateBarcode ? { barcode: updateBarcode } : {}),
+            updatedBy: userId,
+        });
         await this.auditService.log({
             action: 'VARIANT_UPDATED',
             module: 'product-variants',

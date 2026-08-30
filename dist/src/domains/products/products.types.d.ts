@@ -1,6 +1,7 @@
 import { ProductType, ProductStatus, ProductVisibility, ProductChannel, GenderType, AgeGroup } from "../../shared/commerce/commerce.enums";
 export declare class CreateProductVariantDto {
     sku: string;
+    barcode?: string;
     name: string;
     price: number;
     stock: number;

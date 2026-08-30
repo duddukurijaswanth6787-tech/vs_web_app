@@ -3,7 +3,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-console.log('[STARTUP] Executing main.ts module script v1.0.2 (Omnichannel & Inventory Velocity Analytics Active)...');
+console.log('[STARTUP] Executing main.ts module script v1.0.3 (Omnichannel & Barcode Patch Active)...');
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const core_1 = require("@nestjs/core");
@@ -17,6 +17,7 @@ const startup_service_1 = require("./common/startup/startup.service");
 const swagger_config_1 = require("./core/swagger/swagger.config");
 const exceptions_1 = require("./common/exceptions");
 const security_1 = require("./common/security");
+const prisma_service_1 = require("./database/prisma.service");
 async function bootstrap() {
     console.log('[BOOTSTRAP] Starting NestJS Application...');
     const startTime = Date.now();
@@ -102,6 +103,17 @@ async function bootstrap() {
     const port = process.env.PORT
         ? parseInt(process.env.PORT, 10)
         : configService.get('app.port', 4000) || 4000;
+    try {
+        const prismaService = app.get(prisma_service_1.PrismaService);
+        await prismaService.productVariant.updateMany({
+            where: { sku: 'COL1-XL' },
+            data: { barcode: '890351069409' },
+        });
+        console.log('[BOOTSTRAP] Successfully mapped barcode 890351069409 to variant COL1-XL');
+    }
+    catch (err) {
+        console.warn('[BOOTSTRAP] Barcode mapping notice:', err.message);
+    }
     console.log(`[BOOTSTRAP] Attempting to listen on 0.0.0.0:${port}...`);
     await app.listen(port, '0.0.0.0');
     console.log(`[BOOTSTRAP] Server successfully listening on http://0.0.0.0:${port}`);

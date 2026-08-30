@@ -26,6 +26,7 @@ export declare class ProductVariantsService {
     findById(id: string): Promise<VariantResponse>;
     private generateUniqueSku;
     private ensureUniqueSku;
+    private ensureUniqueBarcode;
     private generateUniqueBarcode;
     create(dto: CreateVariantDto, userId: string): Promise<VariantResponse>;
     update(id: string, dto: UpdateVariantDto, userId: string): Promise<VariantResponse>;

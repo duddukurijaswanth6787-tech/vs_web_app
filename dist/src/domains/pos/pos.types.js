@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.PreviewReceiptDto = exports.ClosePosShiftDto = exports.OpenPosShiftDto = exports.GenerateBatchStickersDto = exports.GenerateBarcodeImageDto = exports.CheckoutSessionResponse = exports.BarcodeScanResultResponse = exports.CompletePosSaleDto = exports.CreatePosReturnDto = exports.PosReturnItemDto = exports.PosRefundMethodType = exports.DEFAULT_TERMINAL_ID = exports.AdoptHandoffTokenDto = exports.CreateCheckoutSessionDto = exports.ScanBarcodeDto = exports.PosCustomerInfoDto = exports.PosCartItemDto = exports.PosPaymentMethodType = void 0;
+exports.PreviewReceiptDto = exports.PosCashMovementDto = exports.ClosePosShiftDto = exports.OpenPosShiftDto = exports.GenerateBatchStickersDto = exports.GenerateBarcodeImageDto = exports.CheckoutSessionResponse = exports.BarcodeScanResultResponse = exports.CompletePosSaleDto = exports.PosSplitTenderDto = exports.CreatePosReturnDto = exports.PosReturnItemDto = exports.PosRefundMethodType = exports.DEFAULT_TERMINAL_ID = exports.AdoptHandoffTokenDto = exports.CreateCheckoutSessionDto = exports.ScanBarcodeDto = exports.PosCustomerInfoDto = exports.PosCartItemDto = exports.PosPaymentMethodType = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const class_transformer_1 = require("class-transformer");
@@ -133,6 +133,7 @@ class CreateCheckoutSessionDto {
     notes;
     discountTotal;
     taxTotal;
+    hold;
 }
 exports.CreateCheckoutSessionDto = CreateCheckoutSessionDto;
 __decorate([
@@ -179,6 +180,16 @@ __decorate([
     (0, class_validator_1.IsOptional)(),
     __metadata("design:type", Number)
 ], CreateCheckoutSessionDto.prototype, "taxTotal", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        description: 'Park this cart at the till instead of handing it to a phone. Held ' +
+            'carts are listed for the counter to pick back up and last the shift ' +
+            'rather than the 30 minutes a handoff gets.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsBoolean)(),
+    __metadata("design:type", Boolean)
+], CreateCheckoutSessionDto.prototype, "hold", void 0);
 class AdoptHandoffTokenDto {
     handoffToken;
 }
@@ -258,11 +269,31 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreatePosReturnDto.prototype, "notes", void 0);
+class PosSplitTenderDto {
+    method;
+    amount;
+}
+exports.PosSplitTenderDto = PosSplitTenderDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        enum: PosPaymentMethodType,
+        description: 'How this part of the bill was paid.',
+    }),
+    (0, class_validator_1.IsEnum)(PosPaymentMethodType),
+    __metadata("design:type", String)
+], PosSplitTenderDto.prototype, "method", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Amount handed over on this tender.' }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0),
+    __metadata("design:type", Number)
+], PosSplitTenderDto.prototype, "amount", void 0);
 class CompletePosSaleDto {
     sessionId;
     items;
     paymentMethod;
     amountPaid;
+    splitPayments;
     customer;
     terminalId;
     shopId;
@@ -303,6 +334,18 @@ __decorate([
     (0, class_validator_1.Min)(0),
     __metadata("design:type", Number)
 ], CompletePosSaleDto.prototype, "amountPaid", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({
+        type: [PosSplitTenderDto],
+        description: 'Tenders when paymentMethod is SPLIT. Each is recorded as its own ' +
+            'payment so the drawer count and card settlement both reconcile.',
+    }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    (0, class_validator_1.ValidateNested)({ each: true }),
+    (0, class_transformer_1.Type)(() => PosSplitTenderDto),
+    __metadata("design:type", Array)
+], CompletePosSaleDto.prototype, "splitPayments", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ type: PosCustomerInfoDto }),
     (0, class_validator_1.IsOptional)(),
@@ -508,12 +551,14 @@ __decorate([
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ default: 2 }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], GenerateBarcodeImageDto.prototype, "scale", void 0);
 __decorate([
     (0, swagger_1.ApiPropertyOptional)({ default: 10 }),
     (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], GenerateBarcodeImageDto.prototype, "height", void 0);
@@ -616,6 +661,35 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], ClosePosShiftDto.prototype, "notes", void 0);
+class PosCashMovementDto {
+    direction;
+    amount;
+    reason;
+}
+exports.PosCashMovementDto = PosCashMovementDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        enum: ['IN', 'OUT'],
+        description: 'IN when notes are added to the drawer, OUT when they are taken out.',
+    }),
+    (0, class_validator_1.IsIn)(['IN', 'OUT']),
+    __metadata("design:type", String)
+], PosCashMovementDto.prototype, "direction", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Amount moved. Always positive.' }),
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(0.01),
+    __metadata("design:type", Number)
+], PosCashMovementDto.prototype, "amount", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({
+        description: 'Why the money moved -- "paid delivery boy", "banked surplus". ' +
+            'Required: an unexplained drawer movement is indistinguishable from theft.',
+    }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], PosCashMovementDto.prototype, "reason", void 0);
 class PreviewReceiptDto {
     orderNumber;
     grandTotal;
