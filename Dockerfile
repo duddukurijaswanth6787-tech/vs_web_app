@@ -2,12 +2,12 @@ FROM node:24-alpine AS builder
 
 WORKDIR /app
 
-COPY package.json package-lock.json ./
+COPY package.json package-lock.json* ./
 COPY backend/package.json ./backend/
 
 RUN npm install
 
-COPY backend ./backend
+COPY . .
 
 WORKDIR /app/backend
 RUN npx prisma generate
@@ -28,4 +28,4 @@ COPY --from=builder /app/backend/prisma ./prisma
 
 EXPOSE 3000
 
-CMD ["node", "dist/src/main.js"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node dist/src/main.js"]
