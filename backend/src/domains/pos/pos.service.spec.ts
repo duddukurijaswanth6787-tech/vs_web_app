@@ -8,7 +8,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
-import { DEFAULT_TERMINAL_ID, PosPaymentMethodType } from './pos.types';
+import { DEFAULT_TERMINAL_ID, PosPaymentMethodType, PosRefundMethodType } from './pos.types';
 import { CheckoutSessionStatus } from '@prisma/client';
 
 describe('PosService (Phase 1 Backend)', () => {
@@ -24,6 +24,9 @@ describe('PosService (Phase 1 Backend)', () => {
       findHeldSessions: jest.fn().mockResolvedValue([]),
       findShiftById: jest.fn(),
       findOrderForReprint: jest.fn(),
+      findSaleForReturn: jest.fn(),
+      createPosExchange: jest.fn(),
+      findOrCreateWalkInCustomer: jest.fn().mockResolvedValue({ id: 'cust-walkin' }),
       closeShift: jest.fn(),
       getCashMovementForWindow: jest
         .fn()
@@ -38,7 +41,6 @@ describe('PosService (Phase 1 Backend)', () => {
       findCheckoutSessionByToken: jest.fn(),
       findCheckoutSessionById: jest.fn(),
       updateCheckoutSessionStatus: jest.fn(),
-      findOrCreateWalkInCustomer: jest.fn(),
       // Real rates come from the product; an empty map means 0% here, which
       // keeps these tests about ordering and stock rather than tax.
       findProductTaxRates: jest.fn().mockResolvedValue(new Map()),
@@ -64,6 +66,8 @@ describe('PosService (Phase 1 Backend)', () => {
     workflow = {
       generateOrderNumber: jest.fn().mockResolvedValue('ORD-20260811-POS101'),
       deductInventory: jest.fn().mockResolvedValue(true),
+      deductInventoryTx: jest.fn().mockResolvedValue(true),
+      restockReturnedItems: jest.fn().mockResolvedValue(true),
     };
 
     auditService = {
@@ -299,6 +303,131 @@ describe('PosService (Phase 1 Backend)', () => {
       await expect(
         service.reprintReceipt('ORD-WEB-42', 'cashier-1'),
       ).rejects.toThrow(/not a POS sale/);
+    });
+  });
+
+  describe('exchange', () => {
+    const originalOrder = {
+      id: 'order-orig',
+      orderNumber: 'ORD-ORIG-1',
+      channel: 'POS_SHOPORA',
+      paymentMethod: 'CARD',
+      items: [
+        {
+          id: 'oi-1',
+          productId: 'prod-orig',
+          variantId: 'var-orig',
+          productName: 'Kurti L',
+          variantTitle: 'Blue / L',
+          sku: 'KUR-L',
+          quantity: 1,
+          unitPrice: 1000,
+          discountAmount: 0,
+          taxAmount: 0,
+        },
+      ],
+      payments: [{ id: 'pay-1' }],
+    };
+
+    it('atomically returns old items and sells new ones, netting the difference', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map(),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+        terminalId: 'COUNTER_1',
+        cashierId: 'cashier-1',
+      });
+      repository.findProductTaxRates.mockResolvedValue(
+        new Map([['prod-new', 0]]),
+      );
+      repository.createPosExchange.mockResolvedValue({
+        returnRequest: { id: 'r-1', returnNumber: 'EXR-ORD-ORIG-1-X' },
+        refund: { refundNumber: 'EXF-ORD-ORIG-1-X' },
+        newOrder: { id: 'order-new', orderNumber: 'ORD-NEW-1' },
+      });
+
+      const result = await service.createExchange('cashier-1', {
+        originalOrderNumber: 'ORD-ORIG-1',
+        returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+        newItems: [
+          {
+            productId: 'prod-new',
+            productName: 'Kurti M',
+            variantId: 'var-new',
+            quantity: 1,
+            unitPrice: 1200,
+          },
+        ],
+        refundMethod: PosRefundMethodType.ORIGINAL,
+        paymentMethod: PosPaymentMethodType.CARD,
+        reason: 'Size exchange',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.refundAmount).toBe(1000);
+      expect(result.newSaleTotal).toBe(1200);
+      // Positive net = customer owes the shop 200.
+      expect(result.netDue).toBe(200);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'POS_EXCHANGE_COMPLETED' }),
+      );
+    });
+
+    it('refuses to exchange more of a line than is still returnable', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map([['oi-1', 1]]),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+      });
+
+      await expect(
+        service.createExchange('cashier-1', {
+          originalOrderNumber: 'ORD-ORIG-1',
+          returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+          newItems: [
+            {
+              productId: 'prod-new',
+              productName: 'Kurti M',
+              quantity: 1,
+              unitPrice: 1200,
+            },
+          ],
+          refundMethod: PosRefundMethodType.CASH,
+          paymentMethod: PosPaymentMethodType.CASH,
+          reason: 'x',
+        }),
+      ).rejects.toThrow(/can still be returned/);
+      expect(repository.createPosExchange).not.toHaveBeenCalled();
+    });
+
+    it('refuses when no shift is open (drawer has nowhere to book the movement)', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map(),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
+
+      await expect(
+        service.createExchange('cashier-1', {
+          originalOrderNumber: 'ORD-ORIG-1',
+          returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+          newItems: [
+            {
+              productId: 'prod-new',
+              productName: 'Kurti M',
+              quantity: 1,
+              unitPrice: 1200,
+            },
+          ],
+          refundMethod: PosRefundMethodType.CASH,
+          paymentMethod: PosPaymentMethodType.CASH,
+          reason: 'x',
+        }),
+      ).rejects.toThrow(/Open a shift/);
     });
   });
 

@@ -21,6 +21,8 @@ import {
   ReturnableSale,
   CreateReturnPayload,
   PosReturnResult,
+  CreateExchangePayload,
+  PosExchangeResult,
   HeldSession,
   PosCashMovement,
   PosCashMovementList,
@@ -176,6 +178,11 @@ export const posService = {
   /**
    * Take goods back at the counter: restock, refund, and record it.
    */
+  async createExchange(payload: CreateExchangePayload): Promise<PosExchangeResult> {
+    const res = await apiClient.post<StandardResponse<PosExchangeResult>>('/pos/exchanges', payload);
+    return res.data.data!;
+  },
+
   async createReturn(payload: CreateReturnPayload): Promise<PosReturnResult> {
     const res = await apiClient.post<StandardResponse<PosReturnResult>>('/pos/returns', payload);
     return res.data.data!;

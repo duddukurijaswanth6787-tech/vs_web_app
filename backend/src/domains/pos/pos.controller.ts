@@ -37,6 +37,7 @@ import {
   PreviewReceiptDto,
   OpenPosShiftDto,
   CreatePosReturnDto,
+  CreatePosExchangeDto,
   ClosePosShiftDto,
   PosCashMovementDto,
   DEFAULT_TERMINAL_ID,
@@ -243,6 +244,22 @@ export class PosController {
     @Body() dto: CreatePosReturnDto,
   ) {
     return this.posService.createReturn(user.sub, dto);
+  }
+
+  @Post('exchanges')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Exchange goods over the counter: return old items and sell new ones in one atomic step',
+  })
+  async createExchange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreatePosExchangeDto,
+  ) {
+    return this.posService.createExchange(user.sub, dto);
   }
 
   @Post('shifts/open')

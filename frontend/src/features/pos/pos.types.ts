@@ -290,6 +290,46 @@ export interface PosReturnResult {
   itemsReturned: number;
 }
 
+/** New items being sold as part of an exchange. */
+export interface ExchangeNewItem {
+  productId: string;
+  productName: string;
+  variantId?: string;
+  sku?: string;
+  variantTitle?: string;
+  quantity: number;
+  unitPrice: number;
+  discountAmount?: number;
+  taxAmount?: number;
+}
+
+export interface CreateExchangePayload {
+  originalOrderNumber: string;
+  returnItems: { orderItemId: string; quantity: number }[];
+  newItems: ExchangeNewItem[];
+  refundMethod: PosRefundMethod;
+  paymentMethod: PosPaymentMethod;
+  reason: string;
+  terminalId?: string;
+  notes?: string;
+  customer?: PosCustomerInfo;
+}
+
+export interface PosExchangeResult {
+  success: boolean;
+  originalOrderNumber: string;
+  newOrderNumber: string;
+  returnNumber: string;
+  refundNumber: string;
+  refundAmount: number;
+  refundMethod: string;
+  newSaleTotal: number;
+  paymentMethod: string;
+  /** Positive = customer owes the shop; negative = shop owes them. */
+  netDue: number;
+  terminalId: string;
+}
+
 /** A cart parked at the till, listed so the counter can pick it back up. */
 export interface HeldSession {
   sessionId: string;

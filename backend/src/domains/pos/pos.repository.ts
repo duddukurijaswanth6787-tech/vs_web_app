@@ -422,6 +422,109 @@ export class PosRepository {
     };
   }
 
+  /** Run the createPosOrder logic against a caller-owned transaction. */
+  async createPosOrderTx(
+    tx: Prisma.TransactionClient,
+    params: {
+      orderNumber: string;
+      customerId: string;
+      cashierId: string;
+      subtotal: number;
+      discountTotal: number;
+      taxTotal: number;
+      grandTotal: number;
+      paymentMethod: PosPaymentMethodType;
+      payments?: { method: string; amount: number }[];
+      terminalId?: string;
+      notes?: string;
+      items: PosCartItemDto[];
+      customerInfo?: PosCustomerInfoDto;
+    },
+  ) {
+    const variantIds = params.items
+      .map((i) => i.variantId)
+      .filter((id): id is string => Boolean(id));
+    const existingVariants = await tx.productVariant.findMany({
+      where: { id: { in: variantIds } },
+      select: { id: true },
+    });
+    const validVariantSet = new Set(existingVariants.map((v) => v.id));
+
+    return tx.order.create({
+      data: {
+        orderNumber: params.orderNumber,
+        customerId: params.customerId,
+        status: 'CONFIRMED',
+        channel: 'POS_SHOPORA',
+        paymentMethod: params.paymentMethod,
+        terminalId: params.terminalId || DEFAULT_TERMINAL_ID,
+        subtotal: params.subtotal,
+        discountTotal: params.discountTotal,
+        taxTotal: params.taxTotal,
+        shippingCharge: 0,
+        grandTotal: params.grandTotal,
+        notes: params.notes,
+        createdBy: params.cashierId,
+        addresses: {
+          create: [
+            {
+              addressType: 'SHIPPING',
+              fullName: params.customerInfo?.fullName || 'Walk-in Customer',
+              phone: params.customerInfo?.phone || '9999999999',
+              addressLine1: 'Vasanthi Designers Store - Over The Counter',
+              city: 'Hyderabad',
+              state: 'Telangana',
+              country: 'IN',
+              postalCode: '500034',
+            },
+          ],
+        },
+        items: {
+          create: params.items.map((i) => ({
+            product: { connect: { id: i.productId } },
+            ...(i.variantId && validVariantSet.has(i.variantId)
+              ? { variant: { connect: { id: i.variantId } } }
+              : {}),
+            productName: i.productName,
+            variantTitle: i.variantTitle,
+            sku: i.sku || 'POS-SKU',
+            quantity: i.quantity,
+            unitPrice: i.unitPrice,
+            totalPrice: i.unitPrice * i.quantity,
+            discountAmount: i.discountAmount || 0,
+            taxAmount: i.taxAmount || 0,
+          })),
+        },
+        payments: {
+          create: (params.payments?.length
+            ? params.payments
+            : [{ method: params.paymentMethod, amount: params.grandTotal }]
+          ).map((p, index, all) => ({
+            paymentNumber:
+              all.length > 1
+                ? `PAY-${params.orderNumber}-${index + 1}`
+                : `PAY-${params.orderNumber}`,
+            method: p.method,
+            provider: 'POS_TERMINAL',
+            status: 'COMPLETED',
+            amount: p.amount,
+            createdBy: params.cashierId,
+          })),
+        },
+        timeline: {
+          create: [
+            {
+              status: 'CONFIRMED',
+              message: `POS Sale completed via ${params.paymentMethod}`,
+              createdBy: params.cashierId,
+            },
+          ],
+        },
+      },
+      include: { items: true, payments: true, addresses: true },
+    });
+  }
+
   async createPosOrder(params: {
     orderNumber: string;
     customerId: string;
@@ -655,6 +758,95 @@ export class PosRepository {
       await params.restock(tx);
 
       return { returnRequest, refund };
+    });
+  }
+
+  /**
+   * The whole exchange atomically: book the return + refund, restock the
+   * returned items, create the new sale, deduct its inventory.
+   *
+   * All-or-nothing. If any step fails, the customer neither has money back
+   * nor a new item -- the alternative would let them walk out with cash
+   * refunded on a sale that was never re-booked.
+   */
+  async createPosExchange(params: {
+    orderId: string;
+    orderNumber: string;
+    paymentId: string;
+    returnNumber: string;
+    refundNumber: string;
+    reason: string;
+    notes?: string;
+    refundMethod: string;
+    refundAmount: number;
+    cashierId: string;
+    returnItems: {
+      orderItemId: string;
+      variantId: string | null;
+      quantity: number;
+    }[];
+    /** Callback: caller restocks the returned items using the given tx. */
+    restock: (tx: Prisma.TransactionClient) => Promise<void>;
+    newOrder: {
+      orderNumber: string;
+      customerId: string;
+      subtotal: number;
+      discountTotal: number;
+      taxTotal: number;
+      grandTotal: number;
+      paymentMethod: PosPaymentMethodType;
+      terminalId?: string;
+      notes?: string;
+      items: PosCartItemDto[];
+      customerInfo?: PosCustomerInfoDto;
+    };
+    /** Callback: caller deducts inventory for the new sale using the given tx. */
+    deduct: (tx: Prisma.TransactionClient, newOrderId: string) => Promise<void>;
+  }) {
+    return this.prisma.$transaction(async (tx) => {
+      const returnRequest = await tx.returnRequest.create({
+        data: {
+          orderId: params.orderId,
+          returnNumber: params.returnNumber,
+          reason: params.reason,
+          status: 'COMPLETED',
+          adminNotes: params.notes,
+          createdBy: params.cashierId,
+          refundPreference: params.refundMethod,
+          items: {
+            create: params.returnItems.map((i) => ({
+              orderItemId: i.orderItemId,
+              quantity: i.quantity,
+              reason: params.reason,
+            })),
+          },
+        },
+        include: { items: true },
+      });
+
+      const refund = await tx.refund.create({
+        data: {
+          paymentId: params.paymentId,
+          orderId: params.orderId,
+          refundNumber: params.refundNumber,
+          amount: params.refundAmount,
+          reason: params.reason,
+          status: 'COMPLETED',
+          method: params.refundMethod,
+          createdBy: params.cashierId,
+        },
+      });
+
+      await params.restock(tx);
+
+      const newOrder = await this.createPosOrderTx(tx, {
+        ...params.newOrder,
+        cashierId: params.cashierId,
+      });
+
+      await params.deduct(tx, newOrder.id);
+
+      return { returnRequest, refund, newOrder };
     });
   }
 

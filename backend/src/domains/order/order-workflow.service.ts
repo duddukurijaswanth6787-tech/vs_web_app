@@ -376,6 +376,81 @@ export class OrderWorkflowService {
    * for this order is rolled back (no partial deduction) and a
    * BusinessException carrying the shortages is thrown.
    */
+  /**
+   * Deducts the given order's items inside a caller-supplied transaction.
+   *
+   * Extracted so an exchange can restock the returned lines and deduct the
+   * new sale's lines in the same atomic block -- otherwise a crash between
+   * them would refund the customer without giving them anything.
+   */
+  async deductInventoryTx(
+    tx: Prisma.TransactionClient,
+    orderId: string,
+    userId = 'SYSTEM',
+  ) {
+    const order = await tx.order.findUnique({
+      where: { id: orderId },
+      include: { items: true },
+    });
+    if (!order) return;
+
+    const shortages: {
+      variantId: string;
+      productName: string;
+      variantTitle?: string | null;
+      requested: number;
+      available: number;
+    }[] = [];
+
+    for (const item of order.items) {
+      if (!item.variantId) continue;
+
+      const rows = await tx.$queryRaw<InventoryRow[]>`
+        UPDATE "inventory"
+        SET "availableQuantity" = "availableQuantity" - ${item.quantity},
+            "reservedQuantity" = GREATEST("reservedQuantity" - ${item.quantity}, 0)
+        WHERE "variantId" = ${item.variantId}
+          AND ("availableQuantity" >= ${item.quantity} OR "allowBackorder" = true)
+        RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
+      `;
+
+      if (rows.length === 0) {
+        const current = await tx.inventory.findUnique({
+          where: { variantId: item.variantId },
+        });
+        if (current) {
+          shortages.push({
+            variantId: item.variantId,
+            productName: item.productName,
+            variantTitle: item.variantTitle,
+            requested: item.quantity,
+            available: current.availableQuantity,
+          });
+        }
+        continue;
+      }
+
+      await this.logMovement(tx, rows[0], {
+        variantId: item.variantId,
+        movementType: 'SALE',
+        quantity: item.quantity,
+        previousAvailable: rows[0].availableQuantity + item.quantity,
+        referenceType: 'ORDER',
+        referenceId: orderId,
+        reason: `Order ${order.orderNumber} sold`,
+        performedBy: userId,
+      });
+    }
+
+    if (shortages.length > 0) {
+      throw new BusinessException(
+        'Insufficient stock to complete this order',
+        'ORDER_STOCK_CONFLICT',
+        { shortages },
+      );
+    }
+  }
+
   async deductInventory(orderId: string, userId = 'SYSTEM') {
     const order = await this.prisma.order.findUnique({
       where: { id: orderId },

@@ -11,6 +11,7 @@ import {
   OpenShiftPayload,
   CloseShiftPayload,
   CreateReturnPayload,
+  CreateExchangePayload,
 } from './pos.types';
 
 export const posKeys = {
@@ -219,6 +220,17 @@ export function useReturnableSale(orderNumber: string) {
     queryFn: () => posService.lookupSaleForReturn(orderNumber),
     enabled: !!orderNumber,
     retry: false,
+  });
+}
+
+export function useCreatePosExchange() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: CreateExchangePayload) => posService.createExchange(payload),
+    onSuccess: () => {
+      // Same reason as return: the drawer expectation moves the moment this lands.
+      queryClient.invalidateQueries({ queryKey: posKeys.all });
+    },
   });
 }
 

@@ -31,6 +31,7 @@ import {
   DEFAULT_TERMINAL_ID,
   PosCashMovementDto,
   CreatePosReturnDto,
+  CreatePosExchangeDto,
   PosRefundMethodType,
 } from './pos.types';
 
@@ -918,6 +919,203 @@ export class PosService {
       orderNumber: order.orderNumber,
       terminalId,
       itemsReturned: priced.reduce((sum, i) => sum + i.quantity, 0),
+    };
+  }
+
+  /**
+   * A counter exchange: customer brings items back and takes replacements.
+   *
+   * Booked as two paired invoices in one atomic block -- return credit at the
+   * returned value, fresh sale at the new value. Both carry their own GST so
+   * the customer's tax history is right, and the physical cash movement is
+   * the difference (positive = customer pays extra, negative = shop refunds).
+   * If any step fails the whole exchange rolls back -- otherwise a customer
+   * could walk out having been refunded for an item the shop never resold.
+   */
+  async createExchange(cashierId: string, dto: CreatePosExchangeDto) {
+    const orderNumber = (dto.originalOrderNumber || '').trim();
+    if (!orderNumber) {
+      throw new BadRequestException('originalOrderNumber is required for an exchange.');
+    }
+    if (!dto.returnItems?.length) {
+      throw new BadRequestException('Pick at least one item to return.');
+    }
+    if (!dto.newItems?.length) {
+      throw new BadRequestException('Pick at least one replacement item.');
+    }
+
+    const found = await this.repository.findSaleForReturn(orderNumber);
+    if (!found) {
+      throw new NotFoundException(`No sale found for ${orderNumber}`);
+    }
+    const { order, returnedByItem } = found;
+
+    if (order.channel !== 'POS_SHOPORA') {
+      throw new BusinessException(
+        `${orderNumber} was not sold in store. Online orders are exchanged through Admin.`,
+        'POS_EXCHANGE_NOT_IN_STORE',
+      );
+    }
+
+    const terminalId = dto.terminalId || DEFAULT_TERMINAL_ID;
+    // Same rule as a plain return: no shift → no drawer to reconcile against.
+    const openShift =
+      await this.repository.findOpenShiftForTerminal(terminalId);
+    if (!openShift) {
+      throw new BusinessException(
+        `No open shift on ${terminalId}. Open a shift before exchanging so both sides are reconciled at close.`,
+        'POS_SHIFT_REQUIRED',
+      );
+    }
+
+    // Validate and price the returned items using the same rule the return
+    // flow uses, so an exchange and a plain return of the same line credit
+    // the same amount.
+    const itemsById = new Map(order.items.map((i) => [i.id, i]));
+    const returnPriced: {
+      orderItemId: string;
+      variantId: string | null;
+      quantity: number;
+    }[] = [];
+    let refundAmount = 0;
+    for (const line of dto.returnItems) {
+      const item = itemsById.get(line.orderItemId);
+      if (!item) {
+        throw new BusinessException(
+          `Item ${line.orderItemId} is not part of ${orderNumber}`,
+          'POS_EXCHANGE_ITEM_NOT_ON_SALE',
+        );
+      }
+      const returnable = item.quantity - (returnedByItem.get(item.id) ?? 0);
+      if (line.quantity > returnable) {
+        throw new BusinessException(
+          `Only ${returnable} of ${item.productName} can still be returned on ${orderNumber}`,
+          'POS_EXCHANGE_QUANTITY_EXCEEDED',
+        );
+      }
+      refundAmount += this.unitRefundValue(item) * line.quantity;
+      returnPriced.push({
+        orderItemId: item.id,
+        variantId: item.variantId,
+        quantity: line.quantity,
+      });
+    }
+    refundAmount = Math.round(refundAmount * 100) / 100;
+
+    // Price the new items server-side, per-product GST, tax after discount --
+    // never trust the till's numbers for money.
+    const taxRates = await this.repository.findProductTaxRates(
+      dto.newItems.map((i) => i.productId).filter(Boolean),
+    );
+    const totals = computePosTotals(
+      dto.newItems.map((i) => ({
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        discountAmount: i.discountAmount,
+        taxPercent: taxRates.get(i.productId) ?? 0,
+      })),
+      0,
+    );
+
+    // Refund goes against the original payment, using whatever method the
+    // cashier chose (or the original method when ORIGINAL was selected).
+    const payment = order.payments[0];
+    if (!payment) {
+      throw new BusinessException(
+        `No payment recorded against ${orderNumber}, so there is nothing to refund the return against.`,
+        'POS_EXCHANGE_NO_PAYMENT',
+      );
+    }
+    let refundMethod: string = dto.refundMethod;
+    if (dto.refundMethod === PosRefundMethodType.ORIGINAL) {
+      if (!order.paymentMethod) {
+        throw new BusinessException(
+          `${orderNumber} has no recorded payment method. Choose how to refund instead.`,
+          'POS_EXCHANGE_METHOD_UNKNOWN',
+        );
+      }
+      refundMethod = order.paymentMethod;
+    }
+
+    // Resolve the walk-in customer profile so the new sale has one, same as a
+    // plain sale would.
+    const customerProfile = await this.repository.findOrCreateWalkInCustomer();
+
+    const stamp = Date.now().toString(36).toUpperCase();
+    const newOrderNumber = await this.workflow.generateOrderNumber();
+
+    const { returnRequest, refund, newOrder } =
+      await this.repository.createPosExchange({
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        paymentId: payment.id,
+        returnNumber: `EXR-${order.orderNumber}-${stamp}`,
+        refundNumber: `EXF-${order.orderNumber}-${stamp}`,
+        reason: dto.reason,
+        notes: dto.notes,
+        refundMethod,
+        refundAmount,
+        cashierId,
+        returnItems: returnPriced,
+        restock: (tx) =>
+          this.workflow.restockReturnedItems(tx, {
+            orderId: order.id,
+            orderNumber: order.orderNumber,
+            items: returnPriced,
+            userId: cashierId,
+            reason: `Exchanged at ${terminalId} against ${order.orderNumber}`,
+          }),
+        newOrder: {
+          orderNumber: newOrderNumber,
+          customerId: customerProfile.id,
+          subtotal: totals.subtotal,
+          discountTotal: totals.discountTotal,
+          taxTotal: totals.taxTotal,
+          grandTotal: totals.grandTotal,
+          paymentMethod: dto.paymentMethod,
+          terminalId,
+          notes: `Exchange of ${order.orderNumber}${dto.notes ? ` - ${dto.notes}` : ''}`,
+          items: dto.newItems,
+          customerInfo: dto.customer,
+        },
+        deduct: (tx, newOrderId) =>
+          this.workflow.deductInventoryTx(tx, newOrderId, cashierId),
+      });
+
+    const netDue = Math.round((totals.grandTotal - refundAmount) * 100) / 100;
+
+    await this.auditService.log({
+      action: 'POS_EXCHANGE_COMPLETED',
+      module: 'pos',
+      resource: 'return_request',
+      resourceId: returnRequest.id,
+      userId: cashierId,
+      newValue: {
+        originalOrderNumber: order.orderNumber,
+        newOrderNumber: newOrder.orderNumber,
+        terminalId,
+        shiftId: openShift.id,
+        refundAmount,
+        refundMethod,
+        newSaleTotal: totals.grandTotal,
+        paymentMethod: dto.paymentMethod,
+        netDue,
+      },
+    });
+
+    return {
+      success: true,
+      originalOrderNumber: order.orderNumber,
+      newOrderNumber: newOrder.orderNumber,
+      returnNumber: returnRequest.returnNumber,
+      refundNumber: refund.refundNumber,
+      refundAmount,
+      refundMethod,
+      newSaleTotal: totals.grandTotal,
+      paymentMethod: dto.paymentMethod,
+      // Positive: customer owes the shop that much; negative: shop owes them.
+      netDue,
+      terminalId,
     };
   }
 

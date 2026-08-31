@@ -7,11 +7,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/permissions/rules';
 import {
   useCreatePosReturn,
+  useCreatePosExchange,
   useCurrentShift,
   useReturnableSale,
+  useScanBarcode,
+  useSearchPosProducts,
 } from '@/features/pos/pos.hooks';
 import { useTerminalId } from '@/features/pos/terminal';
-import type { PosRefundMethod, PosReturnResult } from '@/features/pos/pos.types';
+import type { PosRefundMethod, PosPaymentMethod, PosReturnResult, PosExchangeResult, ExchangeNewItem } from '@/features/pos/pos.types';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 const REFUND_METHODS: { value: PosRefundMethod; label: string }[] = [
@@ -44,9 +47,23 @@ export default function PosReturnsPage() {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
   const [receipt, setReceipt] = useState<PosReturnResult | null>(null);
+  const [exchangeReceipt, setExchangeReceipt] = useState<PosExchangeResult | null>(null);
+
+  // Exchange-mode state: whether the panel is on, what's being scanned/added,
+  // and how the new sale side gets paid. Everything server-priced, no trust in
+  // client numbers.
+  const [mode, setMode] = useState<'RETURN' | 'EXCHANGE'>('RETURN');
+  const [scanInput, setScanInput] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [newItems, setNewItems] = useState<ExchangeNewItem[]>([]);
+  const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>('CARD');
 
   const saleQuery = useReturnableSale(searchedOrder);
   const returnMutation = useCreatePosReturn();
+  const exchangeMutation = useCreatePosExchange();
+  const scanMutation = useScanBarcode();
+  // Debounced pass to typed search: same as the till's rules.
+  const productSearch = useSearchPosProducts(searchTerm);
   const sale = saleQuery.data;
 
   const selected = useMemo(
@@ -65,6 +82,14 @@ export default function PosReturnsPage() {
     }, 0);
   }, [sale, selected]);
 
+  const newSaleTotal = useMemo(
+    () =>
+      newItems.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0),
+    [newItems],
+  );
+  // Positive = customer pays extra; negative = shop gives change; 0 = clean swap.
+  const netDue = Math.round((newSaleTotal - refundTotal) * 100) / 100;
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
@@ -78,6 +103,57 @@ export default function PosReturnsPage() {
     setQuantities((prev) => ({ ...prev, [orderItemId]: clamped }));
   };
 
+  const addNewItem = (scan: {
+    productId: string;
+    productName: string;
+    variantId?: string;
+    sku?: string;
+    variantTitle?: string;
+    price: number;
+    availableStock: number;
+  }) => {
+    setNewItems((prev) => {
+      const idx = prev.findIndex(
+        (i) => i.variantId === scan.variantId || (i.sku && i.sku === scan.sku),
+      );
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+        return next;
+      }
+      return [
+        ...prev,
+        {
+          productId: scan.productId,
+          productName: scan.productName,
+          variantId: scan.variantId,
+          sku: scan.sku,
+          variantTitle: scan.variantTitle,
+          unitPrice: scan.price,
+          quantity: 1,
+        },
+      ];
+    });
+    setScanInput('');
+    setSearchTerm('');
+  };
+
+  const handleScanForExchange = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const value = scanInput.trim();
+    if (!value) return;
+    // Digits only: scan by barcode. Anything else: switch to search suggestions.
+    if (/^\d+$/.test(value)) {
+      scanMutation.mutate(value, {
+        onSuccess: (data) => addNewItem(data),
+        onError: (err) =>
+          setError(getApiErrorMessage(err, `No product found for "${value}".`)),
+      });
+    } else {
+      setSearchTerm(value);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!sale || selected.length === 0) {
       setError('Select at least one item to return.');
@@ -88,6 +164,33 @@ export default function PosReturnsPage() {
       return;
     }
     setError('');
+
+    if (mode === 'EXCHANGE') {
+      if (newItems.length === 0) {
+        setError('Add at least one replacement item.');
+        return;
+      }
+      try {
+        const result = await exchangeMutation.mutateAsync({
+          originalOrderNumber: sale.orderNumber,
+          returnItems: selected,
+          newItems,
+          refundMethod,
+          paymentMethod,
+          reason: reason.trim(),
+          terminalId,
+        });
+        setExchangeReceipt(result);
+        setReceipt(null);
+        setQuantities({});
+        setNewItems([]);
+        setReason('');
+      } catch (err) {
+        setError(getApiErrorMessage(err, 'Could not complete the exchange.'));
+      }
+      return;
+    }
+
     try {
       const result = await returnMutation.mutateAsync({
         orderNumber: sale.orderNumber,
@@ -97,6 +200,7 @@ export default function PosReturnsPage() {
         terminalId,
       });
       setReceipt(result);
+      setExchangeReceipt(null);
       setQuantities({});
       setReason('');
     } catch (err) {
@@ -132,6 +236,28 @@ export default function PosReturnsPage() {
           </p>
         )}
 
+        <div className="flex gap-2">
+          {(['RETURN', 'EXCHANGE'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => {
+                setMode(m);
+                setError('');
+                setExchangeReceipt(null);
+                setReceipt(null);
+              }}
+              className={`flex-1 rounded-xl px-4 py-2 text-sm font-bold border ${
+                mode === m
+                  ? 'bg-[var(--brand-primary)] text-white border-[var(--brand-primary)]'
+                  : 'bg-white text-neutral-700 border-neutral-300 hover:bg-neutral-100'
+              }`}
+            >
+              {m === 'RETURN' ? 'Return only' : 'Exchange (swap for another)'}
+            </button>
+          ))}
+        </div>
+
         <form onSubmit={handleSearch} className="flex gap-2">
           <input
             value={orderInput}
@@ -154,6 +280,26 @@ export default function PosReturnsPage() {
           <p className="text-sm text-red-700 bg-red-50 border border-red-100 rounded-xl px-4 py-3">
             {getApiErrorMessage(saleQuery.error, 'No sale found for that number.')}
           </p>
+        )}
+
+        {exchangeReceipt && (
+          <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 space-y-1">
+            <p className="font-bold flex items-center gap-2">
+              <Check className="w-4 h-4" /> Exchange complete
+            </p>
+            <p>
+              Return {exchangeReceipt.returnNumber} · New sale {exchangeReceipt.newOrderNumber}
+            </p>
+            <p>
+              Returned {rupees(exchangeReceipt.refundAmount)} · New{' '}
+              {rupees(exchangeReceipt.newSaleTotal)} ·{' '}
+              {exchangeReceipt.netDue > 0
+                ? `Customer paid extra ${rupees(exchangeReceipt.netDue)} by ${exchangeReceipt.paymentMethod}`
+                : exchangeReceipt.netDue < 0
+                  ? `Refunded ${rupees(-exchangeReceipt.netDue)} by ${exchangeReceipt.refundMethod}`
+                  : 'Clean swap, no cash changed hands'}
+            </p>
+          </div>
         )}
 
         {receipt && (
@@ -227,6 +373,95 @@ export default function PosReturnsPage() {
               </table>
             </div>
 
+            {mode === 'EXCHANGE' && (
+              <div className="border-t border-neutral-200 pt-4 space-y-3">
+                <h3 className="text-sm font-bold text-neutral-800">Replacement items</h3>
+
+                <form onSubmit={handleScanForExchange} className="flex gap-2">
+                  <input
+                    value={scanInput}
+                    onChange={(e) => setScanInput(e.target.value)}
+                    placeholder="Scan barcode or type product name..."
+                    className="flex-1 rounded-xl border border-neutral-300 px-3 py-2 text-sm"
+                  />
+                  <button
+                    type="submit"
+                    disabled={scanMutation.isPending || !scanInput.trim()}
+                    className="px-4 rounded-xl bg-neutral-900 text-white text-sm font-bold disabled:opacity-50"
+                  >
+                    Add
+                  </button>
+                </form>
+
+                {searchTerm && (productSearch.data?.length ?? 0) > 0 && (
+                  <div className="border border-neutral-200 rounded-xl overflow-hidden">
+                    {productSearch.data!.slice(0, 6).map((p) => (
+                      <button
+                        key={p.variantId || p.productId}
+                        type="button"
+                        onClick={() => addNewItem(p)}
+                        className="w-full text-left px-3 py-2 hover:bg-neutral-50 border-b last:border-b-0 flex items-center justify-between text-xs"
+                      >
+                        <span>
+                          <span className="font-bold">{p.productName}</span>
+                          {p.variantTitle ? ` - ${p.variantTitle}` : ''}
+                          <span className="text-neutral-500 ml-2">
+                            ({p.availableStock} in stock)
+                          </span>
+                        </span>
+                        <span className="font-bold">{rupees(p.price)}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {newItems.length > 0 && (
+                  <div className="space-y-1">
+                    {newItems.map((it, idx) => (
+                      <div
+                        key={idx}
+                        className="flex items-center justify-between bg-neutral-50 rounded-lg px-3 py-2 text-xs"
+                      >
+                        <span>
+                          <span className="font-bold">{it.productName}</span>
+                          {it.variantTitle ? ` - ${it.variantTitle}` : ''} × {it.quantity}
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <span className="font-bold">{rupees(it.unitPrice * it.quantity)}</span>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setNewItems((prev) => prev.filter((_, i) => i !== idx))
+                            }
+                            className="text-neutral-400 hover:text-red-600"
+                            aria-label="Remove"
+                          >
+                            ×
+                          </button>
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <label className="block text-sm">
+                  <span className="font-semibold text-neutral-700">Charge extra by</span>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value as PosPaymentMethod)}
+                    className="w-full mt-1 rounded-xl border border-neutral-300 px-3 py-2.5 bg-white"
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="UPI">UPI</option>
+                    <option value="CARD">Card</option>
+                  </select>
+                  <span className="block text-[11px] text-neutral-500 mt-1">
+                    Only used when the exchange leaves the customer owing extra.
+                  </span>
+                </label>
+              </div>
+            )}
+
             <div className="grid sm:grid-cols-2 gap-3">
               <label className="space-y-1 text-sm">
                 <span className="font-semibold text-neutral-700">Refund by</span>
@@ -260,19 +495,39 @@ export default function PosReturnsPage() {
             )}
 
             <div className="flex items-center justify-between border-t border-neutral-200 pt-4">
-              <div className="text-sm">
-                <span className="text-neutral-500">Refund total</span>
-                <p className="text-xl font-bold">{rupees(refundTotal)}</p>
+              <div className="text-sm space-y-0.5">
+                <p><span className="text-neutral-500">Return credit</span> <span className="font-bold">{rupees(refundTotal)}</span></p>
+                {mode === 'EXCHANGE' && (
+                  <>
+                    <p><span className="text-neutral-500">New sale</span> <span className="font-bold">{rupees(newSaleTotal)}</span></p>
+                    <p className={`text-lg font-bold ${netDue > 0 ? 'text-sky-800' : netDue < 0 ? 'text-emerald-700' : 'text-neutral-700'}`}>
+                      {netDue > 0
+                        ? `Customer pays ${rupees(netDue)}`
+                        : netDue < 0
+                          ? `Give ${rupees(-netDue)} back`
+                          : 'Even swap'}
+                    </p>
+                  </>
+                )}
               </div>
               <button
                 onClick={handleSubmit}
                 disabled={
-                  returnMutation.isPending || selected.length === 0 || shiftRequired
+                  (mode === 'RETURN' ? returnMutation.isPending : exchangeMutation.isPending) ||
+                  selected.length === 0 ||
+                  shiftRequired ||
+                  (mode === 'EXCHANGE' && newItems.length === 0)
                 }
                 className="px-6 py-3 rounded-xl bg-[var(--brand-primary)] text-white text-sm font-bold flex items-center gap-2 disabled:opacity-50"
               >
                 <RotateCcw className="w-4 h-4" />
-                {returnMutation.isPending ? 'Refunding…' : 'Complete Return'}
+                {mode === 'EXCHANGE'
+                  ? exchangeMutation.isPending
+                    ? 'Exchanging...'
+                    : 'Complete Exchange'
+                  : returnMutation.isPending
+                    ? 'Refunding...'
+                    : 'Complete Return'}
               </button>
             </div>
           </section>
