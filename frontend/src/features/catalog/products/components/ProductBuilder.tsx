@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
+// Live scannable SKU barcode & QR sticker generator
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
@@ -9,7 +10,9 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { productSchema, ProductFormValues, ProductResponse, AttributeType, CreateProductDto, UpdateProductDto } from '../product.types';
 import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
+import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import { inventoryService } from '@/features/inventory/inventory.service';
+import { getApiBaseUrl } from '@/lib/api/client';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
 import { useSizeCharts } from '@/features/catalog/size-charts/size-chart.hooks';
@@ -189,13 +192,31 @@ const buildVariantAttributeValues = (
   return entries;
 };
 
+/** Generates a distinct color abbreviation to avoid SKU collisions (e.g. "Color 1" -> "COL1", "Color 2" -> "COL2", "Navy Blue" -> "NBLU") */
+export const getColorCodeHelper = (colorName: string) => {
+  const clean = (colorName || 'Color 1').trim();
+  const numMatch = clean.match(/colou?r\s*(\d+)/i);
+  if (numMatch) {
+    return `COL${numMatch[1]}`;
+  }
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length >= 2) {
+    const firstChar = words[0][0].toUpperCase();
+    const secondWord = words[1].toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+    return `${firstChar}${secondWord}`;
+  }
+  const code = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  if (code.length <= 4) return code || 'COL';
+  return code.substring(0, 4);
+};
+
 export default function ProductBuilder({
   productId,
   initialData,
   onSaveSuccess,
 }: ProductBuilderProps) {
   const [activeTab, setActiveTab] = useState<
-    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo'
+    'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo' | 'barcodes'
   >('basic');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
@@ -369,10 +390,186 @@ export default function ProductBuilder({
     setCollectionInput('');
   };
 
-  // Color Groups State (with Images & Sizes per Color)
-  const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(
-    ((initialData as unknown as Record<string, unknown>)?.colorGroups as ColorVariantGroup[]) || []
+  // Dedicated Storefront Product Card View Image state
+  const [productCardImageUrl, setProductCardImageUrl] = useState<string>(
+    () => ((initialData as unknown as Record<string, unknown>)?.productCardImageUrl as string) || initialData?.primaryImageUrl || ''
   );
+
+  const setCardViewImage = (url: string, colorGroupId?: string) => {
+    setProductCardImageUrl(url);
+    if (colorGroupId) {
+      setColorGroups((prev) => {
+        const groupIdx = prev.findIndex((g) => g.id === colorGroupId);
+        if (groupIdx === -1) return prev;
+        const updated = prev.map((group) => {
+          if (group.id !== colorGroupId) return group;
+          const images = [...group.images];
+          const imgIdx = images.indexOf(url);
+          if (imgIdx > 0) {
+            const [picked] = images.splice(imgIdx, 1);
+            images.unshift(picked);
+          }
+          return { ...group, images };
+        });
+        const [primaryGroup] = updated.splice(groupIdx, 1);
+        return [primaryGroup, ...updated];
+      });
+    }
+  };
+
+  // Color Groups State (with Images & Sizes per Color)
+  const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(() => {
+    if (!initialData) return [];
+
+    // 1. Direct colorGroups on initialData if saved
+    const rawGroups = (initialData as unknown as Record<string, unknown>)?.colorGroups;
+    if (Array.isArray(rawGroups) && rawGroups.length > 0) {
+      return rawGroups as ColorVariantGroup[];
+    }
+
+    // 2. Derive from initialData.images and initialData.variants when editing
+    const images = initialData.images || [];
+    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; availableQuantity?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
+    const primaryUrl = initialData.primaryImageUrl;
+
+    const colorMap = new Map<string, { swatch?: string; images: string[] }>();
+
+    images.forEach((img) => {
+      const cName = img.color || 'Color 1';
+      const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || img.url;
+      if (!colorMap.has(cName)) {
+        colorMap.set(cName, { swatch, images: [] });
+      }
+      if (img.url) {
+        colorMap.get(cName)!.images.push(img.url);
+      }
+    });
+
+    // Check variants for color attribute or title ("Color / Size")
+    variants.forEach((v) => {
+      let colorName = '';
+      if (v.attributeValues) {
+        const colorAttr = v.attributeValues.find(
+          (av) => av.attributeName?.toLowerCase() === 'color' || av.attribute?.slug === 'color'
+        );
+        if (colorAttr?.value) colorName = colorAttr.value;
+      }
+      if (!colorName && v.title && v.title.includes('/')) {
+        colorName = v.title.split('/')[0].trim();
+      }
+      if (colorName && !colorMap.has(colorName)) {
+        colorMap.set(colorName, { swatch: primaryUrl, images: primaryUrl ? [primaryUrl] : [] });
+      }
+    });
+
+    if (colorMap.size === 0) {
+      const defaultImgs = images.map((i) => i.url).filter(Boolean);
+      if (primaryUrl && !defaultImgs.includes(primaryUrl)) {
+        defaultImgs.unshift(primaryUrl);
+      }
+      colorMap.set('Color 1', { swatch: primaryUrl || defaultImgs[0], images: defaultImgs });
+    }
+
+    const groups: ColorVariantGroup[] = [];
+    let idx = 1;
+    colorMap.forEach((data, cName) => {
+      const colorCode = getColorCodeHelper(cName);
+      const hasExistingVariants = variants.length > 0;
+      let groupSizes: Array<{ size: string; stock: number; available: boolean; sku: string }> = [];
+
+      if (hasExistingVariants) {
+        const matchingVariantsForColor = variants.filter((v) => {
+          const vTitle = (v.title || '').toLowerCase().trim();
+          const parts = vTitle.split('/').map((s) => s.trim());
+          return parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
+        });
+
+        groupSizes = matchingVariantsForColor.map((v) => {
+          const parts = (v.title || '').split('/').map((s) => s.trim());
+          const sz = parts[1] || 'Free Size';
+          return {
+            size: sz,
+            stock: v.availableQuantity ?? 10,
+            available: true,
+            sku: v.sku || `${colorCode}-${sz}`,
+          };
+        });
+      }
+
+      if (groupSizes.length === 0) {
+        groupSizes = STANDARD_SIZES.map((sz) => ({
+          size: sz,
+          stock: 10,
+          available: true,
+          sku: `${colorCode}-${sz}`,
+        }));
+      }
+
+      groups.push({
+        id: `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        name: cName,
+        hex: idx === 1 ? '#e8c4b8' : '#1e3a8a',
+        swatchImage: data.swatch,
+        images: data.images.length > 0 ? data.images : (primaryUrl ? [primaryUrl] : []),
+        sizes: groupSizes,
+      });
+      idx++;
+    });
+
+    return groups;
+  });
+
+  // Fetch existing product variants when editing to reconstruct ONLY kept sizes
+  const { data: fetchedVariantsData } = useVariants(productId ? { productId, limit: 100 } : {});
+
+  useEffect(() => {
+    if (!productId || !fetchedVariantsData?.data) return;
+    const variants = fetchedVariantsData.data;
+    if (variants.length === 0) return;
+
+    // Auto-populate barcode stickers panel for existing product variants
+    const pName = (initialData?.name || methods.getValues('name') || 'Product').toString();
+    const existingIssued: IssuedVariant[] = variants.map((v) => ({
+      sku: v.sku,
+      barcode: v.barcode || v.sku,
+      title: v.title || pName,
+      stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
+      price: v.priceOverride ? Number(v.priceOverride) : Number(methods.getValues('salePrice') || methods.getValues('basePrice') || 0),
+    }));
+    setIssuedVariants(existingIssued);
+    setLabelQtyBySku(Object.fromEntries(existingIssued.map((v) => [v.sku, Math.max(1, v.stock || 1)])));
+
+    setColorGroups((prevGroups) => {
+      if (!prevGroups.length) return prevGroups;
+      return prevGroups.map((group) => {
+        const cName = group.name.toLowerCase().trim();
+        const matchingForColor = variants.filter((v) => {
+          const vTitle = (v.title || '').toLowerCase().trim();
+          const parts = vTitle.split('/').map((s) => s.trim());
+          return parts[0] ? parts[0] === cName || vTitle.includes(cName) : false;
+        });
+
+        if (matchingForColor.length === 0) return group;
+
+        const colorCode = getColorCodeHelper(group.name);
+        const keptSizes = matchingForColor.map((v) => {
+          const parts = (v.title || '').split('/').map((s) => s.trim());
+          const sz = parts[1] || 'Free Size';
+          return {
+            size: sz,
+            stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
+            available: true,
+            sku: v.sku || `${colorCode}-${sz}`,
+          };
+        });
+
+        return {
+          ...group,
+          sizes: keptSizes,
+        };
+      });
+    });
+  }, [productId, fetchedVariantsData, initialData?.name, methods]);
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
@@ -400,7 +597,7 @@ export default function ProductBuilder({
         size: sz,
         stock: 10,
         available: true,
-        sku: `${cName.substring(0, 3).toUpperCase()}-${sz}`,
+        sku: buildSmartVariantSku(cName, sz),
       })),
     };
 
@@ -420,20 +617,21 @@ export default function ProductBuilder({
 
   // Add Image URL to active color group
   const [imageUrlInput, setImageUrlInput] = useState('');
-  const addImageToColorGroup = (colorGroupId: string) => {
-    if (!imageUrlInput.trim()) return;
+  const addImageToColorGroup = (colorGroupId: string, customUrl?: string) => {
+    const urlToAdd = (customUrl || imageUrlInput).trim();
+    if (!urlToAdd) return;
     setColorGroups((prev) =>
       prev.map((group) => {
         if (group.id === colorGroupId) {
           return {
             ...group,
-            images: [...group.images, imageUrlInput.trim()],
+            images: [...group.images, urlToAdd],
           };
         }
         return group;
       })
     );
-    setImageUrlInput('');
+    if (!customUrl) setImageUrlInput('');
   };
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
@@ -561,16 +759,22 @@ export default function ProductBuilder({
     );
   };
 
-  /** Promote an image to position 0, which is what makes it the primary. */
+  /** Promote an image to position 0 and make its color group primary. */
   const setPrimaryImage = (colorGroupId: string, imgIdx: number) => {
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id !== colorGroupId || imgIdx === 0) return group;
+    setColorGroups((prev) => {
+      const groupIdx = prev.findIndex((g) => g.id === colorGroupId);
+      if (groupIdx === -1) return prev;
+
+      const updated = prev.map((group) => {
+        if (group.id !== colorGroupId) return group;
         const images = [...group.images];
         const [picked] = images.splice(imgIdx, 1);
         return { ...group, images: [picked, ...images] };
-      }),
-    );
+      });
+
+      const [primaryGroup] = updated.splice(groupIdx, 1);
+      return [primaryGroup, ...updated];
+    });
   };
 
   const removeImageFromColorGroup = (colorGroupId: string, imgIdx: number) => {
@@ -590,13 +794,32 @@ export default function ProductBuilder({
   // Add custom size to active color group
   const [newSizeInput, setNewSizeInput] = useState('');
 
+  /** Generates a distinct color abbreviation to avoid SKU collisions (e.g. "Color 1" -> "COL1", "Color 2" -> "COL2", "Navy Blue" -> "NBLU") */
+  const getColorCode = (colorName: string) => {
+    const clean = (colorName || 'Color 1').trim();
+    // Match "Color 1", "Color 2", "Colour 1", etc.
+    const numMatch = clean.match(/colou?r\s*(\d+)/i);
+    if (numMatch) {
+      return `COL${numMatch[1]}`;
+    }
+    const words = clean.split(/\s+/).filter(Boolean);
+    if (words.length >= 2) {
+      const firstChar = words[0][0].toUpperCase();
+      const secondWord = words[1].toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
+      return `${firstChar}${secondWord}`;
+    }
+    const code = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (code.length <= 4) return code || 'COL';
+    return code.substring(0, 4);
+  };
+
   /** Helper to generate a smart, unique, human-readable SKU ID for color + size variants */
   const buildSmartVariantSku = (colorName: string, sizeName: string) => {
-    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || 'VSS').toString().trim();
-    const parentCode = rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) || 'VSS';
-    const colorCode = colorName.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3) || 'COL';
-    const sizeCode = sizeName.trim().toUpperCase();
-    return `${parentCode}-${colorCode}-${sizeCode}`;
+    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || '').toString().trim();
+    const parentCode = rawCode ? rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) : '';
+    const colorCode = getColorCode(colorName);
+    const cleanSize = sizeName.trim().toUpperCase().replace(/\s+/g, '');
+    return parentCode ? `${parentCode}-${colorCode}-${cleanSize}` : `${colorCode}-${cleanSize}`;
   };
 
   const addSizeToColorGroup = (colorGroupId: string) => {
@@ -790,6 +1013,30 @@ export default function ProductBuilder({
 
   const canPublish = validationIssues.length === 0;
 
+  /** Map validation or API error text to the target builder tab so clicking navigates directly there */
+  const getTabForIssue = (issueText: string): 'basic' | 'organisation' | 'pricing' | 'colors' | 'sizes' | 'attributes' | 'seo' => {
+    const lower = issueText.toLowerCase();
+    if (lower.includes('category') || lower.includes('organisation') || lower.includes('collection') || lower.includes('tag')) {
+      return 'organisation';
+    }
+    if (lower.includes('name') || lower.includes('brand') || lower.includes('description') || lower.includes('gender')) {
+      return 'basic';
+    }
+    if (lower.includes('price') || lower.includes('mrp') || lower.includes('tax') || lower.includes('hsn') || lower.includes('cost')) {
+      return 'pricing';
+    }
+    if (lower.includes('color') || lower.includes('colour') || lower.includes('image') || lower.includes('swatch') || lower.includes('media')) {
+      return 'colors';
+    }
+    if (lower.includes('size') || lower.includes('stock') || lower.includes('sku') || lower.includes('barcode')) {
+      return 'sizes';
+    }
+    if (lower.includes('attribute') || lower.includes('fabric') || lower.includes('material')) {
+      return 'attributes';
+    }
+    return 'seo';
+  };
+
   const livePreviewData: LivePreviewData = useMemo(() => {
     return {
       name: watchedValues.name || 'Women\'s Ethnic Wear',
@@ -822,9 +1069,11 @@ export default function ProductBuilder({
     // Saving a draft is always allowed so partial work is never lost, but a
     // product with outstanding issues must not reach the storefront.
     if (values.isPublished && validationIssues.length > 0) {
-      setActiveTab('seo');
+      const firstIssue = validationIssues[0];
+      const targetTab = getTabForIssue(firstIssue);
+      setActiveTab(targetTab);
       setSaveMessage(
-        `✕ Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'} to fix.`,
+        `✕ Cannot publish — ${validationIssues.length} issue${validationIssues.length === 1 ? '' : 's'} to fix: ${firstIssue}`,
       );
       return;
     }
@@ -833,9 +1082,16 @@ export default function ProductBuilder({
     setSaveMessage(null);
     setIssuedVariants([]);
     try {
+      // If a custom card cover image is uploaded (base64 data URL), upload it to server first
+      let finalCardCoverUrl = productCardImageUrl;
+      if (productCardImageUrl && productCardImageUrl.startsWith('data:')) {
+        const blob = dataUrlToBlob(productCardImageUrl);
+        const uploadedCard = await productService.uploadImage(blob, `card-cover-${Date.now()}.png`);
+        finalCardCoverUrl = uploadedCard.url;
+        setProductCardImageUrl(finalCardCoverUrl);
+      }
+
       // Organisation lives outside the react-hook-form schema, so merge it in.
-      // CreateProductDto accepts categoryIds, tags, collections and occasion
-      // directly, and the API rejects unknown properties outright.
       const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
       const payload = {
         ...values,
@@ -844,11 +1100,20 @@ export default function ProductBuilder({
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
+        ...(finalCardCoverUrl ? { primaryImageUrl: finalCardCoverUrl } : {}),
       };
 
-      const created = productId
-        ? await productService.update(productId, payload as UpdateProductDto)
-        : await productService.create(payload as CreateProductDto);
+      let created: ProductResponse;
+      if (productId) {
+        // Strip categoryIds and primaryImageUrl from update payload because PATCH /products/:id forbids them
+        const { categoryIds: catIds, primaryImageUrl: pUrl, ...updatePayload } = payload as Record<string, unknown>;
+        created = await productService.update(productId, updatePayload as UpdateProductDto);
+        if (catIds && Array.isArray(catIds) && catIds.length > 0) {
+          await productService.assignCategories(productId, { categoryIds: catIds as string[] }).catch(() => null);
+        }
+      } else {
+        created = await productService.create(payload as CreateProductDto);
+      }
 
       // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;
       // blank values are dropped so an unset attribute is not stored as "".
@@ -862,15 +1127,20 @@ export default function ProductBuilder({
           .catch(() => null);
       }
 
-      // Flatten every staged image across all color groups into one gallery,
-      // upload real files, and attach them as product media. Media ids are kept
-      // per color group so they can be bound to that group further down.
+      // Prevent duplicate image creation on Edit mode by tracking existing media
+      const existingMedia = created.images || [];
+      const existingMediaMap = new Map<string, string>();
+      existingMedia.forEach((m) => {
+        if (m.url && m.id) existingMediaMap.set(m.url, String(m.id));
+      });
+
       let displayOrder = 0;
       let primarySet = false;
       const mediaIdsByGroup: Record<string, string[]> = {};
+
       for (const group of colorGroups) {
         mediaIdsByGroup[group.id] = [];
-        const groupImages = [group.swatchImage, ...group.images].filter(Boolean) as string[];
+        const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
         for (const img of groupImages) {
           let url = img;
           if (img.startsWith('data:')) {
@@ -878,43 +1148,104 @@ export default function ProductBuilder({
             const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
             url = uploaded.url;
           }
+
+          // If image already exists in database, skip re-calling addMedia!
+          const existingId = existingMediaMap.get(url);
+          if (existingId) {
+            mediaIdsByGroup[group.id].push(existingId);
+            continue;
+          }
+
+          const isImgPrimary = !primarySet || (finalCardCoverUrl ? url === finalCardCoverUrl : false);
           const media = await productService.addMedia({
             productId: created.id,
             url,
-            isPrimary: !primarySet,
+            isPrimary: isImgPrimary,
             displayOrder: displayOrder++,
             color: group.name,
             ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
           });
-          if (media?.id) mediaIdsByGroup[group.id].push(String(media.id));
-          primarySet = true;
+          if (media?.id) {
+            mediaIdsByGroup[group.id].push(String(media.id));
+            existingMediaMap.set(url, String(media.id));
+          }
+          if (isImgPrimary) primarySet = true;
         }
       }
 
       // Persist the color/size matrix as real variants. The backend assigns the
       // SKU and barcode on POST /variants, so nothing here is sellable or
       // scannable until this runs.
-      const [attributeList, existingVariants] = await Promise.all([
+      const [attributeList, existingVariants, existingInventoryList] = await Promise.all([
         attributeService
           .findAllAttributes({ limit: 100 })
           .catch(() => ({ data: [] as AttributeResponse[] })),
         variantService
-          // ProductVariantQueryDto caps `limit` at 100 (@Max(100)) — 200 was
-          // silently rejected by this call's own .catch(), which meant
-          // existingVariants was always empty and re-saving an existing
-          // product created duplicate variants instead of skipping them.
           .findAll({ productId: created.id, limit: 100 })
+          .catch(() => null),
+        inventoryService
+          .findAll({ limit: 100 })
           .catch(() => null),
       ]);
       const attributes = attributeList?.data ?? [];
+      const existingInvMap = new Map<string, string>();
+      (existingInventoryList?.data || []).forEach((inv) => {
+        if (inv.variantId && inv.id) existingInvMap.set(inv.variantId, inv.id);
+      });
 
-      // Saving twice must not duplicate variants, so skip pairs already stored.
-      const existingTitles = new Set(
-        (existingVariants?.data ?? [])
-          .map((v) => String(v.title ?? '').toLowerCase().trim())
-          .filter(Boolean),
-      );
+      // Build a map of wanted active variant titles -> sizeRow details
+      const wantedVariantsMap = new Map<string, { group: ColorVariantGroup; sizeRow: ColorVariantGroup['sizes'][number] }>();
+      for (const group of colorGroups) {
+        for (const sizeRow of group.sizes) {
+          if (sizeRow.available) {
+            const titleKey = `${group.name} / ${sizeRow.size}`.toLowerCase().trim();
+            wantedVariantsMap.set(titleKey, { group, sizeRow });
+          }
+        }
+      }
 
+      // Check existing variants in database
+      const dbVariantsList = existingVariants?.data ?? [];
+      const existingVariantsByTitle = new Map<string, (typeof dbVariantsList)[0]>();
+      dbVariantsList.forEach((v) => {
+        const titleKey = String(v.title ?? '').toLowerCase().trim();
+        if (titleKey) existingVariantsByTitle.set(titleKey, v);
+      });
+
+      // 1) Delete or Deactivate variants that admin deleted/removed from colorGroups
+      for (const existingVar of dbVariantsList) {
+        const titleKey = String(existingVar.title ?? '').toLowerCase().trim();
+        if (titleKey && !wantedVariantsMap.has(titleKey)) {
+          await variantService.delete(existingVar.id).catch(() => {
+            return variantService.deactivate(existingVar.id).catch(() => null);
+          });
+        }
+      }
+
+      // Helper function to update or create inventory record without 422 errors
+      const syncVariantInventory = async (vId: string, sizeRow: ColorVariantGroup['sizes'][number]) => {
+        const existingInvId = existingInvMap.get(vId);
+        if (existingInvId) {
+          await inventoryService
+            .update(existingInvId, {
+              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+            })
+            .catch(() => null);
+        } else {
+          const newInv = await inventoryService
+            .create({
+              variantId: vId,
+              availableQuantity: Math.max(0, sizeRow.stock),
+              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
+              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+            })
+            .catch(() => null);
+          if (newInv?.id) existingInvMap.set(vId, newInv.id);
+        }
+      };
+
+      // 2) Create or Update wanted variants & stock
       const issued: IssuedVariant[] = [];
       const variantIdsByGroup: Record<string, string[]> = {};
       let variantOrder = 0;
@@ -924,44 +1255,52 @@ export default function ProductBuilder({
         for (const sizeRow of group.sizes) {
           if (!sizeRow.available) continue;
           const title = `${group.name} / ${sizeRow.size}`;
-          if (existingTitles.has(title.toLowerCase())) continue;
+          const titleKey = title.toLowerCase().trim();
 
-          const variant = await variantService.create({
-            productId: created.id,
-            title,
-            sku: sizeRow.sku || undefined,
-            priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
-            costPrice: values.costPrice ? Number(values.costPrice) : undefined,
-            displayOrder: variantOrder,
-            isDefault: variantOrder === 0 && existingTitles.size === 0,
-            attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
-          });
-          variantOrder++;
+          const existingVar = existingVariantsByTitle.get(titleKey);
 
-          if (!variant?.id) continue;
-          variantIdsByGroup[group.id].push(variant.id);
+          if (existingVar) {
+            // Already exists -> Safely sync inventory without GET /inventory/variant 422 errors
+            variantIdsByGroup[group.id].push(existingVar.id);
+            await syncVariantInventory(existingVar.id, sizeRow);
 
-          // Opening stock for the new variant.
-          if (sizeRow.stock > 0) {
-            await inventoryService
-              .create({
-                variantId: variant.id,
-                availableQuantity: sizeRow.stock,
-                ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-                ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
-              })
-              .catch(() => null);
+            issued.push({
+              sku: existingVar.sku,
+              barcode: existingVar.barcode,
+              title,
+              stock: sizeRow.stock,
+              price: sizeRow.price
+                ? Number(sizeRow.price)
+                : Number(values.salePrice || values.basePrice || 0),
+            });
+          } else {
+            // Create new variant
+            const variant = await variantService.create({
+              productId: created.id,
+              title,
+              sku: sizeRow.sku || undefined,
+              priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
+              costPrice: values.costPrice ? Number(values.costPrice) : undefined,
+              displayOrder: variantOrder,
+              isDefault: variantOrder === 0 && existingVariantsByTitle.size === 0,
+              attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
+            });
+            variantOrder++;
+
+            if (!variant?.id) continue;
+            variantIdsByGroup[group.id].push(variant.id);
+            await syncVariantInventory(variant.id, sizeRow);
+
+            issued.push({
+              sku: variant.sku,
+              barcode: variant.barcode,
+              title,
+              stock: sizeRow.stock,
+              price: sizeRow.price
+                ? Number(sizeRow.price)
+                : Number(values.salePrice || values.basePrice || 0),
+            });
           }
-
-          issued.push({
-            sku: variant.sku,
-            barcode: variant.barcode,
-            title,
-            stock: sizeRow.stock,
-            price: sizeRow.price
-              ? Number(sizeRow.price)
-              : Number(values.salePrice || values.basePrice || 0),
-          });
         }
       }
 
@@ -1008,7 +1347,12 @@ export default function ProductBuilder({
       if (onSaveSuccess) onSaveSuccess(created.id);
       if (issued.length === 0) setTimeout(() => setSaveMessage(null), 3000);
     } catch (err) {
-      setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to save product'));
+      let rawErr = getApiErrorMessage(err, 'Failed to save product');
+      if (rawErr.includes('property') && rawErr.includes('should not exist')) {
+        rawErr = rawErr.replace(/property\s+([a-zA-Z0-9_]+)\s+should not exist/gi, 'Property "$1" is read-only on update.');
+      }
+      setSaveMessage('✕ ' + rawErr);
+      setActiveTab(getTabForIssue(rawErr));
     } finally {
       setIsSubmitting(false);
     }
@@ -1020,24 +1364,156 @@ export default function ProductBuilder({
     if (!variant.barcode) return;
     setPrintingSku(variant.sku);
     try {
-      const res = await batchStickersMutation.mutateAsync({
-        productName,
-        variantTitle: variant.title,
-        sku: variant.sku,
-        barcode: variant.barcode,
-        price: variant.price,
-        quantity: Math.max(1, labelQtyBySku[variant.sku] || 1),
-        labelSize,
-      });
+      const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
+      const barcodeImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`;
+      const qrImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`;
+
+      const stickerCardsHtml = Array.from({ length: qty }).map(() => `
+        <div class="sticker-card">
+          <div class="header-diamond">❖</div>
+          <div class="store-title">VASANTHI DESIGNERS</div>
+          <div class="divider"></div>
+          <div class="product-title">${productName} | ${variant.title}</div>
+          <div class="sku-badge">${variant.sku}</div>
+          <div class="code-container">
+            <div class="barcode-box">
+              <img src="${barcodeImgUrl}" alt="barcode" />
+              <div class="barcode-num">${variant.barcode}</div>
+              <div class="sku-num">${variant.sku}</div>
+            </div>
+            <div class="dashed-line"></div>
+            <div class="qr-box">
+              <img src="${qrImgUrl}" alt="qr" />
+            </div>
+          </div>
+          <div class="divider"></div>
+          <div class="price">₹${variant.price}</div>
+        </div>
+      `).join('');
+
+      const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Print Barcode Stickers - ${variant.sku}</title>
+          <style>
+            @page { size: auto; margin: 5mm; }
+            body {
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              margin: 0;
+              padding: 10px;
+              background: #fff;
+            }
+            .grid {
+              display: flex;
+              flex-wrap: wrap;
+              gap: 15px;
+              justify-content: flex-start;
+            }
+            .sticker-card {
+              width: 320px;
+              padding: 16px;
+              border: 2px dashed #737373;
+              border-radius: 20px;
+              text-align: center;
+              background: #ffffff;
+              box-sizing: border-box;
+              page-break-inside: avoid;
+            }
+            .header-diamond {
+              color: #0284c7;
+              font-size: 14px;
+              font-weight: bold;
+            }
+            .store-title {
+              font-family: Georgia, serif;
+              font-size: 15px;
+              font-weight: 800;
+              letter-spacing: 1.5px;
+              color: #171717;
+              margin-top: 2px;
+            }
+            .divider {
+              height: 1px;
+              background: #e5e5e5;
+              margin: 8px 0;
+            }
+            .product-title {
+              font-size: 12px;
+              font-weight: 700;
+              color: #262626;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+            }
+            .sku-badge {
+              display: inline-block;
+              background: #09090b;
+              color: #ffffff;
+              border-radius: 9999px;
+              padding: 4px 18px;
+              font-family: monospace;
+              font-size: 13px;
+              font-weight: 700;
+              letter-spacing: 1px;
+              margin: 8px 0;
+            }
+            .code-container {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 10px;
+              margin: 4px 0;
+            }
+            .barcode-box img {
+              height: 48px;
+              max-width: 140px;
+            }
+            .barcode-num {
+              font-family: monospace;
+              font-size: 10px;
+              font-weight: 600;
+              color: #404040;
+              margin-top: -2px;
+            }
+            .sku-num {
+              font-family: monospace;
+              font-size: 9px;
+              color: #737373;
+            }
+            .dashed-line {
+              height: 48px;
+              border-right: 1px dashed #d4d4d4;
+            }
+            .qr-box img {
+              width: 48px;
+              height: 48px;
+            }
+            .price {
+              font-size: 24px;
+              font-weight: 900;
+              color: #000000;
+              margin-top: 2px;
+            }
+          </style>
+        </head>
+        <body>
+          <div class="grid">
+            ${stickerCardsHtml}
+          </div>
+        </body>
+        </html>
+      `;
+
       const printWindow = window.open('', '_blank');
       if (printWindow) {
-        printWindow.document.write(res.html);
+        printWindow.document.write(html);
         printWindow.document.close();
         printWindow.focus();
         setTimeout(() => {
           printWindow.print();
           printWindow.close();
-        }, 250);
+        }, 300);
       }
     } catch (err) {
       setSaveMessage('✕ ' + getApiErrorMessage(err, 'Failed to generate labels'));
@@ -1081,20 +1557,38 @@ export default function ProductBuilder({
 
           <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
             {saveMessage && (
-              <span className="text-xs font-bold text-emerald-600 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200 animate-fade-in">
-                {saveMessage}
-              </span>
+              <button
+                type="button"
+                onClick={() => setActiveTab(getTabForIssue(saveMessage))}
+                className={`text-xs font-bold px-3 py-2 rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                  saveMessage.startsWith('✓')
+                    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                    : 'text-red-700 bg-red-50 border-red-200 hover:bg-red-100 shadow-2xs'
+                }`}
+              >
+                <span>{saveMessage}</span>
+                {!saveMessage.startsWith('✓') && (
+                  <span className="text-[10px] underline font-bold ml-1 text-red-600">(Click to fix)</span>
+                )}
+              </button>
             )}
 
             {!canPublish && (
               <button
                 type="button"
-                onClick={() => setActiveTab('seo')}
-                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors min-h-[38px]"
+                onClick={() => {
+                  const firstIssue = validationIssues[0];
+                  if (firstIssue) {
+                    setActiveTab(getTabForIssue(firstIssue));
+                  } else {
+                    setActiveTab('basic');
+                  }
+                }}
+                className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-2 rounded-xl flex items-center gap-1.5 hover:bg-amber-100 transition-colors min-h-[38px] cursor-pointer shadow-2xs"
               >
                 <AlertTriangle className="w-3.5 h-3.5" />
                 <span>
-                  {validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'}
+                  {validationIssues.length} issue{validationIssues.length === 1 ? '' : 's'} (Click to fix)
                 </span>
               </button>
             )}
@@ -1115,131 +1609,6 @@ export default function ProductBuilder({
             </button>
           </div>
         </div>
-
-        {/* ISSUED BARCODES — shown after a save that created variants */}
-        {issuedVariants.length > 0 && (
-          <div className="bg-white rounded-3xl p-6 border border-neutral-200 shadow-sm">
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-              <div>
-                <h3 className="text-sm font-bold text-neutral-900">
-                  Barcodes issued ({issuedVariants.length})
-                </h3>
-                <p className="text-xs text-neutral-400 mt-0.5">
-                  Assigned by the server when each variant was created. These are scannable in POS.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIssuedVariants([])}
-                className="text-xs font-semibold text-neutral-400 hover:text-neutral-600"
-              >
-                Dismiss
-              </button>
-            </div>
-
-            {/* Label size + print-all */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-4 bg-neutral-50 border border-neutral-200 rounded-2xl p-3">
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">
-                  Label Size
-                </span>
-                <div className="flex gap-1.5">
-                  {LABEL_SIZE_OPTIONS.map((opt) => (
-                    <button
-                      key={opt.value}
-                      type="button"
-                      onClick={() => setLabelSize(opt.value)}
-                      title={opt.description}
-                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
-                        labelSize === opt.value
-                          ? 'bg-amber-600 border-amber-600 text-white'
-                          : 'bg-white border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-                      }`}
-                    >
-                      {opt.title}
-                    </button>
-                  ))}
-                </div>
-              </div>
-              <button
-                type="button"
-                onClick={handlePrintAllLabels}
-                disabled={printingSku !== null}
-                className="bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-4 py-2 rounded-xl flex items-center gap-2 disabled:opacity-60 transition-all"
-              >
-                <Printer className="w-3.5 h-3.5" />
-                <span>Print All {issuedVariants.length} Labels</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {issuedVariants.map((variant) => (
-                <div
-                  key={variant.sku}
-                  className="border border-neutral-200 rounded-2xl p-4 flex flex-col items-center text-center"
-                >
-                  <span className="text-xs font-bold text-neutral-700">{variant.title}</span>
-                  {variant.barcode ? (
-                    <>
-                      <div className="flex items-center justify-center gap-2 my-2">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
-                          alt={`Barcode ${variant.barcode}`}
-                          className="h-14 object-contain"
-                        />
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={`${process.env.NEXT_PUBLIC_API_BASE_URL}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
-                          alt={`QR ${variant.barcode}`}
-                          className="h-14 w-14 object-contain"
-                        />
-                      </div>
-                      <span className="text-xs font-mono tracking-widest text-neutral-900">
-                        {variant.barcode}
-                      </span>
-                    </>
-                  ) : (
-                    <span className="text-xs text-neutral-400 my-4">No barcode returned</span>
-                  )}
-                  <span className="text-[10px] text-neutral-400 mt-1">SKU: {variant.sku}</span>
-                  <span className="text-[10px] text-neutral-400">Stock: {variant.stock}</span>
-
-                  <div className="flex items-center gap-2 mt-3 w-full">
-                    <input
-                      type="number"
-                      min={1}
-                      value={labelQtyBySku[variant.sku] ?? 1}
-                      onChange={(e) =>
-                        setLabelQtyBySku((prev) => ({
-                          ...prev,
-                          [variant.sku]: Math.max(1, Number(e.target.value) || 1),
-                        }))
-                      }
-                      className="w-16 border border-neutral-200 rounded-lg px-2 py-1.5 text-xs text-center"
-                      title="Copies to print"
-                    />
-                    <button
-                      type="button"
-                      onClick={() => handlePrintLabel(variant)}
-                      disabled={!variant.barcode || printingSku === variant.sku}
-                      className="flex-1 bg-neutral-900 hover:bg-neutral-700 text-white text-[11px] font-bold py-1.5 rounded-lg flex items-center justify-center gap-1.5 disabled:opacity-60 transition-all"
-                    >
-                      {printingSku === variant.sku ? (
-                        <span>Printing…</span>
-                      ) : (
-                        <>
-                          <QrCode className="w-3 h-3" />
-                          <span>Print</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
 
         {/* SECTION NAVIGATION TABS */}
         <div className="flex border-b border-neutral-200 bg-white rounded-2xl p-1.5 border shadow-2xs gap-1 overflow-x-auto scrollbar-none">
@@ -1332,6 +1701,19 @@ export default function ProductBuilder({
           >
             <Tag className="w-4 h-4" />
             <span>7. Badges, SEO &amp; Publish</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('barcodes')}
+            className={`flex items-center gap-2 px-5 py-3 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+              activeTab === 'barcodes'
+                ? 'bg-[#0284c7] text-white shadow-sm'
+                : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+            }`}
+          >
+            <QrCode className="w-4 h-4" />
+            <span>8. Barcode Stickers &amp; Labels ({issuedVariants.length})</span>
           </button>
         </div>
 
@@ -1939,15 +2321,85 @@ export default function ProductBuilder({
         {/* TAB 3: COLOR GROUPS & COLOR-SPECIFIC MEDIA */}
         {activeTab === 'colors' && (
           <div className="bg-white rounded-3xl p-6 sm:p-8 border border-neutral-200 shadow-sm space-y-6">
-            <div className="flex flex-wrap items-center justify-between gap-4">
-              <div>
-                <h3 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-                  <Palette className="w-5 h-5 text-[#0284c7]" />
-                  <span>Color Groups & Color-Specific Media Gallery</span>
-                </h3>
-                <p className="text-xs text-neutral-500 font-medium mt-0.5">
-                  Add color variants and upload dedicated image lists for each color
-                </p>
+            {/* DEDICATED STOREFRONT PRODUCT CARD VIEW IMAGE SELECTOR */}
+            <div className="p-5 bg-sky-50/80 rounded-2xl border border-sky-200/90 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-[#0284c7] text-white flex items-center justify-center font-bold text-sm shadow-2xs">
+                    💳
+                  </div>
+                  <div>
+                    <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                      Storefront Product Card View Image (Catalog Cover Photo)
+                    </h4>
+                    <p className="text-[11px] text-neutral-500 font-medium">
+                      Select or upload the exact image to display on Customer Storefront Product Cards (Homepage, Catalog Grid, Search).
+                    </p>
+                  </div>
+                </div>
+                {productCardImageUrl && (
+                  <span className="text-[10px] font-bold text-sky-800 bg-sky-100 border border-sky-300 px-3 py-1 rounded-full uppercase tracking-wider shadow-2xs">
+                    ✓ Custom Card Image Active
+                  </span>
+                )}
+              </div>
+
+              <div className="flex flex-wrap items-center gap-4 bg-white p-3.5 rounded-xl border border-neutral-200 shadow-2xs">
+                {productCardImageUrl ? (
+                  <div className="relative w-20 h-24 rounded-lg overflow-hidden border border-neutral-300 shadow-2xs shrink-0 bg-neutral-100">
+                    <Image
+                      src={productCardImageUrl}
+                      alt="Product Card View Cover"
+                      fill
+                      unoptimized={isLocalOrPlaceholder(productCardImageUrl)}
+                      className="object-cover"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-20 h-24 rounded-lg border-2 border-dashed border-sky-200 bg-sky-50/50 flex items-center justify-center text-xs text-sky-700 text-center p-2 font-bold shrink-0">
+                    Auto Primary
+                  </div>
+                )}
+
+                <div className="flex-1 space-y-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <label className="cursor-pointer bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold px-4 py-2 rounded-xl transition-all flex items-center gap-1.5 shadow-2xs">
+                      <Upload className="w-3.5 h-3.5" />
+                      <span>Upload Storefront Card Image</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (ev) => {
+                              const url = ev.target?.result as string;
+                              if (url) {
+                                setCardViewImage(url);
+                                if (activeColorTab) {
+                                  addImageToColorGroup(activeColorTab, url);
+                                }
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                      />
+                    </label>
+
+                    {productCardImageUrl && (
+                      <button
+                        type="button"
+                        onClick={() => setProductCardImageUrl('')}
+                        className="bg-neutral-100 hover:bg-neutral-200 text-neutral-700 text-xs font-bold px-3 py-2 rounded-xl transition-all"
+                      >
+                        Reset to Default Primary
+                      </button>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -2822,6 +3274,166 @@ export default function ProductBuilder({
                 <p className="text-[10px] text-neutral-400">Comma separated.</p>
               </div>
             </div>
+          </div>
+        )}
+
+        {activeTab === 'barcodes' && (
+          <div className="bg-neutral-900 text-white rounded-3xl p-6 sm:p-8 space-y-6 shadow-xl border border-neutral-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-800 pb-5">
+              <div>
+                <h3 className="text-base font-bold text-white flex items-center gap-2">
+                  <QrCode className="w-5 h-5 text-amber-400" />
+                  <span>SKU Barcode Label &amp; Sticker Generator</span>
+                </h3>
+                <p className="text-xs text-neutral-400 mt-1">
+                  Generate, print, and download barcode product tag stickers for physical garment attachment.
+                </p>
+              </div>
+
+              <div className="flex flex-wrap items-center gap-3">
+                <div className="flex items-center gap-2 bg-neutral-800 p-1.5 rounded-xl border border-neutral-700">
+                  <span className="text-[11px] font-bold text-neutral-400 pl-2">Label Size:</span>
+                  {LABEL_SIZE_OPTIONS.map((opt) => (
+                    <button
+                      key={opt.value}
+                      type="button"
+                      onClick={() => setLabelSize(opt.value)}
+                      title={opt.description}
+                      className={`px-3 py-1.5 rounded-lg border text-[11px] font-bold transition-all ${
+                        labelSize === opt.value
+                          ? 'bg-amber-500 border-amber-500 text-neutral-950 shadow-sm'
+                          : 'bg-neutral-900 border-neutral-700 text-neutral-300 hover:bg-neutral-800'
+                      }`}
+                    >
+                      {opt.title}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={handlePrintAllLabels}
+                  disabled={issuedVariants.length === 0 || printingSku !== null}
+                  className="bg-[#0284c7] hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50 transition-all shadow-md"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print All {issuedVariants.length} Labels</span>
+                </button>
+              </div>
+            </div>
+
+            {issuedVariants.length === 0 ? (
+              <div className="p-8 text-center bg-neutral-800/50 border border-neutral-800 rounded-2xl space-y-3">
+                <QrCode className="w-10 h-10 text-neutral-500 mx-auto" />
+                <h4 className="text-sm font-bold text-neutral-300">No Barcode Variants Ready Yet</h4>
+                <p className="text-xs text-neutral-400 max-w-md mx-auto">
+                  Click &ldquo;Save &amp; Publish&rdquo; or save product specification to generate server-assigned barcode stickers for each SKU combination.
+                </p>
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {issuedVariants.map((variant) => (
+                  <div
+                    key={variant.sku}
+                    className="bg-white rounded-3xl p-5 border-2 border-dashed border-neutral-300 shadow-md text-neutral-900 font-sans flex flex-col items-center text-center relative overflow-hidden"
+                  >
+                    {/* Header: Blue Diamond + VASANTHI DESIGNERS */}
+                    <div className="flex items-center justify-center gap-1 text-center">
+                      <span className="text-[#0284c7] font-bold text-xs">❖</span>
+                    </div>
+                    <div className="text-sm font-extrabold tracking-wider uppercase text-neutral-900 font-serif">
+                      VASANTHI DESIGNERS
+                    </div>
+                    <div className="w-full border-b border-neutral-200 my-2" />
+
+                    {/* Product Title | Color / Size */}
+                    <div className="text-xs font-bold text-neutral-800 line-clamp-1">
+                      {productName} | {variant.title}
+                    </div>
+
+                    {/* Black SKU Pill Badge */}
+                    <div className="my-2.5 bg-neutral-950 text-white rounded-full px-5 py-1 text-xs font-mono font-bold tracking-widest shadow-xs">
+                      {variant.sku}
+                    </div>
+
+                    {/* Barcode + QR Code Side by Side */}
+                    {variant.barcode ? (
+                      <div className="flex items-center justify-center gap-3 my-1 py-1 w-full">
+                        <div className="flex flex-col items-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
+                            alt={`Barcode ${variant.barcode}`}
+                            className="h-12 object-contain"
+                          />
+                          <span className="text-[10px] font-mono text-neutral-700 tracking-wider font-semibold -mt-1">
+                            {variant.barcode}
+                          </span>
+                          <span className="text-[9px] font-mono text-neutral-500 tracking-wider">
+                            {variant.sku}
+                          </span>
+                        </div>
+
+                        <div className="h-12 border-r border-dashed border-neutral-300 mx-1" />
+
+                        <div className="flex flex-col items-center">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
+                            alt={`QR ${variant.barcode}`}
+                            className="h-12 w-12 object-contain"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-xs text-neutral-400 my-4">Generating barcode...</div>
+                    )}
+
+                    {/* Bottom Line Divider & Bold Price */}
+                    <div className="w-full border-b border-neutral-200 my-2" />
+                    <div className="text-2xl font-black text-black font-sans tracking-tight">
+                      ₹{variant.price}
+                    </div>
+
+                    {/* Print Controls at bottom */}
+                    <div className="flex items-center gap-2 mt-4 w-full pt-3 border-t border-neutral-100">
+                      <div className="flex items-center gap-1 bg-neutral-100 border border-neutral-200 rounded-xl px-2.5 py-1.5">
+                        <span className="text-[10px] font-bold text-neutral-600">Qty:</span>
+                        <input
+                          type="number"
+                          min={1}
+                          value={labelQtyBySku[variant.sku] ?? 1}
+                          onChange={(e) =>
+                            setLabelQtyBySku((prev) => ({
+                              ...prev,
+                              [variant.sku]: Math.max(1, Number(e.target.value) || 1),
+                            }))
+                          }
+                          className="w-10 bg-transparent text-xs text-neutral-900 font-bold text-center outline-none"
+                          title="Copies to print"
+                        />
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handlePrintLabel(variant)}
+                        disabled={!variant.barcode || printingSku === variant.sku}
+                        className="flex-1 bg-neutral-950 hover:bg-neutral-800 text-white text-xs font-bold py-2.5 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-50 transition-all shadow-sm"
+                      >
+                        {printingSku === variant.sku ? (
+                          <span>Printing…</span>
+                        ) : (
+                          <>
+                            <Printer className="w-3.5 h-3.5" />
+                            <span>Print Sticker</span>
+                          </>
+                        )}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         )}
 

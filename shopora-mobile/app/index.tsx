@@ -67,8 +67,8 @@ export default function ShoporaHomeScreen() {
     setSummary(null);
   };
 
-  const todaySales = summary ? `₹${summary.todayRevenue.toLocaleString('en-IN')}` : '—';
-  const itemsSold = summary ? `${summary.todayItemsSold} Pcs` : '—';
+  const todaySales = summary ? `₹${(summary.todayRevenue ?? 0).toLocaleString('en-IN')}` : '—';
+  const itemsSold = summary ? `${summary.todayItemsSold ?? 0} Pcs` : '—';
   const lowStockCount = summary?.lowStockCount ?? 0;
   const currentUser = getCurrentUser();
 

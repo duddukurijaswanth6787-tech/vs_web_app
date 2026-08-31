@@ -18,10 +18,12 @@
       "backgroundColor": "#0284c7",
       "package": "com.vasanthi.shopora",
       "permissions": [
-        "BLUETOOTH",
-        "BLUETOOTH_ADMIN",
-        "BLUETOOTH_CONNECT",
-        "BLUETOOTH_SCAN"
+        "android.permission.BLUETOOTH",
+        "android.permission.BLUETOOTH_ADMIN",
+        "android.permission.BLUETOOTH_CONNECT",
+        "android.permission.BLUETOOTH_SCAN",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO"
       ]
     },
     "plugins": [
@@ -35,8 +37,8 @@
         {
           "cameraPermission": "Allow Shopora to access your camera to scan barcodes."
         }
-       ],
-       [
+      ],
+      [
         "expo-image-picker",
         {
           "photosPermission": "The app accesses your photos to scan barcodes from images."
@@ -46,11 +48,20 @@
         "react-native-ble-plx",
         {
           "isBackgroundEnabled": false,
-          "modes": ["central"],
+          "modes": [
+            "central"
+          ],
           "bluetoothAlwaysPermission": "Allow Shopora to connect to your Bluetooth barcode scanner."
         }
       ],
       "./plugins/withAndroidJetifier"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "62342501-b74f-4cca-8b18-d5071263b321"
+      }
+    },
+    "owner": "nany6787"
   }
 }

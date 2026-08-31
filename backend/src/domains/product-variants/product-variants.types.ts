@@ -18,6 +18,7 @@ import {
 export class CreateVariantDto {
   @ApiProperty() @IsUUID() productId!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() sku?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() barcode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() title?: string;
   @ApiPropertyOptional()
   @IsOptional()
@@ -90,6 +91,7 @@ export class VariantAttributeEntry {
 
 export class UpdateVariantDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() colorGroupId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() barcode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() title?: string;
   @ApiPropertyOptional()
   @IsOptional()

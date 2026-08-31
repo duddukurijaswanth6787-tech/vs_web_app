@@ -162,26 +162,49 @@ export default function LabelPreviewScreen() {
 
       {product.variants.map((variant) => (
         <View key={variant.variantId} style={styles.stickerCard}>
-          <Text style={styles.stickerBrand}>{(product.brandName || 'VASANTHI').toUpperCase()}</Text>
-          <Text style={styles.stickerName} numberOfLines={2}>
-            {product.name}
-          </Text>
-          <Text style={styles.stickerVariant}>{variant.title}</Text>
-
-          <Image
-            source={{ uri: barcodeService.imageUrl(variant.barcode, { scale: 3, height: 14 }) }}
-            style={styles.barcodeImage}
-            resizeMode="contain"
-          />
-          <Text style={styles.barcodeNumber}>{variant.barcode}</Text>
-          <Text style={styles.skuText}>SKU: {variant.sku}</Text>
-
-          <View style={styles.priceRow}>
-            {product.salePrice != null && product.salePrice < product.basePrice && (
-              <Text style={styles.mrpText}>MRP ₹{product.basePrice}</Text>
-            )}
-            <Text style={styles.priceText}>₹{labelPrice}</Text>
+          {/* Header: Blue Diamond + VASANTHI DESIGNERS */}
+          <View style={styles.stickerHeaderRow}>
+            <Text style={styles.headerDiamond}>❖</Text>
+            <Text style={styles.stickerBrand}>{(product.brandName || 'VASANTHI DESIGNERS').toUpperCase()}</Text>
           </View>
+          <View style={styles.divider} />
+
+          {/* Product Title | Color / Size */}
+          <Text style={styles.stickerName} numberOfLines={1}>
+            {product.name} | {variant.title}
+          </Text>
+
+          {/* Black SKU Pill Badge */}
+          <View style={styles.skuBadge}>
+            <Text style={styles.skuBadgeText}>{variant.sku}</Text>
+          </View>
+
+          {/* Side-by-Side Barcode + QR Code */}
+          <View style={styles.codesRow}>
+            <View style={styles.barcodeCol}>
+              <Image
+                source={{ uri: barcodeService.imageUrl(variant.barcode, { scale: 3, height: 14 }) }}
+                style={styles.barcodeImage}
+                resizeMode="contain"
+              />
+              <Text style={styles.barcodeNumber}>{variant.barcode}</Text>
+              <Text style={styles.skuSubText}>{variant.sku}</Text>
+            </View>
+
+            <View style={styles.dashedDivider} />
+
+            <View style={styles.qrCol}>
+              <Image
+                source={{ uri: barcodeService.imageUrl(variant.barcode, { bcid: 'qrcode', scale: 3 }) }}
+                style={styles.qrImage}
+                resizeMode="contain"
+              />
+            </View>
+          </View>
+
+          {/* Divider & Large Bold Price */}
+          <View style={styles.divider} />
+          <Text style={styles.priceText}>₹{labelPrice}</Text>
 
           <View style={styles.stockRow}>
             <Text style={styles.stockLabel}>Opening stock: {variant.stock}</Text>
@@ -324,26 +347,37 @@ const styles = StyleSheet.create({
 
   stickerCard: {
     backgroundColor: '#ffffff',
-    borderWidth: 1,
-    borderColor: '#e5e7eb',
-    borderRadius: 16,
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    borderColor: '#a3a3a3',
+    borderRadius: 20,
     padding: 16,
     marginTop: 16,
     alignItems: 'center',
   },
-  stickerBrand: { fontSize: 10, fontWeight: '800', letterSpacing: 1.4, color: '#0284c7' },
-  stickerName: { fontSize: 15, fontWeight: '700', color: '#111827', marginTop: 4, textAlign: 'center' },
-  stickerVariant: { fontSize: 12, color: '#6b7280', marginTop: 2 },
-
-  barcodeImage: { width: '100%', height: 78, marginTop: 14, backgroundColor: '#ffffff' },
-  barcodeNumber: { fontSize: 15, fontWeight: '700', letterSpacing: 2, color: '#111827', marginTop: 4 },
-  skuText: { fontSize: 11, color: '#6b7280', marginTop: 2 },
-
-  priceRow: { flexDirection: 'row', alignItems: 'center', gap: 10, marginTop: 10 },
-  mrpText: { fontSize: 12, color: '#9ca3af', textDecorationLine: 'line-through' },
-  priceText: { fontSize: 19, fontWeight: '800', color: '#0284c7' },
-
-  stockRow: { marginTop: 6 },
+  stickerHeaderRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  headerDiamond: { color: '#0284c7', fontSize: 12, fontWeight: 'bold' },
+  stickerBrand: { fontSize: 13, fontWeight: '800', letterSpacing: 1.5, color: '#171717', fontFamily: 'serif' },
+  divider: { width: '100%', height: 1, backgroundColor: '#e5e5e5', marginVertical: 8 },
+  stickerName: { fontSize: 12, fontWeight: '700', color: '#262626', textAlign: 'center' },
+  skuBadge: {
+    backgroundColor: '#09090b',
+    borderRadius: 999,
+    paddingHorizontal: 16,
+    paddingVertical: 4,
+    marginVertical: 8,
+  },
+  skuBadgeText: { color: '#ffffff', fontFamily: 'monospace', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
+  codesRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginVertical: 6 },
+  barcodeCol: { alignItems: 'center' },
+  barcodeImage: { width: 140, height: 48, backgroundColor: '#ffffff' },
+  barcodeNumber: { fontSize: 10, fontFamily: 'monospace', fontWeight: '600', color: '#404040', marginTop: -2 },
+  skuSubText: { fontSize: 9, fontFamily: 'monospace', color: '#737373' },
+  dashedDivider: { height: 48, borderWidth: 0.5, borderStyle: 'dashed', borderColor: '#d4d4d4', marginHorizontal: 4 },
+  qrCol: { alignItems: 'center', justifyContent: 'center' },
+  qrImage: { width: 48, height: 48 },
+  priceText: { fontSize: 24, fontWeight: '900', color: '#000000', marginVertical: 2 },
+  stockRow: { marginTop: 4 },
   stockLabel: { fontSize: 11, color: '#6b7280' },
 
   printRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 8, marginTop: 16, width: '100%' },
