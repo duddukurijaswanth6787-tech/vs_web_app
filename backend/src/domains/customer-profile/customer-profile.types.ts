@@ -9,10 +9,13 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsPhoneNumberCustom,
+} from '@common/validation/decorators.validation';
 
 export class CreateProfileDto {
   @ApiProperty() @IsString() userId!: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() preferredLanguage?: string;
@@ -58,7 +61,7 @@ export class UpdateProfileDto {
   // Written to the User row, not the profile row -- see updateProfile, which
   // also guards uniqueness since login resolves an account by this.
   @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() gender?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() dateOfBirth?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() preferredLanguage?: string;

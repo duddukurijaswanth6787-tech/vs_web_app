@@ -13,6 +13,12 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsPhoneNumberCustom,
+  IsHsnCodeCustom,
+  IsGSTCustom,
+  IsMoneyCustom,
+} from '@common/validation/decorators.validation';
 
 /**
  * Physical sticker label size. SMALL is the original 50x25mm garment-tag
@@ -83,7 +89,7 @@ export class PosCustomerInfoDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsPhoneNumberCustom()
   phone?: string;
 
   @ApiPropertyOptional()
@@ -107,7 +113,7 @@ export class PosCustomerInfoDto {
       'can claim the input credit.',
   })
   @IsOptional()
-  @IsString()
+  @IsGSTCustom()
   gstin?: string;
 }
 
@@ -249,8 +255,7 @@ export class PosSplitTenderDto {
   method!: PosPaymentMethodType;
 
   @ApiProperty({ description: 'Amount handed over on this tender.' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   amount!: number;
 }
 
@@ -417,7 +422,7 @@ export class GenerateBatchStickersDto {
   barcode!: string;
 
   @ApiProperty()
-  @IsNumber()
+  @IsMoneyCustom()
   price!: number;
 
   @ApiPropertyOptional({
@@ -426,7 +431,7 @@ export class GenerateBatchStickersDto {
       'garments where MRP disclosure is required.',
   })
   @IsOptional()
-  @IsNumber()
+  @IsMoneyCustom()
   mrp?: number;
 
   @ApiPropertyOptional({
@@ -435,7 +440,7 @@ export class GenerateBatchStickersDto {
       'can look the product up without unpicking the SKU.',
   })
   @IsOptional()
-  @IsString()
+  @IsHsnCodeCustom()
   hsnCode?: string;
 
   @ApiProperty({ default: 1 })
@@ -465,8 +470,7 @@ export class OpenPosShiftDto {
   terminalId!: string;
 
   @ApiProperty({ description: 'Starting cash float counted into the drawer' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   openingCash!: number;
 
   @ApiPropertyOptional()
@@ -477,8 +481,7 @@ export class OpenPosShiftDto {
 
 export class ClosePosShiftDto {
   @ApiProperty({ description: 'Physical cash counted in the drawer at close' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   closingCashCounted!: number;
 
   @ApiPropertyOptional()
@@ -568,8 +571,7 @@ export class PosCashMovementDto {
   direction!: 'IN' | 'OUT';
 
   @ApiProperty({ description: 'Amount moved. Always positive.' })
-  @IsNumber()
-  @Min(0.01)
+  @IsMoneyCustom({ message: 'Cash movement amount must be zero or positive with at most 2 decimals' })
   amount!: number;
 
   @ApiProperty({

@@ -55,13 +55,17 @@ export function IsPhoneNumberCustom(validationOptions?: ValidationOptions) {
         options: validationOptions,
         validator: {
           validate(value: any) {
-            return (
-              typeof value === 'string' &&
-              /^(?:\+91|91)?[6789]\d{9}$|^[+]?[1-9]\d{1,14}$/.test(value)
-            );
+            if (typeof value !== 'string') return false;
+            // Strip a +91 or 91 country-code prefix and any spaces/hyphens so
+            // the same digits stored differently across old rows still pass.
+            const digits = value.replace(/[\s-]/g, '').replace(/^\+?91/, '');
+            // Real Indian mobile numbers are exactly 10 digits and start 6-9.
+            // The previous rule accepted 3-digit "international" numbers, so
+            // "123" was let through and stored as a customer phone.
+            return /^[6-9]\d{9}$/.test(digits);
           },
           defaultMessage(args: ValidationArguments) {
-            return `${args.property} must be a valid 10-digit Indian number or international format`;
+            return `${args.property} must be a 10-digit Indian mobile number starting with 6, 7, 8 or 9`;
           },
         },
       });
@@ -656,6 +660,166 @@ export function IsDocumentCustom(validationOptions?: ValidationOptions) {
           },
           defaultMessage(args: ValidationArguments) {
             return `${args.property} must be a valid document file type (.pdf, .xls, .xlsx, .csv, .doc, .docx)`;
+          },
+        },
+      });
+    },
+  );
+}
+
+
+/**
+ * Validates a 6-digit Indian PIN code. Leading zero allowed (110001, 500034).
+ */
+export function IsPincodeCustom(validationOptions?: ValidationOptions) {
+  return applyDecorators(
+    ApiProperty({
+      description: '6-digit Indian PIN code',
+      example: '500034',
+    }),
+    (target: object, propertyKey: string | symbol) => {
+      registerDecorator({
+        name: 'isPincodeCustom',
+        target: target.constructor,
+        propertyName: propertyKey as string,
+        options: validationOptions,
+        validator: {
+          validate(value: any) {
+            return typeof value === 'string' && /^[1-9]\d{5}$/.test(value);
+          },
+          defaultMessage(args: ValidationArguments) {
+            return `${args.property} must be a valid 6-digit Indian PIN code`;
+          },
+        },
+      });
+    },
+  );
+}
+
+/**
+ * Validates an HSN code (4 to 8 digits). Garment retailers typically use 4- or
+ * 8-digit HSN; the shorter classifications are grouped, the longer identify a
+ * specific product.
+ */
+export function IsHsnCodeCustom(validationOptions?: ValidationOptions) {
+  return applyDecorators(
+    ApiProperty({
+      description: '4 to 8 digit HSN code',
+      example: '6204',
+    }),
+    (target: object, propertyKey: string | symbol) => {
+      registerDecorator({
+        name: 'isHsnCodeCustom',
+        target: target.constructor,
+        propertyName: propertyKey as string,
+        options: validationOptions,
+        validator: {
+          validate(value: any) {
+            return typeof value === 'string' && /^\d{4,8}$/.test(value);
+          },
+          defaultMessage(args: ValidationArguments) {
+            return `${args.property} must be an HSN code of 4 to 8 digits`;
+          },
+        },
+      });
+    },
+  );
+}
+
+/**
+ * Non-negative money amount (>= 0), at most two decimals.
+ *
+ * Differs from IsPriceCustom (> 0) -- lets a legitimate zero through, so a
+ * discount of 0, a shipping charge of 0, or a refund of 0 is not falsely
+ * rejected.
+ */
+export function IsMoneyCustom(validationOptions?: ValidationOptions) {
+  return applyDecorators(
+    ApiProperty({
+      description: 'Rupee amount (>= 0), at most 2 decimals',
+      minimum: 0,
+      example: 1299.5,
+    }),
+    (target: object, propertyKey: string | symbol) => {
+      registerDecorator({
+        name: 'isMoneyCustom',
+        target: target.constructor,
+        propertyName: propertyKey as string,
+        options: validationOptions,
+        validator: {
+          validate(value: any) {
+            const num = Number(value);
+            return (
+              !isNaN(num) &&
+              num >= 0 &&
+              /^\d+(?:\.\d{1,2})?$/.test(String(value).replace(/^-/, ''))
+            );
+          },
+          defaultMessage(args: ValidationArguments) {
+            return `${args.property} must be zero or a positive rupee amount with at most 2 decimals`;
+          },
+        },
+      });
+    },
+  );
+}
+
+/**
+ * Positive integer (>= 1). For counts that must actually have at least one --
+ * cart line quantities, print copies, batch sizes.
+ */
+export function IsPositiveIntCustom(validationOptions?: ValidationOptions) {
+  return applyDecorators(
+    ApiProperty({
+      description: 'Positive integer (>= 1)',
+      minimum: 1,
+      example: 1,
+    }),
+    (target: object, propertyKey: string | symbol) => {
+      registerDecorator({
+        name: 'isPositiveIntCustom',
+        target: target.constructor,
+        propertyName: propertyKey as string,
+        options: validationOptions,
+        validator: {
+          validate(value: any) {
+            const num = Number(value);
+            return Number.isInteger(num) && num >= 1;
+          },
+          defaultMessage(args: ValidationArguments) {
+            return `${args.property} must be a positive integer (>= 1)`;
+          },
+        },
+      });
+    },
+  );
+}
+
+/**
+ * A non-empty trimmed string. Rejects "" and "   " -- the two silent ways
+ * a "required" text field slips through with nothing in it.
+ */
+export function IsRequiredStringCustom(
+  min = 1,
+  max = 500,
+  validationOptions?: ValidationOptions,
+) {
+  return applyDecorators(
+    ApiProperty({ description: 'Required text', minLength: min, maxLength: max }),
+    (target: object, propertyKey: string | symbol) => {
+      registerDecorator({
+        name: 'isRequiredStringCustom',
+        target: target.constructor,
+        propertyName: propertyKey as string,
+        options: validationOptions,
+        validator: {
+          validate(value: any) {
+            if (typeof value !== 'string') return false;
+            const trimmed = value.trim();
+            return trimmed.length >= min && trimmed.length <= max;
+          },
+          defaultMessage(args: ValidationArguments) {
+            return `${args.property} is required (${min}-${max} characters)`;
           },
         },
       });

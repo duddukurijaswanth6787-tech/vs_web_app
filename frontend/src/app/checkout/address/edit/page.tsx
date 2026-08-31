@@ -8,6 +8,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { customerMeService, AddressDto } from '@/features/customer/me.service';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { validatePhone, validatePincode, validateRequired } from '@/utils/validators';
 
 function EditAddressForm() {
   const router = useRouter();
@@ -90,6 +91,20 @@ function EditAddressForm() {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
+    // Client-side validation so the user doesn't have to round-trip to the
+    // server for the trivial cases (bad phone, wrong PIN). The server checks
+    // the same rules -- this is only to save a request.
+    const bad =
+      validateRequired(form.fullName, 'Full name') ||
+      validatePhone(form.phone) ||
+      validateRequired(form.addressLine1, 'Address line 1') ||
+      validatePincode(form.postalCode) ||
+      validateRequired(form.city, 'City') ||
+      validateRequired(form.state, 'State');
+    if (bad) {
+      setErrorMsg(bad);
+      return;
+    }
     updateMutation.mutate(form);
   };
 

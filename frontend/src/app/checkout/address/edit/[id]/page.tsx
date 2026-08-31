@@ -12,6 +12,7 @@ import { customerMeService, AddressDto } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { validatePhone, validatePincode, validateRequired } from '@/utils/validators';
 
 interface EditAddressForm {
   fullName: string;
@@ -92,6 +93,19 @@ export default function EditAddressPage() {
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form) return;
+    // Same shared rules as add/edit -- saves a round trip when the phone or
+    // PIN is obviously wrong.
+    const bad =
+      validateRequired(form.fullName, 'Full name') ||
+      validatePhone(form.phone) ||
+      validateRequired(form.addressLine1, 'Address line 1') ||
+      validatePincode(form.postalCode) ||
+      validateRequired(form.city, 'City') ||
+      validateRequired(form.state, 'State');
+    if (bad) {
+      setError(bad);
+      return;
+    }
     setLoading(true);
     setError('');
     try {
