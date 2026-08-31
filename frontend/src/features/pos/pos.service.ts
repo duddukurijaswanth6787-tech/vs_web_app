@@ -56,6 +56,18 @@ export const posService = {
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
+  /**
+   * Reprint a past sale's tax invoice. The receipt is stamped "DUPLICATE COPY"
+   * so it can't be passed off as the original.
+   */
+  async reprintReceipt(orderNumber: string): Promise<{ orderNumber: string; html: string; escposBase64: string }> {
+    const res = await apiClient.get<StandardResponse<{ orderNumber: string; html: string; escposBase64: string }>>(
+      '/pos/receipts/reprint',
+      { params: { orderNumber } },
+    );
+    return res.data.data!;
+  },
+
   /** Carts parked at this till, waiting to be picked back up. */
   async listHeldSessions(terminalId?: string): Promise<HeldSession[]> {
     const res = await apiClient.get<StandardResponse<HeldSession[]>>('/pos/checkout-sessions/held', {

@@ -41,6 +41,7 @@ import {
   useCreateCheckoutSession,
   useHeldSessions,
   useDiscardHeldSession,
+  useReprintReceipt,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -81,6 +82,8 @@ export default function DesktopPosPage() {
 
   // Modals
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
+  const [reprintModalOpen, setReprintModalOpen] = useState(false);
+  const [reprintInput, setReprintInput] = useState('');
   const [handoffPin, setHandoffPin] = useState('');
   const [receiptModalOpen, setReceiptModalOpen] = useState(false);
   const [receiptHtml, setReceiptHtml] = useState('');
@@ -122,6 +125,7 @@ export default function DesktopPosPage() {
   const scanMutation = useScanBarcode();
   const adoptMutation = useAdoptHandoffSession();
   const holdMutation = useCreateCheckoutSession();
+  const reprintMutation = useReprintReceipt();
   const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
@@ -360,6 +364,22 @@ export default function DesktopPosPage() {
         }
         setHandoffModalOpen(false);
         setHandoffPin('');
+      },
+    });
+  };
+
+  // Reprint the tax invoice for a past sale into the same modal a fresh sale
+  // uses; stamped "DUPLICATE COPY" so the counter can\'t reissue an original.
+  const handleReprintReceipt = (orderNumber: string) => {
+    setSaleError('');
+    reprintMutation.mutate(orderNumber, {
+      onSuccess: (res) => {
+        setReceiptHtml(res.html);
+        setReceiptEscposBase64(res.escposBase64);
+        setReceiptModalOpen(true);
+      },
+      onError: (err) => {
+        setSaleError(getApiErrorMessage(err, `Could not reprint ${orderNumber}.`));
       },
     });
   };
@@ -700,6 +720,14 @@ export default function DesktopPosPage() {
             <RotateCcw className="w-4 h-4" />
             <span>Returns</span>
           </Link>
+
+          <button
+            onClick={() => setReprintModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200 transition-colors"
+          >
+            <Printer className="w-4 h-4" />
+            <span>Reprint</span>
+          </button>
 
           <Link
             href="/pos/printers"
@@ -1413,6 +1441,18 @@ export default function DesktopPosPage() {
                       <span>{new Date(ord.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</span>
                       <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">{`${ord.paymentMethod} • ${ord.status}`}</span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setHistoryModalOpen(false);
+                        handleReprintReceipt(ord.orderNumber);
+                      }}
+                      disabled={reprintMutation.isPending}
+                      className="w-full flex items-center justify-center gap-1.5 border border-neutral-300 hover:bg-neutral-100 text-neutral-800 rounded-lg px-2 py-1.5 text-[11px] font-bold disabled:opacity-50"
+                    >
+                      <Printer className="w-3.5 h-3.5" />
+                      <span>Reprint Receipt</span>
+                    </button>
                     {/* Items list */}
                     <div className="border-t border-neutral-200/60 pt-2 space-y-1">
                       {ord.items?.map((it, i) => (
@@ -1437,7 +1477,57 @@ export default function DesktopPosPage() {
         </div>
       )}
 
-      {/* MODAL 4: OFFLINE SALES QUEUE */}
+      {/* Reprint receipt by order number */}
+      {reprintModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2 text-[var(--brand-primary)] font-bold text-sm">
+                <Printer className="w-5 h-5" />
+                <span>Reprint Tax Invoice</span>
+              </div>
+              <button onClick={() => setReprintModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-xs text-neutral-600 leading-relaxed">
+              The reprint is marked &quot;DUPLICATE COPY&quot; on the header so it can&apos;t
+              be mistaken for the original. Every reprint is audit-logged.
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const value = reprintInput.trim();
+                if (!value) return;
+                setReprintModalOpen(false);
+                handleReprintReceipt(value);
+                setReprintInput('');
+              }}
+              className="space-y-3"
+            >
+              <input
+                type="text"
+                value={reprintInput}
+                onChange={(e) => setReprintInput(e.target.value)}
+                placeholder="Order number (e.g. ORD-2026-000123)"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-xs font-mono font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+                autoFocus
+              />
+              <button
+                type="submit"
+                disabled={reprintMutation.isPending || !reprintInput.trim()}
+                className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-2.5 rounded-xl text-xs font-bold disabled:opacity-50"
+              >
+                {reprintMutation.isPending ? 'Loading...' : 'Reprint Receipt'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+            {/* MODAL 4: OFFLINE SALES QUEUE */}
       {syncModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-2xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">

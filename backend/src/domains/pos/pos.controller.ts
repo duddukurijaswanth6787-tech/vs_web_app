@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -188,6 +189,24 @@ export class PosController {
   })
   async previewReceipt(@Body() dto: PreviewReceiptDto) {
     return this.posService.previewReceipt(dto);
+  }
+
+  @Get('receipts/reprint')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Reprint an Existing Tax Invoice (Marked "DUPLICATE COPY", Audited)',
+  })
+  async reprintReceipt(
+    @CurrentUser() user: JwtPayload,
+    @Query('orderNumber') orderNumber: string,
+  ) {
+    if (!orderNumber || !orderNumber.trim()) {
+      throw new BadRequestException('orderNumber is required to reprint a receipt.');
+    }
+    return this.posService.reprintReceipt(orderNumber.trim(), user.sub);
   }
 
   @Get('customers/lookup')

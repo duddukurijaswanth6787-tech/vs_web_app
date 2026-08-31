@@ -512,6 +512,15 @@ export class PosCashMovementDto {
   reason!: string;
 }
 
+/**
+ * Marks a receipt as a duplicate. The header prints "DUPLICATE COPY" so an
+ * over-the-counter reprint can\'t be passed off as the original -- an audit
+ * requirement on Indian GST invoices.
+ */
+export interface ReceiptReprintFlag {
+  isReprint?: boolean;
+}
+
 export class PreviewReceiptDto {
   @ApiProperty()
   @IsString()
@@ -537,6 +546,15 @@ export class PreviewReceiptDto {
   @IsOptional()
   @IsString()
   paymentMethod?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'True when this is a re-issued receipt. The header stamps "DUPLICATE COPY" ' +
+      'so a reprint can\'t be mistaken for the original tax invoice.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isReprint?: boolean;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()

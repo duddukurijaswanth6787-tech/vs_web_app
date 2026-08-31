@@ -23,6 +23,7 @@ describe('PosService (Phase 1 Backend)', () => {
       findVariantByBarcode: jest.fn(),
       findHeldSessions: jest.fn().mockResolvedValue([]),
       findShiftById: jest.fn(),
+      findOrderForReprint: jest.fn(),
       closeShift: jest.fn(),
       getCashMovementForWindow: jest
         .fn()
@@ -222,6 +223,82 @@ describe('PosService (Phase 1 Backend)', () => {
       expect(session.sessionId).toContain('SHOP-2026-');
       expect(session.handoffToken).toHaveLength(7); // "123-456"
       expect(session.grandTotal).toBe(1467.9);
+    });
+  });
+
+  describe('receipt reprint', () => {
+    it('refuses to reprint an order that never existed', async () => {
+      repository.findOrderForReprint.mockResolvedValue(null);
+      await expect(
+        service.reprintReceipt('ORD-NO-SUCH', 'cashier-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rebuilds the receipt from stored order data, stamped as duplicate', async () => {
+      repository.findOrderForReprint.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-2026-001',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CARD',
+        grandTotal: 1468,
+        discountTotal: 0,
+        taxTotal: 176,
+        items: [
+          {
+            productId: 'p1',
+            variantId: 'v1',
+            productName: 'Kurti',
+            variantTitle: 'Blue / L',
+            sku: 'KUR-1',
+            quantity: 2,
+            unitPrice: 699,
+            discountAmount: 0,
+            taxAmount: 176,
+          },
+        ],
+        addresses: [
+          {
+            addressType: 'SHIPPING',
+            fullName: 'Anjali',
+            phone: '9876543210',
+            state: 'Telangana',
+          },
+        ],
+        payments: [{ method: 'CARD' }],
+      });
+      // The printer needs a spy that returns a buffer for buildEscPos.
+      const svcAny = service as any;
+      svcAny.printerService = {
+        generateHtmlInvoiceReceipt: jest
+          .fn()
+          .mockResolvedValue('<html>duplicate html</html>'),
+        buildEscPosInvoiceReceipt: jest.fn().mockResolvedValue(Buffer.from('esc')),
+      };
+
+      const result = await service.reprintReceipt('ORD-2026-001', 'cashier-1');
+      expect(result.orderNumber).toBe('ORD-2026-001');
+      expect(result.html).toContain('duplicate');
+      expect(result.escposBase64).toBe(Buffer.from('esc').toString('base64'));
+      // Every reprint is audited, so an untraceable reprint can't be used to
+      // backdate an invoice.
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'POS_RECEIPT_REPRINTED' }),
+      );
+      // Duplicate flag is set on the DTO passed to the printer.
+      expect(svcAny.printerService.generateHtmlInvoiceReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({ isReprint: true }),
+      );
+    });
+
+    it('refuses to reprint an online-store order (there was no over-the-counter receipt)', async () => {
+      repository.findOrderForReprint.mockResolvedValue({
+        id: 'order-2',
+        orderNumber: 'ORD-WEB-42',
+        channel: 'ONLINE_STORE',
+      });
+      await expect(
+        service.reprintReceipt('ORD-WEB-42', 'cashier-1'),
+      ).rejects.toThrow(/not a POS sale/);
     });
   });
 

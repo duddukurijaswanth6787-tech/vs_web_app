@@ -338,7 +338,7 @@ export class PrinterService {
   </div>
 
   <div class="gstin-line center">GSTIN: <b>${store.gstin || '—'}</b></div>
-  <div class="invoice-title center">TAX INVOICE</div>
+  <div class="invoice-title center">TAX INVOICE${dto.isReprint ? ' (DUPLICATE COPY)' : ''}</div>
 
   <div class="dashed"></div>
 
@@ -462,7 +462,7 @@ export class PrinterService {
     appendLine(`${store.phone}  |  ${store.email}`);
     if (store.gstin) appendLine(`GSTIN: ${store.gstin}`);
     appendBytes([0x1b, 0x45, 0x01]);
-    appendLine('TAX INVOICE');
+    appendLine(dto.isReprint ? 'TAX INVOICE (DUPLICATE COPY)' : 'TAX INVOICE');
     appendBytes([0x1b, 0x45, 0x00]);
     appendLine('--------------------------------');
 

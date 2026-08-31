@@ -50,6 +50,13 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Reprint a past sale's tax invoice, stamped as a duplicate. */
+export function useReprintReceipt() {
+  return useMutation({
+    mutationFn: (orderNumber: string) => posService.reprintReceipt(orderNumber),
+  });
+}
+
 /** Drawer movements recorded against a shift. */
 export function useCashMovements(shiftId?: string) {
   return useQuery({

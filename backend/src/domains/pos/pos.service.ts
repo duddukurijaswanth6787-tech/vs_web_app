@@ -625,6 +625,80 @@ export class PosService {
     };
   }
 
+  /**
+   * Rebuilds the original receipt for a past sale, marked "DUPLICATE COPY".
+   *
+   * Loads the order rather than trusting the till to re-send line data --
+   * that would let a tampered replay produce a "receipt" with new items.
+   * Every reprint is audit-logged: an untraceable reprint is a well-known
+   * way to backdate GST invoices.
+   */
+  async reprintReceipt(orderNumber: string, cashierId: string) {
+    const order = await this.repository.findOrderForReprint(orderNumber);
+    if (!order) {
+      throw new NotFoundException(
+        `No sale found for order number ${orderNumber}`,
+      );
+    }
+    if (order.channel !== 'POS_SHOPORA') {
+      throw new BadRequestException(
+        `${orderNumber} is a ${order.channel} order, not a POS sale, so it has no over-the-counter receipt to reprint.`,
+      );
+    }
+
+    const shipping = order.addresses?.find((a) => a.addressType === 'SHIPPING');
+    // Prefer the first payment method as "the" payment method for the header;
+    // a split bill shows every tender in the payments list below the total.
+    const primaryPayment = order.payments?.[0];
+
+    const dto: PreviewReceiptDto = {
+      orderNumber: order.orderNumber,
+      grandTotal: Number(order.grandTotal),
+      discountTotal: Number(order.discountTotal),
+      taxTotal: Number(order.taxTotal),
+      paymentMethod: (primaryPayment?.method || order.paymentMethod) ?? 'CASH',
+      isReprint: true,
+      items: order.items.map((i) => ({
+        productId: i.productId,
+        productName: i.productName,
+        variantId: i.variantId ?? undefined,
+        sku: i.sku,
+        variantTitle: i.variantTitle ?? undefined,
+        quantity: i.quantity,
+        unitPrice: Number(i.unitPrice),
+        discountAmount: Number(i.discountAmount),
+        taxAmount: Number(i.taxAmount),
+      })),
+      customer: shipping
+        ? {
+            fullName: shipping.fullName,
+            phone: shipping.phone,
+            state: shipping.state,
+          }
+        : undefined,
+    };
+
+    const [html, escpos] = await Promise.all([
+      this.printerService.generateHtmlInvoiceReceipt(dto),
+      this.printerService.buildEscPosInvoiceReceipt(dto),
+    ]);
+
+    await this.auditService.log({
+      action: 'POS_RECEIPT_REPRINTED',
+      module: 'pos',
+      resource: 'order',
+      resourceId: order.id,
+      userId: cashierId,
+      newValue: { orderNumber: order.orderNumber },
+    });
+
+    return {
+      orderNumber: order.orderNumber,
+      html,
+      escposBase64: escpos.toString('base64'),
+    };
+  }
+
   async previewReceipt(dto: PreviewReceiptDto) {
     const html = await this.printerService.generateHtmlInvoiceReceipt(dto);
     const escposBuffer =

@@ -533,6 +533,22 @@ export class PosRepository {
     });
   }
 
+  /**
+   * Everything a receipt reprint needs: line items with their variants (for
+   * HSN lookup later), the shipping address (for the customer name/phone), and
+   * the recorded payments (so a split bill reprints with both tenders).
+   */
+  async findOrderForReprint(orderNumber: string) {
+    return this.prisma.order.findUnique({
+      where: { orderNumber },
+      include: {
+        items: true,
+        addresses: true,
+        payments: { orderBy: { createdAt: 'asc' } },
+      },
+    });
+  }
+
   async findOrderByOrderNumber(orderNumber: string) {
     return this.prisma.order.findUnique({
       where: { orderNumber },
