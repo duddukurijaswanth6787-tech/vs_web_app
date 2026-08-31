@@ -136,6 +136,10 @@ export interface BatchStickersPayload {
   sku: string;
   barcode: string;
   price: number;
+  /** MRP for the "incl. of all taxes" line on the sticker. Optional. */
+  mrp?: number;
+  /** HSN code for the sticker footer. Optional. */
+  hsnCode?: string;
   quantity: number;
   storeName?: string;
   labelSize?: LabelSize;

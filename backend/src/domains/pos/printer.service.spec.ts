@@ -15,6 +15,8 @@ describe('PrinterService (Phase 2)', () => {
           provide: PrismaService,
           useValue: {
             websiteSetting: { findFirst: jest.fn().mockResolvedValue(null) },
+            // HSN lookup joins Product for each printed line item.
+            product: { findMany: jest.fn().mockResolvedValue([]) },
           },
         },
       ],

@@ -10,6 +10,11 @@ interface StoreSettings {
   phone: string;
   email: string;
   website: string;
+  // Fields printed in the GST-compliant invoice header.
+  gstin: string;
+  city: string;
+  state: string;
+  pincode: string;
 }
 
 const FALLBACK_SETTINGS: StoreSettings = {
@@ -19,6 +24,12 @@ const FALLBACK_SETTINGS: StoreSettings = {
   phone: '+91 98765 43210',
   email: 'support@vsboutique.shop',
   website: 'www.vsboutique.shop',
+  // Left blank when the shop hasn't configured them yet -- rendering shows
+  // a dash rather than fake data, so an unset GSTIN is visible on the paper.
+  gstin: '',
+  city: 'Hyderabad',
+  state: 'Telangana',
+  pincode: '500034',
 };
 
 const BELOW_TWENTY = [
@@ -76,6 +87,10 @@ export class PrinterService {
       phone: settings.supportPhone || FALLBACK_SETTINGS.phone,
       email: settings.supportEmail || FALLBACK_SETTINGS.email,
       website: FALLBACK_SETTINGS.website,
+      gstin: settings.companyGstin || FALLBACK_SETTINGS.gstin,
+      city: settings.companyCity || FALLBACK_SETTINGS.city,
+      state: settings.companyState || FALLBACK_SETTINGS.state,
+      pincode: settings.companyPincode || FALLBACK_SETTINGS.pincode,
     };
   }
 
@@ -113,7 +128,38 @@ export class PrinterService {
     return parts.join(' ');
   }
 
-  private computeTotals(dto: PreviewReceiptDto) {
+  /**
+   * Fetches the HSN code for each item's product so it can be printed against
+   * the line -- required on a GST tax invoice for garments.
+   */
+  private async loadHsnCodes(
+    dto: PreviewReceiptDto,
+  ): Promise<Map<string, string>> {
+    const ids = Array.from(
+      new Set(dto.items.map((i) => i.productId).filter(Boolean)),
+    ) as string[];
+    if (ids.length === 0) return new Map();
+    const rows = await this.prisma.product.findMany({
+      where: { id: { in: ids } },
+      select: { id: true, hsnCode: true },
+    });
+    return new Map(rows.map((r) => [r.id, r.hsnCode || '']));
+  }
+
+  /**
+   * Two customers in the same state pay CGST + SGST (split half-and-half);
+   * a customer in a different state pays IGST at the full rate on one line.
+   *
+   * A walk-in with no state given is treated as intra-state, since the shop
+   * itself is the place of supply.
+   */
+  private isInterstate(store: StoreSettings, dto: PreviewReceiptDto): boolean {
+    const customerState = (dto.customer?.state || '').trim().toLowerCase();
+    if (!customerState) return false;
+    return customerState !== store.state.trim().toLowerCase();
+  }
+
+  private computeTotals(dto: PreviewReceiptDto, interstate: boolean) {
     const subtotal = dto.items.reduce(
       (s, i) => s + i.unitPrice * i.quantity,
       0,
@@ -121,34 +167,48 @@ export class PrinterService {
     const discountTotal = dto.discountTotal || 0;
     const taxableAmount = Math.max(0, subtotal - discountTotal);
     const taxTotal = dto.taxTotal || 0;
-    const cgstAmount = Math.round((taxTotal / 2) * 100) / 100;
-    const sgstAmount = taxTotal - cgstAmount;
-    const gstRateHalf =
+    const igstAmount = interstate ? taxTotal : 0;
+    const cgstAmount = interstate
+      ? 0
+      : Math.round((taxTotal / 2) * 100) / 100;
+    const sgstAmount = interstate ? 0 : taxTotal - cgstAmount;
+    const fullGstRate =
       taxableAmount > 0
-        ? Math.round((taxTotal / 2 / taxableAmount) * 1000) / 10
+        ? Math.round((taxTotal / taxableAmount) * 1000) / 10
         : 0;
+    const halfGstRate =
+      Math.round((fullGstRate / 2) * 10) / 10;
     return {
       subtotal,
       discountTotal,
       taxableAmount,
       taxTotal,
+      igstAmount,
       cgstAmount,
       sgstAmount,
-      gstRateHalf,
+      fullGstRate,
+      halfGstRate,
+      interstate,
     };
   }
 
   async generateHtmlInvoiceReceipt(dto: PreviewReceiptDto): Promise<string> {
     const store = await this.getStoreSettings();
+    const interstate = this.isInterstate(store, dto);
     const {
       subtotal,
       discountTotal,
       taxableAmount,
       taxTotal,
+      igstAmount,
       cgstAmount,
       sgstAmount,
-      gstRateHalf,
-    } = this.computeTotals(dto);
+      fullGstRate,
+      halfGstRate,
+    } = this.computeTotals(dto, interstate);
+    // Looked up once from the DB rather than repeated per line -- keeps the
+    // rendering path a single query even for a big cart.
+    const hsnByProduct = await this.loadHsnCodes(dto);
 
     const [nameLine1, ...nameRest] = store.storeName.split(' ');
     const nameLine2 = nameRest.join(' ');
@@ -183,10 +243,12 @@ export class PrinterService {
     const itemsHtml = dto.items
       .map((item, idx) => {
         const total = item.unitPrice * item.quantity;
+        const hsn = hsnByProduct.get(item.productId) || '-';
         return `
         <tr>
           <td class="center">${idx + 1}</td>
           <td class="item-name">${item.productName}</td>
+          <td class="center hsn-cell">${hsn}</td>
           <td class="center">${item.variantTitle || '-'}</td>
           <td class="center">${item.quantity}</td>
           <td class="right">${item.unitPrice.toFixed(2)}</td>
@@ -249,6 +311,9 @@ export class PrinterService {
     .code-caption { font-size: 7px; color: #555; letter-spacing: 0.5px; margin-top: 2px; }
     .policy-title { font-size: 8px; font-weight: 800; }
     .policy-list { font-size: 7.5px; margin: 3px 0 0; padding-left: 12px; line-height: 1.5; }
+    .gstin-line { font-size: 9px; font-weight: 700; letter-spacing: 0.5px; margin-top: 3px; }
+    .invoice-title { font-family: Georgia, 'Times New Roman', serif; font-size: 11px; font-weight: 800; letter-spacing: 3px; margin-top: 2px; }
+    .hsn-cell { font-family: monospace; font-size: 7.5px; }
     .thank-you { font-family: Georgia, 'Times New Roman', serif; font-style: italic; font-size: 16px; text-align: center; margin-top: 4px; }
     .visit-again { font-size: 8px; font-weight: 800; letter-spacing: 1px; text-align: center; }
     .footer-line { font-size: 7px; text-align: center; letter-spacing: 0.5px; color: #444; margin-top: 4px; }
@@ -267,9 +332,13 @@ export class PrinterService {
 
   <div class="info-line center">
     ${store.address}<br/>
+    ${store.city}${store.pincode ? ` - ${store.pincode}` : ''}${store.state ? `, ${store.state}` : ''}<br/>
     ${store.email} &nbsp;|&nbsp; ${store.phone}<br/>
     ${store.website}
   </div>
+
+  <div class="gstin-line center">GSTIN: <b>${store.gstin || '—'}</b></div>
+  <div class="invoice-title center">TAX INVOICE</div>
 
   <div class="dashed"></div>
 
@@ -279,7 +348,8 @@ export class PrinterService {
   ${dto.cashierName ? `<div class="meta-row"><span class="meta-label">Cashier</span><span class="meta-val">${dto.cashierName}</span></div>` : ''}
 
   <div class="bill-to-badge">BILL TO</div>
-  <div class="bill-to-line">${customerName}${customerPhone ? `<br/>Mobile: ${customerPhone}` : ''}</div>
+  <div class="bill-to-line">${customerName}${customerPhone ? `<br/>Mobile: ${customerPhone}` : ''}${dto.customer?.state ? `<br/>State: ${dto.customer.state}` : ''}${dto.customer?.gstin ? `<br/>GSTIN: ${dto.customer.gstin}` : ''}</div>
+  <div class="bill-to-line" style="color:#555;font-size:8px;">Place of Supply: ${dto.customer?.state || store.state}${interstate ? ' (Inter-state -- IGST)' : ' (Intra-state)'}</div>
 
   <div class="dashed"></div>
 
@@ -288,6 +358,7 @@ export class PrinterService {
       <tr>
         <th>#</th>
         <th style="text-align:left">Item</th>
+        <th>HSN</th>
         <th>Size</th>
         <th>Qty</th>
         <th>Rate</th>
@@ -305,9 +376,12 @@ export class PrinterService {
     <tr><td>Taxable Amount</td><td class="right">₹${taxableAmount.toFixed(2)}</td></tr>
     ${
       taxTotal
-        ? `
-    <tr><td>CGST (${gstRateHalf}%)</td><td class="right">₹${cgstAmount.toFixed(2)}</td></tr>
-    <tr><td>SGST (${gstRateHalf}%)</td><td class="right">₹${sgstAmount.toFixed(2)}</td></tr>`
+        ? interstate
+          ? `
+    <tr><td>IGST (${fullGstRate}%)</td><td class="right">₹${igstAmount.toFixed(2)}</td></tr>`
+          : `
+    <tr><td>CGST (${halfGstRate}%)</td><td class="right">₹${cgstAmount.toFixed(2)}</td></tr>
+    <tr><td>SGST (${halfGstRate}%)</td><td class="right">₹${sgstAmount.toFixed(2)}</td></tr>`
         : ''
     }
   </table>
@@ -352,15 +426,19 @@ export class PrinterService {
 
   async buildEscPosInvoiceReceipt(dto: PreviewReceiptDto): Promise<Buffer> {
     const store = await this.getStoreSettings();
+    const interstate = this.isInterstate(store, dto);
     const {
       subtotal,
       discountTotal,
       taxableAmount,
       taxTotal,
+      igstAmount,
       cgstAmount,
       sgstAmount,
-      gstRateHalf,
-    } = this.computeTotals(dto);
+      fullGstRate,
+      halfGstRate,
+    } = this.computeTotals(dto, interstate);
+    const hsnByProduct = await this.loadHsnCodes(dto);
     const commands: number[] = [];
 
     const appendBytes = (bytes: number[]) => commands.push(...bytes);
@@ -380,7 +458,12 @@ export class PrinterService {
     appendBytes([0x1b, 0x45, 0x00]); // Bold Off
     appendLine('Style that defines you');
     appendLine(store.address);
+    appendLine(`${store.city} - ${store.pincode}, ${store.state}`);
     appendLine(`${store.phone}  |  ${store.email}`);
+    if (store.gstin) appendLine(`GSTIN: ${store.gstin}`);
+    appendBytes([0x1b, 0x45, 0x01]);
+    appendLine('TAX INVOICE');
+    appendBytes([0x1b, 0x45, 0x00]);
     appendLine('--------------------------------');
 
     appendBytes([0x1b, 0x61, 0x00]); // Align Left
@@ -390,35 +473,47 @@ export class PrinterService {
     appendLine(
       `Customer: ${dto.customer?.fullName || 'Walk-in'}${dto.customer?.phone ? ` (${dto.customer.phone})` : ''}`,
     );
+    if (dto.customer?.gstin) appendLine(`Cust GSTIN: ${dto.customer.gstin}`);
+    appendLine(
+      `Place of Supply: ${dto.customer?.state || store.state}${interstate ? ' (IGST)' : ''}`,
+    );
     appendLine('--------------------------------');
 
-    appendLine('Item          Qty   Price   Total');
-    appendLine('--------------------------------');
+    appendLine('Item          HSN   Qty  Rate   Total');
+    appendLine('----------------------------------------');
     dto.items.forEach((item) => {
       const name =
         item.productName.length > 12
           ? item.productName.slice(0, 12)
           : item.productName.padEnd(12);
+      const hsnRaw = hsnByProduct.get(item.productId) || '-';
+      const hsn = (hsnRaw.length > 5 ? hsnRaw.slice(0, 5) : hsnRaw).padEnd(5);
       const qty = String(item.quantity).padStart(3);
-      const price = String(item.unitPrice.toFixed(0)).padStart(7);
+      const price = String(item.unitPrice.toFixed(0)).padStart(5);
       const total = String(
         (item.unitPrice * item.quantity).toFixed(0),
-      ).padStart(7);
-      appendLine(`${name} ${qty} ${price} ${total}`);
+      ).padStart(6);
+      appendLine(`${name} ${hsn} ${qty} ${price} ${total}`);
     });
-    appendLine('--------------------------------');
+    appendLine('----------------------------------------');
 
     appendLine(`Sub Total:            Rs.${subtotal.toFixed(2)}`);
     if (discountTotal)
       appendLine(`Discount:            -Rs.${discountTotal.toFixed(2)}`);
     appendLine(`Taxable Amount:       Rs.${taxableAmount.toFixed(2)}`);
     if (taxTotal) {
-      appendLine(
-        `CGST (${gstRateHalf}%):          Rs.${cgstAmount.toFixed(2)}`,
-      );
-      appendLine(
-        `SGST (${gstRateHalf}%):          Rs.${sgstAmount.toFixed(2)}`,
-      );
+      if (interstate) {
+        appendLine(
+          `IGST (${fullGstRate}%):          Rs.${igstAmount.toFixed(2)}`,
+        );
+      } else {
+        appendLine(
+          `CGST (${halfGstRate}%):          Rs.${cgstAmount.toFixed(2)}`,
+        );
+        appendLine(
+          `SGST (${halfGstRate}%):          Rs.${sgstAmount.toFixed(2)}`,
+        );
+      }
     }
     appendLine('--------------------------------');
     appendBytes([0x1b, 0x45, 0x01]); // Bold On

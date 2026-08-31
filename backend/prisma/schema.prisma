@@ -2334,6 +2334,11 @@ model WebsiteSetting {
   language         String    @default("en")
   copyrightText    String?
   maintenanceMode  Boolean   @default(false)
+  // Fields that appear on a GST-compliant tax invoice header.
+  companyGstin     String?
+  companyCity      String?
+  companyState     String?
+  companyPincode   String?
   metaTitle        String?
   metaDescription  String?
   metaKeywords     String?

@@ -90,6 +90,25 @@ export class PosCustomerInfoDto {
   @IsOptional()
   @IsString()
   email?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Customer's state. When it differs from the shop's state the invoice " +
+      'switches from CGST + SGST to a single IGST line, as GST law requires. ' +
+      'Optional; walk-in sales default to the shop\'s state.',
+  })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Customer GSTIN for B2B sales; printed on the tax invoice so the buyer ' +
+      'can claim the input credit.',
+  })
+  @IsOptional()
+  @IsString()
+  gstin?: string;
 }
 
 export class ScanBarcodeDto {
@@ -398,6 +417,24 @@ export class GenerateBatchStickersDto {
   @ApiProperty()
   @IsNumber()
   price!: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Maximum Retail Price, inclusive of taxes. Printed on the label for ' +
+      'garments where MRP disclosure is required.',
+  })
+  @IsOptional()
+  @IsNumber()
+  mrp?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'HSN code for the item. Printed on the label so a return counter ' +
+      'can look the product up without unpicking the SKU.',
+  })
+  @IsOptional()
+  @IsString()
+  hsnCode?: string;
 
   @ApiProperty({ default: 1 })
   @IsNumber()
