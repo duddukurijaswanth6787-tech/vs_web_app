@@ -23,7 +23,7 @@ function PosLoginForm() {
   const { login, isStaffUser } = useAuth();
 
   const [email, setEmail] = useState('admin@vasanthi.com');
-  const [password, setPassword] = useState('Admin@12345');
+  const [password, setPassword] = useState('Admin@123');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -61,7 +61,7 @@ function PosLoginForm() {
 
   const fillSuperAdmin = () => {
     setEmail('admin@vasanthi.com');
-    setPassword('Admin@12345');
+    setPassword('Admin@123');
     setPin('1234');
     setError('');
   };
