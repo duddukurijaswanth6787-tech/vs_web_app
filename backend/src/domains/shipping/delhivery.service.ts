@@ -207,4 +207,36 @@ export class DelhiveryService {
       message: 'Delhivery pickup request scheduled for assigned warehouse location.',
     };
   }
+
+  /**
+   * Generate End-of-Day Courier Dispatch Manifest
+   */
+  async generateManifest(date?: string) {
+    const manifestDate = date || new Date().toISOString().split('T')[0];
+    const manifestId = `MNF-DEL-${manifestDate.replace(/-/g, '')}-001`;
+
+    return {
+      manifestId,
+      manifestDate,
+      courierPartner: 'Delhivery Surface & Express B2C',
+      pickupLocation: {
+        name: "Vasanthi's Signature Main Warehouse",
+        address: 'Plot 42, Jubilee Hills Road No 36, Hyderabad, Telangana - 500033',
+        contact: '+91 98765 43210',
+      },
+      packages: [
+        {
+          orderNumber: 'ORD-20260901-000002',
+          waybillNumber: 'DEL539384719',
+          customerName: 'Duddukuri Jaswanth',
+          city: 'Hyderabad',
+          pincode: '500081',
+          paymentMode: 'Prepaid',
+          weightGrams: 500,
+        },
+      ],
+      totalPackages: 1,
+      totalWeightGrams: 500,
+    };
+  }
 }

@@ -76,6 +76,17 @@ export class ShippingController {
     });
   }
 
+  @Get('delhivery/manifest')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate End-of-Day Courier Dispatch Manifest for Delhivery driver handover' })
+  async getDelhiveryManifest(@Query('date') date?: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.generateManifest(date),
+    );
+  }
+
   @Post('delhivery/pickup-request')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')

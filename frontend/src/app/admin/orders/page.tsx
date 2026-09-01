@@ -5,11 +5,12 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useOrderList } from '@/features/orders/order.hooks';
 import type { OrderResponse } from '@/features/orders/order.types';
 import { OrderStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
-import { Search, Eye } from 'lucide-react';
+import { Search, Eye, FileText } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDate } from '@/utils/format';
 import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
+import { apiClient } from '@/lib/api/client';
 
 export default function OrdersPage() {
   const router = useRouter();
@@ -30,6 +31,100 @@ export default function OrdersPage() {
     channel: channel || undefined,
     status: status || undefined, startDate: startDate || undefined, endDate: endDate || undefined,
   });
+
+  const handleExportManifest = async () => {
+    try {
+      const res = await apiClient.get('/shipping/delhivery/manifest');
+      const manifest = res.data?.data;
+      if (!manifest) return;
+
+      const printWin = window.open('', 'ManifestPrint', 'width=800,height=1000');
+      if (!printWin) return;
+
+      printWin.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Delhivery Manifest - ${manifest.manifestId}</title>
+          <style>
+            body { font-family: sans-serif; padding: 24px; color: #111; }
+            .header { display: flex; justify-content: space-between; border-bottom: 2px solid #000; padding-bottom: 12px; }
+            .title { font-size: 20px; font-weight: bold; }
+            .meta { margin-top: 16px; font-size: 13px; line-height: 1.6; }
+            table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+            th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+            th { background: #f4f4f4; }
+            .sig-box { margin-top: 40px; display: flex; justify-content: space-between; font-size: 12px; }
+            .sig-line { border-top: 1px dashed #000; width: 200px; text-align: center; padding-top: 6px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="title">COURIER DISPATCH MANIFEST</div>
+              <div style="font-size: 12px; color: #555;">${manifest.courierPartner}</div>
+            </div>
+            <div style="text-align: right;">
+              <div style="font-family: monospace; font-size: 16px; font-weight: bold;">${manifest.manifestId}</div>
+              <div style="font-size: 12px;">Date: ${manifest.manifestDate}</div>
+            </div>
+          </div>
+
+          <div class="meta">
+            <strong>Pickup Location:</strong> ${manifest.pickupLocation.name}<br>
+            <strong>Address:</strong> ${manifest.pickupLocation.address}<br>
+            <strong>Contact:</strong> ${manifest.pickupLocation.contact}
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Order Ref</th>
+                <th>AWB / Waybill</th>
+                <th>Customer Name</th>
+                <th>Destination</th>
+                <th>Payment</th>
+                <th>Weight</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${manifest.packages.map((pkg: any, idx: number) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td><strong>${pkg.orderNumber}</strong></td>
+                  <td style="font-family: monospace;">${pkg.waybillNumber}</td>
+                  <td>${pkg.customerName}</td>
+                  <td>${pkg.city} (${pkg.pincode})</td>
+                  <td>${pkg.paymentMode}</td>
+                  <td>${pkg.weightGrams}g</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div style="margin-top: 16px; font-size: 13px; text-align: right;">
+            <strong>Total Packages:</strong> ${manifest.totalPackages} &nbsp;|&nbsp; 
+            <strong>Total Weight:</strong> ${manifest.totalWeightGrams}g
+          </div>
+
+          <div class="sig-box">
+            <div>
+              <div class="sig-line">Warehouse Executive Signature</div>
+            </div>
+            <div>
+              <div class="sig-line">Delhivery Driver Signature & Name</div>
+            </div>
+          </div>
+          <script>window.onload = function() { window.print(); };</script>
+        </body>
+        </html>
+      `);
+      printWin.document.close();
+    } catch {
+      alert('Failed to generate End-of-Day manifest.');
+    }
+  };
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -82,6 +177,13 @@ export default function OrdersPage() {
               </div>
               <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0 min-h-[38px] flex items-center justify-center">Apply</button>
             </form>
+            <button
+              type="button"
+              onClick={handleExportManifest}
+              className="w-full sm:w-auto px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0 min-h-[38px] flex items-center justify-center gap-1.5 shadow-2xs transition"
+            >
+              <FileText className="w-3.5 h-3.5" /> 📄 Export End-of-Day Manifest
+            </button>
             <select value={channel} onChange={(e) => updateQuery('channel', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Channels</option>
               <option value="ONLINE_STORE">🌐 Online Store</option>
