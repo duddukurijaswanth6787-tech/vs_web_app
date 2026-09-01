@@ -17,7 +17,7 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import {
   PermissionsGuard,
   Permissions,
@@ -150,6 +150,7 @@ export class PosController {
   }
 
   @Get('barcodes/generate')
+  @Public()
   @ApiOperation({
     summary: 'Generate Code128 / EAN / QR Barcode PNG Image Stream',
   })
