@@ -84,8 +84,8 @@ export default function OrdersPage() {
             </form>
             <select value={channel} onChange={(e) => updateQuery('channel', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Channels</option>
-              <option value="ONLINE">🌐 Online Store</option>
-              <option value="POS">📱 Mobile POS / Store</option>
+              <option value="ONLINE_STORE">🌐 Online Store</option>
+              <option value="POS_SHOPORA">📱 Mobile POS / Store</option>
             </select>
             <select value={status} onChange={(e) => updateQuery('status', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Statuses</option>

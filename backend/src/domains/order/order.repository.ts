@@ -38,7 +38,15 @@ export class OrderRepository {
         { notes: { contains: search, mode: 'insensitive' } },
       ];
     }
-    if (channel) where.channel = channel as any;
+    if (channel) {
+      if (channel === 'ONLINE' || channel === 'ONLINE_STORE') {
+        where.channel = 'ONLINE_STORE' as any;
+      } else if (channel === 'POS' || channel === 'POS_SHOPORA') {
+        where.channel = 'POS_SHOPORA' as any;
+      } else {
+        where.channel = channel as any;
+      }
+    }
     if (status) where.status = status;
     if (customerId) where.customerId = customerId;
     if (startDate || endDate) {
