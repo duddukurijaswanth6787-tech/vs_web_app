@@ -41,8 +41,11 @@ export const canAccessRoute = (
   // app/pos/layout.tsx and the confinement redirect in app/admin/layout.tsx —
   // so this only matters for a nav item that's rendered inside AdminSidebar
   // while such an account is mid-redirect.
-  if (isPosOnlyRole && !isAdminOrSuperAdmin) {
-    return route.href ? route.href.startsWith('/pos') : false;
+  if (!isAdminOrSuperAdmin) {
+    return route.href
+      ? route.href.startsWith('/pos') ||
+          route.href === '/admin/quotations'
+      : false;
   }
 
   // If the route doesn't specify roles or permissions, anyone authorized in admin shell can access
