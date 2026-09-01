@@ -32,6 +32,8 @@ export interface CompleteSaleCorePayload {
    * this phone's shift however long it waits offline.
    */
   terminalId?: string;
+  /** Coupon code applied at the till; the server re-validates + rebooks on sync. */
+  couponCode?: string;
 }
 
 /** A sale that was completed on the phone while the backend was unreachable, queued locally for sync. */

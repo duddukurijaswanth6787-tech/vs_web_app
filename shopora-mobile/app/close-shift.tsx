@@ -36,6 +36,13 @@ export default function CloseShiftScreen() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [closed, setClosed] = useState<any>(null);
+  // Cash in/out on the phone. Values are recorded against the open shift so
+  // the expected drawer amount here refreshes with each movement.
+  const [movementDir, setMovementDir] = useState<'OUT' | 'IN'>('OUT');
+  const [movementAmount, setMovementAmount] = useState('');
+  const [movementReason, setMovementReason] = useState('');
+  const [movementSubmitting, setMovementSubmitting] = useState(false);
+  const [movementError, setMovementError] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -54,6 +61,38 @@ export default function CloseShiftScreen() {
   const countedNum = parseFloat(counted);
   const hasCount = Number.isFinite(countedNum);
   const variance = hasCount ? countedNum - expected : 0;
+
+  // Wraps the API call and refetches the shift so expectedCash re-renders --
+  // otherwise the drawer figure stays out of date until you leave and come back.
+  const handleRecordMovement = async () => {
+    const amount = parseFloat(movementAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setMovementError('Enter an amount greater than zero.');
+      return;
+    }
+    if (!movementReason.trim()) {
+      setMovementError('Say why: an unexplained drawer movement is a red flag.');
+      return;
+    }
+    setMovementError('');
+    setMovementSubmitting(true);
+    try {
+      await posMobileService.recordCashMovement(shift.terminalId, {
+        direction: movementDir,
+        amount,
+        reason: movementReason.trim(),
+      });
+      setMovementAmount('');
+      setMovementReason('');
+      // Refresh the shift so expectedCash on the screen reflects the movement.
+      const s2 = await posMobileService.getCurrentShift(shift.terminalId);
+      if (s2) setShift(s2);
+    } catch (err: any) {
+      setMovementError(err?.response?.data?.message || 'Could not record.');
+    } finally {
+      setMovementSubmitting(false);
+    }
+  };
 
   const handleClose = async () => {
     if (!hasCount || countedNum < 0) {
@@ -117,6 +156,49 @@ export default function CloseShiftScreen() {
             <View style={styles.statRow}>
               <Text style={styles.statLabel}>Expected in drawer</Text>
               <Text style={styles.statValue}>{rupees(expected)}</Text>
+            </View>
+
+            <View style={styles.movementCard}>
+              <Text style={styles.movementTitle}>Cash In / Out</Text>
+              <View style={styles.movementRow}>
+                <TouchableOpacity
+                  onPress={() => setMovementDir('OUT')}
+                  style={[styles.movementBtn, movementDir === 'OUT' && styles.movementBtnActive]}
+                >
+                  <Text style={movementDir === 'OUT' ? styles.movementBtnTextActive : styles.movementBtnText}>Paid Out</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setMovementDir('IN')}
+                  style={[styles.movementBtn, movementDir === 'IN' && styles.movementBtnActive]}
+                >
+                  <Text style={movementDir === 'IN' ? styles.movementBtnTextActive : styles.movementBtnText}>Paid In</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                value={movementAmount}
+                onChangeText={setMovementAmount}
+                placeholder="Amount"
+                placeholderTextColor="#a3a3a3"
+                keyboardType="decimal-pad"
+                style={styles.input}
+              />
+              <TextInput
+                value={movementReason}
+                onChangeText={setMovementReason}
+                placeholder="Reason (e.g. paid courier)"
+                placeholderTextColor="#a3a3a3"
+                style={styles.input}
+              />
+              {!!movementError && <Text style={styles.errorText}>{movementError}</Text>}
+              <TouchableOpacity
+                onPress={handleRecordMovement}
+                disabled={movementSubmitting}
+                style={[styles.movementRecord, movementSubmitting && { opacity: 0.5 }]}
+              >
+                <Text style={styles.movementRecordText}>
+                  {movementSubmitting ? 'Recording...' : 'Record'}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <Text style={styles.label}>Cash counted</Text>
@@ -195,6 +277,15 @@ export default function CloseShiftScreen() {
 }
 
 const styles = StyleSheet.create({
+  movementCard: { backgroundColor: '#fafafa', borderRadius: 12, padding: 12, marginTop: 16, marginBottom: 4, borderWidth: 1, borderColor: '#e5e5e5', gap: 8 },
+  movementTitle: { fontSize: 11, fontWeight: '800', color: '#525252', textTransform: 'uppercase', letterSpacing: 0.4 },
+  movementRow: { flexDirection: 'row', gap: 8 },
+  movementBtn: { flex: 1, borderWidth: 1, borderColor: '#d4d4d4', backgroundColor: '#ffffff', borderRadius: 8, paddingVertical: 8, alignItems: 'center' },
+  movementBtnActive: { backgroundColor: '#171717', borderColor: '#171717' },
+  movementBtnText: { fontSize: 12, fontWeight: '700', color: '#525252' },
+  movementBtnTextActive: { fontSize: 12, fontWeight: '700', color: '#ffffff' },
+  movementRecord: { backgroundColor: '#171717', borderRadius: 8, paddingVertical: 10, alignItems: 'center' },
+  movementRecordText: { fontSize: 12, fontWeight: '700', color: '#ffffff' },
   screen: { flex: 1, backgroundColor: '#fafafa' },
   header: {
     flexDirection: 'row',

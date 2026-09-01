@@ -334,12 +334,16 @@ export const posMobileService = {
     notes?: string;
     clientOrderNumber?: string;
     isOfflineSync?: boolean;
-    /**
-     * Register this sale bills against. Decides which shift's drawer the cash
-     * is counted in, so it has to be this device's own terminal -- omitting
-     * it falls back to the shared default on the server.
-     */
     terminalId?: string;
+    /** Multiple tenders on one bill. Server validates the sum covers the total. */
+    splitPayments?: { method: 'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'; amount: number }[];
+    /** Promo code applied at the till. Server rebooks after the sale exists. */
+    couponCode?: string;
+    /** Gift cards paid with. Each is booked as its own tender + redemption. */
+    giftCardTenders?: { code: string; amount: number }[];
+    /** Loyalty points to redeem, 1 point = Rs.1. Needs loyaltyCustomerId. */
+    loyaltyPointsRedeem?: number;
+    loyaltyCustomerId?: string;
   }) {
     const res = await posApiClient.post('/pos/sales/complete', {
       ...payload,
@@ -377,7 +381,64 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
-  /** GET /pos/shifts/:id/report — the X/Z read for a shift. */
+  /** POST /pos/shifts/cash-movements -- petty cash in or out of the drawer. */
+  async recordCashMovement(
+    terminalId: string,
+    payload: { direction: 'IN' | 'OUT'; amount: number; reason: string },
+  ) {
+    const res = await posApiClient.post('/pos/shifts/cash-movements', payload, {
+      params: { terminalId },
+    });
+    return unwrap<any>(res);
+  },
+
+  /** GET /pos/shifts/:id/cash-movements -- every drawer movement in a shift. */
+  async listCashMovements(shiftId: string) {
+    const res = await posApiClient.get(`/pos/shifts/${shiftId}/cash-movements`);
+    return unwrap<any>(res);
+  },
+
+  /** POST /pos/coupons/validate -- preview a coupon against the current cart. */
+  async validateCoupon(payload: {
+    code: string;
+    items: PosMobileCartItem[];
+    discountTotal?: number;
+  }) {
+    const res = await posApiClient.post('/pos/coupons/validate', {
+      code: payload.code,
+      items: payload.items.map(toApiCartItem),
+      discountTotal: payload.discountTotal,
+    });
+    return unwrap<{ code: string; discountAmount: number; message: string }>(res);
+  },
+
+  /** POST /pos/gift-cards/balance -- read a gift card's remaining balance. */
+  async lookupGiftCardBalance(code: string) {
+    const res = await posApiClient.post('/pos/gift-cards/balance', { code });
+    return unwrap<{ code: string; balance: number; status: string }>(res);
+  },
+
+  /** GET /pos/loyalty/balance -- customer's points balance + rupee equivalent. */
+  async lookupLoyaltyBalance(customerId: string) {
+    const res = await posApiClient.get('/pos/loyalty/balance', { params: { customerId } });
+    return unwrap<{ customerId: string; pointsBalance: number; tier: string; pointValueRupees: number; rupeeEquivalent: number; isActive: boolean }>(res);
+  },
+
+  /** POST /pos/cashier/switch -- swap the till JWT for the cashier whose PIN matches. */
+  async switchCashier(pin: string, terminalId?: string) {
+    const res = await posApiClient.post('/pos/cashier/switch', { pin }, {
+      params: terminalId ? { terminalId } : undefined,
+    });
+    return unwrap<{ token: string; user: { id: string; fullName: string; email: string; roles: string[] } }>(res);
+  },
+
+  /** GET /pos/receipts/reprint -- reprint a past sale marked DUPLICATE COPY. */
+  async reprintReceipt(orderNumber: string) {
+    const res = await posApiClient.get('/pos/receipts/reprint', { params: { orderNumber } });
+    return unwrap<{ orderNumber: string; html: string; escposBase64: string }>(res);
+  },
+
+    /** GET /pos/shifts/:id/report — the X/Z read for a shift. */
   async getShiftReport(shiftId: string) {
     const res = await posApiClient.get(`/pos/shifts/${shiftId}/report`);
     return unwrap<any>(res);

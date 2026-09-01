@@ -38,6 +38,13 @@ export default function MobilePaymentScreen() {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
+  // Coupon at the till. Server validates against the current cart and
+  // returns the discount; the code + discount go on the completeSale
+  // payload where the server rebooks usage against the created order.
+  const [couponInput, setCouponInput] = useState('');
+  const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [couponBusy, setCouponBusy] = useState(false);
+  const [couponError, setCouponError] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -124,6 +131,26 @@ export default function MobilePaymentScreen() {
 
   const grandTotal = Number(grandTotalStr || '0');
 
+  const handleApplyCoupon = async () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponError('');
+    setCouponBusy(true);
+    try {
+      const data = await posMobileService.validateCoupon({
+        code,
+        items: cartItems,
+      });
+      setCouponApplied({ code: data.code, discountAmount: data.discountAmount });
+      setCouponInput('');
+    } catch (err) {
+      setCouponApplied(null);
+      setCouponError(getApiErrorMessage(err, 'Coupon could not be applied.'));
+    } finally {
+      setCouponBusy(false);
+    }
+  };
+
   const handleCompleteSale = async () => {
     if (shiftRequired) {
       Alert.alert('Shift Required', 'Open a shift before billing so cash sales can be reconciled at close.');
@@ -139,6 +166,7 @@ export default function MobilePaymentScreen() {
         // Bills to this phone's register, so the sale lands in the shift
         // whose drawer actually holds the cash.
         terminalId,
+        couponCode: couponApplied?.code,
       });
 
       router.push({
@@ -161,7 +189,7 @@ export default function MobilePaymentScreen() {
         // The customer still gets a confirmation; the order itself is only
         // created once this syncs (see services/offline/useOfflineSync.ts).
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId },
+          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code },
           { items: cartItems, customer, paymentMethod, grandTotal },
         );
 
@@ -256,10 +284,45 @@ export default function MobilePaymentScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Coupon */}
+      {couponApplied ? (
+        <View style={styles.couponChip}>
+          <Text style={styles.couponChipCode}>Coupon {couponApplied.code}</Text>
+          <Text style={styles.couponChipAmount}>-₹{couponApplied.discountAmount.toFixed(2)}</Text>
+          <TouchableOpacity onPress={() => setCouponApplied(null)}>
+            <Text style={styles.couponChipRemove}>REMOVE</Text>
+          </TouchableOpacity>
+        </View>
+      ) : (
+        <View style={styles.couponRow}>
+          <TextInput
+            style={styles.couponInput}
+            value={couponInput}
+            onChangeText={(t) => setCouponInput(t.toUpperCase())}
+            placeholder="Coupon code"
+            placeholderTextColor="#a3a3a3"
+            autoCapitalize="characters"
+          />
+          <TouchableOpacity
+            onPress={handleApplyCoupon}
+            disabled={couponBusy || !couponInput.trim()}
+            style={[styles.couponBtn, (couponBusy || !couponInput.trim()) && { opacity: 0.5 }]}
+          >
+            <Text style={styles.couponBtnText}>{couponBusy ? '...' : 'Apply'}</Text>
+          </TouchableOpacity>
+        </View>
+      )}
+      {!!couponError && <Text style={styles.shiftErrorText}>{couponError}</Text>}
+
       {/* Summary Box */}
       <View style={styles.summaryBox}>
         <Text style={styles.summaryLabel}>Total Amount Due</Text>
-        <Text style={styles.summaryValue}>₹{grandTotal}</Text>
+        <Text style={styles.summaryValue}>
+          ₹{Math.max(0, grandTotal - (couponApplied?.discountAmount || 0))}
+        </Text>
+        {couponApplied && (
+          <Text style={styles.summaryStrike}>₹{grandTotal}</Text>
+        )}
       </View>
 
       {shiftRequired && (
@@ -327,6 +390,15 @@ export default function MobilePaymentScreen() {
 }
 
 const styles = StyleSheet.create({
+  couponRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  couponInput: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', backgroundColor: '#fafafa', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'monospace', fontWeight: '700', fontSize: 13, color: '#171717' },
+  couponBtn: { backgroundColor: '#171717', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
+  couponBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 12 },
+  couponChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#ecfdf5', borderColor: '#a7f3d0', borderWidth: 1, borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8, marginBottom: 8 },
+  couponChipCode: { flex: 1, fontWeight: '800', color: '#065f46', fontSize: 12 },
+  couponChipAmount: { fontWeight: '800', color: '#065f46', marginRight: 12 },
+  couponChipRemove: { fontWeight: '800', color: '#059669', fontSize: 10 },
+  summaryStrike: { color: '#a3a3a3', textDecorationLine: 'line-through', fontSize: 12, marginTop: 2 },
   container: {
     flex: 1,
     backgroundColor: '#f0f9ff',
