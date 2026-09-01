@@ -100,6 +100,9 @@ export class OrderResponse {
       'Admin-only: POS terminal ID. Omitted from customer-facing responses.',
   })
   terminalId?: string;
+  @ApiPropertyOptional() courierPartner?: string;
+  @ApiPropertyOptional() waybillNumber?: string;
+  @ApiPropertyOptional() trackingUrl?: string;
   @ApiPropertyOptional({ type: [OrderItemResponse] })
   items?: OrderItemResponse[];
   @ApiPropertyOptional({ type: [OrderAddressResponse] })
@@ -108,6 +111,27 @@ export class OrderResponse {
   timeline?: OrderTimelineResponse[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
+}
+
+export class AssignCourierDto {
+  @ApiProperty({ description: 'Courier Partner Name (e.g. Delhivery, DTDC, Professional Courier, FedEx)' })
+  @IsString()
+  courierPartner!: string;
+
+  @ApiPropertyOptional({ description: 'Waybill / AWB Tracking Number' })
+  @IsOptional()
+  @IsString()
+  waybillNumber?: string;
+
+  @ApiPropertyOptional({ description: 'Direct tracking web link' })
+  @IsOptional()
+  @IsString()
+  trackingUrl?: string;
+
+  @ApiPropertyOptional({ description: 'Optional status note / remark' })
+  @IsOptional()
+  @IsString()
+  message?: string;
 }
 
 export class OrderListResponse {

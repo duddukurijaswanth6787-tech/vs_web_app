@@ -2,14 +2,14 @@
 
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
-import { useOrderDetail, useUpdateOrderStatus } from '@/features/orders/order.hooks';
+import { useOrderDetail, useUpdateOrderStatus, useAssignCourier } from '@/features/orders/order.hooks';
 import { useOrderPayments } from '@/features/payments/payment.hooks';
 import { useOrderRefunds } from '@/features/refunds/refund.hooks';
 import { useOrderInvoices, useCreateInvoice } from '@/features/invoices/invoice.hooks';
 import { useCancellationDetail } from '@/features/cancellations/cancellation.hooks';
 import { OrderStatusBadge, PaymentStatusBadge, RefundStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
 import { SectionLoader, PageError, ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { ArrowLeft, User, Clock, CheckCircle2, ChevronRight, Ban, FileText, Plus } from 'lucide-react';
+import { ArrowLeft, User, Clock, CheckCircle2, ChevronRight, Ban, FileText, Plus, Truck, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDateTime, formatDate } from '@/utils/format';
 import CreateCancellationDialog from '@/features/cancellations/components/CreateCancellationDialog';
@@ -37,6 +37,29 @@ export default function OrderDetailPage() {
   // Mutations
   const updateStatusMut = useUpdateOrderStatus();
   const createInvoiceMut = useCreateInvoice();
+  const assignCourierMut = useAssignCourier();
+
+  // Courier Assignment State
+  const [courierPartner, setCourierPartner] = useState('Delhivery');
+  const [waybillNumber, setWaybillNumber] = useState('');
+  const [trackingUrl, setTrackingUrl] = useState('');
+
+  const handleAssignCourier = async () => {
+    try {
+      await assignCourierMut.mutateAsync({
+        id,
+        dto: {
+          courierPartner,
+          waybillNumber: waybillNumber || undefined,
+          trackingUrl: trackingUrl || undefined,
+          message: `Assigned courier partner: ${courierPartner}`,
+        },
+      });
+      refetchOrder();
+    } catch (err) {
+      console.error(categorizeApiError(err));
+    }
+  };
 
   const handleStatusTransition = async (nextStatus: string) => {
     try {
@@ -316,6 +339,95 @@ export default function OrderDetailPage() {
         {/* Right Side: Customer Info, Addresses, Timeline */}
         <div className="space-y-6">
           
+          {/* Delivery Partner Assignment Card */}
+          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+            <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
+              <Truck className="w-4 h-4 text-neutral-900" />
+              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Assign Delivery Partner</h3>
+            </div>
+
+            {order.courierPartner && (
+              <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-xs space-y-1.5">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase">Current Partner</span>
+                  <span className="font-bold text-neutral-900 bg-neutral-200 px-2 py-0.5 rounded text-2xs">{order.courierPartner}</span>
+                </div>
+                {order.waybillNumber && (
+                  <div className="flex justify-between items-center font-mono">
+                    <span className="text-neutral-500">AWB / Waybill:</span>
+                    <span className="font-semibold text-neutral-800">{order.waybillNumber}</span>
+                  </div>
+                )}
+                {order.trackingUrl && (
+                  <a
+                    href={order.trackingUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1 text-2xs text-blue-600 font-bold hover:underline mt-1 block"
+                  >
+                    <ExternalLink className="w-3 h-3" /> Track Package Online
+                  </a>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                  Select Courier Partner
+                </label>
+                <select
+                  value={courierPartner}
+                  onChange={(e) => setCourierPartner(e.target.value)}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                >
+                  <option value="Delhivery">🚚 Delhivery (Express & Surface)</option>
+                  <option value="DTDC">📦 DTDC Courier & Cargo</option>
+                  <option value="Professional Courier">🏎️ Professional Courier</option>
+                  <option value="FedEx">✈️ FedEx Express</option>
+                  <option value="Speed Post">📮 Speed Post (India Post)</option>
+                  <option value="BlueDart">🚀 BlueDart</option>
+                  <option value="Shadowfax">🏍️ Shadowfax</option>
+                  <option value="Other">📍 Other / Local Courier</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                  Waybill / AWB Number (Optional)
+                </label>
+                <input
+                  type="text"
+                  value={waybillNumber}
+                  onChange={(e) => setWaybillNumber(e.target.value)}
+                  placeholder={courierPartner === 'Delhivery' ? 'Auto-generated or enter AWB...' : 'Enter AWB / Waybill number'}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+              </div>
+
+              <div>
+                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                  Tracking Web Link (Optional)
+                </label>
+                <input
+                  type="url"
+                  value={trackingUrl}
+                  onChange={(e) => setTrackingUrl(e.target.value)}
+                  placeholder="https://track.delhivery.com/..."
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                />
+              </div>
+
+              <button
+                disabled={assignCourierMut.isPending}
+                onClick={handleAssignCourier}
+                className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50"
+              >
+                {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
+              </button>
+            </div>
+          </div>
+
           {/* Customer / Address Panel */}
           <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">

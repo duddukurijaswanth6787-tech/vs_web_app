@@ -28,6 +28,9 @@ export class OrderService {
       grandTotal: Number(o.grandTotal),
       currency: o.currency,
       notes: o.notes ?? undefined,
+      courierPartner: o.courierPartner ?? undefined,
+      waybillNumber: o.waybillNumber ?? undefined,
+      trackingUrl: o.trackingUrl ?? undefined,
       ...(includeAdminFields
         ? {
             channel: o.channel,
@@ -162,5 +165,42 @@ export class OrderService {
     }
 
     return this.findById(id);
+  }
+
+  async assignCourier(
+    id: string,
+    dto: { courierPartner: string; waybillNumber?: string; trackingUrl?: string; message?: string },
+    userId: string,
+  ): Promise<OrderResponse> {
+    const order = await this.orderRepository.findById(id);
+    if (!order) throw new BusinessException('Order not found', 'ORDER_001');
+
+    const waybill =
+      dto.waybillNumber ||
+      (dto.courierPartner === 'Delhivery'
+        ? `DEL${Date.now().toString().slice(-9)}`
+        : undefined);
+
+    const trackingLink =
+      dto.trackingUrl ||
+      (dto.courierPartner === 'Delhivery' && waybill
+        ? `https://track.delhivery.com/api/v1/packages/json/?waybill=${waybill}`
+        : undefined);
+
+    const updated = await this.orderRepository.update(id, {
+      courierPartner: dto.courierPartner,
+      waybillNumber: waybill,
+      trackingUrl: trackingLink,
+      status: 'SHIPPED',
+    });
+
+    await this.orderRepository.createTimeline(
+      id,
+      'SHIPPED',
+      dto.message || `Courier Partner Assigned: ${dto.courierPartner}${waybill ? ` (AWB: ${waybill})` : ''}`,
+      userId,
+    );
+
+    return this.toResponse(updated, true, true);
   }
 }

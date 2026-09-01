@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OrderService } from './order.service';
-import { OrderQueryDto } from './order.types';
+import { OrderQueryDto, AssignCourierDto } from './order.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -99,6 +99,22 @@ export class OrderController {
         body.message,
       ),
       'Order status updated',
+    );
+  }
+
+  @Patch(':id/courier')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('orders:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Assign courier partner & waybill to order' })
+  async assignCourier(
+    @Param('id') id: string,
+    @Body() dto: AssignCourierDto,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ResponseBuilder.success(
+      await this.orderService.assignCourier(id, dto, user.sub),
+      'Courier partner assigned & shipment updated',
     );
   }
 }

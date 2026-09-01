@@ -4,6 +4,7 @@ import {
   OrderQueryDto,
   OrderListResponse,
   OrderResponse,
+  AssignCourierDto,
 } from './order.types';
 
 export const orderService = {
@@ -24,6 +25,11 @@ export const orderService = {
 
   updateStatus: async (id: string, status: string, message?: string): Promise<OrderResponse> => {
     const response = await apiClient.patch<StandardResponse<OrderResponse>>(`/orders/${id}/status`, { status, message });
+    return response.data.data!;
+  },
+
+  assignCourier: async (id: string, dto: AssignCourierDto): Promise<OrderResponse> => {
+    const response = await apiClient.patch<StandardResponse<OrderResponse>>(`/orders/${id}/courier`, dto);
     return response.data.data!;
   },
 };

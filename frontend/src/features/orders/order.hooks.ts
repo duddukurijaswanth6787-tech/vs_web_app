@@ -49,3 +49,16 @@ export function useUpdateOrderStatus() {
     },
   });
 }
+
+export function useAssignCourier() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, dto }: { id: string; dto: import('./order.types').AssignCourierDto }) =>
+      orderService.assignCourier(id, dto),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: orderKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.id) });
+      queryClient.invalidateQueries({ queryKey: orderKeys.detailByNumber(data.orderNumber) });
+    },
+  });
+}

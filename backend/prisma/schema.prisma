@@ -987,6 +987,9 @@ model Order {
   isGift                Boolean              @default(false)
   giftWrapMessage       String?
   cancelReason          String?
+  courierPartner        String?
+  waybillNumber         String?
+  trackingUrl           String?
   createdBy             String?
   updatedBy             String?
   deletedAt             DateTime?

@@ -50,11 +50,21 @@ export interface OrderResponse {
   channel?: string;
   paymentMethod?: string;
   terminalId?: string;
+  courierPartner?: string;
+  waybillNumber?: string;
+  trackingUrl?: string;
   items?: OrderItemResponse[];
   addresses?: OrderAddressResponse[];
   timeline?: OrderTimelineResponse[];
   createdAt: string;
   updatedAt: string;
+}
+
+export interface AssignCourierDto {
+  courierPartner: string;
+  waybillNumber?: string;
+  trackingUrl?: string;
+  message?: string;
 }
 
 export interface OrderQueryDto {
