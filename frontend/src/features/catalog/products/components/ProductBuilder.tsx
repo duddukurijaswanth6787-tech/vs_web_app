@@ -12,7 +12,7 @@ import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
 import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import { inventoryService } from '@/features/inventory/inventory.service';
-import { getApiBaseUrl } from '@/lib/api/client';
+import { getApiBaseUrl, getStoredAccessToken } from '@/lib/api/client';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
 import { useSizeCharts } from '@/features/catalog/size-charts/size-chart.hooks';
@@ -3362,7 +3362,7 @@ export default function ProductBuilder({
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`}
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12${getStoredAccessToken() ? `&token=${encodeURIComponent(getStoredAccessToken()!)}` : ''}`}
                             alt={`Barcode ${variant.barcode}`}
                             className="h-12 object-contain"
                           />
@@ -3379,7 +3379,7 @@ export default function ProductBuilder({
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`}
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2${getStoredAccessToken() ? `&token=${encodeURIComponent(getStoredAccessToken()!)}` : ''}`}
                             alt={`QR ${variant.barcode}`}
                             className="h-12 w-12 object-contain"
                           />
