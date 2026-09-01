@@ -51,6 +51,15 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Product tiles for a category, for the till's quick-buy grid. */
+export function usePosProductsByCategory(categoryId?: string, wholesale = false) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'by-category', categoryId, wholesale],
+    queryFn: () => posService.listByCategory(categoryId!, wholesale),
+    enabled: !!categoryId,
+  });
+}
+
 /** Look up a customer's loyalty balance for the till. */
 export function useLoyaltyBalance(customerId?: string) {
   return useQuery({

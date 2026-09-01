@@ -257,6 +257,34 @@ export class PosRepository {
   }
 
   /**
+   * First N sellable variants in a category, for the till's quick-buy grid.
+   *
+   * Same include shape and STORE/BOTH channel filter as the name search, so
+   * the same toScanResult mapping produces a scan-compatible row.
+   */
+  async findVariantsByCategory(categoryId: string, limit = 24) {
+    if (!categoryId?.trim()) return [];
+    return this.prisma.productVariant.findMany({
+      where: {
+        deletedAt: null,
+        product: {
+          channel: { in: ['STORE', 'BOTH'] },
+          deletedAt: null,
+          categories: { some: { categoryId } },
+        },
+      },
+      include: {
+        product: { include: { media: { where: { isPrimary: true, deletedAt: null }, take: 1 } } },
+        inventory: true,
+        attributeValues: { include: { attribute: true, option: true } },
+        media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+      },
+      take: Math.min(48, Math.max(1, limit)),
+      orderBy: { createdAt: 'desc' },
+    });
+  }
+
+  /**
    * Variants matching a typed name, for the till's product search.
    *
    * Returns the same shape as findVariantByBarcode so the caller can map it

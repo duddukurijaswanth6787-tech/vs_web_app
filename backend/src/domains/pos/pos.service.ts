@@ -179,6 +179,20 @@ export class PosService {
     return rows.map((row) => this.toScanResult(row, isOwnerOrManager, wholesale));
   }
 
+  /**
+   * Tiles of sellable products in one category, for the till's quick-buy grid.
+   * Returns the same scan-compatible shape as the name search.
+   */
+  async listByCategory(
+    categoryId: string,
+    isOwnerOrManager = false,
+    limit = 24,
+    wholesale = false,
+  ): Promise<BarcodeScanResultResponse[]> {
+    const rows = await this.repository.findVariantsByCategory(categoryId, limit);
+    return rows.map((row) => this.toScanResult(row, isOwnerOrManager, wholesale));
+  }
+
   async createCheckoutSession(
     cashierId: string,
     dto: CreateCheckoutSessionDto,

@@ -101,6 +101,33 @@ export class PosController {
     );
   }
 
+  @Get('products/by-category')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Sellable Products in a Category (Quick-Buy Tile Grid)' })
+  @ApiResponse({ status: 200, type: [BarcodeScanResultResponse] })
+  async listByCategory(
+    @CurrentUser() user: JwtPayload,
+    @Query('categoryId') categoryId?: string,
+    @Query('limit') limit?: string,
+    @Query('wholesale') wholesale?: string,
+  ): Promise<BarcodeScanResultResponse[]> {
+    if (!categoryId || !categoryId.trim()) {
+      throw new BadRequestException('categoryId is required.');
+    }
+    const isOwnerOrManager = (user.roles || []).some((r) =>
+      ['super_admin', 'admin'].includes(r),
+    );
+    const parsedLimit = Number(limit);
+    return this.posService.listByCategory(
+      categoryId.trim(),
+      isOwnerOrManager,
+      Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 24,
+      wholesale === 'true' || wholesale === '1',
+    );
+  }
+
   @Post('checkout-sessions')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')

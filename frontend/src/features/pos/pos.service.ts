@@ -62,6 +62,14 @@ export const posService = {
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
+  /** Product tiles for a category, for the till's quick-buy grid. */
+  async listByCategory(categoryId: string, wholesale = false, limit = 24): Promise<ScanBarcodeResult[]> {
+    const res = await apiClient.get<StandardResponse<ScanBarcodeResult[]>>('/pos/products/by-category', {
+      params: { categoryId, limit, ...(wholesale ? { wholesale: 'true' } : {}) },
+    });
+    return res.data.data ?? [];
+  },
+
   /** Look up a customer's loyalty balance and rupee equivalent. */
   async lookupLoyaltyBalance(customerId: string): Promise<{ customerId: string; pointsBalance: number; tier: string; pointValueRupees: number; rupeeEquivalent: number; isActive: boolean }> {
     const res = await apiClient.get<StandardResponse<{ customerId: string; pointsBalance: number; tier: string; pointValueRupees: number; rupeeEquivalent: number; isActive: boolean }>>(

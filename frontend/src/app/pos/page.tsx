@@ -45,7 +45,9 @@ import {
   useValidateCoupon,
   useLookupGiftCard,
   useLoyaltyBalance,
+  usePosProductsByCategory,
 } from '@/features/pos/pos.hooks';
+import { useCategories } from '@/features/catalog/categories/category.hooks';
 import {
   PosCartItem,
   PosCustomerInfo,
@@ -79,6 +81,8 @@ export default function DesktopPosPage() {
   // Existing cart lines keep their price -- switching mid-cart doesn't
   // silently re-price something the customer already agreed to.
   const [wholesaleMode, setWholesaleMode] = useState(false);
+  const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [quickBuyCategoryId, setQuickBuyCategoryId] = useState<string>('');
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
@@ -151,6 +155,8 @@ export default function DesktopPosPage() {
   const validateCouponMutation = useValidateCoupon();
   const lookupGiftCardMutation = useLookupGiftCard();
   const loyaltyBalanceQuery = useLoyaltyBalance(customerLookupResult?.customerProfileId);
+  const categoriesQuery = useCategories({ limit: 100 });
+  const quickBuyQuery = usePosProductsByCategory(quickBuyCategoryId, wholesaleMode);
   const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
@@ -962,6 +968,85 @@ export default function DesktopPosPage() {
               </div>
             </div>
           )}
+
+          {/* Quick-buy: category chips + product tiles */}
+          <div className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">
+                Quick Buy
+              </span>
+              <button
+                type="button"
+                onClick={() => setQuickBuyOpen((v) => !v)}
+                className="text-[11px] font-bold text-neutral-500 hover:text-neutral-800"
+              >
+                {quickBuyOpen ? 'Hide' : 'Show'}
+              </button>
+            </div>
+            {quickBuyOpen && (
+              <>
+                <div className="flex gap-1.5 overflow-x-auto pb-1">
+                  {(categoriesQuery.data?.data ?? []).map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setQuickBuyCategoryId(cat.id)}
+                      className={`shrink-0 px-3 py-1.5 rounded-lg text-[11px] font-bold ${
+                        quickBuyCategoryId === cat.id
+                          ? 'bg-[var(--brand-primary)] text-white'
+                          : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700'
+                      }`}
+                    >
+                      {cat.name}
+                    </button>
+                  ))}
+                </div>
+                {quickBuyCategoryId ? (
+                  quickBuyQuery.isPending ? (
+                    <p className="text-xs text-neutral-500 font-medium">Loading tiles...</p>
+                  ) : (quickBuyQuery.data ?? []).length === 0 ? (
+                    <p className="text-xs text-neutral-500 font-medium">
+                      No sellable products in this category.
+                    </p>
+                  ) : (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {(quickBuyQuery.data ?? []).map((item) => {
+                        const oos = item.availableStock <= 0;
+                        return (
+                          <button
+                            key={item.variantId || item.productId}
+                            type="button"
+                            disabled={oos}
+                            onClick={() => addScannedItemToCart(item)}
+                            className="text-left bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 rounded-xl p-2 disabled:opacity-40 disabled:cursor-not-allowed"
+                          >
+                            <span className="block text-[11px] font-bold text-neutral-900 truncate">
+                              {item.productName}
+                            </span>
+                            <span className="block text-[10px] text-neutral-500 truncate">
+                              {item.variantTitle || item.sku || '--'}
+                            </span>
+                            <span className="mt-1 flex items-center justify-between">
+                              <span className="text-[10px] font-medium text-neutral-500">
+                                {oos ? 'Out' : `${item.availableStock} left`}
+                              </span>
+                              <span className="text-xs font-bold text-neutral-900">
+                                ₹{item.price.toFixed(0)}
+                              </span>
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  )
+                ) : (
+                  <p className="text-[11px] text-neutral-500 font-medium">
+                    Pick a category above to see its products as tiles.
+                  </p>
+                )}
+              </>
+            )}
+          </div>
 
           {/* Barcode Search Box */}
           <form onSubmit={handleScanSubmit} className="bg-white p-3.5 rounded-2xl border border-neutral-200 shadow-2xs flex items-center gap-3">
