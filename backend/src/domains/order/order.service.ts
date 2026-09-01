@@ -90,6 +90,7 @@ export class OrderService {
     const limit = Math.min(query.limit ?? 20, 100);
     const result = await this.orderRepository.findAll({
       search: query.search,
+      channel: query.channel,
       status: query.status,
       customerId: query.customerId,
       startDate: query.startDate,

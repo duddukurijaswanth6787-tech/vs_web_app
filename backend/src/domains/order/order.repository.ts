@@ -8,6 +8,7 @@ export class OrderRepository {
 
   async findAll(params: {
     search?: string;
+    channel?: string;
     status?: string;
     customerId?: string;
     startDate?: string;
@@ -19,6 +20,7 @@ export class OrderRepository {
   }) {
     const {
       search,
+      channel,
       status,
       customerId,
       startDate,
@@ -36,6 +38,7 @@ export class OrderRepository {
         { notes: { contains: search, mode: 'insensitive' } },
       ];
     }
+    if (channel) where.channel = channel as any;
     if (status) where.status = status;
     if (customerId) where.customerId = customerId;
     if (startDate || endDate) {

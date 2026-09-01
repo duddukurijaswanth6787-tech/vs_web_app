@@ -11,6 +11,7 @@ import { Type } from 'class-transformer';
 
 export class OrderQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() channel?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() customerId?: string;
   @ApiPropertyOptional() @IsOptional() @IsDateString() startDate?: string;

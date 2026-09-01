@@ -69,6 +69,7 @@ export interface AssignCourierDto {
 
 export interface OrderQueryDto {
   search?: string;
+  channel?: string;
   status?: string;
   customerId?: string;
   startDate?: string;

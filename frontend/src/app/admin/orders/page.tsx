@@ -16,6 +16,7 @@ export default function OrdersPage() {
   const searchParams = useSearchParams();
   const page = parseInt(searchParams.get('page') || '1');
   const search = searchParams.get('search') || '';
+  const channel = searchParams.get('channel') || '';
   const status = searchParams.get('status') || '';
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
@@ -26,6 +27,7 @@ export default function OrdersPage() {
 
   const { data: listData, isLoading, isError, refetch } = useOrderList({
     page, limit: 10, search: search || undefined,
+    channel: channel || undefined,
     status: status || undefined, startDate: startDate || undefined, endDate: endDate || undefined,
   });
 
@@ -80,6 +82,11 @@ export default function OrdersPage() {
               </div>
               <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0 min-h-[38px] flex items-center justify-center">Apply</button>
             </form>
+            <select value={channel} onChange={(e) => updateQuery('channel', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
+              <option value="">All Channels</option>
+              <option value="ONLINE">🌐 Online Store</option>
+              <option value="POS">📱 Mobile POS / Store</option>
+            </select>
             <select value={status} onChange={(e) => updateQuery('status', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Statuses</option>
               <option value="PENDING">PENDING</option>
