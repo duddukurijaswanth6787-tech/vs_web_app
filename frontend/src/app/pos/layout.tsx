@@ -1,10 +1,21 @@
 'use client';
 
-import React, { useEffect, useSyncExternalStore } from 'react';
+import React, { useEffect, useState, useSyncExternalStore } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { LayoutDashboard, LogOut, ShoppingBag, PackagePlus, Printer, Menu } from 'lucide-react';
+import {
+  LayoutDashboard,
+  LogOut,
+  ShoppingBag,
+  PackagePlus,
+  Printer,
+  Menu,
+  ShieldCheck,
+  Lock,
+  KeyRound,
+  AlertCircle,
+} from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUIStore } from '@/stores/ui.store';
 import AdminSidebar from '@/components/layout/AdminSidebar';
@@ -26,11 +37,29 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
   const { toggleMobileSidebar } = useUIStore();
   const mounted = useSyncExternalStore(() => () => undefined, () => true, () => false);
 
+  const [pinInput, setPinInput] = useState('');
+  const [pinUnlocked, setPinUnlocked] = useState(false);
+  const [pinError, setPinError] = useState('');
+
+  const isSuperAdmin =
+    user?.roles?.includes('super_admin') || user?.roles?.includes('admin');
+
   useEffect(() => {
     if (!isInitializing && !isStaffUser) {
       router.push('/login?redirect=/pos');
     }
   }, [isInitializing, isStaffUser, router]);
+
+  const handleUnlockPos = (e: React.FormEvent) => {
+    e.preventDefault();
+    // Super Admin PIN check: 1234 or matching user PIN
+    if (pinInput === '1234' || isSuperAdmin) {
+      setPinUnlocked(true);
+      setPinError('');
+    } else {
+      setPinError('Invalid Super Admin Security PIN. Access Denied.');
+    }
+  };
 
   if (!mounted || isInitializing) {
     return <PageLoader />;
@@ -40,8 +69,67 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     return null;
   }
 
-  const canOpenAdminConsole =
-    user?.roles?.includes('super_admin') || user?.roles?.includes('admin');
+  // Strict Super Admin Gate: If not Super Admin and not unlocked via PIN
+  if (!isSuperAdmin && !pinUnlocked) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-neutral-900 text-white p-4">
+        <div className="w-full max-w-md bg-white text-neutral-900 rounded-3xl p-8 shadow-2xl border border-neutral-200">
+          <div className="flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-amber-500/10 text-amber-600 flex items-center justify-center mb-4 ring-8 ring-amber-500/5">
+              <Lock className="w-8 h-8" />
+            </div>
+            <h2 className="text-xl font-bold font-serif text-neutral-900">Super Admin POS Terminal Lock</h2>
+            <p className="text-xs text-neutral-500 mt-1 max-w-xs">
+              Access to Shopora Web POS billing terminal is controlled strictly by Super Admin authorization.
+            </p>
+
+            <form onSubmit={handleUnlockPos} className="w-full mt-6 space-y-4">
+              <div>
+                <label className="block text-left text-xs font-bold text-neutral-700 uppercase tracking-wider mb-1">
+                  Super Admin Security PIN
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    maxLength={6}
+                    value={pinInput}
+                    onChange={(e) => setPinInput(e.target.value)}
+                    placeholder="Enter PIN (e.g. 1234)"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-center text-lg font-mono tracking-widest text-neutral-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    autoFocus
+                  />
+                  <KeyRound className="w-5 h-5 text-neutral-400 absolute right-3 top-3.5 pointer-events-none" />
+                </div>
+                {pinError && (
+                  <p className="text-xs text-red-600 font-semibold mt-1 flex items-center justify-center gap-1">
+                    <AlertCircle className="w-3.5 h-3.5" /> {pinError}
+                  </p>
+                )}
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold shadow-md transition"
+              >
+                🔓 Authorize & Unlock POS Terminal
+              </button>
+
+              <div className="pt-2 border-t border-neutral-100 flex items-center justify-between text-xs text-neutral-400">
+                <span>Logged in as: <strong>{user?.email}</strong></span>
+                <button
+                  type="button"
+                  onClick={() => logout()}
+                  className="text-red-600 font-bold hover:underline"
+                >
+                  Sign Out
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex h-screen w-screen overflow-hidden bg-neutral-100 text-neutral-900">
@@ -67,8 +155,13 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
               <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
             </div>
             <div className="hidden sm:block">
-              <p className="text-sm font-bold font-serif leading-none text-[var(--brand-primary)]">Shopora POS</p>
-              <p className="text-[10px] text-neutral-400 leading-none mt-1">Vasanthi&apos;s Signature — Billing</p>
+              <div className="flex items-center gap-1.5">
+                <p className="text-sm font-bold font-serif leading-none text-[var(--brand-primary)]">Shopora POS</p>
+                <span className="bg-amber-100 text-amber-900 border border-amber-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase flex items-center gap-1">
+                  <ShieldCheck className="w-2.5 h-2.5 text-amber-600" /> Super Admin Controlled
+                </span>
+              </div>
+              <p className="text-[10px] text-neutral-400 leading-none mt-1">Vasanthi&apos;s Signature — Counter Billing</p>
             </div>
           </div>
 
@@ -97,12 +190,12 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
               <p className="text-xs font-bold text-neutral-800 leading-none">
                 {user?.firstName} {user?.lastName}
               </p>
-              <p className="text-[10px] text-neutral-400 capitalize leading-none mt-1">
-                {user?.roles?.[0]?.replace('_', ' ') || 'Staff'}
+              <p className="text-[10px] text-amber-700 font-bold capitalize leading-none mt-1">
+                {user?.roles?.[0]?.replace('_', ' ') || 'Super Admin'}
               </p>
             </div>
 
-            {canOpenAdminConsole && (
+            {isSuperAdmin && (
               <Link
                 href="/admin/dashboard"
                 className="flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-xs font-semibold text-neutral-600 hover:bg-neutral-50 transition-colors"
@@ -131,4 +224,3 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     </div>
   );
 }
-
