@@ -401,6 +401,21 @@ export class GenerateBarcodeImageDto {
   @Type(() => Number)
   @IsNumber()
   height?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  token?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  accessToken?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  access_token?: string;
 }
 
 export class GenerateBatchStickersDto {
