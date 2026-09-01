@@ -14,7 +14,7 @@ import {
   CreateShippingZoneDto,
   CalculateShippingDto,
 } from './shipping.types';
-import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
@@ -30,6 +30,7 @@ export class ShippingController {
   ) {}
 
   @Get('delhivery/pincode/:pincode')
+  @Public()
   @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
   async checkDelhiveryPincode(@Param('pincode') pincode: string) {
     return ResponseBuilder.success(
@@ -38,6 +39,7 @@ export class ShippingController {
   }
 
   @Get('delhivery/track/:waybill')
+  @Public()
   @ApiOperation({ summary: 'Track Delhivery shipment by AWB Waybill number' })
   async trackDelhiveryShipment(@Param('waybill') waybill: string) {
     return ResponseBuilder.success(
