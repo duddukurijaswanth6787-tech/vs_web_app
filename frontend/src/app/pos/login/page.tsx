@@ -22,8 +22,8 @@ function PosLoginForm() {
   const redirectUrl = searchParams?.get('redirect') || '/pos';
   const { login, isStaffUser } = useAuth();
 
-  const [email, setEmail] = useState('admin@vasanthi.com');
-  const [password, setPassword] = useState('Admin@123');
+  const [email, setEmail] = useState('posstaff@vasanthi.com');
+  const [password, setPassword] = useState('Pos@123');
   const [pin, setPin] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
@@ -57,6 +57,13 @@ function PosLoginForm() {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const fillPosStaff = () => {
+    setEmail('posstaff@vasanthi.com');
+    setPassword('Pos@123');
+    setPin('1234');
+    setError('');
   };
 
   const fillSuperAdmin = () => {
@@ -106,7 +113,7 @@ function PosLoginForm() {
               required
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="admin@vasanthi.com"
+              placeholder="posstaff@vasanthi.com"
               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-2.5 text-sm font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
             />
           </div>
@@ -167,15 +174,25 @@ function PosLoginForm() {
             )}
           </button>
 
-          {/* Quick Demo Credentials Fill Button */}
-          <button
-            type="button"
-            onClick={fillSuperAdmin}
-            className="w-full py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-            <span>⚡ Fill Super Admin Credentials (admin@vasanthi.com / 1234)</span>
-          </button>
+          {/* Quick Fill Credentials Buttons */}
+          <div className="grid grid-cols-1 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={fillPosStaff}
+              className="w-full py-2 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+            >
+              <ShoppingBag className="w-3.5 h-3.5 text-emerald-600" />
+              <span>🛒 Fill POS Staff Credentials (posstaff@vasanthi.com)</span>
+            </button>
+            <button
+              type="button"
+              onClick={fillSuperAdmin}
+              className="w-full py-2 bg-amber-50 hover:bg-amber-100 border border-amber-200 text-amber-900 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+              <span>👑 Fill Super Admin Credentials (admin@vasanthi.com)</span>
+            </button>
+          </div>
         </form>
 
         <div className="mt-6 pt-4 border-t border-neutral-100 text-center text-[10px] text-neutral-400">
