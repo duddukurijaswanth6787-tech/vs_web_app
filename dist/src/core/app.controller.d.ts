@@ -2,11 +2,13 @@ import { AppService } from './app.service';
 import { AwsBillingService } from '../domains/aws-billing/aws-billing.service';
 import { AnalyticsService } from '../domains/analytics/analytics.service';
 import { AnalyticsPeriod } from '../domains/analytics/analytics.types';
+import { PrismaService } from "../database/prisma.service";
 export declare class AppController {
     private readonly appService;
     private readonly awsBillingService;
     private readonly analyticsService;
-    constructor(appService: AppService, awsBillingService: AwsBillingService, analyticsService: AnalyticsService);
+    private readonly prisma;
+    constructor(appService: AppService, awsBillingService: AwsBillingService, analyticsService: AnalyticsService, prisma: PrismaService);
     getHello(): {
         status: string;
         name: string;
@@ -15,6 +17,7 @@ export declare class AppController {
         docs: string;
         apiVersion: string;
     };
+    syncBarcodeDirect(): Promise<import("../common/responses/response.builder").ResponsePayload<import(".prisma/client").Prisma.BatchPayload>>;
     getOmnichannelDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OmnichannelSummary>>;
     getOfflinePosDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OfflinePosAnalytics>>;
     getOnlineSalesDirect(period?: AnalyticsPeriod): Promise<import("../common/responses/response.builder").ResponsePayload<import("../domains/analytics/analytics.types").OnlineSalesAnalytics>>;

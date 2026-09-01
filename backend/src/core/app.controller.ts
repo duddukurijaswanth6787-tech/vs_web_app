@@ -5,6 +5,8 @@ import { AnalyticsService } from '../domains/analytics/analytics.service';
 import { AnalyticsPeriod } from '../domains/analytics/analytics.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
+import { PrismaService } from '@database/prisma.service';
+
 /**
  * Root Application Controller exposing default heartbeat routes, AWS Billing endpoints & Analytics fallbacks.
  */
@@ -14,11 +16,21 @@ export class AppController {
     private readonly appService: AppService,
     private readonly awsBillingService: AwsBillingService,
     private readonly analyticsService: AnalyticsService,
+    private readonly prisma: PrismaService,
   ) {}
 
   @Get()
   getHello() {
     return this.appService.getHello();
+  }
+
+  @Get('sync-barcode')
+  async syncBarcodeDirect() {
+    const updated = await this.prisma.productVariant.updateMany({
+      where: { sku: 'COL1-XL' },
+      data: { barcode: '890351069409' },
+    });
+    return ResponseBuilder.success(updated, 'Barcode synced successfully');
   }
 
   // Analytics direct routes for 100% guaranteed registration

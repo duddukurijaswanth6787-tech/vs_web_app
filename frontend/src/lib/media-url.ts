@@ -70,12 +70,9 @@ export function isLocalOrPlaceholder(url?: string | null): boolean {
   return (
     url.startsWith('/') ||
     url.startsWith('data:') ||
-    url.includes('localhost') ||
-    url.includes('127.0.0.1') ||
+    url.endsWith('.svg') ||
     url.includes('placehold.co') ||
-    url.includes('unsplash.com') ||
-    url.includes('library/images') ||
-    url.includes('railway.app')
+    url.includes('unsplash.com')
   );
 }
 
@@ -84,9 +81,19 @@ export type ImageVariant = keyof typeof VARIANT_SIZES;
 
 /**
  * Append a variant query to a storage proxy URL so the backend serves
- * the pre-generated WebP variant instead of the full-size PNG.
+ * the pre-generated, optimized WebP variant instead of the full-size master image.
  */
-export function withVariant(url: string, _variant?: ImageVariant): string {
+export function withVariant(url: string, variant?: ImageVariant): string {
   if (!url || url.includes('placehold.co') || url.includes('data:') || url.includes('unsplash.com')) return url;
-  return resolveMediaUrl(url);
+  const resolved = resolveMediaUrl(url);
+  if (!variant) return resolved;
+
+  try {
+    const u = new URL(resolved);
+    u.searchParams.set('variant', variant);
+    return u.toString();
+  } catch {
+    const separator = resolved.includes('?') ? '&' : '?';
+    return `${resolved}${separator}variant=${variant}`;
+  }
 }

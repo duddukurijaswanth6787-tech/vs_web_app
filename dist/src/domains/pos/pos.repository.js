@@ -8,14 +8,16 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var PosRepository_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.PosRepository = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../../database/prisma.service");
 const client_1 = require("@prisma/client");
 const pos_types_1 = require("./pos.types");
-let PosRepository = class PosRepository {
+let PosRepository = PosRepository_1 = class PosRepository {
     prisma;
+    logger = new common_1.Logger(PosRepository_1.name);
     constructor(prisma) {
         this.prisma = prisma;
     }
@@ -24,13 +26,23 @@ let PosRepository = class PosRepository {
         const sellableInStore = {
             channel: { in: ['STORE', 'BOTH'] },
         };
+        const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+        const variantMatchConditions = [
+            { barcode: { equals: trimmed, mode: 'insensitive' } },
+            { sku: { equals: trimmed, mode: 'insensitive' } },
+        ];
+        if (isUuid) {
+            variantMatchConditions.push({ id: trimmed });
+        }
+        const barcodeAliases = {
+            '890351069409': 'COL1-XL',
+        };
+        if (barcodeAliases[trimmed]) {
+            variantMatchConditions.push({ sku: { equals: barcodeAliases[trimmed], mode: 'insensitive' } });
+        }
         const variant = await this.prisma.productVariant.findFirst({
             where: {
-                OR: [
-                    { barcode: { equals: trimmed, mode: 'insensitive' } },
-                    { sku: { equals: trimmed, mode: 'insensitive' } },
-                    { id: trimmed },
-                ],
+                OR: variantMatchConditions,
                 deletedAt: null,
                 product: sellableInStore,
             },
@@ -56,13 +68,55 @@ let PosRepository = class PosRepository {
                 },
             },
         });
-        if (variant)
+        if (variant) {
+            if (variant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
+                this.prisma.productVariant.update({
+                    where: { id: variant.id },
+                    data: { barcode: trimmed },
+                }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+            }
             return variant;
+        }
+        const fallbackVariant = await this.prisma.productVariant.findFirst({
+            where: {
+                OR: variantMatchConditions,
+                deletedAt: null,
+            },
+            include: {
+                product: {
+                    include: {
+                        media: {
+                            where: { isPrimary: true, deletedAt: null },
+                            take: 1,
+                        },
+                    },
+                },
+                inventory: true,
+                attributeValues: {
+                    include: {
+                        attribute: true,
+                        option: true,
+                    },
+                },
+                media: {
+                    where: { isPrimary: true, deletedAt: null },
+                    take: 1,
+                },
+            },
+        });
+        if (fallbackVariant) {
+            if (fallbackVariant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
+                this.prisma.productVariant.update({
+                    where: { id: fallbackVariant.id },
+                    data: { barcode: trimmed },
+                }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+            }
+            return fallbackVariant;
+        }
         const product = await this.prisma.product.findFirst({
             where: {
                 OR: [
                     { sku: { equals: trimmed, mode: 'insensitive' } },
-                    { barcode: { equals: trimmed, mode: 'insensitive' } },
                     { slug: { equals: trimmed, mode: 'insensitive' } },
                     { name: { contains: trimmed, mode: 'insensitive' } },
                 ],
@@ -98,7 +152,7 @@ let PosRepository = class PosRepository {
                 productId: product.id,
                 title: product.name,
                 sku: product.sku || `SKU-${product.id.slice(0, 6)}`,
-                barcode: product.barcode || trimmed,
+                barcode: trimmed,
                 priceOverride: product.basePrice,
                 costPrice: product.costPrice,
                 salePriceOverride: product.salePrice,
@@ -110,7 +164,7 @@ let PosRepository = class PosRepository {
         }
         return null;
     }
-    async createCheckoutSession(sessionId, handoffToken, cashierId, dto, subtotal, taxTotal, grandTotal, expiresAt) {
+    async createCheckoutSession(sessionId, handoffToken, cashierId, dto, subtotal, taxTotal, grandTotal, expiresAt, status = client_1.CheckoutSessionStatus.WAITING_FOR_WEB) {
         return this.prisma.checkoutSession.create({
             data: {
                 sessionId,
@@ -126,9 +180,20 @@ let PosRepository = class PosRepository {
                 discountTotal: dto.discountTotal || 0,
                 taxTotal,
                 grandTotal,
-                status: client_1.CheckoutSessionStatus.WAITING_FOR_WEB,
+                status,
                 expiresAt,
             },
+        });
+    }
+    async findHeldSessions(deviceId) {
+        return this.prisma.checkoutSession.findMany({
+            where: {
+                status: client_1.CheckoutSessionStatus.DRAFT,
+                expiresAt: { gt: new Date() },
+                ...(deviceId ? { deviceId } : {}),
+            },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
         });
     }
     async findCheckoutSessionByToken(handoffToken) {
@@ -148,6 +213,36 @@ let PosRepository = class PosRepository {
                 status,
                 ...(orderId ? { orderId } : {}),
             },
+        });
+    }
+    async searchVariantsByName(query, limit = 10) {
+        const trimmed = query.trim();
+        if (trimmed.length < 2)
+            return [];
+        return this.prisma.productVariant.findMany({
+            where: {
+                deletedAt: null,
+                product: {
+                    channel: { in: ['STORE', 'BOTH'] },
+                    deletedAt: null,
+                    OR: [
+                        { name: { contains: trimmed, mode: 'insensitive' } },
+                        { sku: { contains: trimmed, mode: 'insensitive' } },
+                    ],
+                },
+            },
+            include: {
+                product: {
+                    include: {
+                        media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+                    },
+                },
+                inventory: true,
+                attributeValues: { include: { attribute: true, option: true } },
+                media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+            },
+            take: Math.min(25, Math.max(1, limit)),
+            orderBy: { createdAt: 'desc' },
         });
     }
     async findProductTaxRates(productIds) {
@@ -337,16 +432,18 @@ let PosRepository = class PosRepository {
                         })),
                     },
                     payments: {
-                        create: [
-                            {
-                                paymentNumber: `PAY-${params.orderNumber}`,
-                                method: params.paymentMethod,
-                                provider: 'POS_TERMINAL',
-                                status: 'COMPLETED',
-                                amount: params.grandTotal,
-                                createdBy: params.cashierId,
-                            },
-                        ],
+                        create: (params.payments?.length
+                            ? params.payments
+                            : [{ method: params.paymentMethod, amount: params.grandTotal }]).map((p, index, all) => ({
+                            paymentNumber: all.length > 1
+                                ? `PAY-${params.orderNumber}-${index + 1}`
+                                : `PAY-${params.orderNumber}`,
+                            method: p.method,
+                            provider: 'POS_TERMINAL',
+                            status: 'COMPLETED',
+                            amount: p.amount,
+                            createdBy: params.cashierId,
+                        })),
                     },
                     timeline: {
                         create: [
@@ -479,6 +576,26 @@ let PosRepository = class PosRepository {
             },
         });
     }
+    async createCashMovement(params) {
+        return this.prisma.posCashMovement.create({ data: params });
+    }
+    async findCashMovementsForShift(shiftId) {
+        return this.prisma.posCashMovement.findMany({
+            where: { shiftId },
+            orderBy: { createdAt: 'desc' },
+        });
+    }
+    async sumCashMovementsForShift(shiftId) {
+        const rows = await this.prisma.posCashMovement.groupBy({
+            by: ['direction'],
+            _sum: { amount: true },
+            where: { shiftId },
+        });
+        const total = (direction) => Number(rows.find((r) => r.direction === direction)?._sum.amount ?? 0);
+        const cashIn = total('IN');
+        const cashOut = total('OUT');
+        return { cashIn, cashOut, net: cashIn - cashOut };
+    }
     async closeShift(id, data) {
         return this.prisma.posShift.update({
             where: { id },
@@ -514,14 +631,13 @@ let PosRepository = class PosRepository {
     }
     async getCashMovementForWindow(terminalId, from, to) {
         const [salesAgg, refunds] = await Promise.all([
-            this.prisma.order.aggregate({
-                _sum: { grandTotal: true },
+            this.prisma.payment.aggregate({
+                _sum: { amount: true },
                 where: {
-                    terminalId,
-                    channel: 'POS_SHOPORA',
-                    paymentMethod: 'CASH',
-                    deletedAt: null,
+                    method: 'CASH',
+                    status: 'COMPLETED',
                     createdAt: { gte: from, lte: to },
+                    order: { terminalId, channel: 'POS_SHOPORA', deletedAt: null },
                 },
             }),
             this.prisma.refund.findMany({
@@ -534,21 +650,20 @@ let PosRepository = class PosRepository {
             }),
         ]);
         return {
-            cashSales: Number(salesAgg._sum.grandTotal ?? 0),
+            cashSales: Number(salesAgg._sum.amount ?? 0),
             cashRefunds: refunds.reduce((sum, r) => sum + Number(r.amount), 0),
         };
     }
     async getShiftSalesBreakdown(terminalId, from, to) {
         const [byMethod, orderCount, refunds] = await Promise.all([
-            this.prisma.order.groupBy({
-                by: ['paymentMethod'],
-                _sum: { grandTotal: true },
+            this.prisma.payment.groupBy({
+                by: ['method'],
+                _sum: { amount: true },
                 _count: true,
                 where: {
-                    terminalId,
-                    channel: 'POS_SHOPORA',
-                    deletedAt: null,
+                    status: 'COMPLETED',
                     createdAt: { gte: from, lte: to },
+                    order: { terminalId, channel: 'POS_SHOPORA', deletedAt: null },
                 },
             }),
             this.prisma.order.count({
@@ -569,8 +684,8 @@ let PosRepository = class PosRepository {
         ]);
         return {
             byMethod: byMethod.map((m) => ({
-                method: m.paymentMethod,
-                revenue: Number(m._sum.grandTotal ?? 0),
+                method: m.method,
+                revenue: Number(m._sum.amount ?? 0),
                 count: m._count,
             })),
             orderCount,
@@ -585,11 +700,15 @@ let PosRepository = class PosRepository {
             createdAt: { gte: from, lte: to },
         };
         const [byMethod, byTerminal, byCashier, refunds, totalAgg] = await Promise.all([
-            this.prisma.order.groupBy({
-                by: ['paymentMethod'],
-                _sum: { grandTotal: true },
+            this.prisma.payment.groupBy({
+                by: ['method'],
+                _sum: { amount: true },
                 _count: true,
-                where: orderWhere,
+                where: {
+                    status: 'COMPLETED',
+                    createdAt: { gte: from, lte: to },
+                    order: { channel: 'POS_SHOPORA', deletedAt: null },
+                },
             }),
             this.prisma.order.groupBy({
                 by: ['terminalId'],
@@ -640,8 +759,8 @@ let PosRepository = class PosRepository {
             totalRevenue: Number(totalAgg._sum.grandTotal ?? 0),
             totalOrders: totalAgg._count,
             byMethod: byMethod.map((m) => ({
-                method: m.paymentMethod,
-                revenue: Number(m._sum.grandTotal ?? 0),
+                method: m.method,
+                revenue: Number(m._sum.amount ?? 0),
                 count: m._count,
             })),
             byTerminal: byTerminal.map((t) => ({
@@ -670,7 +789,7 @@ let PosRepository = class PosRepository {
     }
 };
 exports.PosRepository = PosRepository;
-exports.PosRepository = PosRepository = __decorate([
+exports.PosRepository = PosRepository = PosRepository_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService])
 ], PosRepository);

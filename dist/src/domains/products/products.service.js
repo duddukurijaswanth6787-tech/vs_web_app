@@ -207,6 +207,16 @@ let ProductsService = class ProductsService {
         }
         return sku;
     }
+    async ensureUniqueBarcode(requested) {
+        const base = requested.trim();
+        let barcode = base;
+        let counter = 1;
+        while (await this.productsRepository.findByBarcode(barcode)) {
+            barcode = `${base}-${counter}`;
+            counter++;
+        }
+        return barcode;
+    }
     async generateUniqueBarcode() {
         let barcode = commerce_utils_1.BarcodeGenerator.generate();
         let existing = await this.productsRepository.findByBarcode(barcode);
@@ -317,7 +327,9 @@ let ProductsService = class ProductsService {
             if (dto.variants?.length) {
                 const variantsWithBarcode = await Promise.all(dto.variants.map(async (v) => ({
                     ...v,
-                    barcode: await this.generateUniqueBarcode(),
+                    barcode: v.barcode
+                        ? await this.ensureUniqueBarcode(v.barcode)
+                        : await this.generateUniqueBarcode(),
                 })));
                 await tx.productVariant.createMany({
                     data: variantsWithBarcode.map((v) => ({

@@ -1,12 +1,27 @@
 import type { JwtPayload } from "../auth/services/jwt.service";
 import { PosService } from './pos.service';
-import { ScanBarcodeDto, CreateCheckoutSessionDto, AdoptHandoffTokenDto, CompletePosSaleDto, BarcodeScanResultResponse, CheckoutSessionResponse, GenerateBarcodeImageDto, GenerateBatchStickersDto, PreviewReceiptDto, OpenPosShiftDto, CreatePosReturnDto, ClosePosShiftDto } from './pos.types';
+import { ScanBarcodeDto, CreateCheckoutSessionDto, AdoptHandoffTokenDto, CompletePosSaleDto, BarcodeScanResultResponse, CheckoutSessionResponse, GenerateBarcodeImageDto, GenerateBatchStickersDto, PreviewReceiptDto, OpenPosShiftDto, CreatePosReturnDto, ClosePosShiftDto, PosCashMovementDto } from './pos.types';
 import type { Response } from 'express';
 export declare class PosController {
     private readonly posService;
     constructor(posService: PosService);
     scanBarcode(user: JwtPayload, dto: ScanBarcodeDto): Promise<BarcodeScanResultResponse>;
+    searchProducts(user: JwtPayload, q?: string, limit?: string): Promise<BarcodeScanResultResponse[]>;
     createCheckoutSession(user: JwtPayload, dto: CreateCheckoutSessionDto): Promise<CheckoutSessionResponse>;
+    listHeldSessions(terminalId?: string): Promise<{
+        sessionId: string;
+        handoffToken: string;
+        deviceId: string | null;
+        customer: import("./pos.types").PosCustomerInfoDto | undefined;
+        itemsCount: number;
+        grandTotal: number;
+        expiresAt: Date;
+        createdAt: Date;
+    }[]>;
+    cancelHeldSession(sessionId: string): Promise<{
+        success: boolean;
+        sessionId: string;
+    }>;
     adoptHandoffSession(dto: AdoptHandoffTokenDto): Promise<CheckoutSessionResponse>;
     completeSale(user: JwtPayload, dto: CompletePosSaleDto): Promise<{
         success: boolean;
@@ -20,6 +35,11 @@ export declare class PosController {
             grandTotal: number;
             itemsCount: number;
             createdAt: Date;
+            changeDue: number;
+            tenders: {
+                method: string;
+                amount: number;
+            }[] | undefined;
         };
         printReady: boolean;
     }>;
@@ -160,9 +180,34 @@ export declare class PosController {
             hasPrevious: boolean;
         };
     }>;
+    recordCashMovement(user: JwtPayload, dto: PosCashMovementDto, terminalId?: string): Promise<{
+        id: string;
+        shiftId: string;
+        direction: string;
+        amount: number;
+        reason: string;
+        createdAt: Date;
+        shiftTotals: {
+            cashIn: number;
+            cashOut: number;
+            net: number;
+        };
+    }>;
+    listCashMovements(id: string): Promise<{
+        cashIn: number;
+        cashOut: number;
+        net: number;
+        movements: {
+            id: string;
+            direction: string;
+            amount: number;
+            reason: string;
+            createdAt: Date;
+        }[];
+    }>;
     getShiftReport(id: string): Promise<{
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];
@@ -192,12 +237,18 @@ export declare class PosController {
         generatedAt: Date;
         windowStart: Date;
         windowEnd: Date;
+        openingCash: number;
+        cashSales: number;
+        cashRefunds: number;
+        cashIn: number;
+        cashOut: number;
+        expectedCash: number;
     }>;
     getPosAnalyticsSummary(date?: string): Promise<{
         totalRevenue: number;
         totalOrders: number;
         byMethod: {
-            method: import(".prisma/client").$Enums.PosPaymentMethod | null;
+            method: string;
             revenue: number;
             count: number;
         }[];

@@ -36,6 +36,7 @@ export declare class ProductsService {
     findBySlug(slug: string, restrictToPublicChannels?: boolean): Promise<ProductResponse | null>;
     private generateUniqueSlug;
     private generateUniqueSku;
+    private ensureUniqueBarcode;
     private generateUniqueBarcode;
     private validatePrices;
     private validateWeightDimensions;

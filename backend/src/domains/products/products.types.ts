@@ -27,6 +27,7 @@ import {
 
 export class CreateProductVariantDto {
   @ApiProperty() @IsString() sku!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() barcode?: string;
   @ApiProperty() @IsString() name!: string;
   @ApiProperty() @Type(() => Number) @IsNumber() price!: number;
   @ApiProperty() @Type(() => Number) @IsInt() stock!: number;

@@ -23,22 +23,30 @@ export class JwtAuthGuard {
       context.getHandler(),
       context.getClass(),
     ]);
-    if (isPublic) return true;
 
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      throw new UnauthorizedException(
-        'Missing or invalid authorization header',
-      );
+    const token =
+      (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null) ||
+      (request.query?.token as string) ||
+      (request.query?.accessToken as string) ||
+      (request.query?.access_token as string);
+
+    if (token) {
+      try {
+        request.user = this.jwtService.verify(token);
+        return true;
+      } catch {
+        if (isPublic) return true;
+        throw new UnauthorizedException('Invalid or expired token');
+      }
     }
-    const token = authHeader.slice(7);
-    try {
-      request.user = this.jwtService.verify(token);
-      return true;
-    } catch {
-      throw new UnauthorizedException('Invalid or expired token');
-    }
+
+    if (isPublic) return true;
+
+    throw new UnauthorizedException(
+      'Missing or invalid authorization header',
+    );
   }
 }
 

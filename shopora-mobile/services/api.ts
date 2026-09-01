@@ -10,7 +10,7 @@ import * as SecureStore from 'expo-secure-store';
  * the box for anyone who hasn't set up a `.env`.
  */
 export const API_BASE_URL =
-  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://secure-quietude-production-afa9.up.railway.app/api/v1';
+  process.env.EXPO_PUBLIC_API_BASE_URL || 'https://api.vasanthissignature.in/api/v1';
 
 /** Origin without the `/api/v1` suffix — used by the websocket namespace. */
 export const API_ORIGIN = API_BASE_URL.replace(/\/api\/v1\/?$/, '');
@@ -103,6 +103,16 @@ posApiClient.interceptors.request.use((config) => {
   return config;
 });
 
+posApiClient.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error?.response?.status === 401) {
+      clearSession();
+    }
+    return Promise.reject(error);
+  },
+);
+
 /**
  * Turn an axios failure into a message worth showing on a phone screen.
  * The API wraps errors as { message, errorCode }, sometimes with an array of
@@ -134,6 +144,7 @@ export interface PosMobileCartItem {
   productName: string;
   variantId?: string;
   sku?: string;
+  barcode?: string;
   variantTitle?: string;
   quantity: number;
   unitPrice: number;
@@ -141,6 +152,7 @@ export interface PosMobileCartItem {
   availableStock?: number;
   /** GST for this line, from the scan. The app used to bill a flat 5%. */
   taxPercent?: number;
+  taxAmount?: number;
   discountAmount?: number;
 }
 
@@ -272,8 +284,17 @@ export const authService = {
  * ever reach the API or every checkout/session request 400s.
  */
 function toApiCartItem(item: PosMobileCartItem) {
-  const { primaryImage, availableStock, ...apiItem } = item;
-  return apiItem;
+  return {
+    productId: item.productId,
+    productName: item.productName,
+    variantId: item.variantId,
+    sku: item.sku,
+    variantTitle: item.variantTitle,
+    quantity: Number(item.quantity || 1),
+    unitPrice: Number(item.unitPrice || 0),
+    discountAmount: item.discountAmount ? Number(item.discountAmount) : 0,
+    taxAmount: item.taxAmount ? Number(item.taxAmount) : undefined,
+  };
 }
 
 export const posMobileService = {

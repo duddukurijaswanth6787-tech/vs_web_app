@@ -9,6 +9,7 @@ import {
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Monitor, CheckCircle2, XCircle } from 'lucide-react-native';
 import { joinSessionRoom, onSessionAdopted, onSaleCompleted } from '../services/socket';
+import { setGlobalCart } from './sale';
 
 export default function WaitingWebScreen() {
   const router = useRouter();
@@ -30,6 +31,7 @@ export default function WaitingWebScreen() {
       });
 
       const unsubscribeComplete = onSaleCompleted((saleData: any) => {
+        setGlobalCart([]);
         router.replace({
           pathname: '/sale-success',
           params: {
@@ -48,6 +50,7 @@ export default function WaitingWebScreen() {
   }, [sessionId, grandTotalStr, router]);
 
   const handleCancelSession = () => {
+    setGlobalCart([]);
     router.replace('/sale');
   };
 

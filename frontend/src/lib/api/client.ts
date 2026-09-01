@@ -71,6 +71,8 @@ export const setClientTokens = (tokens: AuthTokens | null) => {
   bootstrapSettled = true;
 };
 
+export const getStoredAccessToken = (): string | null => currentAccessToken;
+
 // The access token is memory-only, so a full page load starts with nothing --
 // but the httpOnly refresh cookie may still describe a live session. Without
 // this, every query on a cold load fires token-less, 401s, and only then

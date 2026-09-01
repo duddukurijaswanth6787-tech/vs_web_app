@@ -1,6 +1,7 @@
 export declare class CreateVariantDto {
     productId: string;
     sku?: string;
+    barcode?: string;
     title?: string;
     priceOverride?: number;
     salePriceOverride?: number;
@@ -21,6 +22,7 @@ export declare class VariantAttributeEntry {
 }
 export declare class UpdateVariantDto {
     colorGroupId?: string;
+    barcode?: string;
     title?: string;
     priceOverride?: number;
     salePriceOverride?: number;

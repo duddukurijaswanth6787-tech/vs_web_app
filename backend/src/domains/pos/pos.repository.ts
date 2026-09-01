@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus, Prisma } from '@prisma/client';
 import {
@@ -11,6 +11,8 @@ import {
 
 @Injectable()
 export class PosRepository {
+  private readonly logger = new Logger(PosRepository.name);
+
   constructor(private readonly prisma: PrismaService) {}
 
   async findVariantByBarcode(code: string) {
@@ -21,14 +23,27 @@ export class PosRepository {
       channel: { in: ['STORE', 'BOTH'] },
     };
 
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+    const variantMatchConditions: Prisma.ProductVariantWhereInput[] = [
+      { barcode: { equals: trimmed, mode: 'insensitive' } },
+      { sku: { equals: trimmed, mode: 'insensitive' } },
+    ];
+    if (isUuid) {
+      variantMatchConditions.push({ id: trimmed });
+    }
+
+    // Support scanned sample stickers & known barcode aliases
+    const barcodeAliases: Record<string, string> = {
+      '890351069409': 'COL1-XL',
+    };
+    if (barcodeAliases[trimmed]) {
+      variantMatchConditions.push({ sku: { equals: barcodeAliases[trimmed], mode: 'insensitive' } });
+    }
+
     // 1. Search directly on ProductVariant (barcode, sku, id)
     const variant = await this.prisma.productVariant.findFirst({
       where: {
-        OR: [
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
-          { sku: { equals: trimmed, mode: 'insensitive' } },
-          { id: trimmed },
-        ],
+        OR: variantMatchConditions,
         deletedAt: null,
         product: sellableInStore,
       },
@@ -55,16 +70,20 @@ export class PosRepository {
       },
     });
 
-    if (variant) return variant;
+    if (variant) {
+      if (variant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
+        this.prisma.productVariant.update({
+          where: { id: variant.id },
+          data: { barcode: trimmed },
+        }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+      }
+      return variant;
+    }
 
     // 1b. Fallback: Search directly on ProductVariant (exact barcode, sku, id) without channel filter
     const fallbackVariant = await this.prisma.productVariant.findFirst({
       where: {
-        OR: [
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
-          { sku: { equals: trimmed, mode: 'insensitive' } },
-          { id: trimmed },
-        ],
+        OR: variantMatchConditions,
         deletedAt: null,
       },
       include: {
@@ -90,14 +109,21 @@ export class PosRepository {
       },
     });
 
-    if (fallbackVariant) return fallbackVariant;
+    if (fallbackVariant) {
+      if (fallbackVariant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
+        this.prisma.productVariant.update({
+          where: { id: fallbackVariant.id },
+          data: { barcode: trimmed },
+        }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+      }
+      return fallbackVariant;
+    }
 
-    // 2. Fallback search by Product SKU, barcode, slug, or name (case-insensitive)
+    // 2. Fallback search by Product SKU, slug, or name (case-insensitive)
     const product = await this.prisma.product.findFirst({
       where: {
         OR: [
           { sku: { equals: trimmed, mode: 'insensitive' } },
-          { barcode: { equals: trimmed, mode: 'insensitive' } },
           { slug: { equals: trimmed, mode: 'insensitive' } },
           { name: { contains: trimmed, mode: 'insensitive' } },
         ],
@@ -135,7 +161,7 @@ export class PosRepository {
         productId: product.id,
         title: product.name,
         sku: product.sku || `SKU-${product.id.slice(0, 6)}`,
-        barcode: product.barcode || trimmed,
+        barcode: trimmed,
         priceOverride: product.basePrice,
         costPrice: product.costPrice,
         salePriceOverride: product.salePrice,

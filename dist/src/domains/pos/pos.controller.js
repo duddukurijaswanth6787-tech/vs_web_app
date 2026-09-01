@@ -28,8 +28,19 @@ let PosController = class PosController {
         const isOwnerOrManager = (user.roles || []).some((r) => ['super_admin', 'admin'].includes(r));
         return this.posService.scanBarcode(dto, isOwnerOrManager);
     }
+    async searchProducts(user, q, limit) {
+        const isOwnerOrManager = (user.roles || []).some((r) => ['super_admin', 'admin'].includes(r));
+        const parsedLimit = Number(limit);
+        return this.posService.searchProducts(q || '', isOwnerOrManager, Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10);
+    }
     async createCheckoutSession(user, dto) {
         return this.posService.createCheckoutSession(user.sub, dto);
+    }
+    async listHeldSessions(terminalId) {
+        return this.posService.listHeldSessions(terminalId);
+    }
+    async cancelHeldSession(sessionId) {
+        return this.posService.cancelHeldSession(sessionId);
     }
     async adoptHandoffSession(dto) {
         return this.posService.adoptHandoffSession(dto);
@@ -76,6 +87,12 @@ let PosController = class PosController {
             cashierId,
         });
     }
+    async recordCashMovement(user, dto, terminalId) {
+        return this.posService.recordCashMovement(user.sub, terminalId || pos_types_1.DEFAULT_TERMINAL_ID, dto);
+    }
+    async listCashMovements(id) {
+        return this.posService.listCashMovements(id);
+    }
     async getShiftReport(id) {
         return this.posService.getShiftReport(id);
     }
@@ -99,6 +116,20 @@ __decorate([
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "scanBarcode", null);
 __decorate([
+    (0, common_1.Get)('products/search'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_guard_1.Permissions)('pos:view'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Search Sellable Products by Name or SKU' }),
+    (0, swagger_1.ApiResponse)({ status: 200, type: [pos_types_1.BarcodeScanResultResponse] }),
+    __param(0, (0, jwt_auth_guard_1.CurrentUser)()),
+    __param(1, (0, common_1.Query)('q')),
+    __param(2, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "searchProducts", null);
+__decorate([
     (0, common_1.Post)('checkout-sessions'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
     (0, permissions_guard_1.Permissions)('pos:view'),
@@ -113,6 +144,28 @@ __decorate([
     __metadata("design:paramtypes", [Object, pos_types_1.CreateCheckoutSessionDto]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "createCheckoutSession", null);
+__decorate([
+    (0, common_1.Get)('checkout-sessions/held'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_guard_1.Permissions)('pos:view'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'List Carts Parked at the Till' }),
+    __param(0, (0, common_1.Query)('terminalId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "listHeldSessions", null);
+__decorate([
+    (0, common_1.Delete)('checkout-sessions/:sessionId'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_guard_1.Permissions)('pos:view'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'Discard a Parked Cart' }),
+    __param(0, (0, common_1.Param)('sessionId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "cancelHeldSession", null);
 __decorate([
     (0, common_1.Post)('checkout-sessions/adopt'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
@@ -141,9 +194,6 @@ __decorate([
 ], PosController.prototype, "completeSale", null);
 __decorate([
     (0, common_1.Get)('barcodes/generate'),
-    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
-    (0, permissions_guard_1.Permissions)('pos:view'),
-    (0, swagger_1.ApiBearerAuth)(),
     (0, swagger_1.ApiOperation)({
         summary: 'Generate Code128 / EAN / QR Barcode PNG Image Stream',
     }),
@@ -275,6 +325,33 @@ __decorate([
     __metadata("design:paramtypes", [String, String, String, String, String]),
     __metadata("design:returntype", Promise)
 ], PosController.prototype, "listShifts", null);
+__decorate([
+    (0, common_1.Post)('shifts/cash-movements'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_guard_1.Permissions)('pos:view'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, common_1.HttpCode)(common_1.HttpStatus.OK),
+    (0, swagger_1.ApiOperation)({
+        summary: 'Record Cash Paid Into or Out of the Drawer (Petty Cash)',
+    }),
+    __param(0, (0, jwt_auth_guard_1.CurrentUser)()),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Query)('terminalId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, pos_types_1.PosCashMovementDto, String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "recordCashMovement", null);
+__decorate([
+    (0, common_1.Get)('shifts/:id/cash-movements'),
+    (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),
+    (0, permissions_guard_1.Permissions)('pos:view'),
+    (0, swagger_1.ApiBearerAuth)(),
+    (0, swagger_1.ApiOperation)({ summary: 'List Drawer Cash Movements for a Shift' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", Promise)
+], PosController.prototype, "listCashMovements", null);
 __decorate([
     (0, common_1.Get)('shifts/:id/report'),
     (0, common_1.UseGuards)(jwt_auth_guard_1.JwtAuthGuard, permissions_guard_1.PermissionsGuard),

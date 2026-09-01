@@ -16,6 +16,7 @@ const class_validator_1 = require("class-validator");
 const commerce_enums_1 = require("../../shared/commerce/commerce.enums");
 class CreateProductVariantDto {
     sku;
+    barcode;
     name;
     price;
     stock;
@@ -28,6 +29,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CreateProductVariantDto.prototype, "sku", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)(),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], CreateProductVariantDto.prototype, "barcode", void 0);
 __decorate([
     (0, swagger_1.ApiProperty)(),
     (0, class_validator_1.IsString)(),
