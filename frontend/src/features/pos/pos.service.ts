@@ -58,6 +58,15 @@ export const posService = {
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
+  /** Look up a customer's loyalty balance and rupee equivalent. */
+  async lookupLoyaltyBalance(customerId: string): Promise<{ customerId: string; pointsBalance: number; tier: string; pointValueRupees: number; rupeeEquivalent: number; isActive: boolean }> {
+    const res = await apiClient.get<StandardResponse<{ customerId: string; pointsBalance: number; tier: string; pointValueRupees: number; rupeeEquivalent: number; isActive: boolean }>>(
+      '/pos/loyalty/balance',
+      { params: { customerId } },
+    );
+    return res.data.data!;
+  },
+
   /** Look up a gift card's remaining balance for the till. */
   async lookupGiftCardBalance(code: string): Promise<{ code: string; balance: number; status: string }> {
     const res = await apiClient.post<StandardResponse<{ code: string; balance: number; status: string }>>(

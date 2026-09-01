@@ -335,6 +335,24 @@ export class CompletePosSaleDto {
   @Type(() => PosGiftCardTenderDto)
   giftCardTenders?: PosGiftCardTenderDto[];
 
+  @ApiPropertyOptional({
+    description:
+      'Loyalty points the customer wants to redeem against this sale. ' +
+      'Requires loyaltyCustomerId. Points are booked as a LOYALTY tender at ' +
+      '1 point = Rs.1 after the order exists.',
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  loyaltyPointsRedeem?: number;
+
+  @ApiPropertyOptional({
+    description: 'Customer profile id whose loyalty account is being drawn from.',
+  })
+  @IsOptional()
+  @IsString()
+  loyaltyCustomerId?: string;
+
   @ApiPropertyOptional({ type: PosCustomerInfoDto })
   @IsOptional()
   @ValidateNested()

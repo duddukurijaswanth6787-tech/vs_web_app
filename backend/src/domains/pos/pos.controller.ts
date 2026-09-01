@@ -214,6 +214,20 @@ export class PosController {
     return this.posService.lookupGiftCardBalance(dto.code);
   }
 
+  @Get('loyalty/balance')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Look up a Customer Loyalty Balance and Rupee Equivalent for the Till',
+  })
+  async lookupLoyaltyBalance(@Query('customerId') customerId: string) {
+    if (!customerId || !customerId.trim()) {
+      throw new BadRequestException('customerId is required.');
+    }
+    return this.posService.lookupLoyaltyBalance(customerId.trim());
+  }
+
   @Get('receipts/reprint')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')

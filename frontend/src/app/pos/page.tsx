@@ -44,6 +44,7 @@ import {
   useReprintReceipt,
   useValidateCoupon,
   useLookupGiftCard,
+  useLoyaltyBalance,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -83,6 +84,10 @@ export default function DesktopPosPage() {
   const [giftCardAmountInput, setGiftCardAmountInput] = useState('');
   const [giftCards, setGiftCards] = useState<{ code: string; amount: number; balance: number }[]>([]);
   const [giftCardError, setGiftCardError] = useState('');
+  // Loyalty at POS. Requires the customer to be identified by phone lookup
+  // first; without that, there's no account to draw points from.
+  const [loyaltyPointsInput, setLoyaltyPointsInput] = useState('');
+  const [loyaltyApplied, setLoyaltyApplied] = useState<{ points: number; rupees: number } | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>('UPI');
   // Split bills: what the customer handed over on each tender. Kept as strings
   // so the boxes can be left blank rather than showing a stubborn 0.
@@ -141,6 +146,7 @@ export default function DesktopPosPage() {
   const reprintMutation = useReprintReceipt();
   const validateCouponMutation = useValidateCoupon();
   const lookupGiftCardMutation = useLookupGiftCard();
+  const loyaltyBalanceQuery = useLoyaltyBalance(customerLookupResult?.customerProfileId);
   const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
@@ -431,6 +437,29 @@ export default function DesktopPosPage() {
   // Look up a gift card, cap the requested redeem at its live balance, and
   // stash it as an additional tender. Server re-caps at complete time in
   // case another till spent the balance in between.
+  const handleApplyLoyalty = () => {
+    const asked = Math.floor(Number(loyaltyPointsInput) || 0);
+    if (asked <= 0) return;
+    const bal = loyaltyBalanceQuery.data;
+    if (!bal) return;
+    const capByBalance = Math.min(asked, bal.pointsBalance);
+    // Also cap at what the bill can absorb (in points), so the user gets
+    // immediate feedback rather than a server-side capping.
+    const remainingRupees = grandTotal;
+    const capByBill = Math.floor(remainingRupees / (bal.pointValueRupees || 1));
+    const points = Math.max(0, Math.min(capByBalance, capByBill));
+    const rupees = Math.round(points * (bal.pointValueRupees || 1) * 100) / 100;
+    if (points > 0) {
+      setLoyaltyApplied({ points, rupees });
+      setLoyaltyPointsInput('');
+    }
+  };
+
+  const handleRemoveLoyalty = () => {
+    setLoyaltyApplied(null);
+    setLoyaltyPointsInput('');
+  };
+
   const handleAddGiftCard = () => {
     const code = giftCardInput.trim();
     if (!code) return;
@@ -591,6 +620,8 @@ export default function DesktopPosPage() {
         splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
         couponCode: couponApplied?.code,
         giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
+        loyaltyPointsRedeem: loyaltyApplied?.points,
+        loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
         customer,
         discountTotal,
         taxTotal,
@@ -669,6 +700,8 @@ export default function DesktopPosPage() {
           setGiftCards([]);
           setGiftCardInput('');
           setGiftCardAmountInput('');
+          setLoyaltyApplied(null);
+          setLoyaltyPointsInput('');
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -688,6 +721,8 @@ export default function DesktopPosPage() {
               splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
               couponCode: couponApplied?.code,
               giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
+              loyaltyPointsRedeem: loyaltyApplied?.points,
+              loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
               customer,
               discountTotal,
               taxTotal,
@@ -720,6 +755,8 @@ export default function DesktopPosPage() {
           setGiftCards([]);
           setGiftCardInput('');
           setGiftCardAmountInput('');
+          setLoyaltyApplied(null);
+          setLoyaltyPointsInput('');
         },
       },
     );
@@ -1432,6 +1469,48 @@ export default function DesktopPosPage() {
               </div>
               {giftCardError && (
                 <p className="text-[10px] font-medium text-sky-800">{giftCardError}</p>
+              )}
+
+              {loyaltyBalanceQuery.data && loyaltyBalanceQuery.data.pointsBalance > 0 && !loyaltyApplied && (
+                <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-2 py-1.5">
+                  <span className="text-[11px] font-bold text-amber-900 flex-1">
+                    {loyaltyBalanceQuery.data.pointsBalance} pts (~₹{loyaltyBalanceQuery.data.rupeeEquivalent})
+                  </span>
+                  <input
+                    type="number"
+                    min={0}
+                    max={loyaltyBalanceQuery.data.pointsBalance}
+                    value={loyaltyPointsInput}
+                    onChange={(e) => setLoyaltyPointsInput(e.target.value)}
+                    placeholder="Redeem"
+                    className="w-20 bg-white border border-amber-200 rounded-md px-2 py-1 text-right text-[11px] font-bold focus:outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyLoyalty}
+                    disabled={!loyaltyPointsInput}
+                    className="bg-amber-700 hover:bg-amber-800 text-white text-[11px] font-bold px-3 py-1 rounded-md disabled:opacity-50"
+                  >
+                    Use
+                  </button>
+                </div>
+              )}
+              {loyaltyApplied && (
+                <div className="flex justify-between items-center text-amber-900 bg-amber-50 rounded-lg px-2 py-1.5">
+                  <span className="font-bold text-[11px]">
+                    Loyalty {loyaltyApplied.points} pts
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold">-₹{loyaltyApplied.rupees.toFixed(2)}</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveLoyalty}
+                      className="text-amber-700 hover:text-amber-900 text-[10px] font-bold"
+                    >
+                      REMOVE
+                    </button>
+                  </span>
+                </div>
               )}
 
               <div className="flex justify-between text-neutral-600">

@@ -15,6 +15,7 @@ import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
 import { CouponService } from '@domains/coupon/coupon.service';
 import { GiftCardService } from '@domains/gift-card/gift-card.service';
+import { LoyaltyService } from '@domains/loyalty/loyalty.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import {
   ScanBarcodeDto,
@@ -50,7 +51,18 @@ export class PosService {
     private readonly auditService: AuditService,
     private readonly couponService: CouponService,
     private readonly giftCardService: GiftCardService,
+    private readonly loyaltyService: LoyaltyService,
   ) {}
+
+  /**
+   * The rate at which loyalty points redeem to rupees at the till.
+   *
+   * Kept as a constant here rather than a per-shop setting because a single
+   * value is what a cashier can hold in their head, and Odoo's default
+   * pricelist behaves the same way. If the shop ever wants a different rate,
+   * move this to WebsiteSetting.
+   */
+  private static readonly LOYALTY_POINT_VALUE_RUPEES = 1;
   async scanBarcode(
     dto: ScanBarcodeDto,
     // Defaults to withholding cost price: a caller that has not said who it
@@ -512,6 +524,48 @@ export class PosService {
       );
     }
 
+    // Loyalty points redeem is validated + capped here (against live balance
+    // and the sale's grand total). Booked as its own tender at 1 point = Rs.1
+    // and drawn down from the customer's account after the order exists.
+    let loyaltyTender: { method: 'LOYALTY'; amount: number } | null = null;
+    let loyaltyBooking: {
+      customerId: string;
+      points: number;
+      rupees: number;
+    } | null = null;
+    if (dto.loyaltyPointsRedeem && dto.loyaltyPointsRedeem > 0) {
+      if (!dto.loyaltyCustomerId) {
+        throw new BadRequestException(
+          'Loyalty redemption needs a customer to draw points from.',
+        );
+      }
+      try {
+        const bal = await this.loyaltyService.adminBalance(dto.loyaltyCustomerId);
+        if (!bal.isActive) {
+          throw new BusinessException('Loyalty account inactive', 'LOYALTY_001');
+        }
+        const askedPoints = Math.floor(dto.loyaltyPointsRedeem);
+        const cappedByBalance = Math.min(askedPoints, bal.pointsBalance);
+        const cappedByGrand = Math.min(
+          cappedByBalance,
+          Math.floor(grandTotal / PosService.LOYALTY_POINT_VALUE_RUPEES),
+        );
+        if (cappedByGrand > 0) {
+          const rupees = Math.round(cappedByGrand * PosService.LOYALTY_POINT_VALUE_RUPEES * 100) / 100;
+          loyaltyTender = { method: 'LOYALTY', amount: rupees };
+          loyaltyBooking = {
+            customerId: dto.loyaltyCustomerId,
+            points: cappedByGrand,
+            rupees,
+          };
+        }
+      } catch (err) {
+        throw new BadRequestException(
+          err instanceof Error ? err.message : 'Loyalty redemption failed',
+        );
+      }
+    }
+
     // Gift cards are booked as their own tenders, at whatever amount the
     // till asked for -- capped at the card's live balance so a race with
     // another till emptying it can't overspend. Combined with any split
@@ -535,23 +589,29 @@ export class PosService {
       | { method: string; amount: number }[]
       | undefined;
     let changeDue = 0;
-    const gcTendered = giftCardAllocations.reduce((s, a) => s + a.amount, 0);
+    // Non-cash redemption tenders (gift card + loyalty) come first, then
+    // the rest of the bill is settled on whatever the customer hands over.
+    const redemptionAllocations: { method: string; amount: number }[] = [
+      ...giftCardAllocations,
+      ...(loyaltyTender ? [loyaltyTender] : []),
+    ];
+    const redemptionTotal = redemptionAllocations.reduce((s, a) => s + a.amount, 0);
     if (dto.splitPayments?.length) {
-      const totalToSplit = Math.max(0, grandTotal - gcTendered);
+      const totalToSplit = Math.max(0, grandTotal - redemptionTotal);
       try {
         const split = allocateTenders(dto.splitPayments, totalToSplit);
-        tenderAllocations = [...giftCardAllocations, ...split.allocations];
+        tenderAllocations = [...redemptionAllocations, ...split.allocations];
         changeDue = split.changeDue;
       } catch (err) {
         throw new BadRequestException(
           err instanceof Error ? err.message : 'Invalid split payment',
         );
       }
-    } else if (giftCardAllocations.length) {
-      // Gift cards without a split: they cover part or all of the bill; any
-      // remainder is settled on the primary paymentMethod as a single tender.
-      const remainder = Math.max(0, Math.round((grandTotal - gcTendered) * 100) / 100);
-      tenderAllocations = [...giftCardAllocations];
+    } else if (redemptionAllocations.length) {
+      // Redemption tenders without a split: they cover part or all of the
+      // bill; any remainder is settled on the primary paymentMethod.
+      const remainder = Math.max(0, Math.round((grandTotal - redemptionTotal) * 100) / 100);
+      tenderAllocations = [...redemptionAllocations];
       if (remainder > 0) {
         tenderAllocations.push({ method: dto.paymentMethod, amount: remainder });
       }
@@ -597,6 +657,38 @@ export class PosService {
         'Auto-cancelled: insufficient stock at sale completion',
       );
       throw err;
+    }
+
+    // Book the loyalty redemption once the order has an id. redeemInternal
+    // holds a transaction so a concurrent redemption of the same account
+    // that would together overspend the balance is serialised through it.
+    if (loyaltyBooking) {
+      try {
+        await this.loyaltyService.adminRedeem(
+          {
+            customerId: loyaltyBooking.customerId,
+            points: loyaltyBooking.points,
+            referenceType: 'ORDER',
+            referenceId: order.id,
+            description: `POS sale ${order.orderNumber}`,
+          },
+          cashierId,
+        );
+      } catch (err) {
+        this.logger.warn(
+          `Loyalty redeem failed for ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+        );
+        await this.workflow.transition(
+          order.id,
+          'CANCELLED',
+          cashierId,
+          `Auto-cancelled: loyalty points could not be redeemed`,
+        );
+        throw new BusinessException(
+          err instanceof Error ? err.message : 'Loyalty redemption failed',
+          'POS_LOYALTY_REDEEM_FAILED',
+        );
+      }
     }
 
     // Book the gift card redemptions once the order has an id. The gift
@@ -870,6 +962,27 @@ export class PosService {
         err instanceof Error ? err.message : 'Invalid coupon',
       );
     }
+  }
+
+  /**
+   * Reads a customer's loyalty points balance and its rupee equivalent, so
+   * the till can show the cashier "500 pts (Rs.500)" alongside the customer
+   * lookup and offer a redeem input.
+   */
+  async lookupLoyaltyBalance(customerId: string) {
+    if (!customerId || !customerId.trim()) {
+      throw new BadRequestException('customerId is required.');
+    }
+    const bal = await this.loyaltyService.adminBalance(customerId.trim());
+    return {
+      customerId: bal.customerId,
+      pointsBalance: bal.pointsBalance,
+      tier: bal.tier,
+      isActive: bal.isActive,
+      pointValueRupees: PosService.LOYALTY_POINT_VALUE_RUPEES,
+      rupeeEquivalent:
+        bal.pointsBalance * PosService.LOYALTY_POINT_VALUE_RUPEES,
+    };
   }
 
   /**

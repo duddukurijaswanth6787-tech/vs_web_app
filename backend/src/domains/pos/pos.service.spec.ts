@@ -20,6 +20,8 @@ describe('PosService (Phase 1 Backend)', () => {
   let couponServiceToken: import('@nestjs/common').Type<unknown>;
   let giftCardService: { getBalance: jest.Mock; redeem: jest.Mock };
   let giftCardServiceToken: import('@nestjs/common').Type<unknown>;
+  let loyaltyService: { adminBalance: jest.Mock; adminRedeem: jest.Mock };
+  let loyaltyServiceToken: import('@nestjs/common').Type<unknown>;
   let auditService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -94,6 +96,19 @@ describe('PosService (Phase 1 Backend)', () => {
       await import('@domains/gift-card/gift-card.service')
     ).GiftCardService;
 
+    loyaltyService = {
+      adminBalance: jest.fn().mockResolvedValue({
+        customerId: 'c-1',
+        pointsBalance: 0,
+        tier: 'BRONZE',
+        isActive: true,
+      }),
+      adminRedeem: jest.fn().mockResolvedValue({}),
+    };
+    loyaltyServiceToken = (
+      await import('@domains/loyalty/loyalty.service')
+    ).LoyaltyService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PosService,
@@ -123,6 +138,10 @@ describe('PosService (Phase 1 Backend)', () => {
         {
           provide: giftCardServiceToken,
           useValue: giftCardService,
+        },
+        {
+          provide: loyaltyServiceToken,
+          useValue: loyaltyService,
         },
       ],
     }).compile();
@@ -456,6 +475,90 @@ describe('PosService (Phase 1 Backend)', () => {
           reason: 'x',
         }),
       ).rejects.toThrow(/Open a shift/);
+    });
+  });
+
+  describe('loyalty points at POS', () => {
+    it('caps at the account balance and the grand total (whichever is lower)', async () => {
+      loyaltyService.adminBalance.mockResolvedValue({
+        customerId: 'cust-1',
+        pointsBalance: 500,
+        tier: 'SILVER',
+        isActive: true,
+      });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 300,
+        items: [{ id: 'i-1' }],
+        createdAt: new Date(),
+      });
+
+      await service.completeSale('cashier-1', {
+        items: [
+          {
+            productId: 'p1',
+            productName: 'Kurti',
+            quantity: 1,
+            unitPrice: 300,
+          },
+        ],
+        paymentMethod: PosPaymentMethodType.CASH,
+        amountPaid: 300,
+        loyaltyPointsRedeem: 500,
+        loyaltyCustomerId: 'cust-1',
+      });
+
+      // Bill is Rs.300; 500pts at 1:1 would be Rs.500, so capped at 300.
+      // No cash remainder needed either.
+      expect(repository.createPosOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payments: [{ method: 'LOYALTY', amount: 300 }],
+        }),
+      );
+      // Only the 300 that actually applied is redeemed against the account.
+      expect(loyaltyService.adminRedeem).toHaveBeenCalledWith(
+        expect.objectContaining({
+          customerId: 'cust-1',
+          points: 300,
+          referenceId: 'order-1',
+        }),
+        'cashier-1',
+      );
+    });
+
+    it('refuses redemption without a customer to draw from', async () => {
+      await expect(
+        service.completeSale('cashier-1', {
+          items: [
+            {
+              productId: 'p1',
+              productName: 'Kurti',
+              quantity: 1,
+              unitPrice: 300,
+            },
+          ],
+          paymentMethod: PosPaymentMethodType.CASH,
+          amountPaid: 300,
+          loyaltyPointsRedeem: 50,
+        }),
+      ).rejects.toThrow(/needs a customer/);
+    });
+
+    it('lookupLoyaltyBalance returns points and rupee equivalent (1:1 by default)', async () => {
+      loyaltyService.adminBalance.mockResolvedValue({
+        customerId: 'cust-2',
+        pointsBalance: 250,
+        tier: 'GOLD',
+        isActive: true,
+      });
+      const res = await service.lookupLoyaltyBalance('cust-2');
+      expect(res.pointsBalance).toBe(250);
+      expect(res.rupeeEquivalent).toBe(250);
+      expect(res.pointValueRupees).toBe(1);
     });
   });
 

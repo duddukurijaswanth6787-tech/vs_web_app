@@ -51,6 +51,15 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Look up a customer's loyalty balance for the till. */
+export function useLoyaltyBalance(customerId?: string) {
+  return useQuery({
+    queryKey: [...posKeys.all, 'loyalty-balance', customerId],
+    queryFn: () => posService.lookupLoyaltyBalance(customerId!),
+    enabled: !!customerId,
+  });
+}
+
 /** Look up a gift card's remaining balance for the till. */
 export function useLookupGiftCard() {
   return useMutation({

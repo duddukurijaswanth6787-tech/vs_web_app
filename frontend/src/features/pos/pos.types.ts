@@ -81,6 +81,9 @@ export interface CompletePosSalePayload {
   couponCode?: string;
   /** Gift cards used to pay. Each is booked as its own tender + redemption. */
   giftCardTenders?: { code: string; amount: number }[];
+  /** Loyalty points redeemed at 1 point = Rs.1. Needs loyaltyCustomerId. */
+  loyaltyPointsRedeem?: number;
+  loyaltyCustomerId?: string;
   customer?: PosCustomerInfo;
   terminalId?: string;
   shopId?: string;
@@ -113,6 +116,9 @@ export interface PosSaleResult {
 
 export interface PosCustomerLookupResult extends PosCustomerInfo {
   found?: boolean;
+  /** Customer profile id -- needed to look up their loyalty account. */
+  customerProfileId?: string;
+  userId?: string;
   ordersCount?: number;
   totalSpent?: number;
   recentOrders?: PosCustomerOrderSummary[];

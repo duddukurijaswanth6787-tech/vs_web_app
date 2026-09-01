@@ -83,6 +83,10 @@ describe('PosService returns', () => {
           provide: (await import('@domains/gift-card/gift-card.service')).GiftCardService,
           useValue: { getBalance: jest.fn(), redeem: jest.fn() },
         },
+        {
+          provide: (await import('@domains/loyalty/loyalty.service')).LoyaltyService,
+          useValue: { adminBalance: jest.fn(), adminRedeem: jest.fn() },
+        },
       ],
     }).compile();
 
