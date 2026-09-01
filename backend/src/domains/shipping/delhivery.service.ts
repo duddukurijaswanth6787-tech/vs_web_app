@@ -50,39 +50,15 @@ export interface DelhiveryTrackingResult {
 @Injectable()
 export class DelhiveryService {
   private readonly logger = new Logger(DelhiveryService.name);
-  private readonly mcpUrl: string;
-  private readonly clientId: string;
-  private readonly clientSecret: string;
-  private readonly realm: string;
-  private readonly cmsClient: string;
+  private readonly apiToken: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.mcpUrl =
-      this.configService.get<string>('DELHIVERY_MCP_URL') ||
-      'https://mcp-client.delhivery.com/mcp';
-    this.clientId =
-      this.configService.get<string>('DELHIVERY_CLIENT_ID') ||
-      'ucp-service-cli';
-    this.clientSecret =
-      this.configService.get<string>('DELHIVERY_CLIENT_SECRET') ||
-      'IU0BAVT4CWNRPEYHQE6YP82B1687Z3GW';
-    this.realm =
-      this.configService.get<string>('DELHIVERY_REALM') || 'ucp-71R1S2JBAHNN';
-    this.cmsClient =
-      this.configService.get<string>('DELHIVERY_CLIENT_CMS') ||
-      'cms::client::0e5f259f-3bb0-4e2e-9800-e772e81e6df2';
+    this.apiToken =
+      this.configService.get<string>('DELHIVERY_API_TOKEN') ||
+      '0bfb0bcc34ee8ff06f6e06d36b40c96830d20f44';
   }
 
-  private getAuthHeaders(): Record<string, string> {
-    return {
-      'Accept': 'application/json',
-      'X-Client-Id': this.clientId,
-      'X-Client-Secret': this.clientSecret,
-      'X-Realm': this.realm,
-      'X-CMS-Client': this.cmsClient,
-      'X-MCP-Url': this.mcpUrl,
-    };
-  }
+
 
   /**
    * Check pincode serviceability via Delhivery API / MCP
@@ -91,9 +67,9 @@ export class DelhiveryService {
     try {
       this.logger.log(`Checking Delhivery pincode serviceability for ${pincode}`);
       
-      const res = await fetch(`https://track.delhivery.com/c/api/pin-codes/json/?cl=${encodeURIComponent(this.clientId)}&filter_codes=${pincode}`, {
-        headers: this.getAuthHeaders(),
-      });
+      const res = await fetch(
+        `https://track.delhivery.com/c/api/pin-codes/json/?token=${encodeURIComponent(this.apiToken)}&filter_codes=${pincode}`,
+      );
 
       if (res.ok) {
         const data = await res.json();
@@ -151,9 +127,9 @@ export class DelhiveryService {
     this.logger.log(`Tracking Delhivery AWB: ${waybill}`);
 
     try {
-      const res = await fetch(`https://track.delhivery.com/api/v1/packages/json/?waybill=${waybill}`, {
-        headers: { 'Accept': 'application/json' },
-      });
+      const res = await fetch(
+        `https://track.delhivery.com/api/v1/packages/json/?token=${encodeURIComponent(this.apiToken)}&waybill=${waybill}`,
+      );
       if (res.ok) {
         const data = await res.json();
         const pkg = data?.ShipmentData?.[0]?.Shipment;
