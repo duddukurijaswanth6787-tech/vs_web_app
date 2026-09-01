@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -16,10 +16,10 @@ import {
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function PosLoginPage() {
+function PosLoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/pos';
+  const redirectUrl = searchParams?.get('redirect') || '/pos';
   const { login, isStaffUser } = useAuth();
 
   const [email, setEmail] = useState('admin@vasanthi.com');
@@ -183,5 +183,13 @@ export default function PosLoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function PosLoginPage() {
+  return (
+    <Suspense fallback={<div className="flex h-screen w-screen items-center justify-center bg-neutral-950 text-white text-xs">Loading POS Login...</div>}>
+      <PosLoginForm />
+    </Suspense>
   );
 }
