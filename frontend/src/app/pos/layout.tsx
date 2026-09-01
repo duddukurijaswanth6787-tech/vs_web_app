@@ -45,10 +45,15 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
     user?.roles?.includes('super_admin') || user?.roles?.includes('admin');
 
   useEffect(() => {
+    if (pathname === '/pos/login') return;
     if (!isInitializing && !isStaffUser) {
-      router.push('/login?redirect=/pos');
+      router.push(`/pos/login?redirect=${encodeURIComponent(pathname)}`);
     }
-  }, [isInitializing, isStaffUser, router]);
+  }, [isInitializing, isStaffUser, pathname, router]);
+
+  if (pathname === '/pos/login') {
+    return <>{children}</>;
+  }
 
   const handleUnlockPos = (e: React.FormEvent) => {
     e.preventDefault();
