@@ -159,13 +159,25 @@ async function bootstrap() {
 
   try {
     const prismaService = app.get(PrismaService);
+    await prismaService.$executeRawUnsafe(
+      'ALTER TABLE users ADD COLUMN IF NOT EXISTS "posPinHash" TEXT;',
+    );
+    await prismaService.$executeRawUnsafe(
+      'ALTER TABLE orders ADD COLUMN IF NOT EXISTS "courierPartner" TEXT;',
+    );
+    await prismaService.$executeRawUnsafe(
+      'ALTER TABLE orders ADD COLUMN IF NOT EXISTS "waybillNumber" TEXT;',
+    );
+    await prismaService.$executeRawUnsafe(
+      'ALTER TABLE orders ADD COLUMN IF NOT EXISTS "trackingUrl" TEXT;',
+    );
     await prismaService.productVariant.updateMany({
       where: { sku: 'COL1-XL' },
       data: { barcode: '890351069409' },
     });
-    console.log('[BOOTSTRAP] Successfully mapped barcode 890351069409 to variant COL1-XL');
+    console.log('[BOOTSTRAP] Successfully auto-healed production database schema & barcode mappings');
   } catch (err: any) {
-    console.warn('[BOOTSTRAP] Barcode mapping notice:', err.message);
+    console.warn('[BOOTSTRAP] Database bootstrap notice:', err.message);
   }
 
   console.log(`[BOOTSTRAP] Attempting to listen on 0.0.0.0:${port}...`);
