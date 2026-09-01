@@ -16,6 +16,10 @@ describe('AppController', () => {
         // test only needs them to resolve, not to do anything.
         { provide: AwsBillingService, useValue: {} },
         { provide: AnalyticsService, useValue: {} },
+        {
+          provide: (await import('@database/prisma.service')).PrismaService,
+          useValue: {},
+        },
       ],
     }).compile();
 

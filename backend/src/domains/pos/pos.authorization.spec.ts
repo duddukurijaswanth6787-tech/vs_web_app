@@ -25,7 +25,19 @@ describe('PosController authorization', () => {
     expect(routeNames.length).toBeGreaterThan(10);
   });
 
-  it.each(routeNames)('%s requires a permission, not just a login', (name) => {
+  // Handlers deliberately marked @Public serve a public URL (e.g. an <img>
+  // that renders a barcode image directly). They must not carry the pos:view
+  // rule -- doing so would break the anonymous fetch. Every other handler
+  // is still asserted to be permission-guarded below.
+  const isPublicHandler = (name: string) => {
+    const handler = (
+      PosController.prototype as never as Record<string, object>
+    )[name];
+    return Reflect.getMetadata('isPublic', handler) === true;
+  };
+  const guardedRouteNames = routeNames.filter((n) => !isPublicHandler(n));
+
+  it.each(guardedRouteNames)('%s requires a permission, not just a login', (name) => {
     const handler = (
       PosController.prototype as never as Record<string, object>
     )[name];
@@ -35,7 +47,7 @@ describe('PosController authorization', () => {
     expect(permissions).toContain('pos:view');
   });
 
-  it.each(routeNames)('%s is guarded', (name) => {
+  it.each(guardedRouteNames)('%s is guarded', (name) => {
     const handler = (
       PosController.prototype as never as Record<string, object>
     )[name];
