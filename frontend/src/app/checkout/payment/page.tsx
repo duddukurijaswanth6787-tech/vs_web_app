@@ -28,7 +28,7 @@ function CheckoutPaymentPageContent() {
   const { isAuthenticated, isInitializing } = useAuth();
   const { data: methods, isLoading } = usePaymentMethods();
   const placeOrder = usePlaceOrder();
-  const [selected, setSelected] = useState('cod');
+  const [selected, setSelected] = useState('razorpay');
   const [payError, setPayError] = useState('');
   const [verifying, setVerifying] = useState(false);
   const [couponCode] = useState(
@@ -69,14 +69,12 @@ function CheckoutPaymentPageContent() {
             router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
           })
           .catch((err: unknown) => {
+            setPayError(getApiErrorMessage(err, 'Payment verification failed'));
             setVerifying(false);
-            setPayError(
-              getApiErrorMessage(err, 'Payment verification failed. Contact support if money was deducted.'),
-            );
           });
       },
       modal: {
-        ondismiss: () => setPayError('Payment cancelled. You can try again below.'),
+        ondismiss: () => setVerifying(false),
       },
       theme: { color: '#0284c7' },
     });
@@ -90,12 +88,11 @@ function CheckoutPaymentPageContent() {
     }
     setPayError('');
     try {
-      const paymentMethod = selected === 'razorpay' ? 'RAZORPAY' : 'COD';
       const order = await placeOrder.mutateAsync({
         addressId,
         shippingMethod: 'STANDARD',
         couponCode: couponCode || undefined,
-        paymentMethod,
+        paymentMethod: 'RAZORPAY',
       });
       if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
 
@@ -157,19 +154,21 @@ function CheckoutPaymentPageContent() {
         )}
 
         {isLoading && <p className="text-sm text-neutral-500">Loading payment methods…</p>}
-        {((methods || []) as unknown as PaymentMethod[]).map((m) => (
-          <button
-            key={m.code}
-            type="button"
-            onClick={() => setSelected(m.code)}
-            className={`w-full text-left bg-white border rounded-2xl p-4 ${
-              selected === m.code ? 'border-[var(--brand-primary)] bg-sky-50/40' : 'border-neutral-200'
-            }`}
-          >
-            <p className="text-sm font-bold">{m.title}</p>
-            <p className="text-xs text-neutral-500 mt-1">{m.description}</p>
-          </button>
-        ))}
+        {((methods || []) as unknown as PaymentMethod[])
+          .filter((m) => m.code.toLowerCase() !== 'cod')
+          .map((m) => (
+            <button
+              key={m.code}
+              type="button"
+              onClick={() => setSelected(m.code)}
+              className={`w-full text-left bg-white border rounded-2xl p-4 ${
+                selected === m.code ? 'border-[var(--brand-primary)] bg-sky-50/40' : 'border-neutral-200'
+              }`}
+            >
+              <p className="text-sm font-bold">{m.title}</p>
+              <p className="text-xs text-neutral-500 mt-1">{m.description}</p>
+            </button>
+          ))}
 
         <button
           type="button"

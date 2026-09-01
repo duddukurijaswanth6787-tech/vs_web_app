@@ -26,8 +26,8 @@ export function BenefitsStrip() {
     },
     {
       icon: Banknote,
-      title: 'COD Available',
-      description: 'Cash on delivery',
+      title: 'Fast Dispatch',
+      description: 'Quick & reliable delivery',
     },
     {
       icon: Gift,

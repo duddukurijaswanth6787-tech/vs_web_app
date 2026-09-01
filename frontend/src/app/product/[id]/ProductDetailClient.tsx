@@ -399,7 +399,7 @@ export function ProductDetailClient() {
           <span className="text-neutral-200 hidden sm:inline">|</span>
           <div className="flex items-center gap-1.5">
             <Award className="w-3.5 h-3.5 text-neutral-400" />
-            <span>COD Available</span>
+            <span>100% Authentic Quality</span>
           </div>
           <span className="text-neutral-200 hidden sm:inline">|</span>
           <div className="flex items-center gap-1.5">

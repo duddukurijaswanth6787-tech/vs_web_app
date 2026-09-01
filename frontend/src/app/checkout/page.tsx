@@ -59,7 +59,7 @@ function CheckoutPageContent() {
     try {
       const order = await placeOrder.mutateAsync({
         addressId,
-        paymentMethod: 'COD',
+        paymentMethod: 'RAZORPAY',
         notes: notes || undefined,
         deliveryInstructions: deliveryInstructions || undefined,
         preferredDeliverySlot: preferredDeliverySlot || undefined,

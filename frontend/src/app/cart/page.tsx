@@ -169,8 +169,8 @@ export default function CartPage() {
           <div className="flex flex-col items-center justify-center gap-1">
             <Gift className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
-              <p className="font-bold text-[var(--brand-primary)]">COD Available</p>
-              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">Pay on Delivery</p>
+              <p className="font-bold text-[var(--brand-primary)]">Secure Checkout</p>
+              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">100% Encrypted</p>
             </div>
           </div>
         </div>
@@ -526,7 +526,7 @@ export default function CartPage() {
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <Gift className="w-3.5 h-3.5" />
                     </div>
-                    <span>COD Available</span>
+                    <span>Secure Payment</span>
                   </div>
                 </div>
               </div>
