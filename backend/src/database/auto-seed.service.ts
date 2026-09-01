@@ -106,7 +106,12 @@ export class AutoSeedService implements OnModuleInit {
     } catch {
       // ignore DDL errors if column/table exists or role is unprivileged
     }
-    await this.seedEssentialData();
+
+    try {
+      await this.seedEssentialData();
+    } catch (err: any) {
+      this.logger.warn(`AutoSeed notice (non-fatal): ${err.message}`);
+    }
   }
 
   async seedEssentialData() {
