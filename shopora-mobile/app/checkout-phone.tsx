@@ -45,6 +45,11 @@ export default function MobilePaymentScreen() {
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState('');
+  // Split-payment tenders. Cashier picks amounts on each method; server
+  // validates they cover the total (minus coupon and any redemptions).
+  const [splitCash, setSplitCash] = useState('');
+  const [splitUpi, setSplitUpi] = useState('');
+  const [splitCard, setSplitCard] = useState('');
 
   useFocusEffect(
     useCallback(() => {
@@ -130,6 +135,19 @@ export default function MobilePaymentScreen() {
   }
 
   const grandTotal = Number(grandTotalStr || '0');
+  const effectiveTotal = Math.max(0, grandTotal - (couponApplied?.discountAmount || 0));
+  const splitEntries = ([
+    { method: 'CASH' as const, value: splitCash },
+    { method: 'UPI' as const, value: splitUpi },
+    { method: 'CARD' as const, value: splitCard },
+  ]
+    .map((t) => ({ method: t.method, amount: Number(t.value) || 0 }))
+    .filter((t) => t.amount > 0));
+  const splitTendered = Math.round(splitEntries.reduce((s, t) => s + t.amount, 0) * 100) / 100;
+  const splitShortfall = Math.round(Math.max(0, effectiveTotal - splitTendered) * 100) / 100;
+  const splitExcess = Math.round(Math.max(0, splitTendered - effectiveTotal) * 100) / 100;
+  const splitCashN = Number(splitCash) || 0;
+  const splitChangeBlocked = splitExcess > splitCashN + 0.005;
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
@@ -156,6 +174,16 @@ export default function MobilePaymentScreen() {
       Alert.alert('Shift Required', 'Open a shift before billing so cash sales can be reconciled at close.');
       return;
     }
+    if (paymentMethod === 'SPLIT') {
+      if (splitShortfall > 0) {
+        Alert.alert('Split short', `Split payment is short by Rs.${splitShortfall.toFixed(2)}.`);
+        return;
+      }
+      if (splitChangeBlocked) {
+        Alert.alert('Cannot give change', 'Change can only come out of cash. Reduce the card or UPI amount.');
+        return;
+      }
+    }
     try {
       setLoading(true);
       const res = await posMobileService.completeSale({
@@ -163,10 +191,9 @@ export default function MobilePaymentScreen() {
         paymentMethod,
         amountPaid: grandTotal,
         customer,
-        // Bills to this phone's register, so the sale lands in the shift
-        // whose drawer actually holds the cash.
         terminalId,
         couponCode: couponApplied?.code,
+        splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
       });
 
       router.push({
@@ -189,7 +216,7 @@ export default function MobilePaymentScreen() {
         // The customer still gets a confirmation; the order itself is only
         // created once this syncs (see services/offline/useOfflineSync.ts).
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code },
+          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined },
           { items: cartItems, customer, paymentMethod, grandTotal },
         );
 
@@ -282,7 +309,50 @@ export default function MobilePaymentScreen() {
             On Credit
           </Text>
         </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.methodCard, paymentMethod === 'SPLIT' && styles.methodCardActive]}
+          onPress={() => setPaymentMethod('SPLIT')}
+          activeOpacity={0.85}
+        >
+          <Sparkles size={24} color={paymentMethod === 'SPLIT' ? '#ffffff' : '#0284c7'} />
+          <Text style={[styles.methodText, paymentMethod === 'SPLIT' && styles.methodTextActive]}>
+            Split
+          </Text>
+        </TouchableOpacity>
       </View>
+
+      {paymentMethod === 'SPLIT' && (
+        <View style={styles.splitBox}>
+          <Text style={styles.splitTitle}>Enter what the customer paid on each tender</Text>
+          {(['CASH', 'UPI', 'CARD'] as const).map((m) => {
+            const value = m === 'CASH' ? splitCash : m === 'UPI' ? splitUpi : splitCard;
+            const setter = m === 'CASH' ? setSplitCash : m === 'UPI' ? setSplitUpi : setSplitCard;
+            return (
+              <View key={m} style={styles.splitRow}>
+                <Text style={styles.splitMethod}>{m}</Text>
+                <TextInput
+                  style={styles.splitInput}
+                  keyboardType="decimal-pad"
+                  value={value}
+                  onChangeText={setter}
+                  placeholder="0"
+                  placeholderTextColor="#9ca3af"
+                />
+              </View>
+            );
+          })}
+          {splitShortfall > 0 ? (
+            <Text style={styles.splitStatus}>Short by Rs.{splitShortfall.toFixed(2)} of Rs.{effectiveTotal.toFixed(2)}.</Text>
+          ) : splitChangeBlocked ? (
+            <Text style={[styles.splitStatus, { color: '#b45309' }]}>Rs.{splitExcess.toFixed(2)} over, but only Rs.{splitCashN.toFixed(2)} is cash.</Text>
+          ) : splitExcess > 0 ? (
+            <Text style={[styles.splitStatus, { color: '#059669' }]}>Change due: Rs.{splitExcess.toFixed(2)}</Text>
+          ) : splitTendered > 0 ? (
+            <Text style={[styles.splitStatus, { color: '#059669' }]}>Tenders cover the bill exactly.</Text>
+          ) : null}
+        </View>
+      )}
 
       {/* Coupon */}
       {couponApplied ? (
@@ -365,7 +435,7 @@ export default function MobilePaymentScreen() {
           shiftRequired && styles.payBtnDisabled,
         ]}
         onPress={handleCompleteSale}
-        disabled={loading || shiftRequired}
+        disabled={loading || shiftRequired || (paymentMethod === 'SPLIT' && (splitShortfall > 0 || splitChangeBlocked))}
         activeOpacity={0.85}
       >
         {loading ? (
@@ -399,6 +469,12 @@ const styles = StyleSheet.create({
   couponChipAmount: { fontWeight: '800', color: '#065f46', marginRight: 12 },
   couponChipRemove: { fontWeight: '800', color: '#059669', fontSize: 10 },
   summaryStrike: { color: '#a3a3a3', textDecorationLine: 'line-through', fontSize: 12, marginTop: 2 },
+  splitBox: { backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 12, marginBottom: 12, gap: 8 },
+  splitTitle: { fontSize: 11, fontWeight: '700', color: '#6b7280' },
+  splitRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  splitMethod: { width: 60, fontSize: 12, fontWeight: '800', color: '#374151' },
+  splitInput: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#ffffff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, textAlign: 'right', color: '#111827' },
+  splitStatus: { fontSize: 11, fontWeight: '700', color: '#0284c7' },
   container: {
     flex: 1,
     backgroundColor: '#f0f9ff',

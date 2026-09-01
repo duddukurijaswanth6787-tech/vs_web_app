@@ -304,12 +304,57 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
-  /** POST /pos/checkout-sessions — hand the cart to the desktop till. */
+  /** GET /pos/products/search -- find sellable products by typed name / SKU. */
+  async searchProducts(query: string, wholesale = false, limit = 12) {
+    const res = await posApiClient.get('/pos/products/search', {
+      params: { q: query, limit, ...(wholesale ? { wholesale: 'true' } : {}) },
+    });
+    return unwrap<any[]>(res);
+  },
+
+  /** GET /pos/products/by-category -- tiles for the quick-buy grid. */
+  async listByCategory(categoryId: string, wholesale = false, limit = 24) {
+    const res = await posApiClient.get('/pos/products/by-category', {
+      params: { categoryId, limit, ...(wholesale ? { wholesale: 'true' } : {}) },
+    });
+    return unwrap<any[]>(res);
+  },
+
+  /** GET /pos/checkout-sessions/held -- carts parked at this till. */
+  async listHeldSessions(terminalId?: string) {
+    const res = await posApiClient.get('/pos/checkout-sessions/held', {
+      params: terminalId ? { terminalId } : undefined,
+    });
+    return unwrap<any[]>(res);
+  },
+
+  /** DELETE /pos/checkout-sessions/:sessionId -- discard a parked cart. */
+  async discardHeldSession(sessionId: string) {
+    const res = await posApiClient.delete(`/pos/checkout-sessions/${sessionId}`);
+    return unwrap<any>(res);
+  },
+
+  /** POST /pos/checkout-sessions/adopt -- pick up a held or handed-off cart. */
+  async adoptSession(handoffToken: string) {
+    const res = await posApiClient.post('/pos/checkout-sessions/adopt', { handoffToken });
+    return unwrap<any>(res);
+  },
+
+  /** GET /categories -- the shop's own tree, used for the quick-buy chips. */
+  async listCategories() {
+    const res = await posApiClient.get('/categories');
+    return unwrap<any>(res);
+  },
+
+    /** POST /pos/checkout-sessions -- hand the cart to the desktop till, or park it. */
   async createCheckoutSession(payload: {
     items: PosMobileCartItem[];
     customer?: PosMobileCustomer;
     notes?: string;
     deviceId?: string;
+    discountTotal?: number;
+    /** Park the cart at this till instead of handing to a phone. */
+    hold?: boolean;
   }) {
     const res = await posApiClient.post('/pos/checkout-sessions', {
       ...payload,

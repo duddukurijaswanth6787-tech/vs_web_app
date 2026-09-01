@@ -34,6 +34,8 @@ export interface CompleteSaleCorePayload {
   terminalId?: string;
   /** Coupon code applied at the till; the server re-validates + rebooks on sync. */
   couponCode?: string;
+  /** Split payment tenders, when the customer paid on more than one method. */
+  splitPayments?: { method: PosMobilePaymentMethod; amount: number }[];
 }
 
 /** A sale that was completed on the phone while the backend was unreachable, queued locally for sync. */

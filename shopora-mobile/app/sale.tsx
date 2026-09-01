@@ -73,6 +73,20 @@ export default function SaleProductScreen() {
   const timestampParam = params.timestamp as string;
 
   const [barcodeInput, setBarcodeInput] = useState('');
+  // Product-name suggestions when the input is not all-digits. A digit-only
+  // value stays a barcode and hits the scan path on submit.
+  const [searchResults, setSearchResults] = useState<ScanBarcodeResult[]>([]);
+  const [searching, setSearching] = useState(false);
+  // Quick-buy grid: category chips + product tiles. Collapsed by default so
+  // the scan-first flow isn't interrupted.
+  const [quickBuyOpen, setQuickBuyOpen] = useState(false);
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([]);
+  const [quickCatId, setQuickCatId] = useState<string>('');
+  const [quickTiles, setQuickTiles] = useState<ScanBarcodeResult[]>([]);
+  const [quickLoading, setQuickLoading] = useState(false);
+  // Held (parked) bills on this terminal.
+  const [heldBills, setHeldBills] = useState<{ sessionId: string; handoffToken: string; grandTotal: number; itemsCount: number; customer?: { fullName?: string } }[]>([]);
+  const [holdBusy, setHoldBusy] = useState(false);
   const [cart, setCart] = useGlobalCart();
   const [loading, setLoading] = useState(false);
   const [cameraModalOpen, setCameraModalOpen] = useState(false);
@@ -206,6 +220,127 @@ export default function SaleProductScreen() {
     }
   }, [scannedCodeParam, timestampParam]);
 
+  // Debounced name/SKU search: fires only when the input is not all-digits
+  // (a digit-only value is a barcode, waiting for the scan submit).
+  useEffect(() => {
+    const q = barcodeInput.trim();
+    if (q.length < 2 || /^\d+$/.test(q)) {
+      setSearchResults([]);
+      return;
+    }
+    const t = setTimeout(async () => {
+      try {
+        setSearching(true);
+        const rows = await posMobileService.searchProducts(q, false, 8);
+        setSearchResults(rows as ScanBarcodeResult[]);
+      } catch {
+        // Silent -- a keystroke miss shouldn't shout at the cashier.
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    }, 250);
+    return () => clearTimeout(t);
+  }, [barcodeInput]);
+
+  // Load categories once, for the quick-buy chip strip.
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await posMobileService.listCategories();
+        // Response shape: {data: [{id,name,...}]} or an array
+        const list = Array.isArray(res) ? res : res?.data ?? [];
+        setCategories(list.map((c: any) => ({ id: c.id, name: c.name })));
+      } catch {
+        setCategories([]);
+      }
+    })();
+  }, []);
+
+  // Re-fetch tiles when the picked category changes.
+  useEffect(() => {
+    if (!quickCatId) {
+      setQuickTiles([]);
+      return;
+    }
+    (async () => {
+      try {
+        setQuickLoading(true);
+        const rows = await posMobileService.listByCategory(quickCatId, false, 24);
+        setQuickTiles(rows as ScanBarcodeResult[]);
+      } catch {
+        setQuickTiles([]);
+      } finally {
+        setQuickLoading(false);
+      }
+    })();
+  }, [quickCatId]);
+
+  const refreshHeldBills = useCallback(async () => {
+    try {
+      const rows = await posMobileService.listHeldSessions();
+      setHeldBills(rows as any[]);
+    } catch {
+      setHeldBills([]);
+    }
+  }, []);
+
+  useEffect(() => { refreshHeldBills(); }, [refreshHeldBills]);
+
+  // Park the current cart; the checkout-session record marks it DRAFT so it
+  // shows up in listHeldSessions but doesn't reserve stock.
+  const handleHold = async () => {
+    if (cart.length === 0) return;
+    try {
+      setHoldBusy(true);
+      await posMobileService.createCheckoutSession({
+        items: cart,
+        hold: true,
+      });
+      setCart([]);
+      await refreshHeldBills();
+    } catch (err) {
+      Alert.alert('Could not hold', getApiErrorMessage(err, 'Try again.'));
+    } finally {
+      setHoldBusy(false);
+    }
+  };
+
+  // Adopt = restore the held cart into the current session. Same endpoint the
+  // handoff flow uses, since a held bill is stored as a checkout session.
+  const handleResumeHeld = async (handoffToken: string) => {
+    try {
+      const session: any = await posMobileService.adoptSession(handoffToken);
+      const restored = (session?.items || []).map((i: any) => ({
+        productId: i.productId,
+        productName: i.productName,
+        variantId: i.variantId,
+        sku: i.sku,
+        barcode: i.barcode,
+        variantTitle: i.variantTitle,
+        quantity: i.quantity,
+        unitPrice: i.unitPrice,
+        primaryImage: i.primaryImage,
+        availableStock: i.availableStock,
+        taxPercent: i.taxPercent,
+        discountAmount: i.discountAmount,
+      }));
+      setCart(restored);
+      await refreshHeldBills();
+    } catch (err) {
+      Alert.alert('Could not resume', getApiErrorMessage(err, 'Try again.'));
+    }
+  };
+
+  const handleDiscardHeld = async (sessionId: string) => {
+    try {
+      await posMobileService.discardHeldSession(sessionId);
+      await refreshHeldBills();
+    } catch (err) {
+      Alert.alert('Could not discard', getApiErrorMessage(err, 'Try again.'));
+    }
+  };
+
   const handleScanSubmit = () => {
     executeBarcodeScan(barcodeInput);
   };
@@ -299,6 +434,39 @@ export default function SaleProductScreen() {
         </TouchableOpacity>
       </View>
 
+      {/* Name/SKU search suggestions -- only shows when the input is not
+          all-digits (a digit-only value stays a barcode). */}
+      {searchResults.length > 0 && (
+        <View style={styles.suggestionsBox}>
+          {searchResults.slice(0, 6).map((item) => {
+            const oos = (item.availableStock ?? 0) <= 0;
+            return (
+              <TouchableOpacity
+                key={item.variantId || item.productId}
+                style={[styles.suggestionRow, oos && { opacity: 0.4 }]}
+                disabled={oos}
+                onPress={() => {
+                  addScannedItemToCart(item);
+                  setSearchResults([]);
+                }}
+              >
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.suggestionName} numberOfLines={1}>
+                    {item.productName}
+                    {item.variantTitle ? ` - ${item.variantTitle}` : ''}
+                  </Text>
+                  <Text style={styles.suggestionMeta}>
+                    {item.sku || item.barcode || '--'} - {oos ? 'Out of stock' : `${item.availableStock ?? 0} in stock`}
+                  </Text>
+                </View>
+                <Text style={styles.suggestionPrice}>Rs.{item.price}</Text>
+              </TouchableOpacity>
+            );
+          })}
+          {searching && <Text style={styles.suggestionsMeta}>Searching...</Text>}
+        </View>
+      )}
+
       {/* Quick Sample Barcodes Picker Strip */}
       <View style={styles.sampleStrip}>
         <Text style={styles.sampleLabel}>TAP SAMPLE BARCODE:</Text>
@@ -315,6 +483,85 @@ export default function SaleProductScreen() {
         </ScrollView>
       </View>
 
+      {/* Held (parked) bills */}
+      {heldBills.length > 0 && (
+        <View style={styles.heldStrip}>
+          <Text style={styles.heldLabel}>HELD BILLS ({heldBills.length})</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            {heldBills.map((b) => (
+              <View key={b.sessionId} style={styles.heldChipRow}>
+                <TouchableOpacity onPress={() => handleResumeHeld(b.handoffToken)} style={styles.heldChip}>
+                  <Text style={styles.heldChipName} numberOfLines={1}>
+                    {b.customer?.fullName || 'Walk-in'} - Rs.{b.grandTotal.toFixed(0)}
+                  </Text>
+                  <Text style={styles.heldChipMeta}>{b.itemsCount} items</Text>
+                </TouchableOpacity>
+                <TouchableOpacity onPress={() => handleDiscardHeld(b.sessionId)} style={styles.heldDiscard}>
+                  <Text style={styles.heldDiscardText}>x</Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </ScrollView>
+        </View>
+      )}
+
+      {/* Quick-buy category grid */}
+      <View style={styles.quickBuyCard}>
+        <View style={styles.quickBuyHeaderRow}>
+          <Text style={styles.quickBuyTitle}>Quick Buy</Text>
+          <TouchableOpacity onPress={() => setQuickBuyOpen((v) => !v)}>
+            <Text style={styles.quickBuyToggle}>{quickBuyOpen ? 'Hide' : 'Show'}</Text>
+          </TouchableOpacity>
+        </View>
+        {quickBuyOpen && (
+          <>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 8 }}>
+              {categories.map((c) => (
+                <TouchableOpacity
+                  key={c.id}
+                  onPress={() => setQuickCatId(c.id)}
+                  style={[styles.catChip, quickCatId === c.id && styles.catChipActive]}
+                >
+                  <Text style={[styles.catChipText, quickCatId === c.id && styles.catChipTextActive]}>{c.name}</Text>
+                </TouchableOpacity>
+              ))}
+            </ScrollView>
+            {quickCatId ? (
+              quickLoading ? (
+                <Text style={styles.quickMeta}>Loading tiles...</Text>
+              ) : quickTiles.length === 0 ? (
+                <Text style={styles.quickMeta}>No sellable products in this category.</Text>
+              ) : (
+                <View style={styles.tileGrid}>
+                  {quickTiles.map((it) => {
+                    const oos = (it.availableStock ?? 0) <= 0;
+                    return (
+                      <TouchableOpacity
+                        key={it.variantId || it.productId}
+                        style={[styles.tile, oos && { opacity: 0.4 }]}
+                        disabled={oos}
+                        onPress={() => addScannedItemToCart(it)}
+                      >
+                        <Text style={styles.tileName} numberOfLines={2}>{it.productName}</Text>
+                        <Text style={styles.tileMeta} numberOfLines={1}>
+                          {it.variantTitle || it.sku || '--'}
+                        </Text>
+                        <View style={styles.tileFoot}>
+                          <Text style={styles.tileStock}>{oos ? 'Out' : `${it.availableStock ?? 0}`}</Text>
+                          <Text style={styles.tilePrice}>Rs.{Math.round(it.price)}</Text>
+                        </View>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              )
+            ) : (
+              <Text style={styles.quickMeta}>Pick a category above.</Text>
+            )}
+          </>
+        )}
+      </View>
+
       {/* Cart Items Header */}
       <View style={styles.cartHeader}>
         <View style={styles.cartHeaderTitleRow}>
@@ -322,9 +569,16 @@ export default function SaleProductScreen() {
           <Text style={styles.cartTitle}>Cart ({totalItems} Items)</Text>
         </View>
         {cart.length > 0 && (
-          <TouchableOpacity onPress={() => setCart([])}>
-            <Text style={styles.clearBtnText}>Clear Cart</Text>
-          </TouchableOpacity>
+          <View style={{ flexDirection: 'row', gap: 12 }}>
+            <TouchableOpacity onPress={handleHold} disabled={holdBusy}>
+              <Text style={[styles.clearBtnText, { color: '#0284c7' }]}>
+                {holdBusy ? 'Holding...' : 'Hold'}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity onPress={() => setCart([])}>
+              <Text style={styles.clearBtnText}>Clear</Text>
+            </TouchableOpacity>
+          </View>
         )}
       </View>
 
@@ -500,6 +754,37 @@ export default function SaleProductScreen() {
 }
 
 const styles = StyleSheet.create({
+  suggestionsBox: { marginHorizontal: 12, marginBottom: 4, backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', overflow: 'hidden' },
+  suggestionRow: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderBottomColor: '#f3f4f6' },
+  suggestionName: { fontSize: 13, fontWeight: '700', color: '#111827' },
+  suggestionMeta: { fontSize: 11, color: '#6b7280', marginTop: 2, fontFamily: 'monospace' },
+  suggestionPrice: { fontSize: 13, fontWeight: '800', color: '#111827', marginLeft: 8 },
+  suggestionsMeta: { fontSize: 11, color: '#9ca3af', padding: 8, textAlign: 'center' },
+  heldStrip: { paddingHorizontal: 12, paddingVertical: 8, backgroundColor: '#fef3c7', borderBottomWidth: 1, borderBottomColor: '#fde68a' },
+  heldLabel: { fontSize: 10, fontWeight: '800', color: '#92400e', letterSpacing: 0.6, marginBottom: 6 },
+  heldChipRow: { flexDirection: 'row', alignItems: 'center', marginRight: 8 },
+  heldChip: { backgroundColor: '#ffffff', borderWidth: 1, borderColor: '#fcd34d', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6, minWidth: 140 },
+  heldChipName: { fontSize: 12, fontWeight: '700', color: '#78350f' },
+  heldChipMeta: { fontSize: 10, color: '#a16207' },
+  heldDiscard: { width: 24, height: 24, backgroundColor: '#fef3c7', borderRadius: 12, alignItems: 'center', justifyContent: 'center', marginLeft: 4 },
+  heldDiscardText: { fontSize: 14, fontWeight: '700', color: '#92400e' },
+  quickBuyCard: { marginHorizontal: 12, marginBottom: 8, backgroundColor: '#ffffff', borderRadius: 12, borderWidth: 1, borderColor: '#e5e7eb', padding: 10 },
+  quickBuyHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  quickBuyTitle: { fontSize: 11, fontWeight: '800', color: '#6b7280', letterSpacing: 0.6, textTransform: 'uppercase' },
+  quickBuyToggle: { fontSize: 11, fontWeight: '700', color: '#0284c7' },
+  catChip: { backgroundColor: '#f3f4f6', paddingHorizontal: 12, paddingVertical: 6, borderRadius: 8, marginRight: 6 },
+  catChipActive: { backgroundColor: '#0284c7' },
+  catChipText: { fontSize: 11, fontWeight: '700', color: '#374151' },
+  catChipTextActive: { color: '#ffffff' },
+  quickMeta: { fontSize: 11, color: '#9ca3af', marginTop: 8, textAlign: 'center' },
+  tileGrid: { flexDirection: 'row', flexWrap: 'wrap', marginTop: 8, gap: 6 },
+  tile: { width: '31%', backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 10, padding: 8 },
+  tileName: { fontSize: 11, fontWeight: '700', color: '#111827' },
+  tileMeta: { fontSize: 10, color: '#6b7280', marginTop: 2 },
+  tileFoot: { marginTop: 6, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  tileStock: { fontSize: 10, color: '#6b7280' },
+  tilePrice: { fontSize: 12, fontWeight: '800', color: '#111827' },
+
   container: {
     flex: 1,
     backgroundColor: '#f0f9ff',
