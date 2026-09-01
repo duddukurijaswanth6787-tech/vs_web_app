@@ -17,7 +17,9 @@ describe('PosService (Phase 1 Backend)', () => {
   let gateway: Record<string, jest.Mock>;
   let workflow: Record<string, jest.Mock>;
   let couponService: { checkCoupon: jest.Mock; applyCoupon: jest.Mock };
-  let couponServiceToken: unknown;
+  let couponServiceToken: import('@nestjs/common').Type<unknown>;
+  let giftCardService: { getBalance: jest.Mock; redeem: jest.Mock };
+  let giftCardServiceToken: import('@nestjs/common').Type<unknown>;
   let auditService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -84,6 +86,14 @@ describe('PosService (Phase 1 Backend)', () => {
       await import('@domains/coupon/coupon.service')
     ).CouponService;
 
+    giftCardService = {
+      getBalance: jest.fn().mockResolvedValue({ code: 'GC1', balance: 0, status: 'ACTIVE' }),
+      redeem: jest.fn().mockResolvedValue({}),
+    };
+    giftCardServiceToken = (
+      await import('@domains/gift-card/gift-card.service')
+    ).GiftCardService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PosService,
@@ -109,6 +119,10 @@ describe('PosService (Phase 1 Backend)', () => {
         {
           provide: couponServiceToken,
           useValue: couponService,
+        },
+        {
+          provide: giftCardServiceToken,
+          useValue: giftCardService,
         },
       ],
     }).compile();
@@ -442,6 +456,112 @@ describe('PosService (Phase 1 Backend)', () => {
           reason: 'x',
         }),
       ).rejects.toThrow(/Open a shift/);
+    });
+  });
+
+  describe('gift card at POS', () => {
+    it('caps the redeem at the live balance and books each as its own tender', async () => {
+      giftCardService.getBalance.mockResolvedValue({
+        code: 'GC1000',
+        balance: 500,
+        status: 'ACTIVE',
+      });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 800,
+        items: [{ id: 'i-1' }],
+        createdAt: new Date(),
+      });
+
+      await service.completeSale('cashier-1', {
+        items: [
+          {
+            productId: 'p1',
+            productName: 'Kurti',
+            quantity: 1,
+            unitPrice: 800,
+          },
+        ],
+        paymentMethod: PosPaymentMethodType.CASH,
+        amountPaid: 800,
+        // Customer asks to redeem 700, only 500 on the card -- capped.
+        giftCardTenders: [{ code: 'GC1000', amount: 700 }],
+      });
+
+      // Payment rows include the capped gift-card tender plus the remainder
+      // on the primary method, both bookkept separately at close.
+      expect(repository.createPosOrder).toHaveBeenCalledWith(
+        expect.objectContaining({
+          payments: [
+            { method: 'GIFT_CARD', amount: 500 },
+            { method: 'CASH', amount: 300 },
+          ],
+        }),
+      );
+      // The redemption is booked against the created order id, and only for
+      // the capped amount -- not the 700 the till optimistically sent.
+      expect(giftCardService.redeem).toHaveBeenCalledWith(
+        'cashier-1',
+        expect.objectContaining({ code: 'GC1000', amount: 500, orderId: 'order-1' }),
+      );
+    });
+
+    it('cancels the order and errors if a gift card empties between check and redeem', async () => {
+      giftCardService.getBalance.mockResolvedValue({
+        code: 'GC500',
+        balance: 500,
+        status: 'ACTIVE',
+      });
+      giftCardService.redeem.mockRejectedValue(new Error('Insufficient gift card balance'));
+      workflow.transition = jest.fn().mockResolvedValue(true);
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-2',
+        orderNumber: 'ORD-2',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 500,
+        items: [{ id: 'i-1' }],
+        createdAt: new Date(),
+      });
+
+      await expect(
+        service.completeSale('cashier-1', {
+          items: [
+            {
+              productId: 'p1',
+              productName: 'Kurti',
+              quantity: 1,
+              unitPrice: 500,
+            },
+          ],
+          paymentMethod: PosPaymentMethodType.CASH,
+          amountPaid: 500,
+          giftCardTenders: [{ code: 'GC500', amount: 500 }],
+        }),
+      ).rejects.toThrow(/Insufficient gift card balance/);
+      expect(workflow.transition).toHaveBeenCalledWith(
+        'order-2',
+        'CANCELLED',
+        'cashier-1',
+        expect.stringContaining('GC500'),
+      );
+    });
+
+    it('lookupGiftCardBalance returns balance and rejects an empty code', async () => {
+      giftCardService.getBalance.mockResolvedValue({
+        code: 'GC1',
+        balance: 250,
+        status: 'ACTIVE',
+        expiresAt: null,
+      });
+      const res = await service.lookupGiftCardBalance('GC1');
+      expect(res.balance).toBe(250);
+      await expect(service.lookupGiftCardBalance('')).rejects.toThrow();
     });
   });
 

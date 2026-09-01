@@ -3,6 +3,7 @@ import { DatabaseModule } from '@database/database.module';
 import { OrderModule } from '@domains/order/order.module';
 import { AuditModule } from '@domains/audit/audit.module';
 import { CouponModule } from '@domains/coupon/coupon.module';
+import { GiftCardModule } from '@domains/gift-card/gift-card.module';
 import { PosController } from './pos.controller';
 import { PosService } from './pos.service';
 import { PosRepository } from './pos.repository';
@@ -11,7 +12,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 
 @Module({
-  imports: [DatabaseModule, OrderModule, AuditModule, CouponModule],
+  imports: [DatabaseModule, OrderModule, AuditModule, CouponModule, GiftCardModule],
   controllers: [PosController],
   providers: [
     PosRepository,

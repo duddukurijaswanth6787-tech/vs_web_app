@@ -43,6 +43,7 @@ import {
   useDiscardHeldSession,
   useReprintReceipt,
   useValidateCoupon,
+  useLookupGiftCard,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -76,6 +77,12 @@ export default function DesktopPosPage() {
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
+  // Gift cards attached to this sale. Each is an entered code + the amount
+  // the cashier told us to redeem off it. Server caps at live balance.
+  const [giftCardInput, setGiftCardInput] = useState('');
+  const [giftCardAmountInput, setGiftCardAmountInput] = useState('');
+  const [giftCards, setGiftCards] = useState<{ code: string; amount: number; balance: number }[]>([]);
+  const [giftCardError, setGiftCardError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>('UPI');
   // Split bills: what the customer handed over on each tender. Kept as strings
   // so the boxes can be left blank rather than showing a stubborn 0.
@@ -133,6 +140,7 @@ export default function DesktopPosPage() {
   const holdMutation = useCreateCheckoutSession();
   const reprintMutation = useReprintReceipt();
   const validateCouponMutation = useValidateCoupon();
+  const lookupGiftCardMutation = useLookupGiftCard();
   const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
@@ -198,6 +206,7 @@ export default function DesktopPosPage() {
   // The server recomputes both anyway; this is purely for the customer-facing
   // number on the till screen.
   const effectiveDiscount = discountTotal + (couponApplied?.discountAmount || 0);
+  const giftCardTotal = giftCards.reduce((s, c) => s + c.amount, 0);
   const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, effectiveDiscount);
 
   const splitEntries = (['CASH', 'UPI', 'CARD'] as const)
@@ -419,6 +428,42 @@ export default function DesktopPosPage() {
     setCouponInput('');
   };
 
+  // Look up a gift card, cap the requested redeem at its live balance, and
+  // stash it as an additional tender. Server re-caps at complete time in
+  // case another till spent the balance in between.
+  const handleAddGiftCard = () => {
+    const code = giftCardInput.trim();
+    if (!code) return;
+    setGiftCardError('');
+    lookupGiftCardMutation.mutate(code, {
+      onSuccess: (data) => {
+        if (data.status !== 'ACTIVE') {
+          setGiftCardError(`Card is ${data.status}, cannot redeem.`);
+          return;
+        }
+        if (data.balance <= 0) {
+          setGiftCardError('That card has no remaining balance.');
+          return;
+        }
+        const asked = Number(giftCardAmountInput) || data.balance;
+        const amount = Math.min(asked, data.balance);
+        setGiftCards((prev) => {
+          if (prev.some((c) => c.code === data.code)) return prev;
+          return [...prev, { code: data.code, amount, balance: data.balance }];
+        });
+        setGiftCardInput('');
+        setGiftCardAmountInput('');
+      },
+      onError: (err) => {
+        setGiftCardError(getApiErrorMessage(err, 'Gift card not found.'));
+      },
+    });
+  };
+
+  const handleRemoveGiftCard = (code: string) => {
+    setGiftCards((prev) => prev.filter((c) => c.code !== code));
+  };
+
   const handleReprintReceipt = (orderNumber: string) => {
     setSaleError('');
     reprintMutation.mutate(orderNumber, {
@@ -545,6 +590,7 @@ export default function DesktopPosPage() {
         amountPaid: grandTotal,
         splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
         couponCode: couponApplied?.code,
+        giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
         customer,
         discountTotal,
         taxTotal,
@@ -620,6 +666,9 @@ export default function DesktopPosPage() {
           setSplitTenders({ CASH: '', UPI: '', CARD: '' });
           setCouponApplied(null);
           setCouponInput('');
+          setGiftCards([]);
+          setGiftCardInput('');
+          setGiftCardAmountInput('');
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -638,6 +687,7 @@ export default function DesktopPosPage() {
               amountPaid: grandTotal,
               splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
               couponCode: couponApplied?.code,
+              giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
               customer,
               discountTotal,
               taxTotal,
@@ -667,6 +717,9 @@ export default function DesktopPosPage() {
           setSplitTenders({ CASH: '', UPI: '', CARD: '' });
           setCouponApplied(null);
           setCouponInput('');
+          setGiftCards([]);
+          setGiftCardInput('');
+          setGiftCardAmountInput('');
         },
       },
     );
@@ -1333,6 +1386,52 @@ export default function DesktopPosPage() {
               )}
               {couponError && (
                 <p className="text-[10px] font-medium text-sky-800">{couponError}</p>
+              )}
+
+              {giftCards.map((c) => (
+                <div key={c.code} className="flex justify-between items-center text-purple-800 bg-purple-50 rounded-lg px-2 py-1.5">
+                  <span className="font-bold text-[11px] font-mono truncate">
+                    Gift {c.code}
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold">-₹{c.amount.toFixed(2)}</span>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveGiftCard(c.code)}
+                      className="text-purple-600 hover:text-purple-900 text-[10px] font-bold"
+                    >
+                      REMOVE
+                    </button>
+                  </span>
+                </div>
+              ))}
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={giftCardInput}
+                  onChange={(e) => setGiftCardInput(e.target.value.toUpperCase())}
+                  placeholder="Gift card"
+                  className="flex-1 min-w-0 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-[11px] font-mono font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  value={giftCardAmountInput}
+                  onChange={(e) => setGiftCardAmountInput(e.target.value)}
+                  placeholder="Amount"
+                  className="w-16 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-[11px] font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+                />
+                <button
+                  type="button"
+                  onClick={handleAddGiftCard}
+                  disabled={lookupGiftCardMutation.isPending || !giftCardInput.trim()}
+                  className="bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                >
+                  {lookupGiftCardMutation.isPending ? '...' : 'Add'}
+                </button>
+              </div>
+              {giftCardError && (
+                <p className="text-[10px] font-medium text-sky-800">{giftCardError}</p>
               )}
 
               <div className="flex justify-between text-neutral-600">

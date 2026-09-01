@@ -58,6 +58,15 @@ export const posService = {
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
+  /** Look up a gift card's remaining balance for the till. */
+  async lookupGiftCardBalance(code: string): Promise<{ code: string; balance: number; status: string }> {
+    const res = await apiClient.post<StandardResponse<{ code: string; balance: number; status: string }>>(
+      '/pos/gift-cards/balance',
+      { code },
+    );
+    return res.data.data!;
+  },
+
   /**
    * Validate a coupon against the current cart. Read-only preview -- the
    * usage isn't booked until the sale completes.

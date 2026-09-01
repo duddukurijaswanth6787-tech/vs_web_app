@@ -246,6 +246,20 @@ export class CreatePosReturnDto {
   notes?: string;
 }
 
+export class PosGiftCardTenderDto {
+  @ApiProperty({ description: 'Gift card code the customer handed over.' })
+  @IsString()
+  code!: string;
+
+  @ApiProperty({
+    description:
+      'Amount to redeem off this card. Server caps this at the card\'s ' +
+      'remaining balance; overspending the card is refused.',
+  })
+  @IsMoneyCustom()
+  amount!: number;
+}
+
 export class PosSplitTenderDto {
   @ApiProperty({
     enum: PosPaymentMethodType,
@@ -307,6 +321,19 @@ export class CompletePosSaleDto {
   @IsOptional()
   @IsString()
   couponCode?: string;
+
+  @ApiPropertyOptional({
+    type: [PosGiftCardTenderDto],
+    description:
+      'Gift cards used to pay. Each is booked as its own payment row with ' +
+      'method GIFT_CARD, and the card\'s balance is decremented after the ' +
+      'order exists so a sale that never commits leaves the balance intact.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosGiftCardTenderDto)
+  giftCardTenders?: PosGiftCardTenderDto[];
 
   @ApiPropertyOptional({ type: PosCustomerInfoDto })
   @IsOptional()
@@ -634,6 +661,12 @@ export class ValidateCouponAtPosDto {
   @IsNumber()
   @Min(0)
   discountTotal?: number;
+}
+
+export class GiftCardBalanceQueryDto {
+  @ApiProperty()
+  @IsString()
+  code!: string;
 }
 
 export class PreviewReceiptDto {

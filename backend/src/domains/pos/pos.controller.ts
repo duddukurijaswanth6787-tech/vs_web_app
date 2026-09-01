@@ -36,6 +36,7 @@ import {
   GenerateBatchStickersDto,
   PreviewReceiptDto,
   ValidateCouponAtPosDto,
+  GiftCardBalanceQueryDto,
   OpenPosShiftDto,
   CreatePosReturnDto,
   CreatePosExchangeDto,
@@ -201,6 +202,16 @@ export class PosController {
   })
   async validateCoupon(@Body() dto: ValidateCouponAtPosDto) {
     return this.posService.validateCouponAtPos(dto);
+  }
+
+  @Post('gift-cards/balance')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Look up a Gift Card Balance for the Till' })
+  async lookupGiftCard(@Body() dto: GiftCardBalanceQueryDto) {
+    return this.posService.lookupGiftCardBalance(dto.code);
   }
 
   @Get('receipts/reprint')

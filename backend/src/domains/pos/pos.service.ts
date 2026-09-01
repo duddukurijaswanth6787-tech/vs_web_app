@@ -14,6 +14,7 @@ import { PrinterService } from './printer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
 import { CouponService } from '@domains/coupon/coupon.service';
+import { GiftCardService } from '@domains/gift-card/gift-card.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import {
   ScanBarcodeDto,
@@ -48,6 +49,7 @@ export class PosService {
     private readonly workflow: OrderWorkflowService,
     private readonly auditService: AuditService,
     private readonly couponService: CouponService,
+    private readonly giftCardService: GiftCardService,
   ) {}
   async scanBarcode(
     dto: ScanBarcodeDto,
@@ -510,6 +512,22 @@ export class PosService {
       );
     }
 
+    // Gift cards are booked as their own tenders, at whatever amount the
+    // till asked for -- capped at the card's live balance so a race with
+    // another till emptying it can't overspend. Combined with any split
+    // payment tenders so the drawer sees each method separately at close.
+    const giftCardAllocations: { method: string; amount: number }[] = [];
+    const giftCardBookings: { code: string; amount: number }[] = [];
+    if (dto.giftCardTenders?.length) {
+      for (const t of dto.giftCardTenders) {
+        const bal = await this.giftCardService.getBalance(t.code);
+        const capped = Math.min(Number(t.amount) || 0, Number(bal.balance));
+        if (capped <= 0) continue;
+        giftCardAllocations.push({ method: 'GIFT_CARD', amount: Math.round(capped * 100) / 100 });
+        giftCardBookings.push({ code: bal.code, amount: Math.round(capped * 100) / 100 });
+      }
+    }
+
     // Split tenders are validated against the total the server just worked
     // out, never the one the till sent -- otherwise a tampered payload could
     // settle a Rs.5000 bill with Rs.100 of tenders.
@@ -517,15 +535,25 @@ export class PosService {
       | { method: string; amount: number }[]
       | undefined;
     let changeDue = 0;
+    const gcTendered = giftCardAllocations.reduce((s, a) => s + a.amount, 0);
     if (dto.splitPayments?.length) {
+      const totalToSplit = Math.max(0, grandTotal - gcTendered);
       try {
-        const split = allocateTenders(dto.splitPayments, grandTotal);
-        tenderAllocations = split.allocations;
+        const split = allocateTenders(dto.splitPayments, totalToSplit);
+        tenderAllocations = [...giftCardAllocations, ...split.allocations];
         changeDue = split.changeDue;
       } catch (err) {
         throw new BadRequestException(
           err instanceof Error ? err.message : 'Invalid split payment',
         );
+      }
+    } else if (giftCardAllocations.length) {
+      // Gift cards without a split: they cover part or all of the bill; any
+      // remainder is settled on the primary paymentMethod as a single tender.
+      const remainder = Math.max(0, Math.round((grandTotal - gcTendered) * 100) / 100);
+      tenderAllocations = [...giftCardAllocations];
+      if (remainder > 0) {
+        tenderAllocations.push({ method: dto.paymentMethod, amount: remainder });
       }
     }
 
@@ -569,6 +597,37 @@ export class PosService {
         'Auto-cancelled: insufficient stock at sale completion',
       );
       throw err;
+    }
+
+    // Book the gift card redemptions once the order has an id. The gift
+    // card's own row is locked inside redeem, so a race with another till
+    // spending the same card at the same instant serialises and the second
+    // caller sees an "Insufficient balance" instead of both draining it.
+    for (const gc of giftCardBookings) {
+      try {
+        await this.giftCardService.redeem(cashierId, {
+          code: gc.code,
+          amount: gc.amount,
+          orderId: order.id,
+        });
+      } catch (err) {
+        // A gift card that emptied between check and redeem shouldn't leave
+        // the sale half-booked. Cancel and let the till try again with a
+        // different tender split.
+        this.logger.warn(
+          `Gift card ${gc.code} failed to redeem against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+        );
+        await this.workflow.transition(
+          order.id,
+          'CANCELLED',
+          cashierId,
+          `Auto-cancelled: gift card ${gc.code} could not be redeemed`,
+        );
+        throw new BusinessException(
+          err instanceof Error ? err.message : 'Gift card redemption failed',
+          'POS_GIFTCARD_REDEEM_FAILED',
+        );
+      }
     }
 
     // Book the coupon usage now that the order has both a real id and a real
@@ -811,6 +870,26 @@ export class PosService {
         err instanceof Error ? err.message : 'Invalid coupon',
       );
     }
+  }
+
+  /**
+   * Reads a gift card's remaining balance for the till, so the cashier can
+   * see how much is on the card before deciding how much to redeem.
+   *
+   * A non-existent code errors, so the input can display "Card not found"
+   * instead of silently showing zero.
+   */
+  async lookupGiftCardBalance(code: string) {
+    if (!code || !code.trim()) {
+      throw new BadRequestException('Enter a gift card code.');
+    }
+    const card = await this.giftCardService.getBalance(code.trim());
+    return {
+      code: card.code,
+      balance: Number(card.balance),
+      status: card.status,
+      expiresAt: card.expiresAt ?? null,
+    };
   }
 
   async previewReceipt(dto: PreviewReceiptDto) {

@@ -79,6 +79,10 @@ describe('PosService returns', () => {
           provide: (await import('@domains/coupon/coupon.service')).CouponService,
           useValue: { checkCoupon: jest.fn(), applyCoupon: jest.fn() },
         },
+        {
+          provide: (await import('@domains/gift-card/gift-card.service')).GiftCardService,
+          useValue: { getBalance: jest.fn(), redeem: jest.fn() },
+        },
       ],
     }).compile();
 

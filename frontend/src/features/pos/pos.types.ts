@@ -79,6 +79,8 @@ export interface CompletePosSalePayload {
   splitPayments?: { method: PosPaymentMethod; amount: number }[];
   /** Promo code applied at the till. Server validates and books usage. */
   couponCode?: string;
+  /** Gift cards used to pay. Each is booked as its own tender + redemption. */
+  giftCardTenders?: { code: string; amount: number }[];
   customer?: PosCustomerInfo;
   terminalId?: string;
   shopId?: string;

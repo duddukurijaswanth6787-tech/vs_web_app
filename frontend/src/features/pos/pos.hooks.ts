@@ -51,6 +51,13 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Look up a gift card's remaining balance for the till. */
+export function useLookupGiftCard() {
+  return useMutation({
+    mutationFn: (code: string) => posService.lookupGiftCardBalance(code),
+  });
+}
+
 /** Validate a coupon against the current cart before completing the sale. */
 export function useValidateCoupon() {
   return useMutation({
