@@ -68,6 +68,10 @@ export class PosService {
     // Defaults to withholding cost price: a caller that has not said who it
     // is does not get margin data.
     isOwnerOrManager = false,
+    // Defaults to retail. Wholesale is an explicit opt-in the cashier has to
+    // toggle at the till, so a normal walk-in can never be charged the B2B
+    // rate by accident.
+    wholesale = false,
   ): Promise<BarcodeScanResultResponse> {
     const variantMatch = await this.repository.findVariantByBarcode(
       dto.barcode,
@@ -79,7 +83,7 @@ export class PosService {
       );
     }
 
-    return this.toScanResult(variantMatch, isOwnerOrManager);
+    return this.toScanResult(variantMatch, isOwnerOrManager, wholesale);
   }
 
   /**
@@ -92,6 +96,7 @@ export class PosService {
   private toScanResult(
     variantMatch: any,
     isOwnerOrManager: boolean,
+    wholesale = false,
   ): BarcodeScanResultResponse {
     const availableStock = variantMatch.inventory
       ? Math.max(
@@ -100,12 +105,19 @@ export class PosService {
             (variantMatch.inventory.reservedQuantity ?? 0),
         )
       : 0;
-    const price = Number(
+    // Wholesale falls back to the retail price when the product has no
+    // wholesalePrice set -- charging Rs.0 for an unset field would be worse
+    // than charging the retail price.
+    const retailPrice = Number(
       variantMatch.salePriceOverride ??
         variantMatch.priceOverride ??
         variantMatch.product?.basePrice ??
         0,
     );
+    const price =
+      wholesale && variantMatch.product?.wholesalePrice != null
+        ? Number(variantMatch.product.wholesalePrice)
+        : retailPrice;
     const costPrice = isOwnerOrManager
       ? Number(variantMatch.costPrice ?? variantMatch.product?.costPrice ?? 0)
       : undefined;
@@ -161,9 +173,10 @@ export class PosService {
     query: string,
     isOwnerOrManager = false,
     limit = 10,
+    wholesale = false,
   ): Promise<BarcodeScanResultResponse[]> {
     const rows = await this.repository.searchVariantsByName(query, limit);
-    return rows.map((row) => this.toScanResult(row, isOwnerOrManager));
+    return rows.map((row) => this.toScanResult(row, isOwnerOrManager, wholesale));
   }
 
   async createCheckoutSession(

@@ -75,6 +75,10 @@ export default function DesktopPosPage() {
   const [discountTotal, setDiscountTotal] = useState(0);
   // Coupon at the till: the code the cashier typed, the discount the server
   // returned when it was validated, and any error message from that check.
+  // Wholesale toggle: when on, scan and search fill in wholesalePrice.
+  // Existing cart lines keep their price -- switching mid-cart doesn't
+  // silently re-price something the customer already agreed to.
+  const [wholesaleMode, setWholesaleMode] = useState(false);
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
@@ -140,7 +144,7 @@ export default function DesktopPosPage() {
 
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
-  const scanMutation = useScanBarcode();
+  const scanMutation = useScanBarcode(wholesaleMode);
   const adoptMutation = useAdoptHandoffSession();
   const holdMutation = useCreateCheckoutSession();
   const reprintMutation = useReprintReceipt();
@@ -237,7 +241,7 @@ export default function DesktopPosPage() {
     return () => clearTimeout(timer);
   }, [barcodeInput]);
 
-  const productSearch = useSearchPosProducts(searchTerm);
+  const productSearch = useSearchPosProducts(searchTerm, wholesaleMode);
   const suggestions = searchTerm ? (productSearch.data ?? []) : [];
 
   const addScannedItemToCart = (data: {
@@ -872,6 +876,19 @@ export default function DesktopPosPage() {
           >
             <Printer className="w-4 h-4" />
             <span>Reprint</span>
+          </button>
+
+          <button
+            onClick={() => setWholesaleMode((v) => !v)}
+            title="Toggle wholesale pricing on scans and search"
+            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border transition-colors ${
+              wholesaleMode
+                ? 'bg-indigo-600 text-white border-indigo-700 hover:bg-indigo-700'
+                : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200'
+            }`}
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>{wholesaleMode ? 'Wholesale ON' : 'Wholesale'}</span>
           </button>
 
           <Link

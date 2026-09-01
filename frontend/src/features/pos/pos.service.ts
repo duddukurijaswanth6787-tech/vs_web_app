@@ -32,8 +32,12 @@ export const posService = {
   /**
    * Scan Barcode or SKU for instant product/variant lookup
    */
-  async scanBarcode(barcode: string): Promise<ScanBarcodeResult> {
-    const res = await apiClient.post<StandardResponse<ScanBarcodeResult>>('/pos/scan', { barcode });
+  async scanBarcode(barcode: string, wholesale = false): Promise<ScanBarcodeResult> {
+    const res = await apiClient.post<StandardResponse<ScanBarcodeResult>>(
+      '/pos/scan',
+      { barcode },
+      { params: wholesale ? { wholesale: 'true' } : undefined },
+    );
     return res.data.data!;
   },
 
@@ -123,9 +127,9 @@ export const posService = {
    * Returns the same shape as scanBarcode, so the till builds the cart line
    * one way whichever route the item came in by.
    */
-  async searchProducts(query: string, limit = 8): Promise<ScanBarcodeResult[]> {
+  async searchProducts(query: string, limit = 8, wholesale = false): Promise<ScanBarcodeResult[]> {
     const res = await apiClient.get<StandardResponse<ScanBarcodeResult[]>>('/pos/products/search', {
-      params: { q: query, limit },
+      params: { q: query, limit, ...(wholesale ? { wholesale: 'true' } : {}) },
     });
     return res.data.data ?? [];
   },

@@ -19,9 +19,9 @@ export const posKeys = {
   sessions: () => [...posKeys.all, 'sessions'] as const,
 };
 
-export function useScanBarcode() {
+export function useScanBarcode(wholesale = false) {
   return useMutation({
-    mutationFn: (barcode: string) => posService.scanBarcode(barcode),
+    mutationFn: (barcode: string) => posService.scanBarcode(barcode, wholesale),
   });
 }
 
@@ -31,11 +31,11 @@ export function useScanBarcode() {
  * Idle until two characters are typed: a single letter matches most of the
  * catalogue and is never what the cashier meant.
  */
-export function useSearchPosProducts(query: string) {
+export function useSearchPosProducts(query: string, wholesale = false) {
   const trimmed = query.trim();
   return useQuery({
-    queryKey: [...posKeys.all, 'search', trimmed],
-    queryFn: () => posService.searchProducts(trimmed),
+    queryKey: [...posKeys.all, 'search', trimmed, wholesale],
+    queryFn: () => posService.searchProducts(trimmed, 8, wholesale),
     enabled: trimmed.length >= 2,
     staleTime: 30_000,
   });

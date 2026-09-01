@@ -61,6 +61,7 @@ export class PosController {
   async scanBarcode(
     @CurrentUser() user: JwtPayload,
     @Body() dto: ScanBarcodeDto,
+    @Query('wholesale') wholesale?: string,
   ): Promise<BarcodeScanResultResponse> {
     // scanBarcode() can return costPrice, which is margin data a cashier has
     // no reason to see. The parameter existed for that, but defaulted to true
@@ -68,7 +69,11 @@ export class PosController {
     const isOwnerOrManager = (user.roles || []).some((r) =>
       ['super_admin', 'admin'].includes(r),
     );
-    return this.posService.scanBarcode(dto, isOwnerOrManager);
+    return this.posService.scanBarcode(
+      dto,
+      isOwnerOrManager,
+      wholesale === 'true' || wholesale === '1',
+    );
   }
 
   @Get('products/search')
@@ -81,6 +86,7 @@ export class PosController {
     @CurrentUser() user: JwtPayload,
     @Query('q') q?: string,
     @Query('limit') limit?: string,
+    @Query('wholesale') wholesale?: string,
   ): Promise<BarcodeScanResultResponse[]> {
     // Same margin rule as the scan: only owners and managers see cost price.
     const isOwnerOrManager = (user.roles || []).some((r) =>
@@ -91,6 +97,7 @@ export class PosController {
       q || '',
       isOwnerOrManager,
       Number.isFinite(parsedLimit) && parsedLimit > 0 ? parsedLimit : 10,
+      wholesale === 'true' || wholesale === '1',
     );
   }
 

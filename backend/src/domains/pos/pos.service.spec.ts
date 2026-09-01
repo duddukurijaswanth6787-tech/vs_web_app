@@ -203,6 +203,50 @@ describe('PosService (Phase 1 Backend)', () => {
     });
   });
 
+  describe('wholesale price mode', () => {
+    it('returns wholesalePrice when wholesale=true is asked and the product has one', async () => {
+      repository.findVariantByBarcode.mockResolvedValue({
+        id: 'v-1',
+        productId: 'p-1',
+        sku: 'SKU',
+        barcode: 'B',
+        salePriceOverride: 1299,
+        inventory: { availableQuantity: 5 },
+        product: { name: 'Kurti', basePrice: 1499, wholesalePrice: 950 },
+      });
+      const r = await service.scanBarcode({ barcode: 'B' }, false, true);
+      expect(r.price).toBe(950);
+    });
+
+    it('falls back to retail if wholesalePrice is unset (charging Rs.0 is worse)', async () => {
+      repository.findVariantByBarcode.mockResolvedValue({
+        id: 'v-1',
+        productId: 'p-1',
+        sku: 'SKU',
+        barcode: 'B',
+        salePriceOverride: 1299,
+        inventory: { availableQuantity: 5 },
+        product: { name: 'Kurti', basePrice: 1499, wholesalePrice: null },
+      });
+      const r = await service.scanBarcode({ barcode: 'B' }, false, true);
+      expect(r.price).toBe(1299);
+    });
+
+    it('still returns retail when wholesale is not asked (walk-in default)', async () => {
+      repository.findVariantByBarcode.mockResolvedValue({
+        id: 'v-1',
+        productId: 'p-1',
+        sku: 'SKU',
+        barcode: 'B',
+        salePriceOverride: 1299,
+        inventory: { availableQuantity: 5 },
+        product: { name: 'Kurti', basePrice: 1499, wholesalePrice: 950 },
+      });
+      const r = await service.scanBarcode({ barcode: 'B' });
+      expect(r.price).toBe(1299);
+    });
+  });
+
   describe('searchProducts', () => {
     it('returns the same shape as a scan, including GST rate and stock', async () => {
       repository.searchVariantsByName.mockResolvedValue([
