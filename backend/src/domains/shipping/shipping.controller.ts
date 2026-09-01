@@ -65,6 +65,33 @@ export class ShippingController {
     );
   }
 
+  @Get('delhivery/label/:waybill')
+  @Public()
+  @ApiOperation({ summary: 'Get direct Delhivery 4x6 thermal printable shipping label' })
+  async getDelhiveryLabel(@Param('waybill') waybill: string) {
+    return ResponseBuilder.success({
+      waybill,
+      labelUrl: `https://track.delhivery.com/api/v1/packages/label?waybill=${waybill}`,
+      printFormat: '4x6 Thermal Barcode Label',
+    });
+  }
+
+  @Post('delhivery/pickup-request')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Dispatch Delhivery courier pickup request' })
+  async requestPickup(@Body() body: any) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.requestPickup({
+        pickupLocation: body.pickupLocation || 'VASANTHI_MAIN_WAREHOUSE',
+        pickupDate: body.pickupDate || new Date().toISOString().split('T')[0],
+        expectedPackageCount: body.expectedPackageCount || 1,
+      }),
+      'Pickup request dispatched successfully',
+    );
+  }
+
   @Get('methods')
   @ApiOperation({ summary: 'List all shipping methods' })
   async getMethods() {
