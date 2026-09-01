@@ -4,10 +4,12 @@ import { AuditModule } from '@domains/audit/audit.module';
 import { ShippingController } from './shipping.controller';
 import { ShippingService } from './shipping.service';
 import { ShippingRepository } from './shipping.repository';
+import { DelhiveryService } from './delhivery.service';
 
 @Module({
   imports: [AuthModule, AuditModule],
   controllers: [ShippingController],
-  providers: [ShippingService, ShippingRepository],
+  providers: [ShippingService, ShippingRepository, DelhiveryService],
+  exports: [ShippingService, DelhiveryService],
 })
 export class ShippingModule {}

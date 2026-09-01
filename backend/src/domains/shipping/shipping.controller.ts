@@ -19,10 +19,31 @@ import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
+import { DelhiveryService } from './delhivery.service';
+
 @ApiTags('Shipping')
 @Controller('shipping')
 export class ShippingController {
-  constructor(private readonly shippingService: ShippingService) {}
+  constructor(
+    private readonly shippingService: ShippingService,
+    private readonly delhiveryService: DelhiveryService,
+  ) {}
+
+  @Get('delhivery/pincode/:pincode')
+  @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
+  async checkDelhiveryPincode(@Param('pincode') pincode: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.checkPincode(pincode),
+    );
+  }
+
+  @Get('delhivery/track/:waybill')
+  @ApiOperation({ summary: 'Track Delhivery shipment by AWB Waybill number' })
+  async trackDelhiveryShipment(@Param('waybill') waybill: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.trackShipment(waybill),
+    );
+  }
 
   @Get('methods')
   @ApiOperation({ summary: 'List all shipping methods' })
