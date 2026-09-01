@@ -77,6 +77,8 @@ export interface CompletePosSalePayload {
   amountPaid: number;
   /** Set when paymentMethod is SPLIT: one entry per tender the customer paid with. */
   splitPayments?: { method: PosPaymentMethod; amount: number }[];
+  /** Promo code applied at the till. Server validates and books usage. */
+  couponCode?: string;
   customer?: PosCustomerInfo;
   terminalId?: string;
   shopId?: string;

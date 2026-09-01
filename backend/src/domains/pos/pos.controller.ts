@@ -35,6 +35,7 @@ import {
   GenerateBarcodeImageDto,
   GenerateBatchStickersDto,
   PreviewReceiptDto,
+  ValidateCouponAtPosDto,
   OpenPosShiftDto,
   CreatePosReturnDto,
   CreatePosExchangeDto,
@@ -190,6 +191,18 @@ export class PosController {
   })
   async previewReceipt(@Body() dto: PreviewReceiptDto) {
     return this.posService.previewReceipt(dto);
+  }
+
+  @Post('coupons/validate')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Validate a Coupon Against the Current POS Cart (No Usage Booked)',
+  })
+  async validateCoupon(@Body() dto: ValidateCouponAtPosDto) {
+    return this.posService.validateCouponAtPos(dto);
   }
 
   @Get('receipts/reprint')

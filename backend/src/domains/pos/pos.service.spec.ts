@@ -16,6 +16,8 @@ describe('PosService (Phase 1 Backend)', () => {
   let repository: Record<string, jest.Mock>;
   let gateway: Record<string, jest.Mock>;
   let workflow: Record<string, jest.Mock>;
+  let couponService: { checkCoupon: jest.Mock; applyCoupon: jest.Mock };
+  let couponServiceToken: unknown;
   let auditService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -74,6 +76,14 @@ describe('PosService (Phase 1 Backend)', () => {
       log: jest.fn().mockResolvedValue(true),
     };
 
+    couponService = {
+      checkCoupon: jest.fn(),
+      applyCoupon: jest.fn(),
+    };
+    couponServiceToken = (
+      await import('@domains/coupon/coupon.service')
+    ).CouponService;
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         PosService,
@@ -96,6 +106,10 @@ describe('PosService (Phase 1 Backend)', () => {
         },
         { provide: OrderWorkflowService, useValue: workflow },
         { provide: AuditService, useValue: auditService },
+        {
+          provide: couponServiceToken,
+          useValue: couponService,
+        },
       ],
     }).compile();
 
@@ -428,6 +442,137 @@ describe('PosService (Phase 1 Backend)', () => {
           reason: 'x',
         }),
       ).rejects.toThrow(/Open a shift/);
+    });
+  });
+
+  describe('coupon at POS', () => {
+    it('validates a coupon against the current cart and returns the discount', async () => {
+      couponService.checkCoupon.mockResolvedValue({
+        coupon: { id: 'c-1', code: 'DIWALI20' },
+        discountAmount: 200,
+      });
+
+      const result = await service.validateCouponAtPos({
+        code: 'DIWALI20',
+        items: [
+          {
+            productId: 'p1',
+            productName: 'Kurti',
+            quantity: 1,
+            unitPrice: 1000,
+          } as unknown as never,
+        ],
+      });
+
+      expect(result.code).toBe('DIWALI20');
+      expect(result.discountAmount).toBe(200);
+    });
+
+    it('rejects an invalid coupon with a BadRequestException', async () => {
+      couponService.checkCoupon.mockRejectedValue(new Error('Coupon expired'));
+      await expect(
+        service.validateCouponAtPos({
+          code: 'BAD',
+          items: [
+            {
+              productId: 'p1',
+              productName: 'Kurti',
+              quantity: 1,
+              unitPrice: 1000,
+            } as unknown as never,
+          ],
+        }),
+      ).rejects.toThrow(/Coupon expired/);
+    });
+
+    it('books the coupon usage after the order is created, tying it to the new orderId', async () => {
+      couponService.checkCoupon.mockResolvedValue({
+        coupon: { id: 'c-1', code: 'WELCOME10' },
+        discountAmount: 100,
+      });
+      couponService.applyCoupon.mockResolvedValue({});
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 900,
+        items: [{ id: 'i-1' }],
+        createdAt: new Date(),
+      });
+
+      await service.completeSale('cashier-1', {
+        items: [
+          {
+            productId: 'p1',
+            productName: 'Kurti',
+            quantity: 1,
+            unitPrice: 1000,
+          },
+        ],
+        paymentMethod: PosPaymentMethodType.CASH,
+        amountPaid: 900,
+        couponCode: 'WELCOME10',
+      });
+
+      // Usage booked against the new order, with the customer profile the sale
+      // ended up on -- a walk-in in this case.
+      expect(couponService.applyCoupon).toHaveBeenCalledWith(
+        'cust-walkin',
+        expect.objectContaining({
+          code: 'WELCOME10',
+          orderId: 'order-1',
+        }),
+      );
+      // And the discount is folded into the sale's discountTotal, so tax and
+      // grand total are computed on the reduced amount.
+      expect(repository.createPosOrder).toHaveBeenCalledWith(
+        expect.objectContaining({ discountTotal: 100 }),
+      );
+    });
+
+    it('cancels the order and surfaces the error if the coupon fails to book', async () => {
+      couponService.checkCoupon.mockResolvedValue({
+        coupon: { id: 'c-1', code: 'ONEUSE' },
+        discountAmount: 100,
+      });
+      couponService.applyCoupon.mockRejectedValue(
+        new Error('Coupon usage limit reached'),
+      );
+      workflow.transition = jest.fn().mockResolvedValue(true);
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-2',
+        orderNumber: 'ORD-2',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CASH',
+        status: 'CONFIRMED',
+        grandTotal: 900,
+        items: [{ id: 'i-1' }],
+        createdAt: new Date(),
+      });
+
+      await expect(
+        service.completeSale('cashier-1', {
+          items: [
+            {
+              productId: 'p1',
+              productName: 'Kurti',
+              quantity: 1,
+              unitPrice: 1000,
+            },
+          ],
+          paymentMethod: PosPaymentMethodType.CASH,
+          amountPaid: 900,
+          couponCode: 'ONEUSE',
+        }),
+      ).rejects.toThrow(/Coupon usage limit reached/);
+      expect(workflow.transition).toHaveBeenCalledWith(
+        'order-2',
+        'CANCELLED',
+        'cashier-1',
+        expect.stringContaining('ONEUSE'),
+      );
     });
   });
 

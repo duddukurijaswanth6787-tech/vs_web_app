@@ -75,6 +75,10 @@ describe('PosService returns', () => {
         { provide: PrinterService, useValue: {} },
         { provide: OrderWorkflowService, useValue: workflow },
         { provide: AuditService, useValue: { log: jest.fn() } },
+        {
+          provide: (await import('@domains/coupon/coupon.service')).CouponService,
+          useValue: { checkCoupon: jest.fn(), applyCoupon: jest.fn() },
+        },
       ],
     }).compile();
 

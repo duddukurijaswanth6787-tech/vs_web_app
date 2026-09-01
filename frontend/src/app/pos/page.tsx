@@ -42,6 +42,7 @@ import {
   useHeldSessions,
   useDiscardHeldSession,
   useReprintReceipt,
+  useValidateCoupon,
 } from '@/features/pos/pos.hooks';
 import {
   PosCartItem,
@@ -70,6 +71,11 @@ export default function DesktopPosPage() {
     phone: '9999999999',
   });
   const [discountTotal, setDiscountTotal] = useState(0);
+  // Coupon at the till: the code the cashier typed, the discount the server
+  // returned when it was validated, and any error message from that check.
+  const [couponInput, setCouponInput] = useState('');
+  const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [couponError, setCouponError] = useState('');
   const [paymentMethod, setPaymentMethod] = useState<PosPaymentMethod>('UPI');
   // Split bills: what the customer handed over on each tender. Kept as strings
   // so the boxes can be left blank rather than showing a stubborn 0.
@@ -126,6 +132,7 @@ export default function DesktopPosPage() {
   const adoptMutation = useAdoptHandoffSession();
   const holdMutation = useCreateCheckoutSession();
   const reprintMutation = useReprintReceipt();
+  const validateCouponMutation = useValidateCoupon();
   const discardHeldMutation = useDiscardHeldSession();
   const completeSaleMutation = useCompletePosSale();
   const previewReceiptMutation = usePreviewReceipt();
@@ -187,7 +194,11 @@ export default function DesktopPosPage() {
   // GST at each product's own rate, charged after the discount. This used to
   // be a flat 5% applied before the discount was taken off, which
   // under-collected on 12% goods and overcharged tax on every discounted bill.
-  const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, discountTotal);
+  // Order-level discount = the manual discount + whatever the coupon added.
+  // The server recomputes both anyway; this is purely for the customer-facing
+  // number on the till screen.
+  const effectiveDiscount = discountTotal + (couponApplied?.discountAmount || 0);
+  const { subtotal, taxTotal, grandTotal } = computeCartTotals(cart, effectiveDiscount);
 
   const splitEntries = (['CASH', 'UPI', 'CARD'] as const)
     .map((method) => ({ method, amount: Number(splitTenders[method]) || 0 }))
@@ -370,6 +381,44 @@ export default function DesktopPosPage() {
 
   // Reprint the tax invoice for a past sale into the same modal a fresh sale
   // uses; stamped "DUPLICATE COPY" so the counter can\'t reissue an original.
+  // Coupon flow: validate → show discount → include in completeSale payload.
+  // The server re-validates and books usage against the created order, so a
+  // stale UI value cannot cause an unearned discount.
+  const handleApplyCoupon = () => {
+    const code = couponInput.trim();
+    if (!code) return;
+    setCouponError('');
+    validateCouponMutation.mutate(
+      {
+        code,
+        items: cart.map((c) => ({
+          productId: c.productId,
+          productName: c.productName,
+          quantity: c.quantity,
+          unitPrice: c.unitPrice,
+          discountAmount: c.discountAmount,
+        })),
+        discountTotal,
+      },
+      {
+        onSuccess: (data) => {
+          setCouponApplied({ code: data.code, discountAmount: data.discountAmount });
+          setCouponInput('');
+        },
+        onError: (err) => {
+          setCouponApplied(null);
+          setCouponError(getApiErrorMessage(err, 'Coupon could not be applied.'));
+        },
+      },
+    );
+  };
+
+  const handleRemoveCoupon = () => {
+    setCouponApplied(null);
+    setCouponError('');
+    setCouponInput('');
+  };
+
   const handleReprintReceipt = (orderNumber: string) => {
     setSaleError('');
     reprintMutation.mutate(orderNumber, {
@@ -495,6 +544,7 @@ export default function DesktopPosPage() {
         paymentMethod,
         amountPaid: grandTotal,
         splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
+        couponCode: couponApplied?.code,
         customer,
         discountTotal,
         taxTotal,
@@ -568,6 +618,8 @@ export default function DesktopPosPage() {
           setDiscountTotal(0);
           setCashTendered('');
           setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+          setCouponApplied(null);
+          setCouponInput('');
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -585,6 +637,7 @@ export default function DesktopPosPage() {
               paymentMethod,
               amountPaid: grandTotal,
               splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
+              couponCode: couponApplied?.code,
               customer,
               discountTotal,
               taxTotal,
@@ -612,6 +665,8 @@ export default function DesktopPosPage() {
           setDiscountTotal(0);
           setCashTendered('');
           setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+          setCouponApplied(null);
+          setCouponInput('');
         },
       },
     );
@@ -1235,6 +1290,51 @@ export default function DesktopPosPage() {
                   className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-right text-xs font-bold focus:outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>
+              {couponApplied ? (
+                <div className="flex justify-between items-center text-emerald-700 bg-emerald-50 rounded-lg px-2 py-1.5">
+                  <span className="font-bold text-[11px]">
+                    Coupon <span className="font-mono">{couponApplied.code}</span>
+                  </span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold">-₹{couponApplied.discountAmount.toFixed(2)}</span>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-emerald-600 hover:text-emerald-900 text-[10px] font-bold"
+                    >
+                      REMOVE
+                    </button>
+                  </span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={couponInput}
+                    onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleApplyCoupon();
+                      }
+                    }}
+                    placeholder="Coupon code"
+                    className="flex-1 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-[11px] font-mono font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleApplyCoupon}
+                    disabled={validateCouponMutation.isPending || !couponInput.trim() || cart.length === 0}
+                    className="bg-neutral-900 hover:bg-neutral-800 text-white text-[11px] font-bold px-3 py-1.5 rounded-lg disabled:opacity-50"
+                  >
+                    {validateCouponMutation.isPending ? '...' : 'Apply'}
+                  </button>
+                </div>
+              )}
+              {couponError && (
+                <p className="text-[10px] font-medium text-sky-800">{couponError}</p>
+              )}
+
               <div className="flex justify-between text-neutral-600">
                 <span>GST</span>
                 <span className="font-semibold text-neutral-900">₹{taxTotal}</span>

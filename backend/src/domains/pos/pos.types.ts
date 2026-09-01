@@ -298,6 +298,16 @@ export class CompletePosSaleDto {
   @Type(() => PosSplitTenderDto)
   splitPayments?: PosSplitTenderDto[];
 
+  @ApiPropertyOptional({
+    description:
+      'Optional promo/coupon code to apply. Server validates and books the ' +
+      'usage against the created order in the same transaction, so a code ' +
+      'never counts against its usage limit for a sale that fails.',
+  })
+  @IsOptional()
+  @IsString()
+  couponCode?: string;
+
   @ApiPropertyOptional({ type: PosCustomerInfoDto })
   @IsOptional()
   @ValidateNested()
@@ -591,6 +601,24 @@ export class PosCashMovementDto {
  */
 export interface ReceiptReprintFlag {
   isReprint?: boolean;
+}
+
+export class ValidateCouponAtPosDto {
+  @ApiProperty()
+  @IsString()
+  code!: string;
+
+  @ApiProperty({ type: [PosCartItemDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosCartItemDto)
+  items!: PosCartItemDto[];
+
+  @ApiPropertyOptional({ description: 'Order-level discount already applied.' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  discountTotal?: number;
 }
 
 export class PreviewReceiptDto {

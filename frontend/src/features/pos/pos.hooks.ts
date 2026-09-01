@@ -51,6 +51,14 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Validate a coupon against the current cart before completing the sale. */
+export function useValidateCoupon() {
+  return useMutation({
+    mutationFn: (payload: Parameters<typeof posService.validateCoupon>[0]) =>
+      posService.validateCoupon(payload),
+  });
+}
+
 /** Reprint a past sale's tax invoice, stamped as a duplicate. */
 export function useReprintReceipt() {
   return useMutation({

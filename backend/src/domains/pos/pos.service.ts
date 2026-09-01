@@ -13,6 +13,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { AuditService } from '@domains/audit/audit.service';
+import { CouponService } from '@domains/coupon/coupon.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import {
   ScanBarcodeDto,
@@ -46,6 +47,7 @@ export class PosService {
     private readonly printerService: PrinterService,
     private readonly workflow: OrderWorkflowService,
     private readonly auditService: AuditService,
+    private readonly couponService: CouponService,
   ) {}
   async scanBarcode(
     dto: ScanBarcodeDto,
@@ -447,6 +449,39 @@ export class PosService {
     // 1. Get Walk-in Customer profile if none supplied
     const customerProfile = await this.repository.findOrCreateWalkInCustomer();
 
+    // A coupon at the till subtracts from the order-level discount before tax
+    // is worked out, so it lands in the same place a manual discount would
+    // and the customer gets the tax break on the discounted amount. Read-only
+    // here; the usage record is written after the order exists.
+    let couponDiscount = 0;
+    let couponValidated: { id: string; code: string } | null = null;
+    if (dto.couponCode?.trim()) {
+      const grossForCoupon = itemsToProcess.reduce(
+        (sum, i) =>
+          sum + i.quantity * i.unitPrice - (i.discountAmount || 0),
+        0,
+      );
+      try {
+        const checked = await this.couponService.checkCoupon(
+          customerProfile.id,
+          dto.couponCode.trim(),
+          Math.max(0, grossForCoupon - discountTotal),
+          itemsToProcess.map((i) => ({
+            productId: i.productId,
+            price: i.unitPrice,
+            quantity: i.quantity,
+          })),
+        );
+        couponDiscount = Number(checked.discountAmount) || 0;
+        couponValidated = { id: checked.coupon.id, code: checked.coupon.code };
+        discountTotal = Math.round((discountTotal + couponDiscount) * 100) / 100;
+      } catch (err) {
+        throw new BadRequestException(
+          err instanceof Error ? err.message : 'Invalid coupon',
+        );
+      }
+    }
+
     // GST is worked out here, from the rate on each product, rather than
     // trusting whatever the till sent. Two reasons: a client that computes its
     // own tax can be wrong or tampered with, and the mobile app already
@@ -534,6 +569,44 @@ export class PosService {
         'Auto-cancelled: insufficient stock at sale completion',
       );
       throw err;
+    }
+
+    // Book the coupon usage now that the order has both a real id and a real
+    // grand total. applyCoupon runs its own row-locked transaction, so a
+    // second sale trying to use the last copy of a limited coupon at the same
+    // instant is serialised against this one rather than both slipping through.
+    if (couponValidated) {
+      try {
+        await this.couponService.applyCoupon(customerProfile.id, {
+          code: couponValidated.code,
+          orderId: order.id,
+          orderAmount: Math.round(
+            (totals.subtotal - totals.discountTotal + couponDiscount) * 100,
+          ) / 100,
+          items: itemsToProcess.map((i) => ({
+            productId: i.productId,
+            price: i.unitPrice,
+            quantity: i.quantity,
+          })),
+        });
+      } catch (err) {
+        // A coupon that validated a moment ago but has since exhausted its
+        // usage limit shouldn't leave the sale hanging. Cancel back and let
+        // the till try again without the code.
+        this.logger.warn(
+          `Coupon ${couponValidated.code} failed to book against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+        );
+        await this.workflow.transition(
+          order.id,
+          'CANCELLED',
+          cashierId,
+          `Auto-cancelled: coupon ${couponValidated.code} could not be booked`,
+        );
+        throw new BusinessException(
+          err instanceof Error ? err.message : 'Coupon booking failed',
+          'POS_COUPON_BOOK_FAILED',
+        );
+      }
     }
 
     // 5. Update CheckoutSession if active
@@ -698,6 +771,46 @@ export class PosService {
       html,
       escposBase64: escpos.toString('base64'),
     };
+  }
+
+  /**
+   * Validates a coupon against the current cart without booking usage.
+   *
+   * Used by the till's "Apply Coupon" input to give the cashier immediate
+   * feedback ("Rs.100 off") before the sale is completed. The actual
+   * booking happens inside completeSale under a row lock.
+   */
+  async validateCouponAtPos(params: {
+    code: string;
+    items: PosCartItemDto[];
+    discountTotal?: number;
+  }) {
+    const customer = await this.repository.findOrCreateWalkInCustomer();
+    const gross = params.items.reduce(
+      (sum, i) => sum + i.quantity * i.unitPrice - (i.discountAmount || 0),
+      0,
+    );
+    try {
+      const checked = await this.couponService.checkCoupon(
+        customer.id,
+        params.code,
+        Math.max(0, gross - (params.discountTotal || 0)),
+        params.items.map((i) => ({
+          productId: i.productId,
+          price: i.unitPrice,
+          quantity: i.quantity,
+        })),
+      );
+      return {
+        code: checked.coupon.code,
+        discountAmount: Number(checked.discountAmount) || 0,
+        message: 'Coupon is valid',
+      };
+    } catch (err) {
+      throw new BadRequestException(
+        err instanceof Error ? err.message : 'Invalid coupon',
+      );
+    }
   }
 
   async previewReceipt(dto: PreviewReceiptDto) {

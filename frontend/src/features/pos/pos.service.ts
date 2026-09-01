@@ -59,6 +59,22 @@ export const posService = {
   },
 
   /**
+   * Validate a coupon against the current cart. Read-only preview -- the
+   * usage isn't booked until the sale completes.
+   */
+  async validateCoupon(payload: {
+    code: string;
+    items: Array<{ productId: string; productName: string; quantity: number; unitPrice: number; discountAmount?: number }>;
+    discountTotal?: number;
+  }): Promise<{ code: string; discountAmount: number; message: string }> {
+    const res = await apiClient.post<StandardResponse<{ code: string; discountAmount: number; message: string }>>(
+      '/pos/coupons/validate',
+      payload,
+    );
+    return res.data.data!;
+  },
+
+  /**
    * Reprint a past sale's tax invoice. The receipt is stamped "DUPLICATE COPY"
    * so it can't be passed off as the original.
    */
