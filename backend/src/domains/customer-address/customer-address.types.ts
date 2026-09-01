@@ -9,6 +9,10 @@ import {
   Max,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsPhoneNumberCustom,
+  IsPincodeCustom,
+} from '@common/validation/decorators.validation';
 
 export class CreateAddressDto {
   @ApiPropertyOptional({ default: 'Home' })
@@ -17,7 +21,7 @@ export class CreateAddressDto {
   label?: string;
 
   @ApiProperty() @IsString() fullName!: string;
-  @ApiProperty() @IsString() phone!: string;
+  @ApiProperty() @IsPhoneNumberCustom() phone!: string;
   @ApiProperty() @IsString() addressLine1!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() addressLine2?: string;
   @ApiProperty() @IsString() city!: string;
@@ -26,7 +30,7 @@ export class CreateAddressDto {
   @IsOptional()
   @IsString()
   country?: string;
-  @ApiProperty() @IsString() postalCode!: string;
+  @ApiProperty() @IsPincodeCustom() postalCode!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() landmark?: string;
   @ApiPropertyOptional() @IsOptional() @IsDecimal() latitude?: string;
   @ApiPropertyOptional() @IsOptional() @IsDecimal() longitude?: string;
@@ -37,13 +41,13 @@ export class CreateAddressDto {
 export class UpdateAddressDto {
   @ApiPropertyOptional() @IsOptional() @IsString() label?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() fullName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() addressLine1?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() addressLine2?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() state?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() country?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() postalCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPincodeCustom() postalCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() landmark?: string;
   @ApiPropertyOptional() @IsOptional() @IsDecimal() latitude?: string;
   @ApiPropertyOptional() @IsOptional() @IsDecimal() longitude?: string;

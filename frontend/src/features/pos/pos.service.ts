@@ -21,6 +21,8 @@ import {
   ReturnableSale,
   CreateReturnPayload,
   PosReturnResult,
+  CreateExchangePayload,
+  PosExchangeResult,
   HeldSession,
   PosCashMovement,
   PosCashMovementList,
@@ -54,6 +56,18 @@ export const posService = {
       `/pos/shifts/${shiftId}/cash-movements`,
     );
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
+  },
+
+  /**
+   * Reprint a past sale's tax invoice. The receipt is stamped "DUPLICATE COPY"
+   * so it can't be passed off as the original.
+   */
+  async reprintReceipt(orderNumber: string): Promise<{ orderNumber: string; html: string; escposBase64: string }> {
+    const res = await apiClient.get<StandardResponse<{ orderNumber: string; html: string; escposBase64: string }>>(
+      '/pos/receipts/reprint',
+      { params: { orderNumber } },
+    );
+    return res.data.data!;
   },
 
   /** Carts parked at this till, waiting to be picked back up. */
@@ -164,6 +178,11 @@ export const posService = {
   /**
    * Take goods back at the counter: restock, refund, and record it.
    */
+  async createExchange(payload: CreateExchangePayload): Promise<PosExchangeResult> {
+    const res = await apiClient.post<StandardResponse<PosExchangeResult>>('/pos/exchanges', payload);
+    return res.data.data!;
+  },
+
   async createReturn(payload: CreateReturnPayload): Promise<PosReturnResult> {
     const res = await apiClient.post<StandardResponse<PosReturnResult>>('/pos/returns', payload);
     return res.data.data!;

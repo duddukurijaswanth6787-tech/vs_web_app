@@ -8,7 +8,7 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
-import { DEFAULT_TERMINAL_ID, PosPaymentMethodType } from './pos.types';
+import { DEFAULT_TERMINAL_ID, PosPaymentMethodType, PosRefundMethodType } from './pos.types';
 import { CheckoutSessionStatus } from '@prisma/client';
 
 describe('PosService (Phase 1 Backend)', () => {
@@ -23,6 +23,10 @@ describe('PosService (Phase 1 Backend)', () => {
       findVariantByBarcode: jest.fn(),
       findHeldSessions: jest.fn().mockResolvedValue([]),
       findShiftById: jest.fn(),
+      findOrderForReprint: jest.fn(),
+      findSaleForReturn: jest.fn(),
+      createPosExchange: jest.fn(),
+      findOrCreateWalkInCustomer: jest.fn().mockResolvedValue({ id: 'cust-walkin' }),
       closeShift: jest.fn(),
       getCashMovementForWindow: jest
         .fn()
@@ -37,7 +41,6 @@ describe('PosService (Phase 1 Backend)', () => {
       findCheckoutSessionByToken: jest.fn(),
       findCheckoutSessionById: jest.fn(),
       updateCheckoutSessionStatus: jest.fn(),
-      findOrCreateWalkInCustomer: jest.fn(),
       // Real rates come from the product; an empty map means 0% here, which
       // keeps these tests about ordering and stock rather than tax.
       findProductTaxRates: jest.fn().mockResolvedValue(new Map()),
@@ -63,6 +66,8 @@ describe('PosService (Phase 1 Backend)', () => {
     workflow = {
       generateOrderNumber: jest.fn().mockResolvedValue('ORD-20260811-POS101'),
       deductInventory: jest.fn().mockResolvedValue(true),
+      deductInventoryTx: jest.fn().mockResolvedValue(true),
+      restockReturnedItems: jest.fn().mockResolvedValue(true),
     };
 
     auditService = {
@@ -222,6 +227,207 @@ describe('PosService (Phase 1 Backend)', () => {
       expect(session.sessionId).toContain('SHOP-2026-');
       expect(session.handoffToken).toHaveLength(7); // "123-456"
       expect(session.grandTotal).toBe(1467.9);
+    });
+  });
+
+  describe('receipt reprint', () => {
+    it('refuses to reprint an order that never existed', async () => {
+      repository.findOrderForReprint.mockResolvedValue(null);
+      await expect(
+        service.reprintReceipt('ORD-NO-SUCH', 'cashier-1'),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('rebuilds the receipt from stored order data, stamped as duplicate', async () => {
+      repository.findOrderForReprint.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-2026-001',
+        channel: 'POS_SHOPORA',
+        paymentMethod: 'CARD',
+        grandTotal: 1468,
+        discountTotal: 0,
+        taxTotal: 176,
+        items: [
+          {
+            productId: 'p1',
+            variantId: 'v1',
+            productName: 'Kurti',
+            variantTitle: 'Blue / L',
+            sku: 'KUR-1',
+            quantity: 2,
+            unitPrice: 699,
+            discountAmount: 0,
+            taxAmount: 176,
+          },
+        ],
+        addresses: [
+          {
+            addressType: 'SHIPPING',
+            fullName: 'Anjali',
+            phone: '9876543210',
+            state: 'Telangana',
+          },
+        ],
+        payments: [{ method: 'CARD' }],
+      });
+      // The printer needs a spy that returns a buffer for buildEscPos.
+      const svcAny = service as any;
+      svcAny.printerService = {
+        generateHtmlInvoiceReceipt: jest
+          .fn()
+          .mockResolvedValue('<html>duplicate html</html>'),
+        buildEscPosInvoiceReceipt: jest.fn().mockResolvedValue(Buffer.from('esc')),
+      };
+
+      const result = await service.reprintReceipt('ORD-2026-001', 'cashier-1');
+      expect(result.orderNumber).toBe('ORD-2026-001');
+      expect(result.html).toContain('duplicate');
+      expect(result.escposBase64).toBe(Buffer.from('esc').toString('base64'));
+      // Every reprint is audited, so an untraceable reprint can't be used to
+      // backdate an invoice.
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'POS_RECEIPT_REPRINTED' }),
+      );
+      // Duplicate flag is set on the DTO passed to the printer.
+      expect(svcAny.printerService.generateHtmlInvoiceReceipt).toHaveBeenCalledWith(
+        expect.objectContaining({ isReprint: true }),
+      );
+    });
+
+    it('refuses to reprint an online-store order (there was no over-the-counter receipt)', async () => {
+      repository.findOrderForReprint.mockResolvedValue({
+        id: 'order-2',
+        orderNumber: 'ORD-WEB-42',
+        channel: 'ONLINE_STORE',
+      });
+      await expect(
+        service.reprintReceipt('ORD-WEB-42', 'cashier-1'),
+      ).rejects.toThrow(/not a POS sale/);
+    });
+  });
+
+  describe('exchange', () => {
+    const originalOrder = {
+      id: 'order-orig',
+      orderNumber: 'ORD-ORIG-1',
+      channel: 'POS_SHOPORA',
+      paymentMethod: 'CARD',
+      items: [
+        {
+          id: 'oi-1',
+          productId: 'prod-orig',
+          variantId: 'var-orig',
+          productName: 'Kurti L',
+          variantTitle: 'Blue / L',
+          sku: 'KUR-L',
+          quantity: 1,
+          unitPrice: 1000,
+          discountAmount: 0,
+          taxAmount: 0,
+        },
+      ],
+      payments: [{ id: 'pay-1' }],
+    };
+
+    it('atomically returns old items and sells new ones, netting the difference', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map(),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+        terminalId: 'COUNTER_1',
+        cashierId: 'cashier-1',
+      });
+      repository.findProductTaxRates.mockResolvedValue(
+        new Map([['prod-new', 0]]),
+      );
+      repository.createPosExchange.mockResolvedValue({
+        returnRequest: { id: 'r-1', returnNumber: 'EXR-ORD-ORIG-1-X' },
+        refund: { refundNumber: 'EXF-ORD-ORIG-1-X' },
+        newOrder: { id: 'order-new', orderNumber: 'ORD-NEW-1' },
+      });
+
+      const result = await service.createExchange('cashier-1', {
+        originalOrderNumber: 'ORD-ORIG-1',
+        returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+        newItems: [
+          {
+            productId: 'prod-new',
+            productName: 'Kurti M',
+            variantId: 'var-new',
+            quantity: 1,
+            unitPrice: 1200,
+          },
+        ],
+        refundMethod: PosRefundMethodType.ORIGINAL,
+        paymentMethod: PosPaymentMethodType.CARD,
+        reason: 'Size exchange',
+      });
+
+      expect(result.success).toBe(true);
+      expect(result.refundAmount).toBe(1000);
+      expect(result.newSaleTotal).toBe(1200);
+      // Positive net = customer owes the shop 200.
+      expect(result.netDue).toBe(200);
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'POS_EXCHANGE_COMPLETED' }),
+      );
+    });
+
+    it('refuses to exchange more of a line than is still returnable', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map([['oi-1', 1]]),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue({
+        id: 'shift-1',
+      });
+
+      await expect(
+        service.createExchange('cashier-1', {
+          originalOrderNumber: 'ORD-ORIG-1',
+          returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+          newItems: [
+            {
+              productId: 'prod-new',
+              productName: 'Kurti M',
+              quantity: 1,
+              unitPrice: 1200,
+            },
+          ],
+          refundMethod: PosRefundMethodType.CASH,
+          paymentMethod: PosPaymentMethodType.CASH,
+          reason: 'x',
+        }),
+      ).rejects.toThrow(/can still be returned/);
+      expect(repository.createPosExchange).not.toHaveBeenCalled();
+    });
+
+    it('refuses when no shift is open (drawer has nowhere to book the movement)', async () => {
+      repository.findSaleForReturn.mockResolvedValue({
+        order: originalOrder,
+        returnedByItem: new Map(),
+      });
+      repository.findOpenShiftForTerminal.mockResolvedValue(null);
+
+      await expect(
+        service.createExchange('cashier-1', {
+          originalOrderNumber: 'ORD-ORIG-1',
+          returnItems: [{ orderItemId: 'oi-1', quantity: 1 }],
+          newItems: [
+            {
+              productId: 'prod-new',
+              productName: 'Kurti M',
+              quantity: 1,
+              unitPrice: 1200,
+            },
+          ],
+          refundMethod: PosRefundMethodType.CASH,
+          paymentMethod: PosPaymentMethodType.CASH,
+          reason: 'x',
+        }),
+      ).rejects.toThrow(/Open a shift/);
     });
   });
 

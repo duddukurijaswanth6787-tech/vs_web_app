@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  BadRequestException,
 } from '@nestjs/common';
 import {
   ApiTags,
@@ -36,6 +37,7 @@ import {
   PreviewReceiptDto,
   OpenPosShiftDto,
   CreatePosReturnDto,
+  CreatePosExchangeDto,
   ClosePosShiftDto,
   PosCashMovementDto,
   DEFAULT_TERMINAL_ID,
@@ -188,6 +190,24 @@ export class PosController {
     return this.posService.previewReceipt(dto);
   }
 
+  @Get('receipts/reprint')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary:
+      'Reprint an Existing Tax Invoice (Marked "DUPLICATE COPY", Audited)',
+  })
+  async reprintReceipt(
+    @CurrentUser() user: JwtPayload,
+    @Query('orderNumber') orderNumber: string,
+  ) {
+    if (!orderNumber || !orderNumber.trim()) {
+      throw new BadRequestException('orderNumber is required to reprint a receipt.');
+    }
+    return this.posService.reprintReceipt(orderNumber.trim(), user.sub);
+  }
+
   @Get('customers/lookup')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
@@ -222,6 +242,22 @@ export class PosController {
     @Body() dto: CreatePosReturnDto,
   ) {
     return this.posService.createReturn(user.sub, dto);
+  }
+
+  @Post('exchanges')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary:
+      'Exchange goods over the counter: return old items and sell new ones in one atomic step',
+  })
+  async createExchange(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: CreatePosExchangeDto,
+  ) {
+    return this.posService.createExchange(user.sub, dto);
   }
 
   @Post('shifts/open')

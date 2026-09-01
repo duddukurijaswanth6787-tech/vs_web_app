@@ -1,5 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
+import { IsHsnCodeCustom } from '@common/validation/decorators.validation';
 import {
   IsString,
   IsOptional,
@@ -379,7 +380,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isFestivePick?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isExclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnlineOnly?: boolean;
-  @ApiPropertyOptional() @IsOptional() @IsString() hsnCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsHsnCodeCustom() hsnCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() sizeChartTemplateId?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() taxInclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isPublished?: boolean;

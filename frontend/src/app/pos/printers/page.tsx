@@ -109,6 +109,8 @@ export default function PrintersConfigPage() {
         sku: 'KUR-BLU-L-005',
         barcode: '890100000005',
         price: 699,
+        mrp: 999,
+        hsnCode: '6204',
         quantity: 2,
         storeName: 'VASANTHI DESIGNERS',
         labelSize: testLabelSize,

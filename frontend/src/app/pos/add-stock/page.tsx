@@ -106,6 +106,10 @@ export default function AddStockPage() {
                 sku: selectedVariant.sku || 'SKU-CODE',
                 barcode: selectedVariant.barcode,
                 price: selectedVariant.price,
+                // MRP and HSN carry through to the sticker so the printed tag
+                // is GST-compliant. Both come off the scan result.
+                mrp: selectedVariant.mrp,
+                hsnCode: selectedVariant.hsnCode,
                 quantity: quantityReceived,
                 storeName: 'VASANTHI DESIGNERS',
                 labelSize,

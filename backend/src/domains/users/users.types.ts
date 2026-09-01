@@ -8,6 +8,9 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Gender } from '@shared/identity/identity.enums';
+import {
+  IsPhoneNumberCustom,
+} from '@common/validation/decorators.validation';
 
 export class CreateUserDto {
   @ApiProperty() @IsEmail() email!: string;
@@ -18,7 +21,7 @@ export class CreateUserDto {
   @IsString()
   @MaxLength(50)
   lastName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional({ enum: Gender })
   @IsOptional()
   @IsEnum(Gender)
@@ -36,7 +39,7 @@ export class UpdateUserDto {
   @IsString()
   @MaxLength(50)
   lastName?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional({ enum: Gender })
   @IsOptional()
   @IsEnum(Gender)

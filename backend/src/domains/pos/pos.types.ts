@@ -13,6 +13,12 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
+import {
+  IsPhoneNumberCustom,
+  IsHsnCodeCustom,
+  IsGSTCustom,
+  IsMoneyCustom,
+} from '@common/validation/decorators.validation';
 
 /**
  * Physical sticker label size. SMALL is the original 50x25mm garment-tag
@@ -83,13 +89,32 @@ export class PosCustomerInfoDto {
 
   @ApiPropertyOptional()
   @IsOptional()
-  @IsString()
+  @IsPhoneNumberCustom()
   phone?: string;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   email?: string;
+
+  @ApiPropertyOptional({
+    description:
+      "Customer's state. When it differs from the shop's state the invoice " +
+      'switches from CGST + SGST to a single IGST line, as GST law requires. ' +
+      'Optional; walk-in sales default to the shop\'s state.',
+  })
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Customer GSTIN for B2B sales; printed on the tax invoice so the buyer ' +
+      'can claim the input credit.',
+  })
+  @IsOptional()
+  @IsGSTCustom()
+  gstin?: string;
 }
 
 export class ScanBarcodeDto {
@@ -230,8 +255,7 @@ export class PosSplitTenderDto {
   method!: PosPaymentMethodType;
 
   @ApiProperty({ description: 'Amount handed over on this tender.' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   amount!: number;
 }
 
@@ -398,8 +422,26 @@ export class GenerateBatchStickersDto {
   barcode!: string;
 
   @ApiProperty()
-  @IsNumber()
+  @IsMoneyCustom()
   price!: number;
+
+  @ApiPropertyOptional({
+    description:
+      'Maximum Retail Price, inclusive of taxes. Printed on the label for ' +
+      'garments where MRP disclosure is required.',
+  })
+  @IsOptional()
+  @IsMoneyCustom()
+  mrp?: number;
+
+  @ApiPropertyOptional({
+    description:
+      'HSN code for the item. Printed on the label so a return counter ' +
+      'can look the product up without unpicking the SKU.',
+  })
+  @IsOptional()
+  @IsHsnCodeCustom()
+  hsnCode?: string;
 
   @ApiProperty({ default: 1 })
   @IsNumber()
@@ -428,8 +470,7 @@ export class OpenPosShiftDto {
   terminalId!: string;
 
   @ApiProperty({ description: 'Starting cash float counted into the drawer' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   openingCash!: number;
 
   @ApiPropertyOptional()
@@ -440,14 +481,83 @@ export class OpenPosShiftDto {
 
 export class ClosePosShiftDto {
   @ApiProperty({ description: 'Physical cash counted in the drawer at close' })
-  @IsNumber()
-  @Min(0)
+  @IsMoneyCustom()
   closingCashCounted!: number;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   notes?: string;
+}
+
+/**
+ * A counter exchange: the customer brings items back and takes different ones.
+ *
+ * Booked as two paired invoices -- a return credit note at the returned
+ * item's value and a fresh tax invoice at the new item's value. The physical
+ * cash movement is the difference; both invoices carry the correct GST so the
+ * customer's tax history and the shop's ledger stay right.
+ */
+export class CreatePosExchangeDto {
+  @ApiProperty({ description: 'Order number the returned items were originally sold under.' })
+  @IsString()
+  originalOrderNumber!: string;
+
+  @ApiProperty({
+    type: [PosReturnItemDto],
+    description: 'Which lines of the original sale are coming back.',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosReturnItemDto)
+  returnItems!: PosReturnItemDto[];
+
+  @ApiProperty({
+    type: [PosCartItemDto],
+    description: 'The items being sold as replacement, priced as a fresh sale.',
+  })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => PosCartItemDto)
+  newItems!: PosCartItemDto[];
+
+  @ApiProperty({
+    enum: PosRefundMethodType,
+    description:
+      'How the returned value is booked back to the customer. Only matters ' +
+      'when the exchange leaves the shop owing the customer money.',
+  })
+  @IsEnum(PosRefundMethodType)
+  refundMethod!: PosRefundMethodType;
+
+  @ApiProperty({
+    enum: PosPaymentMethodType,
+    description:
+      'How the new sale is paid. Only matters when the customer owes extra ' +
+      'because the replacement costs more than the return.',
+  })
+  @IsEnum(PosPaymentMethodType)
+  paymentMethod!: PosPaymentMethodType;
+
+  @ApiProperty({ description: 'Why the exchange was made (size wrong, defect, etc).' })
+  @IsString()
+  reason!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  terminalId?: string;
+
+  @ApiPropertyOptional({ type: PosCustomerInfoDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PosCustomerInfoDto)
+  customer?: PosCustomerInfoDto;
 }
 
 /** Money in or out of the drawer for something other than a sale. */
@@ -461,8 +571,7 @@ export class PosCashMovementDto {
   direction!: 'IN' | 'OUT';
 
   @ApiProperty({ description: 'Amount moved. Always positive.' })
-  @IsNumber()
-  @Min(0.01)
+  @IsMoneyCustom({ message: 'Cash movement amount must be zero or positive with at most 2 decimals' })
   amount!: number;
 
   @ApiProperty({
@@ -473,6 +582,15 @@ export class PosCashMovementDto {
   @IsString()
   @IsNotEmpty()
   reason!: string;
+}
+
+/**
+ * Marks a receipt as a duplicate. The header prints "DUPLICATE COPY" so an
+ * over-the-counter reprint can\'t be passed off as the original -- an audit
+ * requirement on Indian GST invoices.
+ */
+export interface ReceiptReprintFlag {
+  isReprint?: boolean;
 }
 
 export class PreviewReceiptDto {
@@ -500,6 +618,15 @@ export class PreviewReceiptDto {
   @IsOptional()
   @IsString()
   paymentMethod?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'True when this is a re-issued receipt. The header stamps "DUPLICATE COPY" ' +
+      'so a reprint can\'t be mistaken for the original tax invoice.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  isReprint?: boolean;
 
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()

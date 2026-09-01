@@ -10,6 +10,10 @@ import {
   Min,
   Max,
 } from 'class-validator';
+import {
+  IsPhoneNumberCustom,
+  IsPincodeCustom,
+} from '@common/validation/decorators.validation';
 
 // ─── Create ──────────────────────────────────────────────
 
@@ -21,9 +25,9 @@ export class CreateWarehouseDto {
   @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() state?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() country?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() postalCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPincodeCustom() postalCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() contactPerson?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional({ default: false })
   @IsOptional()
@@ -40,9 +44,9 @@ export class UpdateWarehouseDto {
   @ApiPropertyOptional() @IsOptional() @IsString() city?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() state?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() country?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() postalCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPincodeCustom() postalCode?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() contactPerson?: string;
-  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+  @ApiPropertyOptional() @IsOptional() @IsPhoneNumberCustom() phone?: string;
   @ApiPropertyOptional() @IsOptional() @IsEmail() email?: string;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isDefault?: boolean;
 }

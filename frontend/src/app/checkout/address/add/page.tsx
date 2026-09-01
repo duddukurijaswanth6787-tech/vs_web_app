@@ -11,6 +11,7 @@ import { customerMeService } from '@/features/customer/me.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { customerKeys } from '@/features/customer/hooks';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { validatePhone, validatePincode, validateRequired } from '@/utils/validators';
 
 const empty = {
   fullName: '',
@@ -60,10 +61,9 @@ export default function AddAddressPage() {
 
   const validateField = (key: string, val: string) => {
     if (key === 'addressLine2') return '';
-    if (!val || !val.trim()) return 'This field is required';
-    if (key === 'phone' && val.replace(/\D/g, '').length !== 10) return '10-digit phone required';
-    if (key === 'postalCode' && val.replace(/\D/g, '').length !== 6) return '6-digit PIN required';
-    return '';
+    if (key === 'phone') return validatePhone(val) ?? '';
+    if (key === 'postalCode') return validatePincode(val) ?? '';
+    return validateRequired(val, 'This field') ?? '';
   };
 
   const onSubmit = async (e: React.FormEvent) => {

@@ -109,6 +109,8 @@ export class BarcodeService {
       sku: string;
       price: number;
       barcode: string;
+      mrp?: number;
+      hsnCode?: string;
     },
     labelSize: LabelSize,
     barcodeDataUrl: string,
@@ -130,13 +132,26 @@ export class BarcodeService {
         : rawTitle;
 
     if (spec.layout === 'branded') {
-      // LARGE: branded header, SKU badge, barcode + QR side by side, price footer.
+      // LARGE: branded header, SKU badge, barcode + QR side by side, MRP + HSN, price footer.
+      // MRP is a legal disclosure ("incl. of all taxes"), and HSN is what an
+      // auditor asks for on a return counter -- both belong on the tag when
+      // there's room.
+      const mrpBlock =
+        typeof params.mrp === 'number' && params.mrp > 0 && params.mrp !== params.price
+          ? `<div class="mrp-line">MRP ₹${params.mrp} <span class="mrp-note">(incl. of all taxes)</span></div>`
+          : '';
+      const hsnBlock = params.hsnCode
+        ? `<div class="hsn-chip">HSN ${params.hsnCode}</div>`
+        : '';
       return `
   <div class="brand-mark">❖</div>
   <div class="store-name">${store}</div>
   <div class="hr"></div>
   <div class="product-title">${title}</div>
-  <div class="sku-pill">${params.sku}</div>
+  <div class="sku-hsn-row">
+    <div class="sku-pill">${params.sku}</div>
+    ${hsnBlock}
+  </div>
   <div class="code-row">
     <div class="barcode-col">
       <img src="${barcodeDataUrl}" class="barcode-img" alt="${params.barcode}" />
@@ -145,10 +160,19 @@ export class BarcodeService {
     ${qrDataUrl ? `<div class="v-divider"></div><div class="qr-col"><img src="${qrDataUrl}" class="qr-img" alt="QR ${params.barcode}" /></div>` : ''}
   </div>
   <div class="hr"></div>
+  ${mrpBlock}
   <div class="price-row">₹${params.price}</div>`;
     }
 
     // SMALL / MEDIUM: compact single-column layout (SMALL has no QR).
+    // MEDIUM has enough room for MRP and HSN; SMALL does not, so it stays as-is.
+    const isMedium = labelSize === 'MEDIUM';
+    const mrpBlock =
+      isMedium && typeof params.mrp === 'number' && params.mrp > 0 && params.mrp !== params.price
+        ? `<div class="mrp-line">MRP ₹${params.mrp} <span class="mrp-note">incl. tax</span></div>`
+        : '';
+    const hsnBlock =
+      isMedium && params.hsnCode ? `<span class="hsn">HSN ${params.hsnCode}</span>` : '';
     return `
   <div class="store-name">${store}</div>
   <div class="product-title">${title}</div>
@@ -156,8 +180,9 @@ export class BarcodeService {
     <img src="${barcodeDataUrl}" class="barcode-img" alt="${params.barcode}" />
     ${qrDataUrl ? `<img src="${qrDataUrl}" class="qr-img" alt="QR ${params.barcode}" />` : ''}
   </div>
+  ${mrpBlock}
   <div class="footer-row">
-    <span class="sku">${params.sku}</span>
+    <span class="sku">${params.sku}${hsnBlock ? ` &middot; ${hsnBlock}` : ''}</span>
     <span class="price">₹${params.price}</span>
   </div>`;
   }
@@ -229,6 +254,10 @@ export class BarcodeService {
     .qr-col { display: flex; align-items: center; }
     .qr-img { width: 14mm; height: 14mm; object-fit: contain; }
     .price-row { font-size: 16px; font-weight: 900; line-height: 1.2; flex-shrink: 0; }
+    .sku-hsn-row { display: flex; gap: 3mm; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .hsn-chip { font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 0.3px; padding: 1px 5px; border: 0.5px solid #333333; border-radius: 3px; }
+    .mrp-line { font-size: 8px; font-weight: 700; line-height: 1.1; margin-bottom: 1px; }
+    .mrp-note { font-weight: 400; font-style: italic; color: #444444; }
       `;
     }
 
@@ -283,6 +312,9 @@ export class BarcodeService {
       line-height: 1;
     }
     .sku { font-family: monospace; font-size: ${labelSize === 'MEDIUM' ? 8 : 7}px; }
+    .hsn { font-family: monospace; font-size: ${labelSize === 'MEDIUM' ? 7 : 6}px; font-weight: 600; }
+    .mrp-line { font-size: ${labelSize === 'MEDIUM' ? 8 : 7}px; font-weight: 700; line-height: 1; margin: 1px 0; }
+    .mrp-note { font-weight: 400; font-style: italic; color: #555555; font-size: ${labelSize === 'MEDIUM' ? 7 : 6}px; }
     .price { font-size: ${labelSize === 'MEDIUM' ? 11 : 9}px; font-weight: 900; }
     `;
   }
@@ -295,6 +327,10 @@ export class BarcodeService {
       sku: string;
       price: number;
       barcode: string;
+      // MRP and HSN are required on a GST-compliant garment tag over Rs.1000.
+      // Passing them here is what puts them on paper.
+      mrp?: number;
+      hsnCode?: string;
     },
     labelSize: LabelSize = 'SMALL',
   ): Promise<string> {
@@ -355,6 +391,8 @@ export class BarcodeService {
         sku: dto.sku,
         price: dto.price,
         barcode: dto.barcode,
+        mrp: dto.mrp,
+        hsnCode: dto.hsnCode,
       },
       labelSize,
     );
