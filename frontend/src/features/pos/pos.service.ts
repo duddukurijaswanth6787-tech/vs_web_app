@@ -62,6 +62,25 @@ export const posService = {
     return res.data.data ?? { movements: [], cashIn: 0, cashOut: 0, net: 0 };
   },
 
+  /** Set the current cashier's short PIN for the till (needs current password). */
+  async setCashierPin(currentPassword: string, newPin: string): Promise<{ success: boolean }> {
+    const res = await apiClient.post<StandardResponse<{ success: boolean }>>(
+      '/pos/cashier/set-pin',
+      { currentPassword, newPin },
+    );
+    return res.data.data!;
+  },
+
+  /** Switch active cashier by PIN. Returns a fresh JWT for that cashier. */
+  async switchCashier(pin: string, terminalId?: string): Promise<{ token: string; user: { id: string; fullName: string; email: string; roles: string[] } }> {
+    const res = await apiClient.post<StandardResponse<{ token: string; user: { id: string; fullName: string; email: string; roles: string[] } }>>(
+      '/pos/cashier/switch',
+      { pin },
+      { params: terminalId ? { terminalId } : undefined },
+    );
+    return res.data.data!;
+  },
+
   /** Product tiles for a category, for the till's quick-buy grid. */
   async listByCategory(categoryId: string, wholesale = false, limit = 24): Promise<ScanBarcodeResult[]> {
     const res = await apiClient.get<StandardResponse<ScanBarcodeResult[]>>('/pos/products/by-category', {

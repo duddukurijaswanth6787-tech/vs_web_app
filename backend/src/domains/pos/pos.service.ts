@@ -16,6 +16,9 @@ import { AuditService } from '@domains/audit/audit.service';
 import { CouponService } from '@domains/coupon/coupon.service';
 import { GiftCardService } from '@domains/gift-card/gift-card.service';
 import { LoyaltyService } from '@domains/loyalty/loyalty.service';
+import { PasswordService } from '@domains/auth/services/password.service';
+import { JwtService } from '@domains/auth/services/jwt.service';
+import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import {
   ScanBarcodeDto,
@@ -52,7 +55,134 @@ export class PosService {
     private readonly couponService: CouponService,
     private readonly giftCardService: GiftCardService,
     private readonly loyaltyService: LoyaltyService,
+    private readonly passwordService: PasswordService,
+    private readonly jwtService: JwtService,
+    private readonly prisma: PrismaService,
   ) {}
+
+  /**
+   * Sets a cashier's short POS PIN.
+   *
+   * Guarded by the current password rather than just the session cookie so a
+   * stolen access token can't silently change the PIN to something the
+   * attacker knows -- setting a PIN would give them a shortcut past
+   * password rotation.
+   */
+  async setCashierPin(
+    userId: string,
+    currentPassword: string,
+    newPin: string,
+  ) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    const ok = await this.passwordService.verify(user.passwordHash, currentPassword);
+    if (!ok) throw new BadRequestException('Current password is wrong.');
+    if (!/^\d{4,6}$/.test(newPin)) {
+      throw new BadRequestException('PIN must be 4 to 6 digits.');
+    }
+    const hash = await this.passwordService.hash(newPin);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { posPinHash: hash },
+    });
+    await this.auditService.log({
+      action: 'POS_PIN_SET',
+      module: 'pos',
+      resource: 'user',
+      resourceId: userId,
+      userId,
+    });
+    return { success: true };
+  }
+
+  /**
+   * Switch the active cashier at the till by short PIN.
+   *
+   * Given a 4-6 digit PIN, find the user it belongs to (must still have
+   * pos:view), issue a fresh JWT for them, and return it. The till then
+   * uses that token for subsequent calls, so sales are attributed to the
+   * cashier who now stands at the counter -- no client-set cashierId, no
+   * impersonation of the previously-logged-in user.
+   *
+   * A wrong PIN is refused with a generic message so a shoulder-surfer
+   * can\'t enumerate valid PINs.
+   */
+  async switchCashierByPin(pin: string, terminalId?: string) {
+    if (!/^\d{4,6}$/.test(pin || '')) {
+      throw new BadRequestException('Enter a 4 to 6 digit PIN.');
+    }
+    // Candidates: users with a PIN set who still have pos:view.
+    const candidates = await this.prisma.user.findMany({
+      where: {
+        posPinHash: { not: null },
+        deletedAt: null,
+        accountStatus: 'ACTIVE',
+        userRoles: {
+          some: {
+            role: {
+              rolePermissions: {
+                some: { permission: { code: 'pos:view' } },
+              },
+            },
+          },
+        },
+      },
+      include: {
+        userRoles: { include: { role: true } },
+      },
+    });
+
+    let matched:
+      | { id: string; email: string; firstName: string | null; lastName: string | null; roles: string[]; userType: string }
+      | null = null;
+    for (const c of candidates) {
+      if (!c.posPinHash) continue;
+      const ok = await this.passwordService.verify(c.posPinHash, pin);
+      if (ok) {
+        matched = {
+          id: c.id,
+          email: c.email,
+          firstName: c.firstName,
+          lastName: c.lastName,
+          roles: c.userRoles.map((r) => r.role.name),
+          userType: c.userType,
+        };
+        break;
+      }
+    }
+
+    if (!matched) {
+      // Deliberately generic: don\'t hint whether the PIN matched an inactive
+      // user, or matches no user, or matched a user without pos:view.
+      throw new BadRequestException('PIN not recognised.');
+    }
+
+    const token = await this.jwtService.sign({
+      sub: matched.id,
+      email: matched.email,
+      userType: matched.userType,
+      roles: matched.roles,
+    });
+
+    await this.auditService.log({
+      action: 'POS_CASHIER_SWITCHED',
+      module: 'pos',
+      resource: 'user',
+      resourceId: matched.id,
+      userId: matched.id,
+      newValue: { terminalId: terminalId || 'unknown' },
+    });
+
+    return {
+      token,
+      user: {
+        id: matched.id,
+        fullName: [matched.firstName, matched.lastName].filter(Boolean).join(' ') || matched.email,
+        email: matched.email,
+        roles: matched.roles,
+      },
+    };
+  }
 
   /**
    * The rate at which loyalty points redeem to rupees at the till.

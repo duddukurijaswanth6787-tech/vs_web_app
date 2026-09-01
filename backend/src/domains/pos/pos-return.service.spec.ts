@@ -87,6 +87,18 @@ describe('PosService returns', () => {
           provide: (await import('@domains/loyalty/loyalty.service')).LoyaltyService,
           useValue: { adminBalance: jest.fn(), adminRedeem: jest.fn() },
         },
+        {
+          provide: (await import('@domains/auth/services/password.service')).PasswordService,
+          useValue: { hash: jest.fn(), verify: jest.fn() },
+        },
+        {
+          provide: (await import('@domains/auth/services/jwt.service')).JwtService,
+          useValue: { sign: jest.fn() },
+        },
+        {
+          provide: (await import('@database/prisma.service')).PrismaService,
+          useValue: {},
+        },
       ],
     }).compile();
 

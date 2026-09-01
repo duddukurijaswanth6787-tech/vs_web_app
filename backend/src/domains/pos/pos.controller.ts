@@ -37,6 +37,8 @@ import {
   PreviewReceiptDto,
   ValidateCouponAtPosDto,
   GiftCardBalanceQueryDto,
+  SetCashierPinDto,
+  SwitchCashierDto,
   OpenPosShiftDto,
   CreatePosReturnDto,
   CreatePosExchangeDto,
@@ -236,6 +238,36 @@ export class PosController {
   })
   async validateCoupon(@Body() dto: ValidateCouponAtPosDto) {
     return this.posService.validateCouponAtPos(dto);
+  }
+
+  @Post('cashier/set-pin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Set or change the cashier\'s short POS PIN (requires current password)',
+  })
+  async setCashierPin(
+    @CurrentUser() user: JwtPayload,
+    @Body() dto: SetCashierPinDto,
+  ) {
+    return this.posService.setCashierPin(user.sub, dto.currentPassword, dto.newPin);
+  }
+
+  @Post('cashier/switch')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Switch active cashier by PIN, returns a fresh JWT for that cashier',
+  })
+  async switchCashier(
+    @Body() dto: SwitchCashierDto,
+    @Query('terminalId') terminalId?: string,
+  ) {
+    return this.posService.switchCashierByPin(dto.pin, terminalId);
   }
 
   @Post('gift-cards/balance')

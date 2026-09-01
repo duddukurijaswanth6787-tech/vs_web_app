@@ -9,6 +9,7 @@ import {
   IsIn,
   IsInt,
   IsNotEmpty,
+  Matches,
   ValidateNested,
   Min,
 } from 'class-validator';
@@ -685,6 +686,24 @@ export class GiftCardBalanceQueryDto {
   @ApiProperty()
   @IsString()
   code!: string;
+}
+
+export class SetCashierPinDto {
+  @ApiProperty({ description: 'Current password, so a stolen session cannot silently set a new PIN.' })
+  @IsString()
+  currentPassword!: string;
+
+  @ApiProperty({ description: '4 to 6 digit PIN to use at the till.' })
+  @IsString()
+  @Matches(/^\d{4,6}$/, { message: 'PIN must be 4 to 6 digits.' })
+  newPin!: string;
+}
+
+export class SwitchCashierDto {
+  @ApiProperty({ description: '4 to 6 digit PIN belonging to the cashier taking over.' })
+  @IsString()
+  @Matches(/^\d{4,6}$/, { message: 'PIN must be 4 to 6 digits.' })
+  pin!: string;
 }
 
 export class PreviewReceiptDto {

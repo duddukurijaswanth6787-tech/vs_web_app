@@ -46,7 +46,10 @@ import {
   useLookupGiftCard,
   useLoyaltyBalance,
   usePosProductsByCategory,
+  useSwitchCashier,
+  useSetCashierPin,
 } from '@/features/pos/pos.hooks';
+import { setClientTokens } from '@/lib/api/client';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import {
   PosCartItem,
@@ -83,6 +86,17 @@ export default function DesktopPosPage() {
   const [wholesaleMode, setWholesaleMode] = useState(false);
   const [quickBuyOpen, setQuickBuyOpen] = useState(false);
   const [quickBuyCategoryId, setQuickBuyCategoryId] = useState<string>('');
+  // Cashier switch by PIN. activeCashier tracks who's at the till now,
+  // starting from whoever logged in.
+  const [switchCashierModalOpen, setSwitchCashierModalOpen] = useState(false);
+  const [switchPinInput, setSwitchPinInput] = useState('');
+  const [switchError, setSwitchError] = useState('');
+  const [activeCashier, setActiveCashier] = useState<{ id: string; fullName: string } | null>(null);
+  const [setPinModalOpen, setSetPinModalOpen] = useState(false);
+  const [pinFormPassword, setPinFormPassword] = useState('');
+  const [pinFormNew, setPinFormNew] = useState('');
+  const [pinFormError, setPinFormError] = useState('');
+  const [pinFormSuccess, setPinFormSuccess] = useState('');
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponError, setCouponError] = useState('');
@@ -152,6 +166,8 @@ export default function DesktopPosPage() {
   const adoptMutation = useAdoptHandoffSession();
   const holdMutation = useCreateCheckoutSession();
   const reprintMutation = useReprintReceipt();
+  const switchCashierMutation = useSwitchCashier();
+  const setCashierPinMutation = useSetCashierPin();
   const validateCouponMutation = useValidateCoupon();
   const lookupGiftCardMutation = useLookupGiftCard();
   const loyaltyBalanceQuery = useLoyaltyBalance(customerLookupResult?.customerProfileId);
@@ -402,6 +418,61 @@ export default function DesktopPosPage() {
         setHandoffPin('');
       },
     });
+  };
+
+  // Swap the till's JWT for the cashier whose PIN was entered. All subsequent
+  // requests are then attributed to them, and their open shift shows up.
+  const handleSwitchCashier = () => {
+    const pin = switchPinInput.trim();
+    if (!/^\d{4,6}$/.test(pin)) {
+      setSwitchError('PIN must be 4 to 6 digits.');
+      return;
+    }
+    setSwitchError('');
+    switchCashierMutation.mutate(
+      { pin, terminalId: TERMINAL_ID },
+      {
+        onSuccess: (res) => {
+          // Replace the token in the shared client. Refresh cookie is
+          // untouched, so the old user is not auto-re-issued a token on the
+          // next refresh -- they would have to log in from the login screen.
+          setClientTokens({
+            accessToken: res.token,
+            refreshToken: '',
+            expiresIn: 0,
+          } as never);
+          setActiveCashier({ id: res.user.id, fullName: res.user.fullName });
+          setSwitchCashierModalOpen(false);
+          setSwitchPinInput('');
+        },
+        onError: (err) => {
+          setSwitchError(getApiErrorMessage(err, 'PIN not recognised.'));
+        },
+      },
+    );
+  };
+
+  const handleSetCashierPin = () => {
+    if (!/^\d{4,6}$/.test(pinFormNew)) {
+      setPinFormError('PIN must be 4 to 6 digits.');
+      return;
+    }
+    setPinFormError('');
+    setPinFormSuccess('');
+    setCashierPinMutation.mutate(
+      { currentPassword: pinFormPassword, newPin: pinFormNew },
+      {
+        onSuccess: () => {
+          setPinFormSuccess('PIN saved.');
+          setPinFormPassword('');
+          setPinFormNew('');
+          setTimeout(() => setSetPinModalOpen(false), 800);
+        },
+        onError: (err) => {
+          setPinFormError(getApiErrorMessage(err, 'Could not save PIN.'));
+        },
+      },
+    );
   };
 
   // Reprint the tax invoice for a past sale into the same modal a fresh sale
@@ -882,6 +953,23 @@ export default function DesktopPosPage() {
           >
             <Printer className="w-4 h-4" />
             <span>Reprint</span>
+          </button>
+
+          <button
+            onClick={() => setSwitchCashierModalOpen(true)}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200 transition-colors"
+          >
+            <UserCheck className="w-4 h-4" />
+            <span>{activeCashier ? activeCashier.fullName : 'Switch'}</span>
+          </button>
+
+          <button
+            onClick={() => setSetPinModalOpen(true)}
+            title="Set your short till PIN"
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold border bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200 transition-colors"
+          >
+            <span className="text-sm">🔑</span>
+            <span className="hidden sm:inline">Set PIN</span>
           </button>
 
           <button
@@ -1853,6 +1941,92 @@ export default function DesktopPosPage() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* Switch cashier by PIN */}
+      {switchCashierModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
+              <span className="font-bold text-sm text-[var(--brand-primary)] flex items-center gap-2">
+                <UserCheck className="w-5 h-5" /> Switch Cashier
+              </span>
+              <button onClick={() => setSwitchCashierModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Enter your 4-6 digit till PIN. Subsequent sales will be attributed to you.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); handleSwitchCashier(); }} className="space-y-3">
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                autoFocus
+                maxLength={6}
+                value={switchPinInput}
+                onChange={(e) => setSwitchPinInput(e.target.value.replace(/\D/g, ''))}
+                placeholder="****"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:border-[var(--brand-primary)]"
+              />
+              {switchError && <p className="text-xs font-medium text-sky-800">{switchError}</p>}
+              <button
+                type="submit"
+                disabled={switchCashierMutation.isPending || !switchPinInput}
+                className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-2.5 rounded-xl text-xs font-bold disabled:opacity-50"
+              >
+                {switchCashierMutation.isPending ? 'Switching...' : 'Switch'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Set / change the cashier's own PIN */}
+      {setPinModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-6 space-y-4 shadow-2xl">
+            <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
+              <span className="font-bold text-sm text-[var(--brand-primary)]">Set Till PIN</span>
+              <button onClick={() => setSetPinModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-neutral-600">
+              Set a 4-6 digit PIN for quick till switching. Requires your current password so a stolen session can&apos;t silently set one.
+            </p>
+            <form onSubmit={(e) => { e.preventDefault(); handleSetCashierPin(); }} className="space-y-3">
+              <input
+                type="password"
+                autoFocus
+                value={pinFormPassword}
+                onChange={(e) => setPinFormPassword(e.target.value)}
+                placeholder="Current password"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-xs font-bold focus:outline-none focus:border-[var(--brand-primary)]"
+              />
+              <input
+                type="password"
+                inputMode="numeric"
+                pattern="[0-9]*"
+                maxLength={6}
+                value={pinFormNew}
+                onChange={(e) => setPinFormNew(e.target.value.replace(/\D/g, ''))}
+                placeholder="New PIN (4-6 digits)"
+                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2.5 text-center text-lg font-mono font-bold tracking-widest focus:outline-none focus:border-[var(--brand-primary)]"
+              />
+              {pinFormError && <p className="text-xs font-medium text-sky-800">{pinFormError}</p>}
+              {pinFormSuccess && <p className="text-xs font-medium text-emerald-700">{pinFormSuccess}</p>}
+              <button
+                type="submit"
+                disabled={setCashierPinMutation.isPending || !pinFormPassword || !pinFormNew}
+                className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-2.5 rounded-xl text-xs font-bold disabled:opacity-50"
+              >
+                {setCashierPinMutation.isPending ? 'Saving...' : 'Save PIN'}
+              </button>
+            </form>
           </div>
         </div>
       )}

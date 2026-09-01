@@ -22,6 +22,8 @@ describe('PosService (Phase 1 Backend)', () => {
   let giftCardServiceToken: import('@nestjs/common').Type<unknown>;
   let loyaltyService: { adminBalance: jest.Mock; adminRedeem: jest.Mock };
   let loyaltyServiceToken: import('@nestjs/common').Type<unknown>;
+  let prismaMock: Record<string, Record<string, jest.Mock>>;
+  let passwordMock: { hash: jest.Mock; verify: jest.Mock };
   let auditService: Record<string, jest.Mock>;
 
   beforeEach(async () => {
@@ -142,6 +144,20 @@ describe('PosService (Phase 1 Backend)', () => {
         {
           provide: loyaltyServiceToken,
           useValue: loyaltyService,
+        },
+        {
+          provide: (await import('@domains/auth/services/password.service')).PasswordService,
+          useValue: (passwordMock = { hash: jest.fn(), verify: jest.fn() }),
+        },
+        {
+          provide: (await import('@domains/auth/services/jwt.service')).JwtService,
+          useValue: { sign: jest.fn().mockResolvedValue('tok') },
+        },
+        {
+          provide: (await import('@database/prisma.service')).PrismaService,
+          useValue: (prismaMock = {
+            user: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+          }),
         },
       ],
     }).compile();
@@ -519,6 +535,60 @@ describe('PosService (Phase 1 Backend)', () => {
           reason: 'x',
         }),
       ).rejects.toThrow(/Open a shift/);
+    });
+  });
+
+  describe('cashier PIN switch', () => {
+    it('issues a fresh JWT for the cashier whose PIN matches', async () => {
+      prismaMock.user.findMany.mockResolvedValue([
+        {
+          id: 'u-priya',
+          email: 'priya@vs',
+          firstName: 'Priya',
+          lastName: 'R',
+          userType: 'STAFF',
+          posPinHash: 'hash-priya',
+          userRoles: [{ role: { name: 'pos_operator' } }],
+        },
+        {
+          id: 'u-arun',
+          email: 'arun@vs',
+          firstName: 'Arun',
+          lastName: null,
+          userType: 'STAFF',
+          posPinHash: 'hash-arun',
+          userRoles: [{ role: { name: 'pos_operator' } }],
+        },
+      ]);
+      passwordMock.verify.mockImplementation(async (hash: string) => hash === 'hash-arun');
+
+      const res = await service.switchCashierByPin('4321', 'COUNTER_1');
+      expect(res.user.id).toBe('u-arun');
+      expect(res.token).toBe('tok');
+      expect(auditService.log).toHaveBeenCalledWith(
+        expect.objectContaining({ action: 'POS_CASHIER_SWITCHED' }),
+      );
+    });
+
+    it('refuses with a generic message when no PIN matches (no enumeration hint)', async () => {
+      prismaMock.user.findMany.mockResolvedValue([
+        { id: 'u1', posPinHash: 'h', email: 'a@a', firstName: 'A', lastName: null, userType: 'STAFF', userRoles: [] },
+      ]);
+      passwordMock.verify.mockResolvedValue(false);
+      await expect(service.switchCashierByPin('9999')).rejects.toThrow('PIN not recognised.');
+    });
+
+    it('rejects a non-numeric or wrong-length PIN before touching the DB', async () => {
+      await expect(service.switchCashierByPin('ab12')).rejects.toThrow(/4 to 6 digit/);
+      await expect(service.switchCashierByPin('12')).rejects.toThrow(/4 to 6 digit/);
+      expect(prismaMock.user.findMany).not.toHaveBeenCalled();
+    });
+
+    it('setCashierPin requires the current password', async () => {
+      prismaMock.user.findUnique.mockResolvedValue({ id: 'u1', passwordHash: 'h' });
+      passwordMock.verify.mockResolvedValue(false);
+      await expect(service.setCashierPin('u1', 'wrong', '1234')).rejects.toThrow(/wrong/);
+      expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
   });
 

@@ -11,6 +11,9 @@ model User {
   email                   String                   @unique
   phone                   String?
   passwordHash            String
+  // Short PIN a cashier types at the till to quick-switch without a full
+  // login. argon2-hashed; the raw PIN is never stored.
+  posPinHash              String?
   googleId                String?                  @unique
   facebookId              String?                  @unique
   appleId                 String?                  @unique

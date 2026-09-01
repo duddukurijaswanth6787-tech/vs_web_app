@@ -51,6 +51,22 @@ export function useAdoptHandoffSession() {
   });
 }
 
+/** Set the cashier's short PIN. */
+export function useSetCashierPin() {
+  return useMutation({
+    mutationFn: (payload: { currentPassword: string; newPin: string }) =>
+      posService.setCashierPin(payload.currentPassword, payload.newPin),
+  });
+}
+
+/** Switch active cashier by PIN, returns a fresh JWT for that user. */
+export function useSwitchCashier() {
+  return useMutation({
+    mutationFn: (payload: { pin: string; terminalId?: string }) =>
+      posService.switchCashier(payload.pin, payload.terminalId),
+  });
+}
+
 /** Product tiles for a category, for the till's quick-buy grid. */
 export function usePosProductsByCategory(categoryId?: string, wholesale = false) {
   return useQuery({
