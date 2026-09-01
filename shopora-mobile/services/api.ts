@@ -152,6 +152,7 @@ export interface PosMobileCartItem {
   availableStock?: number;
   /** GST for this line, from the scan. The app used to bill a flat 5%. */
   taxPercent?: number;
+  taxAmount?: number;
   discountAmount?: number;
 }
 
