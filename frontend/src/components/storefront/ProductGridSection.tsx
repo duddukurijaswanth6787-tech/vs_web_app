@@ -58,8 +58,8 @@ function ProductCardItem({
           src={imageSrc}
           alt={cardTitle}
           fill
-          priority={idx < 2}
-          loading={idx < 2 ? 'eager' : 'lazy'}
+          priority={idx < 4}
+          loading={idx < 4 ? 'eager' : 'lazy'}
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 25vw, 16vw"
           unoptimized={isLocalOrPlaceholder(imageSrc)}
           onError={() => setImgError(true)}
