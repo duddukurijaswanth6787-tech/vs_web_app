@@ -10,6 +10,7 @@ import {
   ChevronDown,
   X,
   LogOut,
+  Sparkles,
 } from 'lucide-react';
 import { adminNavigation, findNavItemForPath } from '@/config/navigation';
 import { useUIStore } from '@/stores/ui.store';
@@ -25,9 +26,6 @@ export default function AdminSidebar() {
     toggleSidebar,
     setMobileSidebarOpen,
   } = useUIStore();
-
-  // Find active nav item to auto-expand its group
-  const activeItem = useMemo(() => findNavItemForPath(pathname), [pathname]);
 
   // Track which accordion groups are open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
@@ -73,21 +71,21 @@ export default function AdminSidebar() {
       {/* Mobile Drawer Overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-neutral-900/50 lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-neutral-950/60 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Main Sidebar Panel */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200 bg-white transition-all duration-300 ease-in-out lg:static
-          w-[80vw] max-w-[280px] ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200/80 bg-white/95 backdrop-blur-md transition-all duration-300 ease-in-out lg:static
+          w-[80vw] max-w-[270px] ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-64'}
           ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
       >
         {/* Brand / Logo Header */}
-        <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-100 shrink-0">
-          <div className="hidden lg:flex items-center gap-2 min-w-0">
+        <div className="flex h-16 items-center justify-between px-4 border-b border-neutral-100 shrink-0 bg-white/50">
+          <div className="hidden lg:flex items-center gap-2.5 min-w-0">
             {sidebarCollapsed ? (
               <Image
                 src="/brand/logo-icon.png"
@@ -105,13 +103,18 @@ export default function AdminSidebar() {
                   height={1024}
                   className="w-7 h-7 object-contain shrink-0"
                 />
-                <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase truncate">
-                  Vasanthi&apos;s Signature Admin
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className="text-xs font-extrabold tracking-wider text-neutral-900 uppercase truncate font-serif">
+                    Vasanthi&apos;s Signature
+                  </span>
+                  <span className="text-[9px] font-bold text-[var(--brand-primary)] tracking-widest uppercase flex items-center gap-1">
+                    <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Super Admin
+                  </span>
+                </div>
               </>
             )}
           </div>
-          <div className="flex lg:hidden items-center gap-2 min-w-0">
+          <div className="flex lg:hidden items-center gap-2.5 min-w-0">
             <Image
               src="/brand/logo-icon.png"
               alt=""
@@ -119,9 +122,14 @@ export default function AdminSidebar() {
               height={1024}
               className="w-7 h-7 object-contain shrink-0"
             />
-            <span className="text-xs font-bold tracking-wider text-neutral-900 uppercase truncate">
-              Vasanthi&apos;s Signature Admin
-            </span>
+            <div className="flex flex-col min-w-0">
+              <span className="text-xs font-extrabold tracking-wider text-neutral-900 uppercase truncate font-serif">
+                Vasanthi&apos;s Signature
+              </span>
+              <span className="text-[9px] font-bold text-[var(--brand-primary)] tracking-widest uppercase flex items-center gap-1">
+                <Sparkles className="w-2.5 h-2.5 text-amber-500" /> Admin Console
+              </span>
+            </div>
           </div>
           <button
             onClick={() => setMobileSidebarOpen(false)}
@@ -132,10 +140,10 @@ export default function AdminSidebar() {
           </button>
         </div>
 
-        {/* Scrollable Accordion Navigation */}
+        {/* Scrollable Navigation */}
         <nav
           ref={navRef}
-          className="flex-1 overflow-y-auto p-3 space-y-2.5 scrollbar-thin select-none"
+          className="flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin select-none"
         >
           {adminNavigation.map((group) => {
             const visibleItems = group.items.filter((item) =>
@@ -143,7 +151,7 @@ export default function AdminSidebar() {
             );
             if (visibleItems.length === 0) return null;
 
-            const isOpen = sidebarCollapsed ? true : !!openGroups[group.group];
+            const isOpen = sidebarCollapsed ? true : openGroups[group.group] !== false; // Default open for clean navigation
             const hasActiveChild = visibleItems.some(
               (item) =>
                 pathname === item.href ||
@@ -151,48 +159,36 @@ export default function AdminSidebar() {
             );
 
             return (
-              <div
-                key={group.group}
-                className="rounded-xl border border-neutral-200/70 bg-neutral-50/50 overflow-hidden transition-all shadow-2xs"
-              >
-                {/* Accordion Group Header */}
-                <button
-                  type="button"
-                  onClick={() => toggleGroup(group.group)}
-                  className={`w-full flex items-center justify-between px-3 py-2 text-left transition-colors ${
-                    hasActiveChild
-                      ? 'bg-sky-100/70 text-sky-950 font-bold border-b border-sky-200/60'
-                      : 'hover:bg-neutral-100/80 text-neutral-800 font-semibold'
-                  }`}
-                >
-                  <span
-                    className={`text-[11px] font-bold uppercase tracking-wider ${
-                      sidebarCollapsed ? 'lg:hidden' : 'block'
-                    }`}
+              <div key={group.group} className="space-y-1">
+                {/* Group Header Title */}
+                {!sidebarCollapsed && (
+                  <button
+                    type="button"
+                    onClick={() => toggleGroup(group.group)}
+                    className="w-full flex items-center justify-between px-2 py-1 text-left group/btn"
                   >
-                    {group.group}
-                  </span>
-                  <span
-                    className={`text-[10px] text-neutral-400 font-bold ${
-                      sidebarCollapsed ? 'lg:block hidden' : 'hidden'
-                    }`}
-                  >
-                    •••
-                  </span>
-                  {!sidebarCollapsed && (
-                    <span className="text-neutral-400 shrink-0">
+                    <span
+                      className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                        hasActiveChild
+                          ? 'text-[var(--brand-primary)] font-extrabold'
+                          : 'text-neutral-400 group-hover/btn:text-neutral-700'
+                      }`}
+                    >
+                      {group.group}
+                    </span>
+                    <span className="text-neutral-400 group-hover/btn:text-neutral-600 transition-colors">
                       {isOpen ? (
-                        <ChevronDown className="h-3.5 w-3.5 text-neutral-600" />
+                        <ChevronDown className="h-3 w-3" />
                       ) : (
-                        <ChevronRight className="h-3.5 w-3.5 text-neutral-400" />
+                        <ChevronRight className="h-3 w-3" />
                       )}
                     </span>
-                  )}
-                </button>
+                  </button>
+                )}
 
-                {/* Accordion Sub-Items List */}
+                {/* Sub-Items List with Vertical Guide Line */}
                 {isOpen && (
-                  <div className="p-1 space-y-0.5 border-t border-neutral-100 bg-white">
+                  <div className={`space-y-0.5 ${sidebarCollapsed ? '' : 'pl-2 border-l border-neutral-200/80 ml-1.5'}`}>
                     {visibleItems.map((item) => {
                       const isActive =
                         pathname === item.href ||
@@ -211,14 +207,18 @@ export default function AdminSidebar() {
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all group relative ${
                             isActive
                               ? 'bg-neutral-900 text-white font-bold shadow-xs'
-                              : 'text-neutral-700 hover:bg-neutral-100 hover:text-neutral-900'
+                              : 'text-neutral-600 hover:bg-neutral-100/80 hover:text-neutral-950'
                           } ${
                             !item.implemented
                               ? 'opacity-40 cursor-not-allowed'
                               : ''
                           }`}
                         >
-                          <Icon className="h-3.5 w-3.5 shrink-0" />
+                          <Icon
+                            className={`h-3.5 w-3.5 shrink-0 ${
+                              isActive ? 'text-amber-400' : 'text-neutral-500 group-hover:text-neutral-900'
+                            }`}
+                          />
                           <span
                             className={`truncate ${
                               sidebarCollapsed ? 'lg:hidden' : 'block'
@@ -243,10 +243,10 @@ export default function AdminSidebar() {
         </nav>
 
         {/* Footer Actions */}
-        <div className="border-t border-neutral-100 p-3 shrink-0">
+        <div className="border-t border-neutral-100 p-3 shrink-0 bg-white/50">
           <button
             onClick={() => logout()}
-            className="flex w-full items-center gap-3 rounded-xl px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
+            className="flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-xs font-bold text-red-600 hover:bg-red-50 transition-colors"
           >
             <LogOut className="h-4 w-4 shrink-0" />
             <span className={sidebarCollapsed ? 'lg:hidden' : 'block'}>
@@ -256,7 +256,7 @@ export default function AdminSidebar() {
           {/* Collapse toggle (desktop only) */}
           <button
             onClick={toggleSidebar}
-            className="mt-2 hidden w-full lg:flex items-center justify-center rounded-xl p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
+            className="mt-1.5 hidden w-full lg:flex items-center justify-center rounded-xl p-1.5 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-600 transition-colors"
             aria-label={
               sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'
             }
