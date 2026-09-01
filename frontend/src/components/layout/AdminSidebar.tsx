@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
@@ -12,7 +12,7 @@ import {
   LogOut,
   Sparkles,
 } from 'lucide-react';
-import { adminNavigation, findNavItemForPath } from '@/config/navigation';
+import { adminNavigation } from '@/config/navigation';
 import { useUIStore } from '@/stores/ui.store';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessRoute } from '@/lib/permissions/rules';
@@ -30,16 +30,20 @@ export default function AdminSidebar() {
   // Track which accordion groups are open
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  // Auto-expand group containing current active pathname
+  // Auto-expand ONLY the group containing the active route, keep others collapsed by default
   useEffect(() => {
+    const nextState: Record<string, boolean> = {};
     adminNavigation.forEach((group) => {
       const hasActive = group.items.some(
-        (item) => pathname === item.href || (pathname.startsWith(item.href + '/') && item.href !== '/admin'),
+        (item) =>
+          pathname === item.href ||
+          (pathname.startsWith(item.href + '/') && item.href !== '/admin'),
       );
       if (hasActive) {
-        setOpenGroups((prev) => ({ ...prev, [group.group]: true }));
+        nextState[group.group] = true;
       }
     });
+    setOpenGroups(nextState);
   }, [pathname]);
 
   const toggleGroup = (groupTitle: string) => {
@@ -143,7 +147,7 @@ export default function AdminSidebar() {
         {/* Scrollable Navigation */}
         <nav
           ref={navRef}
-          className="flex-1 overflow-y-auto px-3 py-4 space-y-4 scrollbar-thin select-none"
+          className="flex-1 overflow-y-auto px-3 py-4 space-y-3.5 scrollbar-thin select-none"
         >
           {adminNavigation.map((group) => {
             const visibleItems = group.items.filter((item) =>
@@ -151,7 +155,7 @@ export default function AdminSidebar() {
             );
             if (visibleItems.length === 0) return null;
 
-            const isOpen = sidebarCollapsed ? true : openGroups[group.group] !== false; // Default open for clean navigation
+            const isOpen = sidebarCollapsed ? true : !!openGroups[group.group];
             const hasActiveChild = visibleItems.some(
               (item) =>
                 pathname === item.href ||
@@ -168,27 +172,33 @@ export default function AdminSidebar() {
                     className="w-full flex items-center justify-between px-2 py-1 text-left group/btn"
                   >
                     <span
-                      className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
+                      className={`text-[10px] font-extrabold uppercase tracking-widest transition-colors ${
                         hasActiveChild
-                          ? 'text-[var(--brand-primary)] font-extrabold'
-                          : 'text-neutral-400 group-hover/btn:text-neutral-700'
+                          ? 'text-[var(--brand-primary)]'
+                          : 'text-neutral-400 group-hover/btn:text-neutral-800'
                       }`}
                     >
                       {group.group}
                     </span>
                     <span className="text-neutral-400 group-hover/btn:text-neutral-600 transition-colors">
                       {isOpen ? (
-                        <ChevronDown className="h-3 w-3" />
+                        <ChevronDown className="h-3 w-3 text-neutral-500" />
                       ) : (
-                        <ChevronRight className="h-3 w-3" />
+                        <ChevronRight className="h-3 w-3 text-neutral-400" />
                       )}
                     </span>
                   </button>
                 )}
 
-                {/* Sub-Items List with Vertical Guide Line */}
+                {/* Sub-Items List with Vertical Connecting Guide Line */}
                 {isOpen && (
-                  <div className={`space-y-0.5 ${sidebarCollapsed ? '' : 'pl-2 border-l border-neutral-200/80 ml-1.5'}`}>
+                  <div
+                    className={`space-y-0.5 ${
+                      sidebarCollapsed
+                        ? ''
+                        : 'pl-2 border-l-2 border-neutral-200/70 ml-1.5'
+                    }`}
+                  >
                     {visibleItems.map((item) => {
                       const isActive =
                         pathname === item.href ||
@@ -207,7 +217,7 @@ export default function AdminSidebar() {
                           className={`flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-xs font-medium transition-all group relative ${
                             isActive
                               ? 'bg-neutral-900 text-white font-bold shadow-xs'
-                              : 'text-neutral-600 hover:bg-neutral-100/80 hover:text-neutral-950'
+                              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950'
                           } ${
                             !item.implemented
                               ? 'opacity-40 cursor-not-allowed'
@@ -216,7 +226,9 @@ export default function AdminSidebar() {
                         >
                           <Icon
                             className={`h-3.5 w-3.5 shrink-0 ${
-                              isActive ? 'text-amber-400' : 'text-neutral-500 group-hover:text-neutral-900'
+                              isActive
+                                ? 'text-amber-400'
+                                : 'text-neutral-400 group-hover:text-neutral-900'
                             }`}
                           />
                           <span

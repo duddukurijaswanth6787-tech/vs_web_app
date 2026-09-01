@@ -93,7 +93,144 @@ export const adminNavigation: NavGroup[] = [
     ],
   },
   {
-    group: 'ANALYTICS',
+    group: 'SALES & ORDERS',
+    items: [
+      {
+        id: 'orders',
+        title: 'Orders Control Desk',
+        href: '/admin/orders',
+        icon: ShoppingCart,
+        implemented: true,
+      },
+      {
+        id: 'returns',
+        title: 'Returns',
+        href: '/admin/returns',
+        icon: Undo2,
+        implemented: true,
+      },
+      {
+        id: 'cancellations',
+        title: 'Cancellations',
+        href: '/admin/cancellations',
+        icon: XCircle,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'CATALOG & PRODUCTS',
+    items: [
+      {
+        id: 'products',
+        title: 'Products',
+        href: '/admin/catalog/products',
+        icon: ShoppingBag,
+        implemented: true,
+      },
+      {
+        id: 'categories',
+        title: 'Categories',
+        href: '/admin/catalog/categories',
+        icon: FolderOpen,
+        implemented: true,
+      },
+      {
+        id: 'size-charts',
+        title: 'Size Charts',
+        href: '/admin/catalog/size-charts',
+        icon: Ruler,
+        implemented: true,
+      },
+      {
+        id: 'reviews',
+        title: 'Reviews & Ratings',
+        href: '/admin/reviews',
+        icon: Sparkles,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'INVENTORY & WAREHOUSE',
+    items: [
+      {
+        id: 'inventory',
+        title: 'Inventory Status',
+        href: '/admin/inventory',
+        icon: Package,
+        implemented: true,
+      },
+      {
+        id: 'stock-movements',
+        title: 'Stock Movements',
+        href: '/admin/inventory/movements',
+        icon: ArrowLeftRight,
+        implemented: true,
+      },
+      {
+        id: 'add-stock',
+        title: 'Add Stock & Print Labels',
+        href: '/pos/add-stock',
+        icon: Package,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'SHOPORA POS & RETAIL',
+    items: [
+      {
+        id: 'shopora-pos',
+        title: 'Desktop Web POS',
+        href: '/pos',
+        icon: Store,
+        implemented: true,
+      },
+      {
+        id: 'shopora-pos-dashboard',
+        title: 'Till & Shift Dashboard',
+        href: '/pos/shift',
+        icon: Activity,
+        implemented: true,
+      },
+      {
+        id: 'shopora-quotations',
+        title: 'Quotations',
+        href: '/admin/quotations',
+        icon: FileText,
+        implemented: true,
+      },
+      {
+        id: 'shopora-pos-returns',
+        title: 'Counter Returns',
+        href: '/pos/returns',
+        icon: Undo2,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'SHIPPING & LOGISTICS',
+    items: [
+      {
+        id: 'shipping',
+        title: 'Delhivery B2C Hub',
+        href: '/admin/shipping',
+        icon: Truck,
+        implemented: true,
+      },
+      {
+        id: 'shipping-dtdc',
+        title: 'DTDC Shipping',
+        href: '/admin/shipping/dtdc',
+        icon: Truck,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'ANALYTICS & REPORTS',
     items: [
       {
         id: 'omnichannel-analytics',
@@ -110,106 +247,88 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
-        id: 'analytics-orders',
-        title: 'Order Analytics',
-        href: '/admin/analytics/orders',
-        icon: ShoppingCart,
-        implemented: true,
-      },
-      {
-        id: 'analytics-products',
-        title: 'Product Analytics',
-        href: '/admin/analytics/products',
-        icon: ShoppingBag,
-        implemented: true,
-      },
-      {
-        id: 'analytics-inventory',
-        title: 'Inventory Analytics',
-        href: '/admin/analytics/inventory',
-        icon: Package,
-        implemented: true,
-      },
-      {
-        id: 'analytics-customers',
-        title: 'Customer Analytics',
-        href: '/admin/analytics/customers',
-        icon: Users,
-        implemented: true,
-      },
-      {
-        id: 'analytics-social',
-        title: 'Social Analytics',
-        href: '/admin/analytics/social',
-        icon: Share2,
-        implemented: true,
-      },
-    ],
-  },
-  {
-    group: 'REPORTS & EXPORTS',
-    items: [
-      {
         id: 'reports-center',
         title: 'Report Center',
         href: '/admin/reports',
         icon: FileText,
         implemented: true,
       },
+    ],
+  },
+  {
+    group: 'FINANCIALS & ACCOUNTS',
+    items: [
       {
-        id: 'export-jobs',
-        title: 'Export Jobs',
-        href: '/admin/reports/exports',
+        id: 'payments',
+        title: 'Payments Ledger',
+        href: '/admin/payments',
+        icon: CreditCard,
+        implemented: true,
+      },
+      {
+        id: 'refunds',
+        title: 'Refund Logs',
+        href: '/admin/refunds',
+        icon: Undo2,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'CUSTOMERS & STAFF',
+    items: [
+      {
+        id: 'customers',
+        title: 'Customer Directory',
+        href: '/admin/customers',
+        icon: Users,
+        implemented: true,
+      },
+      {
+        id: 'staff',
+        title: 'Staff Directory',
+        href: '/admin/staff',
+        icon: UserCheck,
+        implemented: true,
+      },
+      {
+        id: 'matrix',
+        title: 'Permissions Matrix',
+        href: '/admin/access/matrix',
+        icon: Key,
+        implemented: true,
+      },
+    ],
+  },
+  {
+    group: 'SETTINGS & SYSTEM',
+    items: [
+      {
+        id: 'communication-otp',
+        title: 'OTP SMS Gateway',
+        href: '/admin/communication/otp',
+        icon: PhoneCall,
+        implemented: true,
+      },
+      {
+        id: 'storefront-settings',
+        title: 'Store Settings',
+        href: '/admin/settings',
+        icon: Settings,
+        implemented: true,
+      },
+      {
+        id: 'session-settings',
+        title: 'Session Settings',
+        href: '/admin/access/session-settings',
         icon: History,
         implemented: true,
       },
     ],
   },
-  {
-    group: 'OPERATIONS',
-    items: [
-      {
-        id: 'command-center',
-        title: 'Command Center',
-        href: '/admin/operations',
-        icon: Activity,
-        implemented: true,
-      },
-      {
-        id: 'notifications',
-        title: 'Notifications',
-        href: '/admin/notifications',
-        icon: Mail,
-        implemented: true,
-      },
-    ],
-  },
-  {
-    group: 'COMMUNICATION',
-    items: [
-      {
-        id: 'communication-sms',
-        title: 'SMS Gateway',
-        href: '/admin/communication/sms',
-        icon: PhoneCall,
-        implemented: true,
-      },
-      {
-        id: 'communication-push',
-        title: 'Push Notifications',
-        href: '/admin/communication/push',
-        icon: Smartphone,
-        implemented: true,
-      },
-      {
-        id: 'communication-otp',
-        title: 'OTP Gateway',
-        href: '/admin/communication/otp',
-        icon: KeyRound,
-        implemented: true,
-      },
-    ],
-  },
+];
+
+export const legacyAdminNavigation = [
   {
     group: 'CATALOG',
     items: [
