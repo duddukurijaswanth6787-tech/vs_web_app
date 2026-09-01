@@ -29,6 +29,7 @@ export class ShippingController {
     private readonly delhiveryService: DelhiveryService,
   ) {}
 
+  @Get('pincode/:pincode')
   @Get('delhivery/pincode/:pincode')
   @Public()
   @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
@@ -38,6 +39,7 @@ export class ShippingController {
     );
   }
 
+  @Get('track/:waybill')
   @Get('delhivery/track/:waybill')
   @Public()
   @ApiOperation({ summary: 'Track Delhivery shipment by AWB Waybill number' })
