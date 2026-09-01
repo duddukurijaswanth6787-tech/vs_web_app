@@ -29,7 +29,6 @@ export class ShippingController {
     private readonly delhiveryService: DelhiveryService,
   ) {}
 
-  @Get('pincode/:pincode')
   @Get('delhivery/pincode/:pincode')
   @Public()
   @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
@@ -39,11 +38,28 @@ export class ShippingController {
     );
   }
 
-  @Get('track/:waybill')
+  @Get('pincode/:pincode')
+  @Public()
+  @ApiOperation({ summary: 'Check pincode serviceability & COD availability' })
+  async checkPincodeAlias(@Param('pincode') pincode: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.checkPincode(pincode),
+    );
+  }
+
   @Get('delhivery/track/:waybill')
   @Public()
   @ApiOperation({ summary: 'Track Delhivery shipment by AWB Waybill number' })
   async trackDelhiveryShipment(@Param('waybill') waybill: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.trackShipment(waybill),
+    );
+  }
+
+  @Get('track/:waybill')
+  @Public()
+  @ApiOperation({ summary: 'Track shipment by AWB Waybill number' })
+  async trackShipmentAlias(@Param('waybill') waybill: string) {
     return ResponseBuilder.success(
       await this.delhiveryService.trackShipment(waybill),
     );
