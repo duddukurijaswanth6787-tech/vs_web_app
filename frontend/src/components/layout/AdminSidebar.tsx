@@ -32,18 +32,19 @@ export default function AdminSidebar() {
   const { data: pendingOrdersData } = useOrderList({ limit: 1, status: 'PENDING' });
   const pendingOrdersCount = pendingOrdersData?.meta?.total ?? 3;
 
-  // Selective Notification Badges
-  const notificationHits: Record<string, { count: number; color: string; label?: string }> = {
-    'orders': { count: pendingOrdersCount > 0 ? pendingOrdersCount : 3, color: 'bg-amber-100 text-amber-900 border-amber-300' },
-    'returns': { count: 1, color: 'bg-amber-100 text-amber-900 border-amber-300' },
-    'shipments': { count: 2, color: 'bg-amber-100 text-amber-900 border-amber-300', label: 'Live' },
-    'inventory': { count: 5, color: 'bg-amber-100 text-amber-900 border-amber-300' },
+  // Notification Badges for specific actionable sections
+  const notificationHits: Record<string, { count: number; label?: string }> = {
+    orders: { count: pendingOrdersCount > 0 ? pendingOrdersCount : 3 },
+    returns: { count: 1 },
+    shipments: { count: 2, label: 'Live' },
+    inventory: { count: 5 },
+    'low-stock-alerts': { count: 5 },
   };
 
   // Track accordion expand/collapse state
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
 
-  // Auto-expand group containing current active route, collapse others by default
+  // Auto-expand section containing active route on load/navigation
   useEffect(() => {
     const nextState: Record<string, boolean> = {};
     adminNavigation.forEach((group) => {
@@ -88,14 +89,14 @@ export default function AdminSidebar() {
       {/* Mobile Overlay */}
       {mobileSidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-neutral-900/50 backdrop-blur-xs lg:hidden transition-opacity"
+          className="fixed inset-0 z-40 bg-neutral-900/40 backdrop-blur-xs lg:hidden transition-opacity"
           onClick={() => setMobileSidebarOpen(false)}
         />
       )}
 
       {/* Main Sidebar Panel */}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200/90 bg-white text-neutral-900 transition-all duration-300 ease-in-out lg:static shadow-2xs
+        className={`fixed inset-y-0 left-0 z-50 flex flex-col border-r border-neutral-200/70 bg-white text-neutral-900 transition-all duration-300 ease-in-out lg:static
           w-[80vw] max-w-[270px] ${sidebarCollapsed ? 'lg:w-16' : 'lg:w-[270px]'}
           ${mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
         `}
@@ -109,7 +110,7 @@ export default function AdminSidebar() {
                 alt="Vasanthi's Signature"
                 width={1024}
                 height={1024}
-                className="w-8 h-8 object-contain shrink-0"
+                className="w-7 h-7 object-contain shrink-0"
               />
             ) : (
               <>
@@ -121,10 +122,10 @@ export default function AdminSidebar() {
                   className="w-7 h-7 object-contain shrink-0"
                 />
                 <div className="flex flex-col min-w-0">
-                  <span className="text-xs font-serif font-extrabold tracking-wider text-neutral-900 uppercase truncate">
+                  <span className="text-[11px] font-serif font-black tracking-wider text-neutral-950 uppercase truncate">
                     VASANTHI&apos;S SIGNATURE
                   </span>
-                  <span className="text-[9px] font-bold text-amber-700 tracking-widest uppercase flex items-center gap-1">
+                  <span className="text-[9px] font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1 mt-0.5">
                     <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" /> SUPER ADMIN CONSOLE
                   </span>
                 </div>
@@ -141,10 +142,10 @@ export default function AdminSidebar() {
               className="w-7 h-7 object-contain shrink-0"
             />
             <div className="flex flex-col min-w-0">
-              <span className="text-xs font-serif font-extrabold tracking-wider text-neutral-900 uppercase truncate">
+              <span className="text-[11px] font-serif font-black tracking-wider text-neutral-950 uppercase truncate">
                 VASANTHI&apos;S SIGNATURE
               </span>
-              <span className="text-[9px] font-bold text-amber-700 tracking-widest uppercase flex items-center gap-1">
+              <span className="text-[9px] font-bold text-amber-700 tracking-wider uppercase flex items-center gap-1 mt-0.5">
                 <Sparkles className="w-2.5 h-2.5 text-amber-600 shrink-0" /> SUPER ADMIN CONSOLE
               </span>
             </div>
@@ -169,10 +170,10 @@ export default function AdminSidebar() {
           </button>
         </div>
 
-        {/* Scrollable Navigation */}
+        {/* Scrollable Navigation Area */}
         <nav
           ref={navRef}
-          className="flex-1 overflow-y-auto px-3 py-4 space-y-3.5 scrollbar-thin select-none"
+          className="flex-1 overflow-y-auto px-3 py-3 space-y-3 scrollbar-thin select-none"
         >
           {adminNavigation.map((group) => {
             const visibleItems = group.items.filter((item) =>
@@ -187,7 +188,7 @@ export default function AdminSidebar() {
                 (pathname.startsWith(item.href + '/') && item.href !== '/admin'),
             );
 
-            // Compute total notifications in group
+            // Compute group total notifications
             const groupNotificationCount = visibleItems.reduce((acc, item) => {
               const hit = notificationHits[item.id];
               return acc + (hit ? hit.count : 0);
@@ -204,10 +205,10 @@ export default function AdminSidebar() {
                   >
                     <div className="flex items-center gap-1.5 min-w-0">
                       <span
-                        className={`text-[10px] font-extrabold uppercase tracking-widest transition-colors ${
+                        className={`text-[10px] font-bold uppercase tracking-wider transition-colors ${
                           hasActiveChild
-                            ? 'text-amber-700 font-black'
-                            : 'text-neutral-400 group-hover/btn:text-neutral-800'
+                            ? 'text-amber-700 font-extrabold'
+                            : 'text-neutral-400 group-hover/btn:text-neutral-700'
                         }`}
                       >
                         {group.group}
@@ -226,13 +227,13 @@ export default function AdminSidebar() {
                   </button>
                 )}
 
-                {/* Expanded Menu Items */}
+                {/* Menu Items Under Section */}
                 {isOpen && (
                   <div
                     className={`space-y-0.5 ${
                       sidebarCollapsed
                         ? ''
-                        : 'pl-2 border-l border-neutral-200 ml-2 space-y-1'
+                        : 'pl-3 border-l border-neutral-200/60 ml-3.5 my-1'
                     }`}
                   >
                     {visibleItems.map((item) => {
@@ -251,10 +252,10 @@ export default function AdminSidebar() {
                             item.implemented ? handleLinkClick : undefined
                           }
                           data-sidebar-active={isActive ? 'true' : 'false'}
-                          className={`flex items-center justify-between gap-2.5 rounded-xl px-3 py-2 text-xs font-semibold transition-all group relative ${
+                          className={`flex items-center justify-between gap-2 px-3 py-2 text-xs font-semibold rounded-xl transition-all duration-150 group relative ${
                             isActive
-                              ? 'bg-amber-50/90 text-neutral-900 font-bold border border-amber-200/80 shadow-2xs'
-                              : 'text-neutral-700 hover:bg-neutral-100/80 hover:text-neutral-950 font-medium'
+                              ? 'bg-amber-50/90 text-neutral-950 font-bold border border-amber-200/80 shadow-2xs'
+                              : 'text-neutral-600 hover:bg-neutral-100/70 hover:text-neutral-900 font-medium'
                           } ${
                             !item.implemented
                               ? 'opacity-40 cursor-not-allowed'
@@ -262,14 +263,14 @@ export default function AdminSidebar() {
                           }`}
                         >
                           <div className="flex items-center gap-2.5 min-w-0">
-                            {isActive ? (
-                              <span className="w-1.5 h-3.5 rounded-full bg-amber-600 shrink-0" />
-                            ) : null}
+                            {isActive && !sidebarCollapsed && (
+                              <span className="w-1 h-3.5 rounded-full bg-amber-600 shrink-0 mr-0.5" />
+                            )}
                             <Icon
                               className={`h-4 w-4 shrink-0 transition-colors ${
                                 isActive
                                   ? 'text-amber-600'
-                                  : 'text-neutral-500 group-hover:text-neutral-900'
+                                  : 'text-neutral-400 group-hover:text-neutral-800'
                               }`}
                             />
                             <span
@@ -281,20 +282,20 @@ export default function AdminSidebar() {
                             </span>
                           </div>
 
-                          {/* Notification Badge */}
+                          {/* Notification Count Badge */}
                           {hit && hit.count > 0 && (
                             <span
                               className={`shrink-0 px-2 py-0.5 rounded-full text-[10px] font-bold border ${
                                 isActive
                                   ? 'bg-amber-100 text-amber-900 border-amber-300'
-                                  : hit.color
+                                  : 'bg-neutral-100 text-neutral-700 border-neutral-200'
                               }`}
                             >
                               {hit.count} {hit.label || ''}
                             </span>
                           )}
 
-                          {/* Collapsed Tooltip */}
+                          {/* Tooltip for Collapsed Sidebar */}
                           {sidebarCollapsed && (
                             <div className="absolute left-14 z-50 rounded-lg bg-neutral-900 px-2.5 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-md">
                               {item.title}
@@ -310,11 +311,11 @@ export default function AdminSidebar() {
           })}
         </nav>
 
-        {/* Fixed Bottom Profile & Logout Area */}
-        <div className="border-t border-neutral-200 p-3 shrink-0 bg-neutral-50/60">
+        {/* Fixed Bottom Admin Profile & Logout Area */}
+        <div className="border-t border-neutral-200/70 p-3 shrink-0 bg-neutral-50/50">
           <div className="flex items-center justify-between gap-2 mb-2 px-1">
             <div className="flex items-center gap-2 min-w-0">
-              <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-bold text-xs flex items-center justify-center shrink-0">
+              <div className="w-7 h-7 rounded-full bg-amber-100 border border-amber-300 text-amber-900 font-extrabold text-xs flex items-center justify-center shrink-0">
                 {user?.firstName?.[0] || 'A'}
               </div>
               <div className={`min-w-0 ${sidebarCollapsed ? 'lg:hidden' : 'block'}`}>
@@ -330,7 +331,7 @@ export default function AdminSidebar() {
 
           <button
             onClick={() => logout()}
-            className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-red-600 bg-red-50 hover:bg-red-100 border border-red-200/80 transition-colors shadow-2xs"
+            className="flex w-full items-center justify-center gap-2 rounded-xl px-3 py-2 text-xs font-bold text-red-600 bg-red-50/80 hover:bg-red-100 text-red-600 border border-red-200/70 transition-colors shadow-2xs"
           >
             <LogOut className="h-4 w-4 shrink-0 text-red-600" />
             <span className={sidebarCollapsed ? 'lg:hidden' : 'block'}>
