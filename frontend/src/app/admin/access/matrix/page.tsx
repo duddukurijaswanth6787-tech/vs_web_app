@@ -78,8 +78,8 @@ export default function AccessMatrixPage() {
         <table className="w-full text-left text-xs border-collapse min-w-[800px]">
           <thead>
             <tr className="border-b border-neutral-100 bg-neutral-50 text-neutral-500 font-semibold uppercase tracking-wider">
-              <th className="p-4 w-[250px] sticky left-0 bg-neutral-50 z-10 border-r border-neutral-100">
-                Permission Rule Code
+              <th className="p-4 w-[320px] sticky left-0 bg-neutral-50 z-10 border-r border-neutral-100">
+                Permission & Privilege Scope
               </th>
               {roleList.map((role) => (
                 <th key={role.id} className="p-4 text-center">
@@ -95,9 +95,14 @@ export default function AccessMatrixPage() {
             {permissionList.length > 0 ? (
               permissionList.map((perm) => (
                 <tr key={perm.id} className="hover:bg-neutral-50/50 transition-colors">
-                  <td className="p-4 font-mono font-bold text-neutral-900 sticky left-0 bg-white z-10 border-r border-neutral-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)]">
-                    <span className="block text-neutral-805 font-sans font-bold">{perm.name}</span>
-                    <span className="block text-[10px] text-neutral-400 font-mono mt-0.5">{perm.code}</span>
+                  <td className="p-4 sticky left-0 bg-white z-10 border-r border-neutral-100 shadow-[2px_0_5px_rgba(0,0,0,0.02)] max-w-[320px]">
+                    <span className="block text-neutral-900 font-sans font-bold text-xs">{perm.name}</span>
+                    <span className="block text-[10px] text-purple-700 font-mono font-medium mt-0.5">{perm.code}</span>
+                    {perm.description && (
+                      <span className="block text-[11px] text-neutral-500 font-sans leading-normal mt-1 font-normal">
+                        {perm.description}
+                      </span>
+                    )}
                   </td>
                   {roleList.map((role) => {
                     const isChecked = role.permissions?.includes(perm.code) || false;

@@ -63,7 +63,21 @@ const PERMISSION_MODULES: Record<string, string[]> = {
   coupons: ['view', 'create', 'update', 'delete'],
   reviews: ['view', 'update'],
   customers: ['view', 'update'],
-  pos: ['view'],
+  pos: ['view', 'manage', 'add-stock', 'printers', 'billing', 'refund'],
+  quotations: ['view', 'create', 'update', 'convert'],
+};
+
+const EXPLICIT_PERMISSION_DETAILS: Record<string, { name: string; description: string }> = {
+  'pos:view': { name: 'View POS Terminal', description: 'Allows opening the POS Billing Counter terminal (/pos).' },
+  'pos:manage': { name: 'Manage POS Privileges', description: 'Controls whether cashier can give custom discounts or process returns.' },
+  'pos:add-stock': { name: 'POS Add Stock', description: 'Controls access to Add Stock & Print Barcode Labels (/pos/add-stock).' },
+  'pos:printers': { name: 'POS Hardware & Printers', description: 'Controls access to Thermal Receipt & Hardware Printer Settings (/pos/printers).' },
+  'pos:billing': { name: 'POS Billing', description: 'Allows processing counter billing sales.' },
+  'pos:refund': { name: 'POS Counter Refund', description: 'Allows processing counter cash returns and refunds.' },
+  'quotations:create': { name: 'Create Quotations', description: 'Controls whether cashier can create Draft Quotations.' },
+  'quotations:view': { name: 'View Quotations', description: 'Allows viewing quotations list.' },
+  'quotations:update': { name: 'Update Quotations', description: 'Allows editing draft quotations.' },
+  'quotations:convert': { name: 'Convert Quotations', description: 'Allows converting draft quotations to billed orders.' },
 };
 
 @Injectable()
@@ -130,12 +144,18 @@ export class AutoSeedService implements OnModuleInit {
     for (const [module, actions] of Object.entries(PERMISSION_MODULES)) {
       for (const action of actions) {
         const code = `${module}:${action}`;
+        const detail = EXPLICIT_PERMISSION_DETAILS[code];
+        const defaultName = `${action.charAt(0).toUpperCase()}${action.slice(1)} ${module.charAt(0).toUpperCase()}${module.slice(1)}`;
+        const name = detail ? detail.name : defaultName;
+        const description = detail ? detail.description : undefined;
+
         await this.prisma.permission.upsert({
           where: { code },
-          update: {},
+          update: { name, description, module },
           create: {
             code,
-            name: `${action.charAt(0).toUpperCase()}${action.slice(1)} ${module.charAt(0).toUpperCase()}${module.slice(1)}`,
+            name,
+            description,
             module,
             scope: 'MODULE',
           },
