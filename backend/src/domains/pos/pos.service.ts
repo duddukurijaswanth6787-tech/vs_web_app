@@ -1902,9 +1902,21 @@ export class PosService {
         notes: sanitizedNotes,
       });
 
+      let imageUrl = qr.image_url;
+      try {
+        const imgResp = await fetch(qr.image_url);
+        if (imgResp.ok) {
+          const arrayBuffer = await imgResp.arrayBuffer();
+          const base64 = Buffer.from(arrayBuffer).toString('base64');
+          imageUrl = `data:image/png;base64,${base64}`;
+        }
+      } catch (imgErr) {
+        this.logger.warn(`Could not inline Razorpay QR image: ${imgErr}`);
+      }
+
       return {
         qrId: qr.id,
-        imageUrl: qr.image_url,
+        imageUrl,
         amount: Number(qr.payment_amount) / 100,
         status: qr.status,
         closeBy: qr.close_by,
