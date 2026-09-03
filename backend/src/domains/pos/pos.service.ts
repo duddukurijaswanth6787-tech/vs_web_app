@@ -1878,11 +1878,14 @@ export class PosService {
     const amountInPaise = Math.round(amount * 100);
     const closeBy = Math.floor(Date.now() / 1000) + 900;
 
-    const sanitizedNotes: Record<string, string> = {};
+    const sanitizedNotes: Record<string, string> = {
+      source: 'SHOPORA_POS_MOBILE',
+      branch: 'MAIN',
+    };
     if (notes && typeof notes === 'object') {
       for (const [k, v] of Object.entries(notes)) {
-        if (v !== undefined && v !== null) {
-          sanitizedNotes[String(k)] = String(v);
+        if (v !== undefined && v !== null && String(v).trim()) {
+          sanitizedNotes[String(k)] = String(v).trim();
         }
       }
     }
