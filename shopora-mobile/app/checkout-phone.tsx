@@ -194,7 +194,6 @@ export default function MobilePaymentScreen() {
 
   // Fetch Razorpay Dynamic QR
   const fetchRazorpayQr = useCallback(async () => {
-    if (paymentMethod !== 'UPI' || upiProvider !== 'RAZORPAY') return;
     setRazorpayLoading(true);
     setRazorpayError('');
     setRazorpayPaid(false);
@@ -211,13 +210,13 @@ export default function MobilePaymentScreen() {
     } finally {
       setRazorpayLoading(false);
     }
-  }, [paymentMethod, upiProvider, effectiveTotal, customer, terminalId]);
+  }, [effectiveTotal, customer?.phone, terminalId]);
 
   useEffect(() => {
     if (paymentMethod === 'UPI' && upiProvider === 'RAZORPAY') {
       fetchRazorpayQr();
     }
-  }, [paymentMethod, upiProvider, effectiveTotal, fetchRazorpayQr]);
+  }, [paymentMethod, upiProvider, fetchRazorpayQr]);
 
   // Polling Razorpay QR status every 2.5s for automatic verification
   useEffect(() => {
@@ -518,10 +517,10 @@ export default function MobilePaymentScreen() {
                 </View>
               ) : razorpayQr?.imageUrl ? (
                 <View>
-                  <View style={styles.qrContainer}>
+                  <View style={[styles.qrContainer, { width: 250, height: 310, padding: 8 }]}>
                     <Image
                       source={{ uri: razorpayQr.imageUrl }}
-                      style={{ width: 200, height: 200 }}
+                      style={{ width: 234, height: 294 }}
                       resizeMode="contain"
                     />
                   </View>
