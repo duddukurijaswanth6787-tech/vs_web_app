@@ -20,6 +20,7 @@ import { PasswordService } from '@domains/auth/services/password.service';
 import { JwtService } from '@domains/auth/services/jwt.service';
 import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus } from '@prisma/client';
+import Razorpay from 'razorpay';
 import {
   ScanBarcodeDto,
   CreateCheckoutSessionDto,
@@ -1858,8 +1859,7 @@ export class PosService {
     return this.repository.getPosDaySummary(from, to);
   }
 
-  private async getRazorpayClient(): Promise<any> {
-    const Razorpay = require('razorpay');
+  private async getRazorpayClient(): Promise<Razorpay> {
     const [keyIdSetting, keySecretSetting] = await Promise.all([
       this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_id' } }),
       this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_secret' } }),
@@ -1878,16 +1878,25 @@ export class PosService {
     const amountInPaise = Math.round(amount * 100);
     const closeBy = Math.floor(Date.now() / 1000) + 900;
 
+    const sanitizedNotes: Record<string, string> = {};
+    if (notes && typeof notes === 'object') {
+      for (const [k, v] of Object.entries(notes)) {
+        if (v !== undefined && v !== null) {
+          sanitizedNotes[String(k)] = String(v);
+        }
+      }
+    }
+
     try {
       const qr: any = await razorpay.qrCode.create({
         type: 'upi_qr',
-        name: "Vasanthi's Signature",
+        name: 'Vasanthi Signature Store',
         usage: 'single_use',
         fixed_amount: true,
         payment_amount: amountInPaise,
-        description,
+        description: description || 'POS Counter Bill',
         close_by: closeBy,
-        notes,
+        notes: sanitizedNotes,
       });
 
       return {
@@ -1898,10 +1907,14 @@ export class PosService {
         closeBy: qr.close_by,
         paymentsAmountReceived: (Number(qr.payments_amount_received) || 0) / 100,
       };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Razorpay QR code generation failed: ${msg}`);
-      throw new BadRequestException(`Razorpay QR error: ${msg}`);
+    } catch (err: any) {
+      const errMsg =
+        err?.error?.description ||
+        err?.description ||
+        err?.message ||
+        JSON.stringify(err);
+      this.logger.error(`Razorpay QR code generation failed: ${errMsg}`);
+      throw new BadRequestException(`Razorpay QR error: ${errMsg}`);
     }
   }
 
@@ -1921,10 +1934,14 @@ export class PosService {
         amountReceived,
         closeBy: qr.close_by,
       };
-    } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Failed to fetch Razorpay QR status: ${msg}`);
-      throw new BadRequestException(`Razorpay status check error: ${msg}`);
+    } catch (err: any) {
+      const errMsg =
+        err?.error?.description ||
+        err?.description ||
+        err?.message ||
+        JSON.stringify(err);
+      this.logger.error(`Failed to fetch Razorpay QR status: ${errMsg}`);
+      throw new BadRequestException(`Razorpay status check error: ${errMsg}`);
     }
   }
 }
