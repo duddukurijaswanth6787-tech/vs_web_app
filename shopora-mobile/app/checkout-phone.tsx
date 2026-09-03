@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import {
   View,
   Text,
@@ -22,7 +22,8 @@ import {
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
 import { getTerminalId } from '../services/terminal';
-import { buildUpiUri, getFallbackQrImageUrl } from '../services/upi';
+import { buildUpiUri } from '../services/upi';
+import { UpiQrView } from '../components/UpiQrView';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -44,9 +45,7 @@ export default function MobilePaymentScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
 
-  // Dynamic UPI QR state
-  const [upiQrData, setUpiQrData] = useState<{ qrDataUrl: string; upiUri: string; vpa: string } | null>(null);
-  const [upiQrLoading, setUpiQrLoading] = useState(false);
+  // Dynamic UPI Store VPA
   const [storeVpa, setStoreVpa] = useState('vasanthisignature@okhdfcbank');
   const [editingVpa, setEditingVpa] = useState(false);
   const [tempVpa, setTempVpa] = useState('vasanthisignature@okhdfcbank');
@@ -164,41 +163,14 @@ export default function MobilePaymentScreen() {
   const splitCashN = Number(splitCash) || 0;
   const splitChangeBlocked = splitExcess > splitCashN + 0.005;
 
-  const fetchUpiQr = useCallback(async (vpaToUse?: string) => {
-    if (effectiveTotal <= 0) return;
-    const vpa = (vpaToUse || storeVpa).trim();
-    const uri = buildUpiUri({
-      vpa,
+  const currentUpiUri = useMemo(() => {
+    return buildUpiUri({
+      vpa: storeVpa,
       merchantName: "Vasanthi's Signature",
       amount: effectiveTotal,
       note: `POS Sale ${customer?.phone ? customer.phone.slice(-4) : ''}`,
     });
-    // Set initial QR image immediately (instant 0ms render)
-    setUpiQrData({
-      qrDataUrl: getFallbackQrImageUrl(uri),
-      upiUri: uri,
-      vpa,
-    });
-    try {
-      const res = await posMobileService.generateUpiQr({
-        amount: effectiveTotal,
-        vpa,
-        merchantName: "Vasanthi's Signature",
-        note: `POS Sale ${customer?.phone ? customer.phone.slice(-4) : ''}`,
-      });
-      if (res?.qrDataUrl) {
-        setUpiQrData(res);
-      }
-    } catch (e) {
-      console.warn('Using instant standard QR generator fallback:', e);
-    }
-  }, [effectiveTotal, storeVpa, customer]);
-
-  useEffect(() => {
-    if (paymentMethod === 'UPI') {
-      fetchUpiQr();
-    }
-  }, [paymentMethod, effectiveTotal, fetchUpiQr]);
+  }, [storeVpa, effectiveTotal, customer?.phone]);
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
@@ -374,35 +346,7 @@ export default function MobilePaymentScreen() {
           </Text>
 
           <View style={styles.qrContainer}>
-            {upiQrLoading ? (
-              <View style={styles.qrLoaderBox}>
-                <ActivityIndicator size="large" color="#0284c7" />
-                <Text style={styles.qrLoaderText}>Generating Dynamic QR...</Text>
-              </View>
-            ) : upiQrData?.qrDataUrl ? (
-              <View style={{ alignItems: 'center' }}>
-                <Image
-                  source={{ uri: upiQrData.qrDataUrl }}
-                  style={styles.qrImage}
-                  resizeMode="contain"
-                />
-                <TouchableOpacity
-                  style={styles.refreshQrBtn}
-                  onPress={() => fetchUpiQr()}
-                  activeOpacity={0.8}
-                >
-                  <RefreshCw size={12} color="#0284c7" style={{ marginRight: 4 }} />
-                  <Text style={styles.refreshQrText}>Refresh QR</Text>
-                </TouchableOpacity>
-              </View>
-            ) : (
-              <TouchableOpacity onPress={() => fetchUpiQr()} style={styles.qrLoaderBox}>
-                <QrCode size={44} color="#94a3b8" />
-                <Text style={[styles.qrLoaderText, { color: '#0284c7', marginTop: 8 }]}>
-                  Tap to Generate QR Code
-                </Text>
-              </TouchableOpacity>
-            )}
+            <UpiQrView value={currentUpiUri} size={190} />
           </View>
 
           <View style={styles.upiAmountBox}>
@@ -427,7 +371,6 @@ export default function MobilePaymentScreen() {
                     const clean = tempVpa.trim() || 'vasanthisignature@okhdfcbank';
                     setStoreVpa(clean);
                     setEditingVpa(false);
-                    fetchUpiQr(clean);
                   }}
                 >
                   <Text style={styles.vpaSaveBtnText}>Save</Text>
