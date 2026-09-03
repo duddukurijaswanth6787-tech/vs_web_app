@@ -14,6 +14,8 @@ import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2 } from 'lucide-react-native';
 import {
   posMobileService,
+  paymentService,
+  RazorpayQrData,
   PosMobileCartItem,
   PosMobileCustomer,
   getApiErrorMessage,
@@ -48,7 +50,13 @@ export default function MobilePaymentScreen() {
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
 
-  // Dynamic UPI Store VPA
+  // Dynamic UPI Store VPA & Provider
+  const [upiProvider, setUpiProvider] = useState<'RAZORPAY' | 'DIRECT_NPCI'>('RAZORPAY');
+  const [razorpayQr, setRazorpayQr] = useState<RazorpayQrData | null>(null);
+  const [razorpayLoading, setRazorpayLoading] = useState(false);
+  const [razorpayError, setRazorpayError] = useState('');
+  const [razorpayPaid, setRazorpayPaid] = useState(false);
+
   const [storeVpa, setStoreVpa] = useState('vasanthisignature@okhdfcbank');
   const [editingVpa, setEditingVpa] = useState(false);
   const [tempVpa, setTempVpa] = useState('vasanthisignature@okhdfcbank');
@@ -178,11 +186,67 @@ export default function MobilePaymentScreen() {
   const currentUpiUri = useMemo(() => {
     return buildUpiUri({
       vpa: storeVpa,
-      merchantName: "Vasanthi's Signature",
+      merchantName: "Vasanthi Signature",
       amount: effectiveTotal,
       note: `POS Sale ${customer?.phone ? customer.phone.slice(-4) : ''}`,
     });
   }, [storeVpa, effectiveTotal, customer?.phone]);
+
+  // Fetch Razorpay Dynamic QR
+  const fetchRazorpayQr = useCallback(async () => {
+    if (paymentMethod !== 'UPI' || upiProvider !== 'RAZORPAY') return;
+    setRazorpayLoading(true);
+    setRazorpayError('');
+    setRazorpayPaid(false);
+    try {
+      const data = await paymentService.createRazorpayQr(
+        effectiveTotal,
+        `POS Sale #${customer?.phone ? customer.phone.slice(-4) : Date.now().toString().slice(-4)}`,
+        { phone: customer?.phone || '9999999999', terminalId }
+      );
+      setRazorpayQr(data);
+    } catch (err: unknown) {
+      const msg = getApiErrorMessage(err, 'Could not generate Razorpay QR');
+      setRazorpayError(msg);
+    } finally {
+      setRazorpayLoading(false);
+    }
+  }, [paymentMethod, upiProvider, effectiveTotal, customer, terminalId]);
+
+  useEffect(() => {
+    if (paymentMethod === 'UPI' && upiProvider === 'RAZORPAY') {
+      fetchRazorpayQr();
+    }
+  }, [paymentMethod, upiProvider, effectiveTotal, fetchRazorpayQr]);
+
+  // Polling Razorpay QR status every 2.5s for automatic verification
+  useEffect(() => {
+    if (
+      paymentMethod !== 'UPI' ||
+      upiProvider !== 'RAZORPAY' ||
+      !razorpayQr?.qrId ||
+      razorpayPaid ||
+      loading
+    ) {
+      return;
+    }
+
+    const interval = setInterval(async () => {
+      try {
+        const res = await paymentService.getRazorpayQrStatus(razorpayQr.qrId);
+        if (res.isPaid || res.status === 'PAID') {
+          setRazorpayPaid(true);
+          clearInterval(interval);
+          // Auto-complete sale
+          executeSaleCompletion('UPI');
+        }
+      } catch {
+        // Ignore transient network errors during background polling
+      }
+    }, 2500);
+
+    return () => clearInterval(interval);
+  }, [paymentMethod, upiProvider, razorpayQr?.qrId, razorpayPaid, loading]);
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
@@ -204,12 +268,13 @@ export default function MobilePaymentScreen() {
     }
   };
 
-  const handleCompleteSale = async () => {
+  const executeSaleCompletion = async (methodOverride?: typeof paymentMethod) => {
+    const chosenMethod = methodOverride || paymentMethod;
     if (shiftRequired) {
       Alert.alert('Shift Required', 'Open a shift before billing so cash sales can be reconciled at close.');
       return;
     }
-    if (paymentMethod === 'SPLIT') {
+    if (chosenMethod === 'SPLIT') {
       if (splitShortfall > 0) {
         Alert.alert('Split short', `Split payment is short by Rs.${splitShortfall.toFixed(2)}.`);
         return;
@@ -223,12 +288,12 @@ export default function MobilePaymentScreen() {
       setLoading(true);
       const res = await posMobileService.completeSale({
         items: cartItems,
-        paymentMethod,
+        paymentMethod: chosenMethod,
         amountPaid: grandTotal,
         customer,
         terminalId,
         couponCode: couponApplied?.code,
-        splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
+        splitPayments: chosenMethod === 'SPLIT' ? splitEntries : undefined,
       });
 
       router.push({
@@ -239,33 +304,36 @@ export default function MobilePaymentScreen() {
           completedOn: 'Shopora Mobile App',
           cartJson: JSON.stringify(cartItems),
           customerJson: JSON.stringify(customer),
-          paymentMethod,
+          paymentMethod: chosenMethod,
         },
       });
     } catch (err: unknown) {
       if (isNetworkFailure(err)) {
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined },
-          { items: cartItems, customer, paymentMethod, grandTotal },
+          { items: cartItems, paymentMethod: chosenMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, splitPayments: chosenMethod === 'SPLIT' ? splitEntries : undefined },
+          { items: cartItems, customer, paymentMethod: chosenMethod, grandTotal },
         );
 
         router.push({
           pathname: '/sale-success',
           params: {
-            orderNumber: sale.clientOrderNumber,
-            grandTotal: grandTotal.toString(),
-            completedOn: 'Shopora Mobile App',
-            offline: 'true',
+            orderNumber: sale.orderNumber,
+            grandTotal: sale.grandTotal.toString(),
+            completedOn: 'Shopora Mobile App (Offline)',
+            cartJson: JSON.stringify(cartItems),
+            customerJson: JSON.stringify(customer),
+            paymentMethod: chosenMethod,
           },
         });
-        return;
+      } else {
+        Alert.alert('Sale failed', getApiErrorMessage(err, 'Failed to complete sale.'));
       }
-
-      Alert.alert('Payment Failed', getApiErrorMessage(err, 'Could not complete POS sale'));
     } finally {
       setLoading(false);
     }
   };
+
+  const handleCompleteSale = () => executeSaleCompletion();
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
@@ -343,73 +411,219 @@ export default function MobilePaymentScreen() {
       {/* Dynamic UPI QR Code Card */}
       {paymentMethod === 'UPI' && (
         <View style={styles.upiCard}>
-          <View style={styles.upiHeaderRow}>
-            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-              <QrCode size={18} color="#0284c7" style={{ marginRight: 6 }} />
-              <Text style={styles.upiCardTitle}>Dynamic UPI QR Code</Text>
-            </View>
-            <View style={styles.liveBadge}>
-              <Text style={styles.liveBadgeText}>NPCI DIRECT UPI</Text>
-            </View>
+          {/* UPI Provider Selector */}
+          <View style={styles.providerTabContainer}>
+            <TouchableOpacity
+              style={[
+                styles.providerTab,
+                upiProvider === 'RAZORPAY' && styles.providerTabActive,
+              ]}
+              onPress={() => setUpiProvider('RAZORPAY')}
+              activeOpacity={0.8}
+            >
+              <Sparkles
+                size={14}
+                color={upiProvider === 'RAZORPAY' ? '#ffffff' : '#0284c7'}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.providerTabText,
+                  upiProvider === 'RAZORPAY' && styles.providerTabTextActive,
+                ]}
+              >
+                Razorpay QR (Auto)
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.providerTab,
+                upiProvider === 'DIRECT_NPCI' && styles.providerTabActive,
+              ]}
+              onPress={() => setUpiProvider('DIRECT_NPCI')}
+              activeOpacity={0.8}
+            >
+              <QrCode
+                size={14}
+                color={upiProvider === 'DIRECT_NPCI' ? '#ffffff' : '#0284c7'}
+                style={{ marginRight: 4 }}
+              />
+              <Text
+                style={[
+                  styles.providerTabText,
+                  upiProvider === 'DIRECT_NPCI' && styles.providerTabTextActive,
+                ]}
+              >
+                Direct NPCI (0% Fee)
+              </Text>
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.upiSub}>
-            Scan with Google Pay, PhonePe, Paytm, BHIM, Cred, or any banking app.
-          </Text>
-
-          <View style={styles.qrContainer}>
-            <UpiQrView value={currentUpiUri} size={190} />
-          </View>
-
-          <View style={styles.upiAmountBox}>
-            <Text style={styles.upiAmountLabel}>Amount to Pay</Text>
-            <Text style={styles.upiAmountValue}>₹{effectiveTotal.toFixed(2)}</Text>
-          </View>
-
-          <View style={styles.upiVpaRow}>
-            <Text style={styles.upiVpaLabel}>Store VPA: </Text>
-            {editingVpa ? (
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
-                <TextInput
-                  style={styles.vpaInput}
-                  value={tempVpa}
-                  onChangeText={setTempVpa}
-                  autoCapitalize="none"
-                  placeholder="e.g. vasanthi@upi"
-                />
-                <TouchableOpacity
-                  style={styles.vpaSaveBtn}
-                  onPress={async () => {
-                    const clean = tempVpa.trim() || 'vasanthisignature@okhdfcbank';
-                    setStoreVpa(clean);
-                    setEditingVpa(false);
-                    await SecureStore.setItemAsync(STORE_VPA_KEY, clean).catch(() => {});
-                  }}
-                >
-                  <Text style={styles.vpaSaveBtnText}>Save</Text>
-                </TouchableOpacity>
+          {/* RAZORPAY MODE */}
+          {upiProvider === 'RAZORPAY' && (
+            <View>
+              <View style={styles.upiHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <QrCode size={18} color="#0284c7" style={{ marginRight: 6 }} />
+                  <Text style={styles.upiCardTitle}>Razorpay Dynamic QR</Text>
+                </View>
+                <View style={[styles.liveBadge, { backgroundColor: '#e0f2fe' }]}>
+                  <Text style={[styles.liveBadgeText, { color: '#0369a1' }]}>
+                    AUTO-VERIFY
+                  </Text>
+                </View>
               </View>
-            ) : (
-              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
-                <Text style={styles.upiVpaText} numberOfLines={1}>{storeVpa}</Text>
-                <TouchableOpacity
-                  onPress={() => {
-                    setTempVpa(storeVpa);
-                    setEditingVpa(true);
-                  }}
-                  style={styles.vpaEditBtn}
-                >
-                  <Text style={styles.upiVpaEdit}>Edit UPI</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-          </View>
 
-          <View style={styles.upiAppsBadgeRow}>
-            <Text style={styles.upiAppsBadgeText}>
-              GPay • PhonePe • Paytm • BHIM • Cred • Amazon Pay (0% Gateway Fee)
-            </Text>
-          </View>
+              <Text style={styles.upiSub}>
+                Customer scans with any UPI app. Payment auto-completes the sale and prints receipt!
+              </Text>
+
+              {razorpayLoading ? (
+                <View style={[styles.qrContainer, { height: 210, justifyContent: 'center' }]}>
+                  <ActivityIndicator size="large" color="#0284c7" />
+                  <Text style={{ marginTop: 12, color: '#64748b', fontSize: 13 }}>
+                    Generating Razorpay Dynamic QR...
+                  </Text>
+                </View>
+              ) : razorpayError ? (
+                <View style={[styles.qrContainer, { padding: 16 }]}>
+                  <Text style={{ color: '#dc2626', fontSize: 13, textAlign: 'center', marginBottom: 12 }}>
+                    {razorpayError}
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
+                    <TouchableOpacity
+                      style={[styles.vpaSaveBtn, { backgroundColor: '#0284c7', paddingHorizontal: 16 }]}
+                      onPress={fetchRazorpayQr}
+                    >
+                      <Text style={styles.vpaSaveBtnText}>Retry</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.vpaSaveBtn, { backgroundColor: '#64748b', paddingHorizontal: 16 }]}
+                      onPress={() => setUpiProvider('DIRECT_NPCI')}
+                    >
+                      <Text style={styles.vpaSaveBtnText}>Use Direct NPCI</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              ) : razorpayPaid ? (
+                <View style={[styles.qrContainer, { height: 210, justifyContent: 'center', backgroundColor: '#f0fdf4' }]}>
+                  <CheckCircle2 size={48} color="#16a34a" />
+                  <Text style={{ marginTop: 8, color: '#16a34a', fontWeight: 'bold', fontSize: 16 }}>
+                    Payment Received!
+                  </Text>
+                  <Text style={{ color: '#15803d', fontSize: 13 }}>
+                    Completing sale and generating receipt...
+                  </Text>
+                </View>
+              ) : (
+                <View>
+                  <View style={styles.qrContainer}>
+                    {razorpayQr?.imageUrl ? (
+                      <Image
+                        source={{ uri: razorpayQr.imageUrl }}
+                        style={{ width: 200, height: 200 }}
+                        resizeMode="contain"
+                      />
+                    ) : (
+                      <UpiQrView value={currentUpiUri} size={190} />
+                    )}
+                  </View>
+
+                  <View style={styles.autoVerifyPill}>
+                    <RefreshCw size={14} color="#0284c7" style={{ marginRight: 6 }} />
+                    <Text style={styles.autoVerifyText}>
+                      Auto-Verifying: Listening for customer payment...
+                    </Text>
+                  </View>
+                </View>
+              )}
+
+              <View style={styles.upiAmountBox}>
+                <Text style={styles.upiAmountLabel}>Amount to Pay</Text>
+                <Text style={styles.upiAmountValue}>₹{effectiveTotal.toFixed(2)}</Text>
+              </View>
+
+              <View style={styles.upiAppsBadgeRow}>
+                <Text style={styles.upiAppsBadgeText}>
+                  Deposits directly to your Razorpay Merchant Account
+                </Text>
+              </View>
+            </View>
+          )}
+
+          {/* DIRECT NPCI MODE */}
+          {upiProvider === 'DIRECT_NPCI' && (
+            <View>
+              <View style={styles.upiHeaderRow}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <QrCode size={18} color="#0284c7" style={{ marginRight: 6 }} />
+                  <Text style={styles.upiCardTitle}>Direct NPCI UPI QR</Text>
+                </View>
+                <View style={styles.liveBadge}>
+                  <Text style={styles.liveBadgeText}>0% GATEWAY FEE</Text>
+                </View>
+              </View>
+
+              <Text style={styles.upiSub}>
+                Scan with Google Pay, PhonePe, Paytm, BHIM, Cred, or any banking app.
+              </Text>
+
+              <View style={styles.qrContainer}>
+                <UpiQrView value={currentUpiUri} size={190} />
+              </View>
+
+              <View style={styles.upiAmountBox}>
+                <Text style={styles.upiAmountLabel}>Amount to Pay</Text>
+                <Text style={styles.upiAmountValue}>₹{effectiveTotal.toFixed(2)}</Text>
+              </View>
+
+              <View style={styles.upiVpaRow}>
+                <Text style={styles.upiVpaLabel}>Store VPA: </Text>
+                {editingVpa ? (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                    <TextInput
+                      style={styles.vpaInput}
+                      value={tempVpa}
+                      onChangeText={setTempVpa}
+                      autoCapitalize="none"
+                      placeholder="e.g. yourstore@okhdfcbank"
+                    />
+                    <TouchableOpacity
+                      style={styles.vpaSaveBtn}
+                      onPress={async () => {
+                        const clean = tempVpa.trim() || 'vasanthisignature@okhdfcbank';
+                        setStoreVpa(clean);
+                        setEditingVpa(false);
+                        await SecureStore.setItemAsync(STORE_VPA_KEY, clean).catch(() => {});
+                      }}
+                    >
+                      <Text style={styles.vpaSaveBtnText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
+                    <Text style={styles.upiVpaText} numberOfLines={1}>{storeVpa}</Text>
+                    <TouchableOpacity
+                      onPress={() => {
+                        setTempVpa(storeVpa);
+                        setEditingVpa(true);
+                      }}
+                      style={styles.vpaEditBtn}
+                    >
+                      <Text style={styles.upiVpaEdit}>Edit UPI</Text>
+                    </TouchableOpacity>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.upiAppsBadgeRow}>
+                <Text style={styles.upiAppsBadgeText}>
+                  Direct Bank Transfer • Zero Intermediary Fees
+                </Text>
+              </View>
+            </View>
+          )}
         </View>
       )}
 
@@ -619,6 +833,53 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 8,
     elevation: 2,
+  },
+  providerTabContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 10,
+    padding: 3,
+    marginBottom: 14,
+    width: '100%',
+  },
+  providerTab: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 7,
+    borderRadius: 8,
+  },
+  providerTabActive: {
+    backgroundColor: '#0284c7',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.1,
+    shadowRadius: 2,
+    elevation: 1,
+  },
+  providerTabText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  providerTabTextActive: {
+    color: '#ffffff',
+  },
+  autoVerifyPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#e0f2fe',
+    borderRadius: 20,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    marginBottom: 12,
+  },
+  autoVerifyText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#0369a1',
   },
   upiHeaderRow: {
     flexDirection: 'row',

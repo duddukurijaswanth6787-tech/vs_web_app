@@ -611,4 +611,72 @@ export class PaymentService {
 
     return this.toResponse(updated, true);
   }
+
+  /**
+   * Generates a live Razorpay Dynamic UPI QR code.
+   * Scanned payments are credited directly to the Razorpay merchant account.
+   */
+  async createDynamicUpiQr(
+    amount: number,
+    description = 'POS Counter Bill',
+    notes: Record<string, string> = {},
+  ) {
+    const razorpay = await this.getRazorpayClient();
+    const amountInPaise = Math.round(amount * 100);
+    const closeBy = Math.floor(Date.now() / 1000) + 900; // 15 mins expiry
+
+    try {
+      const qr: any = await razorpay.qrCode.create({
+        type: 'upi_qr',
+        name: "Vasanthi's Signature",
+        usage: 'single_use',
+        fixed_amount: true,
+        payment_amount: amountInPaise,
+        description,
+        close_by: closeBy,
+        notes,
+      });
+
+      return {
+        qrId: qr.id,
+        imageUrl: qr.image_url,
+        amount: Number(qr.payment_amount) / 100,
+        status: qr.status,
+        closeBy: qr.close_by,
+        paymentsAmountReceived: (Number(qr.payments_amount_received) || 0) / 100,
+      };
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Razorpay QR code creation failed: ${errorMessage}`);
+      throw new BadRequestException(
+        `Razorpay Dynamic QR generation error: ${errorMessage}. Please ensure Razorpay Smart Collect / UPI QR is enabled on your Razorpay dashboard.`,
+      );
+    }
+  }
+
+  /**
+   * Fetches real-time status of a Razorpay Dynamic QR code to confirm payment.
+   */
+  async fetchQrStatus(qrId: string) {
+    const razorpay = await this.getRazorpayClient();
+    try {
+      const qr: any = await razorpay.qrCode.fetch(qrId);
+      const amountDue = (Number(qr.payment_amount) || 0) / 100;
+      const amountReceived = (Number(qr.payments_amount_received) || 0) / 100;
+      const isPaid = amountReceived >= amountDue && amountDue > 0;
+
+      return {
+        qrId: qr.id,
+        status: isPaid ? 'PAID' : qr.status,
+        isPaid,
+        amountDue,
+        amountReceived,
+        closeBy: qr.close_by,
+      };
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to fetch Razorpay QR status for ${qrId}: ${errorMessage}`);
+      throw new BadRequestException(`Failed to check Razorpay QR status: ${errorMessage}`);
+    }
+  }
 }

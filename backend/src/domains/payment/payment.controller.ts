@@ -131,6 +131,30 @@ export class PaymentController {
     );
   }
 
+  @Post('razorpay-qr')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate a Razorpay Dynamic UPI QR code' })
+  async createRazorpayQr(
+    @Body() body: { amount: number; description?: string; notes?: Record<string, string> },
+  ) {
+    return ResponseBuilder.success(
+      await this.paymentService.createDynamicUpiQr(body.amount, body.description, body.notes),
+      'Razorpay Dynamic QR generated',
+    );
+  }
+
+  @Get('razorpay-qr/:qrId/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Poll real-time status of a Razorpay Dynamic QR code' })
+  async getRazorpayQrStatus(@Param('qrId') qrId: string) {
+    return ResponseBuilder.success(
+      await this.paymentService.fetchQrStatus(qrId),
+      'Razorpay QR status fetched',
+    );
+  }
+
   @Post('webhook')
   @ApiOperation({ summary: 'Razorpay webhook callback handler' })
   async handleWebhook(

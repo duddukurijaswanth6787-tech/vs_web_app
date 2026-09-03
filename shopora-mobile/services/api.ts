@@ -916,6 +916,38 @@ export const barcodeService = {
   },
 };
 
+export interface RazorpayQrData {
+  qrId: string;
+  imageUrl: string;
+  amount: number;
+  status: string;
+  closeBy: number;
+  paymentsAmountReceived: number;
+}
+
+export interface RazorpayQrStatus {
+  qrId: string;
+  status: string;
+  isPaid: boolean;
+  amountDue: number;
+  amountReceived: number;
+  closeBy: number;
+}
+
+export const paymentService = {
+  /** POST /payments/razorpay-qr — generate a dynamic Razorpay UPI QR code */
+  async createRazorpayQr(amount: number, description = 'POS Bill', notes: Record<string, string> = {}): Promise<RazorpayQrData> {
+    const res = await posApiClient.post('/payments/razorpay-qr', { amount, description, notes });
+    return unwrap<RazorpayQrData>(res);
+  },
+
+  /** GET /payments/razorpay-qr/:qrId/status — poll payment status */
+  async getRazorpayQrStatus(qrId: string): Promise<RazorpayQrStatus> {
+    const res = await posApiClient.get(`/payments/razorpay-qr/${qrId}/status`);
+    return unwrap<RazorpayQrStatus>(res);
+  },
+};
+
 function guessMimeType(fileName: string, uri: string): string {
   const source = `${fileName}|${uri}`.toLowerCase();
   if (source.includes('.png')) return 'image/png';
