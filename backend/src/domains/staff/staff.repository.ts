@@ -192,6 +192,7 @@ export class StaffRepository {
       emergencyContact?: string;
       address?: string;
       profileImage?: string;
+      joinedAt?: Date;
     },
   ) {
     return this.prisma.staffProfile.update({
