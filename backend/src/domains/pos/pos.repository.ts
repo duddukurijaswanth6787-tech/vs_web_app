@@ -13,7 +13,7 @@ import {
 export class PosRepository {
   private readonly logger = new Logger(PosRepository.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(readonly prisma: PrismaService) {}
 
   async findVariantByBarcode(code: string) {
     const trimmed = code.trim();

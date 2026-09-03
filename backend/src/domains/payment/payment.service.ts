@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
@@ -31,6 +31,8 @@ const KEYS = {
 
 @Injectable()
 export class PaymentService {
+  private readonly logger = new Logger(PaymentService.name);
+
   constructor(
     private readonly paymentRepository: PaymentRepository,
     private readonly auditService: AuditService,
