@@ -44,6 +44,7 @@ import {
   CreatePosExchangeDto,
   ClosePosShiftDto,
   PosCashMovementDto,
+  SavePosCustomerDto,
   DEFAULT_TERMINAL_ID,
 } from './pos.types';
 import type { Response } from 'express';
@@ -321,6 +322,36 @@ export class PosController {
   })
   async lookupCustomer(@Query('phone') phone: string) {
     return this.posService.lookupCustomer(phone || '');
+  }
+
+  @Post('customers')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Save or Update Customer Details from POS Counter or Mobile App',
+  })
+  async saveCustomer(@Body() dto: SavePosCustomerDto) {
+    return this.posService.upsertCustomer(dto);
+  }
+
+  @Get('customers')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'List Offline Store / POS Customers with Order History for Super Admin',
+  })
+  async listPosCustomers(
+    @Query('search') search?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.posService.listPosCustomers({
+      search,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
   }
 
   @Get('returns/lookup')

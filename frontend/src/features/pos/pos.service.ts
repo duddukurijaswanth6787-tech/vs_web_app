@@ -296,4 +296,23 @@ export const posService = {
     });
     return res.data.data!;
   },
+
+  /**
+   * List Offline Store / POS Customers with Order History for Super Admin
+   */
+  async listPosCustomers(params?: { search?: string; page?: number; limit?: number }) {
+    const res = await apiClient.get<StandardResponse<{ data: any[]; total: number; page: number; limit: number; totalPages: number }>>(
+      '/pos/customers',
+      { params },
+    );
+    return res.data.data ?? { data: [], total: 0, page: 1, limit: 20, totalPages: 1 };
+  },
+
+  /**
+   * Create or update customer details from POS counter or mobile app
+   */
+  async savePosCustomer(payload: { fullName: string; phone: string; email?: string }) {
+    const res = await apiClient.post<StandardResponse<any>>('/pos/customers', payload);
+    return res.data.data!;
+  },
 };

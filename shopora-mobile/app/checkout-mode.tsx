@@ -27,6 +27,7 @@ import {
   Calendar,
   ChevronRight,
   UserPlus,
+  UserCheck,
   BadgePercent,
 } from 'lucide-react-native';
 import {
@@ -51,6 +52,7 @@ export default function CheckoutModeScreen() {
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'not_found'>('idle');
   const [customerData, setCustomerData] = useState<any>(null);
   const [historyModalVisible, setHistoryModalVisible] = useState(false);
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // Tax Mode Toggle: True = GST Included in MRP (Default), False = Add GST on top
   const [taxInclusive, setTaxInclusive] = useState(true);
@@ -143,6 +145,38 @@ export default function CheckoutModeScreen() {
     } catch (e) {
       console.error('Customer lookup failed:', e);
       setLookupStatus('idle');
+    }
+  };
+
+  const handleSaveCustomer = async () => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    if (cleanPhone.length !== 10) {
+      Alert.alert('Phone Required', 'Enter a 10-digit phone number to register customer.');
+      return;
+    }
+    if (!customerName.trim()) {
+      Alert.alert('Name Required', 'Please enter customer full name.');
+      return;
+    }
+
+    try {
+      setSavingCustomer(true);
+      const saved = await posMobileService.saveCustomer({
+        fullName: customerName.trim(),
+        phone: cleanPhone,
+        email: customerEmail.trim() || undefined,
+      });
+      if (saved) {
+        setCustomerData(saved);
+        setCustomerName(saved.fullName || customerName);
+        setCustomerEmail(saved.email || customerEmail);
+        setLookupStatus('found');
+        Alert.alert('Customer Saved', `Customer "${saved.fullName}" registered & saved successfully.`);
+      }
+    } catch (e: any) {
+      Alert.alert('Save Error', getApiErrorMessage(e, 'Could not save customer details.'));
+    } finally {
+      setSavingCustomer(false);
     }
   };
 
@@ -290,6 +324,22 @@ export default function CheckoutModeScreen() {
               value={customerEmail}
               onChangeText={setCustomerEmail}
             />
+
+            <TouchableOpacity
+              style={[styles.saveCustomerBtn, (!customerName.trim() || savingCustomer) && styles.btnDisabled]}
+              onPress={handleSaveCustomer}
+              disabled={!customerName.trim() || savingCustomer}
+              activeOpacity={0.85}
+            >
+              {savingCustomer ? (
+                <ActivityIndicator size="small" color="#ffffff" />
+              ) : (
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <UserCheck size={14} color="#ffffff" style={{ marginRight: 6 }} />
+                  <Text style={styles.saveCustomerBtnText}>💾 SAVE CUSTOMER</Text>
+                </View>
+              )}
+            </TouchableOpacity>
           </View>
         )}
       </View>
@@ -375,7 +425,9 @@ export default function CheckoutModeScreen() {
         </View>
 
         <View style={styles.billRow}>
-          <Text style={styles.billLabel}>Item Total ({totalQuantity} {totalQuantity === 1 ? 'item' : 'items'})</Text>
+          <Text style={styles.billLabel}>
+            {taxInclusive ? 'Item Total (MRP)' : 'Item Total (Base Price)'} ({totalQuantity} {totalQuantity === 1 ? 'item' : 'items'})
+          </Text>
           <Text style={styles.billValue}>₹{subtotal.toFixed(2)}</Text>
         </View>
 
@@ -393,19 +445,34 @@ export default function CheckoutModeScreen() {
           </View>
         )}
 
-        <View style={styles.billRow}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.billLabel}>Taxes & GST</Text>
-            <View style={[styles.taxPill, !taxInclusive && { backgroundColor: '#fef3c7' }]}>
-              <Text style={[styles.taxPillText, !taxInclusive && { color: '#b45309' }]}>
-                {taxInclusive ? 'Included in MRP' : 'Added to Total (+GST)'}
-              </Text>
+        {/* GST Row */}
+        {taxInclusive ? (
+          <View style={styles.billRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.billLabel}>Taxes & GST</Text>
+              <View style={styles.taxPill}>
+                <Text style={styles.taxPillText}>Included in MRP</Text>
+              </View>
             </View>
+            <Text style={[styles.billTaxValue, { color: '#16a34a', fontWeight: '600' }]}>
+              ₹0.00 (Included)
+            </Text>
           </View>
-          <Text style={[styles.billTaxValue, !taxInclusive && { color: '#0284c7', fontWeight: 'bold' }]}>
-            {taxInclusive ? '' : '+'}₹{taxTotal.toFixed(2)}
-          </Text>
-        </View>
+        ) : (
+          <View style={styles.billRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <Text style={styles.billLabel}>Taxes & GST (5%)</Text>
+              <View style={[styles.taxPill, { backgroundColor: '#fef3c7' }]}>
+                <Text style={[styles.taxPillText, { color: '#b45309' }]}>
+                  Added to Total (+GST)
+                </Text>
+              </View>
+            </View>
+            <Text style={[styles.billTaxValue, { color: '#0284c7', fontWeight: 'bold' }]}>
+              +₹{taxTotal.toFixed(2)}
+            </Text>
+          </View>
+        )}
 
         <View style={styles.billDivider} />
 
@@ -667,6 +734,20 @@ const styles = StyleSheet.create({
     paddingVertical: 7,
     fontSize: 12,
     color: '#0f172a',
+  },
+  saveCustomerBtn: {
+    backgroundColor: '#d97706',
+    borderRadius: 8,
+    paddingVertical: 9,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
+  saveCustomerBtnText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 12,
+    letterSpacing: 0.5,
   },
   couponCard: {
     backgroundColor: '#ffffff',

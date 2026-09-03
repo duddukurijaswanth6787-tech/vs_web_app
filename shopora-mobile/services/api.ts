@@ -503,17 +503,33 @@ export const posMobileService = {
    * Refunds were web-only: a counter running on phones had no way to take one
    * back, which is the other half of selling.
    */
-  async createReturn(payload: {
-    orderNumber: string;
-    items: { orderItemId: string; quantity: number }[];
-    refundMethod: string;
-    reason: string;
-    terminalId?: string;
-  }) {
-    const res = await posApiClient.post('/pos/returns', payload);
-    return unwrap<any>(res);
+  /** GET /pos/customers/lookup -- search customer details and order history by phone. */
+  async lookupCustomer(phone: string) {
+    const res = await posApiClient.get('/pos/customers/lookup', { params: { phone } });
+    return unwrap<{
+      found: boolean;
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      ordersCount?: number;
+      totalSpent?: number;
+      recentOrders?: any[];
+    }>(res);
   },
 
+  /** POST /pos/customers -- create or update customer details directly from POS app. */
+  async saveCustomer(payload: { fullName: string; phone: string; email?: string }) {
+    const res = await posApiClient.post('/pos/customers', payload);
+    return unwrap<{
+      found: boolean;
+      fullName?: string;
+      phone?: string;
+      email?: string;
+      ordersCount?: number;
+      totalSpent?: number;
+      recentOrders?: any[];
+    }>(res);
+  },
 };
 
 // ─── Dashboard: home screen stats ─────────────────────────────────────────────

@@ -118,6 +118,23 @@ export class PosCustomerInfoDto {
   gstin?: string;
 }
 
+export class SavePosCustomerDto {
+  @ApiProperty({ description: 'Full name of the customer' })
+  @IsString()
+  @IsNotEmpty()
+  fullName!: string;
+
+  @ApiProperty({ description: '10-digit phone number' })
+  @IsString()
+  @IsNotEmpty()
+  phone!: string;
+
+  @ApiPropertyOptional({ description: 'Email address (optional)' })
+  @IsOptional()
+  @IsString()
+  email?: string;
+}
+
 export class ScanBarcodeDto {
   @ApiProperty({ description: 'Variant Barcode or SKU code' })
   @IsString()

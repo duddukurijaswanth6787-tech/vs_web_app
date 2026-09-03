@@ -986,6 +986,17 @@ export class PosService {
     return result;
   }
 
+  async upsertCustomer(dto: { fullName: string; phone: string; email?: string }) {
+    if (!dto.phone || !dto.fullName) {
+      throw new BadRequestException('Full name and phone number are required.');
+    }
+    return this.repository.upsertPosCustomer(dto);
+  }
+
+  async listPosCustomers(params: { search?: string; page?: number; limit?: number }) {
+    return this.repository.listPosCustomers(params);
+  }
+
   async generateBarcodeImage(dto: GenerateBarcodeImageDto): Promise<Buffer> {
     return this.barcodeService.generateBarcodeBuffer(
       dto.code,

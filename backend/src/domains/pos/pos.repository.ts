@@ -476,6 +476,142 @@ export class PosRepository {
     };
   }
 
+  async upsertPosCustomer(dto: { fullName: string; phone: string; email?: string }) {
+    const cleanPhone = dto.phone.replace(/\D/g, '').slice(-10);
+    if (cleanPhone.length < 10) {
+      throw new Error('Valid 10-digit phone number is required.');
+    }
+    const nameParts = dto.fullName.trim().split(' ');
+    const firstName = nameParts[0] || 'Valued';
+    const lastName = nameParts.slice(1).join(' ') || 'Customer';
+    const email = dto.email?.trim() || `pos_${cleanPhone}@vasanthi.local`;
+
+    let user = await this.prisma.user.findFirst({
+      where: {
+        OR: [{ phone: cleanPhone }, { email }, { phone: { contains: cleanPhone } }],
+      },
+      include: { customerProfile: true },
+    });
+
+    if (user) {
+      user = await this.prisma.user.update({
+        where: { id: user.id },
+        data: {
+          firstName: firstName || user.firstName,
+          lastName: lastName || user.lastName,
+          phone: cleanPhone,
+          ...(dto.email?.trim() ? { email: dto.email.trim() } : {}),
+        },
+        include: { customerProfile: true },
+      });
+      if (!user.customerProfile) {
+        await this.prisma.customerProfile.create({
+          data: { userId: user.id, phone: cleanPhone },
+        });
+      }
+    } else {
+      user = await this.prisma.user.create({
+        data: {
+          email,
+          firstName,
+          lastName,
+          phone: cleanPhone,
+          passwordHash: 'POS_CUSTOMER_NO_PASSWORD',
+          userType: 'CUSTOMER',
+          accountStatus: 'ACTIVE',
+          customerProfile: {
+            create: {
+              phone: cleanPhone,
+            },
+          },
+        },
+        include: { customerProfile: true },
+      });
+    }
+
+    return this.findCustomerByPhone(cleanPhone);
+  }
+
+  async listPosCustomers(params: { search?: string; page?: number; limit?: number }) {
+    const page = Math.max(1, params.page || 1);
+    const limit = Math.max(1, Math.min(100, params.limit || 20));
+    const skip = (page - 1) * limit;
+    const search = params.search?.trim();
+
+    const where: any = {
+      deletedAt: null,
+      userType: 'CUSTOMER',
+    };
+
+    if (search) {
+      where.OR = [
+        { firstName: { contains: search, mode: 'insensitive' } },
+        { lastName: { contains: search, mode: 'insensitive' } },
+        { phone: { contains: search, mode: 'insensitive' } },
+        { email: { contains: search, mode: 'insensitive' } },
+      ];
+    }
+
+    const [users, total] = await Promise.all([
+      this.prisma.user.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customerProfile: {
+            include: {
+              orders: {
+                where: { channel: 'POS_SHOPORA' },
+                orderBy: { createdAt: 'desc' },
+                take: 5,
+                include: { items: true },
+              },
+            },
+          },
+        },
+      }),
+      this.prisma.user.count({ where }),
+    ]);
+
+    const data = users.map((u) => {
+      const orders = u.customerProfile?.orders || [];
+      const totalSpent = orders.reduce((sum, o) => sum + Number(o.grandTotal), 0);
+      return {
+        id: u.id,
+        customerProfileId: u.customerProfile?.id,
+        fullName: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
+        phone: u.phone || u.customerProfile?.phone || 'N/A',
+        email: u.email,
+        ordersCount: orders.length,
+        totalSpent,
+        registeredAt: u.createdAt,
+        recentOrders: orders.map((o) => ({
+          orderId: o.id,
+          orderNumber: o.orderNumber,
+          grandTotal: Number(o.grandTotal),
+          status: o.status,
+          paymentMethod: o.paymentMethod,
+          createdAt: o.createdAt,
+          itemsCount: o.items.length,
+          items: o.items.map((i) => ({
+            productName: i.productName,
+            quantity: i.quantity,
+            unitPrice: Number(i.unitPrice),
+          })),
+        })),
+      };
+    });
+
+    return {
+      data,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
+    };
+  }
+
   /** Run the createPosOrder logic against a caller-owned transaction. */
   async createPosOrderTx(
     tx: Prisma.TransactionClient,

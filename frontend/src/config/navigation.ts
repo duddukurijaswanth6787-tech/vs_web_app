@@ -226,6 +226,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'pos-customers',
+        title: 'Offline Store Customers',
+        href: '/admin/pos/customers',
+        icon: Users,
+        permissions: ['pos:view'],
+        implemented: true,
+      },
+      {
         id: 'pos-orders',
         title: 'POS Quotations',
         href: '/pos/quotations',
