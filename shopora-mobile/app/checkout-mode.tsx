@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Modal,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import {
@@ -21,6 +22,12 @@ import {
   CheckCircle2,
   X,
   Percent,
+  History,
+  ShoppingBag,
+  Calendar,
+  ChevronRight,
+  UserPlus,
+  BadgePercent,
 } from 'lucide-react-native';
 import {
   posMobileService,
@@ -40,7 +47,13 @@ export default function CheckoutModeScreen() {
   const [loading, setLoading] = useState(false);
   const [phone, setPhone] = useState('');
   const [customerName, setCustomerName] = useState('');
+  const [customerEmail, setCustomerEmail] = useState('');
   const [lookupStatus, setLookupStatus] = useState<'idle' | 'loading' | 'found' | 'not_found'>('idle');
+  const [customerData, setCustomerData] = useState<any>(null);
+  const [historyModalVisible, setHistoryModalVisible] = useState(false);
+
+  // Tax Mode Toggle: True = GST Included in MRP (Default), False = Add GST on top
+  const [taxInclusive, setTaxInclusive] = useState(true);
 
   // Coupon state
   const [couponInput, setCouponInput] = useState('');
@@ -72,6 +85,7 @@ export default function CheckoutModeScreen() {
       taxPercent: i.taxPercent,
     })),
     orderDiscount,
+    taxInclusive,
   );
 
   const subtotal = cartItems.length ? totals.subtotal : Number(subtotalStr || '0');
@@ -109,7 +123,7 @@ export default function CheckoutModeScreen() {
   const handleLookupCustomer = async () => {
     const cleanPhone = phone.replace(/\D/g, '');
     if (cleanPhone.length !== 10) {
-      Alert.alert('Invalid Phone', 'Enter a 10-digit phone number to look up the customer.');
+      Alert.alert('Invalid Phone', 'Enter a 10-digit phone number to look up customer details & order history.');
       return;
     }
     try {
@@ -117,9 +131,13 @@ export default function CheckoutModeScreen() {
       const result = await posMobileService.lookupCustomer(cleanPhone);
       if (result?.found) {
         setCustomerName(result.fullName || '');
+        setCustomerEmail(result.email || '');
+        setCustomerData(result);
         setLookupStatus('found');
       } else {
         setCustomerName('');
+        setCustomerEmail('');
+        setCustomerData(null);
         setLookupStatus('not_found');
       }
     } catch (e) {
@@ -133,7 +151,11 @@ export default function CheckoutModeScreen() {
     if (cleanPhone.length !== 10) {
       return { fullName: 'Walk-in Customer', phone: '9999999999' };
     }
-    return { fullName: customerName.trim() || 'Walk-in Customer', phone: cleanPhone };
+    return {
+      fullName: customerName.trim() || 'Walk-in Customer',
+      phone: cleanPhone,
+      email: customerEmail.trim() || undefined,
+    };
   };
 
   // Option 1: Continue on Phone
@@ -147,6 +169,7 @@ export default function CheckoutModeScreen() {
         customerJson: JSON.stringify(resolveCustomer()),
         couponCode: couponApplied?.code || '',
         couponDiscount: (couponApplied?.discountAmount || 0).toString(),
+        taxInclusive: taxInclusive ? 'true' : 'false',
       },
     });
   };
@@ -181,12 +204,13 @@ export default function CheckoutModeScreen() {
     <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer} showsVerticalScrollIndicator={false}>
       <Text style={styles.heading}>How would you like to continue?</Text>
 
-      {/* Customer Lookup Card */}
+      {/* Customer Lookup & Profile Card */}
       <View style={styles.customerCard}>
         <View style={styles.customerRow}>
           <User size={15} color="#0284c7" />
-          <Text style={styles.customerLabel}>CUSTOMER (OPTIONAL)</Text>
+          <Text style={styles.customerLabel}>CUSTOMER DETAILS</Text>
         </View>
+
         <View style={styles.phoneRow}>
           <TextInput
             style={styles.phoneInput}
@@ -197,7 +221,10 @@ export default function CheckoutModeScreen() {
             value={phone}
             onChangeText={(t) => {
               setPhone(t);
-              setLookupStatus('idle');
+              if (t.length !== 10) {
+                setLookupStatus('idle');
+                setCustomerData(null);
+              }
             }}
           />
           <TouchableOpacity style={styles.lookupBtn} onPress={handleLookupCustomer} disabled={lookupStatus === 'loading'}>
@@ -208,20 +235,62 @@ export default function CheckoutModeScreen() {
             )}
           </TouchableOpacity>
         </View>
-        {lookupStatus === 'found' && (
-          <Text style={styles.lookupFound}>✓ {customerName || 'Registered customer'}</Text>
+
+        {/* Existing Customer Profile Card */}
+        {lookupStatus === 'found' && customerData && (
+          <View style={styles.existingCustomerBox}>
+            <View style={styles.existingCustomerHeader}>
+              <View style={{ flex: 1 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                  <CheckCircle2 size={15} color="#16a34a" style={{ marginRight: 5 }} />
+                  <Text style={styles.customerFoundName}>{customerName || 'Registered Customer'}</Text>
+                </View>
+                {!!customerEmail && <Text style={styles.customerFoundEmail}>{customerEmail}</Text>}
+                <View style={styles.customerStatsRow}>
+                  <Text style={styles.customerStatsText}>
+                    Orders: <Text style={{ fontWeight: 'bold' }}>{customerData.ordersCount || 0}</Text> • Total Spent: <Text style={{ fontWeight: 'bold' }}>₹{customerData.totalSpent?.toFixed(0) || 0}</Text>
+                  </Text>
+                </View>
+              </View>
+
+              {customerData.recentOrders && customerData.recentOrders.length > 0 && (
+                <TouchableOpacity
+                  style={styles.historyBtn}
+                  onPress={() => setHistoryModalVisible(true)}
+                  activeOpacity={0.8}
+                >
+                  <History size={13} color="#0284c7" style={{ marginRight: 4 }} />
+                  <Text style={styles.historyBtnText}>History ({customerData.recentOrders.length})</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
         )}
+
+        {/* New Customer Registration Form */}
         {lookupStatus === 'not_found' && (
-          <>
-            <Text style={styles.lookupNotFound}>No account found — enter a name to save with this sale</Text>
+          <View style={styles.newCustomerBox}>
+            <View style={styles.newCustomerHeader}>
+              <UserPlus size={14} color="#d97706" style={{ marginRight: 5 }} />
+              <Text style={styles.newCustomerTitle}>New Customer — Add Details</Text>
+            </View>
             <TextInput
               style={styles.nameInput}
-              placeholder="Customer name"
+              placeholder="Customer Full Name (Required)"
               placeholderTextColor="#94a3b8"
               value={customerName}
               onChangeText={setCustomerName}
             />
-          </>
+            <TextInput
+              style={[styles.nameInput, { marginTop: 6 }]}
+              placeholder="Email Address (Optional)"
+              placeholderTextColor="#94a3b8"
+              keyboardType="email-address"
+              autoCapitalize="none"
+              value={customerEmail}
+              onChangeText={setCustomerEmail}
+            />
+          </View>
         )}
       </View>
 
@@ -274,11 +343,35 @@ export default function CheckoutModeScreen() {
         )}
       </View>
 
-      {/* Zomato-style Detailed Bill Summary Card */}
+      {/* Zomato-style Detailed Bill Summary Card with GST Mode Toggle */}
       <View style={styles.billSummaryCard}>
-        <View style={styles.billHeader}>
-          <Receipt size={16} color="#0369a1" />
-          <Text style={styles.billTitle}>Bill Details</Text>
+        <View style={styles.billHeaderRow}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Receipt size={16} color="#0369a1" />
+            <Text style={styles.billTitle}>Bill Details</Text>
+          </View>
+
+          {/* GST Included / Excluded Toggle */}
+          <View style={styles.gstToggleContainer}>
+            <TouchableOpacity
+              style={[styles.gstToggleBtn, taxInclusive && styles.gstToggleBtnActive]}
+              onPress={() => setTaxInclusive(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.gstToggleText, taxInclusive && styles.gstToggleTextActive]}>
+                MRP (GST Inc)
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[styles.gstToggleBtn, !taxInclusive && styles.gstToggleBtnActive]}
+              onPress={() => setTaxInclusive(false)}
+              activeOpacity={0.8}
+            >
+              <Text style={[styles.gstToggleText, !taxInclusive && styles.gstToggleTextActive]}>
+                + Add GST
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.billRow}>
@@ -303,11 +396,15 @@ export default function CheckoutModeScreen() {
         <View style={styles.billRow}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
             <Text style={styles.billLabel}>Taxes & GST</Text>
-            <View style={styles.taxPill}>
-              <Text style={styles.taxPillText}>Included in Price</Text>
+            <View style={[styles.taxPill, !taxInclusive && { backgroundColor: '#fef3c7' }]}>
+              <Text style={[styles.taxPillText, !taxInclusive && { color: '#b45309' }]}>
+                {taxInclusive ? 'Included in MRP' : 'Added to Total (+GST)'}
+              </Text>
             </View>
           </View>
-          <Text style={styles.billTaxValue}>₹{taxTotal.toFixed(2)}</Text>
+          <Text style={[styles.billTaxValue, !taxInclusive && { color: '#0284c7', fontWeight: 'bold' }]}>
+            {taxInclusive ? '' : '+'}₹{taxTotal.toFixed(2)}
+          </Text>
         </View>
 
         <View style={styles.billDivider} />
@@ -315,7 +412,9 @@ export default function CheckoutModeScreen() {
         <View style={styles.billTotalRow}>
           <View>
             <Text style={styles.grandTotalLabel}>To Pay</Text>
-            <Text style={styles.grandTotalSub}>Inclusive of all taxes</Text>
+            <Text style={styles.grandTotalSub}>
+              {taxInclusive ? 'Inclusive of all taxes (MRP)' : 'Subtotal + 5% GST'}
+            </Text>
           </View>
           <Text style={styles.grandTotalAmount}>₹{grandTotal.toFixed(2)}</Text>
         </View>
@@ -367,6 +466,67 @@ export default function CheckoutModeScreen() {
           </View>
         )}
       </TouchableOpacity>
+
+      {/* Customer Order History Modal */}
+      <Modal
+        visible={historyModalVisible}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setHistoryModalVisible(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.historyModalCard}>
+            <View style={styles.modalHeaderRow}>
+              <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                <History size={18} color="#0284c7" style={{ marginRight: 6 }} />
+                <Text style={styles.modalHeaderTitle}>Order History ({customerName})</Text>
+              </View>
+              <TouchableOpacity onPress={() => setHistoryModalVisible(false)} style={{ padding: 4 }}>
+                <X size={20} color="#64748b" />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView style={{ maxHeight: 420 }} showsVerticalScrollIndicator={false}>
+              {customerData?.recentOrders?.map((ord: any, idx: number) => (
+                <View key={ord.orderId || idx} style={styles.historyOrderCard}>
+                  <View style={styles.historyOrderHeader}>
+                    <Text style={styles.historyOrderNumber}>#{ord.orderNumber}</Text>
+                    <Text style={styles.historyOrderAmount}>₹{ord.grandTotal?.toFixed(2)}</Text>
+                  </View>
+
+                  <View style={styles.historyOrderMeta}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                      <Calendar size={11} color="#94a3b8" style={{ marginRight: 4 }} />
+                      <Text style={styles.historyOrderDate}>
+                        {ord.createdAt ? new Date(ord.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' }) : 'Recent'}
+                      </Text>
+                    </View>
+                    <View style={styles.historyPaymentPill}>
+                      <Text style={styles.historyPaymentText}>{ord.paymentMethod || 'PAID'}</Text>
+                    </View>
+                  </View>
+
+                  {ord.items && ord.items.length > 0 && (
+                    <View style={styles.historyItemsList}>
+                      {ord.items.map((it: any, itIdx: number) => (
+                        <View key={itIdx} style={styles.historyItemRow}>
+                          <ShoppingBag size={11} color="#64748b" style={{ marginRight: 4 }} />
+                          <Text style={styles.historyItemName} numberOfLines={1}>{it.productName}</Text>
+                          <Text style={styles.historyItemQty}>x{it.quantity} (₹{it.unitPrice})</Text>
+                        </View>
+                      ))}
+                    </View>
+                  )}
+                </View>
+              ))}
+            </ScrollView>
+
+            <TouchableOpacity style={styles.modalCloseBtn} onPress={() => setHistoryModalVisible(false)}>
+              <Text style={styles.modalCloseBtnText}>Close History</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
@@ -435,26 +595,77 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-  lookupFound: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#16a34a',
-    marginTop: 8,
+  existingCustomerBox: {
+    backgroundColor: '#f0fdf4',
+    borderWidth: 1,
+    borderColor: '#bbf7d0',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
   },
-  lookupNotFound: {
+  existingCustomerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  customerFoundName: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#15803d',
+  },
+  customerFoundEmail: {
     fontSize: 11,
-    color: '#ca8a04',
-    marginTop: 8,
-    marginBottom: 6,
+    color: '#166534',
+    marginTop: 2,
+  },
+  customerStatsRow: {
+    marginTop: 4,
+  },
+  customerStatsText: {
+    fontSize: 11,
+    color: '#15803d',
+  },
+  historyBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#0284c7',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  historyBtnText: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#0284c7',
+  },
+  newCustomerBox: {
+    backgroundColor: '#fffbeb',
+    borderWidth: 1,
+    borderColor: '#fde68a',
+    borderRadius: 10,
+    padding: 10,
+    marginTop: 10,
+  },
+  newCustomerHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  newCustomerTitle: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#b45309',
   },
   nameInput: {
-    backgroundColor: '#f8fafc',
-    borderRadius: 10,
+    backgroundColor: '#ffffff',
+    borderRadius: 8,
     borderWidth: 1,
     borderColor: '#cbd5e1',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    fontSize: 13,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    fontSize: 12,
     color: '#0f172a',
   },
   couponCard: {
@@ -552,9 +763,10 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
     marginBottom: 14,
   },
-  billHeader: {
+  billHeaderRow: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
   },
   billTitle: {
@@ -562,6 +774,31 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0f172a',
     marginLeft: 6,
+  },
+  gstToggleContainer: {
+    flexDirection: 'row',
+    backgroundColor: '#f1f5f9',
+    borderRadius: 8,
+    padding: 2,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  gstToggleBtn: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+  },
+  gstToggleBtnActive: {
+    backgroundColor: '#0284c7',
+  },
+  gstToggleText: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748b',
+  },
+  gstToggleTextActive: {
+    color: '#ffffff',
+    fontWeight: 'bold',
   },
   billRow: {
     flexDirection: 'row',
@@ -655,5 +892,112 @@ const styles = StyleSheet.create({
     color: '#64748b',
     marginTop: 3,
     lineHeight: 15,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(15, 23, 42, 0.65)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 18,
+  },
+  historyModalCard: {
+    width: '100%',
+    maxWidth: 420,
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 18,
+    elevation: 8,
+  },
+  modalHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    marginBottom: 12,
+  },
+  modalHeaderTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  historyOrderCard: {
+    backgroundColor: '#f8fafc',
+    borderRadius: 10,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 10,
+  },
+  historyOrderHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  historyOrderNumber: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0284c7',
+  },
+  historyOrderAmount: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  historyOrderMeta: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 4,
+    paddingBottom: 6,
+    borderBottomWidth: 1,
+    borderBottomColor: '#e2e8f0',
+  },
+  historyOrderDate: {
+    fontSize: 10,
+    color: '#94a3b8',
+  },
+  historyPaymentPill: {
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  historyPaymentText: {
+    fontSize: 9,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  historyItemsList: {
+    marginTop: 6,
+  },
+  historyItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 2,
+  },
+  historyItemName: {
+    flex: 1,
+    fontSize: 11,
+    color: '#334155',
+  },
+  historyItemQty: {
+    fontSize: 10,
+    fontWeight: '600',
+    color: '#64748b',
+    marginLeft: 6,
+  },
+  modalCloseBtn: {
+    backgroundColor: '#0284c7',
+    borderRadius: 10,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 12,
+  },
+  modalCloseBtnText: {
+    color: '#ffffff',
+    fontWeight: 'bold',
+    fontSize: 12,
   },
 });

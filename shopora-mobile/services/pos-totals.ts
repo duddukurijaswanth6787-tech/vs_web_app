@@ -34,6 +34,7 @@ const clampPercent = (value?: number): number =>
 export function computeMobileTotals(
   lines: MobileCartLine[],
   orderDiscount = 0,
+  taxInclusive = true,
 ): MobileCartTotals {
   const gross = lines.reduce(
     (sum, l) =>
@@ -58,16 +59,28 @@ export function computeMobileTotals(
       Math.min(Math.max(0, line.discountAmount || 0) + share, lineSubtotal),
     );
 
-    // In Indian apparel retail, prices are inclusive of GST
-    const linePayable = toMoney(lineSubtotal - discount);
     const taxPercent = clampPercent(line.taxPercent);
-    const taxable = taxPercent > 0 ? toMoney(linePayable / (1 + taxPercent / 100)) : linePayable;
-    const tax = toMoney(linePayable - taxable);
 
-    subtotal += lineSubtotal;
-    discountTotal += discount;
-    taxTotal += tax;
-    grandTotal += linePayable;
+    if (taxInclusive) {
+      // GST is inclusive in retail price (MRP)
+      const linePayable = toMoney(lineSubtotal - discount);
+      const taxable = taxPercent > 0 ? toMoney(linePayable / (1 + taxPercent / 100)) : linePayable;
+      const tax = toMoney(linePayable - taxable);
+
+      subtotal += lineSubtotal;
+      discountTotal += discount;
+      taxTotal += tax;
+      grandTotal += linePayable;
+    } else {
+      // GST is added on top (+GST)
+      const taxable = toMoney(lineSubtotal - discount);
+      const tax = toMoney((taxable * taxPercent) / 100);
+
+      subtotal += lineSubtotal;
+      discountTotal += discount;
+      taxTotal += tax;
+      grandTotal += toMoney(taxable + tax);
+    }
   }
 
   return {

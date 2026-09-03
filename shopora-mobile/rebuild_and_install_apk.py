@@ -71,7 +71,7 @@ def main():
     subprocess.check_call(["adb", "install", "-r", aligned_apk])
     
     print("6. Launching Shopora Mobile App on device...")
-    subprocess.run(["adb", "shell", "monkey", "-p", "com.vasanthisignature.shoporamobile", "-c", "android.intent.category.LAUNCHER", "1"])
+    subprocess.run(["adb", "shell", "monkey", "-p", "com.vasanthi.shopora", "-c", "android.intent.category.LAUNCHER", "1"])
     
     # Clean up
     if os.path.exists(unaligned_apk):
@@ -79,7 +79,7 @@ def main():
     if os.path.exists(aligned_apk):
         os.remove(aligned_apk)
         
-    print("✨ SUCCESS: App updated, signed, installed, and launched on Android phone!")
+    print("SUCCESS: App updated, signed, installed, and launched on Android phone!")
 
 if __name__ == "__main__":
     main()
