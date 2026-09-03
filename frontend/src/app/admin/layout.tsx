@@ -60,8 +60,9 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
       const isAdminOrSuperAdmin =
         user?.roles?.includes('super_admin') ||
         user?.roles?.includes('admin');
+      const hasAnyAdminPermissions = user?.permissions && user.permissions.some(p => !p.startsWith('pos:'));
 
-      if (isPosOnlyRole && !isAdminOrSuperAdmin) {
+      if (isPosOnlyRole && !isAdminOrSuperAdmin && !hasAnyAdminPermissions) {
         router.push('/pos');
         return;
       }

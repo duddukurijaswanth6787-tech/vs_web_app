@@ -23,43 +23,41 @@ export const hasAnyPermission = (user: UserProfile | null, permissions: string[]
   return permissions.some((p) => user.permissions.includes(p));
 };
 
-// Evaluate navigation route configurations against authenticated users
 export const canAccessRoute = (
   user: UserProfile | null,
   route: { href?: string; roles?: string[]; permissions?: string[] }
 ): boolean => {
   if (!user) return false;
 
-  const isPosOnlyRole =
-    user.roles.includes('pos_operator') ||
-    user.roles.includes('pos_staff');
-  const isAdminOrSuperAdmin =
-    user.roles.includes('super_admin') ||
-    user.roles.includes('admin');
+  // super_admin bypasses all role and permission restrictions
+  if (user.roles.includes('super_admin')) return true;
 
-  // POS-restricted operators never reach the admin console at all — see
-  // app/pos/layout.tsx and the confinement redirect in app/admin/layout.tsx —
-  // so this only matters for a nav item that's rendered inside AdminSidebar
-  // while such an account is mid-redirect.
-  if (!isAdminOrSuperAdmin) {
-    return route.href
-      ? route.href.startsWith('/pos') ||
-          route.href === '/admin/quotations'
-      : false;
-  }
-
-  // If the route doesn't specify roles or permissions, anyone authorized in admin shell can access
   const hasNoRoles = !route.roles || route.roles.length === 0;
   const hasNoPermissions = !route.permissions || route.permissions.length === 0;
 
+  // If route specifies permissions, check user permissions array
+  if (route.permissions && route.permissions.length > 0) {
+    if (hasAnyPermission(user, route.permissions)) {
+      return true;
+    }
+  }
+
+  // If route specifies roles, check user roles array
+  if (route.roles && route.roles.length > 0) {
+    if (hasAnyRole(user, route.roles)) {
+      return true;
+    }
+  }
+
+  // If route requires no specific role/permission
   if (hasNoRoles && hasNoPermissions) {
     return true;
   }
 
-  // Evaluate roles match
-  const roleMatch = route.roles ? hasAnyRole(user, route.roles) : false;
-  // Evaluate permissions match
-  const permissionMatch = route.permissions ? hasAnyPermission(user, route.permissions) : false;
+  // Allow POS routes for POS roles
+  if (route.href?.startsWith('/pos')) {
+    return true;
+  }
 
-  return roleMatch || permissionMatch;
+  return false;
 };

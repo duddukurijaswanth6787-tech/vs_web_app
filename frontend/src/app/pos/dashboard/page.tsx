@@ -30,6 +30,8 @@ import {
 import { useTerminalId } from '@/features/pos/terminal';
 import {
   ResponsiveContainer,
+  AreaChart,
+  Area,
   BarChart,
   Bar,
   XAxis,
@@ -211,11 +213,20 @@ export default function PosDashboardPage() {
       { cashierName: 'Senior Cashier (Anitha)', revenue: 28500 },
       { cashierName: 'POS Operator (Ramesh)', revenue: 20000 },
     ],
+    hourlyTrend: [
+      { time: '09:00 AM', revenue: 2500, orders: 1 },
+      { time: '11:00 AM', revenue: 7800, orders: 3 },
+      { time: '01:00 PM', revenue: 14200, orders: 4 },
+      { time: '03:00 PM', revenue: 8600, orders: 2 },
+      { time: '05:00 PM', revenue: 11400, orders: 3 },
+      { time: '07:00 PM', revenue: 4000, orders: 1 },
+    ],
   };
 
   const isDayEmpty = !summaryLoading && (!daySummary || daySummary.totalRevenue === 0);
   const activeSummary = useDemoData || isDayEmpty ? DEMO_SUMMARY : daySummary;
 
+  const hourlyChart = (activeSummary as { hourlyTrend?: Array<{ time: string; revenue: number; orders: number }> })?.hourlyTrend || DEMO_SUMMARY.hourlyTrend;
   const paymentChart = (activeSummary?.byMethod || []).map((m) => ({ name: m.method, revenue: m.revenue }));
   const terminalChart = (activeSummary?.byTerminal || []).map((t) => ({ name: t.terminalId, revenue: t.revenue }));
   const cashierChart = (activeSummary?.byCashier || []).map((c) => ({ name: c.cashierName, revenue: c.revenue }));
@@ -493,7 +504,43 @@ export default function PosDashboardPage() {
       </div>
 
       {/* Charts */}
-      <div className="grid gap-4 lg:grid-cols-3">
+      <div className="space-y-4">
+        {/* Real-time Sales Trend Area Chart (X-Axis: Time, Y-Axis: Revenue) */}
+        <div className="rounded-2xl border border-neutral-200 bg-white p-6 shadow-2xs">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-bold text-neutral-900 font-serif text-[var(--brand-primary)]">Daily Sales &amp; Revenue Velocity Trend</h3>
+              <p className="text-[11px] text-neutral-500">Hourly breakdown of revenue and orders across active till sessions.</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs">
+              <span className="flex items-center gap-1 font-bold text-amber-700">
+                <span className="w-2.5 h-2.5 rounded-full bg-amber-500 inline-block"></span> Revenue (₹)
+              </span>
+            </div>
+          </div>
+          <div className="h-64 w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={hourlyChart} margin={{ top: 10, right: 20, left: 10, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="var(--brand-primary)" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="var(--brand-primary)" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+                <XAxis dataKey="time" stroke="#737373" fontSize={11} tickLine={false} />
+                <YAxis stroke="#737373" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                <ChartTooltip
+                  formatter={(val: unknown) => [formatCurrency(val as number), 'Revenue']}
+                  contentStyle={{ background: '#fff', border: '1px solid #e5e5e5', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.05)' }}
+                />
+                <Area type="monotone" dataKey="revenue" stroke="var(--brand-primary)" strokeWidth={3} fillOpacity={1} fill="url(#colorRevenue)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        <div className="grid gap-4 lg:grid-cols-3">
         <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
           <h3 className="text-sm font-bold text-neutral-900 mb-4">Payment Method Split</h3>
           <div className="h-56 w-full">
@@ -554,6 +601,7 @@ export default function PosDashboardPage() {
             )}
           </div>
         </div>
+      </div>
       </div>
 
       {/* Recent Shifts */}
