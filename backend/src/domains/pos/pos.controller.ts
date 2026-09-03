@@ -522,8 +522,7 @@ export class PosController {
   }
 
   @Post('razorpay-qr')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Public()
   @ApiOperation({ summary: 'Generate live Razorpay Dynamic UPI QR code for POS' })
   async createRazorpayQr(
     @Body() body: { amount: number; description?: string; notes?: Record<string, string> },
@@ -532,8 +531,7 @@ export class PosController {
   }
 
   @Get('razorpay-qr/:qrId/status')
-  @UseGuards(JwtAuthGuard)
-  @ApiBearerAuth()
+  @Public()
   @ApiOperation({ summary: 'Poll real-time status of Razorpay QR for POS auto-complete' })
   async getRazorpayQrStatus(@Param('qrId') qrId: string) {
     return this.posService.fetchRazorpayQrStatus(qrId);
