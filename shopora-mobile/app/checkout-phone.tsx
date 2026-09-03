@@ -24,6 +24,9 @@ import { ConnectivityBadge } from '../components/ConnectivityBadge';
 import { getTerminalId } from '../services/terminal';
 import { buildUpiUri } from '../services/upi';
 import { UpiQrView } from '../components/UpiQrView';
+import * as SecureStore from 'expo-secure-store';
+
+const STORE_VPA_KEY = 'pos_store_upi_vpa';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -49,6 +52,15 @@ export default function MobilePaymentScreen() {
   const [storeVpa, setStoreVpa] = useState('vasanthisignature@okhdfcbank');
   const [editingVpa, setEditingVpa] = useState(false);
   const [tempVpa, setTempVpa] = useState('vasanthisignature@okhdfcbank');
+
+  useEffect(() => {
+    SecureStore.getItemAsync(STORE_VPA_KEY).then((saved) => {
+      if (saved && saved.trim()) {
+        setStoreVpa(saved.trim());
+        setTempVpa(saved.trim());
+      }
+    }).catch(() => {});
+  }, []);
 
   // Coupon at the till.
   const [couponInput, setCouponInput] = useState('');
@@ -367,10 +379,11 @@ export default function MobilePaymentScreen() {
                 />
                 <TouchableOpacity
                   style={styles.vpaSaveBtn}
-                  onPress={() => {
+                  onPress={async () => {
                     const clean = tempVpa.trim() || 'vasanthisignature@okhdfcbank';
                     setStoreVpa(clean);
                     setEditingVpa(false);
+                    await SecureStore.setItemAsync(STORE_VPA_KEY, clean).catch(() => {});
                   }}
                 >
                   <Text style={styles.vpaSaveBtnText}>Save</Text>
