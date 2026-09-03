@@ -98,6 +98,8 @@ export class StaffService {
         lastName: dto.lastName,
         phone: dto.phone,
         userType: 'STAFF',
+        accountStatus: 'ACTIVE',
+        isEmailVerified: true,
         staffProfile: {
           create: {
             department: dto.department as any,
