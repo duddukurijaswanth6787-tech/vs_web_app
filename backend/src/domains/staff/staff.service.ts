@@ -107,6 +107,7 @@ export class StaffService {
             reportingManagerId: dto.reportingManagerId,
             emergencyContact: dto.emergencyContact,
             address: dto.address,
+            joinedAt: dto.joinedAt ? new Date(dto.joinedAt) : undefined,
             createdBy,
           },
         },
@@ -144,6 +145,7 @@ export class StaffService {
       emergencyContact: dto.emergencyContact,
       address: dto.address,
       profileImage: dto.profileImage,
+      joinedAt: dto.joinedAt ? new Date(dto.joinedAt) : undefined,
     });
     if (dto.firstName || dto.lastName || dto.phone) {
       await this.staffRepository.updateUser(profile.userId, {

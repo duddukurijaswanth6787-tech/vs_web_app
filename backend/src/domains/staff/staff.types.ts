@@ -43,8 +43,9 @@ export class CreateStaffDto {
   roleId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() jobTitle?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() reportingManagerId?: string;
-  @ApiPropertyOptional() @IsOptional() emergencyContact?: string;
-  @ApiPropertyOptional() @IsOptional() address?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() emergencyContact?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() joinedAt?: string;
 }
 
 export class UpdateStaffDto {
@@ -69,9 +70,10 @@ export class UpdateStaffDto {
   designation?: StaffDesignation;
   @ApiPropertyOptional() @IsOptional() @IsString() jobTitle?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() reportingManagerId?: string;
-  @ApiPropertyOptional() @IsOptional() emergencyContact?: string;
-  @ApiPropertyOptional() @IsOptional() address?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() emergencyContact?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() address?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() profileImage?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() joinedAt?: string;
 }
 
 export class StaffQueryDto {
