@@ -516,18 +516,14 @@ export default function MobilePaymentScreen() {
                     Completing sale and generating receipt...
                   </Text>
                 </View>
-              ) : (
+              ) : razorpayQr?.imageUrl ? (
                 <View>
                   <View style={styles.qrContainer}>
-                    {razorpayQr?.imageUrl ? (
-                      <Image
-                        source={{ uri: razorpayQr.imageUrl }}
-                        style={{ width: 200, height: 200 }}
-                        resizeMode="contain"
-                      />
-                    ) : (
-                      <UpiQrView value={currentUpiUri} size={190} />
-                    )}
+                    <Image
+                      source={{ uri: razorpayQr.imageUrl }}
+                      style={{ width: 200, height: 200 }}
+                      resizeMode="contain"
+                    />
                   </View>
 
                   <View style={styles.autoVerifyPill}>
@@ -536,6 +532,21 @@ export default function MobilePaymentScreen() {
                       Auto-Verifying: Listening for customer payment...
                     </Text>
                   </View>
+                </View>
+              ) : (
+                <View style={[styles.qrContainer, { height: 210, justifyContent: 'center', padding: 16 }]}>
+                  <Text style={{ color: '#0369a1', fontSize: 13, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
+                    Razorpay Gateway Setup Required
+                  </Text>
+                  <Text style={{ color: '#64748b', fontSize: 11, textAlign: 'center', marginBottom: 14 }}>
+                    To deposit directly into your Razorpay Account with auto-verification, enter your Razorpay Key ID & Secret in Web Admin.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.vpaSaveBtn, { backgroundColor: '#0284c7', paddingHorizontal: 16 }]}
+                    onPress={() => setUpiProvider('DIRECT_NPCI')}
+                  >
+                    <Text style={styles.vpaSaveBtnText}>Use Direct NPCI QR (0% Fee)</Text>
+                  </TouchableOpacity>
                 </View>
               )}
 
