@@ -191,9 +191,34 @@ export default function PosDashboardPage() {
     }, 250);
   };
 
-  const paymentChart = (daySummary?.byMethod || []).map((m) => ({ name: m.method, revenue: m.revenue }));
-  const terminalChart = (daySummary?.byTerminal || []).map((t) => ({ name: t.terminalId, revenue: t.revenue }));
-  const cashierChart = (daySummary?.byCashier || []).map((c) => ({ name: c.cashierName, revenue: c.revenue }));
+  const [useDemoData, setUseDemoData] = useState(false);
+
+  const DEMO_SUMMARY = {
+    totalRevenue: 48500,
+    totalOrders: 14,
+    totalRefundsCount: 1,
+    totalRefundsAmount: 1200,
+    byMethod: [
+      { method: 'UPI', revenue: 24000 },
+      { method: 'CASH', revenue: 16500 },
+      { method: 'CARD', revenue: 8000 },
+    ],
+    byTerminal: [
+      { terminalId: 'COUNTER-EBV3', revenue: 32000 },
+      { terminalId: 'COUNTER-2', revenue: 16500 },
+    ],
+    byCashier: [
+      { cashierName: 'Senior Cashier (Anitha)', revenue: 28500 },
+      { cashierName: 'POS Operator (Ramesh)', revenue: 20000 },
+    ],
+  };
+
+  const isDayEmpty = !summaryLoading && (!daySummary || daySummary.totalRevenue === 0);
+  const activeSummary = useDemoData || isDayEmpty ? DEMO_SUMMARY : daySummary;
+
+  const paymentChart = (activeSummary?.byMethod || []).map((m) => ({ name: m.method, revenue: m.revenue }));
+  const terminalChart = (activeSummary?.byTerminal || []).map((t) => ({ name: t.terminalId, revenue: t.revenue }));
+  const cashierChart = (activeSummary?.byCashier || []).map((c) => ({ name: c.cashierName, revenue: c.revenue }));
 
   if (!canViewDashboard) {
     return (
@@ -215,15 +240,35 @@ export default function PosDashboardPage() {
     <div className="min-h-[calc(100vh-4rem)] bg-neutral-100 p-3 sm:p-6 font-sans space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)]">Till & Shift Dashboard</h1>
-          <p className="text-xs text-neutral-500 mt-1">Cash reconciliation, counter performance, and daily reports.</p>
+          <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)] flex items-center gap-2">
+            <span>Till &amp; Shift Dashboard</span>
+            {isDayEmpty && (
+              <span className="text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-300 px-2 py-0.5 rounded-full font-sans uppercase">
+                Sample Representation
+              </span>
+            )}
+          </h1>
+          <p className="text-xs text-neutral-500 mt-1">Cash reconciliation, counter performance, and real-time sales visual analytics.</p>
         </div>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          className="text-xs border border-neutral-250 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-950"
-        />
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => setUseDemoData((prev) => !prev)}
+            className={`text-2xs font-bold px-3 py-2 rounded-lg border transition-all ${
+              useDemoData || isDayEmpty
+                ? 'bg-amber-50 text-amber-800 border-amber-300 shadow-2xs'
+                : 'bg-white text-neutral-600 border-neutral-200 hover:bg-neutral-50'
+            }`}
+          >
+            {useDemoData || isDayEmpty ? '📊 Showing Sample Demo Metrics' : '🟢 Showing Live Sales'}
+          </button>
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="text-xs border border-neutral-250 rounded-lg px-3 py-2 bg-white focus:outline-none focus:ring-1 focus:ring-neutral-950 font-bold"
+          />
+        </div>
       </div>
 
       {/* Shift Status Panel */}
@@ -427,14 +472,14 @@ export default function PosDashboardPage() {
             <span className="text-xs font-semibold text-neutral-500 uppercase">Total Revenue</span>
             <IndianRupee className="h-4 w-4 text-emerald-500" />
           </div>
-          <h3 className="text-2xl font-bold text-neutral-900 mt-3">{summaryLoading ? '...' : formatCurrency(daySummary?.totalRevenue || 0)}</h3>
+          <h3 className="text-2xl font-bold text-neutral-900 mt-3">{summaryLoading ? '...' : formatCurrency(activeSummary?.totalRevenue || 0)}</h3>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
             <span className="text-xs font-semibold text-neutral-500 uppercase">Total Orders</span>
             <ShoppingCart className="h-4 w-4 text-blue-500" />
           </div>
-          <h3 className="text-2xl font-bold text-neutral-900 mt-3">{summaryLoading ? '...' : daySummary?.totalOrders || 0}</h3>
+          <h3 className="text-2xl font-bold text-neutral-900 mt-3">{summaryLoading ? '...' : activeSummary?.totalOrders || 0}</h3>
         </div>
         <div className="rounded-xl border border-neutral-200 bg-white p-5 shadow-sm">
           <div className="flex items-center justify-between">
@@ -442,7 +487,7 @@ export default function PosDashboardPage() {
             <Undo2 className="h-4 w-4 text-red-500" />
           </div>
           <h3 className="text-2xl font-bold text-neutral-900 mt-3">
-            {summaryLoading ? '...' : `${daySummary?.totalRefundsCount || 0} (${formatCurrency(daySummary?.totalRefundsAmount || 0)})`}
+            {summaryLoading ? '...' : `${activeSummary?.totalRefundsCount || 0} (${formatCurrency(activeSummary?.totalRefundsAmount || 0)})`}
           </h3>
         </div>
       </div>

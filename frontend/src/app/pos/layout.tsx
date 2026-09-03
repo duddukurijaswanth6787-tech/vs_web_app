@@ -10,6 +10,7 @@ import {
   ShoppingBag,
   PackagePlus,
   Printer,
+  FileText,
   Menu,
   ShieldCheck,
   Lock,
@@ -26,6 +27,7 @@ import { PageLoader } from '@/components/feedback/FeedbackStates';
 
 const NAV_LINKS = [
   { href: '/pos', label: 'Billing', Icon: ShoppingBag },
+  { href: '/pos/quotations', label: 'Quotations', Icon: FileText },
   { href: '/pos/add-stock', label: 'Add Stock', Icon: PackagePlus },
   { href: '/pos/printers', label: 'Printers', Icon: Printer },
 ];

@@ -1362,15 +1362,28 @@ export default function DesktopPosPage() {
                 )}
               </div>
 
-              <input
-                type="text"
-                value={customer.fullName || ''}
-                onChange={(e) => setCustomer((prev) => ({ ...prev, fullName: e.target.value }))}
-                placeholder="Customer Name"
-                className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
-              />
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={customer.fullName || ''}
+                  onChange={(e) => setCustomer((prev) => ({ ...prev, fullName: e.target.value }))}
+                  placeholder="Customer Name"
+                  className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
+                />
 
-              {customerLookupResult?.found && (
+                {customer.phone && customer.phone.length === 10 && (
+                  <button
+                    type="button"
+                    onClick={() => setHistoryModalOpen(true)}
+                    className="shrink-0 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-[11px] font-bold px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-2xs transition-colors"
+                  >
+                    <History className="w-3.5 h-3.5" />
+                    <span>History</span>
+                  </button>
+                )}
+              </div>
+
+              {customerLookupResult?.found ? (
                 <div className="bg-emerald-50/80 border border-emerald-200 rounded-xl p-2.5 flex items-center justify-between gap-2">
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 text-xs font-bold text-emerald-900">
@@ -1378,7 +1391,7 @@ export default function DesktopPosPage() {
                       <span className="truncate">{customerLookupResult.fullName}</span>
                     </div>
                     <p className="text-[10px] text-emerald-700 font-medium mt-0.5">
-                      {customerLookupResult.ordersCount} Past Orders • Total: ₹{customerLookupResult.totalSpent}
+                      {customerLookupResult.ordersCount || 0} Past Orders • Total: ₹{customerLookupResult.totalSpent || 0}
                     </p>
                   </div>
                   <button
@@ -1387,10 +1400,15 @@ export default function DesktopPosPage() {
                     className="shrink-0 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold px-2.5 py-1 rounded-lg flex items-center gap-1 transition-colors"
                   >
                     <History className="w-3 h-3" />
-                    <span>History</span>
+                    <span>View Orders</span>
                   </button>
                 </div>
-              )}
+              ) : customer.phone && customer.phone.length === 10 && customer.fullName ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-xl p-2 flex items-center gap-1.5 text-[11px] text-amber-800 font-semibold">
+                  <UserCheck className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                  <span>New customer profile will be created automatically on sale.</span>
+                </div>
+              ) : null}
             </div>
           </div>
 
@@ -1872,39 +1890,51 @@ export default function DesktopPosPage() {
       )}
 
       {/* MODAL 3: CUSTOMER ORDER HISTORY */}
-      {historyModalOpen && customerLookupResult && (
+      {historyModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
           <div className="bg-white rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">
             <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
               <div className="flex items-center gap-2 text-[var(--brand-primary)] font-bold text-sm">
                 <History className="w-5 h-5" />
-                <span>Customer Order History ({customerLookupResult.fullName})</span>
+                <span>Customer Order History ({customer.fullName || customerLookupResult?.fullName || 'Walk-in Customer'})</span>
               </div>
               <button onClick={() => setHistoryModalOpen(false)} className="text-neutral-400 hover:text-neutral-700">
                 <X className="w-5 h-5" />
               </button>
             </div>
 
+            {/* Customer Details Header */}
+            <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-xs font-medium space-y-1">
+              <div className="flex justify-between text-neutral-900 font-bold">
+                <span>Name: {customer.fullName || customerLookupResult?.fullName || 'Not Provided'}</span>
+                <span className="font-mono text-[var(--brand-primary)]">+91 {customer.phone || 'N/A'}</span>
+              </div>
+              <p className="text-[10px] text-neutral-500">
+                {customerLookupResult?.found ? 'Registered Customer Profile' : 'Walk-in Customer'}
+              </p>
+            </div>
+
             {/* Metrics */}
             <div className="grid grid-cols-2 gap-3">
               <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
                 <span className="text-[11px] text-neutral-500 font-medium">Total Lifetime Orders</span>
-                <p className="text-lg font-bold text-neutral-900">{customerLookupResult.ordersCount} Orders</p>
+                <p className="text-lg font-bold text-neutral-900">{customerLookupResult?.ordersCount || 0} Orders</p>
               </div>
               <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200">
                 <span className="text-[11px] text-neutral-500 font-medium">Lifetime Spend</span>
-                <p className="text-lg font-bold text-emerald-700">₹{customerLookupResult.totalSpent}</p>
+                <p className="text-lg font-bold text-emerald-700">₹{customerLookupResult?.totalSpent || 0}</p>
               </div>
             </div>
 
             {/* List of past orders */}
             <div className="flex-1 overflow-y-auto space-y-3 pr-1">
-              {customerLookupResult.recentOrders?.length === 0 ? (
-                <div className="text-center py-8 text-neutral-400 text-xs font-medium">
-                  No past orders found for this customer.
+              {!customerLookupResult?.recentOrders || customerLookupResult.recentOrders.length === 0 ? (
+                <div className="text-center py-8 text-neutral-400 text-xs font-medium space-y-1">
+                  <p className="font-bold text-neutral-700">No previous purchase history found.</p>
+                  <p className="text-[11px]">Completed sales with mobile number +91 {customer.phone} will automatically save under their history.</p>
                 </div>
               ) : (
-                customerLookupResult.recentOrders?.map((ord) => (
+                customerLookupResult.recentOrders.map((ord) => (
                   <div key={ord.orderId} className="bg-neutral-50 p-3.5 rounded-xl border border-neutral-200 space-y-2">
                     <div className="flex items-center justify-between text-xs font-bold text-neutral-900">
                       <span className="text-[var(--brand-primary)]">{ord.orderNumber}</span>
@@ -1944,7 +1974,7 @@ export default function DesktopPosPage() {
               onClick={() => setHistoryModalOpen(false)}
               className="w-full bg-neutral-900 text-white py-2.5 rounded-xl text-xs font-bold hover:bg-neutral-800 transition-colors"
             >
-              Close
+              Close History
             </button>
           </div>
         </div>

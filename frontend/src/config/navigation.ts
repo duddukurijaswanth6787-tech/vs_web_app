@@ -228,7 +228,7 @@ export const adminNavigation: NavGroup[] = [
       {
         id: 'pos-orders',
         title: 'POS Quotations',
-        href: '/admin/quotations',
+        href: '/pos/quotations',
         icon: FileText,
         permissions: ['quotations:view'],
         implemented: true,
