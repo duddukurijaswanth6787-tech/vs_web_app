@@ -16,6 +16,7 @@ import {
 import { useTerminalId } from '@/features/pos/terminal';
 import type { PosRefundMethod, PosPaymentMethod, PosReturnResult, PosExchangeResult, ExchangeNewItem } from '@/features/pos/pos.types';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, sanitizeNonNegativeNumber } from '@/utils/validators';
 
 const REFUND_METHODS: { value: PosRefundMethod; label: string }[] = [
   { value: 'ORIGINAL', label: 'Same as payment' },
@@ -355,12 +356,13 @@ export default function PosReturnsPage() {
                           type="number"
                           min={0}
                           max={item.returnableQuantity}
+                          onKeyDown={preventNegativeKeys}
                           disabled={item.returnableQuantity === 0}
                           value={quantities[item.orderItemId] ?? 0}
                           onChange={(e) =>
                             setQty(
                               item.orderItemId,
-                              parseInt(e.target.value || '0', 10),
+                              sanitizeNonNegativeNumber(e.target.value),
                               item.returnableQuantity,
                             )
                           }

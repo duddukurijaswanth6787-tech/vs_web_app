@@ -64,6 +64,7 @@ import { generateOfflineReceiptHtml } from '@/features/pos/offline/offlineReceip
 import { PendingSale } from '@/features/pos/offline/offline.types';
 import { computeCartTotals } from '@/features/pos/pos-totals';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, sanitizeNonNegativeNumber } from '@/utils/validators';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
 import { useTerminalId } from '@/features/pos/terminal';
 
@@ -1496,6 +1497,7 @@ export default function DesktopPosPage() {
                     <input
                       type="number"
                       min={0}
+                      onKeyDown={preventNegativeKeys}
                       value={splitTenders[method]}
                       onChange={(e) =>
                         setSplitTenders((prev) => ({ ...prev, [method]: e.target.value }))
@@ -1532,6 +1534,7 @@ export default function DesktopPosPage() {
                   <input
                     type="number"
                     min={0}
+                    onKeyDown={preventNegativeKeys}
                     value={cashTendered}
                     onChange={(e) => setCashTendered(e.target.value)}
                     placeholder={String(grandTotal)}
@@ -1565,8 +1568,10 @@ export default function DesktopPosPage() {
                 <span>Discount (₹)</span>
                 <input
                   type="number"
+                  min={0}
+                  onKeyDown={preventNegativeKeys}
                   value={discountTotal}
-                  onChange={(e) => setDiscountTotal(Number(e.target.value) || 0)}
+                  onChange={(e) => setDiscountTotal(sanitizeNonNegativeNumber(e.target.value))}
                   className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1 text-right text-xs font-bold focus:outline-none focus:border-[var(--brand-primary)]"
                 />
               </div>

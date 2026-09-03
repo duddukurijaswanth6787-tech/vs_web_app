@@ -1,15 +1,81 @@
+import React from 'react';
+
 /**
- * Front-end mirror of the backend's shared validators.
+ * Front-end mirror of the backend's shared validators & input sanitizers.
  *
- * A single source of truth for what a valid Indian phone / PIN / HSN / GSTIN
- * / rupee amount looks like, so the form on the page rejects the same values
- * the server would. Every rule matches its counterpart in
- * `backend/src/common/validation/decorators.validation.ts` -- keep the two
- * files in step when either changes.
+ * A single source of truth for validating numbers, non-negative amounts,
+ * mandatory fields, phone numbers, email, GSTIN, PIN code, and stock quantities.
  *
- * Each function returns an error string on failure and `null` on success, so
- * form code reads like `error = validatePhone(input)`.
+ * Prevents negative input values, enforces mandatory fields, and provides
+ * clean reusable helpers to be imported and called across all forms.
  */
+
+/** Prevents typing minus (-), plus (+), and exponential notation (e/E) into numeric inputs. */
+export function preventNegativeKeys(e: React.KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>): void {
+  if (e.key === '-' || e.key === '+' || e.key === 'e' || e.key === 'E') {
+    e.preventDefault();
+  }
+}
+
+/** Sanitizes any input value into a guaranteed non-negative number (>= 0). */
+export function sanitizeNonNegativeNumber(value: unknown, fallback = 0): number {
+  if (value === null || value === undefined || value === '') return fallback;
+  const num = Number(String(value).replace(/-/g, ''));
+  if (!Number.isFinite(num) || num < 0) return fallback;
+  return num;
+}
+
+/** Sanitizes any input value into a guaranteed positive integer (>= 1). */
+export function sanitizePositiveNumber(value: unknown, fallback = 1): number {
+  const num = Math.floor(sanitizeNonNegativeNumber(value, fallback));
+  return num < 1 ? fallback : num;
+}
+
+/** Returns input props object to enforce non-negative values and prevent typing minus. */
+export function nonNegativeInputProps(extraMin = 0) {
+  return {
+    type: 'number',
+    min: String(extraMin),
+    onKeyDown: preventNegativeKeys,
+  };
+}
+
+/** Returns input props object to enforce positive numbers (min 1) and prevent typing minus. */
+export function positiveInputProps() {
+  return {
+    type: 'number',
+    min: '1',
+    onKeyDown: preventNegativeKeys,
+  };
+}
+
+/** Validates that a numeric amount, price, or stock is non-negative (>= 0). */
+export function validateNonNegativeNumber(value: unknown, label = 'Amount'): string | null {
+  if (value === null || value === undefined || String(value).trim() === '') {
+    return `${label} is required.`;
+  }
+  const num = Number(value);
+  if (!Number.isFinite(num)) return `Enter a valid ${label.toLowerCase()}.`;
+  if (num < 0) return `${label} cannot be negative.`;
+  return null;
+}
+
+/** Validates that a quantity or count is strictly positive (> 0). */
+export function validatePositiveNumber(value: unknown, label = 'Quantity'): string | null {
+  const reqError = validateNonNegativeNumber(value, label);
+  if (reqError) return reqError;
+  const num = Number(value);
+  if (num <= 0) return `${label} must be greater than 0.`;
+  return null;
+}
+
+/** Rejects empty values, null/undefined, and whitespace-only strings for mandatory fields. */
+export function validateRequired(value: unknown, label = 'This field'): string | null {
+  if (value === null || value === undefined) return `${label} is required.`;
+  if (typeof value === 'string' && !value.trim()) return `${label} is required.`;
+  if (typeof value === 'number' && Number.isNaN(value)) return `${label} is required.`;
+  return null;
+}
 
 /** 10-digit Indian mobile, starting 6-9. +91 or 91 prefix, spaces or hyphens allowed. */
 export function validatePhone(value: unknown): string | null {
@@ -65,12 +131,6 @@ export function validatePositiveInt(value: unknown): string | null {
   if (!Number.isFinite(num)) return 'Enter a whole number.';
   if (!Number.isInteger(num)) return 'Must be a whole number, no decimals.';
   if (num < 1) return 'Must be at least 1.';
-  return null;
-}
-
-/** Rejects empty strings and whitespace-only ones that IsString would allow. */
-export function validateRequired(value: unknown, label = 'This field'): string | null {
-  if (typeof value !== 'string' || !value.trim()) return `${label} is required.`;
   return null;
 }
 

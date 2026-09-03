@@ -16,6 +16,7 @@ import {
 import { useAuth } from '@/hooks/useAuth';
 import { hasPermission } from '@/lib/permissions/rules';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys } from '@/utils/validators';
 import {
   useCurrentShift,
   useOpenShift,
@@ -276,6 +277,7 @@ export default function PosDashboardPage() {
                 <input
                   type="number"
                   min="0"
+                  onKeyDown={preventNegativeKeys}
                   value={cashAmountInput}
                   onChange={(e) => setCashAmountInput(e.target.value)}
                   placeholder="Amount"
@@ -336,6 +338,7 @@ export default function PosDashboardPage() {
                   <input
                     type="number"
                     min="0"
+                    onKeyDown={preventNegativeKeys}
                     value={closingCashInput}
                     onChange={(e) => setClosingCashInput(e.target.value)}
                     placeholder="0.00"

@@ -16,6 +16,7 @@ import { ScanBarcodeResult, LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos
 import { useStockIn } from '@/features/inventory/inventory.hooks';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, sanitizePositiveNumber } from '@/utils/validators';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
 
 export default function AddStockPage() {
@@ -294,8 +295,9 @@ export default function AddStockPage() {
                 <input
                   type="number"
                   min={1}
+                  onKeyDown={preventNegativeKeys}
                   value={quantityReceived}
-                  onChange={(e) => setQuantityReceived(Number(e.target.value) || 0)}
+                  onChange={(e) => setQuantityReceived(sanitizePositiveNumber(e.target.value))}
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-sm font-bold text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                   required
                 />
