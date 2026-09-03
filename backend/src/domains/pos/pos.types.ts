@@ -135,6 +135,28 @@ export class SavePosCustomerDto {
   email?: string;
 }
 
+export class GenerateUpiQrDto {
+  @ApiProperty({ description: 'Amount in INR' })
+  @IsNumber()
+  @Min(0.01)
+  amount!: number;
+
+  @ApiPropertyOptional({ description: 'Merchant VPA / UPI ID' })
+  @IsOptional()
+  @IsString()
+  vpa?: string;
+
+  @ApiPropertyOptional({ description: 'Merchant Name' })
+  @IsOptional()
+  @IsString()
+  merchantName?: string;
+
+  @ApiPropertyOptional({ description: 'Transaction note / Bill reference' })
+  @IsOptional()
+  @IsString()
+  note?: string;
+}
+
 export class ScanBarcodeDto {
   @ApiProperty({ description: 'Variant Barcode or SKU code' })
   @IsString()

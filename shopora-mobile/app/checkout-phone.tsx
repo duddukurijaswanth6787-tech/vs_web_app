@@ -8,9 +8,10 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock } from 'lucide-react-native';
+import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2 } from 'lucide-react-native';
 import {
   posMobileService,
   PosMobileCartItem,
@@ -21,6 +22,7 @@ import {
 import { useOfflineSync, isNetworkFailure } from '../services/offline/useOfflineSync';
 import { ConnectivityBadge } from '../components/ConnectivityBadge';
 import { getTerminalId } from '../services/terminal';
+import { buildUpiUri, getFallbackQrImageUrl } from '../services/upi';
 
 export default function MobilePaymentScreen() {
   const router = useRouter();
@@ -41,6 +43,14 @@ export default function MobilePaymentScreen() {
 
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
+
+  // Dynamic UPI QR state
+  const [upiQrData, setUpiQrData] = useState<{ qrDataUrl: string; upiUri: string; vpa: string } | null>(null);
+  const [upiQrLoading, setUpiQrLoading] = useState(false);
+  const [storeVpa, setStoreVpa] = useState('vasanthisignature@okhdfcbank');
+  const [editingVpa, setEditingVpa] = useState(false);
+  const [tempVpa, setTempVpa] = useState('vasanthisignature@okhdfcbank');
+
   // Coupon at the till.
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(
@@ -154,6 +164,42 @@ export default function MobilePaymentScreen() {
   const splitCashN = Number(splitCash) || 0;
   const splitChangeBlocked = splitExcess > splitCashN + 0.005;
 
+  const fetchUpiQr = useCallback(async (vpaToUse?: string) => {
+    if (effectiveTotal <= 0) return;
+    const vpa = (vpaToUse || storeVpa).trim();
+    const uri = buildUpiUri({
+      vpa,
+      merchantName: "Vasanthi's Signature",
+      amount: effectiveTotal,
+      note: `POS Sale ${customer?.phone ? customer.phone.slice(-4) : ''}`,
+    });
+    // Set initial QR image immediately (instant 0ms render)
+    setUpiQrData({
+      qrDataUrl: getFallbackQrImageUrl(uri),
+      upiUri: uri,
+      vpa,
+    });
+    try {
+      const res = await posMobileService.generateUpiQr({
+        amount: effectiveTotal,
+        vpa,
+        merchantName: "Vasanthi's Signature",
+        note: `POS Sale ${customer?.phone ? customer.phone.slice(-4) : ''}`,
+      });
+      if (res?.qrDataUrl) {
+        setUpiQrData(res);
+      }
+    } catch (e) {
+      console.warn('Using instant standard QR generator fallback:', e);
+    }
+  }, [effectiveTotal, storeVpa, customer]);
+
+  useEffect(() => {
+    if (paymentMethod === 'UPI') {
+      fetchUpiQr();
+    }
+  }, [paymentMethod, effectiveTotal, fetchUpiQr]);
+
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
     if (!code) return;
@@ -207,9 +253,6 @@ export default function MobilePaymentScreen() {
           orderNumber: res.order.orderNumber,
           grandTotal: res.order.grandTotal.toString(),
           completedOn: 'Shopora Mobile App',
-          // Carried through so the success screen can request a printable
-          // receipt (POST /pos/printers/preview-receipt) without needing to
-          // refetch the order.
           cartJson: JSON.stringify(cartItems),
           customerJson: JSON.stringify(customer),
           paymentMethod,
@@ -217,9 +260,6 @@ export default function MobilePaymentScreen() {
       });
     } catch (err: unknown) {
       if (isNetworkFailure(err)) {
-        // Backend unreachable -- queue the sale locally instead of losing it.
-        // The customer still gets a confirmation; the order itself is only
-        // created once this syncs (see services/offline/useOfflineSync.ts).
         const sale = await offlineSync.queueSale(
           { items: cartItems, paymentMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined },
           { items: cartItems, customer, paymentMethod, grandTotal },
@@ -244,7 +284,7 @@ export default function MobilePaymentScreen() {
   };
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={{ padding: 20 }}>
+    <ScrollView style={styles.container} contentContainerStyle={{ padding: 16, paddingBottom: 36 }} showsVerticalScrollIndicator={false}>
       <ConnectivityBadge
         isBackendReachable={offlineSync.isBackendReachable}
         pendingCount={offlineSync.pendingCount}
@@ -314,18 +354,108 @@ export default function MobilePaymentScreen() {
             On Credit
           </Text>
         </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.methodCard, paymentMethod === 'SPLIT' && styles.methodCardActive]}
-          onPress={() => setPaymentMethod('SPLIT')}
-          activeOpacity={0.85}
-        >
-          <Sparkles size={24} color={paymentMethod === 'SPLIT' ? '#ffffff' : '#0284c7'} />
-          <Text style={[styles.methodText, paymentMethod === 'SPLIT' && styles.methodTextActive]}>
-            Split
-          </Text>
-        </TouchableOpacity>
       </View>
+
+      {/* Dynamic UPI QR Code Card */}
+      {paymentMethod === 'UPI' && (
+        <View style={styles.upiCard}>
+          <View style={styles.upiHeaderRow}>
+            <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+              <QrCode size={18} color="#0284c7" style={{ marginRight: 6 }} />
+              <Text style={styles.upiCardTitle}>Dynamic UPI QR Code</Text>
+            </View>
+            <View style={styles.liveBadge}>
+              <Text style={styles.liveBadgeText}>NPCI DIRECT UPI</Text>
+            </View>
+          </View>
+
+          <Text style={styles.upiSub}>
+            Scan with Google Pay, PhonePe, Paytm, BHIM, Cred, or any banking app.
+          </Text>
+
+          <View style={styles.qrContainer}>
+            {upiQrLoading ? (
+              <View style={styles.qrLoaderBox}>
+                <ActivityIndicator size="large" color="#0284c7" />
+                <Text style={styles.qrLoaderText}>Generating Dynamic QR...</Text>
+              </View>
+            ) : upiQrData?.qrDataUrl ? (
+              <View style={{ alignItems: 'center' }}>
+                <Image
+                  source={{ uri: upiQrData.qrDataUrl }}
+                  style={styles.qrImage}
+                  resizeMode="contain"
+                />
+                <TouchableOpacity
+                  style={styles.refreshQrBtn}
+                  onPress={() => fetchUpiQr()}
+                  activeOpacity={0.8}
+                >
+                  <RefreshCw size={12} color="#0284c7" style={{ marginRight: 4 }} />
+                  <Text style={styles.refreshQrText}>Refresh QR</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => fetchUpiQr()} style={styles.qrLoaderBox}>
+                <QrCode size={44} color="#94a3b8" />
+                <Text style={[styles.qrLoaderText, { color: '#0284c7', marginTop: 8 }]}>
+                  Tap to Generate QR Code
+                </Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          <View style={styles.upiAmountBox}>
+            <Text style={styles.upiAmountLabel}>Amount to Pay</Text>
+            <Text style={styles.upiAmountValue}>₹{effectiveTotal.toFixed(2)}</Text>
+          </View>
+
+          <View style={styles.upiVpaRow}>
+            <Text style={styles.upiVpaLabel}>Store VPA: </Text>
+            {editingVpa ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
+                <TextInput
+                  style={styles.vpaInput}
+                  value={tempVpa}
+                  onChangeText={setTempVpa}
+                  autoCapitalize="none"
+                  placeholder="e.g. vasanthi@upi"
+                />
+                <TouchableOpacity
+                  style={styles.vpaSaveBtn}
+                  onPress={() => {
+                    const clean = tempVpa.trim() || 'vasanthisignature@okhdfcbank';
+                    setStoreVpa(clean);
+                    setEditingVpa(false);
+                    fetchUpiQr(clean);
+                  }}
+                >
+                  <Text style={styles.vpaSaveBtnText}>Save</Text>
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1, justifyContent: 'space-between' }}>
+                <Text style={styles.upiVpaText} numberOfLines={1}>{storeVpa}</Text>
+                <TouchableOpacity
+                  onPress={() => {
+                    setTempVpa(storeVpa);
+                    setEditingVpa(true);
+                  }}
+                  style={styles.vpaEditBtn}
+                >
+                  <Text style={styles.upiVpaEdit}>Edit UPI</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.upiAppsBadgeRow}>
+            <Text style={styles.upiAppsBadgeText}>
+              GPay • PhonePe • Paytm • BHIM • Cred • Amazon Pay (0% Gateway Fee)
+            </Text>
+          </View>
+        </View>
+      )}
 
       {paymentMethod === 'SPLIT' && (
         <View style={styles.splitBox}>
@@ -519,6 +649,173 @@ const styles = StyleSheet.create({
   },
   methodTextActive: {
     color: '#ffffff',
+  },
+  upiCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    marginBottom: 20,
+    alignItems: 'center',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 8,
+    elevation: 2,
+  },
+  upiHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginBottom: 6,
+  },
+  upiCardTitle: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  liveBadge: {
+    backgroundColor: '#ecfdf5',
+    borderColor: '#a7f3d0',
+    borderWidth: 1,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  liveBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#059669',
+    letterSpacing: 0.5,
+  },
+  upiSub: {
+    fontSize: 11,
+    color: '#64748b',
+    textAlign: 'center',
+    marginBottom: 14,
+  },
+  qrContainer: {
+    backgroundColor: '#ffffff',
+    padding: 12,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: 230,
+    height: 230,
+    marginBottom: 12,
+  },
+  qrImage: {
+    width: 190,
+    height: 190,
+  },
+  qrLoaderBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  qrLoaderText: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 8,
+    fontWeight: '600',
+  },
+  refreshQrBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginTop: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+  },
+  refreshQrText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0284c7',
+  },
+  upiAmountBox: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  upiAmountLabel: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  upiAmountValue: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#0284c7',
+    marginTop: 2,
+  },
+  upiVpaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderRadius: 8,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    width: '100%',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    marginBottom: 10,
+  },
+  upiVpaLabel: {
+    fontSize: 11,
+    fontWeight: 'bold',
+    color: '#64748b',
+  },
+  upiVpaText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0f172a',
+    flex: 1,
+  },
+  vpaEditBtn: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    backgroundColor: '#e0f2fe',
+    borderRadius: 4,
+  },
+  upiVpaEdit: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#0369a1',
+  },
+  vpaInput: {
+    flex: 1,
+    fontSize: 11,
+    color: '#0f172a',
+    padding: 2,
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#0284c7',
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  vpaSaveBtn: {
+    backgroundColor: '#0284c7',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
+  },
+  vpaSaveBtnText: {
+    fontSize: 10,
+    fontWeight: 'bold',
+    color: '#ffffff',
+  },
+  upiAppsBadgeRow: {
+    paddingTop: 4,
+  },
+  upiAppsBadgeText: {
+    fontSize: 9,
+    color: '#94a3b8',
+    fontWeight: '700',
+    textAlign: 'center',
   },
   summaryBox: {
     backgroundColor: '#ffffff',

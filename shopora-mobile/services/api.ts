@@ -530,6 +530,19 @@ export const posMobileService = {
       recentOrders?: any[];
     }>(res);
   },
+
+  /** POST /pos/upi-qr -- generate dynamic NPCI UPI QR code for instant payment. */
+  async generateUpiQr(payload: { amount: number; vpa?: string; merchantName?: string; note?: string }) {
+    const res = await posApiClient.post('/pos/upi-qr', payload);
+    return unwrap<{
+      vpa: string;
+      merchantName: string;
+      amount: number;
+      note: string;
+      upiUri: string;
+      qrDataUrl: string;
+    }>(res);
+  },
 };
 
 // ─── Dashboard: home screen stats ─────────────────────────────────────────────

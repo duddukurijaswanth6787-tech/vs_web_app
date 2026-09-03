@@ -39,6 +39,7 @@ import {
   CreatePosReturnDto,
   CreatePosExchangeDto,
   PosRefundMethodType,
+  GenerateUpiQrDto,
 } from './pos.types';
 
 @Injectable()
@@ -995,6 +996,28 @@ export class PosService {
 
   async listPosCustomers(params: { search?: string; page?: number; limit?: number }) {
     return this.repository.listPosCustomers(params);
+  }
+
+  async generateUpiQrCode(dto: GenerateUpiQrDto) {
+    const vpa = dto.vpa?.trim() || 'vasanthisignature@okhdfcbank';
+    const merchantName = dto.merchantName?.trim() || "Vasanthi's Signature";
+    const amount = Number(dto.amount);
+    const note = dto.note?.trim() || 'POS In-Store Bill';
+
+    // Build standard NPCI UPI Intent URI
+    const upiUri = `upi://pay?pa=${encodeURIComponent(vpa)}&pn=${encodeURIComponent(merchantName)}&am=${amount.toFixed(2)}&cu=INR&tn=${encodeURIComponent(note)}`;
+
+    // Generate QR base64 data URL using BarcodeService
+    const qrDataUrl = await this.barcodeService.generateQrCodeDataUrl(upiUri);
+
+    return {
+      vpa,
+      merchantName,
+      amount,
+      note,
+      upiUri,
+      qrDataUrl,
+    };
   }
 
   async generateBarcodeImage(dto: GenerateBarcodeImageDto): Promise<Buffer> {

@@ -45,6 +45,7 @@ import {
   ClosePosShiftDto,
   PosCashMovementDto,
   SavePosCustomerDto,
+  GenerateUpiQrDto,
   DEFAULT_TERMINAL_ID,
 } from './pos.types';
 import type { Response } from 'express';
@@ -352,6 +353,17 @@ export class PosController {
       page: page ? parseInt(page, 10) : 1,
       limit: limit ? parseInt(limit, 10) : 20,
     });
+  }
+
+  @Post('upi-qr')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('pos:view')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Generate Dynamic NPCI UPI QR Code for in-store instant scan-to-pay',
+  })
+  async generateUpiQr(@Body() dto: GenerateUpiQrDto) {
+    return this.posService.generateUpiQrCode(dto);
   }
 
   @Get('returns/lookup')
