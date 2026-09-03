@@ -565,10 +565,10 @@ export default function MobilePaymentScreen() {
                 </View>
               ) : razorpayQr?.imageUrl ? (
                 <View>
-                  <View style={[styles.qrContainer, { width: 250, height: 310, padding: 8 }]}>
+                  <View style={[styles.qrContainer, { width: 300, height: 380, padding: 8, alignSelf: 'center' }]}>
                     <Image
                       source={{ uri: razorpayQr.imageUrl }}
-                      style={{ width: 234, height: 294 }}
+                      style={{ width: 284, height: 364 }}
                       resizeMode="contain"
                     />
                   </View>
@@ -608,7 +608,7 @@ export default function MobilePaymentScreen() {
                   </View>
                 </View>
               ) : (
-                <View style={[styles.qrContainer, { width: 250, height: 270, justifyContent: 'center', padding: 18, backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }]}>
+                <View style={[styles.qrContainer, { width: 280, height: 270, justifyContent: 'center', padding: 18, backgroundColor: '#f0f9ff', borderColor: '#bae6fd', alignSelf: 'center' }]}>
                   <Sparkles size={40} color="#0284c7" style={{ alignSelf: 'center', marginBottom: 10 }} />
                   <Text style={{ color: '#0369a1', fontSize: 15, fontWeight: '800', textAlign: 'center', marginBottom: 6 }}>
                     Razorpay Dynamic QR
@@ -655,8 +655,8 @@ export default function MobilePaymentScreen() {
                 Scan with Google Pay, PhonePe, Paytm, BHIM, Cred, or any banking app.
               </Text>
 
-              <View style={styles.qrContainer}>
-                <UpiQrView value={currentUpiUri} size={190} />
+              <View style={[styles.qrContainer, { width: 280, height: 280, justifyContent: 'center', alignItems: 'center', alignSelf: 'center' }]}>
+                <UpiQrView value={currentUpiUri} size={240} />
               </View>
 
               <View style={styles.upiAmountBox}>
