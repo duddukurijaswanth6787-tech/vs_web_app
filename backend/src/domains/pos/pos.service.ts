@@ -1857,4 +1857,74 @@ export class PosService {
     to.setHours(23, 59, 59, 999);
     return this.repository.getPosDaySummary(from, to);
   }
+
+  private async getRazorpayClient(): Promise<any> {
+    const Razorpay = require('razorpay');
+    const [keyIdSetting, keySecretSetting] = await Promise.all([
+      this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_id' } }),
+      this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_secret' } }),
+    ]);
+    const keyId = keyIdSetting?.value || process.env.RAZORPAY_KEY_ID || 'rzp_live_TSGHBbQLHYa2MW';
+    const keySecret = keySecretSetting?.value || process.env.RAZORPAY_KEY_SECRET || 'B2o4qv6I0YuWX785GDPjwZpS';
+    return new Razorpay({ key_id: keyId, key_secret: keySecret });
+  }
+
+  async createRazorpayQrCode(
+    amount: number,
+    description = 'POS Counter Bill',
+    notes: Record<string, string> = {},
+  ) {
+    const razorpay = await this.getRazorpayClient();
+    const amountInPaise = Math.round(amount * 100);
+    const closeBy = Math.floor(Date.now() / 1000) + 900;
+
+    try {
+      const qr: any = await razorpay.qrCode.create({
+        type: 'upi_qr',
+        name: "Vasanthi's Signature",
+        usage: 'single_use',
+        fixed_amount: true,
+        payment_amount: amountInPaise,
+        description,
+        close_by: closeBy,
+        notes,
+      });
+
+      return {
+        qrId: qr.id,
+        imageUrl: qr.image_url,
+        amount: Number(qr.payment_amount) / 100,
+        status: qr.status,
+        closeBy: qr.close_by,
+        paymentsAmountReceived: (Number(qr.payments_amount_received) || 0) / 100,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Razorpay QR code generation failed: ${msg}`);
+      throw new BadRequestException(`Razorpay QR error: ${msg}`);
+    }
+  }
+
+  async fetchRazorpayQrStatus(qrId: string) {
+    const razorpay = await this.getRazorpayClient();
+    try {
+      const qr: any = await razorpay.qrCode.fetch(qrId);
+      const amountDue = (Number(qr.payment_amount) || 0) / 100;
+      const amountReceived = (Number(qr.payments_amount_received) || 0) / 100;
+      const isPaid = amountReceived >= amountDue && amountDue > 0;
+
+      return {
+        qrId: qr.id,
+        status: isPaid ? 'PAID' : qr.status,
+        isPaid,
+        amountDue,
+        amountReceived,
+        closeBy: qr.close_by,
+      };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      this.logger.error(`Failed to fetch Razorpay QR status: ${msg}`);
+      throw new BadRequestException(`Razorpay status check error: ${msg}`);
+    }
+  }
 }

@@ -520,4 +520,22 @@ export class PosController {
   async getPosAnalyticsSummary(@Query('date') date?: string) {
     return this.posService.getPosDaySummary(date);
   }
+
+  @Post('razorpay-qr')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Generate live Razorpay Dynamic UPI QR code for POS' })
+  async createRazorpayQr(
+    @Body() body: { amount: number; description?: string; notes?: Record<string, string> },
+  ) {
+    return this.posService.createRazorpayQrCode(body.amount, body.description, body.notes);
+  }
+
+  @Get('razorpay-qr/:qrId/status')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Poll real-time status of Razorpay QR for POS auto-complete' })
+  async getRazorpayQrStatus(@Param('qrId') qrId: string) {
+    return this.posService.fetchRazorpayQrStatus(qrId);
+  }
 }

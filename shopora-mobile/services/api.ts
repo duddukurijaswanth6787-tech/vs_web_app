@@ -935,16 +935,26 @@ export interface RazorpayQrStatus {
 }
 
 export const paymentService = {
-  /** POST /payments/razorpay-qr — generate a dynamic Razorpay UPI QR code */
+  /** POST /pos/razorpay-qr — generate a dynamic Razorpay UPI QR code */
   async createRazorpayQr(amount: number, description = 'POS Bill', notes: Record<string, string> = {}): Promise<RazorpayQrData> {
-    const res = await posApiClient.post('/payments/razorpay-qr', { amount, description, notes });
-    return unwrap<RazorpayQrData>(res);
+    try {
+      const res = await posApiClient.post('/pos/razorpay-qr', { amount, description, notes });
+      return unwrap<RazorpayQrData>(res);
+    } catch {
+      const res = await posApiClient.post('/payments/razorpay-qr', { amount, description, notes });
+      return unwrap<RazorpayQrData>(res);
+    }
   },
 
-  /** GET /payments/razorpay-qr/:qrId/status — poll payment status */
+  /** GET /pos/razorpay-qr/:qrId/status — poll payment status */
   async getRazorpayQrStatus(qrId: string): Promise<RazorpayQrStatus> {
-    const res = await posApiClient.get(`/payments/razorpay-qr/${qrId}/status`);
-    return unwrap<RazorpayQrStatus>(res);
+    try {
+      const res = await posApiClient.get(`/pos/razorpay-qr/${qrId}/status`);
+      return unwrap<RazorpayQrStatus>(res);
+    } catch {
+      const res = await posApiClient.get(`/payments/razorpay-qr/${qrId}/status`);
+      return unwrap<RazorpayQrStatus>(res);
+    }
   },
 };
 
