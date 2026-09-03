@@ -37,6 +37,15 @@ const SYSTEM_ROLES = [
     isSystem: true,
   },
   {
+    name: 'pos_app',
+    displayName: 'POS App',
+    description:
+      'Shopora Mobile POS App operator role for counter sales, billing, barcode scanning, stock intake, and quotations.',
+    scope: 'DOMAIN' as const,
+    hierarchy: 40,
+    isSystem: true,
+  },
+  {
     name: 'customer',
     displayName: 'Customer',
     description: 'Customer access',

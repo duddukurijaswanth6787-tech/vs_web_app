@@ -15,6 +15,8 @@ const SYSTEM_ROLES = [
   { name: 'super_admin', displayName: 'Super Admin', description: 'Full system access', scope: 'GLOBAL' as const, hierarchy: 100, isSystem: true },
   { name: 'admin', displayName: 'Admin', description: 'Administrative access', scope: 'GLOBAL' as const, hierarchy: 80, isSystem: true },
   { name: 'staff', displayName: 'Staff', description: 'Staff member access', scope: 'DOMAIN' as const, hierarchy: 50, isSystem: true },
+  { name: 'pos_operator', displayName: 'POS Operator', description: 'Billing counter access only — confined to the standalone Shopora POS screen, no admin console', scope: 'DOMAIN' as const, hierarchy: 40, isSystem: true },
+  { name: 'pos_app', displayName: 'POS App', description: 'Shopora Mobile POS App operator role for counter sales, billing, barcode scanning, stock intake, and quotations.', scope: 'DOMAIN' as const, hierarchy: 40, isSystem: true },
   { name: 'customer', displayName: 'Customer', description: 'Customer access', scope: 'CUSTOM' as const, hierarchy: 10, isSystem: true },
 ];
 
