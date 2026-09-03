@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { View, StyleSheet } from 'react-native';
-import Svg, { Path } from 'react-native-svg';
-import { QrCodeEncoder } from '../services/qr-matrix';
+import Svg, { Path, Rect } from 'react-native-svg';
+import QRCode from 'qrcode';
 
 interface UpiQrViewProps {
   value: string;
@@ -12,39 +12,39 @@ interface UpiQrViewProps {
 
 export const UpiQrView: React.FC<UpiQrViewProps> = ({
   value,
-  size = 200,
-  color = '#0f172a',
+  size = 220,
+  color = '#000000',
   backgroundColor = '#ffffff',
 }) => {
-  const { pathData, matrixSize } = useMemo(() => {
+  const { pathData, viewBoxSize } = useMemo(() => {
     try {
-      if (!value) return { pathData: '', matrixSize: 21 };
-      const matrix = QrCodeEncoder.encode(value);
-      const mSize = matrix.length;
+      if (!value) return { pathData: '', viewBoxSize: 21 };
+      
+      // Generate standard ISO/IEC 18004 QR Code Matrix
+      const qr = QRCode.create(value, { errorCorrectionLevel: 'M' });
+      const mSize = qr.modules.size;
+      const margin = 4; // Standard 4-module quiet zone for fast camera detection
+      const totalSize = mSize + margin * 2;
+      
       let d = '';
-
       for (let r = 0; r < mSize; r++) {
         for (let c = 0; c < mSize; c++) {
-          if (matrix[r][c]) {
-            // Add square to SVG path
-            d += `M${c},${r}h1v1h-1z `;
+          if (qr.modules.get(r, c)) {
+            // Draw 1x1 square module
+            d += `M${c + margin},${r + margin}h1v1h-1z `;
           }
         }
       }
-      return { pathData: d, matrixSize: mSize };
+      return { pathData: d, viewBoxSize: totalSize };
     } catch (e) {
-      console.warn('QR matrix encoding fallback:', e);
-      return { pathData: '', matrixSize: 21 };
+      console.warn('QRCode generation failed:', e);
+      return { pathData: '', viewBoxSize: 21 };
     }
   }, [value]);
 
   if (!pathData) {
     return <View style={{ width: size, height: size, backgroundColor }} />;
   }
-
-  // Add 2 modules quiet zone margin
-  const quietZone = 2;
-  const viewBoxSize = matrixSize + quietZone * 2;
 
   return (
     <View style={[styles.container, { width: size, height: size, backgroundColor }]}>
@@ -53,11 +53,8 @@ export const UpiQrView: React.FC<UpiQrViewProps> = ({
         height={size}
         viewBox={`0 0 ${viewBoxSize} ${viewBoxSize}`}
       >
-        <Path
-          d={pathData}
-          fill={color}
-          transform={`translate(${quietZone}, ${quietZone})`}
-        />
+        <Rect width={viewBoxSize} height={viewBoxSize} fill={backgroundColor} />
+        <Path d={pathData} fill={color} />
       </Svg>
     </View>
   );
@@ -67,7 +64,8 @@ const styles = StyleSheet.create({
   container: {
     alignItems: 'center',
     justifyContent: 'center',
-    borderRadius: 8,
-    overflow: 'hidden',
+    backgroundColor: '#ffffff',
+    padding: 8,
+    borderRadius: 12,
   },
 });

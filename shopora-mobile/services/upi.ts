@@ -4,7 +4,7 @@
 
 export interface UpiPaymentDetails {
   vpa: string;
-  merchantName: string;
+  merchantName?: string;
   amount: number;
   note?: string;
   orderNumber?: string;
@@ -16,9 +16,12 @@ export interface UpiPaymentDetails {
  */
 export function buildUpiUri(details: UpiPaymentDetails): string {
   const vpa = (details.vpa || 'vasanthisignature@okhdfcbank').trim();
-  const pn = encodeURIComponent(details.merchantName || "Vasanthi's Signature");
+  // Sanitize merchant name for UPI banking app compatibility (avoid quotes/special chars)
+  const rawName = (details.merchantName || 'Vasanthi Signature').replace(/[^a-zA-Z0-9 ]/g, '').trim();
+  const pn = encodeURIComponent(rawName || 'Vasanthi Signature');
   const am = details.amount > 0 ? details.amount.toFixed(2) : '1.00';
-  const tn = encodeURIComponent(details.note || 'POS In-Store Bill');
+  const rawNote = (details.note || 'POS Counter Bill').replace(/[^a-zA-Z0-9 ]/g, ' ').trim();
+  const tn = encodeURIComponent(rawNote || 'POS Bill');
   
   return `upi://pay?pa=${vpa}&pn=${pn}&am=${am}&cu=INR&tn=${tn}`;
 }
