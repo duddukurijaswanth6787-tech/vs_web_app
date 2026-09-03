@@ -34,6 +34,7 @@ import { offlineScanCacheDb, normalizeScanCacheKey } from '../services/offline/o
 import { CachedScanResult, ScanBarcodeResult } from '../services/offline/offline.types';
 
 const SAMPLE_BARCODES = [
+  { label: '⚡ Test ₹2 (890000000002)', code: '890000000002' },
   { label: 'Anarkali XL (890351069409)', code: '890351069409' },
   { label: 'Anarkali M (890365090266)', code: '890365090266' },
   { label: 'Anarkali L (890589337088)', code: '890589337088' },
@@ -52,6 +53,10 @@ export function setGlobalCart(newCart: PosMobileCartItem[] | ((prev: PosMobileCa
     globalCart = newCart;
   }
   cartListeners.forEach((l) => l());
+}
+
+export function getGlobalCart() {
+  return [...globalCart];
 }
 
 export function useGlobalCart() {

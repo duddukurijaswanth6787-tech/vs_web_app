@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2 } from 'lucide-react-native';
+import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import {
   posMobileService,
   paymentService,
@@ -26,6 +26,7 @@ import { ConnectivityBadge } from '../components/ConnectivityBadge';
 import { getTerminalId } from '../services/terminal';
 import { buildUpiUri } from '../services/upi';
 import { UpiQrView } from '../components/UpiQrView';
+import { getGlobalCart } from './sale';
 import * as SecureStore from 'expo-secure-store';
 
 const STORE_VPA_KEY = 'pos_store_upi_vpa';
@@ -163,9 +164,15 @@ export default function MobilePaymentScreen() {
 
   let cartItems: PosMobileCartItem[] = [];
   try {
-    if (cartJson) cartItems = JSON.parse(cartJson);
+    if (cartJson) {
+      const cleanJson = cartJson.startsWith('%') ? decodeURIComponent(cartJson) : cartJson;
+      cartItems = typeof cleanJson === 'string' ? JSON.parse(cleanJson) : cleanJson;
+    }
   } catch (e) {
     console.error('Failed to parse cart items:', e);
+  }
+  if (!Array.isArray(cartItems) || cartItems.length === 0) {
+    cartItems = getGlobalCart();
   }
 
   const grandTotal = Number(grandTotalStr || '0');
@@ -192,11 +199,16 @@ export default function MobilePaymentScreen() {
     });
   }, [storeVpa, effectiveTotal, customer?.phone]);
 
-  // Fetch Razorpay Dynamic QR
+  const [razorpaySecondsLeft, setRazorpaySecondsLeft] = useState<number>(120);
+  const [isQrExpired, setIsQrExpired] = useState<boolean>(false);
+
+  // Fetch Razorpay Dynamic QR on Demand
   const fetchRazorpayQr = useCallback(async () => {
     setRazorpayLoading(true);
     setRazorpayError('');
     setRazorpayPaid(false);
+    setIsQrExpired(false);
+    setRazorpaySecondsLeft(120);
     try {
       const data = await paymentService.createRazorpayQr(
         effectiveTotal,
@@ -212,11 +224,30 @@ export default function MobilePaymentScreen() {
     }
   }, [effectiveTotal, customer?.phone, terminalId]);
 
+  // 2-Minute Expiry Countdown Timer
   useEffect(() => {
-    if (paymentMethod === 'UPI' && upiProvider === 'RAZORPAY') {
-      fetchRazorpayQr();
+    if (
+      paymentMethod !== 'UPI' ||
+      upiProvider !== 'RAZORPAY' ||
+      !razorpayQr?.qrId ||
+      razorpayPaid ||
+      isQrExpired
+    ) {
+      return;
     }
-  }, [paymentMethod, upiProvider, fetchRazorpayQr]);
+
+    const timer = setInterval(() => {
+      setRazorpaySecondsLeft((prev) => {
+        if (prev <= 1) {
+          setIsQrExpired(true);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [paymentMethod, upiProvider, razorpayQr?.qrId, razorpayPaid, isQrExpired]);
 
   // Polling Razorpay QR status every 2.5s for automatic verification
   useEffect(() => {
@@ -225,6 +256,7 @@ export default function MobilePaymentScreen() {
       upiProvider !== 'RAZORPAY' ||
       !razorpayQr?.qrId ||
       razorpayPaid ||
+      isQrExpired ||
       loading
     ) {
       return;
@@ -245,7 +277,7 @@ export default function MobilePaymentScreen() {
     }, 2500);
 
     return () => clearInterval(interval);
-  }, [paymentMethod, upiProvider, razorpayQr?.qrId, razorpayPaid, loading]);
+  }, [paymentMethod, upiProvider, razorpayQr?.qrId, razorpayPaid, isQrExpired, loading]);
 
   const handleApplyCoupon = async () => {
     const code = couponInput.trim();
@@ -515,6 +547,22 @@ export default function MobilePaymentScreen() {
                     Completing sale and generating receipt...
                   </Text>
                 </View>
+              ) : isQrExpired ? (
+                <View style={[styles.qrContainer, { width: 250, height: 310, justifyContent: 'center', padding: 16, backgroundColor: '#fef2f2' }]}>
+                  <AlertCircle size={44} color="#dc2626" />
+                  <Text style={{ marginTop: 8, color: '#991b1b', fontWeight: 'bold', fontSize: 16, textAlign: 'center' }}>
+                    QR Expired (2 Min Limit)
+                  </Text>
+                  <Text style={{ color: '#b91c1c', fontSize: 12, textAlign: 'center', marginTop: 4, marginBottom: 14 }}>
+                    For security, dynamic UPI QR expires after 2 minutes.
+                  </Text>
+                  <TouchableOpacity
+                    style={[styles.vpaSaveBtn, { backgroundColor: '#0284c7', paddingHorizontal: 16 }]}
+                    onPress={fetchRazorpayQr}
+                  >
+                    <Text style={styles.vpaSaveBtnText}>🔄 Generate New QR</Text>
+                  </TouchableOpacity>
+                </View>
               ) : razorpayQr?.imageUrl ? (
                 <View>
                   <View style={[styles.qrContainer, { width: 250, height: 310, padding: 8 }]}>
@@ -525,6 +573,33 @@ export default function MobilePaymentScreen() {
                     />
                   </View>
 
+                  {/* 2-Minute Countdown Timer Badge */}
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', marginBottom: 8 }}>
+                    <View
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: razorpaySecondsLeft <= 30 ? '#fee2e2' : '#e0f2fe',
+                        paddingHorizontal: 12,
+                        paddingVertical: 5,
+                        borderRadius: 20,
+                        borderWidth: 1,
+                        borderColor: razorpaySecondsLeft <= 30 ? '#fca5a5' : '#bae6fd',
+                      }}
+                    >
+                      <Clock size={13} color={razorpaySecondsLeft <= 30 ? '#dc2626' : '#0284c7'} style={{ marginRight: 6 }} />
+                      <Text
+                        style={{
+                          fontSize: 12,
+                          fontWeight: 'bold',
+                          color: razorpaySecondsLeft <= 30 ? '#dc2626' : '#0369a1',
+                        }}
+                      >
+                        Expires in {Math.floor(razorpaySecondsLeft / 60)}:{(razorpaySecondsLeft % 60).toString().padStart(2, '0')}
+                      </Text>
+                    </View>
+                  </View>
+
                   <View style={styles.autoVerifyPill}>
                     <RefreshCw size={14} color="#0284c7" style={{ marginRight: 6 }} />
                     <Text style={styles.autoVerifyText}>
@@ -533,18 +608,19 @@ export default function MobilePaymentScreen() {
                   </View>
                 </View>
               ) : (
-                <View style={[styles.qrContainer, { height: 210, justifyContent: 'center', padding: 16 }]}>
-                  <Text style={{ color: '#0369a1', fontSize: 13, fontWeight: '700', textAlign: 'center', marginBottom: 8 }}>
-                    Razorpay Gateway Setup Required
+                <View style={[styles.qrContainer, { width: 250, height: 270, justifyContent: 'center', padding: 18, backgroundColor: '#f0f9ff', borderColor: '#bae6fd' }]}>
+                  <Sparkles size={40} color="#0284c7" style={{ alignSelf: 'center', marginBottom: 10 }} />
+                  <Text style={{ color: '#0369a1', fontSize: 15, fontWeight: '800', textAlign: 'center', marginBottom: 6 }}>
+                    Razorpay Dynamic QR
                   </Text>
-                  <Text style={{ color: '#64748b', fontSize: 11, textAlign: 'center', marginBottom: 14 }}>
-                    To deposit directly into your Razorpay Account with auto-verification, enter your Razorpay Key ID & Secret in Web Admin.
+                  <Text style={{ color: '#64748b', fontSize: 11, textAlign: 'center', marginBottom: 18, lineHeight: 16 }}>
+                    Tap below to generate a live dynamic QR locked to ₹{effectiveTotal.toFixed(2)} with 2-minute timer & auto-verification.
                   </Text>
                   <TouchableOpacity
-                    style={[styles.vpaSaveBtn, { backgroundColor: '#0284c7', paddingHorizontal: 16 }]}
-                    onPress={() => setUpiProvider('DIRECT_NPCI')}
+                    style={[styles.vpaSaveBtn, { backgroundColor: '#0284c7', paddingHorizontal: 16, paddingVertical: 12, width: '100%', alignItems: 'center' }]}
+                    onPress={fetchRazorpayQr}
                   >
-                    <Text style={styles.vpaSaveBtnText}>Use Direct NPCI QR (0% Fee)</Text>
+                    <Text style={[styles.vpaSaveBtnText, { fontSize: 13, fontWeight: 'bold' }]}>⚡ Generate Dynamic QR</Text>
                   </TouchableOpacity>
                 </View>
               )}
@@ -746,15 +822,32 @@ export default function MobilePaymentScreen() {
       <TouchableOpacity
         style={[
           styles.payBtn,
+          razorpayPaid && { backgroundColor: '#16a34a' },
           !offlineSync.isBackendReachable && styles.payBtnOffline,
           shiftRequired && styles.payBtnDisabled,
         ]}
-        onPress={handleCompleteSale}
+        onPress={() => {
+          if (paymentMethod === 'UPI' && upiProvider === 'RAZORPAY' && !razorpayQr && !razorpayPaid) {
+            fetchRazorpayQr();
+          } else {
+            handleCompleteSale();
+          }
+        }}
         disabled={loading || shiftRequired || (paymentMethod === 'SPLIT' && (splitShortfall > 0 || splitChangeBlocked))}
         activeOpacity={0.85}
       >
         {loading ? (
           <ActivityIndicator size="small" color="#ffffff" />
+        ) : razorpayPaid ? (
+          <>
+            <CheckCircle2 size={20} color="#ffffff" style={{ marginRight: 8 }} />
+            <Text style={styles.payBtnText}>✓ PAYMENT RECEIVED — COMPLETE SALE</Text>
+          </>
+        ) : paymentMethod === 'UPI' && upiProvider === 'RAZORPAY' && !razorpayQr ? (
+          <>
+            <Sparkles size={20} color="#ffffff" style={{ marginRight: 8 }} />
+            <Text style={styles.payBtnText}>⚡ GENERATE DYNAMIC QR (₹{effectiveTotal.toFixed(2)})</Text>
+          </>
         ) : (
           <>
             <Check size={20} color="#ffffff" style={{ marginRight: 8 }} />
