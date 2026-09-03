@@ -36,13 +36,18 @@ export default function MobilePaymentScreen() {
     console.error('Failed to parse customer:', e);
   }
 
+  const couponCodeParam = (params.couponCode as string) || '';
+  const couponDiscountParam = Number(params.couponDiscount || '0');
+
   const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
   const [loading, setLoading] = useState(false);
-  // Coupon at the till. Server validates against the current cart and
-  // returns the discount; the code + discount go on the completeSale
-  // payload where the server rebooks usage against the created order.
+  // Coupon at the till.
   const [couponInput, setCouponInput] = useState('');
-  const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
+  const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(
+    couponCodeParam && couponDiscountParam > 0
+      ? { code: couponCodeParam, discountAmount: couponDiscountParam }
+      : null,
+  );
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState('');
   // Split-payment tenders. Cashier picks amounts on each method; server

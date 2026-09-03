@@ -52,20 +52,22 @@ export function computeMobileTotals(
     const unitPrice = Math.max(0, line.unitPrice || 0);
     const lineSubtotal = toMoney(quantity * unitPrice);
 
-    // Split in proportion to line value, because lines can be taxed at
-    // different rates.
+    // Split discount in proportion to line value
     const share = gross > 0 ? (lineSubtotal / gross) * spread : 0;
     const discount = toMoney(
       Math.min(Math.max(0, line.discountAmount || 0) + share, lineSubtotal),
     );
 
-    const taxable = toMoney(lineSubtotal - discount);
-    const tax = toMoney((taxable * clampPercent(line.taxPercent)) / 100);
+    // In Indian apparel retail, prices are inclusive of GST
+    const linePayable = toMoney(lineSubtotal - discount);
+    const taxPercent = clampPercent(line.taxPercent);
+    const taxable = taxPercent > 0 ? toMoney(linePayable / (1 + taxPercent / 100)) : linePayable;
+    const tax = toMoney(linePayable - taxable);
 
     subtotal += lineSubtotal;
     discountTotal += discount;
     taxTotal += tax;
-    grandTotal += toMoney(taxable + tax);
+    grandTotal += linePayable;
   }
 
   return {

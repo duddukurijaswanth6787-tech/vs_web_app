@@ -55,13 +55,15 @@ export function computeCartTotals(
       Math.min(Math.max(0, item.discountAmount || 0) + share, lineSubtotal),
     );
 
-    const taxable = toMoney(lineSubtotal - discount);
-    const tax = toMoney((taxable * clampPercent(item.taxPercent)) / 100);
+    const linePayable = toMoney(lineSubtotal - discount);
+    const taxPercent = clampPercent(item.taxPercent);
+    const taxable = taxPercent > 0 ? toMoney(linePayable / (1 + taxPercent / 100)) : linePayable;
+    const tax = toMoney(linePayable - taxable);
 
     subtotal += lineSubtotal;
     discountTotal += discount;
     taxTotal += tax;
-    grandTotal += toMoney(taxable + tax);
+    grandTotal += linePayable;
   }
 
   return {

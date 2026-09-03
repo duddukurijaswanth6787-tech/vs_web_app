@@ -69,8 +69,9 @@ export function computePosLine(line: PosLineInput): PosLineTotals {
   const rawDiscount = Math.max(0, Number(line.discountAmount) || 0);
   const discountAmount = toMoney(Math.min(rawDiscount, lineSubtotal));
 
-  const taxableAmount = toMoney(lineSubtotal - discountAmount);
-  const taxAmount = toMoney((taxableAmount * taxPercent) / 100);
+  const linePayable = toMoney(lineSubtotal - discountAmount);
+  const taxableAmount = taxPercent > 0 ? toMoney(linePayable / (1 + taxPercent / 100)) : linePayable;
+  const taxAmount = toMoney(linePayable - taxableAmount);
 
   return {
     quantity,
@@ -80,7 +81,7 @@ export function computePosLine(line: PosLineInput): PosLineTotals {
     discountAmount,
     taxableAmount,
     taxAmount,
-    totalPrice: toMoney(taxableAmount + taxAmount),
+    totalPrice: linePayable,
   };
 }
 
