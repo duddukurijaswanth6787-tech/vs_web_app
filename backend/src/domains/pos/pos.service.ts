@@ -549,8 +549,8 @@ export class PosService {
         customerInfo =
           (session.customer as unknown as PosCustomerInfoDto) || undefined;
       }
-      discountTotal = discountTotal || Number(session.discountTotal);
-      taxTotal = taxTotal || Number(session.taxTotal);
+      discountTotal = dto.discountTotal ?? Number(session.discountTotal);
+      taxTotal = dto.taxTotal ?? Number(session.taxTotal);
     }
 
     if (!itemsToProcess || itemsToProcess.length === 0) {
