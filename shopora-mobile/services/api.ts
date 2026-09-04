@@ -508,25 +508,17 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
-  /**
-   * POST /pos/returns — refund items and put them back into stock.
-   *
-   * Refunds were web-only: a counter running on phones had no way to take one
-   * back, which is the other half of selling.
-   */
-  /** GET /pos/customers/lookup -- search customer details and order history by phone. */
-  async lookupCustomer(phone: string) {
-    const res = await posApiClient.get('/pos/customers/lookup', { params: { phone } });
-    return unwrap<{
-      found: boolean;
-      fullName?: string;
-      phone?: string;
-      email?: string;
-      ordersCount?: number;
-      totalSpent?: number;
-      recentOrders?: any[];
-    }>(res);
+  /** POST /pos/returns — refund items and put them back into stock. */
+  async createReturn(payload: {
+    orderNumber: string;
+    items: Array<{ orderItemId: string; quantity: number }>;
+    refundMethod: string;
+    reason: string;
+  }) {
+    const res = await posApiClient.post('/pos/returns', payload);
+    return unwrap<any>(res);
   },
+
 
   /** POST /pos/customers -- create or update customer details directly from POS app. */
   async saveCustomer(payload: { fullName: string; phone: string; email?: string }) {

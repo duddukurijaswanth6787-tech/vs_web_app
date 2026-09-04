@@ -200,18 +200,6 @@ export default function MobilePaymentScreen() {
 
   const grandTotal = Number(grandTotalStr || '0');
   const effectiveTotal = Math.max(0, grandTotal - (couponApplied?.discountAmount || 0));
-  const splitEntries = ([
-    { method: 'CASH' as const, value: splitCash },
-    { method: 'UPI' as const, value: splitUpi },
-    { method: 'CARD' as const, value: splitCard },
-  ]
-    .map((t) => ({ method: t.method, amount: Number(t.value) || 0 }))
-    .filter((t) => t.amount > 0));
-  const splitTendered = Math.round(splitEntries.reduce((s, t) => s + t.amount, 0) * 100) / 100;
-  const splitShortfall = Math.round(Math.max(0, effectiveTotal - splitTendered) * 100) / 100;
-  const splitExcess = Math.round(Math.max(0, splitTendered - effectiveTotal) * 100) / 100;
-  const splitCashN = Number(splitCash) || 0;
-  const splitChangeBlocked = splitExcess > splitCashN + 0.005;
 
   const currentUpiUri = useMemo(() => {
     return buildUpiUri({
@@ -360,8 +348,8 @@ export default function MobilePaymentScreen() {
         router.push({
           pathname: '/sale-success',
           params: {
-            orderNumber: sale.orderNumber,
-            grandTotal: sale.grandTotal.toString(),
+            orderNumber: sale.clientOrderNumber,
+            grandTotal: sale.receipt.grandTotal.toString(),
             completedOn: 'Shopora Mobile App (Offline)',
             cartJson: JSON.stringify(cartItems),
             customerJson: JSON.stringify(customer),

@@ -62,6 +62,12 @@ export interface OrderResponse {
     lastName?: string;
     email?: string;
     phone?: string;
+    user?: {
+      firstName?: string;
+      lastName?: string;
+      email?: string;
+      phone?: string;
+    };
   };
   payments?: Array<{
     id: string;

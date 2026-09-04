@@ -114,8 +114,8 @@ export default function PaymentsPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const orderNum = (o.orderNumber || '').toLowerCase();
-        const custName = `${o.customer?.firstName || ''} ${o.customer?.lastName || ''}`.toLowerCase();
-        const phone = (o.customer?.phone || '').toLowerCase();
+        const custName = `${o.customer?.user?.firstName || o.customer?.firstName || ''} ${o.customer?.user?.lastName || o.customer?.lastName || ''}`.toLowerCase();
+        const phone = (o.customer?.phone || o.customer?.user?.phone || '').toLowerCase();
         const notes = (o.notes || '').toLowerCase();
         if (!orderNum.includes(q) && !custName.includes(q) && !phone.includes(q) && !notes.includes(q)) {
           return false;
@@ -702,10 +702,10 @@ export default function PaymentsPage() {
                     (ord.channel as string) === 'POS' ||
                     (ord.channel as string) === 'IN_STORE';
                   const method = (ord.paymentMethod || ord.payments?.[0]?.method || 'CASH').toUpperCase();
-                  const customerName = ord.customer?.firstName
-                    ? `${ord.customer.firstName} ${ord.customer.lastName || ''}`.trim()
-                    : 'Walk-in Customer';
-                  const customerPhone = ord.customer?.phone || '—';
+                  const custFirst = ord.customer?.user?.firstName || ord.customer?.firstName || '';
+                  const custLast = ord.customer?.user?.lastName || ord.customer?.lastName || '';
+                  const customerName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : 'Walk-in Customer';
+                  const customerPhone = ord.customer?.phone || ord.customer?.user?.phone || '—';
                   const hasDiscount = Number(ord.discountTotal) > 0;
 
                   return (
@@ -869,12 +869,12 @@ export default function PaymentsPage() {
                 <div>
                   <span className="text-2xs font-bold text-neutral-400 uppercase tracking-wider">Customer Profile</span>
                   <p className="font-bold text-neutral-900 text-sm mt-0.5">
-                    {selectedOrder.customer?.firstName
-                      ? `${selectedOrder.customer.firstName} ${selectedOrder.customer.lastName || ''}`.trim()
+                    {(selectedOrder.customer?.user?.firstName || selectedOrder.customer?.firstName)
+                      ? `${selectedOrder.customer?.user?.firstName || selectedOrder.customer?.firstName} ${selectedOrder.customer?.user?.lastName || selectedOrder.customer?.lastName || ''}`.trim()
                       : 'Walk-in Store Customer'}
                   </p>
                   <p className="text-[11px] text-neutral-500 font-mono">
-                    Phone: {selectedOrder.customer?.phone || 'N/A'}
+                    Phone: {selectedOrder.customer?.phone || selectedOrder.customer?.user?.phone || 'N/A'}
                   </p>
                 </div>
               </div>

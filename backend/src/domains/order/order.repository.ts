@@ -65,10 +65,15 @@ export class OrderRepository {
           customer: {
             select: {
               id: true,
-              firstName: true,
-              lastName: true,
-              email: true,
               phone: true,
+              user: {
+                select: {
+                  firstName: true,
+                  lastName: true,
+                  email: true,
+                  phone: true,
+                },
+              },
             },
           },
           items: true,

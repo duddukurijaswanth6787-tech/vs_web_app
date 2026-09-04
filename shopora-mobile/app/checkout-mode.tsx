@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   View,
   Text,
@@ -131,13 +131,7 @@ export default function CheckoutModeScreen() {
     try {
       const data = await posMobileService.validateCoupon({
         code,
-        items: cartItems.map((i) => ({
-          productId: i.productId,
-          variantId: i.variantId,
-          unitPrice: i.unitPrice,
-          quantity: i.quantity,
-          discountAmount: i.discountAmount,
-        })),
+        items: cartItems,
       });
       setCouponApplied({ code: data.code, discountAmount: data.discountAmount });
       setCouponInput('');
@@ -242,7 +236,7 @@ export default function CheckoutModeScreen() {
       const session = await posMobileService.createCheckoutSession({
         items: cartItems,
         customer: resolveCustomer(),
-        couponCode: couponApplied?.code,
+        discountTotal: couponApplied?.discountAmount,
       });
 
       router.push({
@@ -423,7 +417,7 @@ export default function CheckoutModeScreen() {
                   AVAILABLE OFFERS (TAP TO APPLY):
                 </Text>
                 <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
-                  {suggestedCoupons.map((c) => (
+                  {suggestedCoupons.map((c: any) => (
                     <TouchableOpacity
                       key={c.code}
                       style={{
