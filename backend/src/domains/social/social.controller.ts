@@ -196,11 +196,7 @@ export class SocialController {
     @Param('id') id: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    await this.socialService.deleteComment(
-      id,
-      user.sub,
-      user.roles[0] || 'CUSTOMER',
-    );
+    await this.socialService.deleteComment(id, user.sub);
     return ResponseBuilder.success(null, 'Comment deleted');
   }
 
