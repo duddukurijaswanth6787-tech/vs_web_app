@@ -27,6 +27,9 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
 @ApiTags('Warehouses')
 @Controller('warehouses')
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('super_admin', 'admin', 'staff')
+@ApiBearerAuth()
 export class WarehouseController {
   constructor(private readonly warehouseService: WarehouseService) {}
 
