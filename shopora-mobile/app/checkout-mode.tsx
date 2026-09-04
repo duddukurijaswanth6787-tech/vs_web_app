@@ -62,6 +62,33 @@ export default function CheckoutModeScreen() {
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(null);
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState<Array<{ code: string; name: string; discountText: string }>>([
+    { code: 'WELCOME10', name: 'Welcome 10% OFF', discountText: '10% OFF' },
+    { code: 'VASANTHI50', name: 'Store Special ₹50 OFF', discountText: '₹50 OFF' },
+    { code: 'FESTIVE20', name: 'Festive 20% OFF', discountText: '20% OFF' },
+    { code: 'SAVE10', name: 'Instant 10% Savings', discountText: '10% OFF' },
+  ]);
+
+  useEffect(() => {
+    posMobileService.getActiveCoupons().then((list) => {
+      if (Array.isArray(list) && list.length > 0) {
+        const mapped = list.map((c: any) => ({
+          code: c.code,
+          name: c.name || c.code,
+          discountText: c.type === 'PERCENTAGE' ? `${c.value}% OFF` : `₹${c.value} OFF`,
+        }));
+        setAvailableCoupons(mapped);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const suggestedCoupons = useMemo(() => {
+    const q = couponInput.trim().toUpperCase();
+    if (!q) return availableCoupons;
+    return availableCoupons.filter(
+      (c) => c.code.toUpperCase().includes(q) || c.name.toUpperCase().includes(q)
+    );
+  }, [couponInput, availableCoupons]);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -96,8 +123,8 @@ export default function CheckoutModeScreen() {
   const grandTotal = cartItems.length ? totals.grandTotal : Math.max(0, subtotal - orderDiscount);
   const totalQuantity = cartItems.reduce((s, i) => s + (i.quantity || 1), 0);
 
-  const handleApplyCoupon = async () => {
-    const code = couponInput.trim().toUpperCase();
+  const handleApplyCoupon = async (codeOverride?: string) => {
+    const code = (codeOverride || couponInput).trim().toUpperCase();
     if (!code) return;
     setCouponError('');
     setCouponBusy(true);
@@ -378,7 +405,7 @@ export default function CheckoutModeScreen() {
               />
               <TouchableOpacity
                 style={[styles.couponApplyBtn, (!couponInput.trim() || couponBusy) && styles.btnDisabled]}
-                onPress={handleApplyCoupon}
+                onPress={() => handleApplyCoupon()}
                 disabled={!couponInput.trim() || couponBusy}
               >
                 {couponBusy ? (
@@ -388,6 +415,44 @@ export default function CheckoutModeScreen() {
                 )}
               </TouchableOpacity>
             </View>
+
+            {/* Live Auto-Suggest Coupon Chips */}
+            {suggestedCoupons.length > 0 && (
+              <View style={{ marginTop: 8 }}>
+                <Text style={{ fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: 0.5, marginBottom: 4 }}>
+                  AVAILABLE OFFERS (TAP TO APPLY):
+                </Text>
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                  {suggestedCoupons.map((c) => (
+                    <TouchableOpacity
+                      key={c.code}
+                      style={{
+                        flexDirection: 'row',
+                        alignItems: 'center',
+                        backgroundColor: '#f0fdf4',
+                        borderColor: '#bbf7d0',
+                        borderWidth: 1,
+                        borderRadius: 20,
+                        paddingHorizontal: 10,
+                        paddingVertical: 6,
+                      }}
+                      onPress={() => {
+                        setCouponInput(c.code);
+                        handleApplyCoupon(c.code);
+                      }}
+                      disabled={couponBusy}
+                    >
+                      <Tag size={12} color="#0284c7" style={{ marginRight: 4 }} />
+                      <Text style={{ fontSize: 12, fontWeight: '800', color: '#15803d', marginRight: 6 }}>{c.code}</Text>
+                      <View style={{ backgroundColor: '#dcfce7', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 }}>
+                        <Text style={{ fontSize: 10, fontWeight: '800', color: '#166534' }}>{c.discountText}</Text>
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </ScrollView>
+              </View>
+            )}
+
             {!!couponError && <Text style={styles.couponErrorText}>{couponError}</Text>}
           </View>
         )}

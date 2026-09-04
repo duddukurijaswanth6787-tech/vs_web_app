@@ -41,7 +41,7 @@ export default function SaleSuccessScreen() {
     if (!bluetoothPrinterService.isConnected()) {
       Alert.alert(
         'No Printer Connected',
-        'Connect a Bluetooth printer first.',
+        'Connect a Bluetooth thermal printer to print receipts.',
         [
           { text: 'Cancel', style: 'cancel' },
           { text: 'Printer Settings', onPress: () => router.push('/printer-settings') },
@@ -86,6 +86,13 @@ export default function SaleSuccessScreen() {
       setPrinting(false);
     }
   };
+
+  React.useEffect(() => {
+    // If a Bluetooth printer is connected, auto-print immediately
+    if (canPrint && bluetoothPrinterService.isConnected()) {
+      handlePrintReceipt();
+    }
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -150,8 +157,10 @@ export default function SaleSuccessScreen() {
               <ActivityIndicator color="#0369a1" size="small" />
             ) : (
               <>
-                <Printer size={16} color="#0369a1" style={{ marginRight: 6 }} />
-                <Text style={styles.printBtnText}>Print Receipt</Text>
+                <Printer size={18} color="#0369a1" style={{ marginRight: 6 }} />
+                <Text style={styles.printBtnText}>
+                  {bluetoothPrinterService.isConnected() ? '🖨️ Re-Print Receipt' : '🖨️ Print Receipt'}
+                </Text>
               </>
             )}
           </TouchableOpacity>

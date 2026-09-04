@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { QrCode, Banknote, CreditCard, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { QrCode, Banknote, Tag, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react-native';
 import {
   posMobileService,
   paymentService,
@@ -48,7 +48,8 @@ export default function MobilePaymentScreen() {
   const couponCodeParam = (params.couponCode as string) || '';
   const couponDiscountParam = Number(params.couponDiscount || '0');
 
-  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT'>('UPI');
+  // Phone App Payment Methods: UPI QR and CASH Only
+  const [paymentMethod, setPaymentMethod] = useState<'CASH' | 'UPI'>('UPI');
   const [loading, setLoading] = useState(false);
 
   // Dynamic UPI Store VPA & Provider
@@ -71,7 +72,7 @@ export default function MobilePaymentScreen() {
     }).catch(() => {});
   }, []);
 
-  // Coupon at the till.
+  // Coupon at the till & live suggestions
   const [couponInput, setCouponInput] = useState('');
   const [couponApplied, setCouponApplied] = useState<{ code: string; discountAmount: number } | null>(
     couponCodeParam && couponDiscountParam > 0
@@ -80,11 +81,33 @@ export default function MobilePaymentScreen() {
   );
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState('');
-  // Split-payment tenders. Cashier picks amounts on each method; server
-  // validates they cover the total (minus coupon and any redemptions).
-  const [splitCash, setSplitCash] = useState('');
-  const [splitUpi, setSplitUpi] = useState('');
-  const [splitCard, setSplitCard] = useState('');
+  const [availableCoupons, setAvailableCoupons] = useState<Array<{ code: string; name: string; discountText: string }>>([
+    { code: 'WELCOME10', name: 'Welcome 10% OFF', discountText: '10% OFF' },
+    { code: 'VASANTHI50', name: 'Store Special ₹50 OFF', discountText: '₹50 OFF' },
+    { code: 'FESTIVE20', name: 'Festive 20% OFF', discountText: '20% OFF' },
+    { code: 'SAVE10', name: 'Instant 10% Savings', discountText: '10% OFF' },
+  ]);
+
+  useEffect(() => {
+    posMobileService.getActiveCoupons().then((list) => {
+      if (Array.isArray(list) && list.length > 0) {
+        const mapped = list.map((c: any) => ({
+          code: c.code,
+          name: c.name || c.code,
+          discountText: c.type === 'PERCENTAGE' ? `${c.value}% OFF` : `₹${c.value} OFF`,
+        }));
+        setAvailableCoupons(mapped);
+      }
+    }).catch(() => {});
+  }, []);
+
+  const suggestedCoupons = useMemo(() => {
+    const q = couponInput.trim().toUpperCase();
+    if (!q) return availableCoupons;
+    return availableCoupons.filter(
+      (c) => c.code.toUpperCase().includes(q) || c.name.toUpperCase().includes(q)
+    );
+  }, [couponInput, availableCoupons]);
 
   useFocusEffect(
     useCallback(() => {
@@ -279,8 +302,8 @@ export default function MobilePaymentScreen() {
     return () => clearInterval(interval);
   }, [paymentMethod, upiProvider, razorpayQr?.qrId, razorpayPaid, isQrExpired, loading]);
 
-  const handleApplyCoupon = async () => {
-    const code = couponInput.trim();
+  const handleApplyCoupon = async (codeOverride?: string) => {
+    const code = (codeOverride || couponInput).trim().toUpperCase();
     if (!code) return;
     setCouponError('');
     setCouponBusy(true);
@@ -305,16 +328,6 @@ export default function MobilePaymentScreen() {
       Alert.alert('Shift Required', 'Open a shift before billing so cash sales can be reconciled at close.');
       return;
     }
-    if (chosenMethod === 'SPLIT') {
-      if (splitShortfall > 0) {
-        Alert.alert('Split short', `Split payment is short by Rs.${splitShortfall.toFixed(2)}.`);
-        return;
-      }
-      if (splitChangeBlocked) {
-        Alert.alert('Cannot give change', 'Change can only come out of cash. Reduce the card or UPI amount.');
-        return;
-      }
-    }
     try {
       setLoading(true);
       const res = await posMobileService.completeSale({
@@ -324,7 +337,6 @@ export default function MobilePaymentScreen() {
         customer,
         terminalId,
         couponCode: couponApplied?.code,
-        splitPayments: chosenMethod === 'SPLIT' ? splitEntries : undefined,
       });
 
       router.push({
@@ -341,7 +353,7 @@ export default function MobilePaymentScreen() {
     } catch (err: unknown) {
       if (isNetworkFailure(err)) {
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod: chosenMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, splitPayments: chosenMethod === 'SPLIT' ? splitEntries : undefined },
+          { items: cartItems, paymentMethod: chosenMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code },
           { items: cartItems, customer, paymentMethod: chosenMethod, grandTotal },
         );
 
@@ -378,13 +390,13 @@ export default function MobilePaymentScreen() {
       <Text style={styles.sectionTitle}>Select Payment Method</Text>
 
       <View style={styles.methodsGrid}>
-        {/* UPI */}
+        {/* UPI / QR */}
         <TouchableOpacity
           style={[styles.methodCard, paymentMethod === 'UPI' && styles.methodCardActive]}
           onPress={() => setPaymentMethod('UPI')}
           activeOpacity={0.85}
         >
-          <QrCode size={24} color={paymentMethod === 'UPI' ? '#ffffff' : '#0284c7'} />
+          <QrCode size={26} color={paymentMethod === 'UPI' ? '#ffffff' : '#0284c7'} />
           <Text style={[styles.methodText, paymentMethod === 'UPI' && styles.methodTextActive]}>
             UPI / QR
           </Text>
@@ -396,45 +408,9 @@ export default function MobilePaymentScreen() {
           onPress={() => setPaymentMethod('CASH')}
           activeOpacity={0.85}
         >
-          <Banknote size={24} color={paymentMethod === 'CASH' ? '#ffffff' : '#0284c7'} />
+          <Banknote size={26} color={paymentMethod === 'CASH' ? '#ffffff' : '#0284c7'} />
           <Text style={[styles.methodText, paymentMethod === 'CASH' && styles.methodTextActive]}>
             Cash
-          </Text>
-        </TouchableOpacity>
-
-        {/* Card */}
-        <TouchableOpacity
-          style={[styles.methodCard, paymentMethod === 'CARD' && styles.methodCardActive]}
-          onPress={() => setPaymentMethod('CARD')}
-          activeOpacity={0.85}
-        >
-          <CreditCard size={24} color={paymentMethod === 'CARD' ? '#ffffff' : '#0284c7'} />
-          <Text style={[styles.methodText, paymentMethod === 'CARD' && styles.methodTextActive]}>
-            Card
-          </Text>
-        </TouchableOpacity>
-
-        {/* Split */}
-        <TouchableOpacity
-          style={[styles.methodCard, paymentMethod === 'SPLIT' && styles.methodCardActive]}
-          onPress={() => setPaymentMethod('SPLIT')}
-          activeOpacity={0.85}
-        >
-          <Sparkles size={24} color={paymentMethod === 'SPLIT' ? '#ffffff' : '#0284c7'} />
-          <Text style={[styles.methodText, paymentMethod === 'SPLIT' && styles.methodTextActive]}>
-            Split
-          </Text>
-        </TouchableOpacity>
-
-        {/* Credit */}
-        <TouchableOpacity
-          style={[styles.methodCard, paymentMethod === 'CREDIT' && styles.methodCardActive]}
-          onPress={() => setPaymentMethod('CREDIT')}
-          activeOpacity={0.85}
-        >
-          <History size={24} color={paymentMethod === 'CREDIT' ? '#ffffff' : '#0284c7'} />
-          <Text style={[styles.methodText, paymentMethod === 'CREDIT' && styles.methodTextActive]}>
-            On Credit
           </Text>
         </TouchableOpacity>
       </View>
@@ -713,38 +689,6 @@ export default function MobilePaymentScreen() {
         </View>
       )}
 
-      {paymentMethod === 'SPLIT' && (
-        <View style={styles.splitBox}>
-          <Text style={styles.splitTitle}>Enter what the customer paid on each tender</Text>
-          {(['CASH', 'UPI', 'CARD'] as const).map((m) => {
-            const value = m === 'CASH' ? splitCash : m === 'UPI' ? splitUpi : splitCard;
-            const setter = m === 'CASH' ? setSplitCash : m === 'UPI' ? setSplitUpi : setSplitCard;
-            return (
-              <View key={m} style={styles.splitRow}>
-                <Text style={styles.splitMethod}>{m}</Text>
-                <TextInput
-                  style={styles.splitInput}
-                  keyboardType="decimal-pad"
-                  value={value}
-                  onChangeText={setter}
-                  placeholder="0"
-                  placeholderTextColor="#9ca3af"
-                />
-              </View>
-            );
-          })}
-          {splitShortfall > 0 ? (
-            <Text style={styles.splitStatus}>Short by Rs.{splitShortfall.toFixed(2)} of Rs.{effectiveTotal.toFixed(2)}.</Text>
-          ) : splitChangeBlocked ? (
-            <Text style={[styles.splitStatus, { color: '#b45309' }]}>Rs.{splitExcess.toFixed(2)} over, but only Rs.{splitCashN.toFixed(2)} is cash.</Text>
-          ) : splitExcess > 0 ? (
-            <Text style={[styles.splitStatus, { color: '#059669' }]}>Change due: Rs.{splitExcess.toFixed(2)}</Text>
-          ) : splitTendered > 0 ? (
-            <Text style={[styles.splitStatus, { color: '#059669' }]}>Tenders cover the bill exactly.</Text>
-          ) : null}
-        </View>
-      )}
-
       {/* Coupon */}
       {couponApplied ? (
         <View style={styles.couponChip}>
@@ -755,22 +699,50 @@ export default function MobilePaymentScreen() {
           </TouchableOpacity>
         </View>
       ) : (
-        <View style={styles.couponRow}>
-          <TextInput
-            style={styles.couponInput}
-            value={couponInput}
-            onChangeText={(t) => setCouponInput(t.toUpperCase())}
-            placeholder="Coupon code"
-            placeholderTextColor="#a3a3a3"
-            autoCapitalize="characters"
-          />
-          <TouchableOpacity
-            onPress={handleApplyCoupon}
-            disabled={couponBusy || !couponInput.trim()}
-            style={[styles.couponBtn, (couponBusy || !couponInput.trim()) && { opacity: 0.5 }]}
-          >
-            <Text style={styles.couponBtnText}>{couponBusy ? '...' : 'Apply'}</Text>
-          </TouchableOpacity>
+        <View style={{ marginBottom: 8 }}>
+          <View style={styles.couponRow}>
+            <TextInput
+              style={styles.couponInput}
+              value={couponInput}
+              onChangeText={(t) => setCouponInput(t.toUpperCase())}
+              placeholder="Enter coupon code (e.g. WELCOME10)"
+              placeholderTextColor="#a3a3a3"
+              autoCapitalize="characters"
+            />
+            <TouchableOpacity
+              onPress={() => handleApplyCoupon()}
+              disabled={couponBusy || !couponInput.trim()}
+              style={[styles.couponBtn, (couponBusy || !couponInput.trim()) && { opacity: 0.5 }]}
+            >
+              <Text style={styles.couponBtnText}>{couponBusy ? '...' : 'Apply'}</Text>
+            </TouchableOpacity>
+          </View>
+
+          {/* Live Auto-Suggest Coupon Chips */}
+          {suggestedCoupons.length > 0 && (
+            <View style={styles.couponSuggestionsContainer}>
+              <Text style={styles.couponSuggestionsHeader}>AVAILABLE OFFERS (TAP TO APPLY):</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 4 }}>
+                {suggestedCoupons.map((c) => (
+                  <TouchableOpacity
+                    key={c.code}
+                    style={styles.couponSuggestionChip}
+                    onPress={() => {
+                      setCouponInput(c.code);
+                      handleApplyCoupon(c.code);
+                    }}
+                    disabled={couponBusy}
+                  >
+                    <Tag size={12} color="#0284c7" style={{ marginRight: 4 }} />
+                    <Text style={styles.couponSuggestionCode}>{c.code}</Text>
+                    <View style={styles.couponSuggestionBadge}>
+                      <Text style={styles.couponSuggestionBadgeText}>{c.discountText}</Text>
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </ScrollView>
+            </View>
+          )}
         </View>
       )}
       {!!couponError && <Text style={styles.shiftErrorText}>{couponError}</Text>}
@@ -833,7 +805,7 @@ export default function MobilePaymentScreen() {
             handleCompleteSale();
           }
         }}
-        disabled={loading || shiftRequired || (paymentMethod === 'SPLIT' && (splitShortfall > 0 || splitChangeBlocked))}
+        disabled={loading || shiftRequired}
         activeOpacity={0.85}
       >
         {loading ? (
@@ -868,7 +840,7 @@ export default function MobilePaymentScreen() {
 }
 
 const styles = StyleSheet.create({
-  couponRow: { flexDirection: 'row', gap: 8, marginBottom: 8 },
+  couponRow: { flexDirection: 'row', gap: 8, marginBottom: 6 },
   couponInput: { flex: 1, borderWidth: 1, borderColor: '#e5e5e5', backgroundColor: '#fafafa', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, fontFamily: 'monospace', fontWeight: '700', fontSize: 13, color: '#171717' },
   couponBtn: { backgroundColor: '#171717', borderRadius: 10, paddingHorizontal: 16, justifyContent: 'center' },
   couponBtnText: { color: '#ffffff', fontWeight: '700', fontSize: 12 },
@@ -876,13 +848,13 @@ const styles = StyleSheet.create({
   couponChipCode: { flex: 1, fontWeight: '800', color: '#065f46', fontSize: 12 },
   couponChipAmount: { fontWeight: '800', color: '#065f46', marginRight: 12 },
   couponChipRemove: { fontWeight: '800', color: '#059669', fontSize: 10 },
+  couponSuggestionsContainer: { marginTop: 4, marginBottom: 8 },
+  couponSuggestionsHeader: { fontSize: 10, fontWeight: '800', color: '#64748b', letterSpacing: 0.5, marginBottom: 4 },
+  couponSuggestionChip: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#f0fdf4', borderColor: '#bbf7d0', borderWidth: 1, borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6 },
+  couponSuggestionCode: { fontSize: 12, fontWeight: '800', color: '#15803d', marginRight: 6 },
+  couponSuggestionBadge: { backgroundColor: '#dcfce7', borderRadius: 10, paddingHorizontal: 6, paddingVertical: 2 },
+  couponSuggestionBadgeText: { fontSize: 10, fontWeight: '800', color: '#166534' },
   summaryStrike: { color: '#a3a3a3', textDecorationLine: 'line-through', fontSize: 12, marginTop: 2 },
-  splitBox: { backgroundColor: '#f9fafb', borderWidth: 1, borderColor: '#e5e7eb', borderRadius: 12, padding: 12, marginBottom: 12, gap: 8 },
-  splitTitle: { fontSize: 11, fontWeight: '700', color: '#6b7280' },
-  splitRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
-  splitMethod: { width: 60, fontSize: 12, fontWeight: '800', color: '#374151' },
-  splitInput: { flex: 1, borderWidth: 1, borderColor: '#e5e7eb', backgroundColor: '#ffffff', borderRadius: 8, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, textAlign: 'right', color: '#111827' },
-  splitStatus: { fontSize: 11, fontWeight: '700', color: '#0284c7' },
   container: {
     flex: 1,
     backgroundColor: '#f0f9ff',

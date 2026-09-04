@@ -443,6 +443,17 @@ export const posMobileService = {
     return unwrap<any>(res);
   },
 
+  /** GET /coupons/active -- list active coupons for auto-suggestion. */
+  async getActiveCoupons(): Promise<Array<{ id: string; code: string; name: string; type: string; value: number }>> {
+    try {
+      const res = await posApiClient.get('/coupons/active');
+      const data = unwrap<any>(res);
+      return Array.isArray(data) ? data : [];
+    } catch {
+      return [];
+    }
+  },
+
   /** POST /pos/coupons/validate -- preview a coupon against the current cart. */
   async validateCoupon(payload: {
     code: string;
