@@ -133,6 +133,24 @@ export default function PrinterSettingsScreen() {
           </Text>
         </View>
 
+        <TouchableOpacity
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            backgroundColor: '#0f172a',
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+            borderRadius: 12,
+            marginBottom: 16,
+          }}
+          onPress={() => router.push('/printer-demo')}
+        >
+          <Text style={{ color: '#ffffff', fontWeight: 'bold', fontSize: 13 }}>
+            🔬 Open Printer Demo & Test Lab &rarr;
+          </Text>
+        </TouchableOpacity>
+
         {connectedAddress ? (
           <View style={styles.connectedBox}>
             <PrinterCheck size={28} color="#16a34a" style={{ marginBottom: 10 }} />

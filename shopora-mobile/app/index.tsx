@@ -20,6 +20,8 @@ import {
   Store,
   RotateCcw,
   LockKeyhole,
+  Printer,
+  Sparkles,
 } from 'lucide-react-native';
 import {
   dashboardService,
@@ -206,17 +208,30 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
         </TouchableOpacity>
 
-        {/* 5. SHOP (Customer browsing & checkout) */}
+        {/* 6. PRINTER DEMO & TEST LAB */}
         <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: '#0284c7', borderColor: '#0284c7' }]}
-          onPress={() => router.push('/shop')}
+          style={[styles.actionCard, { backgroundColor: '#0f172a', borderColor: '#0f172a' }]}
+          onPress={() => router.push('/printer-demo')}
           activeOpacity={0.85}
         >
-          <View style={styles.iconCircleLight}>
-            <Store size={24} color="#0284c7" />
+          <View style={[styles.iconCircleLight, { backgroundColor: '#334155' }]}>
+            <Printer size={24} color="#38bdf8" />
           </View>
-          <Text style={styles.actionCardTitleLight}>Shop</Text>
-          <Text style={styles.actionCardSubLight}>Browse & buy as a customer</Text>
+          <Text style={styles.actionCardTitleLight}>🖨️ Printer Demo</Text>
+          <Text style={styles.actionCardSubLight}>Test 4x6 labels, POS slips</Text>
+        </TouchableOpacity>
+
+        {/* 7. PRINTER SETTINGS / PAIRING */}
+        <TouchableOpacity
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/printer-settings')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#f0fdf4' }]}>
+            <Sparkles size={24} color="#16a34a" />
+          </View>
+          <Text style={styles.actionCardTitleDark}>Printer Pairing</Text>
+          <Text style={styles.actionCardSubDark}>Bluetooth & hardware</Text>
         </TouchableOpacity>
       </View>
 

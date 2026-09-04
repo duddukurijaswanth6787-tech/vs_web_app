@@ -158,6 +158,26 @@ export interface PrinterLabelData {
   gapMm?: number;
 }
 
+export interface PrinterShippingLabelData {
+  courier: string;
+  waybill: string;
+  orderNumber: string;
+  paymentType: 'PREPAID' | 'COD';
+  codAmount?: number;
+  consigneeName: string;
+  consigneePhone: string;
+  consigneeAddress: string;
+  city: string;
+  state: string;
+  pincode: string;
+  routingHub?: string;
+  weightGrams?: number;
+  sellerName?: string;
+  sellerAddress?: string;
+  sellerGst?: string;
+  itemsSummary?: string;
+}
+
 function parseDeviceList(raw: unknown): DiscoveredPrinter[] {
   const list = Array.isArray(raw) ? raw : [];
   return list
@@ -436,6 +456,177 @@ class BluetoothPrinterService {
         ],
       });
     }
+  }
+
+  /**
+   * Prints a 4x6 inch (100x150mm) Courier Shipping Label using the printer's
+   * built-in TSC/TSPL commands. Formatted with barcode, consignee, and seller details.
+   */
+  async printShippingLabel(shipping: PrinterShippingLabelData): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    if (!BluetoothTscPrinter) {
+      throw new Error('Bluetooth TSC printer native module is not available.');
+    }
+    const widthMm = 100;
+    const heightMm = 150;
+    const gapMm = 3;
+    const DOTS_PER_MM = 8;
+    const marginDots = Math.round(DOTS_PER_MM * 3);
+
+    const textFields = [
+      {
+        text: (shipping.courier || 'DELHIVERY').toUpperCase(),
+        x: marginDots,
+        y: marginDots,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 2,
+        yscal: 2,
+      },
+      {
+        text: `${shipping.paymentType} ${shipping.paymentType === 'COD' && shipping.codAmount ? `Rs.${shipping.codAmount}` : ''}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 12),
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `AWB: ${shipping.waybill}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 18),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Order: ${shipping.orderNumber} | Wt: ${shipping.weightGrams || 500}g`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 38),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: 'SHIP TO / CONSIGNEE:',
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 45),
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `${shipping.consigneeName} (Ph: ${shipping.consigneePhone})`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 51),
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: shipping.consigneeAddress.slice(0, 42),
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 57),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `${shipping.city}, ${shipping.state} - PIN: ${shipping.pincode}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 63),
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Routing Hub: ${shipping.routingHub || 'HYD/JUB/500033'}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 70),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: 'RETURN / SHIPPER ADDRESS:',
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 78),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: (shipping.sellerName || "Vasanthi's Signature").toUpperCase(),
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 84),
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: shipping.sellerAddress || 'Plot 42, Jubilee Hills Rd No 36, Hyd, TS - 500033',
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 90),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `GSTIN: ${shipping.sellerGst || '36AABCU9603R1ZM'}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 96),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Items: ${shipping.itemsSummary || 'Ethnic Wear / Apparel'}`,
+        x: marginDots,
+        y: Math.round(DOTS_PER_MM * 102),
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+    ];
+
+    await BluetoothTscPrinter.printLabel({
+      width: widthMm,
+      height: heightMm,
+      gap: gapMm,
+      direction: DIRECTION.FORWARD,
+      reference: [0, 0],
+      tear: TEAR.ON,
+      sound: 0,
+      text: textFields,
+      barcode: [
+        {
+          x: marginDots,
+          y: Math.round(DOTS_PER_MM * 22),
+          type: TSC_BARCODETYPE.CODE128,
+          height: Math.round(DOTS_PER_MM * 12),
+          readable: READABLE.ENABLE,
+          rotation: TSC_ROTATION.ROTATION_0,
+          code: shipping.waybill,
+          wide: 2,
+          narrow: 1,
+        },
+      ],
+    });
   }
 }
 

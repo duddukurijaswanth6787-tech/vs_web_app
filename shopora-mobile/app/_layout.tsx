@@ -125,6 +125,12 @@ export default function RootLayout() {
           }}
         />
         <Stack.Screen
+          name="printer-demo"
+          options={{
+            headerShown: false,
+          }}
+        />
+        <Stack.Screen
           name="pending-sync"
           options={{
             title: "Pending Sync",
