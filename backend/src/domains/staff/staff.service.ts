@@ -87,6 +87,8 @@ export class StaffService {
         });
     if (dto.roleId && !role)
       throw new BusinessException('Role not found', 'ROLE_001');
+    if (role?.name === 'super_admin')
+      throw new BusinessException('Cannot assign super_admin role via staff creation', 'ROLE_PROTECTED');
 
     const passwordHash = await this.passwordService.hash(dto.password);
     // ponytail: create user + staff profile in one prisma nested create
