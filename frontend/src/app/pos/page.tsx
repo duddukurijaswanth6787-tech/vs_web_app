@@ -27,8 +27,11 @@ import {
   Usb,
   RotateCcw,
   Wallet,
+  Camera,
+  FileText,
 } from 'lucide-react';
 import Link from 'next/link';
+import CameraScannerModal from '@/features/pos/CameraScannerModal';
 import {
   useScanBarcode,
   useAdoptHandoffSession,
@@ -120,8 +123,10 @@ export default function DesktopPosPage() {
     CARD: '',
   });
   const [activeSession, setActiveSession] = useState<CheckoutSessionData | null>(null);
+  const [remarks, setRemarks] = useState('');
 
   // Modals
+  const [cameraScannerOpen, setCameraScannerOpen] = useState(false);
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
   const [reprintModalOpen, setReprintModalOpen] = useState(false);
   const [reprintInput, setReprintInput] = useState('');
@@ -355,6 +360,45 @@ export default function DesktopPosPage() {
         } else {
           setScanOfflineError(
             `Offline -- "${query}" was never scanned before on this register, so it isn't in the offline cache.`,
+          );
+        }
+      },
+    });
+  };
+
+  const handleCameraScan = (code: string) => {
+    if (!code) return;
+    setScanOfflineError('');
+    const cacheKey = normalizeScanCacheKey(code);
+
+    scanMutation.mutate(code, {
+      onSuccess: (data) => {
+        addScannedItemToCart(data);
+        offlineScanCacheDb.cacheScanResult({
+          key: cacheKey,
+          productId: data.productId,
+          productName: data.productName,
+          variantId: data.variantId,
+          sku: data.sku,
+          barcode: data.barcode,
+          variantTitle: data.variantTitle,
+          price: data.price,
+          availableStock: data.availableStock,
+          primaryImage: data.primaryImage,
+          cachedAt: new Date().toISOString(),
+        });
+      },
+      onError: async (err) => {
+        if (!isNetworkFailure(err)) {
+          setScanOfflineError(getApiErrorMessage(err, `Could not find a product for "${code}".`));
+          return;
+        }
+        const cached = await offlineScanCacheDb.getCachedScanResult(cacheKey);
+        if (cached) {
+          addScannedItemToCart(cached);
+        } else {
+          setScanOfflineError(
+            `Offline -- "${code}" was never scanned before on this register, so it isn't in the offline cache.`,
           );
         }
       },
@@ -708,6 +752,7 @@ export default function DesktopPosPage() {
         discountTotal,
         taxTotal,
         terminalId: TERMINAL_ID,
+        notes: remarks.trim() || undefined,
       },
       {
         onSuccess: (res) => {
@@ -784,6 +829,7 @@ export default function DesktopPosPage() {
           setGiftCardAmountInput('');
           setLoyaltyApplied(null);
           setLoyaltyPointsInput('');
+          setRemarks('');
         },
         onError: async (err) => {
           if (!isNetworkFailure(err)) {
@@ -809,6 +855,7 @@ export default function DesktopPosPage() {
               discountTotal,
               taxTotal,
               terminalId: TERMINAL_ID,
+              notes: remarks.trim() || undefined,
             },
             {
               items: saleItems,
@@ -839,6 +886,7 @@ export default function DesktopPosPage() {
           setGiftCardAmountInput('');
           setLoyaltyApplied(null);
           setLoyaltyPointsInput('');
+          setRemarks('');
         },
       },
     );
@@ -1189,6 +1237,15 @@ export default function DesktopPosPage() {
                 </div>
               )}
             </div>
+            <button
+              type="button"
+              onClick={() => setCameraScannerOpen(true)}
+              className="bg-neutral-800 hover:bg-neutral-900 text-white px-3.5 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 shadow-2xs cursor-pointer"
+              title="Open Webcam/Desktop Camera Barcode Scanner"
+            >
+              <Camera className="w-4 h-4 text-emerald-400" />
+              <span className="hidden sm:inline">Camera</span>
+            </button>
             <button
               type="submit"
               disabled={scanMutation.isPending}
@@ -1736,6 +1793,23 @@ export default function DesktopPosPage() {
               </div>
             </div>
 
+            {/* Remarks / Order Notes Field */}
+            <div className="bg-neutral-50 rounded-xl p-3 border border-neutral-200">
+              <div className="flex items-center gap-1.5 text-xs font-bold text-neutral-700 mb-1.5">
+                <FileText className="w-3.5 h-3.5 text-neutral-500" />
+                <span>Remarks / Order Notes</span>
+                <span className="text-[10px] text-neutral-400 font-normal ml-auto">Optional</span>
+              </div>
+              <input
+                type="text"
+                value={remarks}
+                onChange={(e) => setRemarks(e.target.value)}
+                placeholder="e.g. Billed by Staff, custom tailoring, advance partial..."
+                className="w-full bg-white border border-neutral-200 rounded-lg px-3 py-2 text-xs text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:border-[var(--brand-primary)]"
+                maxLength={200}
+              />
+            </div>
+
             {saleError && (
               <div className="bg-sky-50 border border-sky-200 text-sky-900 rounded-xl p-3 flex items-start gap-2 text-xs font-medium">
                 <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5 text-sky-600" />
@@ -2237,6 +2311,13 @@ export default function DesktopPosPage() {
           </div>
         </div>
       )}
+
+      {/* Desktop Camera Barcode Scanner Modal */}
+      <CameraScannerModal
+        isOpen={cameraScannerOpen}
+        onClose={() => setCameraScannerOpen(false)}
+        onScan={handleCameraScan}
+      />
     </div>
   );
 }

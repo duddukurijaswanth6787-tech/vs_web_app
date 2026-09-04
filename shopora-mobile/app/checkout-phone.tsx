@@ -11,7 +11,7 @@ import {
   Image,
 } from 'react-native';
 import { useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
-import { QrCode, Banknote, Tag, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2, AlertCircle } from 'lucide-react-native';
+import { QrCode, Banknote, Tag, Sparkles, Check, History, Clock, RefreshCw, CheckCircle2, AlertCircle, FileText } from 'lucide-react-native';
 import {
   posMobileService,
   paymentService,
@@ -81,6 +81,7 @@ export default function MobilePaymentScreen() {
   );
   const [couponBusy, setCouponBusy] = useState(false);
   const [couponError, setCouponError] = useState('');
+  const [remarks, setRemarks] = useState('');
   const [availableCoupons, setAvailableCoupons] = useState<Array<{ code: string; name: string; discountText: string }>>([
     { code: 'WELCOME10', name: 'Welcome 10% OFF', discountText: '10% OFF' },
     { code: 'VASANTHI50', name: 'Store Special ₹50 OFF', discountText: '₹50 OFF' },
@@ -325,6 +326,7 @@ export default function MobilePaymentScreen() {
         customer,
         terminalId,
         couponCode: couponApplied?.code,
+        notes: remarks.trim() || undefined,
       });
 
       router.push({
@@ -341,7 +343,7 @@ export default function MobilePaymentScreen() {
     } catch (err: unknown) {
       if (isNetworkFailure(err)) {
         const sale = await offlineSync.queueSale(
-          { items: cartItems, paymentMethod: chosenMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code },
+          { items: cartItems, paymentMethod: chosenMethod, amountPaid: grandTotal, customer, terminalId, couponCode: couponApplied?.code, notes: remarks.trim() || undefined },
           { items: cartItems, customer, paymentMethod: chosenMethod, grandTotal },
         );
 
@@ -734,6 +736,24 @@ export default function MobilePaymentScreen() {
         </View>
       )}
       {!!couponError && <Text style={styles.shiftErrorText}>{couponError}</Text>}
+
+      {/* Remarks / Order Notes (Optional) */}
+      <View style={{ backgroundColor: '#ffffff', borderRadius: 16, padding: 14, borderWidth: 1, borderColor: '#e2e8f0', marginBottom: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+          <FileText size={14} color="#64748b" style={{ marginRight: 6 }} />
+          <Text style={{ fontSize: 11, fontWeight: '800', color: '#475569', letterSpacing: 0.5 }}>
+            REMARKS / ORDER NOTES (OPTIONAL)
+          </Text>
+        </View>
+        <TextInput
+          style={{ backgroundColor: '#f8fafc', borderWidth: 1, borderColor: '#cbd5e1', borderRadius: 12, paddingHorizontal: 12, paddingVertical: 8, fontSize: 13, color: '#1e293b' }}
+          placeholder="e.g. Handed to Staff X, customer special request, etc."
+          placeholderTextColor="#94a3b8"
+          value={remarks}
+          onChangeText={setRemarks}
+          maxLength={200}
+        />
+      </View>
 
       {/* Summary Box */}
       <View style={styles.summaryBox}>
