@@ -10,7 +10,7 @@ import {
   X,
   LogOut,
 } from 'lucide-react';
-import { adminNavigation } from '@/config/navigation';
+import { adminNavigation, findNavItemForPath } from '@/config/navigation';
 import { useUIStore } from '@/stores/ui.store';
 import { useAuth } from '@/hooks/useAuth';
 import { canAccessRoute } from '@/lib/permissions/rules';
@@ -36,7 +36,6 @@ export default function AdminSidebar() {
     returns: { count: 1 },
     shipments: { count: 2, label: 'Live' },
     inventory: { count: 5 },
-    'low-stock-alerts': { count: 5 },
   };
 
   const handleLinkClick = () => {
@@ -59,6 +58,8 @@ export default function AdminSidebar() {
   const userInitials = (
     (user?.firstName?.[0] || '') + (user?.lastName?.[0] || '')
   ).toUpperCase() || 'A';
+
+  const activeNavItem = findNavItemForPath(pathname);
 
   return (
     <>
@@ -151,10 +152,9 @@ export default function AdminSidebar() {
                 {/* Navigation Items (Directly visible, no collapsible accordion) */}
                 <div className="space-y-0.5">
                   {visibleItems.map((item) => {
-                    const isActive =
-                      pathname === item.href ||
-                      (pathname.startsWith(item.href + '/') &&
-                        item.href !== '/admin');
+                    const isActive = activeNavItem
+                      ? activeNavItem.id === item.id
+                      : pathname === item.href;
                     const Icon = item.icon;
                     const hit = notificationHits[item.id];
 

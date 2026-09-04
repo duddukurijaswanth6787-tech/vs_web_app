@@ -198,13 +198,6 @@ export const adminNavigation: NavGroup[] = [
         icon: ArrowLeftRight,
         implemented: true,
       },
-      {
-        id: 'low-stock-alerts',
-        title: 'Low Stock Alerts',
-        href: '/admin/inventory',
-        icon: ShieldAlert,
-        implemented: true,
-      },
     ],
   },
   {
@@ -270,49 +263,28 @@ export const adminNavigation: NavGroup[] = [
     items: [
       {
         id: 'shipments',
-        title: 'Shipments',
+        title: 'Shipments & Logistics',
         href: '/admin/shipping',
         icon: Truck,
         implemented: true,
       },
       {
         id: 'delivery-partners',
-        title: 'Delivery Partners (DTDC)',
+        title: 'Delhivery & DTDC Setup',
         href: '/admin/shipping/dtdc',
         icon: Truck,
-        implemented: true,
-      },
-      {
-        id: 'tracking',
-        title: 'Tracking',
-        href: '/admin/shipping',
-        icon: Search,
-        implemented: true,
-      },
-      {
-        id: 'shipping-settings',
-        title: 'Shipping Settings',
-        href: '/admin/shipping',
-        icon: Sliders,
         implemented: true,
       },
     ],
   },
   {
-    group: 'PROMOTIONS & MARKETING',
+    group: 'MARKETING & PROMOTIONS',
     items: [
       {
         id: 'coupons',
-        title: 'Coupons',
-        href: '/admin/promotions/coupons',
-        icon: Gift,
-        implemented: true,
-      },
-      {
-        id: 'offers',
-        title: 'Offers & Discounts',
-        href: '/admin/promotions/offers',
-        icon: Flame,
+        title: 'Coupons & Discounts',
+        href: '/admin/coupons',
+        icon: Tag,
         implemented: true,
       },
       {
@@ -320,6 +292,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'Campaigns',
         href: '/admin/promotions/campaigns',
         icon: Megaphone,
+        implemented: true,
+      },
+      {
+        id: 'offers',
+        title: 'Offers & Discounts',
+        href: '/admin/promotions/offers',
+        icon: Flame,
         implemented: true,
       },
       {
@@ -390,16 +369,9 @@ export const adminNavigation: NavGroup[] = [
     items: [
       {
         id: 'payments',
-        title: 'Payments',
+        title: 'Payments & Ledger',
         href: '/admin/payments',
         icon: CreditCard,
-        implemented: true,
-      },
-      {
-        id: 'transactions',
-        title: 'Transactions',
-        href: '/admin/payments',
-        icon: Receipt,
         implemented: true,
       },
       {

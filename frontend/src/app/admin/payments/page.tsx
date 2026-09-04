@@ -39,7 +39,7 @@ type PaymentMethodFilter = 'ALL' | 'CASH' | 'UPI' | 'CARD' | 'RAZORPAY';
 
 export default function PaymentsPage() {
   // Filter States
-  const [datePreset, setDatePreset] = useState<DatePreset>('TODAY');
+  const [datePreset, setDatePreset] = useState<DatePreset>('ALL');
   const [customStartDate, setCustomStartDate] = useState('');
   const [customEndDate, setCustomEndDate] = useState('');
   const [channelFilter, setChannelFilter] = useState<ChannelFilter>('ALL');
