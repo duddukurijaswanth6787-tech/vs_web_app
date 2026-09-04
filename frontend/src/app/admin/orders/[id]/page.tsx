@@ -130,8 +130,22 @@ export default function OrderDetailPage() {
     );
   }
 
+  const isPosOrWalkIn =
+    order.channel === 'POS_SHOPORA' ||
+    order.channel === 'POS' ||
+    order.channel === 'WALK_IN' ||
+    order.channel === 'IN_STORE' ||
+    order.customerId === 'WALK_IN_CUSTOMER' ||
+    order.customerId === 'walk_in_pos_counter' ||
+    Boolean(order.channel && order.channel.toUpperCase().includes('POS'));
+
+  const isOnlineOrder = !isPosOrWalkIn;
+
   // Determine allowed next status actions
   const getNextStatusActions = (currentStatus: string) => {
+    if (isPosOrWalkIn && ['COMPLETED', 'DELIVERED'].includes(currentStatus.toUpperCase())) {
+      return [];
+    }
     switch (currentStatus.toUpperCase()) {
       case 'PENDING':
         return [{ label: 'Confirm Order', status: 'CONFIRMED', color: 'bg-blue-600 hover:bg-blue-700' }];
@@ -368,116 +382,153 @@ export default function OrderDetailPage() {
         {/* Right Side: Customer Info, Addresses, Timeline */}
         <div className="space-y-6">
           
-          {/* Delivery Partner Assignment Card */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
-              <Truck className="w-4 h-4 text-neutral-900" />
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Assign Delivery Partner</h3>
-            </div>
+          {/* Delivery Partner / Fulfillment Section */}
+          {isOnlineOrder ? (
+            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
+                <Truck className="w-4 h-4 text-neutral-900" />
+                <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Assign Delivery Partner</h3>
+              </div>
 
-            {order.courierPartner && (
-              <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-xs space-y-1.5">
-                <div className="flex justify-between items-center">
-                  <span className="text-[10px] text-neutral-400 font-bold uppercase">Current Partner</span>
-                  <span className="font-bold text-neutral-900 bg-neutral-200 px-2 py-0.5 rounded text-2xs">{order.courierPartner}</span>
-                </div>
-                {order.waybillNumber && (
-                  <div className="flex justify-between items-center font-mono">
-                    <span className="text-neutral-500">AWB / Waybill:</span>
-                    <span className="font-semibold text-neutral-800">{order.waybillNumber}</span>
+              {order.courierPartner && (
+                <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-xs space-y-1.5">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] text-neutral-400 font-bold uppercase">Current Partner</span>
+                    <span className="font-bold text-neutral-900 bg-neutral-200 px-2 py-0.5 rounded text-2xs">{order.courierPartner}</span>
                   </div>
-                )}
-                {order.trackingUrl && (
-                  <a
-                    href={order.trackingUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center gap-1 text-2xs text-blue-600 font-bold hover:underline mt-1 block"
+                  {order.waybillNumber && (
+                    <div className="flex justify-between items-center font-mono">
+                      <span className="text-neutral-500">AWB / Waybill:</span>
+                      <span className="font-semibold text-neutral-800">{order.waybillNumber}</span>
+                    </div>
+                  )}
+                  {order.trackingUrl && (
+                    <a
+                      href={order.trackingUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-2xs text-blue-600 font-bold hover:underline mt-1 block"
+                    >
+                      <ExternalLink className="w-3 h-3" /> Track Package Online
+                    </a>
+                  )}
+                  <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
+                    <button
+                      type="button"
+                      onClick={handlePrintThermalLabel}
+                      className="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs"
+                    >
+                      <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Label (PDF)
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isPickupPending}
+                      onClick={handleDispatchPickup}
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs disabled:opacity-50"
+                    >
+                      {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />} 🚀 Dispatch Delhivery Pickup
+                    </button>
+                    {pickupStatus && (
+                      <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
+                        {pickupStatus}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div className="space-y-3 text-xs">
+                <div>
+                  <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                    Select Courier Partner
+                  </label>
+                  <select
+                    value={courierPartner}
+                    onChange={(e) => setCourierPartner(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   >
-                    <ExternalLink className="w-3 h-3" /> Track Package Online
-                  </a>
-                )}
-                <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
-                  <button
-                    type="button"
-                    onClick={handlePrintThermalLabel}
-                    className="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs"
-                  >
-                    <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Label (PDF)
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isPickupPending}
-                    onClick={handleDispatchPickup}
-                    className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs disabled:opacity-50"
-                  >
-                    {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />} 🚀 Dispatch Delhivery Pickup
-                  </button>
-                  {pickupStatus && (
-                    <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
-                      {pickupStatus}
-                    </p>
+                    <option value="Delhivery">🚚 Delhivery (Express & Surface)</option>
+                    <option value="DTDC">📦 DTDC Courier & Cargo</option>
+                    <option value="Professional Courier">🏎️ Professional Courier</option>
+                    <option value="FedEx">✈️ FedEx Express</option>
+                    <option value="Speed Post">📮 Speed Post (India Post)</option>
+                    <option value="BlueDart">🚀 BlueDart</option>
+                    <option value="Shadowfax">🏍️ Shadowfax</option>
+                    <option value="Other">📍 Other / Local Courier</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                    Waybill / AWB Number (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={waybillNumber}
+                    onChange={(e) => setWaybillNumber(e.target.value)}
+                    placeholder={courierPartner === 'Delhivery' ? 'Auto-generated or enter AWB...' : 'Enter AWB / Waybill number'}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  />
+                </div>
+
+                <div>
+                  <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                    Tracking Web Link (Optional)
+                  </label>
+                  <input
+                    type="url"
+                    value={trackingUrl}
+                    onChange={(e) => setTrackingUrl(e.target.value)}
+                    placeholder="https://track.delhivery.com/..."
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                  />
+                </div>
+
+                <button
+                  disabled={assignCourierMut.isPending}
+                  onClick={handleAssignCourier}
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50"
+                >
+                  {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
+                </button>
+              </div>
+            </div>
+          ) : (
+            /* In-Store POS Walk-in Handover Summary */
+            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">In-Store Counter Fulfillment</h3>
+              </div>
+              <div className="bg-emerald-50/70 p-3.5 rounded-xl border border-emerald-200/80 text-xs space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-emerald-800 font-bold uppercase tracking-wider">Fulfillment Method</span>
+                  <span className="font-bold text-emerald-900 bg-emerald-100/90 px-2 py-0.5 rounded text-2xs">In-Store Handover</span>
+                </div>
+                <p className="text-2xs text-emerald-800 leading-relaxed">
+                  This order was completed directly at the physical retail store counter. The customer took possession of all items immediately. No courier shipment or delivery partner assignment required.
+                </p>
+                <div className="pt-2 border-t border-emerald-200/60 flex flex-col gap-1 text-2xs text-emerald-900">
+                  <div className="flex justify-between">
+                    <span className="text-emerald-700 font-medium">Channel:</span>
+                    <span className="font-semibold">POS Shopora · Walk-In</span>
+                  </div>
+                  {order.paymentMethod && (
+                    <div className="flex justify-between">
+                      <span className="text-emerald-700 font-medium">Payment:</span>
+                      <span className="font-semibold">{order.paymentMethod}</span>
+                    </div>
+                  )}
+                  {order.terminalId && (
+                    <div className="flex justify-between">
+                      <span className="text-emerald-700 font-medium">Terminal ID:</span>
+                      <span className="font-semibold">{order.terminalId}</span>
+                    </div>
                   )}
                 </div>
               </div>
-            )}
-
-            <div className="space-y-3 text-xs">
-              <div>
-                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                  Select Courier Partner
-                </label>
-                <select
-                  value={courierPartner}
-                  onChange={(e) => setCourierPartner(e.target.value)}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
-                >
-                  <option value="Delhivery">🚚 Delhivery (Express & Surface)</option>
-                  <option value="DTDC">📦 DTDC Courier & Cargo</option>
-                  <option value="Professional Courier">🏎️ Professional Courier</option>
-                  <option value="FedEx">✈️ FedEx Express</option>
-                  <option value="Speed Post">📮 Speed Post (India Post)</option>
-                  <option value="BlueDart">🚀 BlueDart</option>
-                  <option value="Shadowfax">🏍️ Shadowfax</option>
-                  <option value="Other">📍 Other / Local Courier</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                  Waybill / AWB Number (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={waybillNumber}
-                  onChange={(e) => setWaybillNumber(e.target.value)}
-                  placeholder={courierPartner === 'Delhivery' ? 'Auto-generated or enter AWB...' : 'Enter AWB / Waybill number'}
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
-                />
-              </div>
-
-              <div>
-                <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                  Tracking Web Link (Optional)
-                </label>
-                <input
-                  type="url"
-                  value={trackingUrl}
-                  onChange={(e) => setTrackingUrl(e.target.value)}
-                  placeholder="https://track.delhivery.com/..."
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
-                />
-              </div>
-
-              <button
-                disabled={assignCourierMut.isPending}
-                onClick={handleAssignCourier}
-                className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50"
-              >
-                {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
-              </button>
             </div>
-          </div>
+          )}
 
           {/* Customer / Address Panel */}
           <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">

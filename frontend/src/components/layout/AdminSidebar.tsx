@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import {
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
   X,
   LogOut,
 } from 'lucide-react';
@@ -38,32 +37,6 @@ export default function AdminSidebar() {
     shipments: { count: 2, label: 'Live' },
     inventory: { count: 5 },
     'low-stock-alerts': { count: 5 },
-  };
-
-  // Track accordion expand/collapse state
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
-
-  // Auto-expand section containing active route on load/navigation
-  useEffect(() => {
-    const nextState: Record<string, boolean> = {};
-    adminNavigation.forEach((group) => {
-      const hasActive = group.items.some(
-        (item) =>
-          pathname === item.href ||
-          (pathname.startsWith(item.href + '/') && item.href !== '/admin'),
-      );
-      if (hasActive) {
-        nextState[group.group] = true;
-      }
-    });
-    setOpenGroups((prev) => ({ ...nextState, ...prev, ...nextState }));
-  }, [pathname]);
-
-  const toggleGroup = (groupTitle: string) => {
-    setOpenGroups((prev) => ({
-      ...prev,
-      [groupTitle]: !prev[groupTitle],
-    }));
   };
 
   const handleLinkClick = () => {
@@ -151,7 +124,7 @@ export default function AdminSidebar() {
           </button>
         </div>
 
-        {/* Scrollable Navigation Area */}
+        {/* Scrollable Navigation Area - Flat, Clean, Non-collapsible layout */}
         <nav
           ref={navRef}
           className="flex-1 overflow-y-auto px-2.5 py-3 space-y-3 scrollbar-thin select-none"
@@ -162,122 +135,88 @@ export default function AdminSidebar() {
             );
             if (visibleItems.length === 0) return null;
 
-            const isOpen = sidebarCollapsed ? true : !!openGroups[group.group];
-            const hasActiveChild = visibleItems.some(
-              (item) =>
-                pathname === item.href ||
-                (pathname.startsWith(item.href + '/') && item.href !== '/admin'),
-            );
-
-            const groupNotificationCount = visibleItems.reduce((acc, item) => {
-              const hit = notificationHits[item.id];
-              return acc + (hit ? hit.count : 0);
-            }, 0);
-
             return (
-              <div key={group.group} className="space-y-0.5">
-                {/* Section Accordion Header */}
-                {!sidebarCollapsed && (
-                  <button
-                    type="button"
-                    onClick={() => toggleGroup(group.group)}
-                    className="w-full flex items-center justify-between px-2 py-1.5 text-left rounded-md hover:bg-neutral-100/60 transition-colors group cursor-pointer"
-                  >
-                    <div className="flex items-center gap-2 min-w-0">
-                      <span
-                        className={`text-[11px] font-semibold tracking-wider uppercase truncate transition-colors ${
-                          hasActiveChild
-                            ? 'text-neutral-900 font-bold'
-                            : 'text-neutral-400 group-hover:text-neutral-700'
+              <div key={group.group} className="space-y-1">
+                {/* Clean Flat Section Header */}
+                {!sidebarCollapsed ? (
+                  <div className="px-2.5 pt-2 pb-0.5">
+                    <span className="text-[10px] font-bold tracking-wider uppercase text-neutral-400">
+                      {group.group}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="my-2 border-t border-neutral-100" />
+                )}
+
+                {/* Navigation Items (Directly visible, no collapsible accordion) */}
+                <div className="space-y-0.5">
+                  {visibleItems.map((item) => {
+                    const isActive =
+                      pathname === item.href ||
+                      (pathname.startsWith(item.href + '/') &&
+                        item.href !== '/admin');
+                    const Icon = item.icon;
+                    const hit = notificationHits[item.id];
+
+                    return (
+                      <Link
+                        key={item.id}
+                        href={item.implemented ? item.href : '#'}
+                        onClick={
+                          item.implemented ? handleLinkClick : undefined
+                        }
+                        data-sidebar-active={isActive ? 'true' : 'false'}
+                        className={`flex items-center justify-between gap-2.5 px-2.5 py-2 text-xs rounded-lg transition-colors group relative ${
+                          isActive
+                            ? 'bg-neutral-900 text-white font-medium shadow-xs'
+                            : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-normal'
+                        } ${
+                          !item.implemented
+                            ? 'opacity-40 cursor-not-allowed'
+                            : ''
                         }`}
                       >
-                        {group.group}
-                      </span>
-                      {groupNotificationCount > 0 && !isOpen && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
-                      )}
-                    </div>
-                    <span className="text-neutral-400 group-hover:text-neutral-600">
-                      {isOpen ? (
-                        <ChevronDown className="h-3.5 w-3.5" />
-                      ) : (
-                        <ChevronRight className="h-3.5 w-3.5" />
-                      )}
-                    </span>
-                  </button>
-                )}
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Icon
+                            className={`h-4 w-4 shrink-0 transition-colors ${
+                              isActive
+                                ? 'text-white'
+                                : 'text-neutral-400 group-hover:text-neutral-700'
+                            }`}
+                          />
+                          <span
+                            className={`truncate text-[13px] ${
+                              sidebarCollapsed ? 'lg:hidden' : 'block'
+                            }`}
+                          >
+                            {item.title}
+                          </span>
+                        </div>
 
-                {/* Submenu Navigation Items */}
-                {isOpen && (
-                  <div className="space-y-0.5 pt-0.5">
-                    {visibleItems.map((item) => {
-                      const isActive =
-                        pathname === item.href ||
-                        (pathname.startsWith(item.href + '/') &&
-                          item.href !== '/admin');
-                      const Icon = item.icon;
-                      const hit = notificationHits[item.id];
+                        {/* Notification Count Badge */}
+                        {hit && hit.count > 0 && (
+                          <span
+                            className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none ${
+                              isActive
+                                ? 'bg-neutral-800 text-neutral-200 border border-neutral-700'
+                                : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
+                            }`}
+                          >
+                            {hit.count}
+                            {hit.label ? ` ${hit.label}` : ''}
+                          </span>
+                        )}
 
-                      return (
-                        <Link
-                          key={item.id}
-                          href={item.implemented ? item.href : '#'}
-                          onClick={
-                            item.implemented ? handleLinkClick : undefined
-                          }
-                          data-sidebar-active={isActive ? 'true' : 'false'}
-                          className={`flex items-center justify-between gap-2.5 px-2.5 py-2 text-xs rounded-lg transition-colors group relative ${
-                            isActive
-                              ? 'bg-neutral-900 text-white font-medium shadow-xs'
-                              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900 font-normal'
-                          } ${
-                            !item.implemented
-                              ? 'opacity-40 cursor-not-allowed'
-                              : ''
-                          }`}
-                        >
-                          <div className="flex items-center gap-2.5 min-w-0">
-                            <Icon
-                              className={`h-4 w-4 shrink-0 transition-colors ${
-                                isActive
-                                  ? 'text-white'
-                                  : 'text-neutral-400 group-hover:text-neutral-700'
-                              }`}
-                            />
-                            <span
-                              className={`truncate text-[13px] ${
-                                sidebarCollapsed ? 'lg:hidden' : 'block'
-                              }`}
-                            >
-                              {item.title}
-                            </span>
+                        {/* Tooltip for Collapsed Sidebar */}
+                        {sidebarCollapsed && (
+                          <div className="absolute left-14 z-50 rounded-md bg-neutral-900 px-2.5 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-md">
+                            {item.title}
                           </div>
-
-                          {/* Notification Count Badge */}
-                          {hit && hit.count > 0 && (
-                            <span
-                              className={`shrink-0 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none ${
-                                isActive
-                                  ? 'bg-neutral-800 text-neutral-200 border border-neutral-700'
-                                  : 'bg-neutral-100 text-neutral-700 border border-neutral-200'
-                              }`}
-                            >
-                              {hit.count}
-                              {hit.label ? ` ${hit.label}` : ''}
-                            </span>
-                          )}
-
-                          {/* Tooltip for Collapsed Sidebar */}
-                          {sidebarCollapsed && (
-                            <div className="absolute left-14 z-50 rounded-md bg-neutral-900 px-2.5 py-1 text-xs text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-md">
-                              {item.title}
-                            </div>
-                          )}
-                        </Link>
-                      );
-                    })}
-                  </div>
-                )}
+                        )}
+                      </Link>
+                    );
+                  })}
+                </div>
               </div>
             );
           })}
