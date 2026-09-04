@@ -185,10 +185,12 @@ export class AutoSeedService implements OnModuleInit {
     const passwordHash = await argon2.hash(adminPassword);
 
     for (const email of ADMIN_EMAILS) {
+      // Only touch the password on CREATE — not on update — so that a
+      // super_admin who has changed their password via the UI keeps it
+      // across restarts. Only restore the status/lockout fields on update.
       const adminUser = await this.prisma.user.upsert({
         where: { email },
         update: {
-          passwordHash,
           userType: 'ADMIN',
           accountStatus: 'ACTIVE',
           isEmailVerified: true,
