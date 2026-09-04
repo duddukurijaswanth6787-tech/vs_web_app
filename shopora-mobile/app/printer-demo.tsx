@@ -59,54 +59,88 @@ interface ReceiptDemoItem {
   data: PrinterReceiptData;
 }
 
-// Realistic demo datasets
-const SHIPPING_DEMOS: ShippingDemoItem[] = [
-  {
-    id: 'ship-1',
-    name: 'Delhivery Surface (Bangalore - Prepaid)',
-    data: {
-      courier: 'DELHIVERY SURFACE',
-      waybill: 'DEL749281034',
-      orderNumber: 'ORD-ONL-20260904-0012',
-      paymentType: 'PREPAID',
-      consigneeName: 'Priya Sharma',
-      consigneePhone: '+91 98451 23098',
-      consigneeAddress: 'Flat 402, Green Palms, 12th Main Road, Indiranagar',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      pincode: '560038',
-      routingHub: 'BLR/IND/560038',
-      weightGrams: 650,
-      sellerName: "Vasanthi's Signature",
-      sellerAddress: 'Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033',
-      sellerGst: '36AABCU9603R1ZM',
-      itemsSummary: 'Emerald Silk Lehenga Set (Size: M)',
+function getLiveDateTime(): string {
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  let hours = now.getHours();
+  const minutes = String(now.getMinutes()).padStart(2, '0');
+  const ampm = hours >= 12 ? 'PM' : 'AM';
+  hours = hours % 12;
+  hours = hours ? hours : 12;
+  const formattedHours = String(hours).padStart(2, '0');
+  return `${day}-${month}-${year} ${formattedHours}:${minutes} ${ampm}`;
+}
+
+function getLiveDateOnly(): string {
+  const now = new Date();
+  const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+  const day = String(now.getDate()).padStart(2, '0');
+  const month = months[now.getMonth()];
+  const year = now.getFullYear();
+  return `${day}-${month}-${year}`;
+}
+
+function getLiveOrderNumber(channel: 'ONL' | 'POS', suffix: string): string {
+  const now = new Date();
+  const yyyy = now.getFullYear();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `ORD-${channel}-${yyyy}${mm}${dd}-${suffix}`;
+}
+
+// Realistic demo datasets dynamically generated with live current timestamps
+function getShippingDemos(): ShippingDemoItem[] {
+  return [
+    {
+      id: 'ship-1',
+      name: 'Delhivery Surface (Bangalore - Prepaid)',
+      data: {
+        courier: 'DELHIVERY SURFACE',
+        waybill: 'DEL749281034',
+        orderNumber: getLiveOrderNumber('ONL', '0012'),
+        paymentType: 'PREPAID',
+        consigneeName: 'Priya Sharma',
+        consigneePhone: '+91 98451 23098',
+        consigneeAddress: 'Flat 402, Green Palms, 12th Main Road, Indiranagar',
+        city: 'Bengaluru',
+        state: 'Karnataka',
+        pincode: '560038',
+        routingHub: 'BLR/IND/560038',
+        weightGrams: 650,
+        sellerName: "Vasanthi's Signature",
+        sellerAddress: 'Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033',
+        sellerGst: '36AABCU9603R1ZM',
+        itemsSummary: 'Emerald Silk Lehenga Set (Size: M)',
+      },
     },
-  },
-  {
-    id: 'ship-2',
-    name: 'Delhivery Express (Hyderabad - COD ₹3,499)',
-    data: {
-      courier: 'DELHIVERY EXPRESS',
-      waybill: 'DEL829104829',
-      orderNumber: 'ORD-ONL-20260904-0015',
-      paymentType: 'COD',
-      codAmount: 3499,
-      consigneeName: 'Ananya Reddy',
-      consigneePhone: '+91 97012 34567',
-      consigneeAddress: 'Villa 18, Road No 10, Banjara Hills',
-      city: 'Hyderabad',
-      state: 'Telangana',
-      pincode: '500034',
-      routingHub: 'HYD/BNJ/500034',
-      weightGrams: 500,
-      sellerName: "Vasanthi's Signature",
-      sellerAddress: 'Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033',
-      sellerGst: '36AABCU9603R1ZM',
-      itemsSummary: 'Banarasi Handloom Silk Saree (Red-Gold)',
+    {
+      id: 'ship-2',
+      name: 'Delhivery Express (Hyderabad - COD ₹3,499)',
+      data: {
+        courier: 'DELHIVERY EXPRESS',
+        waybill: 'DEL829104829',
+        orderNumber: getLiveOrderNumber('ONL', '0015'),
+        paymentType: 'COD',
+        codAmount: 3499,
+        consigneeName: 'Ananya Reddy',
+        consigneePhone: '+91 97012 34567',
+        consigneeAddress: 'Villa 18, Road No 10, Banjara Hills',
+        city: 'Hyderabad',
+        state: 'Telangana',
+        pincode: '500034',
+        routingHub: 'HYD/BNJ/500034',
+        weightGrams: 500,
+        sellerName: "Vasanthi's Signature",
+        sellerAddress: 'Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033',
+        sellerGst: '36AABCU9603R1ZM',
+        itemsSummary: 'Banarasi Handloom Silk Saree (Red-Gold)',
+      },
     },
-  },
-];
+  ];
+}
 
 const BARCODE_DEMOS: BarcodeDemoItem[] = [
   {
@@ -138,56 +172,59 @@ const BARCODE_DEMOS: BarcodeDemoItem[] = [
   },
 ];
 
-const RECEIPT_DEMOS: ReceiptDemoItem[] = [
-  {
-    id: 'rec-1',
-    name: 'Standard POS Sale (80mm / 3-Item Slip)',
-    data: {
-      storeName: "VASANTHI'S SIGNATURE",
-      storeTagline: "Women's Ethnic Wear & Designer Couture",
-      address: 'Plot 42, Jubilee Hills Rd No 36, Hyd - 500033\nGSTIN: 36AABCU9603R1ZM',
-      phone: '+91 98765 43210',
-      orderNumber: 'ORD-POS-20260904-0002',
-      dateStr: '04-Sep-2026 18:45 PM',
-      cashierName: 'POS Counter 01 (Store Cashier)',
-      customerName: 'Sravani Varma',
-      customerPhone: '9848012345',
-      items: [
-        { title: 'Banarasi Silk Saree', quantity: 1, unitPrice: 5499 },
-        { title: 'Designer Anarkali Set (M)', quantity: 1, unitPrice: 3299 },
-        { title: 'Silk Dupatta - Gold', quantity: 1, unitPrice: 999 },
-      ],
-      subtotal: 9797,
-      discountTotal: 500,
-      taxTotal: 442.71,
-      grandTotal: 9739.71,
-      paymentMethod: 'UPI / PhonePe',
-      paperWidthMm: 80,
+function getReceiptDemos(): ReceiptDemoItem[] {
+  const liveTime = getLiveDateTime();
+  return [
+    {
+      id: 'rec-1',
+      name: 'Standard POS Sale (80mm / 3-Item Slip)',
+      data: {
+        storeName: "VASANTHI'S SIGNATURE",
+        storeTagline: "Women's Ethnic Wear & Designer Couture",
+        address: 'Plot 42, Jubilee Hills Rd No 36, Hyd - 500033\nGSTIN: 36AABCU9603R1ZM',
+        phone: '+91 98765 43210',
+        orderNumber: getLiveOrderNumber('POS', '0002'),
+        dateStr: liveTime,
+        cashierName: 'POS Counter 01 (Store Cashier)',
+        customerName: 'Sravani Varma',
+        customerPhone: '9848012345',
+        items: [
+          { title: 'Banarasi Silk Saree', quantity: 1, unitPrice: 5499 },
+          { title: 'Designer Anarkali Set (M)', quantity: 1, unitPrice: 3299 },
+          { title: 'Silk Dupatta - Gold', quantity: 1, unitPrice: 999 },
+        ],
+        subtotal: 9797,
+        discountTotal: 500,
+        taxTotal: 442.71,
+        grandTotal: 9739.71,
+        paymentMethod: 'UPI / PhonePe',
+        paperWidthMm: 80,
+      },
     },
-  },
-  {
-    id: 'rec-2',
-    name: 'Express 58mm Mini Slip (Single Item)',
-    data: {
-      storeName: "VASANTHI'S SIGNATURE",
-      storeTagline: 'Boutique Store',
-      address: 'Jubilee Hills, Hyderabad\nGSTIN: 36AABCU9603R1ZM',
-      phone: '+91 98765 43210',
-      orderNumber: 'ORD-POS-20260904-0009',
-      dateStr: '04-Sep-2026 19:10 PM',
-      cashierName: 'Staff 02',
-      customerName: 'Walk-in Guest',
-      items: [
-        { title: 'Georgette Kurti (L)', quantity: 1, unitPrice: 2499 },
-      ],
-      subtotal: 2499,
-      taxTotal: 119,
-      grandTotal: 2499,
-      paymentMethod: 'CASH',
-      paperWidthMm: 58,
+    {
+      id: 'rec-2',
+      name: 'Express 58mm Mini Slip (Single Item)',
+      data: {
+        storeName: "VASANTHI'S SIGNATURE",
+        storeTagline: 'Boutique Store',
+        address: 'Jubilee Hills, Hyderabad\nGSTIN: 36AABCU9603R1ZM',
+        phone: '+91 98765 43210',
+        orderNumber: getLiveOrderNumber('POS', '0009'),
+        dateStr: liveTime,
+        cashierName: 'Staff 02',
+        customerName: 'Walk-in Guest',
+        items: [
+          { title: 'Georgette Kurti (L)', quantity: 1, unitPrice: 2499 },
+        ],
+        subtotal: 2499,
+        taxTotal: 119,
+        grandTotal: 2499,
+        paymentMethod: 'CASH',
+        paperWidthMm: 58,
+      },
     },
-  },
-];
+  ];
+}
 
 export default function PrinterDemoScreen() {
   const router = useRouter();
@@ -204,6 +241,11 @@ export default function PrinterDemoScreen() {
 
   const isBtConnected = bluetoothPrinterService.isConnected();
   const connectedPrinterName = bluetoothPrinterService.connectedDeviceName();
+
+  const shippingDemos = getShippingDemos();
+  const receiptDemos = getReceiptDemos();
+  const liveDateStr = getLiveDateOnly();
+  const liveDateTimeStr = getLiveDateTime();
 
   const handlePrintViaBluetooth = async () => {
     if (!isBtConnected) {
@@ -223,7 +265,7 @@ export default function PrinterDemoScreen() {
 
     try {
       if (activeTab === 'SHIPPING') {
-        const item = SHIPPING_DEMOS[selectedShippingIdx];
+        const item = shippingDemos[selectedShippingIdx];
         await bluetoothPrinterService.printShippingLabel(item.data);
         setStatusMsg('✅ 4x6 Shipping Label printed successfully!');
       } else if (activeTab === 'BARCODE') {
@@ -245,7 +287,7 @@ export default function PrinterDemoScreen() {
         });
         setStatusMsg(`✅ ${barcodeSize} Barcode Label printed successfully!`);
       } else if (activeTab === 'POS_RECEIPT') {
-        const item = RECEIPT_DEMOS[selectedReceiptIdx];
+        const item = receiptDemos[selectedReceiptIdx];
         await bluetoothPrinterService.printReceipt({
           ...item.data,
           paperWidthMm: receiptWidth,
@@ -265,7 +307,7 @@ export default function PrinterDemoScreen() {
   const handleShareOrSystemPrint = async () => {
     try {
       if (activeTab === 'SHIPPING') {
-        const item = SHIPPING_DEMOS[selectedShippingIdx];
+        const item = shippingDemos[selectedShippingIdx];
         const d = item.data;
         const text = `========================================
 DELHIVERY SHIPPING LABEL (4x6 INCH / 100x150MM)
@@ -275,6 +317,7 @@ PAYMENT: ${d.paymentType} ${d.codAmount ? `(Collect ₹${d.codAmount})` : '(Prep
 AWB: ${d.waybill}
 ORDER: ${d.orderNumber}
 WEIGHT: ${d.weightGrams}g
+DATE: ${liveDateStr}
 
 SHIP TO:
 ${d.consigneeName} (Ph: ${d.consigneePhone})
@@ -300,7 +343,7 @@ MRP: Rs.${item.mrp} | OFFER: Rs.${item.price}
 =============================`;
         await Share.share({ title: `Barcode Sticker - ${item.sku}`, message: text });
       } else if (activeTab === 'POS_RECEIPT') {
-        const item = RECEIPT_DEMOS[selectedReceiptIdx];
+        const item = receiptDemos[selectedReceiptIdx];
         const d = item.data;
         let text = `========================================
 ${d.storeName}
@@ -326,15 +369,16 @@ Payment: ${d.paymentMethod}
 Thank You For Shopping With Us!`;
         await Share.share({ title: `POS Receipt - ${d.orderNumber}`, message: text });
       } else if (activeTab === 'GST_INVOICE') {
+        const invNumber = getLiveOrderNumber('ONL', '0012').replace('ORD-ONL-', 'INV-');
         const text = `========================================================
 TAX INVOICE (RULE 46 OF CGST RULES, 2017)
 VASANTHI'S SIGNATURE BOUTIQUE & DESIGNER FASHION
 Plot 42, Road No 36, Jubilee Hills, Hyderabad - 500033
 GSTIN: 36AABCU9603R1ZM | State: 36-Telangana
 --------------------------------------------------------
-Invoice No: INV-20260904-0012
-Date of Issue: 04-Sep-2026
-Order Ref: ORD-ONL-20260904-0012
+Invoice No: ${invNumber}
+Date of Issue: ${liveDateStr}
+Order Ref: ${getLiveOrderNumber('ONL', '0012')}
 
 Billed & Shipped To:
 Priya Sharma (Ph: +91 98451 23098)
@@ -354,9 +398,9 @@ Authorized Signatory: For Vasanthi's Signature
     }
   };
 
-  const curShipping = SHIPPING_DEMOS[selectedShippingIdx];
+  const curShipping = shippingDemos[selectedShippingIdx];
   const curBarcode = BARCODE_DEMOS[selectedBarcodeIdx];
-  const curReceipt = RECEIPT_DEMOS[selectedReceiptIdx];
+  const curReceipt = receiptDemos[selectedReceiptIdx];
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -464,7 +508,7 @@ Authorized Signatory: For Vasanthi's Signature
             {/* Sample Selector */}
             <Text style={styles.pickerLabel}>SELECT SAMPLE ORDER:</Text>
             <View style={styles.sampleChipsRow}>
-              {SHIPPING_DEMOS.map((item, idx) => (
+              {shippingDemos.map((item, idx) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[styles.sampleChip, selectedShippingIdx === idx && styles.sampleChipActive]}
@@ -669,7 +713,7 @@ Authorized Signatory: For Vasanthi's Signature
             {/* Sample Selector */}
             <Text style={[styles.pickerLabel, { marginTop: 12 }]}>SELECT RECEIPT SAMPLE:</Text>
             <View style={styles.sampleChipsRow}>
-              {RECEIPT_DEMOS.map((item, idx) => (
+              {receiptDemos.map((item, idx) => (
                 <TouchableOpacity
                   key={item.id}
                   style={[styles.sampleChip, selectedReceiptIdx === idx && styles.sampleChipActive]}
@@ -769,8 +813,8 @@ Authorized Signatory: For Vasanthi's Signature
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={styles.a4TaxTitle}>TAX INVOICE</Text>
-                  <Text style={styles.a4InvNum}>INV-20260904-0012</Text>
-                  <Text style={styles.a4InvDate}>Date: 04-Sep-2026</Text>
+                  <Text style={styles.a4InvNum}>{getLiveOrderNumber('ONL', '0012').replace('ORD-ONL-', 'INV-')}</Text>
+                  <Text style={styles.a4InvDate}>Date: {liveDateStr}</Text>
                 </View>
               </View>
 
