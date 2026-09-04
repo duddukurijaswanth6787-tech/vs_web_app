@@ -115,8 +115,8 @@ export class ProductsController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:delete', 'products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Soft delete a product' })
   async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
@@ -125,8 +125,8 @@ export class ProductsController {
   }
 
   @Post(':id/restore')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:delete', 'products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Restore a soft-deleted product' })
   async restore(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
