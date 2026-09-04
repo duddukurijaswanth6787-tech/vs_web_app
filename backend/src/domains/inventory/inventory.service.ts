@@ -28,6 +28,16 @@ export class InventoryService {
     return {
       id: i.id,
       variantId: i.variantId,
+      variant: i.variant
+        ? {
+            id: i.variant.id,
+            sku: i.variant.sku,
+            title: i.variant.title,
+            barcode: i.variant.barcode,
+            productId: i.variant.productId,
+            productName: i.variant.product?.name,
+          }
+        : undefined,
       availableQuantity: i.availableQuantity,
       reservedQuantity: i.reservedQuantity,
       damagedQuantity: i.damagedQuantity,
@@ -43,6 +53,7 @@ export class InventoryService {
       updatedAt: i.updatedAt,
     };
   }
+
 
   private toMovementResponse(m: any): InventoryMovementResponse {
     return {

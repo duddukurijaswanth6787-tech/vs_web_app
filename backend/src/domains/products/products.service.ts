@@ -386,16 +386,35 @@ export class ProductsService {
           })),
         );
 
-        await tx.productVariant.createMany({
-          data: variantsWithBarcode.map((v) => ({
-            productId: p.id,
-            sku: v.sku,
-            title: v.name,
-            priceOverride: v.price,
-            barcode: v.barcode,
-          })),
-        });
+        for (const v of variantsWithBarcode) {
+          const createdVariant = await tx.productVariant.create({
+            data: {
+              productId: p.id,
+              sku: v.sku,
+              title: v.name,
+              priceOverride: v.price,
+              barcode: v.barcode,
+            },
+          });
+          const stockQty = Number((v as any).stock ?? (v as any).inventoryQuantity ?? 10) || 0;
+          await tx.inventory.create({
+            data: {
+              variantId: createdVariant.id,
+              availableQuantity: stockQty,
+              reservedQuantity: 0,
+              damagedQuantity: 0,
+              returnedQuantity: 0,
+              minimumStock: 5,
+              maximumStock: 100,
+              reorderLevel: 10,
+              stockStatus: stockQty > 10 ? 'IN_STOCK' : stockQty > 0 ? 'LOW_STOCK' : 'OUT_OF_STOCK',
+              allowBackorder: false,
+              trackInventory: true,
+            },
+          });
+        }
       }
+
 
       if (dto.media?.length) {
         await tx.productMedia.createMany({

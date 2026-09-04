@@ -2,8 +2,11 @@ export interface InventoryVariant {
   id: string;
   sku: string;
   title: string;
+  barcode?: string;
   productId: string;
+  productName?: string;
 }
+
 
 export interface InventoryResponse {
   id: string;

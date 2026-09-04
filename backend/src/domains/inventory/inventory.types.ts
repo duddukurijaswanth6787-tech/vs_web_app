@@ -162,6 +162,14 @@ export class MovementQueryDto {
 export class InventoryResponse {
   @ApiProperty() id!: string;
   @ApiProperty() variantId!: string;
+  @ApiPropertyOptional() variant?: {
+    id: string;
+    sku: string;
+    title: string;
+    barcode?: string;
+    productId: string;
+    productName?: string;
+  };
   @ApiProperty() availableQuantity!: number;
   @ApiProperty() reservedQuantity!: number;
   @ApiProperty() damagedQuantity!: number;
@@ -176,6 +184,7 @@ export class InventoryResponse {
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }
+
 
 export class InventoryMovementResponse {
   @ApiProperty() id!: string;

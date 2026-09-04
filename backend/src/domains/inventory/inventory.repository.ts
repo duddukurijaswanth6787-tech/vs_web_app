@@ -34,7 +34,14 @@ export class InventoryRepository {
 
     const include: Prisma.InventoryInclude = {
       variant: {
-        select: { id: true, sku: true, title: true, productId: true },
+        select: {
+          id: true,
+          sku: true,
+          title: true,
+          barcode: true,
+          productId: true,
+          product: { select: { id: true, name: true, basePrice: true } },
+        },
       },
     };
 
@@ -66,11 +73,19 @@ export class InventoryRepository {
       where: { id },
       include: {
         variant: {
-          select: { id: true, sku: true, title: true, productId: true },
+          select: {
+            id: true,
+            sku: true,
+            title: true,
+            barcode: true,
+            productId: true,
+            product: { select: { id: true, name: true, basePrice: true } },
+          },
         },
       },
     });
   }
+
 
   async findByVariantId(variantId: string) {
     return this.prisma.inventory.findUnique({ where: { variantId } });
