@@ -715,10 +715,11 @@ export function IsHsnCodeCustom(validationOptions?: ValidationOptions) {
         options: validationOptions,
         validator: {
           validate(value: any) {
-            return typeof value === 'string' && /^\d{4,8}$/.test(value);
+            if (value === undefined || value === null || value === '') return true;
+            return typeof value === 'string' && /^\d{4,8}$/.test(value.trim());
           },
           defaultMessage(args: ValidationArguments) {
-            return `${args.property} must be an HSN code of 4 to 8 digits`;
+            return `${args.property} must be an HSN code of 4 to 8 digits (e.g. 6204 for women's ethnic wear/dresses)`;
           },
         },
       });

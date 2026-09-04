@@ -210,6 +210,27 @@ export const getColorCodeHelper = (colorName: string) => {
   return code.substring(0, 4);
 };
 
+/** Smart unique variant SKU generator */
+export const buildSmartVariantSku = (colorName: string, sizeName: string) => {
+  const colorCode = getColorCodeHelper(colorName);
+  const cleanSize = (sizeName || 'FREE-SIZE')
+    .toUpperCase()
+    .replace(/\s+/g, '-')
+    .replace(/[^A-Z0-9-]/g, '');
+  return `${colorCode}-${cleanSize}`;
+};
+
+/** Visual badge styling for variant inventory status */
+export const stockStatus = (stock: number, minStock?: number) => {
+  if (stock <= 0) {
+    return { label: 'Out of Stock', className: 'bg-rose-50 text-rose-700 border-rose-200' };
+  }
+  if (minStock && stock <= minStock) {
+    return { label: 'Low Stock', className: 'bg-amber-50 text-amber-700 border-amber-200' };
+  }
+  return { label: 'In Stock', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
+};
+
 export default function ProductBuilder({
   productId,
   initialData,
@@ -615,6 +636,108 @@ export default function ProductBuilder({
     }
   };
 
+  // Size management within color groups
+  const [newSizeInput, setNewSizeInput] = useState('');
+
+  const toggleSizeAvailability = (colorGroupId: string, sizeName: string) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.map((s) =>
+              s.size === sizeName ? { ...s, available: !s.available } : s
+            ),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const updateSizeField = (
+    colorGroupId: string,
+    sizeName: string,
+    field: 'sku' | 'minStock' | 'reorderLevel',
+    value: string | number
+  ) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.map((s) =>
+              s.size === sizeName ? { ...s, [field]: value } : s
+            ),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const updateSizeStock = (colorGroupId: string, sizeName: string, stockVal: number) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.map((s) =>
+              s.size === sizeName ? { ...s, stock: Math.max(0, isNaN(stockVal) ? 0 : stockVal) } : s
+            ),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const removeSizeFromColorGroup = (colorGroupId: string, sizeName: string) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.filter((s) => s.size !== sizeName),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const addSizeToColorGroup = (colorGroupId: string) => {
+    const sizeToAdd = newSizeInput.trim().toUpperCase();
+    if (!sizeToAdd) return;
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          const exists = g.sizes.some(
+            (s) => s.size.toLowerCase().trim() === sizeToAdd.toLowerCase().trim()
+          );
+          if (exists) {
+            alert(`Size "${sizeToAdd}" already exists for "${g.name}".`);
+            return g;
+          }
+          return {
+            ...g,
+            sizes: [
+              ...g.sizes,
+              {
+                size: sizeToAdd,
+                stock: 10,
+                available: true,
+                sku: buildSmartVariantSku(g.name, sizeToAdd),
+              },
+            ],
+          };
+        }
+        return g;
+      })
+    );
+    setNewSizeInput('');
+  };
+
   // Add Image URL to active color group
   const [imageUrlInput, setImageUrlInput] = useState('');
   const addImageToColorGroup = (colorGroupId: string, customUrl?: string) => {
@@ -784,135 +907,6 @@ export default function ProductBuilder({
           return {
             ...group,
             images: group.images.filter((_, idx) => idx !== imgIdx),
-          };
-        }
-        return group;
-      })
-    );
-  };
-
-  // Add custom size to active color group
-  const [newSizeInput, setNewSizeInput] = useState('');
-
-  /** Generates a distinct color abbreviation to avoid SKU collisions (e.g. "Color 1" -> "COL1", "Color 2" -> "COL2", "Navy Blue" -> "NBLU") */
-  const getColorCode = (colorName: string) => {
-    const clean = (colorName || 'Color 1').trim();
-    // Match "Color 1", "Color 2", "Colour 1", etc.
-    const numMatch = clean.match(/colou?r\s*(\d+)/i);
-    if (numMatch) {
-      return `COL${numMatch[1]}`;
-    }
-    const words = clean.split(/\s+/).filter(Boolean);
-    if (words.length >= 2) {
-      const firstChar = words[0][0].toUpperCase();
-      const secondWord = words[1].toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 3);
-      return `${firstChar}${secondWord}`;
-    }
-    const code = clean.toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (code.length <= 4) return code || 'COL';
-    return code.substring(0, 4);
-  };
-
-  /** Helper to generate a smart, unique, human-readable SKU ID for color + size variants */
-  const buildSmartVariantSku = (colorName: string, sizeName: string) => {
-    const rawCode = ((watchedValues as any)?.sku || watchedValues?.name || '').toString().trim();
-    const parentCode = rawCode ? rawCode.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6) : '';
-    const colorCode = getColorCode(colorName);
-    const cleanSize = sizeName.trim().toUpperCase().replace(/\s+/g, '');
-    return parentCode ? `${parentCode}-${colorCode}-${cleanSize}` : `${colorCode}-${cleanSize}`;
-  };
-
-  const addSizeToColorGroup = (colorGroupId: string) => {
-    if (!newSizeInput.trim()) return;
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id === colorGroupId) {
-          const exists = group.sizes.some((s) => s.size === newSizeInput.trim().toUpperCase());
-          if (exists) return group;
-          return {
-            ...group,
-            sizes: [
-              ...group.sizes,
-              {
-                size: newSizeInput.trim().toUpperCase(),
-                stock: 10,
-                available: true,
-                sku: buildSmartVariantSku(group.name, newSizeInput.trim().toUpperCase()),
-              },
-            ],
-          };
-        }
-        return group;
-      })
-    );
-    setNewSizeInput('');
-  };
-
-  const toggleSizeAvailability = (colorGroupId: string, sizeName: string) => {
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id === colorGroupId) {
-          return {
-            ...group,
-            sizes: group.sizes.map((s) => (s.size === sizeName ? { ...s, available: !s.available } : s)),
-          };
-        }
-        return group;
-      })
-    );
-  };
-
-  const updateSizeStock = (colorGroupId: string, sizeName: string, stockVal: number) => {
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id === colorGroupId) {
-          return {
-            ...group,
-            sizes: group.sizes.map((s) => (s.size === sizeName ? { ...s, stock: stockVal } : s)),
-          };
-        }
-        return group;
-      })
-    );
-  };
-
-  /** Update any numeric or string field on one size row (min stock, reorder level, sku …). */
-  const updateSizeField = (
-    colorGroupId: string,
-    sizeName: string,
-    field: 'minStock' | 'reorderLevel' | 'sku',
-    value: number | string,
-  ) => {
-    setColorGroups((prev) =>
-      prev.map((group) =>
-        group.id === colorGroupId
-          ? {
-              ...group,
-              sizes: group.sizes.map((s) =>
-                s.size === sizeName ? { ...s, [field]: value } : s,
-              ),
-            }
-          : group,
-      ),
-    );
-  };
-
-  /** Stock status shown next to each size, mirroring the inventory screen. */
-  const stockStatus = (stock: number, minStock?: number) => {
-    if (stock <= 0) return { label: 'OUT', className: 'bg-sky-50 text-sky-700 border-sky-200' };
-    if (minStock != null && minStock > 0 && stock <= minStock) {
-      return { label: 'LOW', className: 'bg-amber-50 text-amber-700 border-amber-200' };
-    }
-    return { label: 'IN STOCK', className: 'bg-emerald-50 text-emerald-700 border-emerald-200' };
-  };
-
-  const removeSizeFromColorGroup = (colorGroupId: string, sizeName: string) => {
-    setColorGroups((prev) =>
-      prev.map((group) => {
-        if (group.id === colorGroupId) {
-          return {
-            ...group,
-            sizes: group.sizes.filter((s) => s.size !== sizeName),
           };
         }
         return group;
@@ -1093,8 +1087,10 @@ export default function ProductBuilder({
 
       // Organisation lives outside the react-hook-form schema, so merge it in.
       const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
+      const cleanHsn = values.hsnCode?.trim() ? values.hsnCode.trim() : undefined;
       const payload = {
         ...values,
+        ...(cleanHsn ? { hsnCode: cleanHsn } : { hsnCode: undefined }),
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
         ...(tags.length > 0 ? { tags } : {}),
         ...(collections.length > 0 ? { collections } : {}),
@@ -2145,14 +2141,38 @@ export default function ProductBuilder({
 
                   {/* HSN code */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-neutral-800">HSN Code</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-neutral-800">HSN Code (GST Classification)</label>
+                      <span className="text-[10px] text-neutral-400 font-medium">Optional (4 to 8 digits)</span>
+                    </div>
                     <input
                       type="text"
                       {...methods.register('hsnCode')}
-                      placeholder="e.g. 6204"
+                      placeholder="e.g. 6204 (Suits/Dresses), 5007 (Sarees)"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                     />
-                    <p className="text-[10px] text-neutral-400">Printed on GST invoices.</p>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                      <span className="text-[10px] text-neutral-500 font-medium">Quick Select:</span>
+                      {[
+                        { code: '6204', label: '6204 (Dresses/Suits/Lehengas)' },
+                        { code: '5007', label: '5007 (Silk Sarees)' },
+                        { code: '6211', label: '6211 (Ethnic Wear)' },
+                        { code: '6214', label: '6214 (Dupattas/Shawls)' },
+                        { code: '6109', label: '6109 (Tops/Kurtis)' },
+                      ].map((item) => (
+                        <button
+                          key={item.code}
+                          type="button"
+                          onClick={() => methods.setValue('hsnCode', item.code, { shouldDirty: true })}
+                          className="text-[10px] font-bold bg-sky-50 text-[#0284c7] hover:bg-sky-100 border border-sky-200 px-2 py-0.5 rounded-md transition-all"
+                        >
+                          {item.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-neutral-400">
+                      HSN is the 4–8 digit code printed on official GST tax invoices &amp; shipping manifests.
+                    </p>
                   </div>
 
                   {/* Tax inclusive */}
