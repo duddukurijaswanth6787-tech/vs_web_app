@@ -88,17 +88,9 @@ export class RagAgentController {
     @Query('limit') limit = 20,
   ) {
     const conv = await this.repository.findConversationById(id);
-    if (!conv) {
-      throw new NotFoundException('Conversation not found');
-    }
-    const customer = await this.repository.findConversations({
-      customerId: user.sub,
-      page: 1,
-      limit: 1,
-    });
-    if (conv.customerId && conv.customerId !== customer.data[0]?.customerId) {
+    if (!conv) throw new NotFoundException('Conversation not found');
+    if (conv.customerId && conv.customerId !== user.sub)
       throw new ForbiddenException('Access denied');
-    }
 
     const messages = await this.repository.getConversationMessages({
       conversationId: id,
@@ -112,11 +104,14 @@ export class RagAgentController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Archive/Delete customer conversation' })
-  async deleteConversation(@Param('id') id: string) {
+  async deleteConversation(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
     const conv = await this.repository.findConversationById(id);
-    if (!conv) {
-      throw new NotFoundException('Conversation not found');
-    }
+    if (!conv) throw new NotFoundException('Conversation not found');
+    if (conv.customerId && conv.customerId !== user.sub)
+      throw new ForbiddenException('Access denied');
 
     await this.repository.updateConversation(id, { status: 'ARCHIVED' });
     return ResponseBuilder.success(null, 'Conversation archived');
