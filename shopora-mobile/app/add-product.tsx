@@ -807,30 +807,36 @@ export default function AddProductScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Step rail — the admin builder's five tabs */}
+      {/* Step rail — the admin builder's tabs */}
       <View style={styles.stepRail}>
-        {STEPS.map((s, idx) => {
-          const active = s.key === step;
-          const done = idx < stepIndex;
-          return (
-            <TouchableOpacity
-              key={s.key}
-              style={[styles.stepChip, active && styles.stepChipActive]}
-              onPress={() => setStep(s.key)}
-            >
-              <s.Icon size={14} color={active ? '#ffffff' : done ? '#0284c7' : '#9ca3af'} />
-              <Text
-                style={[
-                  styles.stepChipText,
-                  active && styles.stepChipTextActive,
-                  done && !active && styles.stepChipTextDone,
-                ]}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.stepRailContent}
+        >
+          {STEPS.map((s, idx) => {
+            const active = s.key === step;
+            const done = idx < stepIndex;
+            return (
+              <TouchableOpacity
+                key={s.key}
+                style={[styles.stepChip, active && styles.stepChipActive]}
+                onPress={() => setStep(s.key)}
               >
-                {s.label}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
+                <s.Icon size={14} color={active ? '#ffffff' : done ? '#0284c7' : '#9ca3af'} />
+                <Text
+                  style={[
+                    styles.stepChipText,
+                    active && styles.stepChipTextActive,
+                    done && !active && styles.stepChipTextDone,
+                  ]}
+                >
+                  {s.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
       </View>
 
       {refsError !== '' && (
@@ -2089,26 +2095,31 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FDFBFB' },
 
   stepRail: {
-    flexDirection: 'row',
-    paddingHorizontal: 10,
-    paddingVertical: 10,
     backgroundColor: '#ffffff',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
-    gap: 6,
+    paddingVertical: 8,
+  },
+  stepRailContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    gap: 8,
   },
   stepChip: {
-    flex: 1,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
     paddingVertical: 8,
-    borderRadius: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
     backgroundColor: '#f8fafc',
-    gap: 4,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 6,
   },
-  stepChipActive: { backgroundColor: '#0284c7' },
-  stepChipText: { fontSize: 10, fontWeight: '700', color: '#9ca3af' },
+  stepChipActive: { backgroundColor: '#0284c7', borderColor: '#0284c7' },
+  stepChipText: { fontSize: 11, fontWeight: '700', color: '#64748b' },
   stepChipTextActive: { color: '#ffffff' },
   stepChipTextDone: { color: '#0284c7' },
 
