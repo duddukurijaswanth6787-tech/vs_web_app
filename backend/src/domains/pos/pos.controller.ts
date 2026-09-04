@@ -24,6 +24,7 @@ import {
   Permissions,
 } from '@domains/auth/guards/permissions.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
+import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
 import { PosService } from './pos.service';
 import {
   ScanBarcodeDto,
@@ -265,9 +266,12 @@ export class PosController {
   })
   async switchCashier(
     @Body() dto: SwitchCashierDto,
+    @Res({ passthrough: true }) res: import('express').Response,
     @Query('terminalId') terminalId?: string,
   ) {
-    return this.posService.switchCashierByPin(dto.pin, terminalId);
+    const result = await this.posService.switchCashierByPin(dto.pin, terminalId);
+    setRefreshTokenCookie(res, result.refreshToken);
+    return withoutRefreshToken(result);
   }
 
   @Post('gift-cards/balance')

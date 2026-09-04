@@ -76,6 +76,8 @@ describe('PosService (Phase 1 Backend)', () => {
       deductInventory: jest.fn().mockResolvedValue(true),
       deductInventoryTx: jest.fn().mockResolvedValue(true),
       restockReturnedItems: jest.fn().mockResolvedValue(true),
+      restoreInventory: jest.fn().mockResolvedValue(true),
+      transition: jest.fn().mockResolvedValue({}),
     };
 
     auditService = {
@@ -152,6 +154,10 @@ describe('PosService (Phase 1 Backend)', () => {
         {
           provide: (await import('@domains/auth/services/jwt.service')).JwtService,
           useValue: { sign: jest.fn().mockResolvedValue('tok') },
+        },
+        {
+          provide: (await import('@domains/auth/services/refresh-token.service')).RefreshTokenService,
+          useValue: { create: jest.fn().mockResolvedValue('rt-mock') },
         },
         {
           provide: (await import('@database/prisma.service')).PrismaService,
@@ -582,6 +588,15 @@ describe('PosService (Phase 1 Backend)', () => {
       await expect(service.switchCashierByPin('ab12')).rejects.toThrow(/4 to 6 digit/);
       await expect(service.switchCashierByPin('12')).rejects.toThrow(/4 to 6 digit/);
       expect(prismaMock.user.findMany).not.toHaveBeenCalled();
+    });
+
+    it('refuses with a generic message when two cashiers share the same PIN (collision)', async () => {
+      prismaMock.user.findMany.mockResolvedValue([
+        { id: 'u1', email: 'a@a', firstName: 'A', lastName: null, userType: 'STAFF', posPinHash: 'h1', userRoles: [{ role: { name: 'pos_operator' } }] },
+        { id: 'u2', email: 'b@b', firstName: 'B', lastName: null, userType: 'STAFF', posPinHash: 'h2', userRoles: [{ role: { name: 'pos_operator' } }] },
+      ]);
+      passwordMock.verify.mockResolvedValue(true);
+      await expect(service.switchCashierByPin('1234')).rejects.toThrow('PIN not recognised.');
     });
 
     it('setCashierPin requires the current password', async () => {

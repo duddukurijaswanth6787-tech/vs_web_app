@@ -18,6 +18,7 @@ import { GiftCardService } from '@domains/gift-card/gift-card.service';
 import { LoyaltyService } from '@domains/loyalty/loyalty.service';
 import { PasswordService } from '@domains/auth/services/password.service';
 import { JwtService } from '@domains/auth/services/jwt.service';
+import { RefreshTokenService } from '@domains/auth/services/refresh-token.service';
 import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import {
@@ -57,6 +58,7 @@ export class PosService {
     private readonly loyaltyService: LoyaltyService,
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
+    private readonly refreshTokenService: RefreshTokenService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -132,37 +134,39 @@ export class PosService {
       },
     });
 
-    let matched:
-      | { id: string; email: string; firstName: string | null; lastName: string | null; roles: string[]; userType: string }
-      | null = null;
+    type CashierMatch = { id: string; email: string; firstName: string | null; lastName: string | null; roles: string[]; userType: string };
+    const matches: CashierMatch[] = [];
     for (const c of candidates) {
       if (!c.posPinHash) continue;
       const ok = await this.passwordService.verify(c.posPinHash, pin);
       if (ok) {
-        matched = {
+        matches.push({
           id: c.id,
           email: c.email,
           firstName: c.firstName,
           lastName: c.lastName,
           roles: c.userRoles.map((r) => r.role.name),
           userType: c.userType,
-        };
-        break;
+        });
       }
     }
 
-    if (!matched) {
-      // Deliberately generic: don\'t hint whether the PIN matched an inactive
-      // user, or matches no user, or matched a user without pos:view.
-      throw new BadRequestException('PIN not recognised.');
-    }
+    // Deliberately generic: don't hint whether the PIN matched an inactive
+    // user, no user, or multiple users (PIN collision).
+    if (matches.length === 0) throw new BadRequestException('PIN not recognised.');
+    if (matches.length > 1) throw new BadRequestException('PIN not recognised.');
 
-    const token = await this.jwtService.sign({
-      sub: matched.id,
-      email: matched.email,
-      userType: matched.userType,
-      roles: matched.roles,
-    });
+    const matched = matches[0];
+
+    const [token, refreshToken] = await Promise.all([
+      this.jwtService.sign({
+        sub: matched.id,
+        email: matched.email,
+        userType: matched.userType,
+        roles: matched.roles,
+      }),
+      this.refreshTokenService.create(matched.id),
+    ]);
 
     await this.auditService.log({
       action: 'POS_CASHIER_SWITCHED',
@@ -175,6 +179,7 @@ export class PosService {
 
     return {
       token,
+      refreshToken,
       user: {
         id: matched.id,
         fullName: [matched.firstName, matched.lastName].filter(Boolean).join(' ') || matched.email,
@@ -835,6 +840,7 @@ export class PosService {
         this.logger.warn(
           `Loyalty redeem failed for ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
         );
+        await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
           order.id,
           'CANCELLED',
@@ -866,6 +872,7 @@ export class PosService {
         this.logger.warn(
           `Gift card ${gc.code} failed to redeem against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
         );
+        await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
           order.id,
           'CANCELLED',
@@ -904,6 +911,7 @@ export class PosService {
         this.logger.warn(
           `Coupon ${couponValidated.code} failed to book against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
         );
+        await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
           order.id,
           'CANCELLED',
@@ -1328,6 +1336,14 @@ export class PosService {
         throw new BusinessException(
           `${order.orderNumber} has no recorded payment method. Choose how to refund instead.`,
           'POS_RETURN_METHOD_UNKNOWN',
+        );
+      }
+      if (order.paymentMethod === 'SPLIT') {
+        // Split sales have two or more tenders; there is no single tender to
+        // mirror back. The cashier must choose explicitly (typically CASH).
+        throw new BusinessException(
+          `${order.orderNumber} was paid with multiple tenders. Choose a specific refund method.`,
+          'POS_RETURN_SPLIT_ORIGINAL',
         );
       }
       refundMethod = order.paymentMethod;
