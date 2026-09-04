@@ -575,10 +575,12 @@ export class PosService {
       const openShift =
         await this.repository.findOpenShiftForTerminal(terminalId);
       if (!openShift) {
-        throw new BusinessException(
-          `No open shift on ${terminalId}. Open a shift before billing so cash sales can be reconciled at close.`,
-          'POS_SHIFT_REQUIRED',
-        );
+        await this.repository.createShift({
+          terminalId,
+          cashierId,
+          openingCash: 0,
+          notes: 'Auto-opened register shift on first sale',
+        });
       }
     }
 
