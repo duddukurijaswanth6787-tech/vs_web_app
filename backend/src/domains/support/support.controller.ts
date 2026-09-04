@@ -37,10 +37,12 @@ export class SupportController {
   // staff portal but isn't an admin. Used to decide whether a caller sees
   // the full ticket queue (staff) vs. only their own tickets (customer),
   // and whether their replies are marked as staff replies.
-  private isStaffMember(user: JwtPayload): boolean {
-    return !!user.roles?.some((r) =>
-      ['super_admin', 'admin', 'staff'].includes(r),
-    );
+  private async isStaffMember(userId: string): Promise<boolean> {
+    const row = await this.prisma.userRole.findFirst({
+      where: { userId, role: { name: { in: ['super_admin', 'admin', 'staff'] } } },
+      select: { userId: true },
+    });
+    return row !== null;
   }
 
   private async resolveCustomerId(userId: string): Promise<string | null> {
@@ -105,7 +107,7 @@ export class SupportController {
     @Query() query: TicketQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    if (!this.isStaffMember(user)) {
+    if (!await this.isStaffMember(user.sub)) {
       const customerId = await this.resolveCustomerId(user.sub);
       if (!customerId) return ResponseBuilder.success([]);
       query.customerId = customerId;
@@ -124,7 +126,7 @@ export class SupportController {
     @CurrentUser() user: JwtPayload,
   ) {
     const ticket = await this.supportService.findTicketById(id);
-    if (!this.isStaffMember(user)) {
+    if (!await this.isStaffMember(user.sub)) {
       const customerId = await this.resolveCustomerId(user.sub);
       if (!customerId || (ticket as any).customerId !== customerId) {
         throw new ForbiddenException('Ticket not found');
@@ -174,7 +176,7 @@ export class SupportController {
     @CurrentUser() user: JwtPayload,
   ) {
     return ResponseBuilder.created(
-      await this.supportService.addReply(id, dto, this.isStaffMember(user)),
+      await this.supportService.addReply(id, dto, await this.isStaffMember(user.sub)),
       'Reply added',
     );
   }

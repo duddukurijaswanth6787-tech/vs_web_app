@@ -24,6 +24,14 @@ export class OrderController {
     private readonly prisma: PrismaService,
   ) {}
 
+  private async isAdmin(userId: string): Promise<boolean> {
+    const row = await this.prisma.userRole.findFirst({
+      where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+      select: { userId: true },
+    });
+    return row !== null;
+  }
+
   // Order.customerId is a CustomerProfile id, not the User id in the JWT's
   // `sub` -- must resolve one to the other before comparing ownership.
   private async resolveCustomerId(userId: string): Promise<string | null> {
@@ -41,9 +49,7 @@ export class OrderController {
     @Query() query: OrderQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    const isAdmin = user.roles?.some((r: string) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isAdmin = await this.isAdmin(user.sub);
     const q = isAdmin ? query : { ...query, customerId: user.sub };
     return ResponseBuilder.success(await this.orderService.findAll(q, isAdmin));
   }
@@ -56,9 +62,7 @@ export class OrderController {
     @Param('orderNumber') orderNumber: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    const isAdmin = user.roles?.some((r: string) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isAdmin = await this.isAdmin(user.sub);
     const order = await this.orderService.findByOrderNumber(orderNumber);
     if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
       return ResponseBuilder.success(null, 'Order not found');
@@ -71,9 +75,7 @@ export class OrderController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get order by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
-    const isAdmin = user.roles?.some((r: string) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isAdmin = await this.isAdmin(user.sub);
     const order = await this.orderService.findById(id, isAdmin);
     if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
       return ResponseBuilder.success(null, 'Order not found');

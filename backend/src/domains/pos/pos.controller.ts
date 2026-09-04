@@ -48,11 +48,23 @@ import {
   DEFAULT_TERMINAL_ID,
 } from './pos.types';
 import type { Response } from 'express';
+import { PrismaService } from '@database/prisma.service';
 
 @ApiTags('POS (Point of Sale & Shopora)')
 @Controller('pos')
 export class PosController {
-  constructor(private readonly posService: PosService) {}
+  constructor(
+    private readonly posService: PosService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  private async isAdmin(userId: string): Promise<boolean> {
+    const row = await this.prisma.userRole.findFirst({
+      where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+      select: { userId: true },
+    });
+    return row !== null;
+  }
 
   @Post('scan')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
@@ -69,9 +81,7 @@ export class PosController {
     // scanBarcode() can return costPrice, which is margin data a cashier has
     // no reason to see. The parameter existed for that, but defaulted to true
     // and was never passed -- so it never actually withheld anything.
-    const isOwnerOrManager = (user.roles || []).some((r) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isOwnerOrManager = await this.isAdmin(user.sub);
     return this.posService.scanBarcode(
       dto,
       isOwnerOrManager,
@@ -92,9 +102,7 @@ export class PosController {
     @Query('wholesale') wholesale?: string,
   ): Promise<BarcodeScanResultResponse[]> {
     // Same margin rule as the scan: only owners and managers see cost price.
-    const isOwnerOrManager = (user.roles || []).some((r) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isOwnerOrManager = await this.isAdmin(user.sub);
     const parsedLimit = Number(limit);
     return this.posService.searchProducts(
       q || '',
@@ -119,9 +127,7 @@ export class PosController {
     if (!categoryId || !categoryId.trim()) {
       throw new BadRequestException('categoryId is required.');
     }
-    const isOwnerOrManager = (user.roles || []).some((r) =>
-      ['super_admin', 'admin'].includes(r),
-    );
+    const isOwnerOrManager = await this.isAdmin(user.sub);
     const parsedLimit = Number(limit);
     return this.posService.listByCategory(
       categoryId.trim(),
