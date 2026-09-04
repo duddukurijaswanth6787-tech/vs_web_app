@@ -24,6 +24,9 @@ export class InvoiceRepository {
         skip,
         take: limit,
         orderBy: { createdAt: 'desc' },
+        include: {
+          order: { select: { id: true, orderNumber: true, channel: true } },
+        },
       }),
       this.prisma.invoice.count({ where }),
     ]);
@@ -43,17 +46,24 @@ export class InvoiceRepository {
   async findById(id: string) {
     return this.prisma.invoice.findUnique({
       where: { id },
-      include: { items: true },
+      include: {
+        items: true,
+        order: { select: { id: true, orderNumber: true, channel: true } },
+      },
     });
   }
 
   async findByOrderId(orderId: string) {
     return this.prisma.invoice.findMany({
       where: { orderId },
-      include: { items: true },
+      include: {
+        items: true,
+        order: { select: { id: true, orderNumber: true, channel: true } },
+      },
       orderBy: { createdAt: 'desc' },
     });
   }
+
 
   async create(data: Prisma.InvoiceCreateInput) {
     return this.prisma.invoice.create({

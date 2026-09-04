@@ -28,6 +28,8 @@ export interface AddressDto {
 export interface InvoiceResponse {
   id: string;
   orderId: string;
+  orderNumber?: string;
+  channel?: string;
   invoiceNumber: string;
   status: string;
   subtotal: number;

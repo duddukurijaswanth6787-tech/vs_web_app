@@ -784,7 +784,7 @@ export class PosService {
     // own order number so retries hit the idempotent-replay path above
     // instead of creating a duplicate order)
     const orderNumber =
-      dto.clientOrderNumber || (await this.workflow.generateOrderNumber());
+      dto.clientOrderNumber || (await this.workflow.generateOrderNumber('POS'));
 
     // 3. Create POS Order in DB
     const order = await this.repository.createPosOrder({

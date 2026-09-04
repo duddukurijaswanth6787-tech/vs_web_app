@@ -3,9 +3,10 @@
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useInvoiceDetail } from '@/features/invoices/invoice.hooks';
+import { useOrderDetail } from '@/features/orders/order.hooks';
 import { InvoiceStatusBadge } from '@/components/feedback/StatusBadges';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
-import { ArrowLeft, Printer, ShoppingCart, Building2, CheckCircle2, FileText, Receipt, Sparkles } from 'lucide-react';
+import { ArrowLeft, Printer, ShoppingCart, Building2, CheckCircle2, FileText, Receipt, Sparkles, Store, Globe } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDate, formatDateTime } from '@/utils/format';
 import type { AddressDto } from '@/features/invoices/invoice.types';
@@ -17,6 +18,7 @@ export default function InvoiceDetailPage() {
 
   // Query
   const { data: invoice, isLoading, isError, refetch } = useInvoiceDetail(id);
+  const { data: orderData } = useOrderDetail(invoice?.orderId || '', !!invoice?.orderId);
 
   if (isLoading) {
     return <SectionLoader message="Retrieving official tax invoice records..." />;
@@ -37,6 +39,9 @@ export default function InvoiceDetailPage() {
       window.print();
     }
   };
+
+  const displayOrderNum = orderData?.orderNumber || invoice.orderNumber || invoice.orderId;
+  const isPos = orderData?.channel?.toUpperCase().includes('POS') || invoice.channel?.toUpperCase().includes('POS') || displayOrderNum.includes('POS');
 
   const billingAddr: AddressDto = invoice.billingAddress ?? {};
   const shippingAddr: AddressDto = invoice.shippingAddress ?? {};
@@ -66,8 +71,10 @@ export default function InvoiceDetailPage() {
               </h1>
               <InvoiceStatusBadge status={invoice.status} />
             </div>
-            <p className="text-xs text-neutral-400 mt-1">
-              Issued on: {formatDateTime(invoice.createdAt)} · Order UUID: {invoice.orderId}
+            <p className="text-xs text-neutral-400 mt-1 flex items-center gap-2">
+              <span>Issued on: {formatDateTime(invoice.createdAt)}</span>
+              <span>·</span>
+              <span className="font-mono font-bold text-neutral-700">Order: {displayOrderNum}</span>
             </p>
           </div>
         </div>
@@ -142,14 +149,24 @@ export default function InvoiceDetailPage() {
               <p className="text-2xs text-neutral-500 mt-0.5">
                 Invoice Date: {formatDate(invoice.createdAt)}
               </p>
-              <p className="text-2xs font-mono text-neutral-500 mt-0.5">
-                Order Ref: {invoice.orderId.slice(0, 18)}...
+              <p className="text-2xs font-mono font-bold text-neutral-800 mt-0.5">
+                Order Ref: {displayOrderNum}
               </p>
-              <div className="mt-2">
+              <div className="mt-2 flex items-center justify-end gap-1.5">
+                {isPos ? (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                    <Store className="w-2.5 h-2.5" /> In-Store POS
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    <Globe className="w-2.5 h-2.5" /> Online Web
+                  </span>
+                )}
                 <span className="inline-flex items-center px-2 py-0.5 rounded text-2xs font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                  Payment Status: {invoice.status}
+                  {invoice.status}
                 </span>
               </div>
+
             </div>
           </div>
 
@@ -426,8 +443,17 @@ export default function InvoiceDetailPage() {
       <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 text-xs print:hidden">
         <div className="flex items-center gap-2">
           <ShoppingCart className="w-4 h-4 text-neutral-400" />
-          <span className="text-neutral-500 font-bold">Associated Order UUID:</span>
-          <span className="font-mono text-neutral-700">{invoice.orderId}</span>
+          <span className="text-neutral-500 font-bold">Associated Order Reference:</span>
+          <span className="font-mono font-bold text-neutral-900">{displayOrderNum}</span>
+          {isPos ? (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+              <Store className="w-2.5 h-2.5" /> In-Store POS
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+              <Globe className="w-2.5 h-2.5" /> Online Web
+            </span>
+          )}
         </div>
         <Link
           href={`/admin/orders/${invoice.orderId}`}
@@ -436,6 +462,7 @@ export default function InvoiceDetailPage() {
           View Order in Orders Desk &rarr;
         </Link>
       </div>
+
     </div>
   );
 }

@@ -76,6 +76,15 @@ export default function InvoicesPage() {
   const invoices = listData?.data ?? [];
   const orders = ordersData?.data ?? [];
 
+  // Map of orderId -> Order
+  const orderMapById = useMemo(() => {
+    const map = new Map<string, OrderResponse>();
+    orders.forEach((o) => {
+      map.set(o.id, o);
+    });
+    return map;
+  }, [orders]);
+
   // Map of orderId -> Invoice
   const orderInvoiceMap = useMemo(() => {
     const map = new Map<string, InvoiceResponse>();
@@ -135,13 +144,17 @@ export default function InvoicesPage() {
   const filteredInvoices = useMemo(() => {
     if (!searchQuery.trim()) return invoices;
     const q = searchQuery.toLowerCase().trim();
-    return invoices.filter(
-      (inv) =>
+    return invoices.filter((inv) => {
+      const ord = orderMapById.get(inv.orderId);
+      const ordNum = ord?.orderNumber || inv.orderNumber || '';
+      return (
         inv.invoiceNumber.toLowerCase().includes(q) ||
-        (inv.orderId && inv.orderId.toLowerCase().includes(q)) ||
+        ordNum.toLowerCase().includes(q) ||
+        inv.orderId.toLowerCase().includes(q) ||
         (inv.notes && inv.notes.toLowerCase().includes(q))
-    );
-  }, [invoices, searchQuery]);
+      );
+    });
+  }, [invoices, orderMapById, searchQuery]);
 
   // Single order invoice generator
   const handleGenerateInvoice = async (order: OrderResponse) => {
@@ -154,7 +167,7 @@ export default function InvoicesPage() {
       });
       setActionMessage({
         type: 'success',
-        text: `✅ Generated Tax Invoice for Order #${order.orderNumber} successfully!`,
+        text: `✅ Generated Tax Invoice for Order ${order.orderNumber} successfully!`,
       });
       refetchInvoices();
       refetchOrders();
@@ -205,31 +218,34 @@ export default function InvoicesPage() {
   const orderColumns: Column<any>[] = [
     {
       key: 'orderNumber',
-      label: 'Order # & Channel',
-      render: (o) => (
-        <div className="space-y-1">
-          <Link
-            href={`/admin/orders/${o.id}`}
-            className="font-mono font-black text-neutral-900 text-xs hover:text-blue-600 hover:underline block"
-          >
-            {o.orderNumber}
-          </Link>
-          <div className="flex items-center gap-1.5">
-            {o.channel === 'POS_SHOPORA' || o.channel === 'POS' ? (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-                <Store className="w-2.5 h-2.5" /> In-Store POS
+      label: 'Order ID & Channel',
+      render: (o) => {
+        const isPos = o.channel?.toUpperCase().includes('POS') || o.orderNumber?.includes('POS');
+        return (
+          <div className="space-y-1">
+            <Link
+              href={`/admin/orders/${o.id}`}
+              className="font-mono font-black text-neutral-900 text-xs hover:text-blue-600 hover:underline block"
+            >
+              {o.orderNumber}
+            </Link>
+            <div className="flex items-center gap-1.5">
+              {isPos ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  <Store className="w-2.5 h-2.5" /> ORD-POS (Counter)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <Globe className="w-2.5 h-2.5" /> ORD-ONL (Web Store)
+                </span>
+              )}
+              <span className="text-[10px] text-neutral-400 font-mono">
+                {o.paymentMethod || 'PAID'}
               </span>
-            ) : (
-              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
-                <Globe className="w-2.5 h-2.5" /> Online Web
-              </span>
-            )}
-            <span className="text-[10px] text-neutral-400 font-mono">
-              {o.paymentMethod || 'PAID'}
-            </span>
+            </div>
           </div>
-        </div>
-      ),
+        );
+      },
     },
     {
       key: 'customer',
@@ -352,23 +368,34 @@ export default function InvoicesPage() {
     },
     {
       key: 'orderId',
-      label: 'Order Reference',
-      render: (i) => (
-        <div className="space-y-0.5">
-          <Link
-            href={`/admin/orders/${i.orderId}`}
-            className="font-mono text-xs font-semibold text-blue-600 hover:underline block truncate max-w-[170px]"
-            title={i.orderId}
-          >
-            {i.orderId}
-          </Link>
-          {i.notes && (
-            <span className="text-[10px] text-neutral-500 block truncate max-w-[170px]">
-              {i.notes}
-            </span>
-          )}
-        </div>
-      ),
+      label: 'Order ID Ref',
+      render: (i) => {
+        const ord = orderMapById.get(i.orderId);
+        const displayOrderNum = ord?.orderNumber || i.orderNumber || i.orderId;
+        const isPos = ord?.channel?.toUpperCase().includes('POS') || displayOrderNum.includes('POS');
+        return (
+          <div className="space-y-1">
+            <Link
+              href={`/admin/orders/${i.orderId}`}
+              className="font-mono text-xs font-black text-blue-600 hover:underline block"
+              title={`View Order ${displayOrderNum}`}
+            >
+              {displayOrderNum}
+            </Link>
+            <div className="flex items-center gap-1">
+              {isPos ? (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
+                  <Store className="w-2.5 h-2.5" /> ORD-POS
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1 px-1.5 py-0.2 rounded text-[9px] font-bold bg-indigo-50 text-indigo-700 border border-indigo-200">
+                  <Globe className="w-2.5 h-2.5" /> ORD-ONL
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      },
     },
     {
       key: 'createdAt',
@@ -447,7 +474,7 @@ export default function InvoicesPage() {
             </span>
           </div>
           <p className="text-xs text-neutral-500 mt-1">
-            Official GST-compliant tax invoices for in-store POS retail sales and online customer orders.
+            Distinct short Order IDs: <span className="font-mono font-bold text-amber-700">ORD-POS-...</span> for counter POS sales and <span className="font-mono font-bold text-indigo-700">ORD-ONL-...</span> for online store orders.
           </p>
         </div>
 
@@ -595,8 +622,8 @@ export default function InvoicesPage() {
             type="text"
             placeholder={
               activeTab === 'ISSUED_INVOICES'
-                ? 'Search by invoice #, order ref, notes...'
-                : 'Search by order #, customer, phone, channel...'
+                ? 'Search by invoice #, ORD-POS/ORD-ONL ref, notes...'
+                : 'Search by ORD-POS/ORD-ONL ID, customer, phone, channel...'
             }
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}

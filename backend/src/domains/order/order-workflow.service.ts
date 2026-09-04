@@ -552,10 +552,12 @@ export class OrderWorkflowService {
     });
   }
 
-  async generateOrderNumber(): Promise<string> {
+  async generateOrderNumber(channel: 'POS' | 'ONLINE' | 'WEB' | string = 'ONLINE'): Promise<string> {
+    const isPos = channel?.toUpperCase().includes('POS');
+    const typePrefix = isPos ? 'ORD-POS' : 'ORD-ONL';
     const today = new Date();
     const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `ORD-${dateStr}-`;
+    const prefix = `${typePrefix}-${dateStr}-`;
 
     const lastOrder = await this.prisma.order.findFirst({
       where: { orderNumber: { startsWith: prefix } },
@@ -565,10 +567,11 @@ export class OrderWorkflowService {
 
     let seq = 1;
     if (lastOrder) {
-      const lastSeq = parseInt(lastOrder.orderNumber.slice(-6), 10);
+      const lastSeq = parseInt(lastOrder.orderNumber.slice(-4), 10) || parseInt(lastOrder.orderNumber.slice(-6), 10);
       if (!isNaN(lastSeq)) seq = lastSeq + 1;
     }
 
-    return `${prefix}${String(seq).padStart(6, '0')}`;
+    return `${prefix}${String(seq).padStart(4, '0')}`;
   }
 }
+

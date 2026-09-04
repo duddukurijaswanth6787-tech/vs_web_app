@@ -35,6 +35,8 @@ export class InvoiceService {
     return {
       id: inv.id,
       orderId: inv.orderId,
+      orderNumber: inv.order?.orderNumber,
+      channel: inv.order?.channel,
       invoiceNumber: inv.invoiceNumber,
       status: inv.status,
       subtotal: Number(inv.subtotal),

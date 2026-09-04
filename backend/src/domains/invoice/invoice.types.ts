@@ -55,6 +55,8 @@ export class InvoiceItemResponse {
 export class InvoiceResponse {
   @ApiProperty() id!: string;
   @ApiProperty() orderId!: string;
+  @ApiPropertyOptional() orderNumber?: string;
+  @ApiPropertyOptional() channel?: string;
   @ApiProperty() invoiceNumber!: string;
   @ApiProperty() status!: string;
   @ApiProperty() subtotal!: number;
