@@ -57,16 +57,16 @@ export class SessionService {
     };
   }
 
-  async findById(id: string, userId: string, userRoles: string[]) {
-    const session = await this.prisma.refreshToken.findUnique({
-      where: { id },
-    });
+  async findById(id: string, userId: string) {
+    const session = await this.prisma.refreshToken.findUnique({ where: { id } });
     if (!session) throw new NotFoundException('Session not found');
-    if (
-      session.userId !== userId &&
-      !userRoles?.some((r) => ['super_admin', 'admin'].includes(r))
-    )
-      throw new ForbiddenException('Access denied');
+    if (session.userId !== userId) {
+      const isAdmin = await this.prisma.userRole.findFirst({
+        where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+        select: { userId: true },
+      });
+      if (!isAdmin) throw new ForbiddenException('Access denied');
+    }
     return this.toResponse(session);
   }
 
@@ -82,21 +82,16 @@ export class SessionService {
     return this.toResponse(session);
   }
 
-  async revoke(
-    id: string,
-    userId: string,
-    userRoles: string[],
-    revokedBy?: string,
-  ) {
-    const session = await this.prisma.refreshToken.findUnique({
-      where: { id },
-    });
+  async revoke(id: string, userId: string, revokedBy?: string) {
+    const session = await this.prisma.refreshToken.findUnique({ where: { id } });
     if (!session) throw new NotFoundException('Session not found');
-    if (
-      session.userId !== userId &&
-      !userRoles?.some((r) => ['super_admin', 'admin'].includes(r))
-    )
-      throw new ForbiddenException('Access denied');
+    if (session.userId !== userId) {
+      const isAdmin = await this.prisma.userRole.findFirst({
+        where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+        select: { userId: true },
+      });
+      if (!isAdmin) throw new ForbiddenException('Access denied');
+    }
     await this.prisma.refreshToken.update({
       where: { id },
       data: { isRevoked: true, revokedAt: new Date() },
