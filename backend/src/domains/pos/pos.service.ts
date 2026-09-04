@@ -932,6 +932,57 @@ export class PosService {
       );
     }
 
+    // 5.5 Auto-generate GST Tax Invoice
+    try {
+      const existingInv = await this.prisma.invoice.findFirst({
+        where: { orderId: order.id },
+      });
+      if (!existingInv) {
+        const today = new Date();
+        const dateStr = today.toISOString().slice(0, 10).replace(/-/g, '');
+        const prefix = `INV-${dateStr}-`;
+        const lastInvoice = await this.prisma.invoice.findFirst({
+          where: { invoiceNumber: { startsWith: prefix } },
+          orderBy: { invoiceNumber: 'desc' },
+        });
+        let seq = 1;
+        if (lastInvoice) {
+          seq = parseInt(lastInvoice.invoiceNumber.slice(-6), 10) + 1;
+        }
+        const invoiceNumber = `${prefix}${String(seq).padStart(6, '0')}`;
+
+        await this.prisma.invoice.create({
+          data: {
+            order: { connect: { id: order.id } },
+            invoiceNumber,
+            status: 'PAID',
+            subtotal: order.subtotal,
+            taxTotal: order.taxTotal,
+            discountTotal: order.discountTotal,
+            grandTotal: order.grandTotal,
+            currency: order.currency || 'INR',
+            notes: `Tax Invoice · POS_SHOPORA · ${dto.paymentMethod || 'PAID'}`,
+            createdBy: cashierId,
+            items: {
+              create: itemsToProcess.map((item) => ({
+                productName: item.productName,
+                sku: item.sku || 'SKU-UNKNOWN',
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: Math.round(item.unitPrice * item.quantity * 100) / 100,
+                taxAmount: 0,
+                discountAmount: item.discountAmount || 0,
+              })),
+            },
+          },
+        });
+      }
+    } catch (invErr) {
+      this.logger.warn(
+        `Auto-invoice creation non-fatal error for order ${order.orderNumber}: ${invErr}`,
+      );
+    }
+
     const saleResult = {
       orderId: order.id,
       orderNumber: order.orderNumber,
