@@ -61,6 +61,21 @@ export class OrderRepository {
         skip,
         take: limit,
         orderBy: { [sortBy]: sortOrder },
+        include: {
+          customer: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+          items: true,
+          payments: {
+            orderBy: { createdAt: 'desc' },
+          },
+        },
       }),
       this.prisma.order.count({ where }),
     ]);

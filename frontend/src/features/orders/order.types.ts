@@ -56,6 +56,25 @@ export interface OrderResponse {
   items?: OrderItemResponse[];
   addresses?: OrderAddressResponse[];
   timeline?: OrderTimelineResponse[];
+  customer?: {
+    id: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
+  payments?: Array<{
+    id: string;
+    paymentNumber: string;
+    provider: string;
+    method: string;
+    amount: number;
+    currency: string;
+    status: string;
+    transactionId?: string;
+    createdAt: string;
+  }>;
+  createdBy?: string;
   createdAt: string;
   updatedAt: string;
 }
