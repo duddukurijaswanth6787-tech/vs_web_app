@@ -78,10 +78,11 @@ export class MeReturnsController {
     @Body() dto: CustomerCreateReturnDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    const isAdmin = user.roles?.some((r) =>
-      ['super_admin', 'admin'].includes(r),
-    );
-    if (!isAdmin) {
+    const adminRole = await this.prisma.userRole.findFirst({
+      where: { userId: user.sub, role: { name: { in: ['super_admin', 'admin'] } } },
+      select: { userId: true },
+    });
+    if (!adminRole) {
       const order = await this.prisma.order.findUnique({
         where: { id: dto.orderId },
         select: { customerId: true },

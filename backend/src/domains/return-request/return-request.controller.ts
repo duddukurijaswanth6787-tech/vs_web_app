@@ -30,8 +30,12 @@ export class ReturnRequestController {
     private readonly prisma: PrismaService,
   ) {}
 
-  private isAdmin(user: JwtPayload): boolean {
-    return !!user.roles?.some((r) => ['super_admin', 'admin'].includes(r));
+  private async isAdmin(userId: string): Promise<boolean> {
+    const row = await this.prisma.userRole.findFirst({
+      where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+      select: { userId: true },
+    });
+    return row !== null;
   }
 
   private async resolveCustomerId(userId: string): Promise<string | null> {
@@ -49,7 +53,7 @@ export class ReturnRequestController {
     @Query() query: ReturnQueryDto,
     @CurrentUser() user: JwtPayload,
   ) {
-    if (this.isAdmin(user)) {
+    if (await this.isAdmin(user.sub)) {
       return ResponseBuilder.success(await this.returnService.findAll(query));
     }
     query.orderId = undefined;
@@ -66,7 +70,7 @@ export class ReturnRequestController {
   @ApiOperation({ summary: 'Get return by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     const result = await this.returnService.findById(id);
-    if (!this.isAdmin(user)) {
+    if (!await this.isAdmin(user.sub)) {
       const customerId = await this.resolveCustomerId(user.sub);
       const order = await this.prisma.order.findUnique({
         where: { id: result.orderId },
