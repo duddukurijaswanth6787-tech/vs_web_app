@@ -89,4 +89,24 @@ export class NotificationRepository {
     ]);
     return { total, unread, read, archived };
   }
+
+  async notifyAdmins(type: string, title: string, message: string, data?: any) {
+    const admins = await this.prisma.user.findMany({
+      where: {
+        userType: { in: ['ADMIN', 'STAFF'] },
+        accountStatus: 'ACTIVE',
+      },
+      select: { id: true },
+    });
+    if (admins.length === 0) return;
+    await this.prisma.notification.createMany({
+      data: admins.map((admin) => ({
+        userId: admin.id,
+        type,
+        title,
+        message,
+        data: data ?? Prisma.JsonNull,
+      })),
+    });
+  }
 }

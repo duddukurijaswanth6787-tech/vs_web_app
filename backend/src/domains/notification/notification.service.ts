@@ -111,4 +111,8 @@ export class NotificationService {
   async getStats(userId: string) {
     return this.notificationRepository.getStats(userId);
   }
+
+  async notifyAdmins(type: string, title: string, message: string, data?: any) {
+    return this.notificationRepository.notifyAdmins(type, title, message, data);
+  }
 }

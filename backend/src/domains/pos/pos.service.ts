@@ -19,6 +19,7 @@ import { LoyaltyService } from '@domains/loyalty/loyalty.service';
 import { PasswordService } from '@domains/auth/services/password.service';
 import { JwtService } from '@domains/auth/services/jwt.service';
 import { PrismaService } from '@database/prisma.service';
+import { NotificationService } from '@domains/notification/notification.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import Razorpay from 'razorpay';
 import {
@@ -60,6 +61,7 @@ export class PosService {
     private readonly passwordService: PasswordService,
     private readonly jwtService: JwtService,
     private readonly prisma: PrismaService,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -969,6 +971,21 @@ export class PosService {
         paymentMethod: dto.paymentMethod,
       },
     });
+
+    // 8. In-App Notification for Super Admin & Staff
+    this.notificationService.notifyAdmins(
+      'ORDER_CREATED',
+      `New In-Store Sale: ${order.orderNumber}`,
+      `POS Sale of ₹${Number(order.grandTotal).toLocaleString('en-IN')} processed via ${dto.paymentMethod}${dto.notes ? ` (Remarks: ${dto.notes})` : ''}`,
+      {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        grandTotal: Number(order.grandTotal),
+        channel: order.channel,
+        paymentMethod: dto.paymentMethod,
+        notes: dto.notes,
+      },
+    ).catch((err) => this.logger.warn(`Failed to notify admins of POS sale: ${err.message}`));
 
     return {
       success: true,
