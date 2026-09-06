@@ -43,7 +43,8 @@ export class CouponController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('coupons:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get coupon by ID' })
   async findById(@Param('id') id: string) {
