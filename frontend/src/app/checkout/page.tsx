@@ -268,7 +268,7 @@ function CheckoutPageContent() {
               className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
             >
               <Lock className="w-4 h-4" />
-              <span>{placeOrder.isPending ? 'Placing Order...' : 'Confirm & Place Order (Cash on Delivery)'}</span>
+              <span>{placeOrder.isPending ? 'Placing Order...' : 'Confirm & Place Order'}</span>
             </button>
           </div>
         ) : (

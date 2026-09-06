@@ -19,7 +19,7 @@ export default function NewTicketPage() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div className="min-h-screen bg-neutral-50 pb-20">
       <StorefrontHeader />
       <main className="max-w-xl mx-auto p-6">
         <h1 className="text-2xl font-bold font-serif mb-6">Create New Ticket</h1>
