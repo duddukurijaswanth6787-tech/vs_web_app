@@ -50,7 +50,8 @@ export class OrderController {
     @CurrentUser() user: JwtPayload,
   ) {
     const isAdmin = await this.isAdmin(user.sub);
-    const q = isAdmin ? query : { ...query, customerId: user.sub };
+    const customerId = isAdmin ? query.customerId : ((await this.resolveCustomerId(user.sub)) ?? '__none__');
+    const q = isAdmin ? query : { ...query, customerId };
     return ResponseBuilder.success(await this.orderService.findAll(q, isAdmin));
   }
 
