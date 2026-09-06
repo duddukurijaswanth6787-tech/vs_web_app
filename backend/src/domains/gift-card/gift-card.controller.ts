@@ -9,6 +9,7 @@ import {
 } from './gift-card.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -45,6 +46,7 @@ export class GiftCardController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('balance')
   @ApiOperation({ summary: 'Check gift card balance by code' })
   async balance(@Body() dto: GiftCardBalanceDto) {

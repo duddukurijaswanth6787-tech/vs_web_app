@@ -17,6 +17,7 @@ import {
 } from './referral.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -37,6 +38,7 @@ export class ReferralController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('apply')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

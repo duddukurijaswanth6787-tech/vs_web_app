@@ -16,6 +16,7 @@ import {
 } from './shipping.types';
 import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -29,6 +30,7 @@ export class ShippingController {
     private readonly delhiveryService: DelhiveryService,
   ) {}
 
+  @ThrottleCredentials()
   @Get('delhivery/pincode/:pincode')
   @Public()
   @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
@@ -38,6 +40,7 @@ export class ShippingController {
     );
   }
 
+  @ThrottleCredentials()
   @Get('pincode/:pincode')
   @Public()
   @ApiOperation({ summary: 'Check pincode serviceability & COD availability' })
@@ -47,6 +50,7 @@ export class ShippingController {
     );
   }
 
+  @ThrottleCredentials()
   @Get('delhivery/track/:waybill')
   @Public()
   @ApiOperation({ summary: 'Track Delhivery shipment by AWB Waybill number' })
@@ -56,6 +60,7 @@ export class ShippingController {
     );
   }
 
+  @ThrottleCredentials()
   @Get('track/:waybill')
   @Public()
   @ApiOperation({ summary: 'Track shipment by AWB Waybill number' })

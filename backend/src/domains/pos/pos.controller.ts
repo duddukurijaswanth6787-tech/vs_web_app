@@ -23,6 +23,7 @@ import {
   PermissionsGuard,
   Permissions,
 } from '@domains/auth/guards/permissions.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
 import { PosService } from './pos.service';
@@ -196,6 +197,7 @@ export class PosController {
     return this.posService.completeSale(user.sub, dto);
   }
 
+  @ThrottleCredentials()
   @Get('barcodes/generate')
   @Public()
   @ApiOperation({
