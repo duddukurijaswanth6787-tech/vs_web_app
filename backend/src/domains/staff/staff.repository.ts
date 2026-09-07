@@ -293,7 +293,10 @@ export class StaffRepository {
   async updateAttendance(
     id: string,
     data: {
-      punchOutAt?: Date;
+      punchInAt?: Date;
+      punchOutAt?: Date | null;
+      punchInLocation?: string;
+      punchInIp?: string;
       totalHours?: number;
       breakMinutes?: number;
       status?: string;
@@ -304,7 +307,10 @@ export class StaffRepository {
     return this.prisma.staffAttendance.update({
       where: { id },
       data: {
-        ...(data.punchOutAt && { punchOutAt: data.punchOutAt }),
+        ...(data.punchInAt && { punchInAt: data.punchInAt }),
+        ...(data.punchOutAt !== undefined && { punchOutAt: data.punchOutAt }),
+        ...(data.punchInLocation && { punchInLocation: data.punchInLocation }),
+        ...(data.punchInIp && { punchInIp: data.punchInIp }),
         ...(data.totalHours !== undefined && { totalHours: data.totalHours }),
         ...(data.breakMinutes !== undefined && { breakMinutes: data.breakMinutes }),
         ...(data.status && { status: data.status }),

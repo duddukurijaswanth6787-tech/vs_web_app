@@ -353,7 +353,22 @@ export class StaffService {
       if (!existing.punchOutAt) {
         return this.toAttendanceResponse(existing);
       }
-      throw new BusinessException('Already clocked out for today', 'ATT_ALREADY_COMPLETED');
+      // Re-punch in / resume shift for the day
+      const now = new Date();
+      const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 45);
+      const updated = await this.staffRepository.updateAttendance(existing.id, {
+        punchInAt: now,
+        punchOutAt: null,
+        status: isLate ? 'LATE' : 'PRESENT',
+        punchInLocation: dto.location || 'Store Main Counter',
+        punchInIp: ip,
+        notes: dto.notes || existing.notes || undefined,
+      });
+      this.loggerService.log(
+        { action: 'staff_punched_in', staffId: staff.id, time: now.toISOString(), status: updated.status },
+        'StaffService',
+      );
+      return this.toAttendanceResponse(updated);
     }
 
     const now = new Date();

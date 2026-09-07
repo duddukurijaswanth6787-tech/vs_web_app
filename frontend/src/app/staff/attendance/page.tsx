@@ -15,7 +15,8 @@ import {
   Award,
   LogOut,
   MapPin,
-  FileText,
+  Play,
+  Square,
   ArrowUpRight,
   UserCircle,
 } from 'lucide-react';
@@ -51,6 +52,13 @@ export default function StaffAttendanceHistoryPage() {
   const { user, isAuthenticated, isStaffUser, isInitializing, logout } = useAuth();
   const [profile, setProfile] = useState<StaffProfileData | null>(null);
 
+  // Today shift & live timer
+  const [todayAttendance, setTodayAttendance] = useState<AttendanceRecord | null>(null);
+  const [isClockedIn, setIsClockedIn] = useState<boolean>(false);
+  const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
+  const [actionLoading, setActionLoading] = useState<boolean>(false);
+
+  // Month history
   const [selectedMonth, setSelectedMonth] = useState<string>(
     new Date().toISOString().slice(0, 7) // YYYY-MM
   );
@@ -70,6 +78,21 @@ export default function StaffAttendanceHistoryPage() {
     }
   }, []);
 
+  // Load Today attendance
+  const fetchToday = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/staff/attendance/today');
+      const data = res.data?.data;
+      if (data) {
+        setTodayAttendance(data.attendance || null);
+        setIsClockedIn(!!data.isClockedIn);
+      }
+    } catch {
+      // no-op
+    }
+  }, []);
+
+  // Load Monthly history records
   const fetchAttendance = useCallback(async () => {
     setLoading(true);
     setError('');
@@ -89,9 +112,68 @@ export default function StaffAttendanceHistoryPage() {
   useEffect(() => {
     if (isAuthenticated) {
       fetchProfile();
+      fetchToday();
       fetchAttendance();
     }
-  }, [isAuthenticated, fetchProfile, fetchAttendance]);
+  }, [isAuthenticated, fetchProfile, fetchToday, fetchAttendance]);
+
+  // Live Stopwatch continuous runner
+  useEffect(() => {
+    if (!isClockedIn || !todayAttendance?.punchInAt) {
+      setElapsedSeconds(0);
+      return;
+    }
+
+    const punchInTime = new Date(todayAttendance.punchInAt).getTime();
+    const updateElapsed = () => {
+      const diffMs = Math.max(0, Date.now() - punchInTime);
+      setElapsedSeconds(Math.floor(diffMs / 1000));
+    };
+
+    updateElapsed();
+    const timer = setInterval(updateElapsed, 1000);
+    return () => clearInterval(timer);
+  }, [isClockedIn, todayAttendance]);
+
+  // Stopwatch formatted string (HH:MM:SS)
+  const formatTimer = (totalSeconds: number) => {
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+    return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+  };
+
+  // Punch In Handler
+  const handlePunchIn = async () => {
+    setActionLoading(true);
+    try {
+      await apiClient.post('/staff/attendance/punch-in', {
+        location: 'Store Counter',
+        shiftType: 'GENERAL',
+      });
+      await fetchToday();
+      await fetchAttendance();
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to punch in');
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  // Punch Out Handler
+  const handlePunchOut = async () => {
+    if (!confirm('Are you sure you want to punch out for today?')) return;
+    setActionLoading(true);
+    try {
+      await apiClient.post('/staff/attendance/punch-out', {});
+      await fetchToday();
+      await fetchAttendance();
+    } catch (err: any) {
+      alert(err.response?.data?.message || err.message || 'Failed to punch out');
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   // Performance calculations
   const totalHours = records.reduce((sum, r) => sum + Number(r.totalHours || 0), 0);
@@ -143,6 +225,7 @@ export default function StaffAttendanceHistoryPage() {
             <button
               onClick={() => {
                 fetchProfile();
+                fetchToday();
                 fetchAttendance();
               }}
               className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors"
@@ -166,12 +249,147 @@ export default function StaffAttendanceHistoryPage() {
 
       {/* Main Content Area */}
       <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
+        {/* PUNCH IN / PUNCH OUT HERO CARD WITH CONTINUOUS TIMER */}
+        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
+            <div>
+              <div className="flex items-center gap-2 mb-1">
+                <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-base font-bold text-neutral-900">Shift Punch & Live Timer</h2>
+              </div>
+              <p className="text-xs text-neutral-500">
+                {new Date().toLocaleDateString('en-IN', {
+                  weekday: 'long',
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </p>
+            </div>
+
+            {/* Status Badge */}
+            <div className="flex items-center gap-2">
+              {isClockedIn ? (
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live On Duty
+                </span>
+              ) : todayAttendance?.punchOutAt ? (
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  Shift Completed ({todayAttendance.totalHours} hrs)
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                  Not Punched In
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* Continuous Live Stopwatch & Direct Punch Actions */}
+          <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+            {/* Live Stopwatch Section */}
+            <div
+              className={`flex flex-col items-center justify-center p-6 rounded-2xl border text-center transition-all ${
+                isClockedIn
+                  ? 'bg-emerald-50/50 border-emerald-200 shadow-xs'
+                  : 'bg-neutral-50 border-neutral-200'
+              }`}
+            >
+              <span
+                className={`text-[11px] uppercase tracking-wider font-bold mb-2 ${
+                  isClockedIn ? 'text-emerald-700' : 'text-neutral-500'
+                }`}
+              >
+                {isClockedIn ? 'Active Working Time (Live)' : 'Total Hours Today'}
+              </span>
+              <div
+                className={`text-4xl sm:text-5xl font-mono font-bold tracking-wider ${
+                  isClockedIn ? 'text-emerald-800' : 'text-neutral-900'
+                }`}
+              >
+                {isClockedIn ? formatTimer(elapsedSeconds) : `${todayAttendance?.totalHours || 0} hrs`}
+              </div>
+
+              {todayAttendance?.punchInAt && (
+                <div className="mt-3 text-xs text-neutral-600 flex items-center gap-3">
+                  <span>
+                    Punch In:{' '}
+                    <strong className="text-neutral-900 font-mono">
+                      {new Date(todayAttendance.punchInAt).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                        second: '2-digit',
+                      })}
+                    </strong>
+                  </span>
+                  {todayAttendance?.punchOutAt && !isClockedIn && (
+                    <span>
+                      Punch Out:{' '}
+                      <strong className="text-neutral-900 font-mono">
+                        {new Date(todayAttendance.punchOutAt).toLocaleTimeString([], {
+                          hour: '2-digit',
+                          minute: '2-digit',
+                          second: '2-digit',
+                        })}
+                      </strong>
+                    </span>
+                  )}
+                  {todayAttendance?.status === 'LATE' && (
+                    <span className="text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded text-[10px] border border-amber-200">
+                      Late Arrival
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+
+            {/* Direct Punch Controls */}
+            <div className="flex flex-col justify-center gap-3">
+              {!isClockedIn ? (
+                <div className="space-y-3">
+                  <button
+                    onClick={handlePunchIn}
+                    disabled={actionLoading}
+                    className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <Play className="w-5 h-5 fill-white" />
+                    {actionLoading
+                      ? 'Recording Punch In...'
+                      : todayAttendance?.punchOutAt
+                      ? 'Punch In Again (Resume Shift)'
+                      : 'Punch In Now'}
+                  </button>
+                  <p className="text-center text-[11px] text-neutral-500">
+                    Tap above when starting your shift to start the live timer.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <button
+                    onClick={handlePunchOut}
+                    disabled={actionLoading}
+                    className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                  >
+                    <Square className="w-5 h-5 fill-white" />
+                    {actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}
+                  </button>
+                  <p className="text-center text-[11px] text-neutral-500">
+                    Live timer is running. Tap above when completing your shift.
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+        </section>
+
         {/* MONTH SUMMARY & KPIS */}
         <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
+                <Calendar className="w-5 h-5 text-[var(--brand-primary)]" />
                 <h2 className="text-base font-bold text-neutral-900">Monthly Working Hours & Summary</h2>
               </div>
               <p className="text-xs text-neutral-500">Total payable hours, shifts, and punctuality score</p>
@@ -324,45 +542,6 @@ export default function StaffAttendanceHistoryPage() {
             </div>
           )}
         </section>
-
-        {/* QUICK LINKS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <Link
-            href="/staff/dashboard"
-            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-[var(--brand-primary)] transition-all flex items-center justify-between group shadow-2xs"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[var(--brand-primary)]">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-[var(--brand-primary)] transition-colors">
-                  Today's Shift & Tasks
-                </h4>
-                <p className="text-xs text-neutral-500">Clock in/out & complete assigned tasks</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-[var(--brand-primary)] transition-colors" />
-          </Link>
-
-          <Link
-            href="/staff/profile"
-            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
-                <UserCircle className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors">
-                  Staff Profile & Security
-                </h4>
-                <p className="text-xs text-neutral-500">Employee ID, contact & password</p>
-              </div>
-            </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-indigo-600 transition-colors" />
-          </Link>
-        </div>
       </main>
     </div>
   );

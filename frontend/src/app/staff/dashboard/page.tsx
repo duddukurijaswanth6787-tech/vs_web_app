@@ -295,13 +295,13 @@ export default function StaffDashboardPage() {
 
       {/* Main Content Area */}
       <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
-        {/* HERO SHIFT CARD: Clock-In / Clock-Out */}
+        {/* HERO SHIFT CARD: Punch In / Punch Out with Live Running Timer */}
         <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2 mb-1">
                 <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
-                <h2 className="text-base font-bold text-neutral-900">Today's Shift & Attendance</h2>
+                <h2 className="text-base font-bold text-neutral-900">Today's Shift Attendance</h2>
               </div>
               <p className="text-xs text-neutral-500">
                 {new Date().toLocaleDateString('en-IN', {
@@ -316,50 +316,60 @@ export default function StaffDashboardPage() {
             {/* Status Badge */}
             <div className="flex items-center gap-2">
               {isClockedIn ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
-                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                  Active On Duty
+                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
+                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  Live On Duty
                 </span>
               ) : attendance?.punchOutAt ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Shift Completed ({attendance.totalHours} hrs)
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
-                  Not Clocked In
+                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                  Not Punched In
                 </span>
               )}
             </div>
           </div>
 
-          {/* Stopwatch & Action Grid */}
+          {/* Continuous Live Stopwatch & Direct Punch Controls */}
           <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-            {/* Stopwatch Section */}
-            <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-neutral-50 border border-neutral-200 text-center">
-              <span className="text-[11px] text-neutral-500 uppercase tracking-wider font-bold mb-2">
-                {isClockedIn ? 'Active Working Time' : 'Total Hours Today'}
+            {/* Live Timer Section */}
+            <div className={`flex flex-col items-center justify-center p-6 rounded-2xl border text-center transition-all ${
+              isClockedIn 
+                ? 'bg-emerald-50/50 border-emerald-200 shadow-xs' 
+                : 'bg-neutral-50 border-neutral-200'
+            }`}>
+              <span className={`text-[11px] uppercase tracking-wider font-bold mb-2 ${
+                isClockedIn ? 'text-emerald-700' : 'text-neutral-500'
+              }`}>
+                {isClockedIn ? 'Active Working Time (Live)' : 'Total Hours Worked Today'}
               </span>
-              <div className="text-4xl sm:text-5xl font-mono font-bold text-neutral-900 tracking-wider">
+              <div className={`text-4xl sm:text-5xl font-mono font-bold tracking-wider ${
+                isClockedIn ? 'text-emerald-800' : 'text-neutral-900'
+              }`}>
                 {isClockedIn ? formatTimer(elapsedSeconds) : `${attendance?.totalHours || 0} hrs`}
               </div>
+              
               {attendance?.punchInAt && (
                 <div className="mt-3 text-xs text-neutral-600 flex items-center gap-3">
                   <span>
-                    In:{' '}
+                    Punch In:{' '}
                     <strong className="text-neutral-900 font-mono">
-                      {new Date(attendance.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      {new Date(attendance.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                     </strong>
                   </span>
-                  {attendance?.punchOutAt && (
+                  {attendance?.punchOutAt && !isClockedIn && (
                     <span>
-                      Out:{' '}
+                      Punch Out:{' '}
                       <strong className="text-neutral-900 font-mono">
-                        {new Date(attendance.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(attendance.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                       </strong>
                     </span>
                   )}
                   {attendance?.status === 'LATE' && (
-                    <span className="text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded text-[11px] border border-amber-200">
+                    <span className="text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded text-[10px] border border-amber-200">
                       Late Arrival
                     </span>
                   )}
@@ -367,64 +377,35 @@ export default function StaffDashboardPage() {
               )}
             </div>
 
-            {/* Action Buttons */}
-            <div className="space-y-4">
+            {/* Direct Punch Actions */}
+            <div className="flex flex-col justify-center gap-3">
               {!isClockedIn ? (
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-600 mb-1">Work Location</label>
-                    <div className="grid grid-cols-3 gap-2">
-                      {['Main Store', 'Warehouse', 'Remote'].map((loc) => (
-                        <button
-                          key={loc}
-                          type="button"
-                          onClick={() => setLocation(loc)}
-                          className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
-                            location === loc
-                              ? 'bg-sky-50 border-[var(--brand-primary)] text-[var(--brand-primary)] shadow-2xs'
-                              : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
-                          }`}
-                        >
-                          {loc}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <button
                     onClick={handlePunchIn}
-                    disabled={actionLoading || !!attendance?.punchOutAt}
-                    className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                    disabled={actionLoading}
+                    className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
                   >
-                    <Play className="w-4 h-4 fill-white" />
-                    {actionLoading ? 'Clocking In...' : attendance?.punchOutAt ? 'Shift Completed Today' : 'Punch In Now'}
+                    <Play className="w-5 h-5 fill-white" />
+                    {actionLoading ? 'Recording Punch In...' : attendance?.punchOutAt ? 'Punch In Again (Resume Shift)' : 'Punch In Now'}
                   </button>
+                  <p className="text-center text-[11px] text-neutral-500">
+                    Tap above when starting your work shift at the store.
+                  </p>
                 </div>
               ) : (
                 <div className="space-y-3">
-                  <div>
-                    <label className="block text-xs font-bold text-neutral-600 mb-1">
-                      Break Deduction (minutes, if any)
-                    </label>
-                    <input
-                      type="number"
-                      min="0"
-                      step="5"
-                      value={breakMinutes || ''}
-                      onChange={(e) => setBreakMinutes(Number(e.target.value))}
-                      placeholder="e.g. 30"
-                      className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
-                    />
-                  </div>
-
                   <button
                     onClick={handlePunchOut}
                     disabled={actionLoading}
-                    className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
+                    className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
                   >
-                    <Square className="w-4 h-4 fill-white" />
-                    {actionLoading ? 'Punching Out...' : 'Punch Out (End Shift)'}
+                    <Square className="w-5 h-5 fill-white" />
+                    {actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}
                   </button>
+                  <p className="text-center text-[11px] text-neutral-500">
+                    Live timer is running. Tap above when completing your shift.
+                  </p>
                 </div>
               )}
             </div>
