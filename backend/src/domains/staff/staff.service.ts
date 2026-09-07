@@ -437,16 +437,35 @@ export class StaffService {
   async getAdminLiveRoster(dateQuery?: string, department?: string) {
     const targetDate = dateQuery || new Date().toISOString().split('T')[0];
 
-    // Fetch all active staff
+    // Fetch all active staff who have the 'staff' role
     const allStaff = await this.prisma.staffProfile.findMany({
       where: {
         employmentStatus: 'ACTIVE',
-        user: { deletedAt: null },
+        user: {
+          deletedAt: null,
+          userRoles: {
+            some: {
+              role: {
+                name: 'staff',
+              },
+            },
+          },
+        },
         ...(department ? { department: department as any } : {}),
       },
       include: {
         user: {
-          select: { firstName: true, lastName: true, email: true, phone: true },
+          select: {
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            userRoles: {
+              select: {
+                role: { select: { name: true, displayName: true } },
+              },
+            },
+          },
         },
       },
       orderBy: { employeeId: 'asc' },
