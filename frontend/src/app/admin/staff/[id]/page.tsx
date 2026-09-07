@@ -47,16 +47,32 @@ export default function StaffDetailPage() {
     refetchStaff();
   };
 
-  const handleAssignRole = async (e: React.FormEvent) => {
+  const handleAssignRole = async (
+    e: React.FormEvent,
+    currentRoles: string[] = []
+  ) => {
     e.preventDefault();
     if (!staff?.userId || !selectedRoleId) return;
     setIsAssigning(true);
     try {
+      // Remove any currently assigned roles (except super_admin) to guarantee a single active role
+      if (currentRoles.length > 0 && allRoles) {
+        for (const rName of currentRoles) {
+          const matchedRole = allRoles.find((r) => r.name === rName);
+          if (matchedRole && matchedRole.id !== selectedRoleId && matchedRole.name !== 'super_admin') {
+            await removeRoleMutation.mutateAsync({
+              staffUserId: staff.userId,
+              roleId: matchedRole.id,
+            });
+          }
+        }
+      }
+
       await assignRoleMutation.mutateAsync({
         staffUserId: staff.userId,
         roleId: selectedRoleId,
       });
-      toast('success', 'Role assigned');
+      toast('success', 'Role updated successfully');
       setSelectedRoleId('');
       refetchStaff();
     } catch (err: unknown) {
@@ -129,7 +145,7 @@ interface StaffDetailContentProps {
   selectedRoleId: string;
   setSelectedRoleId: (id: string) => void;
   isAssigning: boolean;
-  handleAssignRole: (e: React.FormEvent) => void;
+  handleAssignRole: (e: React.FormEvent, currentRoles?: string[]) => void;
   handleRemoveRole: (roleId: string) => void;
 }
 
@@ -315,7 +331,7 @@ function StaffDetailContent({
               Assign new role
             </h3>
             {isSuperAdmin ? (
-              <form onSubmit={handleAssignRole} className="space-y-3">
+              <form onSubmit={(e) => handleAssignRole(e, assignedRoleNames)} className="space-y-3">
                 <div className="space-y-1">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Available Roles</label>
                   <select

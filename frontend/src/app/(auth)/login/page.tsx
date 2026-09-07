@@ -31,19 +31,24 @@ function CustomerLoginForm() {
   const normalizedPhone = useMemo(() => phone.replace(/\D/g, '').slice(-10), [phone]);
 
   const redirectAfterLogin = (profile: ProfileWithRoles) => {
-    const isPosOnly = profile?.roles?.some((r: string) => ['pos_operator', 'pos_staff'].includes(r));
-    const isAdminOrSuperAdmin = profile?.roles?.some((r: string) => ['admin', 'super_admin'].includes(r));
-    const isPlainStaff = profile?.roles?.includes('staff');
-    const isStaffUser = isAdminOrSuperAdmin || isPosOnly || isPlainStaff;
+    const roles: string[] = profile?.roles || [];
+    const isAdminOrSuperAdmin = roles.some((r) => ['admin', 'super_admin'].includes(r));
+    const isStaff = roles.includes('staff');
+    const isPosOnly = roles.some((r) => ['pos_operator', 'pos_staff', 'pos_app'].includes(r));
 
-    if (profile && isStaffUser) {
-      // Billing-only staff land straight on the standalone POS screen, not
-      // the admin console — see app/pos/layout.tsx.
-      let destination = isAdminOrSuperAdmin ? '/admin/dashboard' : '/pos';
-      if (redirectTo !== '/') destination = redirectTo;
-      router.push(destination);
-    } else {
+    if (redirectTo && redirectTo !== '/') {
       router.push(redirectTo);
+      return;
+    }
+
+    if (isAdminOrSuperAdmin) {
+      router.push('/admin/dashboard');
+    } else if (isStaff) {
+      router.push('/staff/dashboard');
+    } else if (isPosOnly) {
+      router.push('/pos');
+    } else {
+      router.push('/');
     }
   };
 

@@ -36,13 +36,18 @@ export default function PosLayout({ children }: { children: React.ReactNode }) {
 
   const isSuperAdmin =
     user?.roles?.includes('super_admin') || user?.roles?.includes('admin');
+  const isPosAllowed =
+    isSuperAdmin ||
+    user?.roles?.some((r) => ['pos_operator', 'pos_staff', 'pos_app'].includes(r));
 
   useEffect(() => {
     if (pathname === '/pos/login') return;
     if (!isInitializing && !isStaffUser) {
       router.push(`/pos/login?redirect=${encodeURIComponent(pathname)}`);
+    } else if (!isInitializing && isStaffUser && !isPosAllowed) {
+      router.push('/staff/dashboard');
     }
-  }, [isInitializing, isStaffUser, pathname, router]);
+  }, [isInitializing, isStaffUser, isPosAllowed, pathname, router]);
 
   if (pathname === '/pos/login') {
     return <>{children}</>;
