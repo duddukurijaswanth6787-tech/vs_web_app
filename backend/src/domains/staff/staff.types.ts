@@ -111,6 +111,9 @@ export class StaffResponse {
   @ApiPropertyOptional() reportingManagerId?: string;
   @ApiProperty() employmentStatus!: string;
   @ApiProperty() accountStatus!: string;
+  @ApiPropertyOptional() emergencyContact?: string;
+  @ApiPropertyOptional() address?: string;
+  @ApiPropertyOptional() roles?: string[];
   @ApiPropertyOptional() joinedAt?: Date;
   @ApiPropertyOptional() phone?: string;
   @ApiPropertyOptional() profileImage?: string;

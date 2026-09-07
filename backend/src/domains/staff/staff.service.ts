@@ -44,6 +44,9 @@ export class StaffService {
       reportingManagerId: profile.reportingManagerId ?? undefined,
       employmentStatus: profile.employmentStatus,
       accountStatus: u.accountStatus,
+      emergencyContact: profile.emergencyContact ?? undefined,
+      address: profile.address ?? undefined,
+      roles: u.userRoles?.map((ur: any) => ur.role?.name || ur.role) ?? undefined,
       joinedAt: profile.joinedAt ?? undefined,
       phone: u.phone ?? undefined,
       profileImage: profile.profileImage ?? undefined,
@@ -74,6 +77,13 @@ export class StaffService {
     const profile = await this.staffRepository.findById(id);
     if (!profile)
       throw new AuthenticationException('Staff not found', 'STAFF_001');
+    return this.toResponse(profile);
+  }
+
+  async findByUserId(userId: string) {
+    const profile = await this.staffRepository.findByUserId(userId);
+    if (!profile)
+      throw new AuthenticationException('Staff profile not found', 'STAFF_001');
     return this.toResponse(profile);
   }
 

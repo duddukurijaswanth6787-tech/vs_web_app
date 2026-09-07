@@ -37,6 +37,18 @@ export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
   // ==========================================
+  // STAFF SELF-SERVICE PROFILE
+  // ==========================================
+
+  @Get('me')
+  @ApiOperation({ summary: 'Get current logged in staff profile with employee ID' })
+  async getMyProfile(@CurrentUser() user: JwtPayload) {
+    return ResponseBuilder.success(
+      await this.staffService.findByUserId(user.sub),
+    );
+  }
+
+  // ==========================================
   // ATTENDANCE & PUNCH IN/OUT
   // ==========================================
 

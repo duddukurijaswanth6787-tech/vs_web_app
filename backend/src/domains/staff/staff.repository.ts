@@ -101,7 +101,26 @@ export class StaffRepository {
   }
 
   async findByUserId(userId: string) {
-    return this.prisma.staffProfile.findUnique({ where: { userId } });
+    return this.prisma.staffProfile.findUnique({
+      where: { userId },
+      include: {
+        user: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+            accountStatus: true,
+            userRoles: {
+              select: {
+                role: { select: { name: true, displayName: true } },
+              },
+            },
+          },
+        },
+      },
+    });
   }
 
   async findByEmployeeId(employeeId: string) {

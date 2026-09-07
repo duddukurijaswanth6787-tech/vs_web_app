@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
   Clock,
   CheckCircle2,
@@ -20,6 +21,8 @@ import {
   ArrowUpRight,
   TrendingUp,
   Award,
+  ShieldCheck,
+  Building,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { apiClient } from '@/lib/api/client';
@@ -55,8 +58,23 @@ interface StaffTask {
   } | null;
 }
 
+interface StaffProfileData {
+  id: string;
+  employeeId: string;
+  department: string;
+  designation: string;
+  firstName: string;
+  lastName?: string;
+  email: string;
+  phone?: string;
+  jobTitle?: string;
+}
+
 export default function StaffDashboardPage() {
   const { user, isAuthenticated, isStaffUser, isInitializing, logout } = useAuth();
+
+  // Profile metadata
+  const [profile, setProfile] = useState<StaffProfileData | null>(null);
 
   // Attendance state
   const [attendance, setAttendance] = useState<StaffAttendance | null>(null);
@@ -73,6 +91,18 @@ export default function StaffDashboardPage() {
   const [loadingTasks, setLoadingTasks] = useState<boolean>(true);
   const [taskFilter, setTaskFilter] = useState<'ALL' | 'PENDING' | 'COMPLETED'>('ALL');
   const [updatingTaskId, setUpdatingTaskId] = useState<string | null>(null);
+
+  // Load Staff Profile Details (Employee ID, Department, Designation)
+  const fetchProfile = useCallback(async () => {
+    try {
+      const res = await apiClient.get('/staff/me');
+      if (res.data?.data) {
+        setProfile(res.data.data);
+      }
+    } catch {
+      // no-op
+    }
+  }, []);
 
   // Load Today Attendance
   const fetchTodayAttendance = useCallback(async () => {
@@ -109,10 +139,11 @@ export default function StaffDashboardPage() {
 
   useEffect(() => {
     if (isAuthenticated) {
+      fetchProfile();
       fetchTodayAttendance();
       fetchMyTasks();
     }
-  }, [isAuthenticated, fetchTodayAttendance, fetchMyTasks]);
+  }, [isAuthenticated, fetchProfile, fetchTodayAttendance, fetchMyTasks]);
 
   // Live stopwatch when clocked in
   useEffect(() => {
@@ -206,42 +237,51 @@ export default function StaffDashboardPage() {
     return <StaffLoginGate redirect="/staff/dashboard" />;
   }
 
-  const staffName = user ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}` : 'Staff Member';
+  const staffDisplayName = profile
+    ? `${profile.firstName} ${profile.lastName || ''}`.trim()
+    : user
+    ? `${user.firstName}${user.lastName ? ' ' + user.lastName : ''}`
+    : 'Staff Member';
+
+  const employeeId = profile?.employeeId || 'EMP-STAFF';
 
   return (
-    <div className="w-full min-h-screen bg-neutral-950 text-neutral-100 font-sans antialiased pb-24 sm:pb-8 flex flex-col">
+    <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-24 sm:pb-8 flex flex-col">
       {/* Top Header */}
-      <header className="bg-neutral-900 border-b border-neutral-800 sticky top-0 z-30 px-4 py-3 shadow-md">
+      <header className="bg-white border-b border-neutral-200 sticky top-0 z-30 px-4 py-3 shadow-2xs">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-sky-600 to-indigo-600 flex items-center justify-center font-bold text-white shadow-inner">
-              {user?.firstName?.[0] || 'S'}
+            <div className="w-9 h-9 rounded-xl bg-[var(--brand-primary)] p-1.5 shadow-xs flex items-center justify-center">
+              <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold text-white tracking-wide">{staffName}</h1>
-                <span className="text-[10px] bg-sky-500/20 text-sky-400 font-bold px-2 py-0.5 rounded-full border border-sky-500/30">
-                  Staff Member
+                <h1 className="text-sm font-bold text-neutral-900 tracking-wide font-serif">{staffDisplayName}</h1>
+                <span className="text-[10px] bg-sky-50 text-sky-700 font-mono font-bold px-2 py-0.5 rounded-md border border-sky-200">
+                  {employeeId}
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-400">Vasanthi's Signature Staff Portal</p>
+              <p className="text-[11px] text-neutral-500">
+                {profile?.department || 'Sales'} · {profile?.designation || 'Staff Associate'}
+              </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => {
+                fetchProfile();
                 fetchTodayAttendance();
                 fetchMyTasks();
               }}
-              className="p-2 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-neutral-300 transition-colors"
+              className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={logout}
-              className="p-2 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors"
+              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -256,16 +296,14 @@ export default function StaffDashboardPage() {
       {/* Main Content Area */}
       <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
         {/* HERO SHIFT CARD: Clock-In / Clock-Out */}
-        <section className="bg-gradient-to-b from-neutral-900 to-neutral-900/90 rounded-3xl border border-neutral-800 p-5 sm:p-6 shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-sky-500/5 rounded-full blur-3xl pointer-events-none" />
-
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-800">
+        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-5 h-5 text-sky-400" />
-                <h2 className="text-base font-bold text-white">Today's Shift & Punch</h2>
+                <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-base font-bold text-neutral-900">Today's Shift & Attendance</h2>
               </div>
-              <p className="text-xs text-neutral-400">
+              <p className="text-xs text-neutral-500">
                 {new Date().toLocaleDateString('en-IN', {
                   weekday: 'long',
                   year: 'numeric',
@@ -278,16 +316,16 @@ export default function StaffDashboardPage() {
             {/* Status Badge */}
             <div className="flex items-center gap-2">
               {isClockedIn ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-500/20 text-emerald-400 text-xs font-bold border border-emerald-500/30">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
                   Active On Duty
                 </span>
               ) : attendance?.punchOutAt ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-800 text-neutral-400 text-xs font-bold border border-neutral-700">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
                   Shift Completed ({attendance.totalHours} hrs)
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-500/20 text-amber-400 text-xs font-bold border border-amber-500/30">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                   Not Clocked In
                 </span>
               )}
@@ -297,32 +335,32 @@ export default function StaffDashboardPage() {
           {/* Stopwatch & Action Grid */}
           <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
             {/* Stopwatch Section */}
-            <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-neutral-950/60 border border-neutral-800/80 text-center">
-              <span className="text-xs text-neutral-400 uppercase tracking-widest font-bold mb-2">
+            <div className="flex flex-col items-center justify-center p-6 rounded-2xl bg-neutral-50 border border-neutral-200 text-center">
+              <span className="text-[11px] text-neutral-500 uppercase tracking-wider font-bold mb-2">
                 {isClockedIn ? 'Active Working Time' : 'Total Hours Today'}
               </span>
-              <div className="text-4xl sm:text-5xl font-mono font-black text-white tracking-wider">
+              <div className="text-4xl sm:text-5xl font-mono font-bold text-neutral-900 tracking-wider">
                 {isClockedIn ? formatTimer(elapsedSeconds) : `${attendance?.totalHours || 0} hrs`}
               </div>
               {attendance?.punchInAt && (
-                <div className="mt-3 text-[11px] text-neutral-400 flex items-center gap-3">
+                <div className="mt-3 text-xs text-neutral-600 flex items-center gap-3">
                   <span>
                     In:{' '}
-                    <strong className="text-neutral-200">
+                    <strong className="text-neutral-900 font-mono">
                       {new Date(attendance.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                     </strong>
                   </span>
                   {attendance?.punchOutAt && (
                     <span>
                       Out:{' '}
-                      <strong className="text-neutral-200">
+                      <strong className="text-neutral-900 font-mono">
                         {new Date(attendance.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </strong>
                     </span>
                   )}
                   {attendance?.status === 'LATE' && (
-                    <span className="text-amber-400 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded border border-amber-500/20">
-                      Late
+                    <span className="text-amber-700 font-bold bg-amber-100 px-2 py-0.5 rounded text-[11px] border border-amber-200">
+                      Late Arrival
                     </span>
                   )}
                 </div>
@@ -334,7 +372,7 @@ export default function StaffDashboardPage() {
               {!isClockedIn ? (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-400 mb-1">Work Location</label>
+                    <label className="block text-xs font-bold text-neutral-600 mb-1">Work Location</label>
                     <div className="grid grid-cols-3 gap-2">
                       {['Main Store', 'Warehouse', 'Remote'].map((loc) => (
                         <button
@@ -343,8 +381,8 @@ export default function StaffDashboardPage() {
                           onClick={() => setLocation(loc)}
                           className={`py-2 px-3 rounded-xl text-xs font-bold border transition-all ${
                             location === loc
-                              ? 'bg-sky-500/20 border-sky-400 text-sky-400'
-                              : 'bg-neutral-900 border-neutral-800 text-neutral-400 hover:text-neutral-200'
+                              ? 'bg-sky-50 border-[var(--brand-primary)] text-[var(--brand-primary)] shadow-2xs'
+                              : 'bg-white border-neutral-200 text-neutral-600 hover:bg-neutral-50'
                           }`}
                         >
                           {loc}
@@ -356,7 +394,7 @@ export default function StaffDashboardPage() {
                   <button
                     onClick={handlePunchIn}
                     disabled={actionLoading || !!attendance?.punchOutAt}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-emerald-950/50 transition-all disabled:opacity-50"
+                    className="w-full py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
                   >
                     <Play className="w-4 h-4 fill-white" />
                     {actionLoading ? 'Clocking In...' : attendance?.punchOutAt ? 'Shift Completed Today' : 'Punch In Now'}
@@ -365,7 +403,7 @@ export default function StaffDashboardPage() {
               ) : (
                 <div className="space-y-3">
                   <div>
-                    <label className="block text-xs font-bold text-neutral-400 mb-1">
+                    <label className="block text-xs font-bold text-neutral-600 mb-1">
                       Break Deduction (minutes, if any)
                     </label>
                     <input
@@ -375,14 +413,14 @@ export default function StaffDashboardPage() {
                       value={breakMinutes || ''}
                       onChange={(e) => setBreakMinutes(Number(e.target.value))}
                       placeholder="e.g. 30"
-                      className="w-full bg-neutral-950 border border-neutral-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-sky-500"
+                      className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
                     />
                   </div>
 
                   <button
                     onClick={handlePunchOut}
                     disabled={actionLoading}
-                    className="w-full py-4 rounded-2xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-black text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-lg shadow-red-950/50 transition-all disabled:opacity-50"
+                    className="w-full py-3.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all disabled:opacity-50"
                   >
                     <Square className="w-4 h-4 fill-white" />
                     {actionLoading ? 'Punching Out...' : 'Punch Out (End Shift)'}
@@ -394,27 +432,27 @@ export default function StaffDashboardPage() {
         </section>
 
         {/* TODAY'S ASSIGNED TASKS CARD */}
-        <section className="bg-neutral-900 rounded-3xl border border-neutral-800 p-5 sm:p-6 shadow-xl">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-800">
+        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2">
-                <ListTodo className="w-5 h-5 text-sky-400" />
-                <h2 className="text-base font-bold text-white">Today's Assigned Tasks</h2>
-                <span className="text-xs font-bold bg-neutral-800 text-neutral-300 px-2.5 py-0.5 rounded-full border border-neutral-700">
+                <ListTodo className="w-5 h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-base font-bold text-neutral-900">Today's Assigned Tasks</h2>
+                <span className="text-xs font-bold bg-neutral-100 text-neutral-700 px-2.5 py-0.5 rounded-full border border-neutral-200">
                   {completedTasksCount} / {tasks.length} Completed
                 </span>
               </div>
-              <p className="text-xs text-neutral-400 mt-0.5">Tasks assigned to you by admin / store manager</p>
+              <p className="text-xs text-neutral-500 mt-0.5">Tasks assigned to you by admin / store manager</p>
             </div>
 
             {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-neutral-950 p-1 rounded-xl border border-neutral-800 self-start sm:self-auto">
+            <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 self-start sm:self-auto">
               {(['ALL', 'PENDING', 'COMPLETED'] as const).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setTaskFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-colors ${
-                    taskFilter === filter ? 'bg-sky-600 text-white' : 'text-neutral-400 hover:text-neutral-200'
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                    taskFilter === filter ? 'bg-white text-neutral-900 shadow-2xs' : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
                   {filter}
@@ -428,28 +466,28 @@ export default function StaffDashboardPage() {
             {loadingTasks ? (
               <div className="py-8 text-center text-neutral-400 text-xs">Loading tasks...</div>
             ) : filteredTasks.length === 0 ? (
-              <div className="py-8 text-center bg-neutral-950/40 rounded-2xl border border-dashed border-neutral-800">
-                <CheckCircle2 className="w-8 h-8 text-emerald-400 mx-auto mb-2 opacity-80" />
-                <p className="text-sm font-bold text-neutral-300">All clear!</p>
-                <p className="text-xs text-neutral-500">No tasks pending for you right now.</p>
+              <div className="py-8 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+                <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
+                <p className="text-sm font-bold text-neutral-800">All tasks completed!</p>
+                <p className="text-xs text-neutral-500">No pending tasks for you right now.</p>
               </div>
             ) : (
               filteredTasks.map((task) => {
                 const isDone = task.status === 'COMPLETED';
                 const priorityColors = {
-                  URGENT: 'bg-red-500/20 text-red-400 border-red-500/30',
-                  HIGH: 'bg-orange-500/20 text-orange-400 border-orange-500/30',
-                  MEDIUM: 'bg-sky-500/20 text-sky-400 border-sky-500/30',
-                  LOW: 'bg-neutral-800 text-neutral-400 border-neutral-700',
+                  URGENT: 'bg-red-50 text-red-700 border-red-200',
+                  HIGH: 'bg-orange-50 text-orange-700 border-orange-200',
+                  MEDIUM: 'bg-sky-50 text-sky-700 border-sky-200',
+                  LOW: 'bg-neutral-100 text-neutral-600 border-neutral-200',
                 };
 
                 return (
                   <div
                     key={task.id}
-                    className={`p-4 rounded-2xl border transition-all ${
+                    className={`p-4 rounded-xl border transition-all ${
                       isDone
-                        ? 'bg-neutral-950/40 border-neutral-800/60 opacity-70'
-                        : 'bg-neutral-950/90 border-neutral-800 hover:border-neutral-700 shadow-md'
+                        ? 'bg-neutral-50/60 border-neutral-200/60 opacity-80'
+                        : 'bg-white border-neutral-200 hover:border-neutral-300 shadow-2xs'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-3">
@@ -459,8 +497,8 @@ export default function StaffDashboardPage() {
                           disabled={updatingTaskId === task.id}
                           className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all mt-0.5 ${
                             isDone
-                              ? 'bg-emerald-500 border-emerald-500 text-neutral-950 font-bold'
-                              : 'border-neutral-700 hover:border-sky-400 text-transparent'
+                              ? 'bg-emerald-600 border-emerald-600 text-white font-bold'
+                              : 'border-neutral-300 hover:border-emerald-500 text-transparent'
                           }`}
                         >
                           <Check className="w-4 h-4 stroke-[3]" />
@@ -468,13 +506,13 @@ export default function StaffDashboardPage() {
                         <div>
                           <h3
                             className={`text-sm font-bold ${
-                              isDone ? 'line-through text-neutral-400' : 'text-neutral-100'
+                              isDone ? 'line-through text-neutral-400' : 'text-neutral-900'
                             }`}
                           >
                             {task.title}
                           </h3>
                           {task.description && (
-                            <p className="text-xs text-neutral-400 mt-1 leading-relaxed">{task.description}</p>
+                            <p className="text-xs text-neutral-600 mt-1 leading-relaxed">{task.description}</p>
                           )}
                           <div className="flex flex-wrap items-center gap-2 mt-2">
                             <span
@@ -485,8 +523,8 @@ export default function StaffDashboardPage() {
                               {task.priority} Priority
                             </span>
                             {task.dueDate && (
-                              <span className="text-[10px] text-neutral-400 bg-neutral-900 px-2 py-0.5 rounded-md border border-neutral-800 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-neutral-500" />
+                              <span className="text-[10px] text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded-md border border-neutral-200 flex items-center gap-1">
+                                <Calendar className="w-3 h-3 text-neutral-400" />
                                 Due: {new Date(task.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                               </span>
                             )}
@@ -506,7 +544,7 @@ export default function StaffDashboardPage() {
                             <button
                               onClick={() => handleUpdateTaskStatus(task.id, 'IN_PROGRESS')}
                               disabled={updatingTaskId === task.id}
-                              className="text-[11px] font-bold text-sky-400 bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 px-2.5 py-1 rounded-lg transition-colors"
+                              className="text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1 rounded-lg transition-colors"
                             >
                               Start
                             </button>
@@ -514,7 +552,7 @@ export default function StaffDashboardPage() {
                           <button
                             onClick={() => handleUpdateTaskStatus(task.id, 'COMPLETED')}
                             disabled={updatingTaskId === task.id}
-                            className="text-[11px] font-bold text-emerald-400 bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 px-2.5 py-1 rounded-lg transition-colors"
+                            className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors"
                           >
                             Done
                           </button>
@@ -532,34 +570,38 @@ export default function StaffDashboardPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <Link
             href="/staff/attendance"
-            className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-sky-500/40 transition-colors flex items-center justify-between group"
+            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-[var(--brand-primary)] transition-all flex items-center justify-between group shadow-2xs"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-500/10 border border-sky-500/20 flex items-center justify-center text-sky-400">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[var(--brand-primary)]">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Monthly Working Hours</h4>
-                <p className="text-xs text-neutral-400">View your attendance history & logs</p>
+                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-[var(--brand-primary)] transition-colors">
+                  Monthly Working Hours
+                </h4>
+                <p className="text-xs text-neutral-500">View your attendance logs & payable hours</p>
               </div>
             </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-sky-400 transition-colors" />
+            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-[var(--brand-primary)] transition-colors" />
           </Link>
 
           <Link
             href="/staff/profile"
-            className="p-5 rounded-2xl bg-neutral-900 border border-neutral-800 hover:border-sky-500/40 transition-colors flex items-center justify-between group"
+            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
                 <UserCheck className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-white">Staff Profile & Details</h4>
-                <p className="text-xs text-neutral-400">Emergency contacts & employee info</p>
+                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors">
+                  Staff Profile & Security
+                </h4>
+                <p className="text-xs text-neutral-500">Employee ID, contact & password</p>
               </div>
             </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-500 group-hover:text-indigo-400 transition-colors" />
+            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-indigo-600 transition-colors" />
           </Link>
         </div>
       </main>
