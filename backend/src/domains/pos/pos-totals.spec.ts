@@ -8,16 +8,18 @@ describe('POS totals', () => {
   it('charges each line at its own GST rate, not a flat 5%', () => {
     // Indian apparel: 5% under Rs 1000 a piece, 12% at or above. A cart with
     // one of each is exactly the case the hardcoded rate got wrong.
+    // In retail, prices are GST-inclusive.
     const totals = computePosTotals([
       { quantity: 1, unitPrice: 800, taxPercent: 5 },
       { quantity: 1, unitPrice: 2400, taxPercent: 12 },
     ]);
 
-    expect(totals.lines[0].taxAmount).toBe(40);
-    expect(totals.lines[1].taxAmount).toBe(288);
-    expect(totals.taxTotal).toBe(328);
-    // The old flat 5% would have collected 160 on the pair.
-    expect(totals.taxTotal).not.toBe(160);
+    expect(totals.lines[0].taxableAmount).toBe(761.9);
+    expect(totals.lines[0].taxAmount).toBe(38.1);
+    expect(totals.lines[1].taxableAmount).toBe(2142.86);
+    expect(totals.lines[1].taxAmount).toBe(257.14);
+    expect(totals.taxTotal).toBe(295.24);
+    expect(totals.grandTotal).toBe(3200);
   });
 
   it('charges tax on the discounted amount, not the full price', () => {
@@ -28,12 +30,9 @@ describe('POS totals', () => {
       taxPercent: 5,
     });
 
-    expect(line.taxableAmount).toBe(4000);
-    expect(line.taxAmount).toBe(200);
-    expect(line.totalPrice).toBe(4200);
-    // Taxing the pre-discount 5000 would have charged 250 -- Rs 50 the
-    // customer does not owe.
-    expect(line.taxAmount).not.toBe(250);
+    expect(line.taxableAmount).toBe(3809.52);
+    expect(line.taxAmount).toBe(190.48);
+    expect(line.totalPrice).toBe(4000);
   });
 
   it('spreads an order-level discount across lines before taxing them', () => {
@@ -48,11 +47,11 @@ describe('POS totals', () => {
     );
 
     expect(totals.discountTotal).toBe(200);
-    expect(totals.lines[0].taxableAmount).toBe(900);
-    expect(totals.lines[1].taxableAmount).toBe(900);
-    expect(totals.lines[0].taxAmount).toBe(45);
-    expect(totals.lines[1].taxAmount).toBe(108);
-    expect(totals.grandTotal).toBe(1953);
+    expect(totals.lines[0].taxableAmount).toBe(857.14);
+    expect(totals.lines[1].taxableAmount).toBe(803.57);
+    expect(totals.lines[0].taxAmount).toBe(42.86);
+    expect(totals.lines[1].taxAmount).toBe(96.43);
+    expect(totals.grandTotal).toBe(1800);
   });
 
   it('keeps the footer equal to the column', () => {

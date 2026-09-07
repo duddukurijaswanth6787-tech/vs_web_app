@@ -25,7 +25,6 @@ import {
 } from './products.types';
 import { CreateColorGroupDto, SyncColorGroupsDto } from './dto/color-group.dto';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { AuthService } from '@domains/auth/auth.service';
 import { ResponseBuilder } from '@common/responses/response.builder';

@@ -818,12 +818,14 @@ export class PosService {
     try {
       await this.workflow.deductInventory(order.id, cashierId);
     } catch (err) {
-      await this.workflow.transition(
-        order.id,
-        'CANCELLED',
-        cashierId,
-        'Auto-cancelled: insufficient stock at sale completion',
-      );
+      if (order?.id) {
+        await this.workflow.transition(
+          order.id,
+          'CANCELLED',
+          cashierId,
+          'Auto-cancelled: insufficient stock at sale completion',
+        );
+      }
       throw err;
     }
 

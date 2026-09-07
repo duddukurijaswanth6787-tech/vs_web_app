@@ -165,6 +165,10 @@ describe('PosService (Phase 1 Backend)', () => {
             user: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
           }),
         },
+        {
+          provide: (await import('@domains/notification/notification.service')).NotificationService,
+          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true), sendSms: jest.fn().mockResolvedValue(true), sendEmail: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
@@ -1172,32 +1176,43 @@ describe('PosService (Phase 1 Backend)', () => {
       amountPaid: 699,
     };
 
-    it('refuses to bill when the terminal has no shift open', async () => {
+    it('auto-opens a shift when the terminal has no shift open', async () => {
       repository.findOpenShiftForTerminal.mockResolvedValue(null);
+      repository.createShift.mockResolvedValue({ id: 'shift-auto' });
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'c-1' });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        grandTotal: 699,
+        items: [],
+      });
 
-      await expect(service.completeSale('cashier-1', sale)).rejects.toThrow(
-        /open a shift/i,
+      const res = await service.completeSale('cashier-1', sale);
+      expect(res.success).toBe(true);
+      expect(repository.createShift).toHaveBeenCalledWith(
+        expect.objectContaining({ terminalId: DEFAULT_TERMINAL_ID, cashierId: 'cashier-1' }),
       );
-      expect(repository.createPosOrder).not.toHaveBeenCalled();
     });
 
     it('checks the terminal the sale is actually billed against', async () => {
-      // A client that sends no terminalId inherits the default, so its
-      // takings land in that drawer -- the guard has to look there too.
       repository.findOpenShiftForTerminal.mockResolvedValue(null);
+      repository.createShift.mockResolvedValue({ id: 'shift-auto' });
+      repository.findOrCreateWalkInCustomer.mockResolvedValue({ id: 'c-1' });
+      repository.createPosOrder.mockResolvedValue({
+        id: 'order-1',
+        orderNumber: 'ORD-1',
+        channel: 'POS_SHOPORA',
+        grandTotal: 699,
+        items: [],
+      });
 
-      await expect(service.completeSale('cashier-1', sale)).rejects.toThrow();
-      expect(repository.findOpenShiftForTerminal).toHaveBeenCalledWith(
-        DEFAULT_TERMINAL_ID,
-      );
-
-      repository.findOpenShiftForTerminal.mockClear();
-      repository.findOpenShiftForTerminal.mockResolvedValue(null);
-      await expect(
-        service.completeSale('cashier-1', { ...sale, terminalId: 'MOBILE_1' }),
-      ).rejects.toThrow();
+      await service.completeSale('cashier-1', { ...sale, terminalId: 'MOBILE_1' });
       expect(repository.findOpenShiftForTerminal).toHaveBeenCalledWith(
         'MOBILE_1',
+      );
+      expect(repository.createShift).toHaveBeenCalledWith(
+        expect.objectContaining({ terminalId: 'MOBILE_1' }),
       );
     });
 

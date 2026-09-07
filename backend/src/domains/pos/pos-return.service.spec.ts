@@ -96,6 +96,14 @@ describe('PosService returns', () => {
           useValue: { sign: jest.fn() },
         },
         {
+          provide: (await import('@domains/auth/services/refresh-token.service')).RefreshTokenService,
+          useValue: { create: jest.fn().mockResolvedValue('rt-mock') },
+        },
+        {
+          provide: (await import('@domains/notification/notification.service')).NotificationService,
+          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true), sendSms: jest.fn().mockResolvedValue(true), sendEmail: jest.fn().mockResolvedValue(true) },
+        },
+        {
           provide: (await import('@database/prisma.service')).PrismaService,
           useValue: {},
         },
