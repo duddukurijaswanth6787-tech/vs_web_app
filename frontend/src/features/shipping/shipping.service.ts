@@ -38,4 +38,25 @@ export const shippingService = {
     const response = await apiClient.post<StandardResponse<ShippingZoneResponse>>('/shipping/zones', dto);
     return response.data.data!;
   },
+
+  checkPincode: async (pincode: string): Promise<{
+    pincode: string;
+    isServiceable: boolean;
+    prepaidAvailable: boolean;
+    codAvailable: boolean;
+    city?: string;
+    state?: string;
+    remarks?: string;
+  }> => {
+    const response = await apiClient.get<StandardResponse<{
+      pincode: string;
+      isServiceable: boolean;
+      prepaidAvailable: boolean;
+      codAvailable: boolean;
+      city?: string;
+      state?: string;
+      remarks?: string;
+    }>>(`/shipping/delhivery/pincode/${encodeURIComponent(pincode)}`);
+    return response.data.data!;
+  },
 };

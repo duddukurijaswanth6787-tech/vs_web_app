@@ -1284,13 +1284,26 @@ export default function DesktopPosPage() {
                 </h2>
               </div>
               {cart.length > 0 && (
-                <button
-                  onClick={() => setCart([])}
-                  className="text-xs text-sky-600 hover:text-sky-800 font-semibold flex items-center gap-1"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>Clear All</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleHoldSale}
+                    disabled={holdMutation.isPending}
+                    className="text-xs bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-200 font-bold px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer disabled:opacity-50"
+                    title="Hold / Park this bill so you can attend to the next customer"
+                  >
+                    <Clock className="w-3.5 h-3.5 text-amber-600" />
+                    <span>{holdMutation.isPending ? 'Holding...' : 'Hold Bill'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCart([])}
+                    className="text-xs text-red-600 hover:text-red-800 font-semibold flex items-center gap-1 px-2 py-1.5 rounded-xl hover:bg-red-50 transition-colors"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Clear All</span>
+                  </button>
+                </div>
               )}
             </div>
 
