@@ -36,110 +36,6 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 export class StaffController {
   constructor(private readonly staffService: StaffService) {}
 
-  @Get()
-  @Permissions('staff:view')
-  @ApiOperation({
-    summary: 'List all staff with search, pagination, filter, sort',
-  })
-  async findAll(@Query() query: StaffQueryDto) {
-    return ResponseBuilder.success(await this.staffService.findAll(query));
-  }
-
-  @Get(':id')
-  @Permissions('staff:view')
-  @ApiOperation({ summary: 'Get staff by ID' })
-  async findById(@Param('id') id: string) {
-    return ResponseBuilder.success(await this.staffService.findById(id));
-  }
-
-  @Post()
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Create a new staff member' })
-  async create(@Body() dto: CreateStaffDto, @CurrentUser() user: JwtPayload) {
-    return ResponseBuilder.created(
-      await this.staffService.create(dto, user.sub),
-      'Staff created',
-    );
-  }
-
-  @Patch(':id')
-  @Permissions('staff:update')
-  @ApiOperation({ summary: 'Update a staff member' })
-  async update(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
-    return ResponseBuilder.success(
-      await this.staffService.update(id, dto),
-      'Staff updated',
-    );
-  }
-
-  @Delete(':id')
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Soft delete a staff member' })
-  async delete(@Param('id') id: string) {
-    await this.staffService.delete(id);
-    return ResponseBuilder.deleted('Staff deleted');
-  }
-
-  @Post(':id/restore')
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Restore a soft-deleted staff member' })
-  async restore(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.restore(id),
-      'Staff restored',
-    );
-  }
-
-  @Post(':id/activate')
-  @Permissions('staff:update')
-  @ApiOperation({ summary: 'Activate a staff member' })
-  async activate(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.activate(id),
-      'Staff activated',
-    );
-  }
-
-  @Post(':id/deactivate')
-  @Permissions('staff:update')
-  @ApiOperation({ summary: 'Deactivate a staff member' })
-  async deactivate(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.deactivate(id),
-      'Staff deactivated',
-    );
-  }
-
-  @Post(':id/suspend')
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Suspend a staff member' })
-  async suspend(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.suspend(id),
-      'Staff suspended',
-    );
-  }
-
-  @Post(':id/lock')
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Lock a staff member account' })
-  async lock(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.lock(id),
-      'Staff locked',
-    );
-  }
-
-  @Post(':id/unlock')
-  @Roles('super_admin')
-  @ApiOperation({ summary: 'Unlock a staff member account' })
-  async unlock(@Param('id') id: string) {
-    return ResponseBuilder.success(
-      await this.staffService.unlock(id),
-      'Staff unlocked',
-    );
-  }
-
   // ==========================================
   // ATTENDANCE & PUNCH IN/OUT
   // ==========================================
@@ -254,6 +150,114 @@ export class StaffController {
   ) {
     return ResponseBuilder.success(
       await this.staffService.getStaffPerformanceReport(staffProfileId, month),
+    );
+  }
+
+  // ==========================================
+  // STAFF DIRECTORY CRUD & MANAGEMENT
+  // ==========================================
+
+  @Get()
+  @Permissions('staff:view')
+  @ApiOperation({
+    summary: 'List all staff with search, pagination, filter, sort',
+  })
+  async findAll(@Query() query: StaffQueryDto) {
+    return ResponseBuilder.success(await this.staffService.findAll(query));
+  }
+
+  @Post()
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Create a new staff member' })
+  async create(@Body() dto: CreateStaffDto, @CurrentUser() user: JwtPayload) {
+    return ResponseBuilder.created(
+      await this.staffService.create(dto, user.sub),
+      'Staff created',
+    );
+  }
+
+  @Get(':id')
+  @Permissions('staff:view')
+  @ApiOperation({ summary: 'Get staff by ID' })
+  async findById(@Param('id') id: string) {
+    return ResponseBuilder.success(await this.staffService.findById(id));
+  }
+
+  @Patch(':id')
+  @Permissions('staff:update')
+  @ApiOperation({ summary: 'Update a staff member' })
+  async update(@Param('id') id: string, @Body() dto: UpdateStaffDto) {
+    return ResponseBuilder.success(
+      await this.staffService.update(id, dto),
+      'Staff updated',
+    );
+  }
+
+  @Delete(':id')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Soft delete a staff member' })
+  async delete(@Param('id') id: string) {
+    await this.staffService.delete(id);
+    return ResponseBuilder.deleted('Staff deleted');
+  }
+
+  @Post(':id/restore')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Restore a soft-deleted staff member' })
+  async restore(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.restore(id),
+      'Staff restored',
+    );
+  }
+
+  @Post(':id/activate')
+  @Permissions('staff:update')
+  @ApiOperation({ summary: 'Activate a staff member' })
+  async activate(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.activate(id),
+      'Staff activated',
+    );
+  }
+
+  @Post(':id/deactivate')
+  @Permissions('staff:update')
+  @ApiOperation({ summary: 'Deactivate a staff member' })
+  async deactivate(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.deactivate(id),
+      'Staff deactivated',
+    );
+  }
+
+  @Post(':id/suspend')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Suspend a staff member' })
+  async suspend(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.suspend(id),
+      'Staff suspended',
+    );
+  }
+
+  @Post(':id/lock')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Lock a staff member account' })
+  async lock(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.lock(id),
+      'Staff locked',
+    );
+  }
+
+  @Post(':id/unlock')
+  @Roles('super_admin')
+  @ApiOperation({ summary: 'Unlock a staff member account' })
+  async unlock(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.staffService.unlock(id),
+      'Staff unlocked',
     );
   }
 }
