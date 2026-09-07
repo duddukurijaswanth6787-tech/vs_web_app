@@ -5,7 +5,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useOrderList } from '@/features/orders/order.hooks';
 import type { OrderResponse } from '@/features/orders/order.types';
 import { OrderStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
-import { Search, Eye, FileText, Calendar, Store, Globe, Users, ArrowRight } from 'lucide-react';
+import { Search, Eye, FileText, Calendar, Store, Globe, Users, ArrowRight, Printer, Tag, CheckSquare, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDate } from '@/utils/format';
 import DataTable from '@/components/tables/DataTable';
@@ -26,6 +26,12 @@ export default function OrdersPage() {
   const [localSearch, setLocalSearch] = useState(search);
   const [localStartDate, setLocalStartDate] = useState(startDate);
   const [localEndDate, setLocalEndDate] = useState(endDate);
+
+  // Bulk Selection & Label Printing state
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [isPrintingLabels, setIsPrintingLabels] = useState(false);
+  const [printError, setPrintError] = useState('');
+
 
   const { data: listData, isLoading, isError, refetch } = useOrderList({
     page,
@@ -133,6 +139,37 @@ export default function OrdersPage() {
       setTimeout(() => setManifestError(''), 4000);
     }
   };
+
+  const handlePrintBulkLabels = async (format: '4x6' | 'A4' = '4x6') => {
+    if (!selectedOrderIds.size) return;
+    setIsPrintingLabels(true);
+    setPrintError('');
+    try {
+      const res = await apiClient.post('/shipping/bulk-labels', {
+        orderIds: Array.from(selectedOrderIds),
+        format,
+      });
+      const data = res.data?.data;
+      if (!data?.html) {
+        throw new Error('No label printable content returned');
+      }
+
+      const printWin = window.open('', '_blank', 'width=900,height=1000');
+      if (!printWin) {
+        alert('Please allow popups to open the shipping label print window.');
+        return;
+      }
+      printWin.document.open();
+      printWin.document.write(data.html);
+      printWin.document.close();
+    } catch (err: any) {
+      setPrintError(err.response?.data?.message || err.message || 'Failed to generate shipping labels.');
+      setTimeout(() => setPrintError(''), 5000);
+    } finally {
+      setIsPrintingLabels(false);
+    }
+  };
+
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -304,6 +341,13 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      {printError && (
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl text-xs font-semibold flex items-center justify-between">
+          <span>{printError}</span>
+          <button onClick={() => setPrintError('')} className="text-red-500 hover:text-red-700">Dismiss</button>
+        </div>
+      )}
+
       <DataTable
         columns={columns}
         data={listData?.data ?? []}
@@ -315,8 +359,31 @@ export default function OrdersPage() {
         onRetry={refetch}
         onPageChange={(p) => { const params = new URLSearchParams(searchParams.toString()); params.set('page', String(p)); router.push(`/admin/orders?${params}`); }}
         rowKey={(o) => o.id}
+        selectedIds={selectedOrderIds}
+        onSelectionChange={setSelectedOrderIds}
+        bulkActions={
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => handlePrintBulkLabels('4x6')}
+              disabled={isPrintingLabels}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-900 hover:bg-neutral-800 disabled:opacity-50 text-white rounded-lg text-xs font-bold transition shadow-xs"
+            >
+              {isPrintingLabels ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+              Print 4x6 Thermal Labels
+            </button>
+            <button
+              onClick={() => handlePrintBulkLabels('A4')}
+              disabled={isPrintingLabels}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 disabled:opacity-50 text-neutral-800 rounded-lg text-xs font-bold transition"
+            >
+              <FileText className="w-3.5 h-3.5 text-neutral-500" />
+              Print A4 Sheet
+            </button>
+          </div>
+        }
         emptyMessage="No orders found matching the filter selection."
       />
     </div>
   );
 }
+

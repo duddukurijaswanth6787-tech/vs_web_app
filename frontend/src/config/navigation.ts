@@ -302,12 +302,20 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'abandoned-carts',
+        title: 'Abandoned Carts Recovery',
+        href: '/admin/promotions/abandoned-carts',
+        icon: ShoppingCart,
+        implemented: true,
+      },
+      {
         id: 'gift-cards',
         title: 'Gift Cards',
         href: '/admin/gift-cards',
         icon: Gift,
         implemented: true,
       },
+
       {
         id: 'loyalty',
         title: 'Loyalty Program',

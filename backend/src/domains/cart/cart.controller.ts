@@ -18,7 +18,14 @@ import {
 import type { Request } from 'express';
 import { JwtService } from '@domains/auth/services/jwt.service';
 import { CartService } from './cart.service';
-import { AddToCartDto, UpdateQuantityDto, MergeCartDto } from './cart.types';
+import {
+  AddToCartDto,
+  UpdateQuantityDto,
+  MergeCartDto,
+  SendCartRecoveryDto,
+  BulkSendCartRecoveryDto,
+} from './cart.types';
+
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -193,4 +200,57 @@ export class CartController {
       await this.cartService.getCartByCustomerIdAdmin(customerId),
     );
   }
+
+  @Get('admin/abandoned')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get all abandoned carts with analytics (Admin only)' })
+  async getAbandonedCarts(@Req() req: Request) {
+    const hours = req.query['hours'] ? Number(req.query['hours']) : 2;
+    return ResponseBuilder.success(
+      await this.cartService.getAbandonedCarts(hours),
+      'Abandoned carts retrieved successfully',
+    );
+  }
+
+  @Post('admin/abandoned/:cartId/send-recovery')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Dispatch recovery reminder to a specific cart (Admin only)' })
+  async sendRecoveryReminder(
+    @Param('cartId') cartId: string,
+    @Body() dto: SendCartRecoveryDto,
+  ) {
+    return ResponseBuilder.success(
+      await this.cartService.sendRecoveryReminder(cartId, dto),
+      'Recovery reminder dispatched successfully',
+    );
+  }
+
+  @Post('admin/abandoned/bulk-send-recovery')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk dispatch recovery reminders (Admin only)' })
+  async bulkSendRecovery(@Body() dto: BulkSendCartRecoveryDto) {
+    return ResponseBuilder.success(
+      await this.cartService.bulkSendRecovery(dto),
+      'Bulk recovery reminders dispatched',
+    );
+  }
+
+  @Post('admin/abandoned/auto-recover')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Run automated recovery pipeline on all eligible carts' })
+  async runAutoRecovery() {
+    return ResponseBuilder.success(
+      await this.cartService.runAutoRecovery(),
+      'Automated cart recovery process finished',
+    );
+  }
 }
+

@@ -99,3 +99,59 @@ export class ShippingCalculationResponse {
   @ApiProperty() estimatedDelivery!: string;
   @ApiProperty() freeShipping!: boolean;
 }
+
+export class BulkShippingLabelDto {
+  @ApiProperty({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  orderIds!: string[];
+
+  @ApiPropertyOptional({ enum: ['4x6', 'A4'] })
+  @IsOptional()
+  @IsString()
+  format?: '4x6' | 'A4';
+}
+
+export interface ShippingLabelOrderData {
+  orderId: string;
+  orderNumber: string;
+  orderDate: string;
+  waybillNumber: string;
+  courierPartner: string;
+  paymentMode: 'PREPAID' | 'COD';
+  codAmount: number;
+  totalAmount: number;
+  recipient: {
+    name: string;
+    phone: string;
+    addressLine1: string;
+    addressLine2?: string;
+    city: string;
+    state: string;
+    postalCode: string;
+    landmark?: string;
+  };
+  sender: {
+    name: string;
+    address: string;
+    phone: string;
+    gstin: string;
+  };
+  items: Array<{
+    sku: string;
+    name: string;
+    variant?: string;
+    quantity: number;
+    price: number;
+  }>;
+  totalWeightGrams: number;
+  barcodeSvg: string;
+}
+
+export interface BulkShippingLabelsResponse {
+  count: number;
+  format: '4x6' | 'A4';
+  orders: ShippingLabelOrderData[];
+  html: string;
+}
+

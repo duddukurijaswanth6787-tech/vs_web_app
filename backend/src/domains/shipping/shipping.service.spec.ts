@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { ShippingService } from './shipping.service';
 import { ShippingRepository } from './shipping.repository';
 import { AuditService } from '@domains/audit/audit.service';
+import { PrismaService } from '@database/prisma.service';
 
 describe('ShippingService', () => {
   let service: ShippingService;
@@ -21,8 +22,15 @@ describe('ShippingService', () => {
           provide: AuditService,
           useValue: { log: jest.fn() },
         },
+        {
+          provide: PrismaService,
+          useValue: {
+            order: { findMany: jest.fn().mockResolvedValue([]) },
+          },
+        },
       ],
     }).compile();
+
 
     service = module.get<ShippingService>(ShippingService);
     repository = module.get<ShippingRepository>(ShippingRepository);

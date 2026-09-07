@@ -3,6 +3,7 @@ import { CartService } from './cart.service';
 import { CartRepository } from './cart.repository';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
+import { NotificationService } from '@domains/notification/notification.service';
 
 describe('CartService', () => {
   let service: CartService;
@@ -23,10 +24,22 @@ describe('CartService', () => {
         },
         {
           provide: PrismaService,
-          useValue: {},
+          useValue: {
+            shoppingCart: {
+              findMany: jest.fn().mockResolvedValue([]),
+              findUnique: jest.fn().mockResolvedValue(null),
+            },
+          },
+        },
+        {
+          provide: NotificationService,
+          useValue: {
+            create: jest.fn().mockResolvedValue({}),
+          },
         },
       ],
     }).compile();
+
 
     service = module.get<CartService>(CartService);
   });

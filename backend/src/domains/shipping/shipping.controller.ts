@@ -13,7 +13,9 @@ import {
   CreateShippingMethodDto,
   CreateShippingZoneDto,
   CalculateShippingDto,
+  BulkShippingLabelDto,
 } from './shipping.types';
+
 import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ThrottleCredentials } from '@common/security/throttle.decorators';
@@ -165,4 +167,17 @@ export class ShippingController {
       'Shipping zone created',
     );
   }
+
+  @Post('bulk-labels')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Bulk generate thermal 4x6 / A4 printable shipping barcode labels' })
+  async generateBulkShippingLabels(@Body() dto: BulkShippingLabelDto) {
+    return ResponseBuilder.success(
+      await this.shippingService.generateBulkShippingLabels(dto),
+      'Shipping labels generated successfully',
+    );
+  }
 }
+
