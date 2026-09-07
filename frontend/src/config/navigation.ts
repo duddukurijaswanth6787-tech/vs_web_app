@@ -49,6 +49,8 @@ import {
   Truck,
   Timer,
   Palette,
+  Clock,
+  ListTodo,
 } from 'lucide-react';
 
 export interface NavItem {
@@ -548,6 +550,20 @@ export const adminNavigation: NavGroup[] = [
         href: '/admin/staff',
         icon: UserCheck,
         roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
+        id: 'staff-attendance',
+        title: 'Staff Attendance & Roster',
+        href: '/admin/staff/attendance',
+        icon: Clock,
+        implemented: true,
+      },
+      {
+        id: 'staff-tasks',
+        title: 'Daily Tasks & Performance',
+        href: '/admin/staff/tasks',
+        icon: ListTodo,
         implemented: true,
       },
       {

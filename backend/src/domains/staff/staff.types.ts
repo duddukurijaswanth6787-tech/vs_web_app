@@ -116,3 +116,158 @@ export class StaffResponse {
   @ApiPropertyOptional() profileImage?: string;
   @ApiProperty() createdAt!: Date;
 }
+
+export class PunchInDto {
+  @ApiPropertyOptional({ default: 'GENERAL' })
+  @IsOptional()
+  @IsString()
+  shiftType?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  location?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class PunchOutDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+
+  @ApiPropertyOptional({ default: 0 })
+  @IsOptional()
+  breakMinutes?: number;
+}
+
+export class AttendanceQueryDto {
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  date?: string; // YYYY-MM-DD
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  month?: string; // YYYY-MM
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  staffProfileId?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  department?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  status?: string;
+}
+
+export class StaffAttendanceResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() staffProfileId!: string;
+  @ApiProperty() employeeId!: string;
+  @ApiProperty() staffName!: string;
+  @ApiProperty() department!: string;
+  @ApiProperty() designation!: string;
+  @ApiProperty() date!: string;
+  @ApiProperty() punchInAt!: Date;
+  @ApiPropertyOptional() punchOutAt?: Date;
+  @ApiProperty() totalHours!: number;
+  @ApiProperty() breakMinutes!: number;
+  @ApiProperty() status!: string;
+  @ApiProperty() shiftType!: string;
+  @ApiPropertyOptional() punchInLocation?: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiProperty() isCurrentlyActive!: boolean;
+}
+
+export class CreateStaffTaskDto {
+  @ApiProperty()
+  @IsString()
+  staffProfileId!: string;
+
+  @ApiProperty()
+  @IsString()
+  title!: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  description?: string;
+
+  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'], default: 'MEDIUM' })
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  dueDate?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class UpdateStaffTaskDto {
+  @ApiPropertyOptional({ enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'] })
+  @IsOptional()
+  @IsString()
+  priority?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  notes?: string;
+}
+
+export class StaffTaskResponse {
+  @ApiProperty() id!: string;
+  @ApiProperty() staffProfileId!: string;
+  @ApiProperty() staffName!: string;
+  @ApiProperty() employeeId!: string;
+  @ApiProperty() title!: string;
+  @ApiPropertyOptional() description?: string;
+  @ApiProperty() priority!: string;
+  @ApiProperty() status!: string;
+  @ApiPropertyOptional() dueDate?: Date;
+  @ApiPropertyOptional() completedAt?: Date;
+  @ApiPropertyOptional() assignedByName?: string;
+  @ApiPropertyOptional() notes?: string;
+  @ApiProperty() createdAt!: Date;
+}
+
+export class StaffPerformanceSummaryResponse {
+  @ApiProperty() staffProfileId!: string;
+  @ApiProperty() employeeId!: string;
+  @ApiProperty() staffName!: string;
+  @ApiProperty() department!: string;
+  @ApiProperty() designation!: string;
+  @ApiProperty() totalWorkingDays!: number;
+  @ApiProperty() presentDays!: number;
+  @ApiProperty() lateDays!: number;
+  @ApiProperty() totalHoursWorked!: number;
+  @ApiProperty() attendanceRatePercent!: number;
+  @ApiProperty() totalTasksAssigned!: number;
+  @ApiProperty() tasksCompleted!: number;
+  @ApiProperty() taskCompletionRatePercent!: number;
+  @ApiProperty() estimatedPayableHours!: number;
+}
+

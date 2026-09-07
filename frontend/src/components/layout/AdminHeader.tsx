@@ -10,6 +10,8 @@ import { queryKeys } from '@/lib/query/client';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import NotificationBell from '@/components/NotificationBell';
+import StaffPunchWidget from '@/components/staff/StaffPunchWidget';
+
 
 export default function AdminHeader() {
   const { toggleMobileSidebar, openCommandPalette } = useUIStore();
@@ -70,8 +72,12 @@ export default function AdminHeader() {
             ⌘K
           </kbd>
         </button>
+        {/* Staff Attendance Punch-In / Live Stopwatch Widget */}
+        <StaffPunchWidget />
+
         {/* Notification Bell */}
         <NotificationBell />
+
 
         {/* Real-time Health Indicator */}
         <Link

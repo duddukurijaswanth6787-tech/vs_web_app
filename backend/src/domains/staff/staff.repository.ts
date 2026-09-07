@@ -200,4 +200,250 @@ export class StaffRepository {
       data: data as any,
     });
   }
+
+  // --- Attendance Repository Methods ---
+
+  async findAttendanceByStaffAndDate(staffProfileId: string, date: string) {
+    return this.prisma.staffAttendance.findUnique({
+      where: {
+        staffProfileId_date: {
+          staffProfileId,
+          date,
+        },
+      },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findAttendanceById(id: string) {
+    return this.prisma.staffAttendance.findUnique({
+      where: { id },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async createAttendance(data: {
+    staffProfileId: string;
+    date: string;
+    punchInAt: Date;
+    punchInLocation?: string;
+    punchInIp?: string;
+    shiftType?: string;
+    status?: string;
+    notes?: string;
+  }) {
+    return this.prisma.staffAttendance.create({
+      data: {
+        staffProfile: { connect: { id: data.staffProfileId } },
+        date: data.date,
+        punchInAt: data.punchInAt,
+        punchInLocation: data.punchInLocation,
+        punchInIp: data.punchInIp,
+        shiftType: data.shiftType || 'GENERAL',
+        status: data.status || 'PRESENT',
+        notes: data.notes,
+      },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async updateAttendance(
+    id: string,
+    data: {
+      punchOutAt?: Date;
+      totalHours?: number;
+      breakMinutes?: number;
+      status?: string;
+      notes?: string;
+      punchOutIp?: string;
+    },
+  ) {
+    return this.prisma.staffAttendance.update({
+      where: { id },
+      data: {
+        ...(data.punchOutAt && { punchOutAt: data.punchOutAt }),
+        ...(data.totalHours !== undefined && { totalHours: data.totalHours }),
+        ...(data.breakMinutes !== undefined && { breakMinutes: data.breakMinutes }),
+        ...(data.status && { status: data.status }),
+        ...(data.notes !== undefined && { notes: data.notes }),
+        ...(data.punchOutIp && { punchOutIp: data.punchOutIp }),
+      },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  async findAttendanceList(params: {
+    staffProfileId?: string;
+    date?: string;
+    month?: string;
+    department?: string;
+    status?: string;
+  }) {
+    const where: any = {};
+    if (params.staffProfileId) where.staffProfileId = params.staffProfileId;
+    if (params.date) where.date = params.date;
+    if (params.month) where.date = { startsWith: params.month };
+    if (params.status) where.status = params.status;
+    if (params.department) {
+      where.staffProfile = { department: params.department };
+    }
+
+    return this.prisma.staffAttendance.findMany({
+      where,
+      orderBy: [{ date: 'desc' }, { punchInAt: 'desc' }],
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true, phone: true },
+            },
+          },
+        },
+      },
+    });
+  }
+
+  // --- Task Repository Methods ---
+
+  async createTask(data: {
+    staffProfileId: string;
+    title: string;
+    description?: string;
+    priority?: string;
+    dueDate?: Date;
+    assignedById?: string;
+    notes?: string;
+  }) {
+    return this.prisma.staffTask.create({
+      data: {
+        staffProfile: { connect: { id: data.staffProfileId } },
+        title: data.title,
+        description: data.description,
+        priority: data.priority || 'MEDIUM',
+        dueDate: data.dueDate,
+        assignedBy: data.assignedById ? { connect: { id: data.assignedById } } : undefined,
+        notes: data.notes,
+      },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+        assignedBy: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+    });
+  }
+
+  async updateTask(
+    id: string,
+    data: {
+      title?: string;
+      description?: string;
+      priority?: string;
+      status?: string;
+      completedAt?: Date | null;
+      notes?: string;
+    },
+  ) {
+    return this.prisma.staffTask.update({
+      where: { id },
+      data,
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+        assignedBy: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+    });
+  }
+
+  async findTaskById(id: string) {
+    return this.prisma.staffTask.findUnique({
+      where: { id },
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+        assignedBy: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+    });
+  }
+
+  async findTasks(params: {
+    staffProfileId?: string;
+    status?: string;
+    priority?: string;
+  }) {
+    const where: any = {};
+    if (params.staffProfileId) where.staffProfileId = params.staffProfileId;
+    if (params.status) where.status = params.status;
+    if (params.priority) where.priority = params.priority;
+
+    return this.prisma.staffTask.findMany({
+      where,
+      orderBy: [{ createdAt: 'desc' }],
+      include: {
+        staffProfile: {
+          include: {
+            user: {
+              select: { firstName: true, lastName: true, email: true },
+            },
+          },
+        },
+        assignedBy: {
+          select: { firstName: true, lastName: true, email: true },
+        },
+      },
+    });
+  }
 }
+
