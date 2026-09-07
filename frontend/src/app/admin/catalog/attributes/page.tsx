@@ -444,7 +444,6 @@ export default function AttributesPage() {
                   </div>
                   {swatchError && <p className="text-[11px] text-red-600 font-medium mt-1">{swatchError}</p>}
                 </div>
-                </div>
 
                 <button
                   type="submit"
