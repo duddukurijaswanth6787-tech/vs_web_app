@@ -22,6 +22,7 @@ export default function OrdersPage() {
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
 
+  const [manifestError, setManifestError] = useState('');
   const [localSearch, setLocalSearch] = useState(search);
   const [localStartDate, setLocalStartDate] = useState(startDate);
   const [localEndDate, setLocalEndDate] = useState(endDate);
@@ -122,7 +123,8 @@ export default function OrdersPage() {
       `);
       printWin.document.close();
     } catch {
-      alert('Failed to generate End-of-Day manifest.');
+      setManifestError('Failed to generate End-of-Day manifest.');
+      setTimeout(() => setManifestError(''), 4000);
     }
   };
 
@@ -177,13 +179,16 @@ export default function OrdersPage() {
               </div>
               <button type="submit" className="w-full sm:w-auto px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-semibold shrink-0 min-h-[38px] flex items-center justify-center">Apply</button>
             </form>
-            <button
-              type="button"
-              onClick={handleExportManifest}
-              className="w-full sm:w-auto px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0 min-h-[38px] flex items-center justify-center gap-1.5 shadow-2xs transition"
-            >
-              <FileText className="w-3.5 h-3.5" /> 📄 Export End-of-Day Manifest
-            </button>
+            <div className="flex flex-col gap-1 w-full sm:w-auto">
+              <button
+                type="button"
+                onClick={handleExportManifest}
+                className="w-full sm:w-auto px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0 min-h-[38px] flex items-center justify-center gap-1.5 shadow-2xs transition"
+              >
+                <FileText className="w-3.5 h-3.5" /> 📄 Export End-of-Day Manifest
+              </button>
+              {manifestError && <p className="text-[10px] text-red-600 font-medium">{manifestError}</p>}
+            </div>
             <select value={channel} onChange={(e) => updateQuery('channel', e.target.value)} className="w-full sm:w-auto bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium">
               <option value="">All Channels</option>
               <option value="ONLINE_STORE">🌐 Online Store</option>

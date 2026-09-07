@@ -54,6 +54,7 @@ export default function BannersPage() {
   const [mobileAnnouncementEnabled, setMobileAnnouncementEnabled] = useState<boolean>(true);
   const [announcementBarText, setAnnouncementBarText] = useState<string>('Festive Sale is Live! Get up to 30% OFF');
   const [isSavingSettings, setIsSavingSettings] = useState<boolean>(false);
+  const [settingsMsg, setSettingsMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   const { data: allSettingsData, refetch: refetchSettings } = useSettings({ limit: 500 });
   const createSettingMut = useCreateSetting();
@@ -110,9 +111,10 @@ export default function BannersPage() {
       }
 
       await refetchSettings();
-      alert('Settings saved successfully!');
+      setSettingsMsg({ type: 'success', text: 'Settings saved successfully!' });
+      setTimeout(() => setSettingsMsg(null), 3000);
     } catch {
-      alert('Failed to save settings');
+      setSettingsMsg({ type: 'error', text: 'Failed to save settings' });
     } finally {
       setIsSavingSettings(false);
     }
@@ -216,6 +218,11 @@ export default function BannersPage() {
             />
           </div>
 
+          {settingsMsg && (
+            <span className={`text-xs font-medium ${settingsMsg.type === 'success' ? 'text-emerald-600' : 'text-red-600'}`}>
+              {settingsMsg.text}
+            </span>
+          )}
           <button
             type="button"
             onClick={handleSaveAutoplaySettings}
