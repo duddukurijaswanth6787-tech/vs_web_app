@@ -23,8 +23,14 @@ export default function PricingPage() {
         <div className="bg-white border border-neutral-200 rounded-3xl p-6 sm:p-10 shadow-xs">
           {isLoading ? (
             <p className="text-sm text-neutral-400">Loading…</p>
+          ) : data?.content ? (
+            <div dangerouslySetInnerHTML={{ __html: data.content }} />
           ) : (
-            <div dangerouslySetInnerHTML={{ __html: data?.content || '' }} />
+            <div className="text-center space-y-3 py-6">
+              <p className="text-sm text-neutral-600 font-semibold">Pricing information coming soon.</p>
+              <p className="text-xs text-neutral-400">For custom pricing on bridal wear, couture stitching, or bulk orders, please contact us directly.</p>
+              <a href="/contact" className="inline-block mt-2 text-xs font-bold text-[var(--brand-primary)] hover:underline">Contact Us →</a>
+            </div>
           )}
         </div>
 

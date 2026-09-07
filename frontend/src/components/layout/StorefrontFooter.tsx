@@ -14,11 +14,20 @@ import {
   Headphones,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
-import { useFeatureEnabled } from '@/features/customer/hooks';
+import { useFeatureEnabled, useSocialLinks } from '@/features/customer/hooks';
+
+const SOCIAL_ICONS: Record<string, React.ReactNode> = {
+  INSTAGRAM: <Camera className="w-3.5 h-3.5" />,
+  FACEBOOK: <Globe className="w-3.5 h-3.5" />,
+  PINTEREST: <MapPin className="w-3.5 h-3.5" />,
+  YOUTUBE: <Play className="w-3.5 h-3.5 fill-sky-200" />,
+  TWITTER: <MessageCircle className="w-3.5 h-3.5" />,
+};
 
 export function StorefrontFooter() {
   const { isAuthenticated } = useAuth();
   const returnsEnabled = useFeatureEnabled('returns');
+  const { data: socialLinks } = useSocialLinks();
   return (
     <footer className="w-full font-sans">
       {/* Main Footer Content */}
@@ -36,23 +45,22 @@ export function StorefrontFooter() {
             </div>
 
             {/* Social Icons */}
-            <div className="flex items-center gap-2 text-[var(--footer-text)]">
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors">
-                <Camera className="w-3.5 h-3.5" />
-              </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors">
-                <Globe className="w-3.5 h-3.5" />
-              </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors">
-                <MapPin className="w-3.5 h-3.5" />
-              </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors">
-                <Play className="w-3.5 h-3.5 fill-sky-200" />
-              </a>
-              <a href="#" className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors">
-                <MessageCircle className="w-3.5 h-3.5" />
-              </a>
-            </div>
+            {socialLinks && socialLinks.length > 0 && (
+              <div className="flex items-center gap-2 text-[var(--footer-text)]">
+                {socialLinks.map((link) => (
+                  <a
+                    key={link.platform}
+                    href={link.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={link.title || link.platform}
+                    className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[var(--footer-bg)] hover:bg-sky-700 hover:text-[var(--footer-link-hover)] flex items-center justify-center transition-colors"
+                  >
+                    {SOCIAL_ICONS[link.platform] ?? <Globe className="w-3.5 h-3.5" />}
+                  </a>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Links Grid: Tight 2-Column on Mobile */}

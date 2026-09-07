@@ -11,7 +11,7 @@ import { formatInr } from '@/features/customer/mappers';
 
 function CheckoutSuccessPageContent() {
   const searchParams = useSearchParams();
-  const orderNumber = searchParams.get('order') || '';
+  const orderNumber = searchParams.get('orderId') || '';
   const { isAuthenticated } = useAuth();
   const { data: order } = useCustomerOrder(orderNumber, !!orderNumber && isAuthenticated);
 
