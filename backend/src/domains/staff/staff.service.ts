@@ -81,9 +81,7 @@ export class StaffService {
   }
 
   async findByUserId(userId: string) {
-    const profile = await this.staffRepository.findByUserId(userId);
-    if (!profile)
-      throw new AuthenticationException('Staff profile not found', 'STAFF_001');
+    const profile = await this.getOrCreateStaffProfileForUser(userId);
     return this.toResponse(profile);
   }
 
@@ -327,7 +325,7 @@ export class StaffService {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
       if (!user) throw new AuthenticationException('User not found', 'USER_404');
       const employeeId = await this.staffRepository.generateEmployeeId();
-      profile = await this.staffRepository.create({
+      await this.staffRepository.create({
         userId: user.id,
         department: 'SALES',
         designation: 'ASSOCIATE',
@@ -335,6 +333,10 @@ export class StaffService {
         createdBy: user.id,
         jobTitle: 'Store Executive',
       });
+      profile = await this.staffRepository.findByUserId(userId);
+    }
+    if (!profile) {
+      throw new AuthenticationException('Staff profile could not be created', 'STAFF_404');
     }
     return profile;
   }
