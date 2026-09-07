@@ -486,22 +486,23 @@ export class SocialService {
     return this.socialRepository.updateComment(commentId, content);
   }
 
-  async deleteComment(commentId: string, userId: string, userType: string) {
+  async deleteComment(commentId: string, userId: string) {
     const comment = await this.socialRepository.findCommentById(commentId);
     if (!comment) {
       throw new BusinessException('Comment not found', 'SOCIAL_COMMENT_004');
     }
 
-    // Admins can delete any comment, customers can only delete their own
-    if (
-      userType !== 'ADMIN' &&
-      userType !== 'SUPER_ADMIN' &&
-      comment.userId !== userId
-    ) {
-      throw new BusinessException(
-        'You are not authorized to delete this comment',
-        'SOCIAL_COMMENT_005',
-      );
+    if (comment.userId !== userId) {
+      const isAdmin = await this.prisma.userRole.findFirst({
+        where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+        select: { userId: true },
+      });
+      if (!isAdmin) {
+        throw new BusinessException(
+          'You are not authorized to delete this comment',
+          'SOCIAL_COMMENT_005',
+        );
+      }
     }
 
     return this.socialRepository.deleteComment(commentId);

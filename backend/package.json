@@ -10,7 +10,7 @@
   },
   "scripts": {
     "prebuild": "prisma generate",
-    "build": "nest build && tsc-alias",
+    "build": "prisma generate && nest build && tsc-alias",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "free-port": "node scripts/free-port.js",

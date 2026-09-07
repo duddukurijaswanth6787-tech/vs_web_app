@@ -56,6 +56,14 @@ export function useStorefrontFeatures() {
   });
 }
 
+export function useSocialLinks() {
+  return useQuery({
+    queryKey: ['social-links'],
+    queryFn: () => customerStorefrontService.getSocialLinks(),
+    staleTime: 10 * 60 * 1000,
+  });
+}
+
 /**
  * Resolves one toggle out of the feature list.
  *

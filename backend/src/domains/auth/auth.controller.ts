@@ -48,7 +48,6 @@ export class AuthController {
   // for whether this deployment has been provisioned yet.
   @ThrottleCredentials()
   @Post('seed-admin')
-  @Get('seed-admin')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Seed or reset initial admin credentials' })
   async seedAdmin() {
@@ -136,6 +135,7 @@ export class AuthController {
     return ResponseBuilder.success(null, 'Logout successful');
   }
 
+  @ThrottleCredentials()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })

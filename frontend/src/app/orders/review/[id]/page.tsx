@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft, Star } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerOrder } from '@/features/customer/hooks';
 import { customerOrdersService } from '@/features/customer/orders.service';
@@ -61,7 +62,7 @@ export default function OrderReviewPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
         <Link href="/orders" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
@@ -74,11 +75,12 @@ export default function OrderReviewPage() {
         <form onSubmit={onSubmit} className="bg-white border border-neutral-200 rounded-3xl p-6 space-y-4">
           {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
           <label className="block space-y-1.5">
-            <span className="text-xs font-semibold">Product</span>
+            <span className="text-xs font-semibold">Product <span className="text-red-500">*</span></span>
             <select
+              required
               value={productId}
               onChange={(e) => setProductId(e.target.value)}
-              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm"
+              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[var(--brand-primary)]"
             >
               {items.map((i) => (
                 <option key={i.id} value={i.productId}>
@@ -87,27 +89,37 @@ export default function OrderReviewPage() {
               ))}
             </select>
           </label>
-          <div className="flex items-center gap-1">
-            {[1, 2, 3, 4, 5].map((n) => (
-              <button key={n} type="button" onClick={() => setRating(n)}>
-                <Star className={`w-5 h-5 ${n <= rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'}`} />
-              </button>
-            ))}
+          <div>
+            <span className="text-xs font-semibold block mb-1.5">Rating <span className="text-red-500">*</span></span>
+            <div className="flex items-center gap-1">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button key={n} type="button" onClick={() => setRating(n)}>
+                  <Star className={`w-5 h-5 ${n <= rating ? 'fill-amber-400 text-amber-400' : 'text-neutral-300'}`} />
+                </button>
+              ))}
+              <span className="text-xs text-neutral-500 ml-1">{rating}/5</span>
+            </div>
           </div>
-          <input
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="Review title"
-            className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm"
-          />
-          <textarea
-            required
-            rows={4}
-            value={comment}
-            onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your experience"
-            className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm"
-          />
+          <label className="block space-y-1.5">
+            <span className="text-xs font-semibold">Review Title <span className="text-neutral-400 font-normal">(Optional)</span></span>
+            <input
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Summarise your experience"
+              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[var(--brand-primary)]"
+            />
+          </label>
+          <label className="block space-y-1.5">
+            <span className="text-xs font-semibold">Your Review <span className="text-red-500">*</span></span>
+            <textarea
+              required
+              rows={4}
+              value={comment}
+              onChange={(e) => setComment(e.target.value)}
+              placeholder="Share your honest experience with this product..."
+              className="w-full border border-neutral-200 rounded-xl px-3 py-2.5 text-sm outline-none focus:border-[var(--brand-primary)]"
+            />
+          </label>
           <button
             type="submit"
             disabled={loading || !productId}
@@ -118,6 +130,7 @@ export default function OrderReviewPage() {
         </form>
       </main>
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }

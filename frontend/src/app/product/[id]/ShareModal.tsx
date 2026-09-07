@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import { X, Copy, Share2, Send, MessageSquare } from 'lucide-react';
+import React, { useState } from 'react';
+import { X, Copy, Check, Share2, Send, MessageSquare } from 'lucide-react';
 
 interface ShareModalProps {
   isOpen: boolean;
@@ -11,11 +11,14 @@ interface ShareModalProps {
 }
 
 export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
+  const [copied, setCopied] = useState(false);
   if (!isOpen) return null;
 
   const handleCopy = () => {
-    navigator.clipboard.writeText(url);
-    alert('Link copied to clipboard!');
+    navigator.clipboard.writeText(url).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
   };
 
   const encodedUrl = encodeURIComponent(url);
@@ -68,12 +71,12 @@ export function ShareModal({ isOpen, onClose, url, title }: ShareModalProps) {
           </a>
           <button
             onClick={handleCopy}
-            className="flex flex-col items-center gap-1.5 text-xs text-neutral-600 hover:text-[var(--brand-primary)]"
+            className={`flex flex-col items-center gap-1.5 text-xs transition-colors ${copied ? 'text-emerald-600' : 'text-neutral-600 hover:text-[var(--brand-primary)]'}`}
           >
-            <div className="w-11 h-11 rounded-full bg-neutral-50 text-neutral-600 flex items-center justify-center border border-neutral-100">
-              <Copy className="w-5 h-5" />
+            <div className={`w-11 h-11 rounded-full flex items-center justify-center border transition-colors ${copied ? 'bg-emerald-50 border-emerald-200 text-emerald-600' : 'bg-neutral-50 border-neutral-100 text-neutral-600'}`}>
+              {copied ? <Check className="w-5 h-5" /> : <Copy className="w-5 h-5" />}
             </div>
-            <span>Copy Link</span>
+            <span>{copied ? 'Copied!' : 'Copy Link'}</span>
           </button>
         </div>
       </div>

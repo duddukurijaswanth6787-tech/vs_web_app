@@ -52,6 +52,7 @@ export default function AttributesPage() {
   const [optLabel, setOptLabel] = useState('');
   const [optSwatchUrl, setOptSwatchUrl] = useState('');
   const [uploadingSwatch, setUploadingSwatch] = useState(false);
+  const [swatchError, setSwatchError] = useState('');
 
   // Queries
   const { data: attributesData, isLoading: loadingAttrs, refetch: refetchAttrs } = useAttributes({ limit: 100 });
@@ -120,7 +121,8 @@ export default function AttributesPage() {
       });
       setOptSwatchUrl(res.data.data.url);
     } catch {
-      alert('Failed to upload swatch image');
+      setSwatchError('Failed to upload swatch image');
+      setTimeout(() => setSwatchError(''), 4000);
     } finally {
       setUploadingSwatch(false);
     }
@@ -440,6 +442,7 @@ export default function AttributesPage() {
                       />
                     </label>
                   </div>
+                  {swatchError && <p className="text-[11px] text-red-600 font-medium mt-1">{swatchError}</p>}
                 </div>
 
                 <button

@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerOrder, useFeatureEnabled } from '@/features/customer/hooks';
 import { customerOrdersService } from '@/features/customer/orders.service';
@@ -70,7 +71,7 @@ export default function OrderReturnPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-50 flex flex-col font-sans pb-20">
       <header className="sticky top-0 bg-white border-b px-4 py-3 flex items-center gap-3">
         <Link href={`/orders/details/${orderNumber}`} className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
@@ -80,8 +81,10 @@ export default function OrderReturnPage() {
       <main className="max-w-xl mx-auto w-full p-6 space-y-6">
         <form onSubmit={onSubmit} className="bg-white border p-6 rounded-2xl shadow-sm space-y-4">
           <div>
-            <label className="block text-sm font-bold mb-2">Reason for Return</label>
-            <select value={reason} onChange={e => setReason(e.target.value)} className="w-full border p-3 rounded-xl">
+            <label className="block text-sm font-bold mb-2">
+              Reason for Return <span className="text-red-500">*</span>
+            </label>
+            <select required value={reason} onChange={e => setReason(e.target.value)} className="w-full border border-neutral-200 p-3 rounded-xl outline-none focus:border-[var(--brand-primary)]">
               <option>Size issue</option>
               <option>Damaged item</option>
               <option>Not as described</option>
@@ -89,8 +92,10 @@ export default function OrderReturnPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold mb-2">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border p-3 rounded-xl h-32" placeholder="Tell us more..." />
+            <label className="block text-sm font-bold mb-2">
+              Additional Details <span className="text-neutral-400 font-normal text-xs">(Optional)</span>
+            </label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border border-neutral-200 p-3 rounded-xl h-32 outline-none focus:border-[var(--brand-primary)]" placeholder="Tell us more about the issue..." />
           </div>
           <button disabled={loading} type="submit" className="w-full bg-[var(--brand-primary)] text-white py-3 rounded-xl font-bold">
             {loading ? 'Submitting...' : 'Submit Return Request'}
@@ -98,6 +103,7 @@ export default function OrderReturnPage() {
           {error && <p className="text-red-600 text-sm">{error}</p>}
         </form>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

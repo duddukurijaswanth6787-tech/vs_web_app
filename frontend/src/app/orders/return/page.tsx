@@ -7,6 +7,8 @@ import { ArrowLeft, RefreshCw, CheckCircle2, AlertCircle, Package } from 'lucide
 import { useCustomerOrders } from '@/features/customer/hooks';
 import { customerOrdersService, OrderDto } from '@/features/customer/orders.service';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
+import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 
 const RETURN_REASONS = [
   'Size / Fit Issue (Too Large or Small)',
@@ -63,7 +65,7 @@ function OrderReturnForm() {
 
       setSuccessMsg('Your return request has been submitted successfully!');
       setTimeout(() => {
-        router.push('/me/orders');
+        router.push('/orders');
       }, 2000);
     } catch (err) {
       setErrorMsg(getApiErrorMessage(err, 'Failed to submit return request'));
@@ -73,9 +75,9 @@ function OrderReturnForm() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
-        <Link href="/me/orders" className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors">
+        <Link href="/orders" className="p-1.5 rounded-lg hover:bg-neutral-100 transition-colors">
           <ArrowLeft className="w-5 h-5 text-neutral-700" />
         </Link>
         <h1 className="text-base font-bold font-serif text-[var(--brand-primary)]">Request Order Return</h1>
@@ -206,6 +208,8 @@ function OrderReturnForm() {
           </button>
         </form>
       </main>
+      <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }

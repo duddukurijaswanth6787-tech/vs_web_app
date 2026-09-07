@@ -12,26 +12,26 @@ const STORES = [
     name: "Vasanthi's Signature Flagship Boutique",
     city: 'Hyderabad',
     address: 'Road No. 36, Jubilee Hills, Hyderabad, Telangana 500033',
-    phone: '+91 98765 43210',
+    phone: '+91 40 2354 0000',
     email: 'jubileehills@vasanthisignature.com',
     hours: 'Mon - Sun: 10:30 AM - 8:30 PM',
-    mapUrl: 'https://maps.google.com',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Road+No.+36+Jubilee+Hills+Hyderabad+Telangana+500033',
   },
   {
     id: 'vijayawada-boutique',
     name: "Vasanthi's Signature Couture Salon",
     city: 'Vijayawada',
     address: 'M.G. Road, Opp. Gateway Hotel, Labbipet, Vijayawada, Andhra Pradesh 520010',
-    phone: '+91 98765 43211',
+    phone: '+91 866 244 0000',
     email: 'vijayawada@vasanthisignature.com',
     hours: 'Mon - Sun: 10:30 AM - 8:30 PM',
-    mapUrl: 'https://maps.google.com',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=MG+Road+Labbipet+Vijayawada+Andhra+Pradesh+520010',
   },
 ];
 
 export default function StoresPage() {
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-16">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3 shadow-xs">
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />

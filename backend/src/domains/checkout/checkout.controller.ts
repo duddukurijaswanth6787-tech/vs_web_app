@@ -3,6 +3,7 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CheckoutService } from './checkout.service';
 import { CheckoutPreviewDto, PlaceOrderDto } from './checkout.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -24,6 +25,7 @@ export class CheckoutController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('place-order')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

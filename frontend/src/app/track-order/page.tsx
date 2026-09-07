@@ -32,7 +32,7 @@ export default function TrackOrderPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-16">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3 shadow-xs">
         <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
           <ArrowLeft className="w-5 h-5" />
@@ -49,11 +49,14 @@ export default function TrackOrderPage() {
           </div>
 
           <form onSubmit={handleTrack} className="space-y-3">
+            <label className="block space-y-1.5">
+              <span className="text-xs font-semibold text-neutral-700">Order Number / AWB <span className="text-red-500">*</span></span>
+            </label>
             <div className="relative">
               <input
                 type="text"
                 required
-                placeholder="Order ID / Tracking Number"
+                placeholder="e.g. ORD-1001 or courier AWB"
                 value={orderQuery}
                 onChange={(e) => setOrderQuery(e.target.value)}
                 className="w-full text-xs pl-10 pr-4 py-3 border border-neutral-300 rounded-xl focus:outline-hidden focus:border-[var(--brand-primary)]"

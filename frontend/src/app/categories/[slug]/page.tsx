@@ -63,7 +63,7 @@ export default function CategorySlugPage() {
   const error = special ? specialProducts.error : categoryProducts.error || category.error;
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <StorefrontHeader />
 
       <main className="flex-1">

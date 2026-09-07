@@ -17,7 +17,8 @@ import {
   AssignRoleDto,
   UserQueryDto,
 } from './users.types';
-import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -66,8 +67,8 @@ export class UsersController {
   @Delete(':id')
   @Roles('super_admin')
   @ApiOperation({ summary: 'Soft delete user' })
-  async delete(@Param('id') id: string) {
-    await this.usersService.delete(id);
+  async delete(@Param('id') id: string, @CurrentUser() actor: JwtPayload) {
+    await this.usersService.delete(id, actor.sub);
     return ResponseBuilder.deleted('User deleted');
   }
 
@@ -104,9 +105,9 @@ export class UsersController {
   @Post(':id/suspend')
   @Roles('super_admin')
   @ApiOperation({ summary: 'Suspend user account' })
-  async suspend(@Param('id') id: string) {
+  async suspend(@Param('id') id: string, @CurrentUser() actor: JwtPayload) {
     return ResponseBuilder.success(
-      await this.usersService.suspend(id),
+      await this.usersService.suspend(id, actor.sub),
       'User suspended',
     );
   }

@@ -13,12 +13,30 @@ import { CreateInvoiceDto, InvoiceQueryDto } from './invoice.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import { PrismaService } from '@database/prisma.service';
+import { ForbiddenException } from '@nestjs/common';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
 @ApiTags('Invoices')
 @Controller('invoices')
 export class InvoiceController {
-  constructor(private readonly invoiceService: InvoiceService) {}
+  constructor(
+    private readonly invoiceService: InvoiceService,
+    private readonly prisma: PrismaService,
+  ) {}
+
+  private async isAdmin(userId: string): Promise<boolean> {
+    const row = await this.prisma.userRole.findFirst({
+      where: { userId, role: { name: { in: ['super_admin', 'admin'] } } },
+      select: { userId: true },
+    });
+    return row !== null;
+  }
+
+  private async resolveCustomerId(userId: string): Promise<string | null> {
+    const p = await this.prisma.customerProfile.findUnique({ where: { userId } });
+    return p?.id ?? null;
+  }
 
   @Get()
   @UseGuards(JwtAuthGuard, RolesGuard)
@@ -33,7 +51,19 @@ export class InvoiceController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get invoices by order ID' })
-  async findByOrderId(@Param('orderId') orderId: string) {
+  async findByOrderId(
+    @Param('orderId') orderId: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    if (!await this.isAdmin(user.sub)) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: orderId },
+        select: { customerId: true },
+      });
+      const customerId = await this.resolveCustomerId(user.sub);
+      if (!order || order.customerId !== customerId)
+        throw new ForbiddenException('Invoice not found');
+    }
     return ResponseBuilder.success(
       await this.invoiceService.findByOrderId(orderId),
     );
@@ -43,8 +73,18 @@ export class InvoiceController {
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get invoice by ID' })
-  async findById(@Param('id') id: string) {
-    return ResponseBuilder.success(await this.invoiceService.findById(id));
+  async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
+    const invoice = await this.invoiceService.findById(id);
+    if (!await this.isAdmin(user.sub)) {
+      const order = await this.prisma.order.findUnique({
+        where: { id: (invoice as any).orderId },
+        select: { customerId: true },
+      });
+      const customerId = await this.resolveCustomerId(user.sub);
+      if (!order || order.customerId !== customerId)
+        throw new ForbiddenException('Invoice not found');
+    }
+    return ResponseBuilder.success(invoice);
   }
 
   @Post()

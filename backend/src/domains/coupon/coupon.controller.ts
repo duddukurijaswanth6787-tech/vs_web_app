@@ -19,6 +19,7 @@ import {
 } from './coupon.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -43,7 +44,8 @@ export class CouponController {
   }
 
   @Get(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('coupons:view')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Get coupon by ID' })
   async findById(@Param('id') id: string) {
@@ -76,6 +78,7 @@ export class CouponController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('apply')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
@@ -86,6 +89,7 @@ export class CouponController {
     );
   }
 
+  @ThrottleCredentials()
   @Post('validate')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()

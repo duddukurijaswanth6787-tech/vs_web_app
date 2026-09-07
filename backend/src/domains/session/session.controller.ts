@@ -57,7 +57,7 @@ export class SessionController {
   @ApiOperation({ summary: 'Get session by ID' })
   async findById(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return ResponseBuilder.success(
-      await this.sessionService.findById(id, user.sub, user.roles),
+      await this.sessionService.findById(id, user.sub),
     );
   }
 
@@ -77,7 +77,7 @@ export class SessionController {
   @ApiOperation({ summary: 'Revoke a specific session by ID' })
   async revoke(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
     return ResponseBuilder.success(
-      await this.sessionService.revoke(id, user.sub, user.roles),
+      await this.sessionService.revoke(id, user.sub),
     );
   }
 

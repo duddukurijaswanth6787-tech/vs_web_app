@@ -18,7 +18,7 @@ export default function BrandSlugPage() {
   const products = useBrandProducts(slug, { limit: 48 });
 
   return (
-    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
         <Link href="/brands" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />

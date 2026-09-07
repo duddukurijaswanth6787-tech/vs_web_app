@@ -2243,7 +2243,7 @@ export default function DesktopPosPage() {
                               : sale.status === 'NEEDS_REVIEW'
                                 ? 'bg-sky-100 text-sky-800'
                                 : sale.status === 'FAILED'
-                                  ? 'bg-sky-100 text-sky-800'
+                                  ? 'bg-red-100 text-red-800'
                                   : 'bg-amber-100 text-amber-800'
                         }`}
                       >

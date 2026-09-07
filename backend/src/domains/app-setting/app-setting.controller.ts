@@ -17,7 +17,6 @@ import {
 } from './app-setting.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
-import { Public } from '@domains/auth/guards/jwt-auth.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -42,12 +41,11 @@ export class AppSettingController {
   }
 
   @Get(':key')
-  @Public()
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:view')
+  @ApiBearerAuth()
   @ApiOperation({ summary: 'Get setting by key' })
   async findByKey(@Param('key') key: string) {
-    if (key === 'public') {
-      return ResponseBuilder.success(await this.settingService.getPublicSettingsFallback());
-    }
     return ResponseBuilder.success(await this.settingService.findByKey(key));
   }
 

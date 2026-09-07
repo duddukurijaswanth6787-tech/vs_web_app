@@ -96,12 +96,17 @@ export class UsersService {
     return this.findById(id);
   }
 
-  async delete(id: string) {
+  async delete(id: string, actorId: string) {
+    if (id === actorId)
+      throw new BusinessException('You cannot delete your own account.', 'USER_SELF_ACTION');
     const user = await this.usersRepository.findById(id);
     if (!user) throw new AuthenticationException('User not found', 'USER_001');
+    const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'super_admin');
+    if (isSuperAdmin)
+      throw new BusinessException('Super-admin accounts cannot be deleted.', 'USER_PROTECTED');
     await this.usersRepository.softDelete(id);
     this.loggerService.log(
-      { action: 'user_deleted', userId: id },
+      { action: 'user_deleted', userId: id, actorId },
       'UsersService',
     );
   }
@@ -131,7 +136,14 @@ export class UsersService {
   async deactivate(id: string) {
     return this.updateSimple(id, 'INACTIVE', 'user_deactivated');
   }
-  async suspend(id: string) {
+  async suspend(id: string, actorId: string) {
+    if (id === actorId)
+      throw new BusinessException('You cannot suspend your own account.', 'USER_SELF_ACTION');
+    const user = await this.usersRepository.findById(id);
+    if (!user) throw new AuthenticationException('User not found', 'USER_001');
+    const isSuperAdmin = user.userRoles.some((ur) => ur.role.name === 'super_admin');
+    if (isSuperAdmin)
+      throw new BusinessException('Super-admin accounts cannot be suspended.', 'USER_PROTECTED');
     return this.updateSimple(id, 'SUSPENDED', 'user_suspended');
   }
   async unlock(id: string) {

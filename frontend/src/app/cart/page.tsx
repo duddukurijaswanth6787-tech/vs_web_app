@@ -148,8 +148,8 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Mobile Top Trust Banner (3 Pillars Pill Row) */}
-        <div className="grid grid-cols-3 gap-2 bg-sky-50/60 border border-sky-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs">
+        {/* Mobile Top Trust Banner (2–3 Pillars Pill Row) */}
+        <div className={`grid ${returnsEnabled ? 'grid-cols-3' : 'grid-cols-2'} gap-2 bg-sky-50/60 border border-sky-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs`}>
           <div className="flex flex-col items-center justify-center gap-1">
             <ShieldCheck className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
@@ -169,8 +169,8 @@ export default function CartPage() {
           <div className="flex flex-col items-center justify-center gap-1">
             <Gift className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
-              <p className="font-bold text-[var(--brand-primary)]">Secure Checkout</p>
-              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">100% Encrypted</p>
+              <p className="font-bold text-[var(--brand-primary)]">Gift Wrapping</p>
+              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">Premium Pack</p>
             </div>
           </div>
         </div>
@@ -411,7 +411,7 @@ export default function CartPage() {
                     </form>
                   )}
                   {couponError && (
-                    <p className="text-[11px] font-semibold text-sky-700">{couponError}</p>
+                    <p className="text-[11px] font-semibold text-red-600">{couponError}</p>
                   )}
                 </div>
 
@@ -526,7 +526,7 @@ export default function CartPage() {
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <Gift className="w-3.5 h-3.5" />
                     </div>
-                    <span>Secure Payment</span>
+                    <span>Gift Wrap</span>
                   </div>
                 </div>
               </div>

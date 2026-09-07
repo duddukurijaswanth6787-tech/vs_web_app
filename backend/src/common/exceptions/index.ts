@@ -220,6 +220,16 @@ export class GlobalExceptionMapper {
       return exception;
     }
 
+    if (exception instanceof Prisma.PrismaClientValidationError) {
+      const isProd =
+        process.env.NODE_ENV === 'production' ||
+        process.env.APP_ENV === 'production';
+      return new ValidationException(
+        isProd ? 'Invalid query parameter' : exception.message.split('\n').pop() || 'Invalid query parameter',
+        'INVALID_INPUT',
+      );
+    }
+
     if (exception instanceof Prisma.PrismaClientKnownRequestError) {
       const err = exception;
       switch (err.code) {

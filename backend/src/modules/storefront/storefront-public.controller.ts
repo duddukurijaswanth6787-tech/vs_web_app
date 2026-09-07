@@ -13,6 +13,7 @@ import { ProductsService } from '@domains/products/products.service';
 import { NewsletterSubscribeDto } from './storefront.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import { Public } from '@domains/auth/guards/jwt-auth.guard';
+import { ThrottleOtpSend } from '@common/security/throttle.decorators';
 
 @ApiTags('Storefront Public')
 @Controller()
@@ -71,6 +72,7 @@ export class StorefrontPublicController {
     );
   }
 
+  @ThrottleOtpSend()
   @Post('newsletter/subscribe')
   @ApiOperation({ summary: 'Subscribe to newsletter' })
   async subscribe(@Body() dto: NewsletterSubscribeDto) {
