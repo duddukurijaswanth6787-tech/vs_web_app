@@ -108,7 +108,9 @@ export default function ContactPage() {
             { key: 'subject', label: 'Subject', icon: MessageSquare, required: true },
           ].map((field) => (
             <label key={field.key} className="block space-y-1.5">
-              <span className="text-xs font-semibold text-neutral-700">{field.label}</span>
+              <span className="text-xs font-semibold text-neutral-700">
+                {field.label}{field.required && <span className="text-red-500 ml-0.5">*</span>}
+              </span>
               <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
                 <field.icon className="w-4 h-4 text-neutral-400" />
                 <input
@@ -123,7 +125,7 @@ export default function ContactPage() {
           ))}
 
           <label className="block space-y-1.5">
-            <span className="text-xs font-semibold text-neutral-700">Message</span>
+            <span className="text-xs font-semibold text-neutral-700">Message <span className="text-red-500">*</span></span>
             <textarea
               required
               rows={4}

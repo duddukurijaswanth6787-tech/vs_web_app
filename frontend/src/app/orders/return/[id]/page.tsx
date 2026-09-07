@@ -80,8 +80,10 @@ export default function OrderReturnPage() {
       <main className="max-w-xl mx-auto w-full p-6 space-y-6">
         <form onSubmit={onSubmit} className="bg-white border p-6 rounded-2xl shadow-sm space-y-4">
           <div>
-            <label className="block text-sm font-bold mb-2">Reason for Return</label>
-            <select value={reason} onChange={e => setReason(e.target.value)} className="w-full border p-3 rounded-xl">
+            <label className="block text-sm font-bold mb-2">
+              Reason for Return <span className="text-red-500">*</span>
+            </label>
+            <select required value={reason} onChange={e => setReason(e.target.value)} className="w-full border border-neutral-200 p-3 rounded-xl outline-none focus:border-[var(--brand-primary)]">
               <option>Size issue</option>
               <option>Damaged item</option>
               <option>Not as described</option>
@@ -89,8 +91,10 @@ export default function OrderReturnPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold mb-2">Description</label>
-            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border p-3 rounded-xl h-32" placeholder="Tell us more..." />
+            <label className="block text-sm font-bold mb-2">
+              Additional Details <span className="text-neutral-400 font-normal text-xs">(Optional)</span>
+            </label>
+            <textarea value={description} onChange={e => setDescription(e.target.value)} className="w-full border border-neutral-200 p-3 rounded-xl h-32 outline-none focus:border-[var(--brand-primary)]" placeholder="Tell us more about the issue..." />
           </div>
           <button disabled={loading} type="submit" className="w-full bg-[var(--brand-primary)] text-white py-3 rounded-xl font-bold">
             {loading ? 'Submitting...' : 'Submit Return Request'}

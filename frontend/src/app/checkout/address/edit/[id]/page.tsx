@@ -145,7 +145,11 @@ export default function EditAddressPage() {
             {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
             {(['fullName', 'phone', 'addressLine1', 'addressLine2'] as const).map((key) => (
               <label key={key} className="block space-y-1">
-                <span className="text-xs font-semibold capitalize">{key.replace(/([A-Z])/g, ' $1')}</span>
+                <span className="text-xs font-semibold capitalize">
+                  {key.replace(/([A-Z])/g, ' $1')}
+                  {key !== 'addressLine2' && <span className="text-red-500 ml-0.5">*</span>}
+                  {key === 'addressLine2' && <span className="text-neutral-400 font-normal text-[10px] ml-1">(Optional)</span>}
+                </span>
                 <input
                   required={key !== 'addressLine2'}
                   value={form[key] || ''}
@@ -157,7 +161,7 @@ export default function EditAddressPage() {
 
             {/* PIN Code first -- auto-fills City & State below */}
             <label className="block space-y-1">
-              <span className="text-xs font-semibold">Postal Code</span>
+              <span className="text-xs font-semibold">Postal Code <span className="text-red-500">*</span></span>
               <div className="relative">
                 <input
                   required
@@ -182,7 +186,7 @@ export default function EditAddressPage() {
 
             {(['city', 'state'] as const).map((key) => (
               <label key={key} className="block space-y-1">
-                <span className="text-xs font-semibold capitalize">{key}</span>
+                <span className="text-xs font-semibold capitalize">{key} <span className="text-red-500">*</span></span>
                 <input
                   required
                   value={form[key] || ''}

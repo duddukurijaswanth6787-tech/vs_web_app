@@ -114,7 +114,7 @@ export default function AddAddressPage() {
                 return (
                   <React.Fragment key="postal-and-city">
                     <label className="block space-y-1">
-                      <span className="text-xs font-semibold">Postal Code</span>
+                      <span className="text-xs font-semibold">Postal Code <span className="text-red-500">*</span></span>
                       <div className="relative">
                         <input
                           required
@@ -137,7 +137,7 @@ export default function AddAddressPage() {
                       )}
                     </label>
                     <label className="block space-y-1">
-                      <span className="text-xs font-semibold">City</span>
+                      <span className="text-xs font-semibold">City <span className="text-red-500">*</span></span>
                       <input
                         required
                         value={form.city}
@@ -150,7 +150,11 @@ export default function AddAddressPage() {
               }
               return (
                 <label key={key} className="block space-y-1">
-                  <span className="text-xs font-semibold capitalize">{String(key).replace(/([A-Z])/g, ' $1')}</span>
+                  <span className="text-xs font-semibold capitalize">
+                    {String(key).replace(/([A-Z])/g, ' $1')}
+                    {key !== 'addressLine2' && <span className="text-red-500 ml-0.5">*</span>}
+                    {key === 'addressLine2' && <span className="text-neutral-400 font-normal text-[10px] ml-1">(Optional)</span>}
+                  </span>
                   <input
                     required={key !== 'addressLine2'}
                     value={String(form[key] || '')}

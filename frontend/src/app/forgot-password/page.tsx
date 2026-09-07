@@ -44,7 +44,7 @@ export default function ForgotPasswordPage() {
           {error && <p className="text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{error}</p>}
           {message && <p className="text-xs text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">{message}</p>}
           <label className="block space-y-1.5">
-            <span className="text-xs font-semibold text-neutral-700">Email</span>
+            <span className="text-xs font-semibold text-neutral-700">Email Address <span className="text-red-500">*</span></span>
             <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
               <Mail className="w-4 h-4 text-neutral-400" />
               <input

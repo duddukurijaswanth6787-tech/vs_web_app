@@ -177,11 +177,12 @@ function CustomerLoginForm() {
             !otpSent ? (
               <form onSubmit={handleSendOTP} className="space-y-4">
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-semibold text-neutral-700">Mobile Number</span>
+                  <span className="text-xs font-semibold text-neutral-700">Mobile Number <span className="text-red-500">*</span></span>
                   <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
                     <Phone className="w-4 h-4 text-neutral-400" />
                     <span className="text-sm text-neutral-500">+91</span>
                     <input
+                      required
                       value={phone}
                       onChange={(e) => setPhone(e.target.value)}
                       className="flex-1 text-sm outline-none"
@@ -202,10 +203,11 @@ function CustomerLoginForm() {
             ) : (
               <form onSubmit={handleVerifyAndLogin} className="space-y-4">
                 <label className="block space-y-1.5">
-                  <span className="text-xs font-semibold text-neutral-700">Enter OTP</span>
+                  <span className="text-xs font-semibold text-neutral-700">Enter OTP <span className="text-red-500">*</span></span>
                   <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
                     <ShieldCheck className="w-4 h-4 text-neutral-400" />
                     <input
+                      required
                       value={otp}
                       onChange={(e) => setOtp(e.target.value)}
                       className="flex-1 text-sm outline-none tracking-widest"
@@ -237,7 +239,7 @@ function CustomerLoginForm() {
           ) : (
             <form onSubmit={handleEmailLogin} className="space-y-4">
               <label className="block space-y-1.5">
-                <span className="text-xs font-semibold text-neutral-700">Email or Username</span>
+                <span className="text-xs font-semibold text-neutral-700">Email or Username <span className="text-red-500">*</span></span>
                 <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
                   <Mail className="w-4 h-4 text-neutral-400" />
                   <input
@@ -251,7 +253,7 @@ function CustomerLoginForm() {
                 </div>
               </label>
               <label className="block space-y-1.5">
-                <span className="text-xs font-semibold text-neutral-700">Password</span>
+                <span className="text-xs font-semibold text-neutral-700">Password <span className="text-red-500">*</span></span>
                 <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
                   <Lock className="w-4 h-4 text-neutral-400" />
                   <input
