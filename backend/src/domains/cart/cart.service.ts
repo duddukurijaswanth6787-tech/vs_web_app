@@ -678,13 +678,14 @@ export class CartService {
     for (const cartId of targetCartIds) {
       try {
         const res = await this.sendRecoveryReminder(cartId, dto);
-        results.push({ cartId, success: true, ...res });
+        results.push(res);
         successful++;
       } catch (err: any) {
         results.push({ cartId, success: false, error: err.message });
         failed++;
       }
     }
+
 
     return {
       total: targetCartIds.length,

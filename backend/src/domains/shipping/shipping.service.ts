@@ -227,11 +227,15 @@ export class ShippingService {
         o.customer?.user?.phone ||
         '+91 00000 00000';
 
+      const paymentMethodStr =
+        (typeof o.paymentMethod === 'string' ? o.paymentMethod : '') ||
+        (o.payments?.[0]?.method ? String(o.payments[0].method) : '');
+
       const isCod =
-        o.paymentMethod === 'CASH' ||
-        o.paymentMethod === 'PAY_ON_DELIVERY' ||
-        o.payments?.[0]?.paymentMethod === 'CASH' ||
-        o.payments?.[0]?.paymentMethod === 'PAY_ON_DELIVERY';
+        paymentMethodStr.toUpperCase() === 'CASH' ||
+        paymentMethodStr.toUpperCase() === 'COD' ||
+        paymentMethodStr.toUpperCase() === 'PAY_ON_DELIVERY';
+
 
       const totalAmount = Number(o.grandTotal);
       const waybillNumber =
