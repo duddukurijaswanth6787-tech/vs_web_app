@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, User, Phone, Mail, Calendar, Save } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerProfile, customerKeys } from '@/features/customer/hooks';
@@ -87,7 +88,7 @@ export default function ProfileEditPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
+    <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
         <Link href="/profile" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
@@ -201,6 +202,7 @@ export default function ProfileEditPage() {
         </form>
       </main>
       <StorefrontFooter />
+      <MobileBottomNav />
     </div>
   );
 }

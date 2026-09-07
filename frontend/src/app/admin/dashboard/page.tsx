@@ -15,7 +15,7 @@ import {
   ResponsiveContainer, AreaChart, Area, BarChart, Bar, XAxis, YAxis,
   Tooltip as ChartTooltip, CartesianGrid, Cell, Legend, PieChart, Pie,
 } from 'recharts';
-import { SectionLoader, PageError, EmptyState } from '@/components/feedback/FeedbackStates';
+import { SectionLoader, EmptyState } from '@/components/feedback/FeedbackStates';
 
 const formatCurrency = (val: number) =>
   new Intl.NumberFormat('en-IN', { style: 'currency', currency: 'INR', maximumFractionDigits: 0 }).format(val);
@@ -78,12 +78,10 @@ export default function DashboardPage() {
   const { data: payAna } = useDashboardPaymentAnalytics();
   const { data: recent } = useDashboardRecentActivity();
 
-  const loading = sLoading || cLoading;
-  const error = sError || cError;
+  const loading = sLoading && cLoading;
   const handleRetry = () => { refetchS(); refetchC(); };
 
   if (loading) return <SectionLoader message="Loading dashboard..." />;
-  if (error) return <PageError title="Dashboard Load Failure" message="Could not load dashboard data." retry={handleRetry} />;
 
   const graphData = chartData?.labels.map((l, i) => ({ name: l, revenue: chartData.data[i] || 0 })) ?? [];
 
@@ -93,8 +91,16 @@ export default function DashboardPage() {
   const recentProducts = recent?.products ?? [];
   const recentReviews = recent?.reviews ?? [];
 
+  const anyError = sError || cError;
+
   return (
     <div className="space-y-6" role="main" aria-label="Dashboard">
+      {anyError && (
+        <div className="bg-red-50 border border-red-200 rounded-xl px-4 py-3 flex items-center justify-between text-sm text-red-700">
+          <span>Some dashboard data failed to load.</span>
+          <button onClick={handleRetry} className="text-xs font-bold underline ml-4">Retry</button>
+        </div>
+      )}
       {/* Welcome */}
       <div className="bg-white rounded-2xl border border-neutral-200 p-6 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

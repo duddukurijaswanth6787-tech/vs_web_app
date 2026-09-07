@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { useAuth } from '@/hooks/useAuth';
 import { useCustomerOrder, useFeatureEnabled } from '@/features/customer/hooks';
 import { customerOrdersService } from '@/features/customer/orders.service';
@@ -70,7 +71,7 @@ export default function OrderReturnPage() {
   }
 
   return (
-    <div className="min-h-screen bg-neutral-50 flex flex-col font-sans">
+    <div className="min-h-screen bg-neutral-50 flex flex-col font-sans pb-20">
       <header className="sticky top-0 bg-white border-b px-4 py-3 flex items-center gap-3">
         <Link href={`/orders/details/${orderNumber}`} className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
@@ -102,6 +103,7 @@ export default function OrderReturnPage() {
           {error && <p className="text-red-600 text-sm">{error}</p>}
         </form>
       </main>
+      <MobileBottomNav />
     </div>
   );
 }

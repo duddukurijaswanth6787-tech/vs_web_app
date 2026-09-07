@@ -163,6 +163,24 @@ export class AutoSeedService implements OnModuleInit {
       }
     }
 
+    // 1c. Assign every non-POS permission to the admin role so that staff
+    // with the admin role can access all admin screens, including the dashboard.
+    // super_admin bypasses the guard entirely; this covers the admin role.
+    const adminRole = await this.prisma.role.findUnique({ where: { name: 'admin' } });
+    if (adminRole) {
+      const allNonPosPermissions = await this.prisma.permission.findMany({
+        where: { code: { not: { startsWith: 'pos:' } } },
+        select: { id: true },
+      });
+      for (const perm of allNonPosPermissions) {
+        await this.prisma.rolePermission.upsert({
+          where: { roleId_permissionId: { roleId: adminRole.id, permissionId: perm.id } },
+          update: {},
+          create: { roleId: adminRole.id, permissionId: perm.id },
+        });
+      }
+    }
+
     // 2. Seed Super Admin Role & User
     const superAdminRole = await this.prisma.role.findUnique({
       where: { name: 'super_admin' },
