@@ -29,6 +29,7 @@ import {
   Wallet,
   Camera,
   FileText,
+  Play,
 } from 'lucide-react';
 import Link from 'next/link';
 import CameraScannerModal from '@/features/pos/CameraScannerModal';
@@ -128,6 +129,8 @@ export default function DesktopPosPage() {
   // Modals
   const [cameraScannerOpen, setCameraScannerOpen] = useState(false);
   const [handoffModalOpen, setHandoffModalOpen] = useState(false);
+  const [heldModalOpen, setHeldModalOpen] = useState(false);
+  const [holdSuccessMessage, setHoldSuccessMessage] = useState('');
   const [reprintModalOpen, setReprintModalOpen] = useState(false);
   const [reprintInput, setReprintInput] = useState('');
   const [handoffPin, setHandoffPin] = useState('');
@@ -633,12 +636,12 @@ export default function DesktopPosPage() {
     });
   };
 
-  // Parking a cart reuses the checkout-session record the phone handoff
-  // already runs on: same cart, same customer, same totals, just kept at the
-  // till until the customer comes back.
+  // Parking a cart reuses the checkout-session record:
+  // keeps items, customer details, and totals at the till until resumed.
   const handleHoldSale = () => {
     if (cart.length === 0) return;
     setSaleError('');
+    setHoldSuccessMessage('');
     const heldItems = cart.map(({ productId, productName, variantId, sku, variantTitle, quantity, unitPrice, discountAmount, taxAmount }) => ({
       productId,
       productName,
@@ -660,13 +663,16 @@ export default function DesktopPosPage() {
         hold: true,
       },
       {
-        onSuccess: () => {
+        onSuccess: (session) => {
           setCart([]);
           setActiveSession(null);
           setDiscountTotal(0);
           setCashTendered('');
           setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+          setHoldSuccessMessage(`Bill #${session.sessionId?.slice(0, 8) || 'HELD'} parked successfully! Click 'Parked Bills' above to resume anytime.`);
+          heldSessions.refetch();
           barcodeInputRef.current?.focus();
+          setTimeout(() => setHoldSuccessMessage(''), 8000);
         },
         onError: (err) => {
           setSaleError(getApiErrorMessage(err, 'Could not hold this bill.'));
@@ -677,6 +683,7 @@ export default function DesktopPosPage() {
 
   const handleResumeHeld = (handoffToken: string) => {
     setSaleError('');
+    setHoldSuccessMessage('');
     adoptMutation.mutate(handoffToken, {
       onSuccess: (data) => {
         setActiveSession(data);
@@ -687,7 +694,10 @@ export default function DesktopPosPage() {
           setCustomer(data.customer);
         }
         setDiscountTotal(data.discountTotal || 0);
+        setHeldModalOpen(false);
         heldSessions.refetch();
+        setHoldSuccessMessage('Parked bill restored to cart.');
+        setTimeout(() => setHoldSuccessMessage(''), 4000);
       },
       onError: (err) => {
         setSaleError(getApiErrorMessage(err, 'Could not resume that held bill.'));
@@ -980,6 +990,21 @@ export default function DesktopPosPage() {
             </button>
           )}
 
+          {/* Parked / Held Bills Button */}
+          <button
+            type="button"
+            onClick={() => setHeldModalOpen(true)}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold border transition-all ${
+              (heldSessions.data?.length ?? 0) > 0
+                ? 'bg-amber-100 hover:bg-amber-200 text-amber-950 border-amber-300 ring-2 ring-amber-300/60 shadow-xs animate-pulse'
+                : 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border-neutral-200'
+            }`}
+            title="View or resume parked bills"
+          >
+            <Clock className="w-4 h-4 text-amber-700" />
+            <span>Parked Bills ({(heldSessions.data?.length ?? 0)})</span>
+          </button>
+
           <button
             onClick={() => setHandoffModalOpen(true)}
             className="flex-1 md:flex-initial flex items-center justify-center gap-2 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300/80 px-4 py-2 rounded-xl text-xs font-bold transition-all shadow-2xs"
@@ -1054,6 +1079,23 @@ export default function DesktopPosPage() {
           )}
         </div>
       </div>
+
+      {/* Toast / Notification Banner for Held or Restored Bills */}
+      {holdSuccessMessage && (
+        <div className="mb-4 bg-emerald-50 border border-emerald-200 text-emerald-900 rounded-2xl p-4 flex items-center justify-between gap-3 shadow-xs animate-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5">
+            <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+            <span className="text-xs font-bold">{holdSuccessMessage}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setHeldModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-3 py-1.5 rounded-xl shadow-2xs transition-colors shrink-0"
+          >
+            View Parked Bills
+          </button>
+        </div>
+      )}
 
       {/* Main 2-Column POS Layout */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
@@ -2321,6 +2363,121 @@ export default function DesktopPosPage() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL: PARKED / HELD BILLS MANAGER */}
+      {heldModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center border-b border-neutral-100 pb-3.5">
+              <div className="flex items-center gap-2.5 text-neutral-900 font-bold text-base font-serif">
+                <div className="w-8 h-8 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-700">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-neutral-900">Parked / Hold Bills at this Counter</h3>
+                  <p className="text-[11px] text-neutral-500 font-normal font-sans">
+                    {(heldSessions.data?.length ?? 0)} bill{(heldSessions.data?.length ?? 0) === 1 ? '' : 's'} on hold
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setHeldModalOpen(false)}
+                className="text-neutral-400 hover:text-neutral-700 p-1.5 rounded-xl hover:bg-neutral-100 transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-1">
+              {(heldSessions.data?.length ?? 0) === 0 ? (
+                <div className="py-12 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200 p-6">
+                  <Clock className="w-10 h-10 text-neutral-300 mx-auto mb-2" />
+                  <p className="text-sm font-bold text-neutral-700">No Parked Bills</p>
+                  <p className="text-xs text-neutral-500 mt-1 max-w-xs mx-auto">
+                    When you click &quot;Hold Bill&quot; during an active sale, it will be safely kept here so you can attend the next customer and resume anytime.
+                  </p>
+                </div>
+              ) : (
+                heldSessions.data!.map((held) => (
+                  <div
+                    key={held.sessionId}
+                    className="p-4 rounded-2xl border border-neutral-200 bg-white hover:border-amber-300 hover:shadow-xs transition-all space-y-3"
+                  >
+                    <div className="flex items-start justify-between gap-3">
+                      <div>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold text-neutral-900 font-serif">
+                            {held.customer?.fullName || 'Walk-in Customer'}
+                          </span>
+                          {held.customer?.phone && (
+                            <span className="text-[10px] font-mono font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md border border-neutral-200">
+                              {held.customer.phone}
+                            </span>
+                          )}
+                          <span className="text-[10px] font-mono text-amber-700 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-bold">
+                            PIN: {held.handoffToken}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 mt-1 text-[11px] text-neutral-500">
+                          <span>{held.itemsCount} item{held.itemsCount === 1 ? '' : 's'} in cart</span>
+                          <span>•</span>
+                          <span>Held {new Date(held.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        </div>
+                      </div>
+
+                      <div className="text-right shrink-0">
+                        <span className="text-sm font-mono font-bold text-[var(--brand-primary)] block">
+                          ₹{held.grandTotal.toFixed(2)}
+                        </span>
+                        <span className="text-[10px] text-neutral-400">Total Payable</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-neutral-100">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (window.confirm('Are you sure you want to discard this parked bill?')) {
+                            discardHeldMutation.mutate(held.sessionId, {
+                              onSuccess: () => heldSessions.refetch(),
+                            });
+                          }
+                        }}
+                        disabled={discardHeldMutation.isPending}
+                        className="px-3 py-2 rounded-xl text-xs font-bold text-red-600 hover:bg-red-50 border border-red-200 transition-colors disabled:opacity-50 flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Discard</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleResumeHeld(held.handoffToken)}
+                        disabled={adoptMutation.isPending}
+                        className="px-4 py-2 rounded-xl text-xs font-bold bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-95 text-white transition-all shadow-xs flex items-center gap-1.5 disabled:opacity-50"
+                      >
+                        <Play className="w-3.5 h-3.5 fill-white" />
+                        <span>Resume This Bill</span>
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="pt-2 border-t border-neutral-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setHeldModalOpen(false)}
+                className="bg-neutral-900 hover:bg-neutral-800 text-white py-2.5 px-6 rounded-xl text-xs font-bold transition-colors"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

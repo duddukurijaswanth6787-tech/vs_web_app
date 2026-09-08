@@ -25,6 +25,10 @@ import {
   MapPin,
   Calendar,
   BadgeCheck,
+  Scissors,
+  Boxes,
+  Check,
+  Info,
 } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -102,6 +106,18 @@ export function ProductDetailClient() {
   
   // Wishlist toggle
   const [isSaved, setIsSaved] = useState(false);
+
+  // Custom Tailoring & Stitching State
+  const [customTailoring, setCustomTailoring] = useState(false);
+  const [measurements, setMeasurements] = useState({
+    bust: '36',
+    waist: '30',
+    hips: '38',
+    length: '44',
+    sleeveStyle: '3/4th Sleeves',
+    neckline: 'Sweetheart Neck',
+    notes: '',
+  });
 
   // Dynamic Modal states
   const [showShare, setShowShare] = useState(false);
@@ -328,6 +344,20 @@ export function ProductDetailClient() {
     return 'In Stock';
   }, [selectedSize]);
 
+  // Wholesale Tier & Pricing Calculation
+  const wholesaleTier = useMemo(() => {
+    if (qty >= 10) return { name: 'Gold Bulk Tier', discountPercent: 25, badge: '25% WHOLESALE SAVINGS' };
+    if (qty >= 5) return { name: 'Silver Reseller Tier', discountPercent: 15, badge: '15% RESELLER SAVINGS' };
+    return { name: 'Retail Tier', discountPercent: 0, badge: null };
+  }, [qty]);
+
+  const effectiveUnitPrice = wholesaleTier.discountPercent > 0
+    ? Math.round(price * (1 - wholesaleTier.discountPercent / 100))
+    : price;
+  const tailoringFeePerItem = customTailoring ? 499 : 0;
+  const finalUnitPrice = effectiveUnitPrice + tailoringFeePerItem;
+  const grandTotal = finalUnitPrice * qty;
+
   const handleAddToCart = async () => {
     if (!product) return;
     setErr('');
@@ -338,8 +368,26 @@ export function ProductDetailClient() {
         variantId: matchingVariant?.id, 
         quantity: qty 
       });
-      setMsg('Product successfully added to your bag!');
-      setTimeout(() => setMsg(''), 4000);
+      if (customTailoring) {
+        try {
+          const tailoringStore = JSON.parse(localStorage.getItem('vs_tailoring_specs') || '{}');
+          tailoringStore[product.id] = {
+            productName: product.name,
+            selectedSize,
+            selectedColor,
+            measurements,
+            tailoringFee: 499,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem('vs_tailoring_specs', JSON.stringify(tailoringStore));
+        } catch {}
+        setMsg(`Added to bag with Custom Tailoring (${measurements.bust}" Bust, ${measurements.waist}" Waist, ${measurements.sleeveStyle})!`);
+      } else if (wholesaleTier.discountPercent > 0) {
+        setMsg(`Added ${qty} items to bag with ${wholesaleTier.discountPercent}% Wholesale Discount!`);
+      } else {
+        setMsg('Product successfully added to your bag!');
+      }
+      setTimeout(() => setMsg(''), 5000);
     } catch (e) {
       setErr(getApiErrorMessage(e, 'Could not add to cart'));
     }
@@ -350,6 +398,20 @@ export function ProductDetailClient() {
     setErr('');
     setMsg('');
     try {
+      if (customTailoring) {
+        try {
+          const tailoringStore = JSON.parse(localStorage.getItem('vs_tailoring_specs') || '{}');
+          tailoringStore[product.id] = {
+            productName: product.name,
+            selectedSize,
+            selectedColor,
+            measurements,
+            tailoringFee: 499,
+            updatedAt: new Date().toISOString(),
+          };
+          localStorage.setItem('vs_tailoring_specs', JSON.stringify(tailoringStore));
+        } catch {}
+      }
       await addItem.mutateAsync({ 
         productId: product.id, 
         variantId: matchingVariant?.id, 
@@ -635,23 +697,40 @@ export function ProductDetailClient() {
                 </div>
 
                 {/* Price Section Box */}
-                <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-1">
-                  <div className="flex items-baseline gap-3">
+                <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-1.5">
+                  <div className="flex items-baseline gap-3 flex-wrap">
                     <span className="text-3xl font-extrabold text-[#0284c7] font-serif">
-                      {formatInr(price)}
+                      {formatInr(finalUnitPrice)}
                     </span>
-                    {original > price && (
+                    {original > finalUnitPrice && (
                       <span className="text-base text-neutral-400 line-through font-semibold">
-                        {formatInr(original)}
+                        {formatInr(original + tailoringFeePerItem)}
                       </span>
                     )}
-                    {discount && (
+                    {discount && wholesaleTier.discountPercent === 0 && (
                       <span className="text-xs font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full border border-sky-200">
                         {discount} OFF
                       </span>
                     )}
+                    {wholesaleTier.discountPercent > 0 && (
+                      <span className="text-xs font-bold text-emerald-700 bg-emerald-100 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                        {wholesaleTier.discountPercent}% Bulk Tier Applied
+                      </span>
+                    )}
+                    {customTailoring && (
+                      <span className="text-[10px] font-bold text-sky-800 bg-sky-100/80 px-2 py-0.5 rounded-md border border-sky-200">
+                        Includes +₹499 Custom Tailoring
+                      </span>
+                    )}
                   </div>
-                  <p className="text-[11px] text-neutral-500 font-medium">Inclusive of all taxes</p>
+                  <div className="flex items-center justify-between text-[11px] text-neutral-500 font-medium">
+                    <span>Inclusive of all taxes</span>
+                    {qty > 1 && (
+                      <span className="font-bold text-neutral-800">
+                        Total ({qty} items): <span className="text-[#0284c7] font-extrabold">{formatInr(grandTotal)}</span>
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Short Description */}
@@ -781,6 +860,198 @@ export function ProductDetailClient() {
                     <span className={stockText.includes('Only') || stockText.includes('Low') ? 'text-amber-600' : 'text-emerald-600'}>
                       {stockText}
                     </span>
+                  </div>
+                </div>
+
+                {/* CUSTOM TAILORING & STITCHING STUDIO */}
+                <div className="border border-sky-100 bg-white rounded-2xl p-4 shadow-2xs space-y-3 transition-all">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center font-bold">
+                        <Scissors className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-xs font-extrabold text-neutral-900">Custom Tailoring & Stitching</h4>
+                          <span className="text-[10px] font-black bg-sky-100 text-[#0284c7] px-2 py-0.5 rounded-md uppercase tracking-wider">+₹499</span>
+                        </div>
+                        <p className="text-[10px] text-neutral-500">Bespoke sizing for Blouses, Lehengas & Anarkalis</p>
+                      </div>
+                    </div>
+                    <label className="relative inline-flex items-center cursor-pointer">
+                      <input 
+                        type="checkbox" 
+                        checked={customTailoring} 
+                        onChange={(e) => setCustomTailoring(e.target.checked)} 
+                        className="sr-only peer" 
+                      />
+                      <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                    </label>
+                  </div>
+
+                  {customTailoring && (
+                    <div className="border-t border-sky-50 pt-3 space-y-3 animate-fade-in text-xs">
+                      <p className="text-[11px] font-semibold text-neutral-600">
+                        Our master tailors will hand-stitch this garment to your exact measurements:
+                      </p>
+
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Bust (Inches)</label>
+                          <select 
+                            value={measurements.bust} 
+                            onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            {[32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54].map((n) => (
+                              <option key={n} value={n}>{n}&quot; (Inches)</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Waist (Inches)</label>
+                          <select 
+                            value={measurements.waist} 
+                            onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            {[26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50].map((n) => (
+                              <option key={n} value={n}>{n}&quot; (Inches)</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Hips (Inches)</label>
+                          <select 
+                            value={measurements.hips} 
+                            onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            {[34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
+                              <option key={n} value={n}>{n}&quot; (Inches)</option>
+                            ))}
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Garment Length</label>
+                          <select 
+                            value={measurements.length} 
+                            onChange={(e) => setMeasurements({ ...measurements, length: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            {[38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
+                              <option key={n} value={n}>{n}&quot; (Standard)</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Sleeve Styling</label>
+                          <select 
+                            value={measurements.sleeveStyle} 
+                            onChange={(e) => setMeasurements({ ...measurements, sleeveStyle: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            <option value="Sleeveless">Sleeveless</option>
+                            <option value="Cap Sleeves">Cap Sleeves (3&quot;)</option>
+                            <option value="Short Sleeves">Short Sleeves (6&quot;)</option>
+                            <option value="3/4th Sleeves">3/4th Sleeves (15&quot;)</option>
+                            <option value="Full Sleeves">Full Sleeves (21&quot;)</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Neckline Cut</label>
+                          <select 
+                            value={measurements.neckline} 
+                            onChange={(e) => setMeasurements({ ...measurements, neckline: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                          >
+                            <option value="Sweetheart Neck">Sweetheart Neck (Designer)</option>
+                            <option value="Round Neck">Classic Round Neck</option>
+                            <option value="V-Neck Deep">Deep V-Neck</option>
+                            <option value="Boat Neck">Modern Boat Neck</option>
+                            <option value="Square Neck">Square Neck</option>
+                            <option value="Collar / Mandarin">Mandarin Collar</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        <label className="block text-[10px] font-bold text-neutral-500 uppercase">Special Tailoring Notes (Optional)</label>
+                        <input 
+                          type="text" 
+                          placeholder="e.g. Add extra margin inside, side zipper requested..."
+                          value={measurements.notes} 
+                          onChange={(e) => setMeasurements({ ...measurements, notes: e.target.value })}
+                          className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0284c7]"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* B2B / WHOLESALE RESELLER TIER */}
+                <div className="border border-neutral-200/90 bg-neutral-50/50 rounded-2xl p-4 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+                        <Boxes className="w-4 h-4 text-amber-700" />
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-1.5">
+                          <h4 className="text-xs font-extrabold text-neutral-900">B2B & Wholesale Reseller Pricing</h4>
+                          {wholesaleTier.badge && (
+                            <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                              {wholesaleTier.badge}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[10px] text-neutral-500">Buy in bulk for boutiques, resellers & events</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                    <div className={`p-2 rounded-xl border transition-all ${qty < 5 ? 'bg-white border-neutral-300 shadow-2xs font-bold text-neutral-900 ring-1 ring-neutral-400' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                      <p className="text-[10px] uppercase font-bold text-neutral-400">1 - 4 Pcs</p>
+                      <p className="text-xs font-black text-neutral-800 mt-0.5">{formatInr(price)}/pc</p>
+                      <span className="text-[9px] text-neutral-400">Standard</span>
+                    </div>
+
+                    <div className={`p-2 rounded-xl border transition-all ${qty >= 5 && qty < 10 ? 'bg-amber-50 border-amber-300 shadow-2xs font-bold text-amber-900 ring-2 ring-amber-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                      <p className="text-[10px] uppercase font-bold text-amber-700">5 - 9 Pcs</p>
+                      <p className="text-xs font-black text-amber-900 mt-0.5">{formatInr(Math.round(price * 0.85))}/pc</p>
+                      <span className="text-[9px] font-bold text-emerald-600">15% OFF</span>
+                    </div>
+
+                    <div className={`p-2 rounded-xl border transition-all ${qty >= 10 ? 'bg-emerald-50 border-emerald-300 shadow-2xs font-bold text-emerald-900 ring-2 ring-emerald-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                      <p className="text-[10px] uppercase font-bold text-emerald-700">10+ Pcs</p>
+                      <p className="text-xs font-black text-emerald-900 mt-0.5">{formatInr(Math.round(price * 0.75))}/pc</p>
+                      <span className="text-[9px] font-bold text-emerald-600">25% OFF</span>
+                    </div>
+                  </div>
+
+                  {/* 1-Click Wholesale Quantity Buttons */}
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Quick Bulk:</span>
+                    <div className="flex flex-wrap gap-1.5 flex-1">
+                      {[5, 10, 25, 50].map((bulkQty) => (
+                        <button
+                          key={bulkQty}
+                          type="button"
+                          onClick={() => setQty(bulkQty)}
+                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
+                            qty === bulkQty
+                              ? 'bg-neutral-900 text-white border-neutral-900'
+                              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                          }`}
+                        >
+                          {bulkQty} Pcs
+                        </button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 

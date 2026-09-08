@@ -20,6 +20,7 @@ import {
   AlertTriangle,
   X,
   CheckCircle2,
+  Tag,
 } from 'lucide-react';
 import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
@@ -280,12 +281,20 @@ export default function ProductsPage() {
             {productsData?.meta?.total ?? 0} products in catalog
           </p>
         </div>
-        <Link
-          href="/admin/catalog/products/new"
-          className="w-full sm:w-auto justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
-        >
-          <Plus className="w-4 h-4" /> Create Product
-        </Link>
+        <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <Link
+            href="/admin/catalog/products/tags"
+            className="flex-1 sm:flex-initial justify-center bg-white border border-neutral-200 hover:bg-neutral-50 text-neutral-700 font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-xs transition-all"
+          >
+            <Tag className="w-4 h-4 text-[#0284c7]" /> Barcode Tags
+          </Link>
+          <Link
+            href="/admin/catalog/products/new"
+            className="flex-1 sm:flex-initial justify-center bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 shadow-sm transition-all"
+          >
+            <Plus className="w-4 h-4" /> Create Product
+          </Link>
+        </div>
       </div>
 
       {/* Filter / Search Bar */}
