@@ -194,12 +194,12 @@ export default function StaffAttendanceHistoryPage() {
   const employeeId = profile?.employeeId || 'EMP-STAFF';
 
   return (
-    <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-24 sm:pb-8 flex flex-col">
+    <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-28 sm:pb-8 flex flex-col">
       {/* Top Header */}
-      <header className="bg-white border-b border-neutral-200 sticky top-0 z-30 px-4 py-3 shadow-2xs">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--brand-primary)] p-1.5 shadow-xs flex items-center justify-center">
+      <header className="bg-white border-b border-neutral-200 sticky top-0 z-30 px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xs">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[var(--brand-primary)] p-1.5 shadow-xs flex items-center justify-center shrink-0">
               <Image
                 src="/brand/logo-icon.png"
                 alt="Vasanthi's Signature"
@@ -208,34 +208,36 @@ export default function StaffAttendanceHistoryPage() {
                 className="w-full h-full object-contain"
               />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold text-neutral-900 tracking-wide font-serif">{staffDisplayName}</h1>
-                <span className="text-[10px] bg-sky-50 text-sky-700 font-mono font-bold px-2 py-0.5 rounded-md border border-sky-200">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-xs sm:text-sm font-bold text-neutral-900 tracking-wide font-serif truncate max-w-[130px] sm:max-w-none">
+                  {staffDisplayName}
+                </h1>
+                <span className="text-[9px] sm:text-[10px] bg-sky-50 text-sky-700 font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded-md border border-sky-200 shrink-0">
                   {employeeId}
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-500">
+              <p className="text-[10px] sm:text-[11px] text-neutral-500 truncate">
                 {profile?.department || 'Staff Member'} · {profile?.designation || 'Staff Associate'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => {
                 fetchProfile();
                 fetchToday();
                 fetchAttendance();
               }}
-              className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors"
+              className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors active:scale-95"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={logout}
-              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
+              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors active:scale-95"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -248,16 +250,16 @@ export default function StaffAttendanceHistoryPage() {
       <StaffPortalNav />
 
       {/* Main Content Area */}
-      <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full space-y-4 sm:space-y-6 flex-1">
         {/* PUNCH IN / PUNCH OUT HERO CARD WITH CONTINUOUS TIMER */}
-        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-4 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
-                <h2 className="text-base font-bold text-neutral-900">Shift Punch & Live Timer</h2>
+              <div className="flex items-center gap-2 mb-0.5">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900">Shift Punch & Live Timer</h2>
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-[11px] sm:text-xs text-neutral-500">
                 {new Date().toLocaleDateString('en-IN', {
                   weekday: 'long',
                   year: 'numeric',
@@ -268,19 +270,19 @@ export default function StaffAttendanceHistoryPage() {
             </div>
 
             {/* Status Badge */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {isClockedIn ? (
-                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live On Duty
                 </span>
               ) : todayAttendance?.punchOutAt ? (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Shift Completed ({todayAttendance.totalHours} hrs)
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                   Not Punched In
                 </span>
               )}
@@ -288,24 +290,24 @@ export default function StaffAttendanceHistoryPage() {
           </div>
 
           {/* Continuous Live Stopwatch & Direct Punch Actions */}
-          <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="py-4 sm:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center">
             {/* Live Stopwatch Section */}
             <div
-              className={`flex flex-col items-center justify-center p-6 rounded-2xl border text-center transition-all ${
+              className={`flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl border text-center transition-all ${
                 isClockedIn
                   ? 'bg-emerald-50/50 border-emerald-200 shadow-xs'
                   : 'bg-neutral-50 border-neutral-200'
               }`}
             >
               <span
-                className={`text-[11px] uppercase tracking-wider font-bold mb-2 ${
+                className={`text-[10px] sm:text-[11px] uppercase tracking-wider font-bold mb-1.5 ${
                   isClockedIn ? 'text-emerald-700' : 'text-neutral-500'
                 }`}
               >
                 {isClockedIn ? 'Active Working Time (Live)' : 'Total Hours Today'}
               </span>
               <div
-                className={`text-4xl sm:text-5xl font-mono font-bold tracking-wider ${
+                className={`text-3xl sm:text-5xl font-mono font-bold tracking-wider ${
                   isClockedIn ? 'text-emerald-800' : 'text-neutral-900'
                 }`}
               >
@@ -313,7 +315,7 @@ export default function StaffAttendanceHistoryPage() {
               </div>
 
               {todayAttendance?.punchInAt && (
-                <div className="mt-3 text-xs text-neutral-600 flex items-center gap-3">
+                <div className="mt-2.5 text-[11px] sm:text-xs text-neutral-600 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                   <span>
                     Punch In:{' '}
                     <strong className="text-neutral-900 font-mono">
@@ -346,36 +348,38 @@ export default function StaffAttendanceHistoryPage() {
             </div>
 
             {/* Direct Punch Controls */}
-            <div className="flex flex-col justify-center gap-3">
+            <div className="flex flex-col justify-center gap-2.5 sm:gap-3">
               {!isClockedIn ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <button
                     onClick={handlePunchIn}
                     disabled={actionLoading}
-                    className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                    className="w-full py-4 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 min-h-[52px]"
                   >
-                    <Play className="w-5 h-5 fill-white" />
-                    {actionLoading
-                      ? 'Recording Punch In...'
-                      : todayAttendance?.punchOutAt
-                      ? 'Punch In Again (Resume Shift)'
-                      : 'Punch In Now'}
+                    <Play className="w-5 h-5 fill-white shrink-0" />
+                    <span>
+                      {actionLoading
+                        ? 'Recording Punch In...'
+                        : todayAttendance?.punchOutAt
+                        ? 'Punch In Again (Resume)'
+                        : 'Punch In Now'}
+                    </span>
                   </button>
-                  <p className="text-center text-[11px] text-neutral-500">
+                  <p className="text-center text-[10px] sm:text-[11px] text-neutral-500">
                     Tap above when starting your shift to start the live timer.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <button
                     onClick={handlePunchOut}
                     disabled={actionLoading}
-                    className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                    className="w-full py-4 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 min-h-[52px]"
                   >
-                    <Square className="w-5 h-5 fill-white" />
-                    {actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}
+                    <Square className="w-5 h-5 fill-white shrink-0" />
+                    <span>{actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}</span>
                   </button>
-                  <p className="text-center text-[11px] text-neutral-500">
+                  <p className="text-center text-[10px] sm:text-[11px] text-neutral-500">
                     Live timer is running. Tap above when completing your shift.
                   </p>
                 </div>
@@ -385,72 +389,72 @@ export default function StaffAttendanceHistoryPage() {
         </section>
 
         {/* MONTH SUMMARY & KPIS */}
-        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-4 sm:p-6 shadow-sm space-y-4 sm:space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-neutral-100">
             <div>
               <div className="flex items-center gap-2 mb-0.5">
-                <Calendar className="w-5 h-5 text-[var(--brand-primary)]" />
-                <h2 className="text-base font-bold text-neutral-900">Monthly Working Hours & Summary</h2>
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900">Monthly Working Hours & Summary</h2>
               </div>
-              <p className="text-xs text-neutral-500">Total payable hours, shifts, and punctuality score</p>
+              <p className="text-[11px] sm:text-xs text-neutral-500">Total payable hours, shifts, and punctuality score</p>
             </div>
-            <div>
+            <div className="w-full sm:w-auto">
               <input
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="bg-white border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--brand-primary)] shadow-2xs cursor-pointer"
+                className="w-full sm:w-auto bg-neutral-50 sm:bg-white border border-neutral-200 text-neutral-800 text-xs font-bold rounded-xl px-3 py-2 focus:outline-none focus:border-[var(--brand-primary)] shadow-2xs cursor-pointer"
               />
             </div>
           </div>
 
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">
-                <Clock className="w-4 h-4 text-[var(--brand-primary)]" />
-                <span>Total Hours</span>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3.5">
+            <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 mb-1">
+                <Clock className="w-3.5 h-3.5 text-[var(--brand-primary)] shrink-0" />
+                <span className="truncate">Total Hours</span>
               </div>
-              <div className="text-2xl font-mono font-bold text-neutral-900">
-                {totalHours.toFixed(1)} <span className="text-xs font-normal text-neutral-500">hrs</span>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">
-                <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span>Present Days</span>
-              </div>
-              <div className="text-2xl font-bold text-emerald-700">
-                {presentDays} <span className="text-xs font-normal text-neutral-500">days</span>
+              <div className="text-xl sm:text-2xl font-mono font-bold text-neutral-900">
+                {totalHours.toFixed(1)} <span className="text-[10px] sm:text-xs font-normal text-neutral-500">hrs</span>
               </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">
-                <Clock3 className="w-4 h-4 text-amber-600" />
-                <span>Late Arrivals</span>
+            <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 mb-1">
+                <UserCheck className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span className="truncate">Present Days</span>
               </div>
-              <div className="text-2xl font-bold text-amber-700">{lateDays}</div>
+              <div className="text-xl sm:text-2xl font-bold text-emerald-700">
+                {presentDays} <span className="text-[10px] sm:text-xs font-normal text-neutral-500">days</span>
+              </div>
             </div>
 
-            <div className="p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
-              <div className="flex items-center gap-1.5 text-xs text-neutral-500 mb-1">
-                <Award className="w-4 h-4 text-indigo-600" />
-                <span>On-Time Score</span>
+            <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 mb-1">
+                <Clock3 className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                <span className="truncate">Late Arrivals</span>
               </div>
-              <div className="text-2xl font-bold text-indigo-700">{onTimePercentage}%</div>
+              <div className="text-xl sm:text-2xl font-bold text-amber-700">{lateDays}</div>
+            </div>
+
+            <div className="p-3.5 sm:p-4 rounded-xl bg-neutral-50 border border-neutral-200/80">
+              <div className="flex items-center gap-1.5 text-[11px] sm:text-xs text-neutral-500 mb-1">
+                <Award className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
+                <span className="truncate">On-Time</span>
+              </div>
+              <div className="text-xl sm:text-2xl font-bold text-indigo-700">{onTimePercentage}%</div>
             </div>
           </div>
         </section>
 
-        {/* ATTENDANCE SHIFT LOG TABLE */}
-        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm">
+        {/* ATTENDANCE SHIFT LOGS */}
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-4 sm:p-6 shadow-sm">
           <div className="flex items-center justify-between gap-3 mb-4 pb-3 border-b border-neutral-100">
-            <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-[var(--brand-primary)]" />
+            <h2 className="text-sm sm:text-base font-bold text-neutral-900 flex items-center gap-2">
+              <Calendar className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-primary)]" />
               Daily Shift Logs
             </h2>
-            <span className="text-xs text-neutral-500 font-bold bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
+            <span className="text-[11px] sm:text-xs text-neutral-600 font-bold bg-neutral-100 px-2.5 py-1 rounded-full border border-neutral-200">
               {records.length} {records.length === 1 ? 'Record' : 'Records'}
             </span>
           </div>
@@ -458,88 +462,171 @@ export default function StaffAttendanceHistoryPage() {
           {loading ? (
             <div className="py-12 text-center text-neutral-400 text-xs">Loading shift records...</div>
           ) : error ? (
-            <div className="py-8 text-center text-red-500 text-xs bg-red-50 rounded-xl border border-red-200">
+            <div className="py-8 text-center text-red-500 text-xs bg-red-50 rounded-xl border border-red-200 p-4">
               {error}
             </div>
           ) : records.length === 0 ? (
-            <div className="py-12 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+            <div className="py-12 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200 p-4">
               <Calendar className="w-8 h-8 text-neutral-400 mx-auto mb-2" />
               <p className="text-sm font-bold text-neutral-800">No shift logs found</p>
               <p className="text-xs text-neutral-500 mt-0.5">No attendance recorded for {selectedMonth}.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-neutral-700">
-                <thead>
-                  <tr className="border-b border-neutral-200 text-neutral-400 font-bold uppercase tracking-wider text-[10px] bg-neutral-50/50">
-                    <th className="py-3 px-3.5">Date</th>
-                    <th className="py-3 px-3.5">Status</th>
-                    <th className="py-3 px-3.5">Punch In</th>
-                    <th className="py-3 px-3.5">Punch Out</th>
-                    <th className="py-3 px-3.5">Total Hours</th>
-                    <th className="py-3 px-3.5">Location / Notes</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-neutral-100">
-                  {records.map((rec) => {
-                    const statusColors: Record<string, string> = {
-                      PRESENT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                      LATE: 'bg-amber-50 text-amber-700 border-amber-200',
-                      HALF_DAY: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-                      ON_LEAVE: 'bg-purple-50 text-purple-700 border-purple-200',
-                    };
+            <>
+              {/* MOBILE CARD VIEW: Rendered on Phones (<640px) */}
+              <div className="sm:hidden space-y-3">
+                {records.map((rec) => {
+                  const statusColors: Record<string, string> = {
+                    PRESENT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                    LATE: 'bg-amber-50 text-amber-700 border-amber-200',
+                    HALF_DAY: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                    ON_LEAVE: 'bg-purple-50 text-purple-700 border-purple-200',
+                  };
 
-                    return (
-                      <tr key={rec.id} className="hover:bg-neutral-50 transition-colors">
-                        <td className="py-3.5 px-3.5 font-bold text-neutral-900">
+                  return (
+                    <div
+                      key={rec.id}
+                      className="p-3.5 rounded-2xl border border-neutral-200/90 bg-white shadow-2xs space-y-2.5"
+                    >
+                      {/* Top Row: Date & Status */}
+                      <div className="flex items-center justify-between gap-2">
+                        <span className="text-xs font-bold text-neutral-900 font-serif">
                           {new Date(rec.date).toLocaleDateString('en-IN', {
                             weekday: 'short',
                             day: 'numeric',
                             month: 'short',
+                            year: 'numeric',
                           })}
-                        </td>
-                        <td className="py-3.5 px-3.5">
-                          <span
-                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
-                              statusColors[rec.status] || 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                            }`}
-                          >
-                            {rec.status}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            statusColors[rec.status] || 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                          }`}
+                        >
+                          {rec.status}
+                        </span>
+                      </div>
+
+                      {/* Time Details Grid */}
+                      <div className="grid grid-cols-3 gap-2 bg-neutral-50 p-2.5 rounded-xl border border-neutral-100 text-center">
+                        <div>
+                          <span className="text-[10px] text-neutral-500 block">In</span>
+                          <span className="text-xs font-mono font-bold text-neutral-800">
+                            {rec.punchInAt
+                              ? new Date(rec.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : '—'}
                           </span>
-                        </td>
-                        <td className="py-3.5 px-3.5 font-mono text-neutral-800">
-                          {rec.punchInAt
-                            ? new Date(rec.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                            : '—'}
-                        </td>
-                        <td className="py-3.5 px-3.5 font-mono text-neutral-800">
-                          {rec.punchOutAt ? (
-                            new Date(rec.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-                          ) : rec.punchInAt ? (
-                            <span className="text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
-                              Active Now
-                            </span>
-                          ) : (
-                            '—'
-                          )}
-                        </td>
-                        <td className="py-3.5 px-3.5 font-mono font-bold text-[var(--brand-primary)]">
-                          {Number(rec.totalHours || 0).toFixed(1)} hrs
-                        </td>
-                        <td className="py-3.5 px-3.5 text-neutral-600 text-[11px]">
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-neutral-500 block">Out</span>
+                          <span className="text-xs font-mono font-bold text-neutral-800">
+                            {rec.punchOutAt ? (
+                              new Date(rec.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ) : rec.punchInAt ? (
+                              <span className="text-emerald-600 text-[10px] font-bold">Active</span>
+                            ) : (
+                              '—'
+                            )}
+                          </span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-neutral-500 block">Hours</span>
+                          <span className="text-xs font-mono font-bold text-[var(--brand-primary)]">
+                            {Number(rec.totalHours || 0).toFixed(1)} h
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Location & Notes */}
+                      {(rec.punchInLocation || rec.notes) && (
+                        <div className="text-[11px] text-neutral-600 flex items-center justify-between gap-2 pt-0.5">
                           {rec.punchInLocation && (
-                            <span className="inline-flex items-center gap-1 font-semibold text-neutral-800 mr-2">
-                              <MapPin className="w-3 h-3 text-neutral-400" /> {rec.punchInLocation}
+                            <span className="inline-flex items-center gap-1 font-medium text-neutral-700 truncate">
+                              <MapPin className="w-3 h-3 text-neutral-400 shrink-0" /> {rec.punchInLocation}
                             </span>
                           )}
-                          {rec.notes && <span className="text-neutral-500 italic block">{rec.notes}</span>}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                          {rec.notes && <span className="text-neutral-500 italic truncate">{rec.notes}</span>}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* DESKTOP TABLE VIEW: Rendered on Tablet & Desktop (>=640px) */}
+              <div className="hidden sm:block overflow-x-auto">
+                <table className="w-full text-left text-xs text-neutral-700">
+                  <thead>
+                    <tr className="border-b border-neutral-200 text-neutral-400 font-bold uppercase tracking-wider text-[10px] bg-neutral-50/50">
+                      <th className="py-3 px-3.5">Date</th>
+                      <th className="py-3 px-3.5">Status</th>
+                      <th className="py-3 px-3.5">Punch In</th>
+                      <th className="py-3 px-3.5">Punch Out</th>
+                      <th className="py-3 px-3.5">Total Hours</th>
+                      <th className="py-3 px-3.5">Location / Notes</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-neutral-100">
+                    {records.map((rec) => {
+                      const statusColors: Record<string, string> = {
+                        PRESENT: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                        LATE: 'bg-amber-50 text-amber-700 border-amber-200',
+                        HALF_DAY: 'bg-indigo-50 text-indigo-700 border-indigo-200',
+                        ON_LEAVE: 'bg-purple-50 text-purple-700 border-purple-200',
+                      };
+
+                      return (
+                        <tr key={rec.id} className="hover:bg-neutral-50 transition-colors">
+                          <td className="py-3.5 px-3.5 font-bold text-neutral-900">
+                            {new Date(rec.date).toLocaleDateString('en-IN', {
+                              weekday: 'short',
+                              day: 'numeric',
+                              month: 'short',
+                            })}
+                          </td>
+                          <td className="py-3.5 px-3.5">
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                                statusColors[rec.status] || 'bg-neutral-100 text-neutral-600 border-neutral-200'
+                              }`}
+                            >
+                              {rec.status}
+                            </span>
+                          </td>
+                          <td className="py-3.5 px-3.5 font-mono text-neutral-800">
+                            {rec.punchInAt
+                              ? new Date(rec.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                              : '—'}
+                          </td>
+                          <td className="py-3.5 px-3.5 font-mono text-neutral-800">
+                            {rec.punchOutAt ? (
+                              new Date(rec.punchOutAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                            ) : rec.punchInAt ? (
+                              <span className="text-emerald-600 font-bold bg-emerald-50 px-1.5 py-0.5 rounded text-[10px] border border-emerald-200">
+                                Active Now
+                              </span>
+                            ) : (
+                              '—'
+                            )}
+                          </td>
+                          <td className="py-3.5 px-3.5 font-mono font-bold text-[var(--brand-primary)]">
+                            {Number(rec.totalHours || 0).toFixed(1)} hrs
+                          </td>
+                          <td className="py-3.5 px-3.5 text-neutral-600 text-[11px]">
+                            {rec.punchInLocation && (
+                              <span className="inline-flex items-center gap-1 font-semibold text-neutral-800 mr-2">
+                                <MapPin className="w-3 h-3 text-neutral-400" /> {rec.punchInLocation}
+                              </span>
+                            )}
+                            {rec.notes && <span className="text-neutral-500 italic block">{rec.notes}</span>}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </>
           )}
         </section>
       </main>

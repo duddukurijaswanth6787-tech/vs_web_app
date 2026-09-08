@@ -246,42 +246,44 @@ export default function StaffDashboardPage() {
   const employeeId = profile?.employeeId || 'EMP-STAFF';
 
   return (
-    <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-24 sm:pb-8 flex flex-col">
+    <div className="w-full min-h-screen bg-neutral-50 text-neutral-900 font-sans antialiased pb-28 sm:pb-8 flex flex-col">
       {/* Top Header */}
-      <header className="bg-white border-b border-neutral-200 sticky top-0 z-30 px-4 py-3 shadow-2xs">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-[var(--brand-primary)] p-1.5 shadow-xs flex items-center justify-center">
+      <header className="bg-white border-b border-neutral-200 sticky top-0 z-30 px-3 sm:px-4 py-2.5 sm:py-3 shadow-2xs">
+        <div className="max-w-4xl mx-auto flex items-center justify-between gap-2">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-[var(--brand-primary)] p-1.5 shadow-xs flex items-center justify-center shrink-0">
               <Image src="/brand/logo-icon.png" alt="Vasanthi's Signature" width={1024} height={1024} className="w-full h-full object-contain" />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-sm font-bold text-neutral-900 tracking-wide font-serif">{staffDisplayName}</h1>
-                <span className="text-[10px] bg-sky-50 text-sky-700 font-mono font-bold px-2 py-0.5 rounded-md border border-sky-200">
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5 flex-wrap">
+                <h1 className="text-xs sm:text-sm font-bold text-neutral-900 tracking-wide font-serif truncate max-w-[130px] sm:max-w-none">
+                  {staffDisplayName}
+                </h1>
+                <span className="text-[9px] sm:text-[10px] bg-sky-50 text-sky-700 font-mono font-bold px-1.5 sm:px-2 py-0.5 rounded-md border border-sky-200 shrink-0">
                   {employeeId}
                 </span>
               </div>
-              <p className="text-[11px] text-neutral-500">
+              <p className="text-[10px] sm:text-[11px] text-neutral-500 truncate">
                 {profile?.department || 'Sales'} · {profile?.designation || 'Staff Associate'}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
             <button
               onClick={() => {
                 fetchProfile();
                 fetchTodayAttendance();
                 fetchMyTasks();
               }}
-              className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors"
+              className="p-2 rounded-xl border border-neutral-200 hover:bg-neutral-100 text-neutral-600 transition-colors active:scale-95"
               title="Refresh"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
             <button
               onClick={logout}
-              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors"
+              className="p-2 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 transition-colors active:scale-95"
               title="Sign Out"
             >
               <LogOut className="w-4 h-4" />
@@ -294,16 +296,16 @@ export default function StaffDashboardPage() {
       <StaffPortalNav />
 
       {/* Main Content Area */}
-      <main className="max-w-4xl mx-auto px-4 py-6 w-full space-y-6 flex-1">
+      <main className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 w-full space-y-4 sm:space-y-6 flex-1">
         {/* HERO SHIFT CARD: Punch In / Punch Out with Live Running Timer */}
-        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-5 border-b border-neutral-100">
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-4 sm:p-6 shadow-sm relative overflow-hidden">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
             <div>
-              <div className="flex items-center gap-2 mb-1">
-                <Clock className="w-5 h-5 text-[var(--brand-primary)]" />
-                <h2 className="text-base font-bold text-neutral-900">Today's Shift Attendance</h2>
+              <div className="flex items-center gap-2 mb-0.5">
+                <Clock className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900">Today's Shift Attendance</h2>
               </div>
-              <p className="text-xs text-neutral-500">
+              <p className="text-[11px] sm:text-xs text-neutral-500">
                 {new Date().toLocaleDateString('en-IN', {
                   weekday: 'long',
                   year: 'numeric',
@@ -314,19 +316,19 @@ export default function StaffDashboardPage() {
             </div>
 
             {/* Status Badge */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 self-start sm:self-auto">
               {isClockedIn ? (
-                <span className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-emerald-50 text-emerald-700 text-xs font-bold border border-emerald-200 shadow-2xs">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
                   Live On Duty
                 </span>
               ) : attendance?.punchOutAt ? (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-neutral-100 text-neutral-700 text-xs font-bold border border-neutral-200">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
                   Shift Completed ({attendance.totalHours} hrs)
                 </span>
               ) : (
-                <span className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
+                <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold border border-amber-200">
                   Not Punched In
                 </span>
               )}
@@ -334,26 +336,26 @@ export default function StaffDashboardPage() {
           </div>
 
           {/* Continuous Live Stopwatch & Direct Punch Controls */}
-          <div className="py-6 grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+          <div className="py-4 sm:py-6 grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 items-center">
             {/* Live Timer Section */}
-            <div className={`flex flex-col items-center justify-center p-6 rounded-2xl border text-center transition-all ${
+            <div className={`flex flex-col items-center justify-center p-5 sm:p-6 rounded-2xl border text-center transition-all ${
               isClockedIn 
                 ? 'bg-emerald-50/50 border-emerald-200 shadow-xs' 
                 : 'bg-neutral-50 border-neutral-200'
             }`}>
-              <span className={`text-[11px] uppercase tracking-wider font-bold mb-2 ${
+              <span className={`text-[10px] sm:text-[11px] uppercase tracking-wider font-bold mb-1.5 ${
                 isClockedIn ? 'text-emerald-700' : 'text-neutral-500'
               }`}>
                 {isClockedIn ? 'Active Working Time (Live)' : 'Total Hours Worked Today'}
               </span>
-              <div className={`text-4xl sm:text-5xl font-mono font-bold tracking-wider ${
+              <div className={`text-3xl sm:text-5xl font-mono font-bold tracking-wider ${
                 isClockedIn ? 'text-emerald-800' : 'text-neutral-900'
               }`}>
                 {isClockedIn ? formatTimer(elapsedSeconds) : `${attendance?.totalHours || 0} hrs`}
               </div>
               
               {attendance?.punchInAt && (
-                <div className="mt-3 text-xs text-neutral-600 flex items-center gap-3">
+                <div className="mt-2.5 text-[11px] sm:text-xs text-neutral-600 flex flex-wrap items-center justify-center gap-2 sm:gap-3">
                   <span>
                     Punch In:{' '}
                     <strong className="text-neutral-900 font-mono">
@@ -378,32 +380,32 @@ export default function StaffDashboardPage() {
             </div>
 
             {/* Direct Punch Actions */}
-            <div className="flex flex-col justify-center gap-3">
+            <div className="flex flex-col justify-center gap-2.5 sm:gap-3">
               {!isClockedIn ? (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <button
                     onClick={handlePunchIn}
                     disabled={actionLoading}
-                    className="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                    className="w-full py-4 px-4 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 min-h-[52px]"
                   >
-                    <Play className="w-5 h-5 fill-white" />
-                    {actionLoading ? 'Recording Punch In...' : attendance?.punchOutAt ? 'Punch In Again (Resume Shift)' : 'Punch In Now'}
+                    <Play className="w-5 h-5 fill-white shrink-0" />
+                    <span>{actionLoading ? 'Recording Punch In...' : attendance?.punchOutAt ? 'Punch In Again (Resume)' : 'Punch In Now'}</span>
                   </button>
-                  <p className="text-center text-[11px] text-neutral-500">
+                  <p className="text-center text-[10px] sm:text-[11px] text-neutral-500">
                     Tap above when starting your work shift at the store.
                   </p>
                 </div>
               ) : (
-                <div className="space-y-3">
+                <div className="space-y-2">
                   <button
                     onClick={handlePunchOut}
                     disabled={actionLoading}
-                    className="w-full py-4 rounded-xl bg-red-600 hover:bg-red-700 text-white font-bold text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-sm transition-all active:scale-[0.99] disabled:opacity-50"
+                    className="w-full py-4 px-4 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-bold text-sm sm:text-base uppercase tracking-wider flex items-center justify-center gap-2.5 shadow-md transition-all active:scale-[0.98] disabled:opacity-50 min-h-[52px]"
                   >
-                    <Square className="w-5 h-5 fill-white" />
-                    {actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}
+                    <Square className="w-5 h-5 fill-white shrink-0" />
+                    <span>{actionLoading ? 'Recording Punch Out...' : 'Punch Out (End Shift)'}</span>
                   </button>
-                  <p className="text-center text-[11px] text-neutral-500">
+                  <p className="text-center text-[10px] sm:text-[11px] text-neutral-500">
                     Live timer is running. Tap above when completing your shift.
                   </p>
                 </div>
@@ -413,41 +415,41 @@ export default function StaffDashboardPage() {
         </section>
 
         {/* TODAY'S ASSIGNED TASKS CARD */}
-        <section className="bg-white rounded-2xl border border-neutral-200/90 p-5 sm:p-6 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-neutral-100">
+        <section className="bg-white rounded-2xl sm:rounded-3xl border border-neutral-200/90 p-4 sm:p-6 shadow-sm">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-neutral-100">
             <div>
-              <div className="flex items-center gap-2">
-                <ListTodo className="w-5 h-5 text-[var(--brand-primary)]" />
-                <h2 className="text-base font-bold text-neutral-900">Today's Assigned Tasks</h2>
-                <span className="text-xs font-bold bg-neutral-100 text-neutral-700 px-2.5 py-0.5 rounded-full border border-neutral-200">
+              <div className="flex items-center gap-2 flex-wrap">
+                <ListTodo className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--brand-primary)]" />
+                <h2 className="text-sm sm:text-base font-bold text-neutral-900">Today's Assigned Tasks</h2>
+                <span className="text-[10px] sm:text-xs font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-full border border-neutral-200">
                   {completedTasksCount} / {tasks.length} Completed
                 </span>
               </div>
-              <p className="text-xs text-neutral-500 mt-0.5">Tasks assigned to you by admin / store manager</p>
+              <p className="text-[11px] sm:text-xs text-neutral-500 mt-0.5">Tasks assigned to you by admin / store manager</p>
             </div>
 
-            {/* Filter Tabs */}
-            <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 self-start sm:self-auto">
+            {/* Filter Tabs - Full width on mobile */}
+            <div className="grid grid-cols-3 sm:flex items-center gap-1 bg-neutral-100 p-1 rounded-xl border border-neutral-200 w-full sm:w-auto">
               {(['ALL', 'PENDING', 'COMPLETED'] as const).map((filter) => (
                 <button
                   key={filter}
                   onClick={() => setTaskFilter(filter)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  className={`py-1.5 px-2.5 rounded-lg text-center text-[11px] sm:text-xs font-bold transition-all ${
                     taskFilter === filter ? 'bg-white text-neutral-900 shadow-2xs' : 'text-neutral-500 hover:text-neutral-900'
                   }`}
                 >
-                  {filter}
+                  {filter === 'ALL' ? 'All' : filter === 'PENDING' ? 'Pending' : 'Done'}
                 </button>
               ))}
             </div>
           </div>
 
           {/* Task List */}
-          <div className="mt-4 space-y-3">
+          <div className="mt-3.5 space-y-2.5 sm:space-y-3">
             {loadingTasks ? (
               <div className="py-8 text-center text-neutral-400 text-xs">Loading tasks...</div>
             ) : filteredTasks.length === 0 ? (
-              <div className="py-8 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200">
+              <div className="py-8 text-center bg-neutral-50 rounded-2xl border border-dashed border-neutral-200 p-4">
                 <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto mb-2 opacity-80" />
                 <p className="text-sm font-bold text-neutral-800">All tasks completed!</p>
                 <p className="text-xs text-neutral-500">No pending tasks for you right now.</p>
@@ -465,53 +467,54 @@ export default function StaffDashboardPage() {
                 return (
                   <div
                     key={task.id}
-                    className={`p-4 rounded-xl border transition-all ${
+                    className={`p-3.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all ${
                       isDone
                         ? 'bg-neutral-50/60 border-neutral-200/60 opacity-80'
                         : 'bg-white border-neutral-200 hover:border-neutral-300 shadow-2xs'
                     }`}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="flex items-start gap-3">
+                    <div className="flex items-start justify-between gap-2.5 sm:gap-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3 min-w-0 flex-1">
                         <button
                           onClick={() => handleUpdateTaskStatus(task.id, isDone ? 'TODO' : 'COMPLETED')}
                           disabled={updatingTaskId === task.id}
-                          className={`w-6 h-6 rounded-lg flex items-center justify-center border transition-all mt-0.5 ${
+                          className={`w-7 h-7 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center border transition-all mt-0.5 shrink-0 active:scale-90 ${
                             isDone
                               ? 'bg-emerald-600 border-emerald-600 text-white font-bold'
                               : 'border-neutral-300 hover:border-emerald-500 text-transparent'
                           }`}
+                          aria-label={isDone ? 'Mark task pending' : 'Mark task done'}
                         >
                           <Check className="w-4 h-4 stroke-[3]" />
                         </button>
-                        <div>
+                        <div className="min-w-0 flex-1">
                           <h3
-                            className={`text-sm font-bold ${
+                            className={`text-xs sm:text-sm font-bold leading-snug break-words ${
                               isDone ? 'line-through text-neutral-400' : 'text-neutral-900'
                             }`}
                           >
                             {task.title}
                           </h3>
                           {task.description && (
-                            <p className="text-xs text-neutral-600 mt-1 leading-relaxed">{task.description}</p>
+                            <p className="text-[11px] sm:text-xs text-neutral-600 mt-1 leading-relaxed break-words">{task.description}</p>
                           )}
-                          <div className="flex flex-wrap items-center gap-2 mt-2">
+                          <div className="flex flex-wrap items-center gap-1.5 mt-2">
                             <span
-                              className={`text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                              className={`text-[9px] sm:text-[10px] font-bold px-2 py-0.5 rounded-md border ${
                                 priorityColors[task.priority] || priorityColors.MEDIUM
                               }`}
                             >
-                              {task.priority} Priority
+                              {task.priority}
                             </span>
                             {task.dueDate && (
-                              <span className="text-[10px] text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded-md border border-neutral-200 flex items-center gap-1">
-                                <Calendar className="w-3 h-3 text-neutral-400" />
+                              <span className="text-[9px] sm:text-[10px] text-neutral-600 bg-neutral-50 px-2 py-0.5 rounded-md border border-neutral-200 flex items-center gap-1">
+                                <Calendar className="w-2.5 h-2.5 text-neutral-400" />
                                 Due: {new Date(task.dueDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric' })}
                               </span>
                             )}
                             {task.assignedBy && (
-                              <span className="text-[10px] text-neutral-500">
-                                Assigned by {task.assignedBy.firstName}
+                              <span className="text-[9px] sm:text-[10px] text-neutral-500">
+                                By {task.assignedBy.firstName}
                               </span>
                             )}
                           </div>
@@ -520,12 +523,12 @@ export default function StaffDashboardPage() {
 
                       {/* Action buttons */}
                       {!isDone && (
-                        <div className="flex items-center gap-1.5 self-start">
+                        <div className="flex items-center gap-1.5 self-start shrink-0">
                           {task.status !== 'IN_PROGRESS' && (
                             <button
                               onClick={() => handleUpdateTaskStatus(task.id, 'IN_PROGRESS')}
                               disabled={updatingTaskId === task.id}
-                              className="text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1 rounded-lg transition-colors"
+                              className="text-[10px] sm:text-[11px] font-bold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2 sm:px-2.5 py-1.5 rounded-lg transition-colors active:scale-95"
                             >
                               Start
                             </button>
@@ -533,7 +536,7 @@ export default function StaffDashboardPage() {
                           <button
                             onClick={() => handleUpdateTaskStatus(task.id, 'COMPLETED')}
                             disabled={updatingTaskId === task.id}
-                            className="text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2.5 py-1 rounded-lg transition-colors"
+                            className="text-[10px] sm:text-[11px] font-bold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 sm:px-2.5 py-1.5 rounded-lg transition-colors active:scale-95"
                           >
                             Done
                           </button>
@@ -548,41 +551,41 @@ export default function StaffDashboardPage() {
         </section>
 
         {/* SUMMARY / QUICK LINKS */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
           <Link
             href="/staff/attendance"
-            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-[var(--brand-primary)] transition-all flex items-center justify-between group shadow-2xs"
+            className="p-4 sm:p-5 rounded-2xl bg-white border border-neutral-200 hover:border-[var(--brand-primary)] transition-all flex items-center justify-between group shadow-2xs active:scale-[0.99]"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[var(--brand-primary)]">
+              <div className="w-10 h-10 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center text-[var(--brand-primary)] shrink-0">
                 <Clock className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-[var(--brand-primary)] transition-colors">
+                <h4 className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-[var(--brand-primary)] transition-colors">
                   Monthly Working Hours
                 </h4>
-                <p className="text-xs text-neutral-500">View your attendance logs & payable hours</p>
+                <p className="text-[11px] sm:text-xs text-neutral-500">View your attendance logs & payable hours</p>
               </div>
             </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-[var(--brand-primary)] transition-colors" />
+            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-[var(--brand-primary)] transition-colors shrink-0" />
           </Link>
 
           <Link
             href="/staff/profile"
-            className="p-5 rounded-2xl bg-white border border-neutral-200 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs"
+            className="p-4 sm:p-5 rounded-2xl bg-white border border-neutral-200 hover:border-indigo-500 transition-all flex items-center justify-between group shadow-2xs active:scale-[0.99]"
           >
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600">
+              <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center text-indigo-600 shrink-0">
                 <UserCheck className="w-5 h-5" />
               </div>
               <div>
-                <h4 className="text-sm font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors">
+                <h4 className="text-xs sm:text-sm font-bold text-neutral-900 group-hover:text-indigo-600 transition-colors">
                   Staff Profile & Security
                 </h4>
-                <p className="text-xs text-neutral-500">Employee ID, contact & password</p>
+                <p className="text-[11px] sm:text-xs text-neutral-500">Employee ID, contact & password</p>
               </div>
             </div>
-            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-indigo-600 transition-colors" />
+            <ArrowUpRight className="w-4 h-4 text-neutral-400 group-hover:text-indigo-600 transition-colors shrink-0" />
           </Link>
         </div>
       </main>
