@@ -95,6 +95,9 @@ const nextConfig: NextConfig = {
       { source: '/admin/pos', destination: '/pos', permanent: true },
       { source: '/admin/pos/add-stock', destination: '/pos/add-stock', permanent: true },
       { source: '/admin/pos/printers', destination: '/pos/printers', permanent: true },
+      { source: '/catalog', destination: '/collections', permanent: false },
+      { source: '/track', destination: '/track-order', permanent: false },
+      { source: '/faq', destination: '/faqs', permanent: false },
     ];
   },
   async rewrites() {
