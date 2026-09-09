@@ -7,6 +7,7 @@ export interface CartItemDto {
   cartId: string;
   productId: string;
   productName?: string;
+  productSlug?: string;
   variantId?: string;
   quantity: number;
   unitPrice: number;
@@ -17,6 +18,7 @@ export interface CartItemDto {
   color?: string;
   size?: string;
   product?: {
+    slug?: string;
     primaryImageUrl?: string;
     images?: Array<{ url?: string }>;
   };

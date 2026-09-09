@@ -247,7 +247,7 @@ export default function CartPage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 sm:gap-4 items-center">
                           <div className="md:col-span-6 flex gap-3 sm:gap-4 items-start sm:items-center pr-6 md:pr-0">
-                            <Link href={`/product/${item.productId}`} className="shrink-0 relative">
+                            <Link href={`/product/${item.productSlug || item.productId}`} className="shrink-0 relative">
                               <Image
                                 src={withVariant(imageSrc, 'thumb')}
                                 alt={item.productName || 'Product'}
@@ -260,7 +260,7 @@ export default function CartPage() {
 
                             <div className="space-y-1 min-w-0 flex-1">
                               <Link
-                                href={`/product/${item.productId}`}
+                                href={`/product/${item.productSlug || item.productId}`}
                                 className="text-xs sm:text-base font-bold text-neutral-900 line-clamp-2 hover:text-[var(--brand-primary)] leading-snug"
                               >
                                 {item.productName || 'Product'}

@@ -77,6 +77,17 @@ export function ProductDetailClient() {
     }
   }, [product?.id, isAuthenticated]);
 
+  // Normalize URL in browser to clean SEO slug, preventing raw database IDs/UUIDs from being exposed in URL
+  React.useEffect(() => {
+    if (product?.slug && typeof window !== 'undefined') {
+      const currentPath = window.location.pathname;
+      const expectedPath = `/product/${product.slug}`;
+      if (currentPath !== expectedPath && (looksLikeUuid || idOrSlug === product.id)) {
+        window.history.replaceState(null, '', expectedPath);
+      }
+    }
+  }, [product?.slug, product?.id, looksLikeUuid, idOrSlug]);
+
   // Extract unique colors and sizes from variants
   const { data: variantsData } = useVariants({ productId: looksLikeUuid ? idOrSlug : product?.id, limit: 100 });
   const { data: reviewsData } = useProductReviews(product?.id || '', !!product?.id);
