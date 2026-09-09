@@ -64,9 +64,10 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedSize, setSelectedSize] = useState<string>('');
 
-  const currentColorGroup = data.colorGroups[activeColorIndex] || data.colorGroups[0];
+  const safeColorIndex = (data.colorGroups && activeColorIndex < data.colorGroups.length) ? activeColorIndex : 0;
+  const currentColorGroup = (data.colorGroups && data.colorGroups.length > 0) ? data.colorGroups[safeColorIndex] : null;
   const images = currentColorGroup?.images?.length ? currentColorGroup.images : [];
-  const mainImage = images[activeImageIndex] || images[0] || null;
+  const mainImage = (images && activeImageIndex < images.length) ? images[activeImageIndex] : (images?.[0] || null);
 
   const price = data.salePrice && data.salePrice > 0 && data.salePrice < data.basePrice
     ? data.salePrice
@@ -330,34 +331,46 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                   </div>
 
                   <div className="flex flex-wrap gap-2.5">
-                    {(currentColorGroup?.sizes?.length ? currentColorGroup.sizes : [
-                      { size: 'S', stock: 10, available: true },
-                      { size: 'M', stock: 15, available: true },
-                      { size: 'L', stock: 8, available: true },
-                      { size: 'XL', stock: 5, available: true },
-                      { size: 'XXL', stock: 0, available: false },
-                    ]).map((sz, idx) => {
-                      const isSelected = selectedSize === sz.size;
-                      const isOutOfStock = sz.stock <= 0 || !sz.available;
+                    {currentColorGroup?.sizes && currentColorGroup.sizes.length > 0 ? (
+                      currentColorGroup.sizes.map((sz, idx) => {
+                        const isSelected = selectedSize === sz.size;
+                        const isOutOfStock = sz.stock <= 0 || !sz.available;
 
-                      return (
+                        return (
+                          <button
+                            key={idx}
+                            type="button"
+                            disabled={isOutOfStock}
+                            onClick={() => setSelectedSize(sz.size)}
+                            title={isOutOfStock ? `${sz.size} (Out of stock)` : `${sz.size} (${sz.stock} in stock)`}
+                            className={`min-w-12 h-11 px-3.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                              isSelected
+                                ? 'border-[#0284c7] bg-[#0284c7] text-white shadow-md scale-105'
+                                : isOutOfStock
+                                ? 'border-neutral-200 bg-neutral-100 text-neutral-400 opacity-40 cursor-not-allowed line-through'
+                                : 'border-neutral-200 bg-white text-neutral-800 hover:border-[#0284c7] hover:text-[#0284c7]'
+                            }`}
+                          >
+                            <span>{sz.size}</span>
+                          </button>
+                        );
+                      })
+                    ) : (
+                      ['S', 'M', 'L', 'XL', 'XXL'].map((defaultSz, idx) => (
                         <button
                           key={idx}
                           type="button"
-                          disabled={isOutOfStock}
-                          onClick={() => setSelectedSize(sz.size)}
-                          className={`min-w-12 h-11 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center ${
-                            isSelected
+                          onClick={() => setSelectedSize(defaultSz)}
+                          className={`min-w-12 h-11 px-3.5 rounded-xl border text-xs font-bold transition-all flex items-center justify-center ${
+                            selectedSize === defaultSz
                               ? 'border-[#0284c7] bg-[#0284c7] text-white shadow-md'
-                              : isOutOfStock
-                              ? 'border-neutral-200 bg-neutral-100 text-neutral-400 opacity-50 cursor-not-allowed line-through'
                               : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
                           }`}
                         >
-                          <span>{sz.size}</span>
+                          <span>{defaultSz}</span>
                         </button>
-                      );
-                    })}
+                      ))
+                    )}
                   </div>
                 </div>
 

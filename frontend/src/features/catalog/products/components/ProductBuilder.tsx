@@ -3013,18 +3013,78 @@ export default function ProductBuilder({
                   <div className="flex gap-2 pt-2">
                     <input
                       type="text"
-                      placeholder="Add custom size (e.g. 4XL, FREE SIZE)"
-                      value={activeColorTab === group.id ? newSizeInput : ''}
-                      onChange={(e) => {
-                        setActiveColorTab(group.id);
-                        setNewSizeInput(e.target.value);
+                      placeholder="Add custom size (e.g. 4XL, 5XL, FREE SIZE)"
+                      id={`custom-size-input-${group.id}`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const val = (e.currentTarget.value || '').trim().toUpperCase();
+                          if (val) {
+                            setColorGroups((prev) =>
+                              prev.map((g) => {
+                                if (g.id === group.id) {
+                                  const exists = g.sizes.some(
+                                    (s) => s.size.toLowerCase().trim() === val.toLowerCase().trim()
+                                  );
+                                  if (exists) return g;
+                                  return {
+                                    ...g,
+                                    sizes: [
+                                      ...g.sizes,
+                                      {
+                                        size: val,
+                                        stock: 10,
+                                        available: true,
+                                        sku: buildSmartVariantSku(g.name, val),
+                                      },
+                                    ],
+                                  };
+                                }
+                                return g;
+                              })
+                            );
+                            e.currentTarget.value = '';
+                          }
+                        }
                       }}
-                      className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs text-neutral-900 font-medium focus:outline-none"
+                      className="flex-1 bg-white border border-neutral-200 rounded-xl px-4 py-2 text-xs text-neutral-900 font-medium focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                     />
                     <button
                       type="button"
-                      onClick={() => addSizeToColorGroup(group.id)}
-                      className="bg-neutral-900 text-white text-xs font-bold px-4 py-2 rounded-xl hover:bg-neutral-800"
+                      onClick={() => {
+                        const inputEl = document.getElementById(`custom-size-input-${group.id}`) as HTMLInputElement | null;
+                        const val = (inputEl?.value || '').trim().toUpperCase();
+                        if (val) {
+                          setColorGroups((prev) =>
+                            prev.map((g) => {
+                              if (g.id === group.id) {
+                                const exists = g.sizes.some(
+                                  (s) => s.size.toLowerCase().trim() === val.toLowerCase().trim()
+                                );
+                                if (exists) {
+                                  alert(`Size "${val}" already exists for "${g.name}".`);
+                                  return g;
+                                }
+                                return {
+                                  ...g,
+                                  sizes: [
+                                    ...g.sizes,
+                                    {
+                                      size: val,
+                                      stock: 10,
+                                      available: true,
+                                      sku: buildSmartVariantSku(g.name, val),
+                                    },
+                                  ],
+                                };
+                              }
+                              return g;
+                            })
+                          );
+                          if (inputEl) inputEl.value = '';
+                        }
+                      }}
+                      className="bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-2xs"
                     >
                       + Add Size
                     </button>
