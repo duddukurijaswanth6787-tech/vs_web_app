@@ -147,6 +147,13 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'barcode-tags',
+        title: 'Barcode & Price Tags',
+        href: '/admin/catalog/products/tags',
+        icon: Tag,
+        implemented: true,
+      },
+      {
         id: 'attributes',
         title: 'Attributes',
         href: '/admin/catalog/attributes',

@@ -42,9 +42,10 @@ const statusChartColor: Record<string, string> = {
 
 const quickActions = [
   { label: 'Add Product', href: '/admin/catalog/products/new', icon: PlusCircle, color: 'text-blue-600 bg-blue-50' },
+  { label: 'Barcode Tags', href: '/admin/catalog/products/tags', icon: Tag, color: 'text-sky-600 bg-sky-50' },
+  { label: 'Desktop POS', href: '/pos', icon: ShoppingBag, color: 'text-emerald-600 bg-emerald-50' },
   { label: 'Add Category', href: '/admin/catalog/categories', icon: Layers, color: 'text-indigo-600 bg-indigo-50' },
   { label: 'Add Brand', href: '/admin/catalog/brands', icon: Tag, color: 'text-purple-600 bg-purple-50' },
-  { label: 'Create Banner', href: '/admin/banners', icon: Image, color: 'text-pink-600 bg-pink-50' },
   { label: 'Create Coupon', href: '/admin/promotions/coupons', icon: Gift, color: 'text-orange-600 bg-orange-50' },
   { label: 'View Orders', href: '/admin/orders', icon: Eye, color: 'text-neutral-600 bg-neutral-50' },
 ];
