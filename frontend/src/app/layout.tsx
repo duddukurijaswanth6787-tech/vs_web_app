@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { QueryClient, dehydrate } from "@tanstack/react-query";
 import "./globals.css";
@@ -29,6 +29,12 @@ export const siteOpenGraph = {
   title: "Vasanthi's Signature | Women's Ethnic Wear & Designer Fashion",
   description: "Official Online Store for Vasanthi's Signature - Premium women's ethnic wear, designer fashion, and handcrafted collections.",
   images: ["/brand/logo-full.png"],
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  themeColor: "#7c3aed",
 };
 
 export const metadata: Metadata = {
