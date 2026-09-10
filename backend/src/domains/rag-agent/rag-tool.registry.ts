@@ -135,6 +135,7 @@ export class RagToolRegistry {
               productId,
             },
           },
+          take: 100,
           include: {
             variant: {
               include: {
@@ -278,6 +279,8 @@ export class RagToolRegistry {
 
         const returns = await this.prisma.returnRequest.findMany({
           where,
+          take: 10,
+          orderBy: { createdAt: 'desc' },
           include: {
             order: {
               include: { customer: true },
@@ -331,6 +334,8 @@ export class RagToolRegistry {
 
         const refunds = await this.prisma.refund.findMany({
           where,
+          take: 10,
+          orderBy: { createdAt: 'desc' },
           include: {
             order: {
               include: { customer: true },

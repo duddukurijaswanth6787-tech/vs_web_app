@@ -56,8 +56,7 @@ if (isBullMQEnabled) {
   const mockReportQueueProvider = {
     provide: 'BullQueue_report-export',
     useValue: {
-      add: async (name: string, data: any) => {
-        console.log('Mock Queue: report-export job added:', name, data);
+      add: async (_name: string, _data: any) => {
         return { id: 'mock-job-id' };
       },
       client: Promise.resolve({

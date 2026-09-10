@@ -275,11 +275,12 @@ export class StorefrontService {
     await this.prisma.newsletterSubscription.delete({ where: { id } });
   }
 
-  async exportNewsletters() {
+  async exportNewsletters(limit = 10000) {
     return this.prisma.newsletterSubscription.findMany({
       where: { status: 'SUBSCRIBED' },
       select: { email: true, subscribedAt: true, source: true },
       orderBy: { subscribedAt: 'desc' },
+      take: limit,
     });
   }
 

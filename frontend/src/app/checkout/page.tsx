@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import Link from 'next/link';
+import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Lock, Gift, MapPin, Truck, Clock, MessageSquare, Plus, Check } from 'lucide-react';
 import { MobilePageContainer } from '@/components/layout/MobilePageContainer';
@@ -13,6 +14,8 @@ import {
 } from '@/features/customer/hooks';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { paymentService } from '@/features/payments/payment.service';
+import type { OrderPlacePaymentDto } from '@/features/customer/checkout.service';
 
 const DELIVERY_SLOTS = [
   { id: 'MORNING', label: 'Morning (9:00 AM - 1:00 PM)' },
@@ -28,6 +31,7 @@ function CheckoutPageContent() {
   const { data: addressesData } = useCustomerAddresses(isAuthenticated);
   const placeOrder = usePlaceOrder();
   const [orderError, setOrderError] = useState('');
+  const [verifying, setVerifying] = useState(false);
 
   // Form states
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
@@ -50,6 +54,37 @@ function CheckoutPageContent() {
     return null;
   }
 
+  const openRazorpay = (payment: OrderPlacePaymentDto, orderNumber: string) => {
+    if (!window.Razorpay) {
+      setOrderError('Payment gateway failed to load. Please refresh and try again.');
+      return;
+    }
+    const rzp = new window.Razorpay({
+      key: payment.razorpayKeyId,
+      amount: Math.round(payment.amount * 100),
+      currency: payment.currency,
+      order_id: payment.providerOrderId,
+      name: "Vasanthi's Signature",
+      description: `Order ${orderNumber}`,
+      handler: (response) => {
+        setVerifying(true);
+        paymentService
+          .verify(payment.paymentId, {
+            razorpayPaymentId: response.razorpay_payment_id,
+            razorpaySignature: response.razorpay_signature,
+          })
+          .then(() => router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`))
+          .catch((err: unknown) => {
+            setOrderError(getApiErrorMessage(err, 'Payment verification failed'));
+            setVerifying(false);
+          });
+      },
+      modal: { ondismiss: () => setVerifying(false) },
+      theme: { color: '#0284c7' },
+    });
+    rzp.open();
+  };
+
   const onPlaceOrder = async () => {
     if (!addressId) {
       setOrderError('Please select or add a shipping address first.');
@@ -66,7 +101,11 @@ function CheckoutPageContent() {
         isGift,
         giftWrapMessage: isGift ? giftWrapMessage || undefined : undefined,
       });
-      router.push(`/checkout/success?orderId=${order.orderNumber}`);
+      if (order.payment) {
+        openRazorpay(order.payment, order.orderNumber);
+        return;
+      }
+      router.push(`/checkout/success?order=${encodeURIComponent(order.orderNumber || order.id || '')}`);
     } catch (err: unknown) {
       setOrderError(getApiErrorMessage(err, 'Failed to place order'));
     }
@@ -74,6 +113,7 @@ function CheckoutPageContent() {
 
   return (
     <MobilePageContainer>
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <Link href="/cart" className="p-1 rounded-lg hover:bg-neutral-100">
@@ -264,11 +304,11 @@ function CheckoutPageContent() {
 
             <button
               onClick={onPlaceOrder}
-              disabled={placeOrder.isPending}
+              disabled={placeOrder.isPending || verifying}
               className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
             >
               <Lock className="w-4 h-4" />
-              <span>{placeOrder.isPending ? 'Placing Order...' : 'Confirm & Place Order'}</span>
+              <span>{verifying ? 'Confirming payment…' : placeOrder.isPending ? 'Placing Order...' : 'Confirm & Place Order'}</span>
             </button>
           </div>
         ) : (

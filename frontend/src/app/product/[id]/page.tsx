@@ -1,11 +1,43 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { dehydrate, HydrationBoundary } from '@tanstack/react-query';
 import { QueryClient } from '@tanstack/react-query';
 import { productService } from '@/features/catalog/products/product.service';
 import { customerStorefrontService } from '@/features/customer/storefront.service';
 import { customerReviewsService } from '@/features/customer/reviews.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
+import { siteOpenGraph } from '@/app/layout';
 import { ProductDetailClient } from './ProductDetailClient';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const looksLikeUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id);
+  try {
+    const product = await (looksLikeUuid
+      ? productService.findById(id)
+      : customerStorefrontService.getProductBySlug(id));
+    const title = product.seoTitle || product.name;
+    const description =
+      product.seoDescription || product.shortDescription || product.description || title;
+    const url = `/product/${product.slug || id}`;
+    const images = product.primaryImageUrl
+      ? [product.primaryImageUrl]
+      : ['/brand/logo-full.png'];
+    return {
+      title,
+      description,
+      alternates: { canonical: url },
+      openGraph: { ...siteOpenGraph, title, description, url, images },
+    };
+  } catch {
+    return {};
+  }
+}
 
 // ponytail: inline keys to avoid importing from 'use client' module -- these
 // MUST match the query keys the client hooks use (useCustomerProduct,

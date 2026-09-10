@@ -18,6 +18,7 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { RagOrchestratorService } from './rag-orchestrator.service';
 import { RagAgentRepository } from './rag-agent.repository';
+import { Throttle } from '@nestjs/throttler';
 import { ChatRequestDto, SubmitFeedbackDto } from './rag-agent.types';
 import type { Request } from 'express';
 
@@ -31,6 +32,7 @@ export class RagAgentController {
   ) {}
 
   @Post('chat')
+  @Throttle({ default: { limit: 20, ttl: 60 * 1000 } })
   @ApiOperation({ summary: 'Send a message to a RAG Agent' })
   async chat(@Body() dto: ChatRequestDto, @Req() req: Request) {
     let userId: string | undefined;

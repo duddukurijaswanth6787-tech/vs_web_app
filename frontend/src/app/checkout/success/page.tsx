@@ -4,6 +4,7 @@ import React from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { CheckCircle2 } from 'lucide-react';
+import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { useCustomerOrder } from '@/features/customer/hooks';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,12 +12,13 @@ import { formatInr } from '@/features/customer/mappers';
 
 function CheckoutSuccessPageContent() {
   const searchParams = useSearchParams();
-  const orderNumber = searchParams.get('orderId') || '';
+  const orderNumber = searchParams.get('order') || searchParams.get('orderId') || '';
   const { isAuthenticated } = useAuth();
   const { data: order } = useCustomerOrder(orderNumber, !!orderNumber && isAuthenticated);
 
   return (
     <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
+      <StorefrontHeader />
       <main className="max-w-md mx-auto w-full px-4 py-16 flex-1 text-center space-y-4">
         <CheckCircle2 className="w-14 h-14 text-emerald-500 mx-auto" />
         <h1 className="text-2xl font-bold font-serif text-[var(--brand-primary)]">Order Placed</h1>

@@ -92,7 +92,7 @@ function CheckoutPaymentPageContent() {
         addressId,
         shippingMethod: 'STANDARD',
         couponCode: couponCode || undefined,
-        paymentMethod: 'RAZORPAY',
+        paymentMethod: selected.toUpperCase() as 'RAZORPAY' | 'COD',
       });
       if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
 
@@ -155,7 +155,6 @@ function CheckoutPaymentPageContent() {
 
         {isLoading && <p className="text-sm text-neutral-500">Loading payment methods…</p>}
         {((methods || []) as unknown as PaymentMethod[])
-          .filter((m) => m.code.toLowerCase() !== 'cod')
           .map((m) => (
             <button
               key={m.code}

@@ -4,6 +4,7 @@ import React, { useMemo } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { ArrowLeft } from 'lucide-react';
+import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 import { ProductGridSection } from '@/components/storefront/ProductGridSection';
@@ -25,7 +26,8 @@ export default function CollectionSlugPage() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 pb-20">
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
+      <StorefrontHeader />
+      <header className="px-4 py-3 flex items-center gap-3">
         <Link href="/collections" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
