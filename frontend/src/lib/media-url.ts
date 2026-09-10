@@ -6,19 +6,16 @@
 function getBackendOrigin(): string {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
   if (envUrl) {
-    if (envUrl.includes('api.vasanthisignature.in') || envUrl.includes('api.vasanthis-signature.in')) {
-      return 'https://vsss-production.up.railway.app';
-    }
     return envUrl.replace(/\/api\/v1\/?$/, '');
   }
   if (typeof window !== 'undefined') {
     const hostname = window.location.hostname;
     if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://vsss-production.up.railway.app';
+      return 'https://api.vasanthissignature.in';
     }
     return 'http://localhost:4000';
   }
-  return 'https://vsss-production.up.railway.app';
+  return 'https://api.vasanthissignature.in';
 }
 
 export function resolveMediaUrl(url?: string | null): string {
@@ -30,6 +27,11 @@ export function resolveMediaUrl(url?: string | null): string {
   }
 
   const backendOrigin = getBackendOrigin();
+
+  // Rewrite legacy railway domain to live api.vasanthissignature.in
+  if (url.includes('vsss-production.up.railway.app')) {
+    url = url.replace('https://vsss-production.up.railway.app', backendOrigin);
+  }
 
   // 2. Convert any dev/local backend origin (localhost:4000, 127.0.0.1:4000, 192.168.x.x:4000) to current environment's backend origin
   if (/^https?:\/\/[^\/]+:4000/i.test(url)) {
@@ -66,13 +68,17 @@ export function resolveMediaUrl(url?: string | null): string {
 }
 
 export function isLocalOrPlaceholder(url?: string | null): boolean {
-  if (!url) return false;
+  if (!url) return true;
   return (
     url.startsWith('/') ||
     url.startsWith('data:') ||
+    url.startsWith('blob:') ||
     url.endsWith('.svg') ||
     url.includes('placehold.co') ||
-    url.includes('unsplash.com')
+    url.includes('unsplash.com') ||
+    url.includes('railway.app') ||
+    url.includes('vasanthissignature.in') ||
+    url.includes('/api/v1/storage')
   );
 }
 

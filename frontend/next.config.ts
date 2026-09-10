@@ -85,6 +85,21 @@ const nextConfig: NextConfig = {
         hostname: "**.up.railway.app",
         pathname: "/**",
       },
+      {
+        protocol: "https",
+        hostname: "api.vasanthissignature.in",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "vasanthissignature.in",
+        pathname: "/**",
+      },
+      {
+        protocol: "https",
+        hostname: "**.vasanthissignature.in",
+        pathname: "/**",
+      },
     ],
   },
   async redirects() {
