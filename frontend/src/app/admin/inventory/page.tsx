@@ -612,6 +612,7 @@ export default function InventoryPage() {
                     </div>
 
                     {/* Right: Primary Action Buttons */}
+                    {/* Right: Primary Action Buttons */}
                     <div
                       className="flex items-center gap-2 shrink-0"
                       onClick={(e) => e.stopPropagation()}
@@ -619,36 +620,16 @@ export default function InventoryPage() {
                       <button
                         type="button"
                         onClick={() => setStockModalProduct(prod)}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
+                        className="flex items-center gap-1.5 px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold transition shadow-2xs cursor-pointer"
                       >
                         <Plus className="w-3.5 h-3.5" />
                         <span>Add Stock</span>
                       </button>
 
-                      <button
-                        type="button"
-                        onClick={() => {
-                          const firstV = prod.variants[0];
-                          setEditProductData({
-                            productId: prod.productId,
-                            variantId: firstV?.variantId,
-                            title: prod.productName,
-                            sku: firstV?.variant?.sku,
-                            barcode: firstV?.variant?.barcode,
-                            price: (firstV?.variant as any)?.price || 0,
-                            compareAtPrice: (firstV?.variant as any)?.compareAtPrice || 0,
-                          });
-                        }}
-                        className="flex items-center gap-1.5 px-3 py-1.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-800 rounded-xl text-xs font-bold transition cursor-pointer"
-                      >
-                        <Edit3 className="w-3.5 h-3.5 text-neutral-600" />
-                        <span>Quick Edit</span>
-                      </button>
-
                       <Link
                         href={`/admin/catalog/products/${prod.productId}/edit`}
                         title="Open full catalog product page"
-                        className="p-1.5 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition"
+                        className="p-2 text-neutral-400 hover:text-neutral-900 hover:bg-neutral-100 rounded-xl transition"
                       >
                         <ExternalLink className="w-4 h-4" />
                       </Link>
@@ -669,7 +650,7 @@ export default function InventoryPage() {
                               <th className="py-2.5 px-3 text-center">Reserved</th>
                               <th className="py-2.5 px-3 text-center">Reorder Threshold</th>
                               <th className="py-2.5 px-3">Status</th>
-                              <th className="py-2.5 px-4 text-right">Quick Restock / Actions</th>
+                              <th className="py-2.5 px-4 text-right">Actions</th>
                             </tr>
                           </thead>
                           <tbody className="divide-y divide-neutral-100">
@@ -743,33 +724,11 @@ export default function InventoryPage() {
                                   {/* Direct Actions */}
                                   <td className="py-3 px-4 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
-                                      {/* Quick +10 */}
-                                      <button
-                                        type="button"
-                                        onClick={() => handleQuickAddUnits(v, 10)}
-                                        disabled={quickIncrementId === v.id}
-                                        title="Add +10 units to this size"
-                                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-mono font-bold text-[10px] rounded-lg border border-emerald-200 transition disabled:opacity-50 cursor-pointer"
-                                      >
-                                        {quickIncrementId === v.id ? <ButtonLoader /> : '+10'}
-                                      </button>
-
-                                      {/* Quick +25 */}
-                                      <button
-                                        type="button"
-                                        onClick={() => handleQuickAddUnits(v, 25)}
-                                        disabled={quickIncrementId === v.id}
-                                        title="Add +25 units to this size"
-                                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-700 font-mono font-bold text-[10px] rounded-lg border border-emerald-200 transition disabled:opacity-50 cursor-pointer"
-                                      >
-                                        +25
-                                      </button>
-
                                       {/* Advanced Adjust */}
                                       <button
                                         type="button"
                                         onClick={() => setActionItem(v)}
-                                        className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-lg text-2xs font-semibold transition cursor-pointer"
+                                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 rounded-lg text-2xs font-bold transition cursor-pointer"
                                       >
                                         Adjust
                                       </button>
@@ -779,7 +738,7 @@ export default function InventoryPage() {
                                         type="button"
                                         onClick={() => setSettingsItem(v)}
                                         title="Configure reorder thresholds"
-                                        className="p-1 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-900 transition cursor-pointer"
+                                        className="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-900 transition cursor-pointer"
                                       >
                                         <Sliders className="w-3.5 h-3.5" />
                                       </button>

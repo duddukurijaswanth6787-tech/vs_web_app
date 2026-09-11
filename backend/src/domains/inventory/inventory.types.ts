@@ -58,6 +58,12 @@ export class UpdateInventoryDto {
   @Type(() => Number)
   @IsInt()
   @Min(0)
+  availableQuantity?: number;
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
   minimumStock?: number;
   @ApiPropertyOptional()
   @IsOptional()

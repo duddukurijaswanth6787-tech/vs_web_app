@@ -1218,23 +1218,41 @@ export default function ProductBuilder({
         }
       }
 
-      // Helper function to update or create inventory record without 422 errors
+      // Helper function to update or create inventory record with exact availableQuantity sync
       const syncVariantInventory = async (vId: string, sizeRow: ColorVariantGroup['sizes'][number]) => {
-        const existingInvId = existingInvMap.get(vId);
+        let existingInvId = existingInvMap.get(vId);
+        const targetStock = Math.max(0, Number(sizeRow.stock) || 0);
+
+        if (!existingInvId) {
+          try {
+            const foundInv = await inventoryService.findByVariantId(vId);
+            if (foundInv?.id) {
+              existingInvId = foundInv.id;
+              existingInvMap.set(vId, foundInv.id);
+            }
+          } catch {
+            // ignore
+          }
+        }
+
         if (existingInvId) {
           await inventoryService
             .update(existingInvId, {
-              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+              availableQuantity: targetStock,
+              minimumStock: sizeRow.minStock ?? 5,
+              reorderLevel: sizeRow.reorderLevel ?? 10,
+              maximumStock: 100,
             })
             .catch(() => null);
         } else {
           const newInv = await inventoryService
             .create({
               variantId: vId,
-              availableQuantity: Math.max(0, sizeRow.stock),
-              ...(sizeRow.minStock ? { minimumStock: sizeRow.minStock } : {}),
-              ...(sizeRow.reorderLevel ? { reorderLevel: sizeRow.reorderLevel } : {}),
+              availableQuantity: targetStock,
+              minimumStock: sizeRow.minStock ?? 5,
+              reorderLevel: sizeRow.reorderLevel ?? 10,
+              maximumStock: 100,
+              reason: 'Product catalog size stock setup',
             })
             .catch(() => null);
           if (newInv?.id) existingInvMap.set(vId, newInv.id);

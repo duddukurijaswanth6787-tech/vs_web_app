@@ -52,6 +52,7 @@ export interface CreateInventoryDto {
 }
 
 export interface UpdateInventoryDto {
+  availableQuantity?: number;
   minimumStock?: number;
   maximumStock?: number;
   reorderLevel?: number;

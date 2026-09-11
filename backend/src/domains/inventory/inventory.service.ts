@@ -196,7 +196,31 @@ export class InventoryService {
     if (!inv)
       throw new BusinessException('Inventory not found', 'INVENTORY_001');
 
-    await this.inventoryRepository.update(id, { ...dto });
+    const { availableQuantity, ...rest } = dto;
+    const updateData: any = { ...rest };
+    if (availableQuantity !== undefined) {
+      updateData.availableQuantity = availableQuantity;
+    }
+
+    await this.inventoryRepository.update(id, updateData);
+
+    if (
+      availableQuantity !== undefined &&
+      availableQuantity !== inv.availableQuantity
+    ) {
+      const delta = availableQuantity - inv.availableQuantity;
+      await this.inventoryRepository.createMovement({
+        inventory: { connect: { id } },
+        variantId: inv.variantId,
+        movementType: 'ADJUSTMENT',
+        quantity: delta,
+        previousQuantity: inv.availableQuantity,
+        newQuantity: availableQuantity,
+        reason: 'Catalog stock update',
+        performedBy: userId,
+      });
+    }
+
     await this.updateStockStatus(id, userId);
 
     await this.auditService.log({
