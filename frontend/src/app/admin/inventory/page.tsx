@@ -109,8 +109,10 @@ export default function InventoryPage() {
         let overallStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' = 'IN_STOCK';
         if (totalAvailable <= 0 || matchingVariants.length === 0) {
           overallStatus = 'OUT_OF_STOCK';
-        } else if (hasOutOfStock || hasLowStock || totalAvailable <= 10) {
+        } else if (hasOutOfStock || hasLowStock) {
           overallStatus = 'LOW_STOCK';
+        } else {
+          overallStatus = 'IN_STOCK';
         }
 
         const primaryImg =
@@ -171,7 +173,7 @@ export default function InventoryPage() {
 
       if (prod.totalAvailable <= 0) {
         prod.overallStatus = 'OUT_OF_STOCK';
-      } else if (hasOutOfStock || hasLowStock || prod.totalAvailable <= 10) {
+      } else if (hasOutOfStock || hasLowStock) {
         prod.overallStatus = 'LOW_STOCK';
       } else {
         prod.overallStatus = 'IN_STOCK';
@@ -665,8 +667,15 @@ export default function InventoryPage() {
                                     <div className="font-bold text-neutral-900 text-xs">
                                       {v.variant?.title || 'Variant Item'}
                                     </div>
-                                    <span className="text-[10px] text-neutral-400">
-                                      {(v.variant as any)?.option1 || 'Standard'}
+                                    <span className="text-[10px] text-neutral-500 font-medium">
+                                      {(() => {
+                                        const title = v.variant?.title || '';
+                                        const parts = title.split('/').map((s) => s.trim());
+                                        if (parts.length >= 2) {
+                                          return `Size: ${parts[1]} • ${parts[0]}`;
+                                        }
+                                        return v.variant?.sku ? `SKU: ${v.variant.sku}` : 'Standard Variant';
+                                      })()}
                                     </span>
                                   </td>
 
@@ -710,10 +719,14 @@ export default function InventoryPage() {
                                     {v.reservedQuantity}
                                   </td>
 
-                                  {/* Min/Max */}
-                                  <td className="py-3 px-3 text-center font-mono text-2xs text-neutral-600">
-                                    <span>{v.minimumStock} / {v.maximumStock}</span>
-                                    <span className="text-[9px] text-neutral-400 block">Reorder @ {v.reorderLevel}</span>
+                                  {/* Min/Max & Reorder Threshold */}
+                                  <td className="py-3 px-3 text-center">
+                                    <div className="font-mono text-2xs font-semibold text-neutral-700">
+                                      Min: {v.minimumStock || 5} • Max: {v.maximumStock || 100}
+                                    </div>
+                                    <span className="text-[9px] text-neutral-400 font-medium block">
+                                      Reorder @ {v.reorderLevel || 10}
+                                    </span>
                                   </td>
 
                                   {/* Status Badge */}
@@ -724,11 +737,31 @@ export default function InventoryPage() {
                                   {/* Direct Actions */}
                                   <td className="py-3 px-4 text-right">
                                     <div className="flex items-center justify-end gap-1.5">
+                                      {/* Quick Restock Buttons */}
+                                      <button
+                                        type="button"
+                                        disabled={quickIncrementId === v.id}
+                                        onClick={() => handleQuickAddUnits(v, 10)}
+                                        title="1-click add +10 stock"
+                                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-lg text-2xs font-bold transition cursor-pointer disabled:opacity-50"
+                                      >
+                                        {quickIncrementId === v.id ? '...' : '+10'}
+                                      </button>
+                                      <button
+                                        type="button"
+                                        disabled={quickIncrementId === v.id}
+                                        onClick={() => handleQuickAddUnits(v, 25)}
+                                        title="1-click add +25 stock"
+                                        className="px-2 py-1 bg-emerald-50 hover:bg-emerald-600 hover:text-white text-emerald-800 border border-emerald-200 rounded-lg text-2xs font-bold transition cursor-pointer disabled:opacity-50"
+                                      >
+                                        {quickIncrementId === v.id ? '...' : '+25'}
+                                      </button>
+
                                       {/* Advanced Adjust */}
                                       <button
                                         type="button"
                                         onClick={() => setActionItem(v)}
-                                        className="px-3 py-1.5 bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 rounded-lg text-2xs font-bold transition cursor-pointer"
+                                        className="px-2.5 py-1 bg-neutral-100 hover:bg-neutral-900 hover:text-white text-neutral-700 rounded-lg text-2xs font-bold transition cursor-pointer"
                                       >
                                         Adjust
                                       </button>
@@ -738,7 +771,7 @@ export default function InventoryPage() {
                                         type="button"
                                         onClick={() => setSettingsItem(v)}
                                         title="Configure reorder thresholds"
-                                        className="p-1.5 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-900 transition cursor-pointer"
+                                        className="p-1 hover:bg-neutral-100 rounded-lg text-neutral-400 hover:text-neutral-900 transition cursor-pointer"
                                       >
                                         <Sliders className="w-3.5 h-3.5" />
                                       </button>
@@ -763,6 +796,7 @@ export default function InventoryPage() {
       {stockModalProduct && (
         <ProductStockModal
           product={stockModalProduct}
+          allProducts={filteredProducts}
           onClose={() => setStockModalProduct(null)}
           onSuccess={handleRefresh}
         />

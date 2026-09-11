@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Plus, Package2, Sparkles, CheckCircle2, AlertCircle, Layers, Store, Globe, ArrowRight } from 'lucide-react';
+import { X, Plus, Package2, Sparkles, CheckCircle2, AlertCircle, Store, Globe, ArrowRight } from 'lucide-react';
 import { useIncreaseStock } from '../inventory.hooks';
 import type { InventoryResponse } from '../inventory.types';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
@@ -21,17 +21,20 @@ export interface GroupedProductInventory {
 
 interface ProductStockModalProps {
   product: GroupedProductInventory;
+  allProducts?: GroupedProductInventory[];
   onClose: () => void;
   onSuccess?: () => void;
 }
 
 export default function ProductStockModal({
-  product,
+  product: initialProduct,
+  allProducts = [],
   onClose,
   onSuccess,
 }: ProductStockModalProps) {
+  const [currentProduct, setCurrentProduct] = useState<GroupedProductInventory>(initialProduct);
   const [selectedVariantId, setSelectedVariantId] = useState<string>(
-    product.variants[0]?.id || ''
+    initialProduct.variants[0]?.id || ''
   );
   const [quantity, setQuantity] = useState<number>(10);
   const [reason, setReason] = useState<string>('Inbound Purchase Restock / Counter Inbound');
@@ -43,7 +46,16 @@ export default function ProductStockModal({
 
   const increaseMut = useIncreaseStock();
 
-  const activeVariantInventory = product.variants.find((v) => v.id === selectedVariantId) || product.variants[0];
+  const handleProductChange = (prodId: string) => {
+    const found = allProducts.find((p) => p.productId === prodId);
+    if (found) {
+      setCurrentProduct(found);
+      setSelectedVariantId(found.variants[0]?.id || '');
+    }
+  };
+
+  const activeVariantInventory =
+    currentProduct.variants.find((v) => v.id === selectedVariantId) || currentProduct.variants[0];
   const currentAvailable = activeVariantInventory?.availableQuantity ?? 0;
   const newProjectedAvailable = currentAvailable + (quantity || 0);
 
@@ -124,26 +136,46 @@ export default function ProductStockModal({
 
         {/* Scrollable Modal Content Body */}
         <div className="p-4 sm:p-5 overflow-y-auto space-y-4 flex-1">
+          {/* Product Switcher if multiple products exist */}
+          {allProducts.length > 1 && (
+            <div>
+              <label className="block text-xs font-bold text-neutral-700 mb-1">
+                Select Catalog Product
+              </label>
+              <select
+                value={currentProduct.productId}
+                onChange={(e) => handleProductChange(e.target.value)}
+                className="w-full rounded-xl border border-neutral-200 bg-neutral-50 p-2.5 text-xs font-bold text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900"
+              >
+                {allProducts.map((p) => (
+                  <option key={p.productId} value={p.productId}>
+                    {p.productName} ({p.variants.length} sizes • {p.totalAvailable} units live)
+                  </option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {/* Product Identity Summary Card */}
           <div className="p-3.5 bg-neutral-50 rounded-xl border border-neutral-200 flex items-center justify-between gap-3">
             <div className="flex items-center gap-3 min-w-0">
               <div className="w-10 h-10 rounded-lg bg-white border border-neutral-200 flex items-center justify-center font-bold text-neutral-400 shrink-0 overflow-hidden">
-                {product.imageUrl ? (
-                  <img src={product.imageUrl} alt={product.productName} className="w-full h-full object-cover" />
+                {currentProduct.imageUrl ? (
+                  <img src={currentProduct.imageUrl} alt={currentProduct.productName} className="w-full h-full object-cover" />
                 ) : (
                   <Package2 className="w-5 h-5 text-neutral-400" />
                 )}
               </div>
               <div className="min-w-0">
-                <h4 className="font-bold text-xs text-neutral-900 truncate">{product.productName}</h4>
+                <h4 className="font-bold text-xs text-neutral-900 truncate">{currentProduct.productName}</h4>
                 <p className="text-2xs text-neutral-400 font-medium">
-                  {product.category || 'Catalog Product'} • {product.variants.length} Sizes/Variants Available
+                  {currentProduct.category || 'Catalog Product'} • {currentProduct.variants.length} Sizes/Variants Available
                 </p>
               </div>
             </div>
             <div className="text-right shrink-0">
               <span className="text-2xs text-neutral-400 uppercase font-semibold block">Total Live Stock</span>
-              <span className="font-mono font-black text-sm text-neutral-900">{product.totalAvailable} units</span>
+              <span className="font-mono font-black text-sm text-neutral-900">{currentProduct.totalAvailable} units</span>
             </div>
           </div>
 
@@ -170,12 +202,12 @@ export default function ProductStockModal({
                   1. Select Size / Variant to Restock *
                 </label>
                 <span className="text-[10px] text-neutral-400 font-medium">
-                  Scroll to view all {product.variants.length} sizes
+                  Scroll to view all {currentProduct.variants.length} sizes
                 </span>
               </div>
               <div className="max-h-52 overflow-y-auto p-1.5 rounded-xl border border-neutral-200 bg-neutral-50/50">
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {product.variants.map((v) => {
+                  {currentProduct.variants.map((v) => {
                     const isSelected = v.id === selectedVariantId;
                     const sizeTitle = v.variant?.title || 'Variant';
                     const skuCode = v.variant?.sku || v.variantId.substring(0, 8);
@@ -276,7 +308,7 @@ export default function ProductStockModal({
                   3. Quantity to Add *
                 </label>
                 <div className="flex items-center gap-1">
-                  {[10, 25, 50, 100].map((preset) => (
+                  {[5, 10, 25, 50, 100].map((preset) => (
                     <button
                       key={preset}
                       type="button"
@@ -325,7 +357,7 @@ export default function ProductStockModal({
                 value={remarks}
                 onChange={(e) => setRemarks(e.target.value)}
                 className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2 text-xs text-neutral-800 focus:bg-white focus:outline-none focus:border-neutral-900 transition"
-                placeholder="e.g. Inbound shipment from Surat workshop"
+                placeholder="e.g. Inbound shipment from workshop"
               />
             </div>
           </form>
