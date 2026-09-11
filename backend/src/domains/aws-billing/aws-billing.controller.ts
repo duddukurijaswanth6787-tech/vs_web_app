@@ -1,7 +1,8 @@
-import { Controller, Get, Post, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Body, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
-import { AwsBillingService } from './aws-billing.service';
+import { AwsBillingService, UpdateAwsCreditsDto } from './aws-billing.service';
 import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('AWS Billing')
@@ -31,4 +32,23 @@ export class AwsBillingController {
     const summary = await this.awsBillingService.getBillingSummary();
     return ResponseBuilder.success(summary, 'AWS billing data synced successfully');
   }
+
+  @Post('credits')
+  @UseGuards(RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiOperation({ summary: 'Configure AWS Promotional Credits Details' })
+  async updateCredits(@Body() body: UpdateAwsCreditsDto) {
+    const summary = await this.awsBillingService.updateCreditsSettings(body);
+    return ResponseBuilder.success(summary, 'AWS promotional credits updated successfully');
+  }
+
+  @Put('credits')
+  @UseGuards(RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiOperation({ summary: 'Configure AWS Promotional Credits Details (PUT alias)' })
+  async putCredits(@Body() body: UpdateAwsCreditsDto) {
+    const summary = await this.awsBillingService.updateCreditsSettings(body);
+    return ResponseBuilder.success(summary, 'AWS promotional credits updated successfully');
+  }
 }
+

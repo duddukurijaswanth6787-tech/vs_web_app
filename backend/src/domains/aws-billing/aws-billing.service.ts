@@ -1,11 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, ListObjectsV2Command } from '@aws-sdk/client-s3';
+import { PrismaService } from '@database/prisma.service';
 
 export interface AwsBillingServiceBreakdown {
   serviceName: string;
   amount: number;
   currency: string;
+}
+
+export interface AwsCreditsInfo {
+  totalGrantUSD: number;
+  usedCreditsUSD: number;
+  remainingCreditsUSD: number;
+  percentageUsed: number;
+  expiryDate: string;
+  daysRemaining: number;
+  grantName: string;
+  notes?: string;
+  status: 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED';
+}
+
+export interface S3StorageInfo {
+  bucket: string;
+  region: string;
+  objectCount: number;
+  totalSizeBytes: number;
+  totalSizeMB: number;
+  totalSizeGB: number;
+  storageClass: string;
 }
 
 export interface AwsBillingSummaryResponse {
@@ -17,6 +40,8 @@ export interface AwsBillingSummaryResponse {
   currency: string;
   totalSpend: number;
   forecastedSpend: number;
+  credits: AwsCreditsInfo;
+  s3Storage: S3StorageInfo;
   serviceBreakdown: AwsBillingServiceBreakdown[];
   accountInfo: {
     region: string;
@@ -28,6 +53,13 @@ export interface AwsBillingSummaryResponse {
   lastSyncedAt: string;
 }
 
+export interface UpdateAwsCreditsDto {
+  totalGrantUSD?: number;
+  expiryDate?: string;
+  grantName?: string;
+  notes?: string;
+}
+
 @Injectable()
 export class AwsBillingService {
   private readonly logger = new Logger(AwsBillingService.name);
@@ -37,7 +69,10 @@ export class AwsBillingService {
   private readonly accessKeyId: string;
   private readonly secretAccessKey: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+  ) {
     this.region = this.configService.get<string>(
       'app.storage.s3.region',
       'ap-south-2',
@@ -68,6 +103,83 @@ export class AwsBillingService {
     });
   }
 
+  async getCreditsSettings(): Promise<{
+    totalGrantUSD: number;
+    expiryDate: string;
+    grantName: string;
+    notes: string;
+  }> {
+    try {
+      const settings = await this.prisma.systemSetting.findMany({
+        where: {
+          key: {
+            in: [
+              'AWS_CREDIT_GRANT_AMOUNT',
+              'AWS_CREDIT_EXPIRY_DATE',
+              'AWS_CREDIT_GRANT_NAME',
+              'AWS_CREDIT_NOTES',
+            ],
+          },
+        },
+      });
+
+      const map = new Map(settings.map((s) => [s.key, s.value]));
+
+      return {
+        totalGrantUSD: parseFloat(map.get('AWS_CREDIT_GRANT_AMOUNT') || '1000.00'),
+        expiryDate: map.get('AWS_CREDIT_EXPIRY_DATE') || '2026-12-31',
+        grantName: map.get('AWS_CREDIT_GRANT_NAME') || 'AWS Promotional Credit / Free Tier',
+        notes: map.get('AWS_CREDIT_NOTES') || 'Active AWS Promotional Credits applied on AWS Account',
+      };
+    } catch {
+      return {
+        totalGrantUSD: 1000.0,
+        expiryDate: '2026-12-31',
+        grantName: 'AWS Promotional Credit / Free Tier',
+        notes: 'Active AWS Promotional Credits applied on AWS Account',
+      };
+    }
+  }
+
+  async updateCreditsSettings(dto: UpdateAwsCreditsDto) {
+    const updates: Array<{ key: string; value: string }> = [];
+
+    if (dto.totalGrantUSD !== undefined && !isNaN(Number(dto.totalGrantUSD))) {
+      updates.push({
+        key: 'AWS_CREDIT_GRANT_AMOUNT',
+        value: String(Number(dto.totalGrantUSD)),
+      });
+    }
+    if (dto.expiryDate && dto.expiryDate.trim()) {
+      updates.push({
+        key: 'AWS_CREDIT_EXPIRY_DATE',
+        value: dto.expiryDate.trim(),
+      });
+    }
+    if (dto.grantName && dto.grantName.trim()) {
+      updates.push({
+        key: 'AWS_CREDIT_GRANT_NAME',
+        value: dto.grantName.trim(),
+      });
+    }
+    if (dto.notes !== undefined) {
+      updates.push({
+        key: 'AWS_CREDIT_NOTES',
+        value: dto.notes.trim(),
+      });
+    }
+
+    for (const item of updates) {
+      await this.prisma.systemSetting.upsert({
+        where: { key: item.key },
+        update: { value: item.value },
+        create: { key: item.key, value: item.value },
+      });
+    }
+
+    return this.getBillingSummary();
+  }
+
   async getBillingSummary(): Promise<AwsBillingSummaryResponse> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -79,6 +191,69 @@ export class AwsBillingService {
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0)
       .toISOString()
       .split('T')[0];
+
+    // Load Credit configurations from DB
+    const creditConfig = await this.getCreditsSettings();
+
+    // Query S3 Live Metrics
+    let s3ObjectCount = 0;
+    let s3TotalSizeBytes = 0;
+    try {
+      const s3Res = await this.s3Client.send(
+        new ListObjectsV2Command({ Bucket: this.bucket, MaxKeys: 1000 }),
+      );
+      s3ObjectCount = s3Res.KeyCount ?? 0;
+      s3TotalSizeBytes = (s3Res.Contents || []).reduce(
+        (acc, item) => acc + (item.Size || 0),
+        0,
+      );
+    } catch (e: any) {
+      this.logger.debug(`S3 stats fetch notice: ${e?.message}`);
+    }
+
+    const s3TotalSizeMB = Math.round((s3TotalSizeBytes / (1024 * 1024)) * 100) / 100;
+    const s3TotalSizeGB = Math.round((s3TotalSizeBytes / (1024 * 1024 * 1024)) * 1000) / 1000;
+
+    const s3StorageInfo: S3StorageInfo = {
+      bucket: this.bucket,
+      region: this.region,
+      objectCount: s3ObjectCount,
+      totalSizeBytes: s3TotalSizeBytes,
+      totalSizeMB: s3TotalSizeMB,
+      totalSizeGB: s3TotalSizeGB,
+      storageClass: 'Standard S3 (SSE-S3 AES-256)',
+    };
+
+    // Calculate Credit remaining and expiry status
+    const calculateCredits = (spend: number): AwsCreditsInfo => {
+      const totalGrant = creditConfig.totalGrantUSD || 1000;
+      const used = Math.round(spend * 100) / 100;
+      const remaining = Math.max(0, Math.round((totalGrant - used) * 100) / 100);
+      const percentageUsed = Math.min(100, Math.round((used / totalGrant) * 1000) / 10);
+
+      const expiry = new Date(creditConfig.expiryDate);
+      const diffTime = expiry.getTime() - now.getTime();
+      const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+
+      let status: 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' = 'ACTIVE';
+      if (daysRemaining <= 0) {
+        status = 'EXPIRED';
+      } else if (daysRemaining <= 30) {
+        status = 'EXPIRING_SOON';
+      }
+
+      return {
+        totalGrantUSD: totalGrant,
+        usedCreditsUSD: used,
+        remainingCreditsUSD: remaining,
+        percentageUsed,
+        expiryDate: creditConfig.expiryDate,
+        daysRemaining,
+        grantName: creditConfig.grantName,
+        notes: creditConfig.notes,
+        status,
+      };
+    };
 
     // Try live AWS Cost Explorer SDK via dynamic import
     try {
@@ -165,6 +340,8 @@ export class AwsBillingService {
         currency,
         totalSpend: Math.round(totalSpend * 100) / 100,
         forecastedSpend,
+        credits: calculateCredits(totalSpend),
+        s3Storage: s3StorageInfo,
         serviceBreakdown,
         accountInfo: {
           region: this.region,
@@ -178,27 +355,16 @@ export class AwsBillingService {
         `AWS Cost Explorer SDK notice: ${error?.message || String(error)}`,
       );
 
-      let s3ObjectCount = 0;
-      let s3TotalSize = 0;
-      try {
-        const s3Res = await this.s3Client.send(
-          new ListObjectsV2Command({ Bucket: this.bucket, MaxKeys: 100 }),
-        );
-        s3ObjectCount = s3Res.KeyCount ?? 0;
-        s3TotalSize = (s3Res.Contents || []).reduce(
-          (acc, item) => acc + (item.Size || 0),
-          0,
-        );
-      } catch {
-        // Ignore S3 error
-      }
+      const estimatedSpend = 0.0;
 
       return {
         status: 'activation_required',
         period: { start: startOfMonth, end: endDate },
         currency: 'USD',
-        totalSpend: 0.0,
-        forecastedSpend: 0.0,
+        totalSpend: estimatedSpend,
+        forecastedSpend: estimatedSpend,
+        credits: calculateCredits(estimatedSpend),
+        s3Storage: s3StorageInfo,
         serviceBreakdown: [
           {
             serviceName: 'Amazon Elastic Compute Cloud (EC2)',
@@ -206,12 +372,12 @@ export class AwsBillingService {
             currency: 'USD',
           },
           {
-            serviceName: `Amazon Simple Storage Service (S3) - ${this.bucket} (${s3ObjectCount} objects, ${(s3TotalSize / 1024 / 1024).toFixed(2)} MB)`,
+            serviceName: `Amazon Simple Storage Service (S3) - ${this.bucket} (${s3ObjectCount} items, ${s3TotalSizeMB} MB)`,
             amount: 0.0,
             currency: 'USD',
           },
           {
-            serviceName: 'AWS Data Transfer Out',
+            serviceName: 'AWS Data Transfer Out (Global CDN)',
             amount: 0.0,
             currency: 'USD',
           },
@@ -224,10 +390,10 @@ export class AwsBillingService {
         message:
           'AWS Cost Explorer API requires 1-click activation in AWS Console.',
         activationInstructions: [
-          '1. Log into AWS Console (https://console.aws.amazon.com/billing).',
-          '2. Click "Cost Explorer" on the left sidebar menu.',
-          '3. Click "Launch Cost Explorer" / "Enable Cost Explorer".',
-          '4. Attach "AWSBillingReadOnlyAccess" policy to user "railway-iam-user" in IAM Console.',
+          '1. Log into AWS Console (https://console.aws.amazon.com/billing/home#/credits) to view your active promotional credits.',
+          '2. Click "Cost Explorer" on the left sidebar menu (https://console.aws.amazon.com/costmanagement/home#/cost-explorer).',
+          '3. Click "Enable Cost Explorer" (AWS initial data ingestion takes 24 hours).',
+          '4. Attach "CostExplorerReadOnlyAccess" or "AWSBillingReadOnlyAccess" policy to your IAM user in AWS IAM Console.',
         ],
         lastSyncedAt: new Date().toISOString(),
       };
