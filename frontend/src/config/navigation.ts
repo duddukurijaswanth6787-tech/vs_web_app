@@ -207,6 +207,13 @@ export const adminNavigation: NavGroup[] = [
         icon: ArrowLeftRight,
         implemented: true,
       },
+      {
+        id: 'packing',
+        title: 'Order Packing & Dispatch',
+        href: '/admin/packing',
+        icon: Package,
+        implemented: true,
+      },
     ],
   },
   {
@@ -290,6 +297,13 @@ export const adminNavigation: NavGroup[] = [
     group: 'MARKETING & PROMOTIONS',
     items: [
       {
+        id: 'social',
+        title: 'Social Posts & Reels',
+        href: '/admin/social',
+        icon: Video,
+        implemented: true,
+      },
+      {
         id: 'coupons',
         title: 'Coupons & Discounts',
         href: '/admin/coupons',
@@ -363,6 +377,13 @@ export const adminNavigation: NavGroup[] = [
         title: 'Customer Analytics',
         href: '/admin/analytics/customers',
         icon: Users,
+        implemented: true,
+      },
+      {
+        id: 'social-analytics',
+        title: 'Social & Reels Analytics',
+        href: '/admin/analytics/social',
+        icon: Video,
         implemented: true,
       },
       {
@@ -631,6 +652,27 @@ export const adminNavigation: NavGroup[] = [
         href: '/admin/system/feature-flags',
         icon: ToggleLeft,
         roles: ['super_admin'],
+        implemented: true,
+      },
+      {
+        id: 'notifications',
+        title: 'Notifications Hub',
+        href: '/admin/notifications',
+        icon: Megaphone,
+        implemented: true,
+      },
+      {
+        id: 'communication',
+        title: 'Communication & OTP Logs',
+        href: '/admin/communication/otp',
+        icon: MessageSquare,
+        implemented: true,
+      },
+      {
+        id: 'operations',
+        title: 'Store Operations',
+        href: '/admin/operations',
+        icon: Activity,
         implemented: true,
       },
       {
