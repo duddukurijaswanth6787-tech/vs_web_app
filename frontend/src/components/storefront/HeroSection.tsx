@@ -107,26 +107,14 @@ export function HeroSection() {
           
           {/* Background Image & Gradient Overlay */}
           <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">
-            {/* Mobile uses the same (confirmed-clear) desktop banner image rather than
-                the separately-uploaded mobile image, which can carry its own baked-in
-                fade that no amount of overlay tuning can remove. */}
             <Image
               src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
               alt={main.title || 'Hero Banner'}
               fill
               priority
-              sizes="100vw"
+              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 66vw"
               unoptimized={isLocalOrPlaceholder(main.imageUrl)}
-              className="block sm:hidden object-cover object-center group-hover:scale-103 transition-transform duration-700"
-            />
-            <Image
-              src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
-              alt={main.title || 'Hero Banner'}
-              fill
-              priority
-              sizes="(max-width: 1024px) 100vw, 66vw"
-              unoptimized={isLocalOrPlaceholder(main.imageUrl)}
-              className="hidden sm:block object-cover object-center group-hover:scale-103 transition-transform duration-700"
+              className="object-cover object-center group-hover:scale-103 transition-transform duration-700"
             />
             {/* Mobile: a thin, steep scrim right behind the text block so the
                 photo stays clear through the rest of the banner, instead of

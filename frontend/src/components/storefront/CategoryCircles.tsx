@@ -81,7 +81,7 @@ export function CategoryCircles() {
         </div>
       ) : (
         <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-3 pt-1 scrollbar-none snap-x snap-mandatory">
-          {categories.map((cat) => {
+          {categories.map((cat, idx) => {
             const hasFailed = failedImages[cat.id];
             const src = (cat.imageUrl && !hasFailed) ? withVariant(cat.imageUrl, 'thumb') : '';
 
@@ -99,6 +99,7 @@ export function CategoryCircles() {
                         src={src}
                         alt={cat.name}
                         fill
+                        priority={idx < 4}
                         sizes="100px"
                         unoptimized={isLocalOrPlaceholder(src)}
                         onError={() => setFailedImages((prev) => ({ ...prev, [cat.id]: true }))}
