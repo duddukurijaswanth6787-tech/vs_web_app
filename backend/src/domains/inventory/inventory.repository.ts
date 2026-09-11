@@ -26,7 +26,15 @@ export class InventoryRepository {
       sortBy,
       sortOrder,
     } = params;
-    const where: Prisma.InventoryWhereInput = {};
+    const where: Prisma.InventoryWhereInput = {
+      variant: {
+        deletedAt: null,
+        product: {
+          deletedAt: null,
+          status: { not: 'ARCHIVED' },
+        },
+      },
+    };
     if (variantId) where.variantId = variantId;
     if (stockStatus) where.stockStatus = stockStatus;
     if (lowStock) where.stockStatus = 'LOW_STOCK';
@@ -40,7 +48,7 @@ export class InventoryRepository {
           title: true,
           barcode: true,
           productId: true,
-          product: { select: { id: true, name: true, basePrice: true } },
+          product: { select: { id: true, name: true, basePrice: true, status: true, channel: true } },
         },
       },
     };
@@ -176,6 +184,15 @@ export class InventoryRepository {
 
   async getStockSummary() {
     const inventories = await this.prisma.inventory.findMany({
+      where: {
+        variant: {
+          deletedAt: null,
+          product: {
+            deletedAt: null,
+            status: { not: 'ARCHIVED' },
+          },
+        },
+      },
       select: {
         stockStatus: true,
         availableQuantity: true,

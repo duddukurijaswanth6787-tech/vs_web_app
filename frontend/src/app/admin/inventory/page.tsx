@@ -40,6 +40,9 @@ import QuickEditProductDialog, { QuickEditProductData } from '@/features/invento
 import { useAuth } from '@/hooks/useAuth';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 
+import { useProducts } from '@/features/catalog/products/product.hooks';
+import type { ProductResponse } from '@/features/catalog/products/product.types';
+
 type ChannelTab = 'ALL' | 'POS_STORE' | 'ONLINE_WEB';
 
 export default function InventoryPage() {
@@ -66,7 +69,6 @@ export default function InventoryPage() {
   const {
     data: listData,
     isLoading: isListLoading,
-    isError,
     refetch: refetchList,
   } = useInventoryList({
     page,
@@ -74,19 +76,71 @@ export default function InventoryPage() {
     stockStatus: stockStatus || undefined,
   });
 
+  const { data: productsData, isLoading: isProductsLoading, refetch: refetchProducts } = useProducts({
+    limit: 100,
+  });
+
   const increaseMut = useIncreaseStock();
 
   const isEditor = user?.roles?.some((r) => ['super_admin', 'admin'].includes(r));
   const inventories = listData?.data ?? [];
+  const catalogProducts = productsData?.data ?? [];
 
-  // Group variants by parent product
+  // Group variants by parent product and sync with live catalog products
   const groupedProducts = useMemo(() => {
+    // If catalog products are loaded, use catalog products as primary source of truth
+    if (catalogProducts.length > 0) {
+      return catalogProducts.map((prod: ProductResponse) => {
+        // Find matching inventory items for this product
+        const matchingVariants = inventories.filter(
+          (inv) =>
+            inv.variant?.productId === prod.id ||
+            inv.variant?.productName?.toLowerCase() === prod.name.toLowerCase()
+        );
+
+        const totalAvailable = matchingVariants.reduce((sum, v) => sum + v.availableQuantity, 0);
+        const totalReserved = matchingVariants.reduce((sum, v) => sum + v.reservedQuantity, 0);
+
+        const hasOutOfStock = matchingVariants.length === 0 || matchingVariants.some((v) => v.availableQuantity <= 0);
+        const hasLowStock = matchingVariants.some(
+          (v) => v.availableQuantity > 0 && v.availableQuantity <= (v.minimumStock || 5)
+        );
+
+        let overallStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' = 'IN_STOCK';
+        if (totalAvailable <= 0 || matchingVariants.length === 0) {
+          overallStatus = 'OUT_OF_STOCK';
+        } else if (hasOutOfStock || hasLowStock || totalAvailable <= 10) {
+          overallStatus = 'LOW_STOCK';
+        }
+
+        const primaryImg =
+          prod.primaryImageUrl ||
+          prod.images?.find((img) => img.isPrimary)?.url ||
+          prod.images?.[0]?.url;
+
+        return {
+          productId: prod.id,
+          productName: prod.name,
+          category: prod.categories?.[0]?.categoryName || prod.brandName,
+          brand: prod.brandName,
+          imageUrl: primaryImg,
+          channel: prod.channel || 'BOTH',
+          totalAvailable,
+          totalReserved,
+          overallStatus,
+          variants: matchingVariants,
+        };
+      });
+    }
+
+    // Fallback if catalog query is loading or empty
     const map = new Map<string, GroupedProductInventory>();
 
     inventories.forEach((item) => {
       const v = item.variant;
-      const productId = v?.productId || v?.productName || item.variantId;
-      const productName = v?.productName || 'Catalog Product';
+      if (!v?.productName) return; // Skip orphan items
+      const productId = v.productId || item.variantId;
+      const productName = v.productName;
 
       if (!map.has(productId)) {
         map.set(productId, {
@@ -94,7 +148,7 @@ export default function InventoryPage() {
           productName,
           category: (v as any)?.categoryName || (v as any)?.category,
           brand: (v as any)?.brandName || (v as any)?.brand,
-          imageUrl: (v as any)?.imageUrl || (v as any)?.images?.[0] || (v as any)?.productImage,
+          imageUrl: (v as any)?.imageUrl || (v as any)?.images?.[0],
           totalAvailable: 0,
           totalReserved: 0,
           overallStatus: 'IN_STOCK',
@@ -108,7 +162,6 @@ export default function InventoryPage() {
       prod.totalReserved += item.reservedQuantity;
     });
 
-    // Determine overall status for each product
     const result: GroupedProductInventory[] = [];
     map.forEach((prod) => {
       const hasOutOfStock = prod.variants.some((v) => v.availableQuantity <= 0);
@@ -128,7 +181,7 @@ export default function InventoryPage() {
     });
 
     return result;
-  }, [inventories]);
+  }, [catalogProducts, inventories]);
 
   // Filter products based on search and channel tab
   const filteredProducts = useMemo(() => {
@@ -146,6 +199,15 @@ export default function InventoryPage() {
         if (!matchesProduct && !matchesVariants) return false;
       }
 
+      // Channel filtering
+      if (channelTab === 'POS_STORE') {
+        const ch = (prod as any).channel;
+        if (ch && ch !== 'STORE' && ch !== 'BOTH') return false;
+      } else if (channelTab === 'ONLINE_WEB') {
+        const ch = (prod as any).channel;
+        if (ch && ch !== 'ONLINE' && ch !== 'BOTH') return false;
+      }
+
       // Stock status filter from query param
       if (stockStatus) {
         if (stockStatus === 'OUT_OF_STOCK' && prod.overallStatus !== 'OUT_OF_STOCK') return false;
@@ -155,7 +217,7 @@ export default function InventoryPage() {
 
       return true;
     });
-  }, [groupedProducts, searchQuery, stockStatus]);
+  }, [groupedProducts, searchQuery, stockStatus, channelTab]);
 
   // Toggle row expansion
   const toggleExpand = (productId: string) => {
@@ -196,8 +258,7 @@ export default function InventoryPage() {
         type: 'success',
         text: `✅ Added +${qty} units to SKU: ${item.variant?.sku || item.variantId}. New Stock: ${item.availableQuantity + qty}`,
       });
-      refetchList();
-      refetchSummary();
+      handleRefresh();
     } catch (err: any) {
       setBannerNotice({
         type: 'error',
@@ -211,6 +272,7 @@ export default function InventoryPage() {
   const handleRefresh = () => {
     refetchList();
     refetchSummary();
+    refetchProducts();
   };
 
   return (
