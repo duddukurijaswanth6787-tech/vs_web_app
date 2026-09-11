@@ -5,6 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 import { Timer, Save, RefreshCw, KeyRound, CreditCard, CheckCircle2, AlertCircle } from 'lucide-react';
 import { adminOpsApi, SessionExpirySettingsDto } from '@/features/admin-ops/admin-ops.api';
 import { useUserSessions, useSessionStats, useRevokeSession, useRevokeExpiredSessions } from '@/features/sessions/session.hooks';
+import { UserSession } from '@/features/sessions/session.types';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -331,10 +332,18 @@ function RazorpaySection() {
 
 function ActiveUserSessionsSection() {
   const { toast } = useToast();
-  const { data: sessions = [], isLoading, refetch } = useUserSessions();
+  const { data: rawSessions, isLoading, refetch } = useUserSessions();
   const { data: stats } = useSessionStats();
   const revokeMutation = useRevokeSession();
   const revokeExpiredMutation = useRevokeExpiredSessions();
+
+  const sessions: UserSession[] = Array.isArray(rawSessions)
+    ? rawSessions
+    : Array.isArray((rawSessions as any)?.data)
+    ? (rawSessions as any).data
+    : Array.isArray((rawSessions as any)?.data?.data)
+    ? (rawSessions as any).data.data
+    : [];
 
   const handleRevoke = async (id: string) => {
     try {
@@ -384,19 +393,19 @@ function ActiveUserSessionsSection() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
           <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
             <span className="text-neutral-500 font-medium block text-[11px]">Total Active</span>
-            <strong className="text-sm font-bold text-neutral-900">{stats.totalActiveSessions || sessions.length}</strong>
+            <strong className="text-sm font-bold text-neutral-900">{stats.totalActiveSessions ?? sessions.length}</strong>
           </div>
           <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
             <span className="text-neutral-500 font-medium block text-[11px]">Unique Users</span>
-            <strong className="text-sm font-bold text-neutral-900">{stats.uniqueUsersActive || 1}</strong>
+            <strong className="text-sm font-bold text-neutral-900">{stats.uniqueUsersActive ?? (sessions.length > 0 ? 1 : 0)}</strong>
           </div>
           <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
             <span className="text-neutral-500 font-medium block text-[11px]">Revoked Count</span>
-            <strong className="text-sm font-bold text-neutral-900">{stats.revokedSessionsCount || 0}</strong>
+            <strong className="text-sm font-bold text-neutral-900">{stats.revokedSessionsCount ?? 0}</strong>
           </div>
           <div className="bg-neutral-50 border border-neutral-200/80 p-3 rounded-xl">
             <span className="text-neutral-500 font-medium block text-[11px]">Expired Count</span>
-            <strong className="text-sm font-bold text-neutral-900">{stats.expiredSessionsCount || 0}</strong>
+            <strong className="text-sm font-bold text-neutral-900">{stats.expiredSessionsCount ?? 0}</strong>
           </div>
         </div>
       )}

@@ -10,15 +10,65 @@ import {
 export const reviewService = {
   findAll: async (query: ReviewQueryDto = {}): Promise<ReviewListResponse> => {
     const params: Record<string, string | number | boolean> = {};
-    if (query.productId) params.productId = query.productId;
-    if (query.customerId) params.customerId = query.customerId;
-    if (query.rating) params.rating = query.rating;
-    if (query.status) params.status = query.status;
-    if (query.page) params.page = query.page;
-    if (query.limit) params.limit = query.limit;
+    if (query.productId && typeof query.productId === 'string' && query.productId.trim()) {
+      params.productId = query.productId.trim();
+    }
+    if (query.customerId && typeof query.customerId === 'string' && query.customerId.trim()) {
+      params.customerId = query.customerId.trim();
+    }
+    if (query.rating !== undefined && query.rating !== null && !isNaN(Number(query.rating))) {
+      params.rating = Number(query.rating);
+    }
+    if (query.status && typeof query.status === 'string' && query.status.trim()) {
+      params.status = query.status.trim();
+    }
+    if (query.page && !isNaN(Number(query.page))) {
+      params.page = Number(query.page);
+    }
+    if (query.limit && !isNaN(Number(query.limit))) {
+      params.limit = Number(query.limit);
+    }
 
-    const response = await apiClient.get<StandardResponse<ReviewListResponse>>('/reviews', { params });
-    return response.data.data!;
+    try {
+      const response = await apiClient.get<any>('/reviews', { params });
+      const raw = response.data?.data ?? response.data;
+      if (Array.isArray(raw)) {
+        return {
+          data: raw,
+          meta: {
+            page: 1,
+            limit: raw.length,
+            total: raw.length,
+            totalPages: 1,
+            hasNext: false,
+            hasPrevious: false,
+          },
+        };
+      }
+      return {
+        data: Array.isArray(raw?.data) ? raw.data : [],
+        meta: raw?.meta || {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      };
+    } catch {
+      return {
+        data: [],
+        meta: {
+          page: 1,
+          limit: 10,
+          total: 0,
+          totalPages: 1,
+          hasNext: false,
+          hasPrevious: false,
+        },
+      };
+    }
   },
 
   getProductRatingSummary: async (productId: string): Promise<ProductRatingSummary> => {

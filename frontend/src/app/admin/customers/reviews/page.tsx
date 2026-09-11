@@ -125,108 +125,118 @@ export default function ReviewsPage() {
         <PageError title="Connection Failure" message="Could not fetch reviews from server." retry={refetch} />
       ) : (
         <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-4">
-            {listData?.data?.map((review) => (
-              <div
-                key={review.id}
-                className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm hover:border-neutral-300 transition flex flex-col md:flex-row gap-5 items-start justify-between"
-              >
-                <div className="space-y-2.5 w-full md:max-w-2xl">
-                  {/* Rating star badges */}
-                  <div className="flex items-center gap-2">
-                    <div className="flex text-amber-400">
-                      {Array.from({ length: 5 }).map((_, i) => (
-                        <Star
-                          key={i}
-                          className={`w-4 h-4 ${i < review.rating ? 'fill-amber-400' : 'text-neutral-200'}`}
-                        />
-                      ))}
+          {(() => {
+            const reviewsList = Array.isArray(listData?.data)
+              ? listData.data
+              : Array.isArray(listData)
+              ? listData
+              : [];
+
+            return (
+              <div className="grid grid-cols-1 gap-4">
+                {reviewsList.map((review) => (
+                  <div
+                    key={review.id}
+                    className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm hover:border-neutral-300 transition flex flex-col md:flex-row gap-5 items-start justify-between"
+                  >
+                    <div className="space-y-2.5 w-full md:max-w-2xl">
+                      {/* Rating star badges */}
+                      <div className="flex items-center gap-2">
+                        <div className="flex text-amber-400">
+                          {Array.from({ length: 5 }).map((_, i) => (
+                            <Star
+                              key={i}
+                              className={`w-4 h-4 ${i < review.rating ? 'fill-amber-400' : 'text-neutral-200'}`}
+                            />
+                          ))}
+                        </div>
+                        <span className="text-2xs font-semibold text-neutral-500 uppercase tracking-wider font-mono">
+                          Rating: {review.rating}/5
+                        </span>
+                        {review.isVerifiedPurchase && (
+                          <span className="text-[9px] bg-green-50 text-green-700 border border-green-100 font-bold px-1.5 py-0.5 rounded">
+                            Verified Buyer
+                          </span>
+                        )}
+                      </div>
+
+                      {/* Title & Comment */}
+                      <div>
+                        {review.title && <h3 className="text-xs font-bold text-neutral-900">{review.title}</h3>}
+                        <p className="text-xs text-neutral-600 leading-relaxed mt-1 whitespace-pre-wrap">{review.comment || 'No review message provided.'}</p>
+                      </div>
+
+                      {/* Review Images */}
+                      {review.images && review.images.length > 0 && (
+                        <div className="flex gap-2.5 overflow-x-auto py-1">
+                          {review.images.map((img: any) => (
+                            <RemoteImage
+                              key={img.id || img.url}
+                              src={img.url}
+                              alt="Review attachment"
+                              width={80}
+                              height={80}
+                              className="w-20 h-20 object-cover rounded-lg border border-neutral-200 shadow-sm shrink-0"
+                            />
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Metadata */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-neutral-400 font-medium">
+                        <span className="flex items-center gap-1">
+                          <User className="w-3.5 h-3.5" /> Client ID: {review.customerId}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5" /> {formatDate(review.createdAt)}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <ThumbsUp className="w-3.5 h-3.5 text-neutral-350" /> Helpful count: {review.helpfulCount}
+                        </span>
+                      </div>
                     </div>
-                    <span className="text-2xs font-semibold text-neutral-500 uppercase tracking-wider font-mono">
-                      Rating: {review.rating}/5
-                    </span>
-                    {review.isVerifiedPurchase && (
-                      <span className="text-[9px] bg-green-50 text-green-700 border border-green-100 font-bold px-1.5 py-0.5 rounded">
-                        Verified Buyer
-                      </span>
+
+                    {/* Approvals action triggers */}
+                    {isEditor && review.status === 'PENDING' && (
+                      <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0 justify-end">
+                        <button
+                          disabled={approveMut.isPending}
+                          onClick={() => handleApprove(review.id)}
+                          className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-3.5 rounded-xl text-2xs flex items-center gap-1.5 shadow-sm transition justify-center w-full md:w-28"
+                        >
+                          <Check className="w-3.5 h-3.5" /> Approve
+                        </button>
+                        <button
+                          disabled={rejectMut.isPending}
+                          onClick={() => handleReject(review.id)}
+                          className="bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-red-600 hover:text-red-750 font-bold py-2 px-3.5 rounded-xl text-2xs flex items-center gap-1.5 shadow-sm transition justify-center w-full md:w-28"
+                        >
+                          <X className="w-3.5 h-3.5" /> Reject
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Static indicator for already moderated reviews */}
+                    {review.status !== 'PENDING' && (
+                      <div className="shrink-0 pt-2 w-full md:w-auto text-right">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase
+                          ${review.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}
+                        `}>
+                          {review.status}
+                        </span>
+                      </div>
                     )}
                   </div>
+                ))}
 
-                  {/* Title & Comment */}
-                  <div>
-                    {review.title && <h3 className="text-xs font-bold text-neutral-900">{review.title}</h3>}
-                    <p className="text-xs text-neutral-600 leading-relaxed mt-1 whitespace-pre-wrap">{review.comment || 'No review message provided.'}</p>
-                  </div>
-
-                  {/* Review Images */}
-                  {review.images && review.images.length > 0 && (
-                    <div className="flex gap-2.5 overflow-x-auto py-1">
-                      {review.images.map((img) => (
-                        <RemoteImage
-                          key={img.id}
-                          src={img.url}
-                          alt="Review attachment"
-                          width={80}
-                          height={80}
-                          className="w-20 h-20 object-cover rounded-lg border border-neutral-200 shadow-sm shrink-0"
-                        />
-                      ))}
-                    </div>
-                  )}
-
-                  {/* Metadata */}
-                  <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-neutral-400 font-medium">
-                    <span className="flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" /> Client ID: {review.customerId}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Calendar className="w-3.5 h-3.5" /> {formatDate(review.createdAt)}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <ThumbsUp className="w-3.5 h-3.5 text-neutral-350" /> Helpful count: {review.helpfulCount}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Approvals action triggers */}
-                {isEditor && review.status === 'PENDING' && (
-                  <div className="flex md:flex-col gap-2 w-full md:w-auto shrink-0 justify-end">
-                    <button
-                      disabled={approveMut.isPending}
-                      onClick={() => handleApprove(review.id)}
-                      className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-3.5 rounded-xl text-2xs flex items-center gap-1.5 shadow-sm transition justify-center w-full md:w-28"
-                    >
-                      <Check className="w-3.5 h-3.5" /> Approve
-                    </button>
-                    <button
-                      disabled={rejectMut.isPending}
-                      onClick={() => handleReject(review.id)}
-                      className="bg-neutral-50 hover:bg-neutral-100 border border-neutral-200 text-red-600 hover:text-red-750 font-bold py-2 px-3.5 rounded-xl text-2xs flex items-center gap-1.5 shadow-sm transition justify-center w-full md:w-28"
-                    >
-                      <X className="w-3.5 h-3.5" /> Reject
-                    </button>
-                  </div>
-                )}
-
-                {/* Static indicator for already moderated reviews */}
-                {review.status !== 'PENDING' && (
-                  <div className="shrink-0 pt-2 w-full md:w-auto text-right">
-                    <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase
-                      ${review.status === 'APPROVED' ? 'bg-green-50 text-green-700 border border-green-100' : 'bg-red-50 text-red-700 border border-red-100'}
-                    `}>
-                      {review.status}
-                    </span>
+                {reviewsList.length === 0 && (
+                  <div className="bg-white p-12 text-center border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 font-medium">
+                    No reviews found matching filters.
                   </div>
                 )}
               </div>
-            ))}
-
-            {(!listData?.data || listData.data.length === 0) && (
-              <div className="bg-white p-12 text-center border border-neutral-200 rounded-2xl shadow-sm text-neutral-400 font-medium">
-                No reviews found matching filters.
-              </div>
-            )}
-          </div>
+            );
+          })()}
 
           {/* Pagination */}
           {listData?.meta && listData.meta.totalPages > 1 && (
