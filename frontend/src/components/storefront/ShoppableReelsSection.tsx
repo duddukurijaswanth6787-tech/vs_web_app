@@ -24,27 +24,35 @@ export function ShoppableReelsSection() {
     return list.map((post: unknown, index: number) => {
       const pPost = post as Record<string, unknown>;
       const media = (Array.isArray(pPost.media) ? (pPost.media[0] as Record<string, unknown>) : (Array.isArray(pPost.medias) ? (pPost.medias[0] as Record<string, unknown>) : {})) || {};
+      const rawUrl = String(media.url || pPost.url || '');
+      const isVideo = rawUrl.endsWith('.mp4') || rawUrl.includes('/videos/') || media.mediaType === 'VIDEO' || pPost.contentType === 'REEL';
       const products = Array.isArray(pPost.products) ? pPost.products : Array.isArray(pPost.taggedProducts) ? pPost.taggedProducts : [];
+      
+      const posterImage = String(media.thumbnailUrl || (!isVideo && rawUrl ? rawUrl : '') || (isVideo && rawUrl ? `${rawUrl}#t=0.001` : '') || pPost.thumbnailUrl || pPost.coverUrl || PLACEHOLDER_IMAGE);
+
       return {
         id: String(pPost.id || `reel-${index}`),
         title: String(pPost.title || pPost.caption || 'Shoppable Reel'),
-        posterImage: String((media as Record<string, unknown>).thumbnailUrl || (media as Record<string, unknown>).url || pPost.thumbnailUrl || pPost.coverUrl || PLACEHOLDER_IMAGE),
-        accountName: String(pPost.authorName || 'vasanthi.designers'),
-        accountAvatar: 'VD',
+        posterImage,
+        videoUrl: isVideo && rawUrl ? rawUrl : undefined,
+        accountName: String(pPost.authorName || "Vasanthi's Signature"),
+        accountAvatar: 'VS',
         caption: String(pPost.caption || pPost.title || ''),
         audioTrack: String(pPost.audioTrack || 'Original audio'),
         likes: String(pPost.likeCount ?? pPost.likes ?? 0),
         comments: String(pPost.commentCount ?? pPost.comments ?? 0),
         shares: String(pPost.shareCount ?? pPost.shares ?? 0),
         taggedProducts: products.slice(0, 3).map((pItem: unknown, i: number) => {
-          const p = pItem as Record<string, unknown>;
+          const pRecord = pItem as Record<string, unknown>;
+          const prod = (pRecord.product as Record<string, unknown>) || pRecord;
+          const primaryMedia = ((prod.media as Array<Record<string, unknown>>)?.[0]?.url) || prod.primaryImageUrl || prod.image;
           return {
-            id: String(p.id || p.productId || `tp-${i}`),
-            name: String(p.name || p.productName || 'Product'),
-          price: Number(p.salePrice ?? p.basePrice ?? p.price ?? 0),
-          originalPrice: Number(p.basePrice ?? p.originalPrice ?? p.price ?? 0),
-          discount: '',
-            image: String(p.primaryImageUrl || p.image || PLACEHOLDER_IMAGE),
+            id: String(prod.id || pRecord.productId || `tp-${i}`),
+            name: String(pRecord.label || prod.name || prod.productName || 'Vasanthi Garment'),
+            price: Number(prod.salePrice ?? prod.basePrice ?? prod.price ?? 0),
+            originalPrice: Number(prod.basePrice ?? prod.originalPrice ?? prod.price ?? 0),
+            discount: '',
+            image: primaryMedia ? String(primaryMedia) : PLACEHOLDER_IMAGE,
             position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
           };
         }),
@@ -71,24 +79,37 @@ export function ShoppableReelsSection() {
       {isLoading && <p className="text-sm text-neutral-500">Loading reels…</p>}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
-        {reels.map((reel, index) => (
-          <div
-            key={reel.id}
-            onClick={() => setActiveReelIndex(index)}
-            className="group relative aspect-9/16 rounded-3xl overflow-hidden bg-neutral-900 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
-          >
-            <Image
-              src={withVariant(reel.posterImage, 'medium')}
-              alt={reel.title}
-              fill
-              sizes="(max-width: 640px) 50vw, 25vw"
-              unoptimized={isLocalOrPlaceholder(reel.posterImage)}
-              className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-            />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30" />
-            <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30">
-              <Play className="w-4 h-4 fill-white ml-0.5" />
-            </div>
+        {reels.map((reel, index) => {
+          const isVideo = !!reel.videoUrl;
+
+          return (
+            <div
+              key={reel.id}
+              onClick={() => setActiveReelIndex(index)}
+              className="group relative aspect-9/16 rounded-3xl overflow-hidden bg-neutral-900 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
+            >
+              {isVideo && reel.videoUrl ? (
+                <video
+                  src={`${reel.videoUrl}#t=0.001`}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 pointer-events-none"
+                />
+              ) : (
+                <Image
+                  src={withVariant(reel.posterImage, 'medium')}
+                  alt={reel.title}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                  unoptimized={isLocalOrPlaceholder(reel.posterImage)}
+                  className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+                />
+              )}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
+              <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 z-10">
+                <Play className="w-4 h-4 fill-white ml-0.5" />
+              </div>
             <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 text-white">
               <h3 className="text-xs font-semibold line-clamp-2 leading-snug drop-shadow-xs">
                 {reel.caption || reel.title}
@@ -105,8 +126,9 @@ export function ShoppableReelsSection() {
               </div>
             </div>
           </div>
-        ))}
-      </div>
+        );
+      })}
+    </div>
 
       {activeReelIndex !== null && (
         <ReelViewerModal

@@ -118,7 +118,21 @@ export interface SocialPostResponse {
   shareCount: number;
   viewCount: number;
   media: PostMediaDto[];
-  productTags: ProductTagDto[];
+  productTags?: ProductTagDto[];
+  products?: Array<{
+    id: string;
+    postId: string;
+    productId: string;
+    label?: string;
+    product?: {
+      id: string;
+      name: string;
+      slug?: string;
+      basePrice?: number | string;
+      salePrice?: number | string;
+      media?: Array<{ url: string }>;
+    };
+  }>;
   createdAt: string;
   updatedAt: string;
 }

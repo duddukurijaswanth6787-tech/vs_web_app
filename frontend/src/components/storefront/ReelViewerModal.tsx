@@ -270,7 +270,7 @@ export function ReelViewerModal({
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[26vh] scroll-smooth">
               {currentReel.taggedProducts.map((prod) => (
                 <div key={prod.id} className="flex items-center justify-between gap-3 p-2 rounded-2xl border border-neutral-100 bg-neutral-50/70">
-                  <div className="flex items-center gap-2.5">
+                  <Link href={`/product/${prod.id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
                     <Image
                       src={resolveMediaUrl(prod.image)}
                       alt={prod.name}
@@ -278,17 +278,19 @@ export function ReelViewerModal({
                       height={48}
                       className="w-11 h-12 object-cover rounded-xl shrink-0"
                     />
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">{prod.name}</h4>
                       <div className="flex items-baseline gap-1.5">
                         <span className="text-xs font-extrabold text-[var(--brand-primary)]">₹{prod.price.toLocaleString('en-IN')}</span>
-                        <span className="text-[10px] text-neutral-400 line-through">₹{prod.originalPrice.toLocaleString('en-IN')}</span>
+                        {prod.originalPrice > prod.price && (
+                          <span className="text-[10px] text-neutral-400 line-through">₹{prod.originalPrice.toLocaleString('en-IN')}</span>
+                        )}
                       </div>
                     </div>
-                  </div>
-                  <button onClick={() => setCartCount((prev) => prev + 1)} className="p-1.5 text-[var(--brand-primary)] border border-sky-200 bg-sky-50 rounded-xl">
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                  </button>
+                  </Link>
+                  <Link href={`/product/${prod.id}`} className="p-2 text-white bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] rounded-xl shrink-0 text-[11px] font-bold">
+                    Buy
+                  </Link>
                 </div>
               ))}
             </div>
@@ -377,12 +379,16 @@ export function ReelViewerModal({
                       <span className="text-sm font-extrabold text-[var(--brand-primary)]">
                         ₹{prod.price.toLocaleString('en-IN')}
                       </span>
-                      <span className="text-xs text-neutral-400 line-through">
-                        ₹{prod.originalPrice.toLocaleString('en-IN')}
-                      </span>
-                      <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
-                        {prod.discount}
-                      </span>
+                      {prod.originalPrice > prod.price && (
+                        <span className="text-xs text-neutral-400 line-through">
+                          ₹{prod.originalPrice.toLocaleString('en-IN')}
+                        </span>
+                      )}
+                      {prod.discount && (
+                        <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
+                          {prod.discount}
+                        </span>
+                      )}
                     </div>
 
                     <span className="text-[10px] font-semibold text-emerald-700 block">
@@ -394,20 +400,20 @@ export function ReelViewerModal({
                 {/* Right Action Buttons for Each Product */}
                 <div className="flex flex-col gap-2 shrink-0">
                   <Link
-                    href="/product/banarasi-silk-saree"
+                    href={`/product/${prod.id}`}
                     className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-2xs text-center flex items-center gap-1"
                   >
                     <Zap className="w-3.5 h-3.5 fill-white" />
                     <span>Buy</span>
                   </Link>
 
-                  <button
-                    onClick={() => setCartCount((prev) => prev + 1)}
-                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[#F3F8FF] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1"
+                  <Link
+                    href={`/product/${prod.id}`}
+                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[#F3F8FF] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1 text-center justify-center"
                   >
                     <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>Cart</span>
-                  </button>
+                    <span>View</span>
+                  </Link>
                 </div>
               </div>
             ))}

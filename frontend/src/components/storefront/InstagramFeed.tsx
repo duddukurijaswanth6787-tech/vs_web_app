@@ -208,23 +208,39 @@ export function InstagramFeed() {
     const rawMediaUrl = firstMedia?.url;
     const resolvedUrl = rawMediaUrl ? resolveMediaUrl(rawMediaUrl) : undefined;
 
-    const fallbackImage = FALLBACK_REELS[idx % FALLBACK_REELS.length].posterImage;
-    const isVideo = post.contentType === 'REEL' || firstMedia?.mediaType === 'VIDEO' || resolvedUrl?.endsWith('.mp4');
-
+    const isVideo = post.contentType === 'REEL' || firstMedia?.mediaType === 'VIDEO' || (resolvedUrl ? resolvedUrl.endsWith('.mp4') || resolvedUrl.includes('/videos/') : false);
     const rawThumbUrl = firstMedia?.thumbnailUrl;
-    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
-      || (!isVideo ? resolvedUrl : undefined)
-      || fallbackImage;
     const videoUrl = isVideo ? resolvedUrl : undefined;
+    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
+      || (!isVideo && resolvedUrl ? resolvedUrl : undefined)
+      || (videoUrl ? `${videoUrl}#t=0.001` : undefined)
+      || FALLBACK_REELS[idx % FALLBACK_REELS.length].posterImage;
 
-    const taggedProducts = (post.productTags || []).map((tag) => ({
-      id: tag.productId,
-      name: tag.label || 'Vasanthi Signature Special',
-      price: 3499,
-      originalPrice: 5499,
-      discount: '36% OFF',
-      image: posterImage,
-    }));
+    // Handle tagged products accurately from post.products OR post.productTags
+    const postProducts = Array.isArray(post.products)
+      ? post.products
+      : Array.isArray((post as unknown as Record<string, unknown>).taggedProducts)
+        ? ((post as unknown as Record<string, unknown>).taggedProducts as unknown[])
+        : Array.isArray(post.productTags)
+          ? post.productTags
+          : [];
+
+    const taggedProducts = postProducts.map((pItem: unknown, i: number) => {
+      const pRecord = pItem as Record<string, unknown>;
+      const prod = (pRecord.product as Record<string, unknown>) || pRecord;
+      const primaryMedia = ((prod.media as Array<Record<string, unknown>>)?.[0]?.url) || prod.primaryImageUrl || prod.image;
+      return {
+        id: String(prod.id || pRecord.productId || `prod-${i}`),
+        name: String(pRecord.label || prod.name || prod.title || 'Vasanthi Signature Exclusive'),
+        price: Number(prod.salePrice ?? prod.basePrice ?? prod.price ?? 3499),
+        originalPrice: Number(prod.basePrice ?? prod.originalPrice ?? 5499),
+        discount: prod.salePrice && prod.basePrice && Number(prod.basePrice) > Number(prod.salePrice)
+          ? `${Math.round(((Number(prod.basePrice) - Number(prod.salePrice)) / Number(prod.basePrice)) * 100)}% OFF`
+          : '',
+        image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : (posterImage || FALLBACK_REELS[0].posterImage),
+        position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
+      };
+    });
 
     return {
       id: post.id,
@@ -235,9 +251,9 @@ export function InstagramFeed() {
       accountAvatar: 'VS',
       caption: post.caption || "Vasanthi's Signature Festive Collection",
       audioTrack: "Original Audio - Vasanthi's Signature",
-      likes: `${post.likeCount || 120}`,
-      comments: `${post.commentCount || 14}`,
-      shares: `${post.shareCount || 45}`,
+      likes: `${post.likeCount || 0}`,
+      comments: `${post.commentCount || 0}`,
+      shares: `${post.shareCount || 0}`,
       taggedProducts: taggedProducts.length > 0 ? taggedProducts : FALLBACK_REELS[0].taggedProducts,
     };
   });
@@ -259,14 +275,8 @@ export function InstagramFeed() {
         </h2>
       </div>
 
-      {/* Horizontal Side-Scrolling Carousel on Mobile, Grid on Desktop.
-          Grid tiles are static images only — never autoplaying video. With
-          8+ tiles on screen at once, autoplaying <video> per tile meant up
-          to 8 simultaneous video downloads/decodes on page load, which is
-          the single heaviest thing this page could do on a mid-range phone.
-          Actual video playback happens one-at-a-time in ReelViewerModal on
-          tap, same as before. */}
-      <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-8 lg:gap-3">
+      {/* Horizontal Side-Scrolling Carousel on Mobile, Grid on Desktop. */}
+      <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:gap-4">
         {activeReels.map((reel, index) => {
           const isVideo = !!reel.videoUrl;
 
@@ -274,18 +284,28 @@ export function InstagramFeed() {
             <button
               key={reel.id}
               onClick={() => setSelectedReelIndex(index)}
-              className="group relative aspect-[3/4] rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left"
+              className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left cursor-pointer"
             >
-              <Image
-                src={reel.posterImage}
-                alt={reel.title}
-                fill
-                sizes="(max-width: 640px) 50vw, 33vw"
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-              />
+              {isVideo && reel.videoUrl ? (
+                <video
+                  src={`${reel.videoUrl}#t=0.001`}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                />
+              ) : (
+                <Image
+                  src={reel.posterImage}
+                  alt={reel.title}
+                  fill
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              )}
 
-              {/* Reel Play Badge Icon — filled for actual video reels */}
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1 rounded-full text-white">
+              {/* Reel Play Badge Icon */}
+              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10">
                 {isVideo ? (
                   <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
                     <path d="M8 5v14l11-7z" />
@@ -296,8 +316,8 @@ export function InstagramFeed() {
               </div>
 
               {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center text-white text-[10px] font-bold">
-                <span className="line-clamp-2">{reel.title}</span>
+              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center text-white text-xs font-semibold z-10">
+                <span className="line-clamp-2">{reel.caption || reel.title}</span>
               </div>
             </button>
           );

@@ -20,15 +20,20 @@ export default function ReelsFeedPage() {
       const p = post as Record<string, unknown>;
       const media = (Array.isArray(p.media) ? (p.media[0] as Record<string, unknown>) : {}) || {};
       const productList = Array.isArray(p.products) ? p.products : Array.isArray(p.taggedProducts) ? p.taggedProducts : [];
-      const product = (productList[0] as Record<string, unknown>) || {};
+      const productEntry = (productList[0] as Record<string, unknown>) || {};
+      const prod = (productEntry.product as Record<string, unknown>) || productEntry;
+      const rawUrl = String(media.url || '');
+      const isVideo = rawUrl.endsWith('.mp4') || rawUrl.includes('/videos/') || media.mediaType === 'VIDEO' || p.contentType === 'REEL';
+
       return {
         id: String(p.id || `r-${index}`),
         title: String(p.title || p.caption || 'Reel'),
-        price: Number(product.salePrice ?? product.basePrice ?? product.price ?? 0),
+        price: Number(prod.salePrice ?? prod.basePrice ?? prod.price ?? 0),
         image: String(media.thumbnailUrl || media.url || p.thumbnailUrl || PLACEHOLDER_IMAGE),
+        videoUrl: isVideo && rawUrl ? rawUrl : undefined,
         likes: Number(p.likeCount ?? p.likes ?? 0),
         comments: Number(p.commentCount ?? p.comments ?? 0),
-        productId: String(product.id || product.productId || ''),
+        productId: String(prod.id || productEntry.productId || ''),
       };
     });
   }, [data]);
@@ -54,9 +59,21 @@ export default function ReelsFeedPage() {
         )}
         {activeReel && (
           <div className="relative w-full aspect-9/16 bg-neutral-900 rounded-3xl overflow-hidden shadow-2xl border border-white/10">
-            <Image src={withVariant(activeReel.image, 'large')} alt={activeReel.title} fill sizes="100vw" className="object-cover" />
-            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30" />
-            <div className="absolute right-3 bottom-28 flex flex-col gap-4 items-center">
+            {activeReel.videoUrl ? (
+              <video
+                src={activeReel.videoUrl}
+                className="w-full h-full object-cover"
+                autoPlay
+                loop
+                muted
+                playsInline
+                controls
+              />
+            ) : (
+              <Image src={withVariant(activeReel.image, 'large')} alt={activeReel.title} fill sizes="100vw" className="object-cover" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-transparent to-black/30 pointer-events-none" />
+            <div className="absolute right-3 bottom-28 flex flex-col gap-4 items-center z-10">
               <div className="flex flex-col items-center gap-1">
                 <Heart className="w-6 h-6" />
                 <span className="text-[10px]">{activeReel.likes}</span>
@@ -66,7 +83,7 @@ export default function ReelsFeedPage() {
                 <span className="text-[10px]">{activeReel.comments}</span>
               </div>
             </div>
-            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2">
+            <div className="absolute bottom-0 left-0 right-0 p-5 space-y-2 z-10">
               <h2 className="text-sm font-bold">{activeReel.title}</h2>
               {activeReel.price > 0 && (
                 <p className="text-xs text-amber-300 font-bold">{formatInr(activeReel.price)}</p>
