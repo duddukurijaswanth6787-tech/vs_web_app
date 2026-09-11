@@ -211,10 +211,6 @@ export function InstagramFeed() {
     const isVideo = post.contentType === 'REEL' || firstMedia?.mediaType === 'VIDEO' || (resolvedUrl ? resolvedUrl.endsWith('.mp4') || resolvedUrl.includes('/videos/') : false);
     const rawThumbUrl = firstMedia?.thumbnailUrl;
     const videoUrl = isVideo ? resolvedUrl : undefined;
-    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
-      || (!isVideo && resolvedUrl ? resolvedUrl : undefined)
-      || (videoUrl ? `${videoUrl}#t=0.001` : undefined)
-      || FALLBACK_REELS[idx % FALLBACK_REELS.length].posterImage;
 
     // Handle tagged products accurately from post.products OR post.productTags
     const postProducts = Array.isArray(post.products)
@@ -237,10 +233,15 @@ export function InstagramFeed() {
         discount: prod.salePrice && prod.basePrice && Number(prod.basePrice) > Number(prod.salePrice)
           ? `${Math.round(((Number(prod.basePrice) - Number(prod.salePrice)) / Number(prod.basePrice)) * 100)}% OFF`
           : '',
-        image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : (posterImage || FALLBACK_REELS[0].posterImage),
+        image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : FALLBACK_REELS[0].posterImage,
         position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
       };
     });
+
+    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
+      || (!isVideo && resolvedUrl ? resolvedUrl : undefined)
+      || (taggedProducts[0]?.image ? taggedProducts[0].image : undefined)
+      || FALLBACK_REELS[idx % FALLBACK_REELS.length].posterImage;
 
     return {
       id: post.id,
@@ -286,28 +287,19 @@ export function InstagramFeed() {
               onClick={() => setSelectedReelIndex(index)}
               className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left cursor-pointer"
             >
-              {isVideo && reel.videoUrl ? (
-                <video
-                  src={`${reel.videoUrl}#t=0.001`}
-                  preload="metadata"
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
-                />
-              ) : (
-                <Image
-                  src={reel.posterImage}
-                  alt={reel.title}
-                  fill
-                  sizes="(max-width: 640px) 50vw, 33vw"
-                  className="object-cover group-hover:scale-110 transition-transform duration-500"
-                />
-              )}
+              <Image
+                src={reel.posterImage}
+                alt={reel.title}
+                fill
+                loading="lazy"
+                sizes="(max-width: 640px) 50vw, 33vw"
+                className="object-cover group-hover:scale-110 transition-transform duration-500"
+              />
 
               {/* Reel Play Badge Icon */}
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10">
+              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10 shadow-xs">
                 {isVideo ? (
-                  <svg className="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                  <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
                     <path d="M8 5v14l11-7z" />
                   </svg>
                 ) : (

@@ -118,6 +118,8 @@ export function useCustomerProducts(
   return useQuery({
     queryKey: ['customer', 'products', query],
     queryFn: () => productService.findAll(query),
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
     ...options,
   });
 }
@@ -127,12 +129,13 @@ export function useCustomerProduct(idOrSlug: string, enabled = true) {
     queryKey: ['customer', 'product', idOrSlug],
     queryFn: () => productService.findById(idOrSlug),
     enabled,
+    staleTime: 2 * 60 * 1000,
   });
 }
 
 export function useFeaturedCategories() {
   return useQuery({
-    queryKey: customerKeys.all,
+    queryKey: ['customer', 'featured-categories'],
     queryFn: async () => {
       try {
         const tree = await categoryService.getTree();
@@ -142,18 +145,11 @@ export function useFeaturedCategories() {
       } catch {
         // fallback
       }
-      try {
-        const featured = await categoryService.findFeatured();
-        if (Array.isArray(featured) && featured.length > 0) {
-          return featured;
-        }
-      } catch {
-        // fallback
-      }
       const list = await categoryService.findAll({ isVisible: true, limit: 20 });
       return Array.isArray(list) ? list : (list as any)?.data || [];
     },
-    staleTime: 1 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
+    gcTime: 10 * 60 * 1000,
   });
 }
 

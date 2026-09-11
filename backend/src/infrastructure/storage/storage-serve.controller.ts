@@ -138,7 +138,28 @@ export class StorageServeController {
         return res.send(buffer);
       }
 
-      // Original file — serve directly
+      // Try streaming provider (S3 / Local with native Range support)
+      const range = req.headers.range;
+      const streamResult = await this.storageService.getStream(key, range);
+      if (streamResult) {
+        const headers: Record<string, string> = {
+          'Accept-Ranges': 'bytes',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        };
+        if (streamResult.contentType) {
+          headers['Content-Type'] = streamResult.contentType;
+        }
+        if (streamResult.contentLength !== undefined) {
+          headers['Content-Length'] = String(streamResult.contentLength);
+        }
+        if (streamResult.contentRange) {
+          headers['Content-Range'] = streamResult.contentRange;
+        }
+        res.status(streamResult.statusCode).set(headers);
+        return (streamResult.stream as any).pipe(res);
+      }
+
+      // Fallback to in-memory read
       const exists = await this.storageService.exists(key);
       if (!exists) {
         return res.status(404).json({ message: 'File not found' });
@@ -163,7 +184,6 @@ export class StorageServeController {
 
       const contentType = mimeTypes[ext] ?? 'application/octet-stream';
       const totalLength = buffer.length;
-      const range = req.headers.range;
 
       if (range) {
         const parts = range.replace(/bytes=/, '').split('-');

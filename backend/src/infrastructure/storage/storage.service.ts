@@ -9,6 +9,7 @@ import type {
   StorageProvider,
   FileMetadata,
   ImageVariants,
+  StreamResult,
 } from './storage.types';
 import { StorageUtils } from './storage.utils';
 
@@ -115,6 +116,13 @@ export class StorageService {
 
   async get(storagePath: string): Promise<Buffer> {
     return this.provider.read(storagePath);
+  }
+
+  async getStream(storagePath: string, range?: string): Promise<StreamResult | null> {
+    if (typeof this.provider.getStream === 'function') {
+      return this.provider.getStream(storagePath, range);
+    }
+    return null;
   }
 
   async exists(storagePath: string): Promise<boolean> {

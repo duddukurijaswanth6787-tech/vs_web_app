@@ -7,9 +7,11 @@ import {
   unlink,
   access,
   copyFile,
+  stat,
 } from 'fs/promises';
+import { createReadStream } from 'fs';
 import { resolve, join } from 'path';
-import type { StorageProvider, FileMetadata } from './storage.types';
+import type { StorageProvider, FileMetadata, StreamResult } from './storage.types';
 import { StorageUtils } from './storage.utils';
 
 @Injectable()
@@ -49,6 +51,50 @@ export class LocalStorageProvider implements StorageProvider {
   async read(filePath: string): Promise<Buffer> {
     StorageUtils.assertSafePath(filePath);
     return readFile(join(this.storageRoot, filePath));
+  }
+
+  async getStream(filePath: string, range?: string): Promise<StreamResult> {
+    StorageUtils.assertSafePath(filePath);
+    const fullPath = join(this.storageRoot, filePath);
+    const fileStat = await stat(fullPath);
+    const totalLength = fileStat.size;
+    const ext = filePath.split('.').pop()?.toLowerCase() ?? '';
+    const mimeTypes: Record<string, string> = {
+      jpg: 'image/jpeg',
+      jpeg: 'image/jpeg',
+      png: 'image/png',
+      webp: 'image/webp',
+      avif: 'image/avif',
+      gif: 'image/gif',
+      svg: 'image/svg+xml',
+      pdf: 'application/pdf',
+      mp4: 'video/mp4',
+      webm: 'video/webm',
+      mov: 'video/quicktime',
+    };
+    const contentType = mimeTypes[ext] ?? 'application/octet-stream';
+
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10) || 0;
+      const end = parts[1] ? parseInt(parts[1], 10) : totalLength - 1;
+      const chunkSize = end - start + 1;
+      const stream = createReadStream(fullPath, { start, end });
+      return {
+        stream,
+        contentType,
+        contentLength: chunkSize,
+        contentRange: `bytes ${start}-${end}/${totalLength}`,
+        statusCode: 206,
+      };
+    }
+
+    return {
+      stream: createReadStream(fullPath),
+      contentType,
+      contentLength: totalLength,
+      statusCode: 200,
+    };
   }
 
   async delete(filePath: string): Promise<void> {

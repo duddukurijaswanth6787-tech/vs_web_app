@@ -19,6 +19,14 @@ export interface ImageVariants {
   large?: FileMetadata;
 }
 
+export interface StreamResult {
+  stream: NodeJS.ReadableStream;
+  contentType?: string;
+  contentLength?: number;
+  contentRange?: string;
+  statusCode: number;
+}
+
 export interface StorageProvider {
   write(
     filePath: string,
@@ -26,6 +34,7 @@ export interface StorageProvider {
     contentType?: string,
   ): Promise<FileMetadata>;
   read(filePath: string): Promise<Buffer>;
+  getStream?(filePath: string, range?: string): Promise<StreamResult>;
   delete(filePath: string): Promise<void>;
   exists(filePath: string): Promise<boolean>;
   copy(sourceKey: string, destKey: string): Promise<void>;

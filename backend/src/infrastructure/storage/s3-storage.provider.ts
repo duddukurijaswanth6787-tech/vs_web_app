@@ -9,7 +9,7 @@ import {
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { StorageProvider, FileMetadata } from './storage.types';
+import type { StorageProvider, FileMetadata, StreamResult } from './storage.types';
 
 @Injectable()
 export class S3StorageProvider implements StorageProvider {
@@ -105,6 +105,23 @@ export class S3StorageProvider implements StorageProvider {
       chunks.push(chunk);
     }
     return Buffer.concat(chunks);
+  }
+
+  async getStream(filePath: string, range?: string): Promise<StreamResult> {
+    const response = await this.client.send(
+      new GetObjectCommand({
+        Bucket: this.bucket,
+        Key: filePath,
+        ...(range ? { Range: range } : {}),
+      }),
+    );
+    return {
+      stream: response.Body as unknown as NodeJS.ReadableStream,
+      contentType: response.ContentType ?? this.getContentType(filePath),
+      contentLength: response.ContentLength,
+      contentRange: response.ContentRange,
+      statusCode: response.ContentRange ? 206 : 200,
+    };
   }
 
   async delete(filePath: string): Promise<void> {

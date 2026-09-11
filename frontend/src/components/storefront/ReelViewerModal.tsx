@@ -67,10 +67,12 @@ export function ReelViewerModal({
   const [cartCount, setCartCount] = useState(2);
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
+  const [isVideoLoading, setIsVideoLoading] = useState(true);
 
   if (initialReelIndex !== prevInitialIndex) {
     setPrevInitialIndex(initialReelIndex);
     setCurrentIndex(initialReelIndex);
+    setIsVideoLoading(true);
   }
 
   if (!isOpen || !reels || reels.length === 0) return null;
@@ -82,6 +84,7 @@ export function ReelViewerModal({
     if (isAnimating) return;
     setSlideDirection('right');
     setIsAnimating(true);
+    setIsVideoLoading(true);
     setTimeout(() => {
       setCurrentIndex((prev) => (prev > 0 ? prev - 1 : reels.length - 1));
       setIsAnimating(false);
@@ -92,6 +95,7 @@ export function ReelViewerModal({
     if (isAnimating) return;
     setSlideDirection('left');
     setIsAnimating(true);
+    setIsVideoLoading(true);
     setTimeout(() => {
       setCurrentIndex((prev) => (prev < reels.length - 1 ? prev + 1 : 0));
       setIsAnimating(false);
@@ -101,6 +105,12 @@ export function ReelViewerModal({
   const toggleLike = () => {
     setLikedReels((prev) => ({ ...prev, [currentReel.id]: !prev[currentReel.id] }));
   };
+
+  const safePoster = currentReel.posterImage && !currentReel.posterImage.endsWith('.mp4') && !currentReel.posterImage.includes('/videos/')
+    ? resolveMediaUrl(currentReel.posterImage)
+    : currentReel.taggedProducts[0]?.image
+      ? resolveMediaUrl(currentReel.taggedProducts[0].image)
+      : undefined;
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-md transition-opacity p-0 lg:p-6">
@@ -166,6 +176,12 @@ export function ReelViewerModal({
 
           {/* Video Poster Display */}
           <div className="relative w-full flex-1 bg-neutral-950 overflow-hidden flex items-center justify-center">
+            {isVideoLoading && (
+              <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-xs pointer-events-none">
+                <div className="w-10 h-10 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            )}
+
             <div
               className={`w-full h-full transition-all duration-300 ease-out flex items-center justify-center ${
                 isAnimating
@@ -177,8 +193,9 @@ export function ReelViewerModal({
             >
               {currentReel.videoUrl || currentReel.posterImage?.endsWith('.mp4') ? (
                 <video
+                  key={currentReel.id}
                   src={resolveMediaUrl(currentReel.videoUrl || currentReel.posterImage)}
-                  poster={currentReel.posterImage?.endsWith('.mp4') ? undefined : resolveMediaUrl(currentReel.posterImage)}
+                  poster={safePoster}
                   className="w-full h-full object-cover select-none"
                   autoPlay
                   loop
@@ -186,6 +203,10 @@ export function ReelViewerModal({
                   playsInline
                   preload="auto"
                   controls
+                  onWaiting={() => setIsVideoLoading(true)}
+                  onCanPlay={() => setIsVideoLoading(false)}
+                  onPlaying={() => setIsVideoLoading(false)}
+                  onLoadedData={() => setIsVideoLoading(false)}
                 />
               ) : (
                 <Image
@@ -193,6 +214,8 @@ export function ReelViewerModal({
                   alt={currentReel.title}
                   width={1080}
                   height={1920}
+                  priority
+                  onLoad={() => setIsVideoLoading(false)}
                   className="w-full h-full object-cover select-none"
                 />
               )}

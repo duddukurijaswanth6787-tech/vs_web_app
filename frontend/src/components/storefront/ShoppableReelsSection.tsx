@@ -27,8 +27,10 @@ export function ShoppableReelsSection() {
       const rawUrl = String(media.url || pPost.url || '');
       const isVideo = rawUrl.endsWith('.mp4') || rawUrl.includes('/videos/') || media.mediaType === 'VIDEO' || pPost.contentType === 'REEL';
       const products = Array.isArray(pPost.products) ? pPost.products : Array.isArray(pPost.taggedProducts) ? pPost.taggedProducts : [];
+      const firstProd = (products[0] as Record<string, unknown>)?.product || products[0];
+      const prodImg = ((firstProd as Record<string, unknown>)?.media as Array<Record<string, unknown>>)?.[0]?.url || (firstProd as Record<string, unknown>)?.primaryImageUrl || (firstProd as Record<string, unknown>)?.image;
       
-      const posterImage = String(media.thumbnailUrl || (!isVideo && rawUrl ? rawUrl : '') || (isVideo && rawUrl ? `${rawUrl}#t=0.001` : '') || pPost.thumbnailUrl || pPost.coverUrl || PLACEHOLDER_IMAGE);
+      const posterImage = String(media.thumbnailUrl || (!isVideo && rawUrl ? rawUrl : '') || prodImg || pPost.thumbnailUrl || pPost.coverUrl || PLACEHOLDER_IMAGE);
 
       return {
         id: String(pPost.id || `reel-${index}`),
@@ -80,34 +82,23 @@ export function ShoppableReelsSection() {
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
         {reels.map((reel, index) => {
-          const isVideo = !!reel.videoUrl;
-
           return (
             <div
               key={reel.id}
               onClick={() => setActiveReelIndex(index)}
               className="group relative aspect-9/16 rounded-3xl overflow-hidden bg-neutral-900 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              {isVideo && reel.videoUrl ? (
-                <video
-                  src={`${reel.videoUrl}#t=0.001`}
-                  preload="metadata"
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 pointer-events-none"
-                />
-              ) : (
-                <Image
-                  src={withVariant(reel.posterImage, 'medium')}
-                  alt={reel.title}
-                  fill
-                  sizes="(max-width: 640px) 50vw, 25vw"
-                  unoptimized={isLocalOrPlaceholder(reel.posterImage)}
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-                />
-              )}
+              <Image
+                src={withVariant(reel.posterImage, 'medium')}
+                alt={reel.title}
+                fill
+                loading="lazy"
+                sizes="(max-width: 640px) 50vw, 25vw"
+                unoptimized={isLocalOrPlaceholder(reel.posterImage)}
+                className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
-              <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 z-10">
+              <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 z-10 shadow-xs">
                 <Play className="w-4 h-4 fill-white ml-0.5" />
               </div>
             <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 text-white">
