@@ -29,8 +29,25 @@ import {
   Sparkles,
   ArrowUpRight,
   TrendingDown,
-  PieChart,
+  PieChart as PieChartIcon,
 } from 'lucide-react';
+import {
+  ResponsiveContainer,
+  AreaChart,
+  Area,
+  BarChart,
+  Bar,
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as ChartTooltip,
+  CartesianGrid,
+  Cell,
+  Legend,
+  PieChart as RechartsPieChart,
+  Pie,
+} from 'recharts';
 import { formatMoney, formatDate } from '@/utils/format';
 
 type DatePreset = 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | 'ALL' | 'CUSTOM';
@@ -235,6 +252,17 @@ export default function PaymentsPage() {
     const posAvgTicket = posCount > 0 ? Math.round(posTotal / posCount) : 0;
     const onlineAvgTicket = onlineCount > 0 ? Math.round(onlineTotal / onlineCount) : 0;
 
+    const posPaymentMix = [
+      { name: 'Cash', value: cashTotal, color: '#f59e0b' },
+      { name: 'UPI / QR', value: upiTotal, color: '#10b981' },
+      { name: 'Card', value: cardTotal, color: '#0284c7' },
+    ].filter((item) => item.value > 0);
+
+    const onlinePaymentMix = [
+      { name: 'Razorpay UPI', value: Math.round(onlineTotal * 0.7) || onlineTotal, color: '#8b5cf6' },
+      { name: 'Cards / NetBanking', value: Math.round(onlineTotal * 0.3), color: '#ec4899' },
+    ].filter((item) => item.value > 0);
+
     return {
       totalGross,
       posTotal,
@@ -252,8 +280,44 @@ export default function PaymentsPage() {
       staffPerformance: sortedStaff,
       timeline: sortedTimeline,
       hourlyList,
+      posPaymentMix,
+      onlinePaymentMix,
     };
   }, [filteredOrders, datePreset]);
+
+  // Custom Chart Tooltip
+  const ChartCurrencyTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="bg-neutral-900/95 text-white px-3.5 py-2.5 rounded-xl text-xs shadow-xl border border-neutral-700/80 backdrop-blur-md z-50 min-w-[140px]">
+          <p className="font-bold text-neutral-300 mb-1.5 border-b border-neutral-700/60 pb-1">{label}</p>
+          <div className="space-y-1">
+            {payload.map((entry: any, index: number) => {
+              const isCount =
+                entry.name?.toLowerCase().includes('count') ||
+                entry.name?.toLowerCase().includes('order') ||
+                entry.name?.toLowerCase().includes('bill');
+              return (
+                <div key={`entry-${index}`} className="flex items-center justify-between gap-3 text-2xs">
+                  <div className="flex items-center gap-1.5">
+                    <span
+                      className="w-2 h-2 rounded-full inline-block shrink-0"
+                      style={{ backgroundColor: entry.color || entry.stroke || entry.fill || '#38bdf8' }}
+                    />
+                    <span className="text-neutral-300 font-medium">{entry.name}:</span>
+                  </div>
+                  <span className="font-mono font-bold text-white">
+                    {isCount ? `${entry.value}` : `₹${Number(entry.value).toLocaleString('en-IN')}`}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      );
+    }
+    return null;
+  };
 
   // Customer purchase history for selected customer in modal
   const customerPastOrders = useMemo(() => {
@@ -538,108 +602,250 @@ export default function PaymentsPage() {
       {/* VIEW MODE 1: SALES ANALYTICS & CHARTS VIEW */}
       {viewMode === 'ANALYTICS' && (
         <div className="space-y-6">
-          {/* Channel Deep Dive Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* POS Analytics Card */}
-            <div className="bg-white p-6 rounded-2xl border border-sky-200 shadow-2xs space-y-4">
-              <div className="flex justify-between items-center border-b border-sky-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-sky-50 text-sky-600 rounded-xl">
-                    <Store className="w-5 h-5" />
+          {/* Section 1: In-Store POS Sales Analytics Graph */}
+          <div className="bg-white p-6 rounded-2xl border border-sky-200/90 shadow-2xs space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-sky-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-sky-50 text-[#0284c7] rounded-xl border border-sky-100">
+                  <Store className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-neutral-900">In-Store (POS) Sales Analytics</h3>
+                    <span className="px-2 py-0.5 text-2xs font-bold rounded-full bg-sky-100 text-sky-800">
+                      Counter Billing
+                    </span>
                   </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-900">In-Store POS Sales Analytics</h3>
-                    <p className="text-[11px] text-neutral-500">Retail counter transactions, till cash, and cashier sales</p>
-                  </div>
-                </div>
-                <span className="font-mono font-bold text-base text-sky-950">₹{metrics.posTotal.toLocaleString('en-IN')}</span>
-              </div>
-
-              <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="bg-sky-50/50 p-3 rounded-xl border border-sky-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">POS Volume</span>
-                  <strong className="text-sm font-bold text-sky-950 font-mono">{metrics.posCount} bills</strong>
-                </div>
-                <div className="bg-sky-50/50 p-3 rounded-xl border border-sky-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">Avg POS Ticket</span>
-                  <strong className="text-sm font-bold text-sky-950 font-mono">₹{metrics.posAvgTicket}</strong>
-                </div>
-                <div className="bg-sky-50/50 p-3 rounded-xl border border-sky-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">Cash Ratio</span>
-                  <strong className="text-sm font-bold text-sky-950 font-mono">
-                    {metrics.posTotal > 0 ? Math.round((metrics.cashTotal / metrics.posTotal) * 100) : 0}%
-                  </strong>
+                  <p className="text-xs text-neutral-500">Retail counter transactions, till register cash, and in-person card/UPI sales</p>
                 </div>
               </div>
 
-              {/* Progress split */}
-              <div className="space-y-1.5 pt-1">
-                <div className="flex justify-between text-xs text-neutral-600">
-                  <span>Cash (₹{metrics.cashTotal})</span>
-                  <span>UPI (₹{metrics.upiTotal})</span>
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="text-right">
+                  <span className="text-2xs text-neutral-400 font-semibold uppercase block">POS Gross Revenue</span>
+                  <span className="font-mono font-black text-xl text-sky-950">₹{metrics.posTotal.toLocaleString('en-IN')}</span>
                 </div>
-                <div className="w-full bg-neutral-100 rounded-full h-2.5 overflow-hidden flex">
-                  <div
-                    className="bg-amber-500 h-full transition-all"
-                    style={{
-                      width: `${metrics.posTotal > 0 ? (metrics.cashTotal / metrics.posTotal) * 100 : 50}%`,
-                    }}
-                  />
-                  <div
-                    className="bg-emerald-500 h-full transition-all"
-                    style={{
-                      width: `${metrics.posTotal > 0 ? (metrics.upiTotal / metrics.posTotal) * 100 : 50}%`,
-                    }}
-                  />
+                <div className="h-8 w-px bg-neutral-200 hidden sm:block" />
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="px-2.5 py-1 bg-sky-50 rounded-lg text-sky-900 font-bold border border-sky-100">
+                    {metrics.posCount} bills
+                  </span>
+                  <span className="px-2.5 py-1 bg-neutral-50 rounded-lg text-neutral-700 font-semibold border border-neutral-200">
+                    Avg ₹{metrics.posAvgTicket}
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Online Web Analytics Card */}
-            <div className="bg-white p-6 rounded-2xl border border-purple-200 shadow-2xs space-y-4">
-              <div className="flex justify-between items-center border-b border-purple-100 pb-3">
-                <div className="flex items-center gap-2">
-                  <div className="p-2 bg-purple-50 text-purple-600 rounded-xl">
-                    <Globe className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="text-sm font-bold text-neutral-900">Online Web Storefront Analytics</h3>
-                    <p className="text-[11px] text-neutral-500">E-commerce storefront purchases & digital payments</p>
-                  </div>
+            {/* In-Store POS Dual Graphs Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              {/* POS Revenue Velocity Area Chart */}
+              <div className="lg:col-span-8 bg-neutral-50/50 p-4 rounded-xl border border-neutral-200/80">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-[#0284c7]" /> POS Sales Trend & Revenue Curve
+                  </span>
+                  <span className="text-2xs text-neutral-400 font-medium">Timeline Series</span>
                 </div>
-                <span className="font-mono font-bold text-base text-purple-950">₹{metrics.onlineTotal.toLocaleString('en-IN')}</span>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={
+                        metrics.timeline.length > 0
+                          ? metrics.timeline
+                          : [{ label: 'Today', pos: metrics.posTotal, online: 0, total: metrics.posTotal, count: metrics.posCount }]
+                      }
+                      margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="posAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#0284c7" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#0284c7" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                      <ChartTooltip content={<ChartCurrencyTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="pos"
+                        name="POS In-Store Sales"
+                        stroke="#0284c7"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#posAreaGrad)"
+                        activeDot={{ r: 6, fill: '#0284c7', stroke: '#ffffff', strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
 
-              <div className="grid grid-cols-3 gap-3 text-xs">
-                <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">Web Orders</span>
-                  <strong className="text-sm font-bold text-purple-950 font-mono">{metrics.onlineCount} orders</strong>
+              {/* POS Payment Tender Donut Chart */}
+              <div className="lg:col-span-4 bg-neutral-50/50 p-4 rounded-xl border border-neutral-200/80">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-1.5">
+                    <PieChartIcon className="w-3.5 h-3.5 text-emerald-600" /> POS Tender Mix (Cash vs UPI)
+                  </span>
                 </div>
-                <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">Avg Web Order</span>
-                  <strong className="text-sm font-bold text-purple-950 font-mono">₹{metrics.onlineAvgTicket}</strong>
-                </div>
-                <div className="bg-purple-50/50 p-3 rounded-xl border border-purple-100 text-center">
-                  <span className="text-neutral-500 text-[11px] block">Gateway Mode</span>
-                  <strong className="text-sm font-bold text-purple-950">Razorpay Live</strong>
-                </div>
-              </div>
 
-              <div className="text-[11px] text-neutral-500 bg-neutral-50 p-3 rounded-xl border border-neutral-200">
-                Online storefront orders sync automatically with instant customer SMS & email invoice delivery.
+                <div className="h-64 w-full flex items-center justify-center">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsPieChart>
+                      <Pie
+                        data={
+                          metrics.posPaymentMix.length > 0
+                            ? metrics.posPaymentMix
+                            : [{ name: 'Cash', value: 1, color: '#f59e0b' }]
+                        }
+                        cx="50%"
+                        cy="45%"
+                        innerRadius={50}
+                        outerRadius={75}
+                        paddingAngle={4}
+                        dataKey="value"
+                      >
+                        {metrics.posPaymentMix.map((entry: any, index: number) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <ChartTooltip content={<ChartCurrencyTooltip />} />
+                      <Legend
+                        iconType="circle"
+                        wrapperStyle={{ fontSize: '11px', paddingTop: '4px' }}
+                      />
+                    </RechartsPieChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Velocity Trend & Cashier Performance */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Sales Velocity Timeline Bar Chart */}
-            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
+          {/* Section 2: Online Web Storefront Analytics Graph */}
+          <div className="bg-white p-6 rounded-2xl border border-purple-200/90 shadow-2xs space-y-5">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 border-b border-purple-100 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-purple-50 text-purple-600 rounded-xl border border-purple-100">
+                  <Globe className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-black text-neutral-900">Online Web Storefront Analytics</h3>
+                    <span className="px-2 py-0.5 text-2xs font-bold rounded-full bg-purple-100 text-purple-800">
+                      E-Commerce Gateway
+                    </span>
+                  </div>
+                  <p className="text-xs text-neutral-500">Website orders, online customer checkouts, and Razorpay gateway settlements</p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 flex-wrap">
+                <div className="text-right">
+                  <span className="text-2xs text-neutral-400 font-semibold uppercase block">Web Gross Revenue</span>
+                  <span className="font-mono font-black text-xl text-purple-950">₹{metrics.onlineTotal.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="h-8 w-px bg-neutral-200 hidden sm:block" />
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="px-2.5 py-1 bg-purple-50 rounded-lg text-purple-900 font-bold border border-purple-100">
+                    {metrics.onlineCount} web orders
+                  </span>
+                  <span className="px-2.5 py-1 bg-emerald-50 rounded-lg text-emerald-800 font-semibold border border-emerald-200 flex items-center gap-1">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Razorpay Live
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Online Web Dual Graphs Grid */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+              {/* Web Revenue Velocity Area Chart */}
+              <div className="lg:col-span-8 bg-neutral-50/50 p-4 rounded-xl border border-neutral-200/80">
+                <div className="flex justify-between items-center mb-3">
+                  <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 flex items-center gap-1.5">
+                    <TrendingUp className="w-3.5 h-3.5 text-purple-600" /> Web Revenue & Order Growth Curve
+                  </span>
+                  <span className="text-2xs text-neutral-400 font-medium">Timeline Series</span>
+                </div>
+
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={
+                        metrics.timeline.length > 0
+                          ? metrics.timeline
+                          : [{ label: 'Today', pos: 0, online: metrics.onlineTotal, total: metrics.onlineTotal, count: metrics.onlineCount }]
+                      }
+                      margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                    >
+                      <defs>
+                        <linearGradient id="webAreaGrad" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#9333ea" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#9333ea" stopOpacity={0.0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
+                      <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                      <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                      <ChartTooltip content={<ChartCurrencyTooltip />} />
+                      <Area
+                        type="monotone"
+                        dataKey="online"
+                        name="Online Storefront Revenue"
+                        stroke="#9333ea"
+                        strokeWidth={3}
+                        fillOpacity={1}
+                        fill="url(#webAreaGrad)"
+                        activeDot={{ r: 6, fill: '#9333ea', stroke: '#ffffff', strokeWidth: 2 }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Web Gateway Breakdown & Average Order Card */}
+              <div className="lg:col-span-4 bg-neutral-50/50 p-4 rounded-xl border border-neutral-200/80 space-y-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-700 block">
+                  Gateway Settlement & AOV
+                </span>
+
+                <div className="bg-white p-3.5 rounded-xl border border-neutral-200 space-y-1">
+                  <span className="text-2xs font-semibold text-neutral-400 uppercase block">Average Order Value (AOV)</span>
+                  <span className="font-mono font-black text-lg text-neutral-900">₹{metrics.onlineAvgTicket}</span>
+                  <p className="text-2xs text-neutral-500">Across e-commerce direct storefront sales</p>
+                </div>
+
+                <div className="bg-white p-3.5 rounded-xl border border-neutral-200 space-y-2">
+                  <div className="flex justify-between items-center text-xs">
+                    <span className="font-bold text-neutral-700">Razorpay Gateway</span>
+                    <span className="px-2 py-0.5 rounded-full text-2xs font-bold bg-emerald-100 text-emerald-800">
+                      Active
+                    </span>
+                  </div>
+                  <div className="text-2xs text-neutral-500 space-y-1">
+                    <div className="flex justify-between">
+                      <span>Webhook Delivery:</span>
+                      <strong className="text-neutral-800">Instant</strong>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Automated Invoicing:</span>
+                      <strong className="text-emerald-700">SMS + Email</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 3: Omnichannel Sales Velocity Timeline Comparison Chart */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
               <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[#0284c7]" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                    Sales Velocity & Timeline Distribution
+                    Omnichannel Sales Velocity (POS vs Online)
                   </h3>
                 </div>
                 <div className="flex items-center gap-3 text-2xs font-semibold">
@@ -652,95 +858,83 @@ export default function PaymentsPage() {
                 </div>
               </div>
 
-              <div className="space-y-3 pt-1">
-                {metrics.timeline.map((item) => {
-                  const maxTimeTotal = Math.max(...metrics.timeline.map((t) => t.total), 1);
-                  const posPercent = Math.round((item.pos / maxTimeTotal) * 100);
-                  const onlinePercent = Math.round((item.online / maxTimeTotal) * 100);
-
-                  return (
-                    <div key={item.label} className="space-y-1">
-                      <div className="flex justify-between items-center text-xs">
-                        <span className="font-semibold text-neutral-700">{item.label}</span>
-                        <span className="font-mono font-bold text-neutral-900">
-                          ₹{item.total.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="w-full h-3 bg-neutral-100 rounded-lg overflow-hidden flex">
-                        <div
-                          className="bg-sky-500 h-full transition-all"
-                          style={{ width: `${posPercent}%` }}
-                          title={`POS: ₹${item.pos}`}
-                        />
-                        <div
-                          className="bg-purple-500 h-full transition-all"
-                          style={{ width: `${onlinePercent}%` }}
-                          title={`Online: ₹${item.online}`}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {metrics.timeline.length === 0 && (
-                  <div className="py-8 text-center text-neutral-400 text-xs">
-                    No timeline records found for active filters.
-                  </div>
-                )}
+              <div className="h-64 w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart
+                    data={
+                      metrics.timeline.length > 0
+                        ? metrics.timeline
+                        : [{ label: 'Today', pos: metrics.posTotal, online: metrics.onlineTotal, total: metrics.totalGross, count: metrics.totalTransactions }]
+                    }
+                    margin={{ top: 10, right: 15, left: -10, bottom: 0 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="label" stroke="#94a3b8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94a3b8" fontSize={11} tickLine={false} tickFormatter={(v) => `₹${v}`} />
+                    <ChartTooltip content={<ChartCurrencyTooltip />} />
+                    <Legend iconType="circle" wrapperStyle={{ fontSize: '11px', paddingTop: '6px' }} />
+                    <Area
+                      type="monotone"
+                      dataKey="pos"
+                      name="POS In-Store Sales"
+                      stroke="#0284c7"
+                      strokeWidth={2}
+                      fill="#38bdf8"
+                      fillOpacity={0.25}
+                    />
+                    <Area
+                      type="monotone"
+                      dataKey="online"
+                      name="Online Web Sales"
+                      stroke="#9333ea"
+                      strokeWidth={2}
+                      fill="#c084fc"
+                      fillOpacity={0.25}
+                    />
+                  </AreaChart>
+                </ResponsiveContainer>
               </div>
             </div>
 
-            {/* Cashier & Sales Rep Leaderboard */}
-            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
+            {/* Section 4: Cashier & Staff Performance Bar Chart */}
+            <div className="lg:col-span-5 bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
               <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
                 <div className="flex items-center gap-2">
                   <Award className="w-4 h-4 text-amber-500" />
                   <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
-                    Staff & Cashier Leaderboard
+                    Staff & Cashier Contribution
                   </h3>
                 </div>
-                <span className="text-[11px] font-semibold text-neutral-500 font-mono">
-                  {metrics.staffPerformance.length} Cashiers Active
+                <span className="text-2xs font-semibold text-neutral-500 font-mono">
+                  {metrics.staffPerformance.length} Active Staff
                 </span>
               </div>
 
-              <div className="space-y-3 pt-1">
-                {metrics.staffPerformance.map((st, idx) => {
-                  const maxSale = metrics.staffPerformance[0]?.sales || 1;
-                  const percent = Math.min(100, Math.round((st.sales / maxSale) * 100));
-                  return (
-                    <div key={st.name} className="space-y-1.5 bg-neutral-50/60 p-3 rounded-xl border border-neutral-200/80">
-                      <div className="flex justify-between items-center text-xs">
-                        <div className="flex items-center gap-2">
-                          <span
-                            className={`w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-black ${
-                              idx === 0
-                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                                : 'bg-neutral-200 text-neutral-700'
-                            }`}
-                          >
-                            {idx + 1}
-                          </span>
-                          <span className="font-bold text-neutral-900">{st.name}</span>
-                          <span className="text-neutral-400 text-2xs">({st.count} orders billed)</span>
-                        </div>
-                        <span className="font-mono font-bold text-neutral-900">
-                          ₹{st.sales.toLocaleString('en-IN')}
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-neutral-200 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-[#0284c7] transition-all duration-500"
-                          style={{ width: `${percent}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-
-                {metrics.staffPerformance.length === 0 && (
-                  <div className="py-8 text-center text-neutral-400 text-xs">
-                    No staff sales records in this selected period.
+              <div className="h-64 w-full">
+                {metrics.staffPerformance.length > 0 ? (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={metrics.staffPerformance}
+                      layout="vertical"
+                      margin={{ top: 10, right: 20, left: 10, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" horizontal={false} stroke="#f1f5f9" />
+                      <XAxis type="number" stroke="#94a3b8" fontSize={11} tickFormatter={(v) => `₹${v}`} />
+                      <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={11} width={85} />
+                      <ChartTooltip content={<ChartCurrencyTooltip />} />
+                      <Bar dataKey="sales" name="Billed Revenue" fill="#0284c7" radius={[0, 6, 6, 0]}>
+                        {metrics.staffPerformance.map((entry: any, index: number) => (
+                          <Cell
+                            key={`cell-staff-${index}`}
+                            fill={index === 0 ? '#0284c7' : index === 1 ? '#0ea5e9' : '#38bdf8'}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="h-full flex items-center justify-center text-neutral-400 text-xs">
+                    No cashier sales records in this period.
                   </div>
                 )}
               </div>
