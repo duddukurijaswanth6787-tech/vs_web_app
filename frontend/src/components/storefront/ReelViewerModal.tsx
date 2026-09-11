@@ -19,6 +19,8 @@ import {
   Music,
   Plus,
   Zap,
+  Volume2,
+  VolumeX,
 } from 'lucide-react';
 
 export interface TaggedProduct {
@@ -68,6 +70,7 @@ export function ReelViewerModal({
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   if (initialReelIndex !== prevInitialIndex) {
     setPrevInitialIndex(initialReelIndex);
@@ -145,8 +148,12 @@ export function ReelViewerModal({
             </div>
 
             <div className="flex items-center gap-3">
-              <button className="p-1.5 hover:bg-white/20 rounded-full transition-colors">
-                <Search className="w-5 h-5 text-white" />
+              <button
+                onClick={() => setIsMuted(!isMuted)}
+                className="p-1.5 bg-black/40 hover:bg-white/20 rounded-full transition-colors text-white"
+                aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
+              >
+                {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
               </button>
               <Link href="/cart" className="relative p-1.5 hover:bg-white/20 rounded-full">
                 <ShoppingBag className="w-5 h-5 text-white" />
@@ -199,7 +206,7 @@ export function ReelViewerModal({
                   className="w-full h-full object-cover select-none"
                   autoPlay
                   loop
-                  muted
+                  muted={isMuted}
                   playsInline
                   preload="auto"
                   controls

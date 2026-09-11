@@ -88,15 +88,25 @@ export function ShoppableReelsSection() {
               onClick={() => setActiveReelIndex(index)}
               className="group relative aspect-9/16 rounded-3xl overflow-hidden bg-neutral-900 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              <Image
-                src={withVariant(reel.posterImage, 'medium')}
-                alt={reel.title}
-                fill
-                loading="lazy"
-                sizes="(max-width: 640px) 50vw, 25vw"
-                unoptimized={isLocalOrPlaceholder(reel.posterImage)}
-                className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-              />
+              {reel.videoUrl ? (
+                <video
+                  src={`${reel.videoUrl}#t=0.001`}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 pointer-events-none"
+                />
+              ) : (
+                <Image
+                  src={withVariant(reel.posterImage, 'medium')}
+                  alt={reel.title}
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 50vw, 25vw"
+                  unoptimized={isLocalOrPlaceholder(reel.posterImage)}
+                  className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+                />
+              )}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
               <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 z-10 shadow-xs">
                 <Play className="w-4 h-4 fill-white ml-0.5" />

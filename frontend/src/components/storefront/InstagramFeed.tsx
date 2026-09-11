@@ -287,14 +287,24 @@ export function InstagramFeed() {
               onClick={() => setSelectedReelIndex(index)}
               className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left cursor-pointer"
             >
-              <Image
-                src={reel.posterImage}
-                alt={reel.title}
-                fill
-                loading="lazy"
-                sizes="(max-width: 640px) 50vw, 33vw"
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-              />
+              {isVideo && reel.videoUrl ? (
+                <video
+                  src={`${reel.videoUrl}#t=0.001`}
+                  preload="metadata"
+                  muted
+                  playsInline
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+                />
+              ) : (
+                <Image
+                  src={reel.posterImage}
+                  alt={reel.title}
+                  fill
+                  loading="lazy"
+                  sizes="(max-width: 640px) 50vw, 33vw"
+                  className="object-cover group-hover:scale-110 transition-transform duration-500"
+                />
+              )}
 
               {/* Reel Play Badge Icon */}
               <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10 shadow-xs">
