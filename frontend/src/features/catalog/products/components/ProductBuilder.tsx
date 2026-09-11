@@ -1072,13 +1072,25 @@ export default function ProductBuilder({
 
   const deferredPreviewData = useDeferredValue(livePreviewData);
 
-  const dataUrlToBlob = (dataUrl: string): Blob => {
-    const [header, base64] = dataUrl.split(',');
-    const mime = header.match(/data:(.*?);base64/)?.[1] || 'image/png';
-    const binary = atob(base64);
-    const bytes = new Uint8Array(binary.length);
-    for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
-    return new Blob([bytes], { type: mime });
+  const dataUrlToBlob = async (dataUrl: string): Promise<Blob> => {
+    try {
+      const res = await fetch(dataUrl);
+      return await res.blob();
+    } catch {
+      const parts = dataUrl.split(',');
+      const header = parts[0] || '';
+      const rawData = parts.slice(1).join(',');
+      if (header.includes(';base64')) {
+        const binary = atob(rawData.replace(/\s/g, ''));
+        const bytes = new Uint8Array(binary.length);
+        for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+        const mime = header.match(/data:(.*?);base64/)?.[1] || 'image/png';
+        return new Blob([bytes], { type: mime });
+      }
+      const decoded = decodeURIComponent(rawData);
+      const mime = header.match(/data:(.*?);/)?.[1] || 'image/svg+xml';
+      return new Blob([decoded], { type: mime });
+    }
   };
 
   const handleSubmitForm = async (values: ProductFormValues) => {
@@ -1101,10 +1113,14 @@ export default function ProductBuilder({
       // If a custom card cover image is uploaded (base64 data URL), upload it to server first
       let finalCardCoverUrl = productCardImageUrl;
       if (productCardImageUrl && productCardImageUrl.startsWith('data:')) {
-        const blob = dataUrlToBlob(productCardImageUrl);
-        const uploadedCard = await productService.uploadImage(blob, `card-cover-${Date.now()}.png`);
-        finalCardCoverUrl = uploadedCard.url;
-        setProductCardImageUrl(finalCardCoverUrl);
+        try {
+          const blob = await dataUrlToBlob(productCardImageUrl);
+          const uploadedCard = await productService.uploadImage(blob, `card-cover-${Date.now()}.png`);
+          finalCardCoverUrl = uploadedCard.url;
+          setProductCardImageUrl(finalCardCoverUrl);
+        } catch (e) {
+          console.warn('Failed to upload card cover image:', e);
+        }
       }
 
       // Organisation lives outside the react-hook-form schema, so merge it in.
@@ -1161,16 +1177,27 @@ export default function ProductBuilder({
         const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
         for (const img of groupImages) {
           let url = img;
-          if (img.startsWith('data:')) {
-            const blob = dataUrlToBlob(img);
-            const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
-            url = uploaded.url;
-          }
 
-          // If image already exists in database, skip re-calling addMedia!
+          // If image already exists in database, skip re-calling addMedia and re-uploading!
           const existingId = existingMediaMap.get(url);
           if (existingId) {
             mediaIdsByGroup[group.id].push(existingId);
+            continue;
+          }
+
+          if (img.startsWith('data:')) {
+            try {
+              const blob = await dataUrlToBlob(img);
+              const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
+              url = uploaded.url;
+            } catch (e) {
+              console.warn('Failed to upload image blob:', e);
+            }
+          }
+
+          const uploadedExistingId = existingMediaMap.get(url);
+          if (uploadedExistingId) {
+            mediaIdsByGroup[group.id].push(uploadedExistingId);
             continue;
           }
 
