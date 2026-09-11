@@ -355,7 +355,13 @@ export function useCustomerSearch(q: string) {
 export function useCustomerReels() {
   return useQuery({
     queryKey: ['customer', 'reels'],
-    queryFn: async (): Promise<{ data: unknown[] }> => ({ data: [] }),
+    queryFn: async (): Promise<{ data: unknown[] }> => {
+      // Import socialService dynamically to avoid circular deps
+      const { socialService } = await import('@/features/social/social.service');
+      const result = await socialService.getPublicReels();
+      return { data: result?.data || [] };
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 

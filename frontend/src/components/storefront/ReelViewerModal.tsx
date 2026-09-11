@@ -208,7 +208,7 @@ export function ReelViewerModal({
                   loop
                   muted={isMuted}
                   playsInline
-                  preload="auto"
+                  preload="metadata"
                   controls
                   onWaiting={() => setIsVideoLoading(true)}
                   onCanPlay={() => setIsVideoLoading(false)}

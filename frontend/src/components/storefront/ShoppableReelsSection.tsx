@@ -70,7 +70,7 @@ export function ShoppableReelsSection() {
         <div>
           <h2 className="text-xl sm:text-2xl font-bold font-serif text-neutral-900 tracking-tight flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-[var(--brand-primary)]" />
-            <span>Instagram Reels & Shoppable Feeds</span>
+            <span>Instagram Reels &amp; Shoppable Feeds</span>
           </h2>
           <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">
             Live social commerce feed from the catalog
@@ -78,58 +78,60 @@ export function ShoppableReelsSection() {
         </div>
       </div>
 
-      {isLoading && <p className="text-sm text-neutral-500">Loading reels…</p>}
+      {isLoading && (
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="aspect-9/16 rounded-3xl bg-neutral-200 animate-pulse" />
+          ))}
+        </div>
+      )}
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6">
         {reels.map((reel, index) => {
+          /* Always render a lightweight Image poster — never a <video> tag in the grid.
+             Videos are only loaded inside the ReelViewerModal on user click. */
+          const posterSrc = reel.posterImage && !reel.posterImage.endsWith('.mp4') && !reel.posterImage.includes('/videos/')
+            ? reel.posterImage
+            : reel.taggedProducts?.[0]?.image || PLACEHOLDER_IMAGE;
+
           return (
             <div
               key={reel.id}
               onClick={() => setActiveReelIndex(index)}
               className="group relative aspect-9/16 rounded-3xl overflow-hidden bg-neutral-900 cursor-pointer shadow-md hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              {reel.videoUrl ? (
-                <video
-                  src={`${reel.videoUrl}#t=0.001`}
-                  preload="metadata"
-                  muted
-                  playsInline
-                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 pointer-events-none"
-                />
-              ) : (
-                <Image
-                  src={withVariant(reel.posterImage, 'medium')}
-                  alt={reel.title}
-                  fill
-                  loading="lazy"
-                  sizes="(max-width: 640px) 50vw, 25vw"
-                  unoptimized={isLocalOrPlaceholder(reel.posterImage)}
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
-                />
-              )}
+              <Image
+                src={withVariant(posterSrc, 'medium')}
+                alt={reel.title}
+                fill
+                loading={index < 2 ? 'eager' : 'lazy'}
+                sizes="(max-width: 640px) 50vw, 25vw"
+                unoptimized={isLocalOrPlaceholder(posterSrc)}
+                className="object-cover group-hover:scale-105 transition-transform duration-700 opacity-90 group-hover:opacity-100"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
               <div className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white border border-white/30 z-10 shadow-xs">
                 <Play className="w-4 h-4 fill-white ml-0.5" />
               </div>
-            <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 text-white">
-              <h3 className="text-xs font-semibold line-clamp-2 leading-snug drop-shadow-xs">
-                {reel.caption || reel.title}
-              </h3>
-              <div className="flex items-center gap-3 text-[10px] text-white/80 font-medium pt-1">
-                <div className="flex items-center gap-1">
-                  <Heart className="w-3 h-3 fill-sky-500 text-sky-500" />
-                  <span>{reel.likes}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <MessageCircle className="w-3 h-3 text-white" />
-                  <span>{reel.comments}</span>
+              <div className="absolute bottom-0 left-0 right-0 p-4 space-y-2 text-white">
+                <h3 className="text-xs font-semibold line-clamp-2 leading-snug drop-shadow-xs">
+                  {reel.caption || reel.title}
+                </h3>
+                <div className="flex items-center gap-3 text-[10px] text-white/80 font-medium pt-1">
+                  <div className="flex items-center gap-1">
+                    <Heart className="w-3 h-3 fill-sky-500 text-sky-500" />
+                    <span>{reel.likes}</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <MessageCircle className="w-3 h-3 text-white" />
+                    <span>{reel.comments}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
 
       {activeReelIndex !== null && (
         <ReelViewerModal
