@@ -156,11 +156,36 @@ export class StorageServeController {
         svg: 'image/svg+xml',
         pdf: 'application/pdf',
         mp4: 'video/mp4',
+        webm: 'video/webm',
+        mov: 'video/quicktime',
+        m4v: 'video/x-m4v',
       };
 
+      const contentType = mimeTypes[ext] ?? 'application/octet-stream';
+      const totalLength = buffer.length;
+      const range = req.headers.range;
+
+      if (range) {
+        const parts = range.replace(/bytes=/, '').split('-');
+        const start = parseInt(parts[0], 10) || 0;
+        const end = parts[1] ? parseInt(parts[1], 10) : totalLength - 1;
+        const chunkSize = end - start + 1;
+        const chunk = buffer.subarray(start, end + 1);
+
+        res.status(206).set({
+          'Content-Range': `bytes ${start}-${end}/${totalLength}`,
+          'Accept-Ranges': 'bytes',
+          'Content-Length': String(chunkSize),
+          'Content-Type': contentType,
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        });
+        return res.send(chunk);
+      }
+
       res.set({
-        'Content-Type': mimeTypes[ext] ?? 'application/octet-stream',
-        'Content-Length': String(buffer.length),
+        'Accept-Ranges': 'bytes',
+        'Content-Type': contentType,
+        'Content-Length': String(totalLength),
         'Cache-Control': 'public, max-age=31536000, immutable',
       });
       return res.send(buffer);
