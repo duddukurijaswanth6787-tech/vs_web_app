@@ -12,6 +12,7 @@ import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
 import { useVariants } from '@/features/catalog/variants/variant.hooks';
 import { inventoryService } from '@/features/inventory/inventory.service';
+import { useInventoryList } from '@/features/inventory/inventory.hooks';
 import { getApiBaseUrl, getStoredAccessToken } from '@/lib/api/client';
 import { attributeService } from '@/features/catalog/attributes/attribute.service';
 import { useAttributes } from '@/features/catalog/attributes/attribute.hooks';
@@ -540,8 +541,23 @@ export default function ProductBuilder({
     return groups;
   });
 
-  // Fetch existing product variants when editing to reconstruct ONLY kept sizes
+  // Fetch existing product variants and live inventory when editing to reconstruct ONLY kept sizes with accurate stock
   const { data: fetchedVariantsData } = useVariants(productId ? { productId, limit: 100 } : {});
+  const { data: inventoryListData } = useInventoryList({ limit: 100 });
+
+  const inventoryMap = useMemo(() => {
+    const map = new Map<string, { availableQuantity: number; minimumStock?: number; reorderLevel?: number }>();
+    (inventoryListData?.data || []).forEach((inv) => {
+      if (inv.variantId) {
+        map.set(inv.variantId, {
+          availableQuantity: inv.availableQuantity,
+          minimumStock: inv.minimumStock,
+          reorderLevel: inv.reorderLevel,
+        });
+      }
+    });
+    return map;
+  }, [inventoryListData]);
 
   useEffect(() => {
     if (!productId || !fetchedVariantsData?.data) return;
@@ -550,13 +566,16 @@ export default function ProductBuilder({
 
     // Auto-populate barcode stickers panel for existing product variants
     const pName = (initialData?.name || methods.getValues('name') || 'Product').toString();
-    const existingIssued: IssuedVariant[] = variants.map((v) => ({
-      sku: v.sku,
-      barcode: v.barcode || v.sku,
-      title: v.title || pName,
-      stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
-      price: v.priceOverride ? Number(v.priceOverride) : Number(methods.getValues('salePrice') || methods.getValues('basePrice') || 0),
-    }));
+    const existingIssued: IssuedVariant[] = variants.map((v) => {
+      const inv = inventoryMap.get(v.id);
+      return {
+        sku: v.sku,
+        barcode: v.barcode || v.sku,
+        title: v.title || pName,
+        stock: inv?.availableQuantity ?? 10,
+        price: v.priceOverride ? Number(v.priceOverride) : Number(methods.getValues('salePrice') || methods.getValues('basePrice') || 0),
+      };
+    });
     setIssuedVariants(existingIssued);
     setLabelQtyBySku(Object.fromEntries(existingIssued.map((v) => [v.sku, Math.max(1, v.stock || 1)])));
 
@@ -576,9 +595,12 @@ export default function ProductBuilder({
         const keptSizes = matchingForColor.map((v) => {
           const parts = (v.title || '').split('/').map((s) => s.trim());
           const sz = parts[1] || 'Free Size';
+          const inv = inventoryMap.get(v.id);
           return {
             size: sz,
-            stock: (v as unknown as { availableQuantity?: number }).availableQuantity ?? 10,
+            stock: inv?.availableQuantity ?? 10,
+            minStock: inv?.minimumStock ?? 5,
+            reorderLevel: inv?.reorderLevel ?? 10,
             available: true,
             sku: v.sku || `${colorCode}-${sz}`,
           };
@@ -590,7 +612,7 @@ export default function ProductBuilder({
         };
       });
     });
-  }, [productId, fetchedVariantsData, initialData?.name, methods]);
+  }, [productId, fetchedVariantsData, inventoryMap, initialData?.name, methods]);
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
