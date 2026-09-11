@@ -29,6 +29,25 @@ export interface S3StorageInfo {
   totalSizeMB: number;
   totalSizeGB: number;
   storageClass: string;
+  // Estimated monthly costs
+  monthlyStorageCostUSD: number;
+  monthlyRequestsCostUSD: number;
+  monthlyTotalCostUSD: number;
+  // Free Tier Status
+  freeTierLimitGB: number;
+  freeTierUsedGB: number;
+  freeTierRemainingGB: number;
+  isUnderFreeTier: boolean;
+  ratePerGB: number;
+}
+
+export interface ProjectSpendAttribution {
+  projectName: string;
+  s3MediaCostUSD: number;
+  dataTransferCostUSD: number;
+  estimatedMonthlyCostUSD: number;
+  coveredByCreditsOrFreeTier: boolean;
+  activeMediaBucket: string;
 }
 
 export interface AwsBillingSummaryResponse {
@@ -40,6 +59,7 @@ export interface AwsBillingSummaryResponse {
   currency: string;
   totalSpend: number;
   forecastedSpend: number;
+  projectSpend: ProjectSpendAttribution;
   credits: AwsCreditsInfo;
   s3Storage: S3StorageInfo;
   serviceBreakdown: AwsBillingServiceBreakdown[];
@@ -214,6 +234,19 @@ export class AwsBillingService {
     const s3TotalSizeMB = Math.round((s3TotalSizeBytes / (1024 * 1024)) * 100) / 100;
     const s3TotalSizeGB = Math.round((s3TotalSizeBytes / (1024 * 1024 * 1024)) * 1000) / 1000;
 
+    // AWS ap-south-2 S3 pricing: $0.023 / GB/month
+    const ratePerGB = 0.023;
+    const freeTierLimitGB = 5.0;
+    const freeTierUsedGB = Math.min(freeTierLimitGB, s3TotalSizeGB);
+    const freeTierRemainingGB = Math.max(0, Math.round((freeTierLimitGB - s3TotalSizeGB) * 100) / 100);
+    const isUnderFreeTier = s3TotalSizeGB <= freeTierLimitGB;
+
+    const billableGB = Math.max(0, s3TotalSizeGB - freeTierLimitGB);
+    const monthlyStorageCostUSD = Math.round(billableGB * ratePerGB * 100) / 100;
+    // Estimated API operations cost ($0.005 / 1000 PUT/POST, $0.0004 / 1000 GET)
+    const monthlyRequestsCostUSD = Math.round((s3ObjectCount * 0.000005) * 100) / 100;
+    const monthlyTotalCostUSD = Math.round((monthlyStorageCostUSD + monthlyRequestsCostUSD) * 100) / 100;
+
     const s3StorageInfo: S3StorageInfo = {
       bucket: this.bucket,
       region: this.region,
@@ -222,6 +255,23 @@ export class AwsBillingService {
       totalSizeMB: s3TotalSizeMB,
       totalSizeGB: s3TotalSizeGB,
       storageClass: 'Standard S3 (SSE-S3 AES-256)',
+      monthlyStorageCostUSD,
+      monthlyRequestsCostUSD,
+      monthlyTotalCostUSD,
+      freeTierLimitGB,
+      freeTierUsedGB,
+      freeTierRemainingGB,
+      isUnderFreeTier,
+      ratePerGB,
+    };
+
+    const projectSpend: ProjectSpendAttribution = {
+      projectName: "Vasanthi's Signature Web Platform & POS",
+      s3MediaCostUSD: monthlyTotalCostUSD,
+      dataTransferCostUSD: 0.0, // First 100GB/mo is free on AWS
+      estimatedMonthlyCostUSD: monthlyTotalCostUSD,
+      coveredByCreditsOrFreeTier: true,
+      activeMediaBucket: this.bucket,
     };
 
     // Calculate Credit remaining and expiry status
@@ -340,6 +390,7 @@ export class AwsBillingService {
         currency,
         totalSpend: Math.round(totalSpend * 100) / 100,
         forecastedSpend,
+        projectSpend,
         credits: calculateCredits(totalSpend),
         s3Storage: s3StorageInfo,
         serviceBreakdown,
@@ -363,6 +414,7 @@ export class AwsBillingService {
         currency: 'USD',
         totalSpend: estimatedSpend,
         forecastedSpend: estimatedSpend,
+        projectSpend,
         credits: calculateCredits(estimatedSpend),
         s3Storage: s3StorageInfo,
         serviceBreakdown: [
@@ -373,7 +425,7 @@ export class AwsBillingService {
           },
           {
             serviceName: `Amazon Simple Storage Service (S3) - ${this.bucket} (${s3ObjectCount} items, ${s3TotalSizeMB} MB)`,
-            amount: 0.0,
+            amount: monthlyTotalCostUSD,
             currency: 'USD',
           },
           {

@@ -21,6 +21,11 @@ import {
   X,
   Save,
   Info,
+  Layers,
+  Sparkles,
+  Calculator,
+  ArrowUpRight,
+  DollarSign,
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 
@@ -50,6 +55,23 @@ interface S3StorageInfo {
   totalSizeMB: number;
   totalSizeGB: number;
   storageClass: string;
+  monthlyStorageCostUSD: number;
+  monthlyRequestsCostUSD: number;
+  monthlyTotalCostUSD: number;
+  freeTierLimitGB: number;
+  freeTierUsedGB: number;
+  freeTierRemainingGB: number;
+  isUnderFreeTier: boolean;
+  ratePerGB: number;
+}
+
+interface ProjectSpendAttribution {
+  projectName: string;
+  s3MediaCostUSD: number;
+  dataTransferCostUSD: number;
+  estimatedMonthlyCostUSD: number;
+  coveredByCreditsOrFreeTier: boolean;
+  activeMediaBucket: string;
 }
 
 interface AwsBillingData {
@@ -61,6 +83,7 @@ interface AwsBillingData {
   currency: string;
   totalSpend: number;
   forecastedSpend: number;
+  projectSpend?: ProjectSpendAttribution;
   credits?: AwsCreditsInfo;
   s3Storage?: S3StorageInfo;
   serviceBreakdown: AwsServiceBreakdown[];
@@ -81,6 +104,12 @@ export default function AwsBillingPage() {
   const [savingCredits, setSavingCredits] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [syncSuccessMsg, setSyncSuccessMsg] = useState<string | null>(null);
+
+  // Tab Scope: 'project' | 'account'
+  const [activeTab, setActiveTab] = useState<'project' | 'account'>('project');
+
+  // Interactive Calculator State
+  const [simulatedMediaGB, setSimulatedMediaGB] = useState<number>(10);
 
   // Edit Credits Modal state
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -185,7 +214,30 @@ export default function AwsBillingPage() {
     totalSizeMB: 0,
     totalSizeGB: 0,
     storageClass: 'Standard S3 (SSE-S3 AES-256)',
+    monthlyStorageCostUSD: 0.0,
+    monthlyRequestsCostUSD: 0.0,
+    monthlyTotalCostUSD: 0.0,
+    freeTierLimitGB: 5.0,
+    freeTierUsedGB: 0.0,
+    freeTierRemainingGB: 5.0,
+    isUnderFreeTier: true,
+    ratePerGB: 0.023,
   };
+
+  const projectSpend = data?.projectSpend || {
+    projectName: "Vasanthi's Signature Web Platform & POS",
+    s3MediaCostUSD: s3Info.monthlyTotalCostUSD || 0.0,
+    dataTransferCostUSD: 0.0,
+    estimatedMonthlyCostUSD: s3Info.monthlyTotalCostUSD || 0.0,
+    coveredByCreditsOrFreeTier: true,
+    activeMediaBucket: s3Info.bucket,
+  };
+
+  // Cost simulator calculations
+  const simBillableGB = Math.max(0, simulatedMediaGB - 5.0);
+  const simStorageCost = simBillableGB * 0.023;
+  const simRequestsCost = 0.05;
+  const simTotalEstimated = simStorageCost + simRequestsCost;
 
   return (
     <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -194,13 +246,13 @@ export default function AwsBillingPage() {
         <div>
           <div className="flex items-center gap-2">
             <Cloud className="w-7 h-7 text-amber-500" />
-            <h1 className="text-2xl font-black text-neutral-900 font-sans tracking-tight">AWS Billing & Credits</h1>
+            <h1 className="text-2xl font-black text-neutral-900 font-sans tracking-tight">AWS Billing & Spend Intelligence</h1>
             <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
               <ShieldCheck className="w-3.5 h-3.5" /> S3 Storage Active
             </span>
           </div>
           <p className="text-xs text-neutral-500 mt-1">
-            Real-time AWS Cloud infrastructure cost tracking, free promotional credits balance, and S3 media storage monitor.
+            Real-time AWS Cloud infrastructure cost tracking, project vs account attribution, promotional credits burndown, and live S3 storage estimates.
           </p>
         </div>
 
@@ -240,6 +292,35 @@ export default function AwsBillingPage() {
         </div>
       )}
 
+      {/* View Filter Scope Switcher */}
+      <div className="flex border-b border-neutral-200 space-x-4">
+        <button
+          type="button"
+          onClick={() => setActiveTab('project')}
+          className={`pb-3 text-xs font-bold transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
+            activeTab === 'project'
+              ? 'border-[#0284c7] text-[#0284c7]'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          <Sparkles className="w-4 h-4" />
+          <span>This Website & Project Only (Vasanthi&apos;s Signature)</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab('account')}
+          className={`pb-3 text-xs font-bold transition-all flex items-center gap-2 border-b-2 cursor-pointer ${
+            activeTab === 'account'
+              ? 'border-[#0284c7] text-[#0284c7]'
+              : 'border-transparent text-neutral-500 hover:text-neutral-800'
+          }`}
+        >
+          <Layers className="w-4 h-4" />
+          <span>Overall AWS Account (All Services & Infrastructure)</span>
+        </button>
+      </div>
+
       {loading ? (
         <div className="bg-white p-12 rounded-2xl border border-neutral-200 text-center space-y-3">
           <RefreshCw className="w-8 h-8 text-neutral-400 animate-spin mx-auto" />
@@ -254,7 +335,7 @@ export default function AwsBillingPage() {
               <div className="flex justify-between items-center text-emerald-200">
                 <span className="text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5">
                   <Gift className="w-4 h-4 text-emerald-400" />
-                  <span>AWS Credits Balance</span>
+                  <span>Remaining Credits</span>
                 </span>
                 <span className="text-[10px] bg-emerald-500/20 border border-emerald-400/40 text-emerald-300 px-2 py-0.5 rounded-full font-bold">
                   {credits.status}
@@ -285,50 +366,184 @@ export default function AwsBillingPage() {
               </div>
             </div>
 
-            {/* Card 2: Current Month Spend */}
+            {/* Card 2: Spend Card (Contextual based on Active Tab) */}
             <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
               <div className="flex justify-between items-center text-neutral-500">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Current Month Spend</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">
+                  {activeTab === 'project' ? "This Project's Spend" : 'Overall AWS Spend'}
+                </span>
                 <CreditCard className="w-4 h-4 text-amber-500" />
               </div>
               <div className="text-2xl font-black text-neutral-900 font-mono">
-                ${data?.totalSpend?.toFixed(2) ?? '0.00'}{' '}
-                <span className="text-xs font-normal text-neutral-400">USD</span>
-              </div>
-              <p className="text-[11px] text-neutral-400">
-                Period: {data?.period?.start || 'Start of month'} to {data?.period?.end || 'Present'}
-              </p>
-            </div>
-
-            {/* Card 3: Forecasted Month Spend */}
-            <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
-              <div className="flex justify-between items-center text-neutral-500">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">Forecasted Month End</span>
-                <TrendingUp className="w-4 h-4 text-sky-500" />
-              </div>
-              <div className="text-2xl font-black text-neutral-900 font-mono">
-                ${data?.forecastedSpend?.toFixed(2) ?? '0.00'}{' '}
+                ${activeTab === 'project' ? projectSpend.estimatedMonthlyCostUSD.toFixed(2) : data?.totalSpend?.toFixed(2) ?? '0.00'}{' '}
                 <span className="text-xs font-normal text-neutral-400">USD</span>
               </div>
               <p className="text-[11px] text-emerald-600 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Fully Covered by Credits
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>{s3Info.isUnderFreeTier ? '100% Free Tier Covered' : 'Deducted from AWS Credits'}</span>
               </p>
             </div>
 
-            {/* Card 4: S3 Media Storage */}
+            {/* Card 3: S3 Storage Volume & Capacity */}
             <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
               <div className="flex justify-between items-center text-neutral-500">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">AWS S3 Media Storage</span>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">S3 Stored Media</span>
                 <Database className="w-4 h-4 text-indigo-500" />
               </div>
-              <div className="text-lg font-bold text-neutral-900 truncate font-mono">
-                {s3Info.bucket}
+              <div className="text-2xl font-black text-neutral-900 font-mono">
+                {s3Info.totalSizeMB}{' '}
+                <span className="text-xs font-normal text-neutral-400">MB ({s3Info.totalSizeGB} GB)</span>
               </div>
-              <div className="flex items-center justify-between text-[11px] text-neutral-500 pt-0.5">
-                <span className="bg-neutral-100 px-2 py-0.5 rounded font-mono text-neutral-700">
-                  {s3Info.objectCount} items ({s3Info.totalSizeMB} MB)
+              <p className="text-[11px] text-neutral-500">
+                {s3Info.objectCount} active files in <code className="font-mono text-[10px] bg-neutral-100 px-1 py-0.5 rounded">{s3Info.bucket}</code>
+              </p>
+            </div>
+
+            {/* Card 4: S3 Monthly Estimated Cost */}
+            <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-2xs space-y-2">
+              <div className="flex justify-between items-center text-neutral-500">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-neutral-400">S3 Monthly Rate & Cost</span>
+                <DollarSign className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-black text-neutral-900 font-mono">
+                ${s3Info.monthlyTotalCostUSD.toFixed(2)}{' '}
+                <span className="text-xs font-normal text-neutral-400">USD / mo</span>
+              </div>
+              <p className="text-[11px] text-neutral-400">
+                Rate: $0.023 / GB in <span className="font-semibold text-neutral-600">ap-south-2</span>
+              </p>
+            </div>
+          </div>
+
+          {/* S3 Storage Deep Dive & Free Tier Progress */}
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Left 2 Cols: Storage Breakdown & Project Attribution */}
+            <div className="lg:col-span-2 bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-5">
+              <div className="flex justify-between items-center border-b border-neutral-100 pb-3">
+                <div className="flex items-center gap-2">
+                  <HardDrive className="w-4 h-4 text-[#0284c7]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                    S3 Media Storage Cost & Capacity Breakdown
+                  </h3>
+                </div>
+                <span className="px-2.5 py-0.5 text-[10px] font-bold uppercase rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                  {s3Info.isUnderFreeTier ? 'Within 5GB Free Tier' : 'Billable Storage'}
                 </span>
-                <span className="text-emerald-600 font-semibold">{s3Info.region}</span>
+              </div>
+
+              {/* Free tier progress bar */}
+              <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200/80 space-y-2">
+                <div className="flex justify-between items-center text-xs">
+                  <span className="font-semibold text-neutral-800 flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>AWS 5 GB Standard Storage Free Tier Meter</span>
+                  </span>
+                  <span className="font-mono font-bold text-neutral-700">
+                    {s3Info.totalSizeGB.toFixed(3)} GB / {s3Info.freeTierLimitGB.toFixed(1)} GB ({((s3Info.totalSizeGB / s3Info.freeTierLimitGB) * 100).toFixed(1)}%)
+                  </span>
+                </div>
+                <div className="w-full bg-neutral-200 rounded-full h-2.5 overflow-hidden">
+                  <div
+                    className="bg-[#0284c7] h-full rounded-full transition-all duration-500"
+                    style={{ width: `${Math.min(100, Math.max(3, (s3Info.totalSizeGB / s3Info.freeTierLimitGB) * 100))}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-[11px] text-neutral-500">
+                  <span>Free Tier Remaining: {s3Info.freeTierRemainingGB.toFixed(3)} GB</span>
+                  <span className="text-emerald-600 font-semibold">$0.00 Incurred</span>
+                </div>
+              </div>
+
+              {/* Storage Itemized Table */}
+              <div className="divide-y divide-neutral-100 text-xs">
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">Target Media Bucket</span>
+                  <span className="font-mono font-semibold text-neutral-900">{s3Info.bucket}</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">AWS Primary Region</span>
+                  <span className="font-semibold text-neutral-900">{s3Info.region} (Hyderabad, India)</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">Total Media Assets</span>
+                  <span className="font-mono font-semibold text-neutral-900">{s3Info.objectCount} product images & banners</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">Total Stored Data</span>
+                  <span className="font-mono font-semibold text-neutral-900">{s3Info.totalSizeMB} MB ({s3Info.totalSizeGB} GB)</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">Storage Cost Rate</span>
+                  <span className="font-mono font-semibold text-neutral-900">$0.023 / GB-month</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center">
+                  <span className="text-neutral-500 font-medium">PUT / GET API Request Cost</span>
+                  <span className="font-mono font-semibold text-neutral-900">$0.005 / 1,000 PUTs ($0.00 within free tier)</span>
+                </div>
+                <div className="py-2.5 flex justify-between items-center bg-emerald-50/50 p-2.5 rounded-lg">
+                  <span className="text-emerald-900 font-bold">Estimated Total Monthly S3 Cost</span>
+                  <span className="font-mono font-bold text-emerald-800 text-sm">${s3Info.monthlyTotalCostUSD.toFixed(2)} USD (Covered by Credits)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Col: Interactive Future Storage Cost Calculator */}
+            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
+              <div className="flex items-center gap-2 border-b border-neutral-100 pb-3">
+                <Calculator className="w-4 h-4 text-[#0284c7]" />
+                <h3 className="text-xs font-bold uppercase tracking-wider text-neutral-900">
+                  Future Storage Cost Simulator
+                </h3>
+              </div>
+              <p className="text-xs text-neutral-500">
+                Estimate how much AWS S3 will cost as your product catalog and high-resolution media library expands.
+              </p>
+
+              <div className="space-y-3 pt-1">
+                <div>
+                  <div className="flex justify-between text-xs font-semibold text-neutral-700 mb-1">
+                    <span>Projected Media Size:</span>
+                    <span className="font-mono font-bold text-[#0284c7]">{simulatedMediaGB} GB (~{Math.round(simulatedMediaGB * 350)} Photos)</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="1"
+                    max="500"
+                    step="5"
+                    value={simulatedMediaGB}
+                    onChange={(e) => setSimulatedMediaGB(Number(e.target.value))}
+                    className="w-full h-2 bg-neutral-200 rounded-lg appearance-none cursor-pointer accent-[#0284c7]"
+                  />
+                  <div className="flex justify-between text-[10px] text-neutral-400 mt-1">
+                    <span>1 GB</span>
+                    <span>100 GB</span>
+                    <span>250 GB</span>
+                    <span>500 GB</span>
+                  </div>
+                </div>
+
+                <div className="bg-neutral-50 p-4 rounded-xl border border-neutral-200/80 space-y-2 text-xs">
+                  <div className="flex justify-between text-neutral-600">
+                    <span>Free Tier Deduction:</span>
+                    <span className="font-mono text-emerald-600 font-semibold">-5.00 GB Free</span>
+                  </div>
+                  <div className="flex justify-between text-neutral-600">
+                    <span>Billable Storage:</span>
+                    <span className="font-mono font-semibold">{simBillableGB.toFixed(1)} GB</span>
+                  </div>
+                  <div className="flex justify-between text-neutral-600">
+                    <span>S3 Storage Rate:</span>
+                    <span className="font-mono">$0.023 / GB</span>
+                  </div>
+                  <div className="flex justify-between border-t border-neutral-200 pt-2 font-bold text-neutral-900">
+                    <span>Estimated Monthly Cost:</span>
+                    <span className="font-mono text-[#0284c7] text-sm">${simTotalEstimated.toFixed(2)} USD</span>
+                  </div>
+                </div>
+
+                <div className="text-[11px] text-neutral-400 leading-relaxed bg-amber-50/50 p-3 rounded-xl border border-amber-200/50 text-amber-900">
+                  💡 Even at <strong>50 GB</strong> (over 15,000 product images), your monthly S3 cost is only <strong>~$1.04/month</strong>, which is 100% absorbed by your AWS credits.
+                </div>
               </div>
             </div>
           </div>
@@ -406,7 +621,7 @@ export default function AwsBillingPage() {
             )}
           </div>
 
-          {/* Infrastructure Health & Storage Specifications */}
+          {/* Cloud Infrastructure Summary */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {/* Storage Specification Card */}
             <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
@@ -481,9 +696,11 @@ export default function AwsBillingPage() {
           <div className="bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
             <div className="p-5 border-b border-neutral-100 flex justify-between items-center">
               <div>
-                <h3 className="font-bold text-neutral-900 text-xs uppercase tracking-wider">AWS Services Usage & Cost Breakdown</h3>
+                <h3 className="font-bold text-neutral-900 text-xs uppercase tracking-wider">
+                  {activeTab === 'project' ? "Project Services Cost Allocation" : "Overall AWS Services Breakdown"}
+                </h3>
                 <p className="text-2xs text-neutral-400 mt-0.5">
-                  Breakdown of AWS hosting, image storage, and network transfer costs.
+                  Itemized AWS hosting, image storage, and network transfer costs.
                 </p>
               </div>
               {data?.lastSyncedAt && (
@@ -519,7 +736,7 @@ export default function AwsBillingPage() {
                         <span className="text-2xs font-normal text-neutral-400">{item.currency}</span>
                       </p>
                       <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-emerald-600">
-                        <CheckCircle2 className="w-3 h-3" /> Covered by Credits
+                        <CheckCircle2 className="w-3 h-3" /> Covered by Credits / Free Tier
                       </span>
                     </div>
                   </div>
