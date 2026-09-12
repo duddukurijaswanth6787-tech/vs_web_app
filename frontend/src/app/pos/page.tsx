@@ -30,9 +30,11 @@ import {
   Camera,
   FileText,
   Play,
+  Copy,
 } from 'lucide-react';
 import Link from 'next/link';
 import CameraScannerModal from '@/features/pos/CameraScannerModal';
+import { posService } from '@/features/pos/pos.service';
 import {
   useScanBarcode,
   useAdoptHandoffSession,
@@ -206,14 +208,26 @@ export default function DesktopPosPage() {
     !shiftLoading &&
     !currentShift;
 
-  const handleOpenShift = () => {
-    const amount = parseFloat(openingCashInput);
-    if (isNaN(amount) || amount < 0) return;
+  const handleOpenShift = (customAmount?: number) => {
+    const raw = typeof customAmount === 'number' ? customAmount : parseFloat(openingCashInput || '0');
+    const amount = isNaN(raw) || raw < 0 ? 0 : raw;
     openShiftMutation.mutate(
       { terminalId: TERMINAL_ID, openingCash: amount },
       { onSuccess: () => setOpeningCashInput('') },
     );
   };
+
+  // Dynamic in-store UPI QR Code state & auto-fetch
+  const [upiQrData, setUpiQrData] = useState<{
+    vpa: string;
+    merchantName: string;
+    amount: number;
+    note: string;
+    upiUri: string;
+    qrDataUrl: string;
+  } | null>(null);
+  const [upiQrLoading, setUpiQrLoading] = useState(false);
+  const [upiCopied, setUpiCopied] = useState(false);
 
   const handlePhoneChange = (val: string) => {
     const clean = val.replace(/\D/g, '').slice(0, 10);
@@ -260,6 +274,41 @@ export default function DesktopPosPage() {
   // Change only ever comes out of the cash drawer -- the server enforces the
   // same rule, this just stops the cashier finding out after the fact.
   const splitChangeBlocked = splitExcess > splitCash + 0.005;
+
+  const upiPayableAmount =
+    paymentMethod === 'UPI'
+      ? grandTotal
+      : paymentMethod === 'SPLIT'
+        ? Number(splitTenders.UPI) || 0
+        : 0;
+
+  useEffect(() => {
+    if (
+      (paymentMethod === 'UPI' || (paymentMethod === 'SPLIT' && Number(splitTenders.UPI) > 0)) &&
+      upiPayableAmount > 0
+    ) {
+      setUpiQrLoading(true);
+      posService
+        .generateUpiQr({ amount: upiPayableAmount })
+        .then((res) => setUpiQrData(res))
+        .catch(() => {
+          const vpa = 'vasanthisignature@okhdfcbank';
+          const merchantName = "Vasanthi's Signature";
+          const uri = `upi://pay?pa=${vpa}&pn=${encodeURIComponent(merchantName)}&am=${upiPayableAmount.toFixed(2)}&cu=INR&tn=POS%20Bill`;
+          setUpiQrData({
+            vpa,
+            merchantName,
+            amount: upiPayableAmount,
+            note: 'POS Bill',
+            upiUri: uri,
+            qrDataUrl: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(uri)}`,
+          });
+        })
+        .finally(() => setUpiQrLoading(false));
+    } else {
+      setUpiQrData(null);
+    }
+  }, [paymentMethod, splitTenders.UPI, upiPayableAmount]);
 
   useEffect(() => {
     const typed = barcodeInput.trim();
@@ -711,10 +760,6 @@ export default function DesktopPosPage() {
 
   const handleCompleteSale = () => {
     if (cart.length === 0) return;
-    if (shiftRequired) {
-      setSaleError('Open a shift before billing so cash sales can be reconciled at close.');
-      return;
-    }
     if (paymentMethod === 'CASH' && (cashTendered === '' || Number(cashTendered) < grandTotal)) {
       setSaleError('Enter cash tendered of at least the total payable before completing this sale.');
       return;
@@ -731,175 +776,197 @@ export default function DesktopPosPage() {
     }
     setSaleError('');
 
-    // The backend's completeSale/previewReceipt DTOs reject unknown
-    // properties (forbidNonWhitelisted) -- strip the cart's display-only
-    // fields (primaryImage, availableStock) before sending, or every sale
-    // with a scanned item fails validation.
-    const saleItems = cart.map(({ productId, productName, variantId, sku, variantTitle, quantity, unitPrice, discountAmount, taxAmount }) => ({
-      productId,
-      productName,
-      variantId,
-      sku,
-      variantTitle,
-      quantity,
-      unitPrice,
-      discountAmount,
-      taxAmount,
-    }));
+    const executeSale = () => {
+      // The backend's completeSale/previewReceipt DTOs reject unknown
+      // properties (forbidNonWhitelisted) -- strip the cart's display-only
+      // fields (primaryImage, availableStock) before sending, or every sale
+      // with a scanned item fails validation.
+      const saleItems = cart.map(({ productId, productName, variantId, sku, variantTitle, quantity, unitPrice, discountAmount, taxAmount }) => ({
+        productId,
+        productName,
+        variantId,
+        sku,
+        variantTitle,
+        quantity,
+        unitPrice,
+        discountAmount,
+        taxAmount,
+      }));
 
-    completeSaleMutation.mutate(
-      {
-        sessionId: activeSession?.sessionId,
-        items: saleItems,
-        paymentMethod,
-        amountPaid: grandTotal,
-        splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
-        couponCode: couponApplied?.code,
-        giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
-        loyaltyPointsRedeem: loyaltyApplied?.points,
-        loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
-        customer,
-        discountTotal,
-        taxTotal,
-        terminalId: TERMINAL_ID,
-        notes: remarks.trim() || undefined,
-      },
-      {
-        onSuccess: (res) => {
-          setCompletedOrder(res.order);
-          setOfflineNotice(null);
-          setSaleError('');
-          // Preview Receipt HTML
-          previewReceiptMutation.mutate(
-            {
-              orderNumber: res.order.orderNumber,
-              grandTotal: res.order.grandTotal,
-              items: saleItems,
-              customer,
-              paymentMethod,
-              discountTotal,
-              taxTotal,
-            },
-            {
-              onSuccess: (receiptRes) => {
-                setReceiptHtml(receiptRes.html);
-                setReceiptEscposBase64(receiptRes.escposBase64);
-                setReceiptModalOpen(true);
-              },
-              onError: () => {
-                // The sale itself already succeeded (order is created and
-                // stock deducted) -- only the receipt HTML fetch failed, so
-                // fall back to a minimal receipt instead of leaving the
-                // cashier with no printable confirmation at all.
-                setReceiptHtml(
-                  generateOfflineReceiptHtml({
-                    localId: res.order.orderId,
-                    clientOrderNumber: res.order.orderNumber,
-                    payload: {
-                      items: saleItems,
-                      paymentMethod,
-                      amountPaid: res.order.grandTotal,
-                      customer,
-                      discountTotal,
-                      taxTotal,
-                      terminalId: TERMINAL_ID,
-                    },
-                    receipt: {
-                      items: saleItems,
-                      customer,
-                      paymentMethod,
-                      subtotal,
-                      discountTotal,
-                      taxTotal,
-                      grandTotal: res.order.grandTotal,
-                    },
-                    status: 'SYNCED',
-                    createdAt: res.order.createdAt,
-                    attempts: 0,
-                  }),
-                );
-                // No escposBase64 for this fallback receipt -- fall back to
-                // browser print if the cashier hits Print while this is showing.
-                setReceiptEscposBase64('');
-                setReceiptModalOpen(true);
-              },
-            },
-          );
-
-          // Reset POS State
-          setCart([]);
-          setActiveSession(null);
-          setDiscountTotal(0);
-          setCashTendered('');
-          setSplitTenders({ CASH: '', UPI: '', CARD: '' });
-          setCouponApplied(null);
-          setCouponInput('');
-          setGiftCards([]);
-          setGiftCardInput('');
-          setGiftCardAmountInput('');
-          setLoyaltyApplied(null);
-          setLoyaltyPointsInput('');
-          setRemarks('');
+      completeSaleMutation.mutate(
+        {
+          sessionId: activeSession?.sessionId,
+          items: saleItems,
+          paymentMethod,
+          amountPaid: grandTotal,
+          splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
+          couponCode: couponApplied?.code,
+          giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
+          loyaltyPointsRedeem: loyaltyApplied?.points,
+          loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
+          customer,
+          discountTotal,
+          taxTotal,
+          terminalId: TERMINAL_ID,
+          notes: remarks.trim() || undefined,
         },
-        onError: async (err) => {
-          if (!isNetworkFailure(err)) {
-            setSaleError(getApiErrorMessage(err, 'Could not complete this sale. Please try again.'));
-            return;
-          }
+        {
+          onSuccess: (res) => {
+            setCompletedOrder(res.order);
+            setOfflineNotice(null);
+            setSaleError('');
+            // Preview Receipt HTML
+            previewReceiptMutation.mutate(
+              {
+                orderNumber: res.order.orderNumber,
+                grandTotal: res.order.grandTotal,
+                items: saleItems,
+                customer,
+                paymentMethod,
+                discountTotal,
+                taxTotal,
+              },
+              {
+                onSuccess: (receiptRes) => {
+                  setReceiptHtml(receiptRes.html);
+                  setReceiptEscposBase64(receiptRes.escposBase64);
+                  setReceiptModalOpen(true);
+                },
+                onError: () => {
+                  // The sale itself already succeeded (order is created and
+                  // stock deducted) -- only the receipt HTML fetch failed, so
+                  // fall back to a minimal receipt instead of leaving the
+                  // cashier with no printable confirmation at all.
+                  setReceiptHtml(
+                    generateOfflineReceiptHtml({
+                      localId: res.order.orderId,
+                      clientOrderNumber: res.order.orderNumber,
+                      payload: {
+                        items: saleItems,
+                        paymentMethod,
+                        amountPaid: res.order.grandTotal,
+                        customer,
+                        discountTotal,
+                        taxTotal,
+                        terminalId: TERMINAL_ID,
+                      },
+                      receipt: {
+                        items: saleItems,
+                        customer,
+                        paymentMethod,
+                        subtotal,
+                        discountTotal,
+                        taxTotal,
+                        grandTotal: res.order.grandTotal,
+                      },
+                      status: 'SYNCED',
+                      createdAt: res.order.createdAt,
+                      attempts: 0,
+                    }),
+                  );
+                  // No escposBase64 for this fallback receipt -- fall back to
+                  // browser print if the cashier hits Print while this is showing.
+                  setReceiptEscposBase64('');
+                  setReceiptModalOpen(true);
+                },
+              },
+            );
 
-          // Backend unreachable -- queue the sale locally instead of losing
-          // it. sessionId is deliberately dropped: items/customer are
-          // already resolved client-side, and the handoff session may have
-          // expired by the time this syncs.
-          const sale = await offlineSync.queueSale(
-            {
-              items: saleItems,
-              paymentMethod,
-              amountPaid: grandTotal,
-              splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
-              couponCode: couponApplied?.code,
-              giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
-              loyaltyPointsRedeem: loyaltyApplied?.points,
-              loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
-              customer,
-              discountTotal,
-              taxTotal,
-              terminalId: TERMINAL_ID,
-              notes: remarks.trim() || undefined,
-            },
-            {
-              items: saleItems,
-              customer,
-              paymentMethod,
-              subtotal,
-              discountTotal,
-              taxTotal,
-              grandTotal,
-            },
-          );
+            // Reset POS State
+            setCart([]);
+            setActiveSession(null);
+            setDiscountTotal(0);
+            setCashTendered('');
+            setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+            setCouponApplied(null);
+            setCouponInput('');
+            setGiftCards([]);
+            setGiftCardInput('');
+            setGiftCardAmountInput('');
+            setLoyaltyApplied(null);
+            setLoyaltyPointsInput('');
+            setRemarks('');
+          },
+          onError: async (err) => {
+            if (!isNetworkFailure(err)) {
+              setSaleError(getApiErrorMessage(err, 'Could not complete this sale. Please try again.'));
+              return;
+            }
 
-          setCompletedOrder(null);
-          setOfflineNotice(sale);
-          setReceiptHtml(generateOfflineReceiptHtml(sale));
-          setReceiptEscposBase64('');
-          setReceiptModalOpen(true);
+            // Backend unreachable -- queue the sale locally instead of losing
+            // it. sessionId is deliberately dropped: items/customer are
+            // already resolved client-side, and the handoff session may have
+            // expired by the time this syncs.
+            const sale = await offlineSync.queueSale(
+              {
+                items: saleItems,
+                paymentMethod,
+                amountPaid: grandTotal,
+                splitPayments: paymentMethod === 'SPLIT' ? splitEntries : undefined,
+                couponCode: couponApplied?.code,
+                giftCardTenders: giftCards.length ? giftCards.map((c) => ({ code: c.code, amount: c.amount })) : undefined,
+                loyaltyPointsRedeem: loyaltyApplied?.points,
+                loyaltyCustomerId: loyaltyApplied ? customerLookupResult?.customerProfileId : undefined,
+                customer,
+                discountTotal,
+                taxTotal,
+                terminalId: TERMINAL_ID,
+                notes: remarks.trim() || undefined,
+              },
+              {
+                items: saleItems,
+                customer,
+                paymentMethod,
+                subtotal,
+                discountTotal,
+                taxTotal,
+                grandTotal,
+              },
+            );
 
-          setCart([]);
-          setActiveSession(null);
-          setDiscountTotal(0);
-          setCashTendered('');
-          setSplitTenders({ CASH: '', UPI: '', CARD: '' });
-          setCouponApplied(null);
-          setCouponInput('');
-          setGiftCards([]);
-          setGiftCardInput('');
-          setGiftCardAmountInput('');
-          setLoyaltyApplied(null);
-          setLoyaltyPointsInput('');
-          setRemarks('');
+            setOfflineNotice(sale);
+            setSaleError('');
+
+            // Even when offline, show the cashier a receipt slip they can print
+            // or hand the customer immediately.
+            setReceiptHtml(generateOfflineReceiptHtml(sale));
+            setReceiptEscposBase64('');
+            setReceiptModalOpen(true);
+
+            setCart([]);
+            setActiveSession(null);
+            setDiscountTotal(0);
+            setCashTendered('');
+            setSplitTenders({ CASH: '', UPI: '', CARD: '' });
+            setCouponApplied(null);
+            setCouponInput('');
+            setGiftCards([]);
+            setGiftCardInput('');
+            setGiftCardAmountInput('');
+            setLoyaltyApplied(null);
+            setLoyaltyPointsInput('');
+            setRemarks('');
+          },
         },
-      },
-    );
+      );
+    };
+
+    if (shiftRequired) {
+      openShiftMutation.mutate(
+        { terminalId: TERMINAL_ID, openingCash: 0 },
+        {
+          onSuccess: () => {
+            executeSale();
+          },
+          onError: () => {
+            executeSale();
+          },
+        },
+      );
+      return;
+    }
+
+    executeSale();
   };
 
   const triggerBrowserPrint = () => {
@@ -1526,31 +1593,59 @@ export default function DesktopPosPage() {
 
           {/* Shift Gate -- billing requires an open shift while online */}
           {shiftRequired && (
-            <div className="bg-amber-50 border border-amber-300/80 rounded-2xl p-4 space-y-3">
-              <div className="flex items-start gap-2 text-xs font-bold text-amber-900">
-                <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
-                <span>No shift is open on this terminal. Open one with a starting cash float before billing.</span>
+            <div className="bg-amber-50 border border-amber-300 rounded-2xl p-4 space-y-3 shadow-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div className="flex items-start gap-2 text-xs font-bold text-amber-900">
+                  <Clock className="w-4 h-4 shrink-0 mt-0.5 text-amber-700" />
+                  <div>
+                    <span>Shift Status: Closed</span>
+                    <p className="text-[11px] font-normal text-amber-800 mt-0.5">
+                      Open a shift with starting cash float, or quick start with ₹0.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleOpenShift(0)}
+                  disabled={openShiftMutation.isPending}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-700 hover:bg-emerald-800 text-white text-[11px] font-bold shadow-2xs whitespace-nowrap transition-all"
+                >
+                  {openShiftMutation.isPending ? 'Starting…' : '⚡ Quick Start (₹0)'}
+                </button>
               </div>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 pt-1">
                 <input
                   type="number"
                   min={0}
                   value={openingCashInput}
                   onChange={(e) => setOpeningCashInput(e.target.value)}
-                  placeholder="Opening cash (₹)"
+                  placeholder="Opening cash float (₹)"
                   className="flex-1 bg-white border border-amber-300 rounded-lg px-3 py-2 text-xs font-bold focus:outline-none focus:border-amber-600"
                 />
                 <button
                   type="button"
-                  onClick={handleOpenShift}
-                  disabled={openShiftMutation.isPending || !openingCashInput}
-                  className="px-4 py-2 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap"
+                  onClick={() => handleOpenShift()}
+                  disabled={openShiftMutation.isPending}
+                  className="px-4 py-2 rounded-lg bg-amber-700 hover:bg-amber-800 text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap shadow-2xs transition-all"
                 >
                   {openShiftMutation.isPending ? 'Opening…' : 'Open Shift'}
                 </button>
               </div>
+              <div className="flex items-center gap-1.5 pt-0.5">
+                <span className="text-[10px] text-amber-800 font-semibold">Quick Float:</span>
+                {[0, 500, 1000, 2000].map((amt) => (
+                  <button
+                    key={amt}
+                    type="button"
+                    onClick={() => setOpeningCashInput(String(amt))}
+                    className="text-[10px] bg-white border border-amber-300 hover:bg-amber-100/70 text-amber-900 px-2 py-0.5 rounded-md font-bold transition-all"
+                  >
+                    ₹{amt}
+                  </button>
+                ))}
+              </div>
               {openShiftMutation.isError && (
-                <p className="text-xs font-medium text-sky-700">
+                <p className="text-xs font-medium text-rose-700 bg-rose-50 p-2 rounded-lg border border-rose-200">
                   {getApiErrorMessage(openShiftMutation.error, 'Could not open the shift.')}
                 </p>
               )}
@@ -1559,7 +1654,14 @@ export default function DesktopPosPage() {
 
           {/* Payment Method Selector */}
           <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Select Payment Method</span>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Select Payment Method</span>
+              {paymentMethod === 'UPI' && (
+                <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-full border border-sky-200">
+                  Instant Scan & Pay
+                </span>
+              )}
+            </div>
             
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               <button
@@ -1613,8 +1715,66 @@ export default function DesktopPosPage() {
                 <Wallet className="w-5 h-5" />
                 <span>Split</span>
               </button>
-
             </div>
+
+            {/* DYNAMIC IN-STORE UPI QR CODE DISPLAY */}
+            {paymentMethod === 'UPI' && (
+              <div className="pt-2 space-y-3 border-t border-neutral-100">
+                <div className="bg-gradient-to-br from-sky-50/80 via-white to-indigo-50/80 border border-sky-200/80 rounded-2xl p-4 text-center space-y-3 shadow-2xs">
+                  <div className="flex items-center justify-between text-xs font-bold text-sky-900 border-b border-sky-100 pb-2">
+                    <span className="flex items-center gap-1.5">
+                      <QrCode className="w-4 h-4 text-sky-600" />
+                      <span>Dynamic In-Store UPI QR</span>
+                    </span>
+                    <span className="bg-sky-600 text-white px-2 py-0.5 rounded-full text-[10px] font-bold tracking-wider animate-pulse">
+                      READY TO SCAN
+                    </span>
+                  </div>
+
+                  {upiQrLoading ? (
+                    <div className="p-8 flex flex-col items-center justify-center gap-2">
+                      <RefreshCw className="w-6 h-6 animate-spin text-sky-600" />
+                      <span className="text-xs text-neutral-500 font-medium">Generating UPI QR...</span>
+                    </div>
+                  ) : upiQrData?.qrDataUrl ? (
+                    <div className="space-y-2.5">
+                      <div className="w-44 h-44 mx-auto bg-white p-2 rounded-2xl shadow-md border border-neutral-200 flex items-center justify-center">
+                        <img
+                          src={upiQrData.qrDataUrl}
+                          alt="UPI QR Code"
+                          className="w-full h-full object-contain rounded-lg"
+                        />
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-lg font-black text-neutral-900">₹{grandTotal.toFixed(2)}</p>
+                        <p className="text-xs font-mono font-bold text-sky-900">{upiQrData.vpa}</p>
+                        <p className="text-[10px] text-neutral-500 font-medium">
+                          Scan with Google Pay, PhonePe, Paytm, BHIM, or any UPI App
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-center gap-2 pt-1">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (upiQrData?.upiUri) {
+                              navigator.clipboard.writeText(upiQrData.upiUri);
+                              setUpiCopied(true);
+                              setTimeout(() => setUpiCopied(false), 2000);
+                            }
+                          }}
+                          className="text-[11px] bg-white border border-neutral-300 hover:bg-neutral-50 text-neutral-700 px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 shadow-2xs"
+                        >
+                          {upiCopied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
+                          <span>{upiCopied ? 'UPI Link Copied!' : 'Copy UPI Link'}</span>
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-neutral-500 py-4">Add items to cart to generate QR.</p>
+                  )}
+                </div>
+              </div>
+            )}
 
             {paymentMethod === 'SPLIT' && (
               <div className="pt-1 space-y-2 border-t border-neutral-100">
@@ -1637,6 +1797,21 @@ export default function DesktopPosPage() {
                     />
                   </div>
                 ))}
+
+                {/* Split UPI QR if UPI portion is > 0 */}
+                {Number(splitTenders.UPI) > 0 && upiQrData?.qrDataUrl && (
+                  <div className="mt-2 bg-sky-50 border border-sky-200 rounded-xl p-3 flex items-center gap-3">
+                    <div className="w-16 h-16 bg-white p-1 rounded-lg border border-neutral-200 shrink-0">
+                      <img src={upiQrData.qrDataUrl} alt="UPI QR" className="w-full h-full object-contain" />
+                    </div>
+                    <div className="text-left space-y-0.5 min-w-0">
+                      <p className="text-xs font-bold text-sky-900">UPI Split: ₹{Number(splitTenders.UPI).toFixed(2)}</p>
+                      <p className="text-[10px] text-neutral-600 font-mono truncate">{upiQrData.vpa}</p>
+                      <p className="text-[9px] text-neutral-500">Scan QR to pay split amount</p>
+                    </div>
+                  </div>
+                )}
+
                 {splitShortfall > 0 ? (
                   <p className="text-[11px] font-semibold text-sky-700">
                     Short by ₹{splitShortfall.toFixed(2)} of ₹{grandTotal.toFixed(2)}.
@@ -1671,11 +1846,30 @@ export default function DesktopPosPage() {
                     className="w-28 bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5 text-right text-xs font-bold focus:outline-none focus:border-[var(--brand-primary)]"
                   />
                 </div>
+                <div className="flex items-center justify-end gap-1.5">
+                  <button
+                    type="button"
+                    onClick={() => setCashTendered(String(grandTotal))}
+                    className="text-[10px] bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-2 py-0.5 rounded-md font-bold transition-all"
+                  >
+                    Exact (₹{grandTotal})
+                  </button>
+                  {[500, 1000, 2000].map((note) => (
+                    <button
+                      key={note}
+                      type="button"
+                      onClick={() => setCashTendered(String(note))}
+                      className="text-[10px] bg-neutral-100 hover:bg-neutral-200 text-neutral-800 px-2 py-0.5 rounded-md font-bold transition-all"
+                    >
+                      ₹{note}
+                    </button>
+                  ))}
+                </div>
                 {cashTendered !== '' && (
                   Number(cashTendered) >= grandTotal ? (
-                    <div className="flex items-center justify-between text-xs font-bold text-emerald-700">
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-700 bg-emerald-50 p-2 rounded-lg border border-emerald-200">
                       <span>Change Due</span>
-                      <span>₹{Math.round((Number(cashTendered) - grandTotal) * 100) / 100}</span>
+                      <span className="text-sm font-black">₹{Math.round((Number(cashTendered) - grandTotal) * 100) / 100}</span>
                     </div>
                   ) : (
                     <p className="text-[11px] font-semibold text-sky-700">

@@ -315,4 +315,19 @@ export const posService = {
     const res = await apiClient.post<StandardResponse<any>>('/pos/customers', payload);
     return res.data.data!;
   },
+
+  /**
+   * Generate Dynamic NPCI UPI QR code for in-store instant scan-to-pay
+   */
+  async generateUpiQr(payload: { amount: number; vpa?: string; merchantName?: string; note?: string }) {
+    const res = await apiClient.post<StandardResponse<{
+      vpa: string;
+      merchantName: string;
+      amount: number;
+      note: string;
+      upiUri: string;
+      qrDataUrl: string;
+    }>>('/pos/upi-qr', payload);
+    return res.data.data!;
+  },
 };
