@@ -231,8 +231,34 @@ export class PosRepository {
   }
 
   async findCheckoutSessionByToken(handoffToken: string) {
-    return this.prisma.checkoutSession.findUnique({
-      where: { handoffToken: handoffToken.trim() },
+    const raw = handoffToken.trim();
+    const withoutHash = raw.replace(/^#/, '');
+    const cleanDigits = raw.replace(/[^0-9]/g, '');
+    const hyphenated =
+      cleanDigits.length === 6
+        ? `${cleanDigits.slice(0, 3)}-${cleanDigits.slice(3)}`
+        : raw;
+
+    const candidates = Array.from(
+      new Set([
+        raw,
+        withoutHash,
+        cleanDigits,
+        hyphenated,
+        `#${raw}`,
+        `#${withoutHash}`,
+        `SHOP-2026-${cleanDigits}`,
+        `#SHOP-2026-${cleanDigits}`,
+      ]),
+    ).filter((c) => c && c.length > 0);
+
+    return this.prisma.checkoutSession.findFirst({
+      where: {
+        OR: [
+          { handoffToken: { in: candidates } },
+          { sessionId: { in: candidates } },
+        ],
+      },
     });
   }
 

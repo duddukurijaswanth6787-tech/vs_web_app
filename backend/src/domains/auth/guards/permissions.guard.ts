@@ -51,8 +51,18 @@ export class PermissionsGuard implements CanActivate {
       },
     });
 
-    // Super admin has full access to all endpoints
-    if (userRoles.some((ur) => ur.role.name === 'super_admin')) {
+    // Super admin, admin, and owner have full access to all endpoints
+    if (
+      userRoles.some((ur) => {
+        const name = (ur.role.name || '').toLowerCase();
+        return (
+          name === 'super_admin' ||
+          name === 'admin' ||
+          name === 'owner' ||
+          name === 'superadmin'
+        );
+      })
+    ) {
       return true;
     }
 

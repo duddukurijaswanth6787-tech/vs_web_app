@@ -1938,14 +1938,16 @@ export default function DesktopPosPage() {
                 type="text"
                 value={handoffPin}
                 onChange={(e) => setHandoffPin(e.target.value)}
-                placeholder="582-194"
-                maxLength={7}
-                className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)]"
+                placeholder="922-227 or 922227"
+                maxLength={30}
+                className="w-full bg-neutral-50 border border-neutral-300 rounded-xl px-4 py-3 text-center text-lg font-mono font-bold tracking-widest text-neutral-900 focus:outline-none focus:border-[var(--brand-primary)] uppercase"
                 autoFocus
               />
 
               {handoffError && (
-                <p className="text-xs font-medium text-sky-700">{handoffError}</p>
+                <p className="text-xs font-semibold text-rose-600 bg-rose-50 border border-rose-200 rounded-lg p-2.5 text-center">
+                  {handoffError}
+                </p>
               )}
 
               <button
