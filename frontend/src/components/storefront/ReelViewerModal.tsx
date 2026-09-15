@@ -70,18 +70,58 @@ export function ReelViewerModal({
   const [slideDirection, setSlideDirection] = useState<'left' | 'right' | null>(null);
   const [isAnimating, setIsAnimating] = useState(false);
   const [isVideoLoading, setIsVideoLoading] = useState(true);
-  const [isMuted, setIsMuted] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const videoRef = React.useRef<HTMLVideoElement | null>(null);
 
   if (initialReelIndex !== prevInitialIndex) {
     setPrevInitialIndex(initialReelIndex);
     setCurrentIndex(initialReelIndex);
     setIsVideoLoading(true);
+    setIsPlaying(true);
   }
 
-  if (!isOpen || !reels || reels.length === 0) return null;
+  const currentReel = reels && reels.length > 0 ? reels[currentIndex] || reels[0] : null;
 
-  const currentReel = reels[currentIndex] || reels[0];
+  React.useEffect(() => {
+    if (!currentReel) return;
+    setIsPlaying(true);
+    setIsVideoLoading(true);
+    if (videoRef.current) {
+      videoRef.current.currentTime = 0;
+      const playPromise = videoRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsVideoLoading(false);
+            setIsPlaying(true);
+          })
+          .catch((err) => {
+            console.warn('Autoplay restricted by browser, playing muted:', err);
+            if (videoRef.current) {
+              videoRef.current.muted = true;
+              setIsMuted(true);
+              videoRef.current.play().catch(() => {});
+            }
+          });
+      }
+    }
+  }, [currentIndex, currentReel]);
+
+  if (!isOpen || !reels || reels.length === 0 || !currentReel) return null;
+
   const isLiked = !!likedReels[currentReel.id];
+
+  const togglePlayPause = () => {
+    if (!videoRef.current) return;
+    if (videoRef.current.paused) {
+      videoRef.current.play();
+      setIsPlaying(true);
+    } else {
+      videoRef.current.pause();
+      setIsPlaying(false);
+    }
+  };
 
   const handlePrevReel = () => {
     if (isAnimating) return;
@@ -135,7 +175,7 @@ export function ReelViewerModal({
             <div className="flex items-center gap-3">
               <button
                 onClick={onClose}
-                className="p-1.5 hover:bg-white/20 rounded-full transition-colors active:scale-95"
+                className="p-1.5 hover:bg-white/20 rounded-full transition-colors active:scale-95 cursor-pointer"
                 aria-label="Close Reel"
               >
                 <ArrowLeft className="w-5 h-5 text-white" />
@@ -149,8 +189,14 @@ export function ReelViewerModal({
 
             <div className="flex items-center gap-3">
               <button
-                onClick={() => setIsMuted(!isMuted)}
-                className="p-1.5 bg-black/40 hover:bg-white/20 rounded-full transition-colors text-white"
+                onClick={() => {
+                  const nextMuted = !isMuted;
+                  setIsMuted(nextMuted);
+                  if (videoRef.current) {
+                    videoRef.current.muted = nextMuted;
+                  }
+                }}
+                className="p-1.5 bg-black/40 hover:bg-white/20 rounded-full transition-colors text-white cursor-pointer"
                 aria-label={isMuted ? 'Unmute audio' : 'Mute audio'}
               >
                 {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
@@ -167,7 +213,7 @@ export function ReelViewerModal({
           {/* Side Swiping Carousel Navigation Arrows */}
           <button
             onClick={handlePrevReel}
-            className="absolute left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg border border-white/20"
+            className="absolute left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg border border-white/20 cursor-pointer"
             aria-label="Previous Reel"
           >
             <ChevronLeft className="w-6 h-6" />
@@ -175,17 +221,28 @@ export function ReelViewerModal({
 
           <button
             onClick={handleNextReel}
-            className="absolute right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg border border-white/20"
+            className="absolute right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/40 hover:bg-black/80 text-white flex items-center justify-center backdrop-blur-md transition-all duration-300 hover:scale-110 active:scale-95 shadow-lg border border-white/20 cursor-pointer"
             aria-label="Next Reel"
           >
             <ChevronRight className="w-6 h-6" />
           </button>
 
           {/* Video Poster Display */}
-          <div className="relative w-full flex-1 bg-neutral-950 overflow-hidden flex items-center justify-center">
+          <div
+            className="relative w-full flex-1 bg-neutral-950 overflow-hidden flex items-center justify-center cursor-pointer"
+            onClick={togglePlayPause}
+          >
             {isVideoLoading && (
               <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/40 backdrop-blur-xs pointer-events-none">
                 <div className="w-10 h-10 border-3 border-white/30 border-t-white rounded-full animate-spin" />
+              </div>
+            )}
+
+            {!isPlaying && (
+              <div className="absolute inset-0 z-25 flex items-center justify-center bg-black/30 pointer-events-none transition-all">
+                <div className="w-16 h-16 rounded-full bg-black/60 backdrop-blur-md flex items-center justify-center text-white border border-white/30 shadow-2xl">
+                  <Zap className="w-8 h-8 fill-white ml-1" />
+                </div>
               </div>
             )}
 
@@ -200,6 +257,7 @@ export function ReelViewerModal({
             >
               {currentReel.videoUrl || currentReel.posterImage?.endsWith('.mp4') ? (
                 <video
+                  ref={videoRef}
                   key={currentReel.id}
                   src={resolveMediaUrl(currentReel.videoUrl || currentReel.posterImage)}
                   poster={safePoster}
@@ -208,11 +266,15 @@ export function ReelViewerModal({
                   loop
                   muted={isMuted}
                   playsInline
-                  preload="metadata"
-                  controls
+                  preload="auto"
+                  controls={false}
                   onWaiting={() => setIsVideoLoading(true)}
                   onCanPlay={() => setIsVideoLoading(false)}
-                  onPlaying={() => setIsVideoLoading(false)}
+                  onPlaying={() => {
+                    setIsVideoLoading(false);
+                    setIsPlaying(true);
+                  }}
+                  onPause={() => setIsPlaying(false)}
                   onLoadedData={() => setIsVideoLoading(false)}
                 />
               ) : (

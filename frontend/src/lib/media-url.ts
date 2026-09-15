@@ -90,7 +90,18 @@ export type ImageVariant = keyof typeof VARIANT_SIZES;
  * the pre-generated, optimized WebP variant instead of the full-size master image.
  */
 export function withVariant(url: string, variant?: ImageVariant): string {
-  if (!url || url.includes('placehold.co') || url.includes('data:') || url.includes('unsplash.com')) return url;
+  if (
+    !url ||
+    url.includes('placehold.co') ||
+    url.includes('data:') ||
+    url.includes('unsplash.com') ||
+    url.endsWith('.mp4') ||
+    url.endsWith('.webm') ||
+    url.endsWith('.mov') ||
+    url.includes('/videos/')
+  ) {
+    return resolveMediaUrl(url);
+  }
   const resolved = resolveMediaUrl(url);
   if (!variant) return resolved;
 

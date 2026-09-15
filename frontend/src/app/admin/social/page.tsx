@@ -48,6 +48,7 @@ import { socialService } from '@/features/social/social.service';
 import { RemoteImage } from '@/components/media/RemoteImage';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
 import { formatDate } from '@/utils/format';
+import { resolveMediaUrl } from '@/lib/media-url';
 
 export default function SocialDashboardPage() {
   const router = useRouter();
@@ -194,16 +195,24 @@ export default function SocialDashboardPage() {
                   {/* Image/Video media Preview Container */}
                   <div className="aspect-square bg-neutral-100 relative overflow-hidden flex items-center justify-center border-b border-neutral-100">
                     {post.media && post.media[0] ? (
-                      post.media[0].mediaType === SocialMediaType.VIDEO ? (
-                        <div className="w-full h-full relative">
-                          <video src={post.media[0].url} className="w-full h-full object-cover" muted loop playsInline />
-                          <div className="absolute top-3 left-3 bg-black/60 text-white rounded-lg p-1.5 flex items-center">
+                      post.media[0].mediaType === SocialMediaType.VIDEO || (post.media[0].url && post.media[0].url.includes('.mp4')) ? (
+                        <div className="w-full h-full relative group/vid">
+                          <video
+                            src={resolveMediaUrl(post.media[0].url)}
+                            className="w-full h-full object-cover"
+                            controls
+                            muted
+                            loop
+                            playsInline
+                            preload="metadata"
+                          />
+                          <div className="absolute top-3 left-3 bg-black/60 text-white rounded-lg p-1.5 flex items-center pointer-events-none">
                             <Video className="w-4 h-4" />
                           </div>
                         </div>
                       ) : (
                         <RemoteImage
-                          src={post.media[0].url}
+                          src={resolveMediaUrl(post.media[0].url)}
                           alt="feed post preview"
                           fill
                           sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"

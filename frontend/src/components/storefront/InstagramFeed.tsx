@@ -259,13 +259,11 @@ export function InstagramFeed() {
     };
   });
 
-  // Only display Super Admin uploaded/published reels from the database.
-  // If no reels are in the database yet, hide the section (return null) so it's 100% dynamic.
-  const activeReels = dbReels;
-
-  if (!isLoading && activeReels.length === 0) {
-    return null;
-  }
+  // Seamlessly merge DB published reels with curated fallback reels.
+  // Real DB reels appear first, and remaining slots (up to 6) are filled so the grid is never half-empty!
+  const activeReels = dbReels.length > 0
+    ? [...dbReels, ...FALLBACK_REELS.slice(0, Math.max(0, 6 - dbReels.length))]
+    : FALLBACK_REELS;
 
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-8">
