@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useDeferredValue } from 'react';
+import React, { useState, useMemo, useEffect, useCallback, useDeferredValue } from 'react';
 // Live scannable SKU barcode & QR sticker generator
 import { useForm, FormProvider, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -614,6 +614,57 @@ export default function ProductBuilder({
     });
   }, [productId, fetchedVariantsData, inventoryMap, initialData?.name, methods]);
 
+  // Auto-generate preview barcode stickers and QR codes from color groups and sizes
+  const generateBarcodeVariants = useCallback(() => {
+    const pName = (methods.getValues('name') || initialData?.name || 'Product').toString();
+    const pPrice = Number(
+      methods.getValues('salePrice') ||
+      methods.getValues('basePrice') ||
+      initialData?.salePrice ||
+      initialData?.basePrice ||
+      0
+    );
+
+    const generated: IssuedVariant[] = [];
+    colorGroups.forEach((group) => {
+      group.sizes.forEach((sizeRow) => {
+        if (!sizeRow.available) return;
+        const title = `${group.name} / ${sizeRow.size}`;
+        const sku = sizeRow.sku || buildSmartVariantSku(group.name, sizeRow.size);
+        const barcode = sku.replace(/[^A-Z0-9]/gi, '');
+        const stock = Number(sizeRow.stock) || 10;
+        const price = sizeRow.price ? Number(sizeRow.price) : pPrice;
+        generated.push({
+          sku,
+          barcode,
+          title,
+          stock,
+          price,
+        });
+      });
+    });
+
+    if (generated.length > 0) {
+      setIssuedVariants(generated);
+      setLabelQtyBySku(
+        Object.fromEntries(generated.map((v) => [v.sku, Math.max(1, v.stock || 1)]))
+      );
+    }
+    return generated;
+  }, [colorGroups, initialData?.basePrice, initialData?.name, initialData?.salePrice, methods]);
+
+  // Total active sizes count for instant tab badge
+  const totalActiveSizes = useMemo(() => {
+    return colorGroups.reduce((acc, g) => acc + g.sizes.filter((s) => s.available).length, 0);
+  }, [colorGroups]);
+
+  // Auto-populate barcode variants whenever Tab 8 is opened
+  useEffect(() => {
+    if (activeTab === 'barcodes' && issuedVariants.length === 0 && totalActiveSizes > 0) {
+      generateBarcodeVariants();
+    }
+  }, [activeTab, issuedVariants.length, totalActiveSizes, generateBarcodeVariants]);
+
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
   // Add New Color Group
@@ -1162,17 +1213,14 @@ export default function ProductBuilder({
         created = await productService.create(createPayload as CreateProductDto);
       }
 
-      // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;
-      // blank values are dropped so an unset attribute is not stored as "".
+      // Parallelize dynamic attributes assignment
       const attributeEntries = Object.entries(attributeValues)
         .filter(([, value]) => value.trim() !== '')
         .map(([attributeId, value]) => ({ attributeId, value: value.trim() }));
 
-      if (attributeEntries.length > 0) {
-        await productService
-          .assignAttributes(created.id, { attributes: attributeEntries })
-          .catch(() => null);
-      }
+      const assignAttributesPromise = attributeEntries.length > 0
+        ? productService.assignAttributes(created.id, { attributes: attributeEntries }).catch(() => null)
+        : Promise.resolve();
 
       // Prevent duplicate image creation on Edit mode by tracking existing media
       const existingMedia = created.images || [];
@@ -1181,27 +1229,39 @@ export default function ProductBuilder({
         if (m.url && m.id) existingMediaMap.set(m.url, String(m.id));
       });
 
+      // Prepare all media upload and attachment tasks in parallel
+      const mediaTasks: Array<{ group: ColorVariantGroup; img: string; isPrimary: boolean; order: number }> = [];
       let displayOrder = 0;
       let primarySet = false;
-      const mediaIdsByGroup: Record<string, string[]> = {};
 
       for (const group of colorGroups) {
-        mediaIdsByGroup[group.id] = [];
         const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
         for (const img of groupImages) {
-          let url = img;
+          const isImgPrimary = !primarySet || (finalCardCoverUrl ? img === finalCardCoverUrl : false);
+          if (isImgPrimary) primarySet = true;
+          mediaTasks.push({ group, img, isPrimary: isImgPrimary, order: displayOrder++ });
+        }
+      }
 
-          // If image already exists in database, skip re-calling addMedia and re-uploading!
+      const mediaIdsByGroup: Record<string, string[]> = {};
+      colorGroups.forEach((g) => {
+        mediaIdsByGroup[g.id] = [];
+      });
+
+      // Upload and attach all images in parallel
+      await Promise.all(
+        mediaTasks.map(async (task) => {
+          let url = task.img;
           const existingId = existingMediaMap.get(url);
           if (existingId) {
-            mediaIdsByGroup[group.id].push(existingId);
-            continue;
+            mediaIdsByGroup[task.group.id].push(existingId);
+            return;
           }
 
-          if (img.startsWith('data:')) {
+          if (url.startsWith('data:')) {
             try {
-              const blob = await dataUrlToBlob(img);
-              const uploaded = await productService.uploadImage(blob, `${group.name}-${displayOrder}.png`);
+              const blob = await dataUrlToBlob(url);
+              const uploaded = await productService.uploadImage(blob, `${task.group.name}-${task.order}.png`);
               url = uploaded.url;
             } catch (e) {
               console.warn('Failed to upload image blob:', e);
@@ -1210,41 +1270,37 @@ export default function ProductBuilder({
 
           const uploadedExistingId = existingMediaMap.get(url);
           if (uploadedExistingId) {
-            mediaIdsByGroup[group.id].push(uploadedExistingId);
-            continue;
+            mediaIdsByGroup[task.group.id].push(uploadedExistingId);
+            return;
           }
 
-          const isImgPrimary = !primarySet || (finalCardCoverUrl ? url === finalCardCoverUrl : false);
-          const media = await productService.addMedia({
-            productId: created.id,
-            url,
-            isPrimary: isImgPrimary,
-            displayOrder: displayOrder++,
-            color: group.name,
-            ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
-          });
+          const media = await productService
+            .addMedia({
+              productId: created.id,
+              url,
+              isPrimary: task.isPrimary,
+              displayOrder: task.order,
+              color: task.group.name,
+              ...(imageLabels[task.img] ? { title: imageLabels[task.img] } : {}),
+            })
+            .catch(() => null);
+
           if (media?.id) {
-            mediaIdsByGroup[group.id].push(String(media.id));
+            mediaIdsByGroup[task.group.id].push(String(media.id));
             existingMediaMap.set(url, String(media.id));
           }
-          if (isImgPrimary) primarySet = true;
-        }
-      }
+        })
+      );
 
-      // Persist the color/size matrix as real variants. The backend assigns the
-      // SKU and barcode on POST /variants, so nothing here is sellable or
-      // scannable until this runs.
+      // Fetch attributes, existing variants, and inventory in parallel
       const [attributeList, existingVariants, existingInventoryList] = await Promise.all([
-        attributeService
-          .findAllAttributes({ limit: 100 })
-          .catch(() => ({ data: [] as AttributeResponse[] })),
-        variantService
-          .findAll({ productId: created.id, limit: 100 })
-          .catch(() => null),
-        inventoryService
-          .findAll({ limit: 100 })
-          .catch(() => null),
+        assignAttributesPromise.then(() =>
+          attributeService.findAllAttributes({ limit: 100 }).catch(() => ({ data: [] as AttributeResponse[] }))
+        ),
+        variantService.findAll({ productId: created.id, limit: 100 }).catch(() => null),
+        inventoryService.findAll({ limit: 100 }).catch(() => null),
       ]);
+
       const attributes = attributeList?.data ?? [];
       const existingInvMap = new Map<string, string>();
       (existingInventoryList?.data || []).forEach((inv) => {
@@ -1270,15 +1326,17 @@ export default function ProductBuilder({
         if (titleKey) existingVariantsByTitle.set(titleKey, v);
       });
 
-      // 1) Delete or Deactivate variants that admin deleted/removed from colorGroups
-      for (const existingVar of dbVariantsList) {
-        const titleKey = String(existingVar.title ?? '').toLowerCase().trim();
-        if (titleKey && !wantedVariantsMap.has(titleKey)) {
-          await variantService.delete(existingVar.id).catch(() => {
-            return variantService.deactivate(existingVar.id).catch(() => null);
-          });
-        }
-      }
+      // Delete/Deactivate removed variants in parallel
+      const cleanupDeletions = dbVariantsList
+        .filter((existingVar) => {
+          const titleKey = String(existingVar.title ?? '').toLowerCase().trim();
+          return titleKey && !wantedVariantsMap.has(titleKey);
+        })
+        .map((existingVar) =>
+          variantService.delete(existingVar.id).catch(() => variantService.deactivate(existingVar.id).catch(() => null))
+        );
+
+      await Promise.all(cleanupDeletions);
 
       // Helper function to update or create inventory record with exact availableQuantity sync
       const syncVariantInventory = async (vId: string, sizeRow: ColorVariantGroup['sizes'][number]) => {
@@ -1298,7 +1356,7 @@ export default function ProductBuilder({
         }
 
         if (existingInvId) {
-          await inventoryService
+          return inventoryService
             .update(existingInvId, {
               availableQuantity: targetStock,
               minimumStock: sizeRow.minStock ?? 5,
@@ -1307,7 +1365,7 @@ export default function ProductBuilder({
             })
             .catch(() => null);
         } else {
-          const newInv = await inventoryService
+          return inventoryService
             .create({
               variantId: vId,
               availableQuantity: targetStock,
@@ -1316,72 +1374,95 @@ export default function ProductBuilder({
               maximumStock: 100,
               reason: 'Product catalog size stock setup',
             })
+            .then((newInv) => {
+              if (newInv?.id) existingInvMap.set(vId, newInv.id);
+            })
             .catch(() => null);
-          if (newInv?.id) existingInvMap.set(vId, newInv.id);
         }
       };
 
-      // 2) Create or Update wanted variants & stock
+      // Prepare all variant creation and inventory sync tasks in parallel
       const issued: IssuedVariant[] = [];
       const variantIdsByGroup: Record<string, string[]> = {};
-      let variantOrder = 0;
+      colorGroups.forEach((g) => {
+        variantIdsByGroup[g.id] = [];
+      });
 
+      const variantTasks: Array<{
+        group: ColorVariantGroup;
+        sizeRow: ColorVariantGroup['sizes'][number];
+        title: string;
+        titleKey: string;
+        order: number;
+      }> = [];
+
+      let variantOrder = 0;
       for (const group of colorGroups) {
-        variantIdsByGroup[group.id] = [];
         for (const sizeRow of group.sizes) {
           if (!sizeRow.available) continue;
           const title = `${group.name} / ${sizeRow.size}`;
           const titleKey = title.toLowerCase().trim();
-
-          const existingVar = existingVariantsByTitle.get(titleKey);
-
-          if (existingVar) {
-            // Already exists -> Safely sync inventory without GET /inventory/variant 422 errors
-            variantIdsByGroup[group.id].push(existingVar.id);
-            await syncVariantInventory(existingVar.id, sizeRow);
-
-            issued.push({
-              sku: existingVar.sku,
-              barcode: existingVar.barcode,
-              title,
-              stock: sizeRow.stock,
-              price: sizeRow.price
-                ? Number(sizeRow.price)
-                : Number(values.salePrice || values.basePrice || 0),
-            });
-          } else {
-            // Create new variant
-            const variant = await variantService.create({
-              productId: created.id,
-              title,
-              sku: sizeRow.sku || undefined,
-              priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
-              costPrice: values.costPrice ? Number(values.costPrice) : undefined,
-              displayOrder: variantOrder,
-              isDefault: variantOrder === 0 && existingVariantsByTitle.size === 0,
-              attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
-            });
-            variantOrder++;
-
-            if (!variant?.id) continue;
-            variantIdsByGroup[group.id].push(variant.id);
-            await syncVariantInventory(variant.id, sizeRow);
-
-            issued.push({
-              sku: variant.sku,
-              barcode: variant.barcode,
-              title,
-              stock: sizeRow.stock,
-              price: sizeRow.price
-                ? Number(sizeRow.price)
-                : Number(values.salePrice || values.basePrice || 0),
-            });
-          }
+          variantTasks.push({ group, sizeRow, title, titleKey, order: variantOrder++ });
         }
       }
 
-      // Bind the new variants and media to their color group so the storefront
-      // can group images and sizes by color.
+      const variantResults = await Promise.all(
+        variantTasks.map(async (task) => {
+          const { group, sizeRow, title, titleKey, order } = task;
+          const existingVar = existingVariantsByTitle.get(titleKey);
+
+          if (existingVar) {
+            await syncVariantInventory(existingVar.id, sizeRow);
+            return {
+              groupId: group.id,
+              variantId: existingVar.id,
+              issued: {
+                sku: existingVar.sku,
+                barcode: existingVar.barcode || existingVar.sku,
+                title,
+                stock: sizeRow.stock,
+                price: sizeRow.price ? Number(sizeRow.price) : Number(values.salePrice || values.basePrice || 0),
+              },
+            };
+          } else {
+            const variant = await variantService
+              .create({
+                productId: created.id,
+                title,
+                sku: sizeRow.sku || undefined,
+                priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
+                costPrice: values.costPrice ? Number(values.costPrice) : undefined,
+                displayOrder: order,
+                isDefault: order === 0 && existingVariantsByTitle.size === 0,
+                attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
+              })
+              .catch(() => null);
+
+            if (!variant?.id) return null;
+            await syncVariantInventory(variant.id, sizeRow);
+            return {
+              groupId: group.id,
+              variantId: variant.id,
+              issued: {
+                sku: variant.sku,
+                barcode: variant.barcode || variant.sku,
+                title,
+                stock: sizeRow.stock,
+                price: sizeRow.price ? Number(sizeRow.price) : Number(values.salePrice || values.basePrice || 0),
+              },
+            };
+          }
+        })
+      );
+
+      variantResults.forEach((res) => {
+        if (res) {
+          variantIdsByGroup[res.groupId].push(res.variantId);
+          issued.push(res.issued);
+        }
+      });
+
+      // Bind color groups, coupons, and offers in parallel
       const syncPayload = colorGroups.flatMap((group) => {
         const optionId = findColorOptionId(attributes, group.name);
         if (!optionId) return [];
@@ -1395,21 +1476,19 @@ export default function ProductBuilder({
         ];
       });
 
-      if (syncPayload.length > 0) {
-        await productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch(() => null);
-      }
-
-      // Attach/detach this product from whichever coupons and offers were
-      // toggled on the Coupons & Offers panel above. Only coupons/offers
-      // whose membership actually changed are written.
-      for (const coupon of coupons) {
-        const diff = diffProductAttachment(coupon, created.id, selectedCouponIds.includes(coupon.id));
-        if (diff) await couponService.update(coupon.id, diff).catch(() => null);
-      }
-      for (const offer of offers) {
-        const diff = diffProductAttachment(offer, created.id, selectedOfferIds.includes(offer.id));
-        if (diff) await offerService.update(offer.id, diff).catch(() => null);
-      }
+      await Promise.all([
+        syncPayload.length > 0
+          ? productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch(() => null)
+          : Promise.resolve(),
+        ...coupons.map((coupon) => {
+          const diff = diffProductAttachment(coupon, created.id, selectedCouponIds.includes(coupon.id));
+          return diff ? couponService.update(coupon.id, diff).catch(() => null) : Promise.resolve();
+        }),
+        ...offers.map((offer) => {
+          const diff = diffProductAttachment(offer, created.id, selectedOfferIds.includes(offer.id));
+          return diff ? offerService.update(offer.id, diff).catch(() => null) : Promise.resolve();
+        }),
+      ]);
 
       setIssuedVariants(issued);
       setLabelQtyBySku(
@@ -1789,7 +1868,7 @@ export default function ProductBuilder({
             }`}
           >
             <QrCode className="w-4 h-4" />
-            <span>8. Barcode Stickers &amp; Labels ({issuedVariants.length})</span>
+            <span>8. Barcode Stickers &amp; Labels ({issuedVariants.length || totalActiveSizes})</span>
           </button>
         </div>
 
@@ -3446,11 +3525,21 @@ export default function ProductBuilder({
                   <span>SKU Barcode Label &amp; Sticker Generator</span>
                 </h3>
                 <p className="text-xs text-neutral-400 mt-1">
-                  Generate, print, and download barcode product tag stickers for physical garment attachment.
+                  Generate, print, and download barcode &amp; QR tag stickers based on Color, Size, Stock, and Price for physical garment attachment.
                 </p>
               </div>
 
               <div className="flex flex-wrap items-center gap-3">
+                <button
+                  type="button"
+                  onClick={generateBarcodeVariants}
+                  className="bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-neutral-950 text-xs font-black px-4 py-2.5 rounded-xl flex items-center gap-2 shadow-md transition-all active:scale-95 cursor-pointer"
+                  title="Generate barcodes & QR codes for all sizes and color variants"
+                >
+                  <Sparkles className="w-4 h-4 text-neutral-950" />
+                  <span>Generate Barcodes ({totalActiveSizes})</span>
+                </button>
+
                 <div className="flex items-center gap-2 bg-neutral-800 p-1.5 rounded-xl border border-neutral-700">
                   <span className="text-[11px] font-bold text-neutral-400 pl-2">Label Size:</span>
                   {LABEL_SIZE_OPTIONS.map((opt) => (
@@ -3474,7 +3563,7 @@ export default function ProductBuilder({
                   type="button"
                   onClick={handlePrintAllLabels}
                   disabled={issuedVariants.length === 0 || printingSku !== null}
-                  className="bg-[#0284c7] hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50 transition-all shadow-md"
+                  className="bg-[#0284c7] hover:bg-sky-500 text-white text-xs font-bold px-5 py-2.5 rounded-xl flex items-center gap-2 disabled:opacity-50 transition-all shadow-md cursor-pointer"
                 >
                   <Printer className="w-4 h-4" />
                   <span>Print All {issuedVariants.length} Labels</span>
@@ -3483,12 +3572,20 @@ export default function ProductBuilder({
             </div>
 
             {issuedVariants.length === 0 ? (
-              <div className="p-8 text-center bg-neutral-800/50 border border-neutral-800 rounded-2xl space-y-3">
-                <QrCode className="w-10 h-10 text-neutral-500 mx-auto" />
-                <h4 className="text-sm font-bold text-neutral-300">No Barcode Variants Ready Yet</h4>
+              <div className="p-8 text-center bg-neutral-800/50 border border-neutral-800 rounded-2xl space-y-4">
+                <QrCode className="w-12 h-12 text-amber-400 mx-auto animate-pulse" />
+                <h4 className="text-sm font-bold text-neutral-200">Generate Barcode Stickers For Your Configured Variants</h4>
                 <p className="text-xs text-neutral-400 max-w-md mx-auto">
-                  Click &ldquo;Save &amp; Publish&rdquo; or save product specification to generate server-assigned barcode stickers for each SKU combination.
+                  Instantly generate SKU barcodes &amp; QR codes for all {totalActiveSizes} configured color and size variations with one click.
                 </p>
+                <button
+                  type="button"
+                  onClick={generateBarcodeVariants}
+                  className="bg-amber-500 hover:bg-amber-400 text-neutral-950 font-black text-xs px-6 py-3 rounded-2xl flex items-center gap-2 mx-auto shadow-lg hover:shadow-amber-500/20 transition-all active:scale-95 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-neutral-950" />
+                  <span>Generate Barcodes &amp; QR Codes Now ({totalActiveSizes} SKUs)</span>
+                </button>
               </div>
             ) : (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
