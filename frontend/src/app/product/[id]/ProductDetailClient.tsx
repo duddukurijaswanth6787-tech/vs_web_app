@@ -315,15 +315,42 @@ export function ProductDetailClient() {
   });
 
   const pdpOffers = useMemo(() => {
-    const listFromApi = Array.isArray(activeCouponsData) ? activeCouponsData : [];
+    if (!product) return [];
     const pRecord = product as unknown as Record<string, unknown>;
-    const listFromProduct = Array.isArray(pRecord?.coupons)
-      ? (pRecord.coupons as unknown[])
-      : Array.isArray(pRecord?.offers)
+    
+    // Only use offers/coupons explicitly assigned or associated with this product
+    const explicitOffers = Array.isArray(pRecord?.offers)
       ? (pRecord.offers as unknown[])
+      : Array.isArray(pRecord?.coupons)
+      ? (pRecord.coupons as unknown[])
       : [];
 
-    const merged = [...listFromProduct, ...listFromApi];
+    // Also check if any active coupon explicitly specifies this product's ID or category
+    const targetedCoupons = Array.isArray(activeCouponsData)
+      ? activeCouponsData.filter((c: any) => {
+          if (!c) return false;
+          // If coupon is targeted to specific products
+          if (Array.isArray(c.applicableProductIds) && c.applicableProductIds.length > 0) {
+            return c.applicableProductIds.includes(product.id);
+          }
+          if (Array.isArray(c.productIds) && c.productIds.length > 0) {
+            return c.productIds.includes(product.id);
+          }
+          // If coupon is targeted to specific categories
+          const productCatIds = product.categories?.map((pc) => pc.categoryId) || [];
+          if (Array.isArray(c.applicableCategoryIds) && c.applicableCategoryIds.length > 0) {
+            return c.applicableCategoryIds.some((cid: string) => productCatIds.includes(cid));
+          }
+          if (Array.isArray(c.categoryIds) && c.categoryIds.length > 0) {
+            return c.categoryIds.some((cid: string) => productCatIds.includes(cid));
+          }
+          return false;
+        })
+      : [];
+
+    const merged = [...explicitOffers, ...targetedCoupons];
+    if (merged.length === 0) return [];
+
     const uniqueByCode = new Map<string, Record<string, unknown>>();
 
     merged.forEach((item) => {
@@ -863,7 +890,7 @@ export function ProductDetailClient() {
 
                 {/* Short Description */}
                 <p className="text-xs text-neutral-600 font-normal leading-relaxed">
-                  {product.shortDescription || 'Elegant floral printed Anarkali dress for women, perfect for festive and special occasions.'}
+                  {product.shortDescription || `${product.name} — finely tailored with premium fabrics and authentic craftsmanship.`}
                 </p>
 
                 {/* OFFERS FOR YOU section — Interactive Coupons */}
