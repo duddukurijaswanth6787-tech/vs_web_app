@@ -41,7 +41,7 @@ export function ProductImageZoom({ src, alt, unoptimized }: ProductImageZoomProp
         sizes="(max-width: 1024px) 100vw, 50vw"
         unoptimized={unoptimized}
         priority
-        className="object-cover"
+        className="object-cover object-top"
       />
       <div 
         className="absolute inset-0 pointer-events-none border border-neutral-100/50"

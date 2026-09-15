@@ -307,6 +307,13 @@ export function ProductDetailClient() {
 
   // Real, currently-active coupons from global API and attached product coupons
   const { data: activeCouponsData } = useActiveCoupons();
+  const [selectedOfferCode, setSelectedOfferCode] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('vs_applied_coupon') || null;
+    }
+    return null;
+  });
+
   const pdpOffers = useMemo(() => {
     const listFromApi = Array.isArray(activeCouponsData) ? activeCouponsData : [];
     const pRecord = product as unknown as Record<string, unknown>;
@@ -330,7 +337,7 @@ export function ProductDetailClient() {
 
     return Array.from(uniqueByCode.values()).slice(0, 3).map((c) => {
       const type = String(c.type || c.discountType || '');
-      const value = c.value || c.discountValue || 0;
+      const value = Number(c.value || c.discountValue || 0);
       const label =
         type === 'PERCENTAGE'
           ? `${value}% OFF`
@@ -341,33 +348,138 @@ export function ProductDetailClient() {
       return {
         code: String(c.code || c.couponCode || ''),
         label,
+        type,
+        value,
+        minOrder,
         detail: minOrder ? `Min purchase ₹${minOrder}.` : 'On all orders.',
       };
     });
   }, [activeCouponsData, product]);
 
-  // Simulated dynamic stock
+  // Read size configuration & real inventory stock
+  const currentSizeObj = useMemo(() => {
+    if (!currentColorGroup?.sizes?.length) return null;
+    return currentColorGroup.sizes.find(
+      (s) => s.size.toLowerCase().trim() === (selectedSize || '').toLowerCase().trim()
+    );
+  }, [currentColorGroup, selectedSize]);
+
+  const maxAllowedQty = useMemo(() => {
+    // 1) Read from size in color group if specified
+    if (currentSizeObj && typeof currentSizeObj.stock === 'number') {
+      return Math.max(0, currentSizeObj.stock);
+    }
+    // 2) Read from matching variant
+    const vStock = (matchingVariant as unknown as { availableQuantity?: number; stock?: number })?.availableQuantity ??
+      (matchingVariant as unknown as { availableQuantity?: number; stock?: number })?.stock;
+    if (typeof vStock === 'number') {
+      return Math.max(0, vStock);
+    }
+    // 3) Default fallback
+    return 10;
+  }, [currentSizeObj, matchingVariant]);
+
+  // Keep qty constrained within [1, maxAllowedQty]
+  useEffect(() => {
+    if (maxAllowedQty > 0 && qty > maxAllowedQty) {
+      setQty(maxAllowedQty);
+    }
+  }, [maxAllowedQty, qty]);
+
+  // Dynamic stock indicator driven by real stock & admin setting
   const stockText = useMemo(() => {
     if (!selectedSize) return 'Select size to check availability';
-    if (selectedSize === 'XL') return 'Only 6 left - selling fast!';
-    if (selectedSize === 'S') return 'In Stock';
-    if (selectedSize === 'XXL') return 'Low Stock';
+    if (maxAllowedQty === 0) return 'Out of Stock';
+
+    const isLimited = Boolean(
+      product?.isLimitedStock ||
+      product?.tags?.includes('low-stock-alert')
+    );
+
+    if (isLimited || (maxAllowedQty > 0 && maxAllowedQty <= 5)) {
+      return `Only ${maxAllowedQty} left - selling fast!`;
+    }
+    if (maxAllowedQty <= 10) {
+      return 'Low Stock';
+    }
     return 'In Stock';
-  }, [selectedSize]);
+  }, [selectedSize, maxAllowedQty, product]);
+
+  // Dynamic Storefront Feature Visibility
+  const showCustomTailoring = useMemo(() => {
+    if (!product) return false;
+    return Boolean(
+      product.tags?.includes('custom-tailoring') ||
+      product.tags?.includes('custom-stitch') ||
+      product.type === 'CUSTOM'
+    );
+  }, [product]);
+
+  const showWholesalePricing = useMemo(() => {
+    if (!product) return false;
+    return Boolean(
+      product.tags?.includes('wholesale-pricing') ||
+      product.tags?.includes('b2b') ||
+      (product.wholesalePrice && Number(product.wholesalePrice) > 0)
+    );
+  }, [product]);
 
   // Wholesale Tier & Pricing Calculation
   const wholesaleTier = useMemo(() => {
+    if (!showWholesalePricing) return { name: 'Retail Tier', discountPercent: 0, badge: null };
     if (qty >= 10) return { name: 'Gold Bulk Tier', discountPercent: 25, badge: '25% WHOLESALE SAVINGS' };
     if (qty >= 5) return { name: 'Silver Reseller Tier', discountPercent: 15, badge: '15% RESELLER SAVINGS' };
     return { name: 'Retail Tier', discountPercent: 0, badge: null };
-  }, [qty]);
+  }, [qty, showWholesalePricing]);
 
   const effectiveUnitPrice = wholesaleTier.discountPercent > 0
     ? Math.round(price * (1 - wholesaleTier.discountPercent / 100))
     : price;
-  const tailoringFeePerItem = customTailoring ? 499 : 0;
+  const tailoringFeePerItem = (showCustomTailoring && customTailoring) ? 499 : 0;
   const finalUnitPrice = effectiveUnitPrice + tailoringFeePerItem;
-  const grandTotal = finalUnitPrice * qty;
+  const rawGrandTotal = finalUnitPrice * qty;
+
+  // Selected Offer Calculations
+  const selectedOffer = useMemo(() => {
+    return pdpOffers.find((o) => o.code.toUpperCase() === (selectedOfferCode || '').toUpperCase());
+  }, [pdpOffers, selectedOfferCode]);
+
+  const isOfferEligible = useMemo(() => {
+    if (!selectedOffer) return false;
+    return !selectedOffer.minOrder || rawGrandTotal >= selectedOffer.minOrder;
+  }, [selectedOffer, rawGrandTotal]);
+
+  const offerDiscountAmount = useMemo(() => {
+    if (!selectedOffer || !isOfferEligible) return 0;
+    if (selectedOffer.type === 'PERCENTAGE') {
+      return Math.round((rawGrandTotal * selectedOffer.value) / 100);
+    }
+    if (selectedOffer.type !== 'FREE_SHIPPING') {
+      return Math.min(rawGrandTotal, selectedOffer.value);
+    }
+    return 0;
+  }, [selectedOffer, isOfferEligible, rawGrandTotal]);
+
+  const grandTotal = Math.max(0, rawGrandTotal - offerDiscountAmount);
+
+  const handleToggleOffer = (offer: typeof pdpOffers[0]) => {
+    if (selectedOfferCode?.toUpperCase() === offer.code.toUpperCase()) {
+      setSelectedOfferCode(null);
+      if (typeof window !== 'undefined') localStorage.removeItem('vs_applied_coupon');
+      setMsg('Offer removed');
+      setTimeout(() => setMsg(''), 3000);
+    } else {
+      setSelectedOfferCode(offer.code);
+      if (typeof window !== 'undefined') localStorage.setItem('vs_applied_coupon', offer.code);
+      if (offer.minOrder && rawGrandTotal < offer.minOrder) {
+        const diff = offer.minOrder - rawGrandTotal;
+        setMsg(`Coupon "${offer.code}" selected! Add ${formatInr(diff)} more (e.g. increase quantity) to unlock discount.`);
+      } else {
+        setMsg(`Coupon "${offer.code}" applied successfully!`);
+      }
+      setTimeout(() => setMsg(''), 4000);
+    }
+  };
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -525,31 +637,6 @@ export function ProductDetailClient() {
   return (
     <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans antialiased text-neutral-900 pb-20 md:pb-0">
       
-      {/* Promotional Top Bar */}
-      <div className="hidden md:block bg-neutral-50 border-b border-neutral-100 py-2.5 text-[10px] md:text-[11px] font-bold text-neutral-500 uppercase tracking-widest">
-        <div className="max-w-[1440px] mx-auto px-4 md:px-8 flex items-center justify-center gap-4 sm:gap-6 flex-wrap">
-          <div className="flex items-center gap-1.5">
-            <Truck className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Free Shipping on orders above ₹999</span>
-          </div>
-          <span className="text-neutral-200 hidden sm:inline">|</span>
-          <div className="flex items-center gap-1.5">
-            <RefreshCw className="w-3.5 h-3.5 text-neutral-400" />
-            <span>Easy 7-Day Returns</span>
-          </div>
-          <span className="text-neutral-200 hidden sm:inline">|</span>
-          <div className="flex items-center gap-1.5">
-            <Award className="w-3.5 h-3.5 text-neutral-400" />
-            <span>100% Authentic Quality</span>
-          </div>
-          <span className="text-neutral-200 hidden sm:inline">|</span>
-          <div className="flex items-center gap-1.5">
-            <Sparkles className="w-3.5 h-3.5 text-neutral-400" />
-            <span>New Arrivals Every Week</span>
-          </div>
-        </div>
-      </div>
-
       {/* Main Storefront Header */}
       <StorefrontHeader />
 
@@ -593,90 +680,110 @@ export function ProductDetailClient() {
 
         {product && (
           <>
-            {/* Breadcrumb Trail */}
-            <nav className="hidden md:flex text-[11px] text-neutral-400 font-bold items-center gap-1.5">
+            {/* Dynamic Breadcrumb Trail */}
+            <nav className="hidden md:flex text-[11px] text-neutral-400 font-bold items-center gap-1.5 flex-wrap">
               <Link href="/" className="hover:text-[var(--brand-primary)]">Home</Link>
+              {product.categories && product.categories.length > 0 ? (
+                product.categories.map((c: { categoryId?: string; categorySlug?: string; categoryName?: string; category?: { slug?: string; name?: string } }, idx: number) => {
+                  const slug = c.categorySlug || c.category?.slug;
+                  const name = c.categoryName || c.category?.name || 'Category';
+                  return (
+                    <React.Fragment key={c.categoryId || idx}>
+                      <ChevronRight className="w-3 h-3 text-neutral-300" />
+                      {slug ? (
+                        <Link href={`/categories/${slug}`} className="hover:text-[var(--brand-primary)]">
+                          {name}
+                        </Link>
+                      ) : (
+                        <span className="hover:text-[var(--brand-primary)]">{name}</span>
+                      )}
+                    </React.Fragment>
+                  );
+                })
+              ) : (
+                <>
+                  <ChevronRight className="w-3 h-3 text-neutral-300" />
+                  <span className="hover:text-[var(--brand-primary)]">{product.brandName || "Vasanthi's Signature"}</span>
+                </>
+              )}
               <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[var(--brand-primary)]">Women</span>
-              <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[var(--brand-primary)]">Ethnic Wear</span>
-              <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="hover:text-[var(--brand-primary)]">Kurta Sets</span>
-              <ChevronRight className="w-3 h-3 text-neutral-300" />
-              <span className="text-neutral-600 truncate max-w-[180px] md:max-w-none">{product.name}</span>
+              <span className="text-neutral-600 font-semibold truncate max-w-[240px] md:max-w-none">{product.name}</span>
             </nav>
 
             {/* Product Core Grid Section */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-start">
               
-              {/* Left Column: Product Media Showcase (Span 6) */}
-              <div className="lg:col-span-6 space-y-4">
-                {/* Main Large Display Image */}
-                <div className="relative rounded-3xl overflow-hidden aspect-[4/5] bg-white border border-neutral-200 shadow-xs group">
-                  <ProductImageZoom
-                    src={withVariant(resolveMediaUrl(visibleImages[activeImage] || PLACEHOLDER_IMAGE), 'large')}
-                    alt={product.name}
-                    unoptimized={isLocalOrPlaceholder(resolveMediaUrl(visibleImages[activeImage] || PLACEHOLDER_IMAGE))}
-                  />
+              {/* Left Column: Product Media Showcase (Span 6, Sticky on Desktop) */}
+              <div className="lg:col-span-6 xl:col-span-6 lg:sticky lg:top-24 self-start space-y-4">
+                <div className="flex flex-col-reverse md:flex-row gap-3 md:gap-4 items-start">
                   
-                  {/* Badges */}
-                  <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
-                    <span className="bg-neutral-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
-                      NEW
-                    </span>
-                    {discount && (
-                      <span className="bg-sky-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
-                        {discount} OFF
+                  {/* Thumbnails (Vertical on md/lg, horizontal on mobile) */}
+                  {visibleImages.length > 1 && (
+                    <div className="flex md:flex-col gap-2.5 overflow-x-auto md:overflow-y-auto max-h-[540px] lg:max-h-[600px] scrollbar-none shrink-0 py-0.5 w-full md:w-auto">
+                      {visibleImages.map((src, i) => (
+                        <button
+                          key={src + i}
+                          type="button"
+                          onClick={() => setActiveImage(i)}
+                          className={`w-14 h-18 md:w-16 md:h-20 rounded-xl overflow-hidden relative shrink-0 border-2 transition-all duration-200 ${
+                            i === activeImage
+                              ? 'border-[#0284c7] ring-2 ring-[#0284c7]/20 shadow-sm scale-102'
+                              : 'border-neutral-200/90 opacity-70 hover:opacity-100 hover:border-neutral-300'
+                          }`}
+                        >
+                          <Image
+                            src={withVariant(resolveMediaUrl(src), 'thumb')}
+                            alt=""
+                            fill
+                            sizes="64px"
+                            unoptimized={isLocalOrPlaceholder(resolveMediaUrl(src))}
+                            className="object-cover object-top"
+                          />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Main Large Display Image */}
+                  <div className="relative flex-1 w-full rounded-2xl md:rounded-3xl overflow-hidden aspect-[3/4] md:aspect-[4/5] max-h-[540px] lg:max-h-[600px] xl:max-h-[640px] bg-neutral-50/50 border border-neutral-200/80 shadow-xs group">
+                    <ProductImageZoom
+                      src={withVariant(resolveMediaUrl(visibleImages[activeImage] || PLACEHOLDER_IMAGE), 'large')}
+                      alt={product.name}
+                      unoptimized={isLocalOrPlaceholder(resolveMediaUrl(visibleImages[activeImage] || PLACEHOLDER_IMAGE))}
+                    />
+                    
+                    {/* Badges */}
+                    <div className="absolute top-4 left-4 flex flex-col gap-2 z-10">
+                      <span className="bg-neutral-900 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+                        NEW
                       </span>
-                    )}
+                      {discount && (
+                        <span className="bg-sky-600 text-white text-[10px] font-bold px-3 py-1 rounded-full shadow-xs uppercase tracking-wider">
+                          {discount} OFF
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Wishlist Icon */}
+                    <button
+                      type="button"
+                      onClick={handleWishlist}
+                      className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-[#0284c7] flex items-center justify-center shadow-md transition-all z-10"
+                    >
+                      <Heart className={`w-5 h-5 ${isSaved ? 'text-sky-500 fill-current' : ''}`} />
+                    </button>
+
+                    {/* View Full Size Overlay button */}
+                    <button
+                      type="button"
+                      onClick={() => setShowFullSize(true)}
+                      className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-xs hover:bg-white text-[10px] font-black text-neutral-800 px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-md uppercase tracking-wider transition-all z-10"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      View Full Size
+                    </button>
                   </div>
-
-                  {/* Wishlist Icon */}
-                  <button
-                    type="button"
-                    onClick={handleWishlist}
-                    className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-[#0284c7] flex items-center justify-center shadow-md transition-all z-10"
-                  >
-                    <Heart className={`w-5 h-5 ${isSaved ? 'text-sky-500 fill-current' : ''}`} />
-                  </button>
-
-                  {/* View Full Size Overlay button */}
-                  <button
-                    type="button"
-                    onClick={() => setShowFullSize(true)}
-                    className="absolute bottom-4 right-4 bg-white/90 backdrop-blur-xs hover:bg-white text-[10px] font-black text-neutral-800 px-3 py-2 rounded-xl flex items-center gap-1.5 shadow-md uppercase tracking-wider transition-all z-10"
-                  >
-                    <Maximize2 className="w-3.5 h-3.5" />
-                    View Full Size
-                  </button>
                 </div>
-
-                {/* Thumbnails Row (4 Horizontal Cards below Main Image) */}
-                {visibleImages.length > 1 && (
-                  <div className="flex gap-3 overflow-x-auto pb-2 scrollbar-none">
-                    {visibleImages.map((src, i) => (
-                      <button
-                        key={src + i}
-                        type="button"
-                        onClick={() => setActiveImage(i)}
-                        className={`w-16 h-20 rounded-xl overflow-hidden relative shrink-0 border-2 transition-all ${
-                          i === activeImage
-                            ? 'border-[#0284c7] shadow-sm scale-105'
-                            : 'border-neutral-200 opacity-70 hover:opacity-100'
-                        }`}
-                      >
-                        <Image
-                          src={withVariant(resolveMediaUrl(src), 'thumb')}
-                          alt=""
-                          fill
-                          sizes="64px"
-                          unoptimized={isLocalOrPlaceholder(resolveMediaUrl(src))}
-                          className="object-cover"
-                        />
-                      </button>
-                    ))}
-                  </div>
-                )}
               </div>
 
               {/* Right Column: Product Details & Buying Options (Span 6) */}
@@ -708,7 +815,7 @@ export function ProductDetailClient() {
                 </div>
 
                 {/* Price Section Box */}
-                <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-1.5">
+                <div className="p-4 bg-sky-50/60 rounded-2xl border border-sky-100 space-y-2">
                   <div className="flex items-baseline gap-3 flex-wrap">
                     <span className="text-3xl font-extrabold text-[#0284c7] font-serif">
                       {formatInr(finalUnitPrice)}
@@ -734,13 +841,23 @@ export function ProductDetailClient() {
                       </span>
                     )}
                   </div>
+
+                  {/* Coupon Applied Discount Highlight */}
+                  {offerDiscountAmount > 0 && selectedOffer && (
+                    <div className="flex items-center justify-between text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1.5 rounded-xl border border-emerald-200">
+                      <span className="flex items-center gap-1.5">
+                        <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
+                        Coupon <span className="font-mono uppercase">{selectedOffer.code}</span> applied
+                      </span>
+                      <span>-{formatInr(offerDiscountAmount)}</span>
+                    </div>
+                  )}
+
                   <div className="flex items-center justify-between text-[11px] text-neutral-500 font-medium">
                     <span>Inclusive of all taxes</span>
-                    {qty > 1 && (
-                      <span className="font-bold text-neutral-800">
-                        Total ({qty} items): <span className="text-[#0284c7] font-extrabold">{formatInr(grandTotal)}</span>
-                      </span>
-                    )}
+                    <span className="font-bold text-neutral-800">
+                      Total ({qty} {qty > 1 ? 'items' : 'item'}): <span className="text-[#0284c7] font-extrabold">{formatInr(grandTotal)}</span>
+                    </span>
                   </div>
                 </div>
 
@@ -749,22 +866,80 @@ export function ProductDetailClient() {
                   {product.shortDescription || 'Elegant floral printed Anarkali dress for women, perfect for festive and special occasions.'}
                 </p>
 
-                {/* OFFERS FOR YOU section — real active coupons only */}
+                {/* OFFERS FOR YOU section — Interactive Coupons */}
                 {pdpOffers.length > 0 && (
-                  <div className="border border-dashed border-neutral-200 bg-white rounded-2xl p-4 space-y-3 shadow-2xs">
-                    <h3 className="text-[10px] font-black text-neutral-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
-                    </h3>
+                  <div className="border border-dashed border-sky-200 bg-sky-50/20 rounded-2xl p-4 space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-[11px] font-black text-neutral-700 uppercase tracking-widest flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-amber-500" /> Offers For You
+                      </h3>
+                      {selectedOfferCode && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedOfferCode(null);
+                            if (typeof window !== 'undefined') localStorage.removeItem('vs_applied_coupon');
+                          }}
+                          className="text-[10px] font-bold text-rose-600 hover:text-rose-700 hover:underline"
+                        >
+                          Clear Offer
+                        </button>
+                      )}
+                    </div>
+
                     <div className="grid grid-cols-1 gap-2.5">
-                      {pdpOffers.map((o) => (
-                        <div key={o.code} className="flex items-center justify-between border border-neutral-100 rounded-xl p-3 bg-neutral-50/50">
-                          <div className="space-y-0.5">
-                            <p className="text-xs font-bold text-neutral-800">{o.label}</p>
-                            <p className="text-[9px] text-neutral-400 font-semibold">Use code <span className="font-mono font-bold text-[#0284c7]">{o.code}</span> — {o.detail}</p>
+                      {pdpOffers.map((o) => {
+                        const isSelected = selectedOfferCode?.toUpperCase() === o.code.toUpperCase();
+                        const meetsMin = !o.minOrder || rawGrandTotal >= o.minOrder;
+
+                        return (
+                          <div
+                            key={o.code}
+                            onClick={() => handleToggleOffer(o)}
+                            className={`cursor-pointer transition-all duration-200 flex items-center justify-between border rounded-xl p-3.5 ${
+                              isSelected
+                                ? 'bg-sky-50/80 border-[#0284c7] ring-2 ring-[#0284c7]/20 shadow-sm'
+                                : 'bg-white hover:bg-neutral-50 border-neutral-200 hover:border-neutral-300'
+                            }`}
+                          >
+                            <div className="space-y-1 pr-3">
+                              <div className="flex items-center gap-2">
+                                <p className="text-xs font-bold text-neutral-900">{o.label}</p>
+                                {isSelected && (
+                                  <span className={`text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                                    meetsMin ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                                  }`}>
+                                    {meetsMin ? 'Applied' : 'Selected'}
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-[10px] text-neutral-500 font-medium">
+                                Use code <span className="font-mono font-bold text-[#0284c7]">{o.code}</span> — {o.detail}
+                              </p>
+                              {isSelected && !meetsMin && o.minOrder && (
+                                <p className="text-[10px] text-amber-700 font-semibold flex items-center gap-1">
+                                  <span>⚠️ Add {formatInr(o.minOrder - rawGrandTotal)} more to unlock discount</span>
+                                </p>
+                              )}
+                            </div>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleOffer(o);
+                              }}
+                              className={`px-3.5 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all shrink-0 ${
+                                isSelected
+                                  ? 'bg-[#0284c7] text-white shadow-xs'
+                                  : 'bg-neutral-100 hover:bg-[#0284c7] text-neutral-700 hover:text-white border border-neutral-200'
+                              }`}
+                            >
+                              {isSelected ? 'Applied' : 'Apply'}
+                            </button>
                           </div>
-                          <div className="w-4 h-4 rounded-full border border-neutral-300 flex items-center justify-center"><CheckCircle className="w-2.5 h-2.5 text-emerald-600" /></div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
                 )}
@@ -874,206 +1049,227 @@ export function ProductDetailClient() {
                   </div>
                 </div>
 
-                {/* CUSTOM TAILORING & STITCHING STUDIO */}
-                <div className="border border-sky-100 bg-white rounded-2xl p-4 shadow-2xs space-y-3 transition-all">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center font-bold">
-                        <Scissors className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-xs font-extrabold text-neutral-900">Custom Tailoring & Stitching</h4>
-                          <span className="text-[10px] font-black bg-sky-100 text-[#0284c7] px-2 py-0.5 rounded-md uppercase tracking-wider">+₹499</span>
-                        </div>
-                        <p className="text-[10px] text-neutral-500">Bespoke sizing for Blouses, Lehengas & Anarkalis</p>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer">
-                      <input 
-                        type="checkbox" 
-                        checked={customTailoring} 
-                        onChange={(e) => setCustomTailoring(e.target.checked)} 
-                        className="sr-only peer" 
-                      />
-                      <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
-                    </label>
-                  </div>
-
-                  {customTailoring && (
-                    <div className="border-t border-sky-50 pt-3 space-y-3 animate-fade-in text-xs">
-                      <p className="text-[11px] font-semibold text-neutral-600">
-                        Our master tailors will hand-stitch this garment to your exact measurements:
-                      </p>
-
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Bust (Inches)</label>
-                          <select 
-                            value={measurements.bust} 
-                            onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            {[32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54].map((n) => (
-                              <option key={n} value={n}>{n}&quot; (Inches)</option>
-                            ))}
-                          </select>
+                {/* CUSTOM TAILORING & STITCHING STUDIO (Only if enabled on product) */}
+                {showCustomTailoring && (
+                  <div className="border border-sky-100 bg-white rounded-2xl p-4 shadow-2xs space-y-3 transition-all">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-sky-50 text-[#0284c7] flex items-center justify-center font-bold">
+                          <Scissors className="w-4 h-4" />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Waist (Inches)</label>
-                          <select 
-                            value={measurements.waist} 
-                            onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            {[26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50].map((n) => (
-                              <option key={n} value={n}>{n}&quot; (Inches)</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Hips (Inches)</label>
-                          <select 
-                            value={measurements.hips} 
-                            onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            {[34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
-                              <option key={n} value={n}>{n}&quot; (Inches)</option>
-                            ))}
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Garment Length</label>
-                          <select 
-                            value={measurements.length} 
-                            onChange={(e) => setMeasurements({ ...measurements, length: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            {[38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
-                              <option key={n} value={n}>{n}&quot; (Standard)</option>
-                            ))}
-                          </select>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-extrabold text-neutral-900">Custom Tailoring & Stitching</h4>
+                            <span className="text-[10px] font-black bg-sky-100 text-[#0284c7] px-2 py-0.5 rounded-md uppercase tracking-wider">+₹499</span>
+                          </div>
+                          <p className="text-[10px] text-neutral-500">Bespoke sizing for Blouses, Lehengas & Anarkalis</p>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Sleeve Styling</label>
-                          <select 
-                            value={measurements.sleeveStyle} 
-                            onChange={(e) => setMeasurements({ ...measurements, sleeveStyle: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            <option value="Sleeveless">Sleeveless</option>
-                            <option value="Cap Sleeves">Cap Sleeves (3&quot;)</option>
-                            <option value="Short Sleeves">Short Sleeves (6&quot;)</option>
-                            <option value="3/4th Sleeves">3/4th Sleeves (15&quot;)</option>
-                            <option value="Full Sleeves">Full Sleeves (21&quot;)</option>
-                          </select>
-                        </div>
-                        <div>
-                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Neckline Cut</label>
-                          <select 
-                            value={measurements.neckline} 
-                            onChange={(e) => setMeasurements({ ...measurements, neckline: e.target.value })}
-                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
-                          >
-                            <option value="Sweetheart Neck">Sweetheart Neck (Designer)</option>
-                            <option value="Round Neck">Classic Round Neck</option>
-                            <option value="V-Neck Deep">Deep V-Neck</option>
-                            <option value="Boat Neck">Modern Boat Neck</option>
-                            <option value="Square Neck">Square Neck</option>
-                            <option value="Collar / Mandarin">Mandarin Collar</option>
-                          </select>
-                        </div>
-                      </div>
-
-                      <div className="pt-1">
-                        <label className="block text-[10px] font-bold text-neutral-500 uppercase">Special Tailoring Notes (Optional)</label>
+                      <label className="relative inline-flex items-center cursor-pointer">
                         <input 
-                          type="text" 
-                          placeholder="e.g. Add extra margin inside, side zipper requested..."
-                          value={measurements.notes} 
-                          onChange={(e) => setMeasurements({ ...measurements, notes: e.target.value })}
-                          className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0284c7]"
+                          type="checkbox" 
+                          checked={customTailoring} 
+                          onChange={(e) => setCustomTailoring(e.target.checked)} 
+                          className="sr-only peer" 
                         />
-                      </div>
+                        <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                      </label>
                     </div>
-                  )}
-                </div>
 
-                {/* B2B / WHOLESALE RESELLER TIER */}
-                <div className="border border-neutral-200/90 bg-neutral-50/50 rounded-2xl p-4 shadow-2xs space-y-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
-                        <Boxes className="w-4 h-4 text-amber-700" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-1.5">
-                          <h4 className="text-xs font-extrabold text-neutral-900">B2B & Wholesale Reseller Pricing</h4>
-                          {wholesaleTier.badge && (
-                            <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                              {wholesaleTier.badge}
-                            </span>
-                          )}
+                    {customTailoring && (
+                      <div className="border-t border-sky-50 pt-3 space-y-3 animate-fade-in text-xs">
+                        <p className="text-[11px] font-semibold text-neutral-600">
+                          Our master tailors will hand-stitch this garment to your exact measurements:
+                        </p>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Bust (Inches)</label>
+                            <select 
+                              value={measurements.bust} 
+                              onChange={(e) => setMeasurements({ ...measurements, bust: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              {[32, 34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54].map((n) => (
+                                <option key={n} value={n}>{n}&quot; (Inches)</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Waist (Inches)</label>
+                            <select 
+                              value={measurements.waist} 
+                              onChange={(e) => setMeasurements({ ...measurements, waist: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              {[26, 28, 30, 32, 34, 36, 38, 40, 42, 44, 46, 48, 50].map((n) => (
+                                <option key={n} value={n}>{n}&quot; (Inches)</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Hips (Inches)</label>
+                            <select 
+                              value={measurements.hips} 
+                              onChange={(e) => setMeasurements({ ...measurements, hips: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              {[34, 36, 38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
+                                <option key={n} value={n}>{n}&quot; (Inches)</option>
+                              ))}
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Garment Length</label>
+                            <select 
+                              value={measurements.length} 
+                              onChange={(e) => setMeasurements({ ...measurements, length: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              {[38, 40, 42, 44, 46, 48, 50, 52, 54, 56].map((n) => (
+                                <option key={n} value={n}>{n}&quot; (Standard)</option>
+                              ))}
+                            </select>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-neutral-500">Buy in bulk for boutiques, resellers & events</p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Sleeve Styling</label>
+                            <select 
+                              value={measurements.sleeveStyle} 
+                              onChange={(e) => setMeasurements({ ...measurements, sleeveStyle: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              <option value="Sleeveless">Sleeveless</option>
+                              <option value="Cap Sleeves">Cap Sleeves (3&quot;)</option>
+                              <option value="Short Sleeves">Short Sleeves (6&quot;)</option>
+                              <option value="3/4th Sleeves">3/4th Sleeves (15&quot;)</option>
+                              <option value="Full Sleeves">Full Sleeves (21&quot;)</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-neutral-500 uppercase">Neckline Cut</label>
+                            <select 
+                              value={measurements.neckline} 
+                              onChange={(e) => setMeasurements({ ...measurements, neckline: e.target.value })}
+                              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-semibold focus:outline-none focus:border-[#0284c7]"
+                            >
+                              <option value="Sweetheart Neck">Sweetheart Neck (Designer)</option>
+                              <option value="Round Neck">Classic Round Neck</option>
+                              <option value="V-Neck Deep">Deep V-Neck</option>
+                              <option value="Boat Neck">Modern Boat Neck</option>
+                              <option value="Square Neck">Square Neck</option>
+                              <option value="Collar / Mandarin">Mandarin Collar</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="pt-1">
+                          <label className="block text-[10px] font-bold text-neutral-500 uppercase">Special Tailoring Notes (Optional)</label>
+                          <input 
+                            type="text" 
+                            placeholder="e.g. Add extra margin inside, side zipper requested..."
+                            value={measurements.notes} 
+                            onChange={(e) => setMeasurements({ ...measurements, notes: e.target.value })}
+                            className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-medium focus:outline-none focus:border-[#0284c7]"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* B2B / WHOLESALE RESELLER TIER (Only if enabled on product) */}
+                {showWholesalePricing && (
+                  <div className="border border-neutral-200/90 bg-neutral-50/50 rounded-2xl p-4 shadow-2xs space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold">
+                          <Boxes className="w-4 h-4 text-amber-700" />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-1.5">
+                            <h4 className="text-xs font-extrabold text-neutral-900">B2B & Wholesale Reseller Pricing</h4>
+                            {wholesaleTier.badge && (
+                              <span className="text-[9px] font-black bg-emerald-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
+                                {wholesaleTier.badge}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-[10px] text-neutral-500">Buy in bulk for boutiques, resellers & events</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 text-center text-xs">
+                      <div className={`p-2 rounded-xl border transition-all ${qty < 5 ? 'bg-white border-neutral-300 shadow-2xs font-bold text-neutral-900 ring-1 ring-neutral-400' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                        <p className="text-[10px] uppercase font-bold text-neutral-400">1 - 4 Pcs</p>
+                        <p className="text-xs font-black text-neutral-800 mt-0.5">{formatInr(price)}/pc</p>
+                        <span className="text-[9px] text-neutral-400">Standard</span>
+                      </div>
+
+                      <div className={`p-2 rounded-xl border transition-all ${qty >= 5 && qty < 10 ? 'bg-amber-50 border-amber-300 shadow-2xs font-bold text-amber-900 ring-2 ring-amber-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                        <p className="text-[10px] uppercase font-bold text-amber-700">5 - 9 Pcs</p>
+                        <p className="text-xs font-black text-amber-900 mt-0.5">{formatInr(Math.round(price * 0.85))}/pc</p>
+                        <span className="text-[9px] font-bold text-emerald-600">15% OFF</span>
+                      </div>
+
+                      <div className={`p-2 rounded-xl border transition-all ${qty >= 10 ? 'bg-emerald-50 border-emerald-300 shadow-2xs font-bold text-emerald-900 ring-2 ring-emerald-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
+                        <p className="text-[10px] uppercase font-bold text-emerald-700">10+ Pcs</p>
+                        <p className="text-xs font-black text-emerald-900 mt-0.5">{formatInr(Math.round(price * 0.75))}/pc</p>
+                        <span className="text-[9px] font-bold text-emerald-600">25% OFF</span>
+                      </div>
+                    </div>
+
+                    {/* 1-Click Wholesale Quantity Buttons */}
+                    <div className="flex items-center gap-2 pt-0.5">
+                      <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Quick Bulk:</span>
+                      <div className="flex flex-wrap gap-1.5 flex-1">
+                        {[5, 10, 25, 50].map((bulkQty) => (
+                          <button
+                            key={bulkQty}
+                            type="button"
+                            onClick={() => setQty(bulkQty)}
+                            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
+                              qty === bulkQty
+                                ? 'bg-neutral-900 text-white border-neutral-900'
+                                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                            }`}
+                          >
+                            {bulkQty} Pcs
+                          </button>
+                        ))}
                       </div>
                     </div>
                   </div>
-
-                  <div className="grid grid-cols-3 gap-2 text-center text-xs">
-                    <div className={`p-2 rounded-xl border transition-all ${qty < 5 ? 'bg-white border-neutral-300 shadow-2xs font-bold text-neutral-900 ring-1 ring-neutral-400' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
-                      <p className="text-[10px] uppercase font-bold text-neutral-400">1 - 4 Pcs</p>
-                      <p className="text-xs font-black text-neutral-800 mt-0.5">{formatInr(price)}/pc</p>
-                      <span className="text-[9px] text-neutral-400">Standard</span>
-                    </div>
-
-                    <div className={`p-2 rounded-xl border transition-all ${qty >= 5 && qty < 10 ? 'bg-amber-50 border-amber-300 shadow-2xs font-bold text-amber-900 ring-2 ring-amber-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
-                      <p className="text-[10px] uppercase font-bold text-amber-700">5 - 9 Pcs</p>
-                      <p className="text-xs font-black text-amber-900 mt-0.5">{formatInr(Math.round(price * 0.85))}/pc</p>
-                      <span className="text-[9px] font-bold text-emerald-600">15% OFF</span>
-                    </div>
-
-                    <div className={`p-2 rounded-xl border transition-all ${qty >= 10 ? 'bg-emerald-50 border-emerald-300 shadow-2xs font-bold text-emerald-900 ring-2 ring-emerald-500' : 'bg-white/60 border-neutral-200 text-neutral-500'}`}>
-                      <p className="text-[10px] uppercase font-bold text-emerald-700">10+ Pcs</p>
-                      <p className="text-xs font-black text-emerald-900 mt-0.5">{formatInr(Math.round(price * 0.75))}/pc</p>
-                      <span className="text-[9px] font-bold text-emerald-600">25% OFF</span>
-                    </div>
-                  </div>
-
-                  {/* 1-Click Wholesale Quantity Buttons */}
-                  <div className="flex items-center gap-2 pt-0.5">
-                    <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Quick Bulk:</span>
-                    <div className="flex flex-wrap gap-1.5 flex-1">
-                      {[5, 10, 25, 50].map((bulkQty) => (
-                        <button
-                          key={bulkQty}
-                          type="button"
-                          onClick={() => setQty(bulkQty)}
-                          className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
-                            qty === bulkQty
-                              ? 'bg-neutral-900 text-white border-neutral-900'
-                              : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
-                          }`}
-                        >
-                          {bulkQty} Pcs
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
+                )}
 
                 {/* Counter, ADD TO BAG & BUY NOW section */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-0.5">
                   <div className="flex items-center justify-between sm:justify-center gap-3 border border-neutral-200 bg-white rounded-xl px-3 py-3 shadow-2xs shrink-0">
-                    <button type="button" onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-0.5 hover:bg-neutral-50 rounded">
+                    <button 
+                      type="button" 
+                      disabled={qty <= 1}
+                      onClick={() => setQty((q) => Math.max(1, q - 1))} 
+                      className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <Minus className="w-3.5 h-3.5 text-neutral-500" />
                     </button>
                     <span className="text-sm font-bold w-5 text-center text-neutral-800">{qty}</span>
-                    <button type="button" onClick={() => setQty((q) => q + 1)} className="p-0.5 hover:bg-neutral-50 rounded">
+                    <button 
+                      type="button" 
+                      disabled={qty >= maxAllowedQty}
+                      onClick={() => {
+                        if (qty < maxAllowedQty) {
+                          setQty((q) => q + 1);
+                        } else {
+                          setMsg(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
+                          setTimeout(() => setMsg(''), 3000);
+                        }
+                      }} 
+                      className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                    >
                       <Plus className="w-3.5 h-3.5 text-neutral-500" />
                     </button>
                   </div>
@@ -1081,22 +1277,22 @@ export function ProductDetailClient() {
                   <div className="flex items-center gap-2.5 flex-1">
                     <button
                       type="button"
-                      disabled={addItem.isPending}
+                      disabled={addItem.isPending || maxAllowedQty === 0}
                       onClick={handleAddToCart}
-                      className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-98 transition-all disabled:opacity-60 text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
+                      className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
                     >
                       <ShoppingBag className="w-4 h-4" />
-                      {addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
+                      {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
                     </button>
 
                     <button
                       type="button"
-                      disabled={addItem.isPending}
+                      disabled={addItem.isPending || maxAllowedQty === 0}
                       onClick={handleBuyNow}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all disabled:opacity-60 text-neutral-950 text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 border border-amber-400/50"
+                      className="flex-1 bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 border border-amber-400/50"
                     >
                       <Zap className="w-4 h-4 fill-neutral-950" />
-                      {addItem.isPending ? 'BUYING…' : 'BUY NOW'}
+                      {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'BUYING…' : 'BUY NOW'}
                     </button>
                   </div>
                 </div>
@@ -1304,18 +1500,22 @@ export function ProductDetailClient() {
                     <p className="text-xs font-medium text-neutral-500 uppercase tracking-widest block mb-2">Product Overview</p>
                     <div className="whitespace-pre-wrap">{product.description || 'No detailed overview provided.'}</div>
                     
-                    {/* Mobile Bullet Specifications mock list */}
+                    {/* Product Highlights & Occasion */}
                     <div className="pt-4 space-y-2">
-                      <p className="text-xs font-bold text-neutral-800">Key Features:</p>
-                      <ul className="space-y-2 text-xs text-neutral-700 font-semibold">
-                        <li className="flex items-center gap-2"><span className="text-[var(--brand-primary)] font-bold">✔</span> Floral printed Anarkali kurta with elegant flare</li>
-                        <li className="flex items-center gap-2"><span className="text-[var(--brand-primary)] font-bold">✔</span> Matching bottom with comfortable fit</li>
-                        <li className="flex items-center gap-2"><span className="text-[var(--brand-primary)] font-bold">✔</span> Lightweight floral dupatta with tassels</li>
-                        <li className="flex items-center gap-2"><span className="text-[var(--brand-primary)] font-bold">✔</span> Round neckline with delicate detailing</li>
-                        <li className="flex items-center gap-2"><span className="text-[var(--brand-primary)] font-bold">✔</span> Full length sleeves</li>
-                      </ul>
+                      {product.highlights && Array.isArray(product.highlights) && product.highlights.length > 0 ? (
+                        <>
+                          <p className="text-xs font-bold text-neutral-800">Key Features:</p>
+                          <ul className="space-y-2 text-xs text-neutral-700 font-semibold">
+                            {product.highlights.map((hl: string, idx: number) => (
+                              <li key={idx} className="flex items-center gap-2">
+                                <span className="text-[var(--brand-primary)] font-bold">✔</span> {hl}
+                              </li>
+                            ))}
+                          </ul>
+                        </>
+                      ) : null}
                       <p className="text-xs text-neutral-500 font-semibold pt-2">
-                        <strong>Ideal For:</strong> Festive wear, casual outings, family gatherings, office wear, and day celebrations.
+                        <strong>Ideal For:</strong> {product.occasion ? `${product.occasion} wear & celebrations` : 'Everyday, festive & party wear'}
                       </p>
                     </div>
                   </div>
@@ -1373,13 +1573,13 @@ export function ProductDetailClient() {
 
             </div>
 
-            {/* Mobile spec cards with chevron arrows (from mobile mock) */}
+            {/* Mobile spec cards with chevron arrows */}
             <div className="grid grid-cols-1 gap-3 md:hidden">
               {[
-                { title: 'Premium Rayon Fabric', desc: 'Soft, breathable & skin-friendly' },
-                { title: 'All Day Comfort', desc: 'Lightweight fabric for all day ease' },
-                { title: 'Perfect For Every Occasion', desc: 'Festive, casual & party wear' },
-                { title: 'Easy Care', desc: 'Low maintenance & durable fabric' }
+                { title: product.type ? `${product.type}` : 'Premium Craftsmanship', desc: 'Expertly tailored with premium quality' },
+                { title: 'All Day Comfort', desc: 'Lightweight & breathable for all day ease' },
+                { title: 'Occasion & Style', desc: product.occasion ? `${product.occasion} wear` : 'Versatile styling for every moment' },
+                { title: 'Season & Collection', desc: product.season || 'Year-round essential' }
               ].map((spec, idx) => (
                 <div key={idx} className="flex items-center justify-between bg-white border border-neutral-200 rounded-xl p-4 cursor-pointer hover:border-neutral-300">
                   <div className="space-y-0.5">
@@ -1401,8 +1601,32 @@ export function ProductDetailClient() {
                 </div>
                 <div className="flex py-2.5">
                   <span className="w-1/3 text-neutral-400 font-bold uppercase">Category</span>
-                  <span className="w-2/3 text-neutral-800 font-semibold">{product.categories?.[0]?.categoryName || 'Ethnic Wear'}</span>
+                  <span className="w-2/3 text-neutral-800 font-semibold">{product.categories?.map(c => c.categoryName || (c as any).category?.name).filter(Boolean).join(', ') || 'Apparel'}</span>
                 </div>
+                {product.occasion && (
+                  <div className="flex py-2.5">
+                    <span className="w-1/3 text-neutral-400 font-bold uppercase">Occasion</span>
+                    <span className="w-2/3 text-neutral-800 font-semibold">{product.occasion}</span>
+                  </div>
+                )}
+                {product.season && (
+                  <div className="flex py-2.5">
+                    <span className="w-1/3 text-neutral-400 font-bold uppercase">Season</span>
+                    <span className="w-2/3 text-neutral-800 font-semibold">{product.season}</span>
+                  </div>
+                )}
+                {product.gender && (
+                  <div className="flex py-2.5">
+                    <span className="w-1/3 text-neutral-400 font-bold uppercase">Gender</span>
+                    <span className="w-2/3 text-neutral-800 font-semibold">{product.gender}</span>
+                  </div>
+                )}
+                {product.type && (
+                  <div className="flex py-2.5">
+                    <span className="w-1/3 text-neutral-400 font-bold uppercase">Garment Type</span>
+                    <span className="w-2/3 text-neutral-800 font-semibold">{product.type}</span>
+                  </div>
+                )}
                 {product.attributes?.map((attr) => (
                   <div key={attr.attributeId} className="flex py-2.5">
                     <span className="w-1/3 text-neutral-400 font-bold uppercase">{attr.attributeName}</span>

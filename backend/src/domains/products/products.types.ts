@@ -430,6 +430,19 @@ export class UpdateProductDto {
   @IsArray()
   @IsString({ each: true })
   highlights?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @IsUUID('all', { each: true })
+  categoryIds?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => ProductAttributeEntry)
+  attributes?: ProductAttributeEntry[];
 }
 
 // ─── Query ───────────────────────────────────────────────

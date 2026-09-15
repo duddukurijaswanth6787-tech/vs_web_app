@@ -58,6 +58,9 @@ import {
   Globe,
   Layers,
   Sparkles,
+  Scissors,
+  Boxes,
+  Flame,
 } from 'lucide-react';
 
 interface ProductBuilderProps {
@@ -360,6 +363,33 @@ export default function ProductBuilder({
   const [occasion, setOccasion] = useState(initialData?.occasion ?? '');
   const [tagInput, setTagInput] = useState('');
   const [collectionInput, setCollectionInput] = useState('');
+
+  // Customer-facing storefront feature toggles
+  const [enableCustomTailoring, setEnableCustomTailoring] = useState<boolean>(() => {
+    return Boolean(
+      initialData?.tags?.includes('custom-tailoring') ||
+      initialData?.tags?.includes('custom-stitch') ||
+      initialData?.type === 'CUSTOM'
+    );
+  });
+
+  const [enableWholesalePricing, setEnableWholesalePricing] = useState<boolean>(() => {
+    return Boolean(
+      initialData?.tags?.includes('wholesale-pricing') ||
+      initialData?.tags?.includes('b2b') ||
+      (initialData?.wholesalePrice && Number(initialData.wholesalePrice) > 0)
+    );
+  });
+
+  useEffect(() => {
+    if (!initialData) return;
+    if (initialData.tags?.includes('custom-tailoring') || initialData.type === 'CUSTOM') {
+      setEnableCustomTailoring(true);
+    }
+    if (initialData.tags?.includes('wholesale-pricing') || initialData.tags?.includes('b2b') || (initialData.wholesalePrice && Number(initialData.wholesalePrice) > 0)) {
+      setEnableWholesalePricing(true);
+    }
+  }, [initialData]);
 
   // attributeId -> chosen value, for the dynamic attribute registry.
   const [attributeValues, setAttributeValues] = useState<Record<string, string>>(() => {
@@ -1177,11 +1207,26 @@ export default function ProductBuilder({
       // Organisation lives outside the react-hook-form schema, so merge it in.
       const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
       const cleanHsn = values.hsnCode?.trim() ? values.hsnCode.trim() : undefined;
+
+      // Sync tags with custom tailoring & wholesale pricing customer visibility toggles
+      let finalTags = [...tags];
+      if (enableCustomTailoring) {
+        if (!finalTags.includes('custom-tailoring')) finalTags.push('custom-tailoring');
+      } else {
+        finalTags = finalTags.filter((t) => t !== 'custom-tailoring' && t !== 'custom-stitch');
+      }
+
+      if (enableWholesalePricing) {
+        if (!finalTags.includes('wholesale-pricing')) finalTags.push('wholesale-pricing');
+      } else {
+        finalTags = finalTags.filter((t) => t !== 'wholesale-pricing' && t !== 'b2b');
+      }
+
       const payload = {
         ...values,
         ...(cleanHsn ? { hsnCode: cleanHsn } : { hsnCode: undefined }),
         ...(categoryIds.length > 0 ? { categoryIds } : {}),
-        ...(tags.length > 0 ? { tags } : {}),
+        tags: finalTags,
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
@@ -1977,6 +2022,89 @@ export default function ProductBuilder({
                   placeholder="Detailed specifications, fabric details, care instructions, craftsmanship..."
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-4 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
+              </div>
+
+              {/* STOREFRONT CUSTOMER-FACING FEATURE TOGGLES */}
+              <div className="md:col-span-2 bg-sky-50/40 rounded-2xl p-5 border border-sky-100 space-y-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="w-4 h-4 text-[#0284c7]" />
+                  <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Customer Storefront Features (Show / Hide on Product Page)
+                  </h4>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Custom Tailoring Toggle */}
+                  <div className={`p-4 rounded-xl border transition-all ${enableCustomTailoring ? 'bg-white border-[#0284c7] shadow-xs ring-1 ring-[#0284c7]/20' : 'bg-white/70 border-neutral-200'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Scissors className="w-4 h-4 text-[#0284c7]" />
+                          <span className="text-xs font-bold text-neutral-900">Custom Tailoring &amp; Stitching (+₹499)</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          Show bespoke measurement customizer (Bust, Waist, Hips, Sleeve, Neckline) to customers on the product page.
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={enableCustomTailoring}
+                          onChange={(e) => setEnableCustomTailoring(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* B2B / Wholesale Pricing Toggle */}
+                  <div className={`p-4 rounded-xl border transition-all ${enableWholesalePricing ? 'bg-white border-[#0284c7] shadow-xs ring-1 ring-[#0284c7]/20' : 'bg-white/70 border-neutral-200'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Boxes className="w-4 h-4 text-amber-600" />
+                          <span className="text-xs font-bold text-neutral-900">B2B &amp; Wholesale Reseller Pricing</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          Show bulk reseller tier discounts (5-9 pcs @ 15% OFF, 10+ pcs @ 25% OFF) and quick bulk quantity selectors.
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={enableWholesalePricing}
+                          onChange={(e) => setEnableWholesalePricing(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Low Stock Urgency Alert Toggle */}
+                  <div className={`p-4 rounded-xl border transition-all ${methods.watch('isLimitedStock') ? 'bg-white border-[#0284c7] shadow-xs ring-1 ring-[#0284c7]/20' : 'bg-white/70 border-neutral-200'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Flame className="w-4 h-4 text-amber-500" />
+                          <span className="text-xs font-bold text-neutral-900">Low Stock Alert Badge (&quot;Only X left!&quot;)</span>
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          Show live remaining inventory urgency badge (e.g. &quot;Only 1 left - selling fast!&quot;) under selected size.
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          {...methods.register('isLimitedStock')}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                      </label>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           </div>

@@ -256,9 +256,16 @@ export class ProductsRepository {
   // ─── Category assignments ───────────────────────────────
 
   async assignCategories(productId: string, categoryIds: string[]) {
-    await this.prisma.productCategory.createMany({
-      data: categoryIds.map((categoryId) => ({ productId, categoryId })),
-      skipDuplicates: true,
+    await this.prisma.$transaction(async (tx) => {
+      await tx.productCategory.deleteMany({
+        where: { productId },
+      });
+      if (categoryIds.length > 0) {
+        await tx.productCategory.createMany({
+          data: categoryIds.map((categoryId) => ({ productId, categoryId })),
+          skipDuplicates: true,
+        });
+      }
     });
   }
 
@@ -274,13 +281,20 @@ export class ProductsRepository {
     productId: string,
     entries: { attributeId: string; value?: string }[],
   ) {
-    await this.prisma.productAttribute.createMany({
-      data: entries.map((e) => ({
-        productId,
-        attributeId: e.attributeId,
-        value: e.value,
-      })),
-      skipDuplicates: true,
+    await this.prisma.$transaction(async (tx) => {
+      await tx.productAttribute.deleteMany({
+        where: { productId },
+      });
+      if (entries.length > 0) {
+        await tx.productAttribute.createMany({
+          data: entries.map((e) => ({
+            productId,
+            attributeId: e.attributeId,
+            value: e.value,
+          })),
+          skipDuplicates: true,
+        });
+      }
     });
   }
 

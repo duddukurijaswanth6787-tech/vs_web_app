@@ -461,7 +461,7 @@ export class ProductsService {
     this.validatePrices(dto);
     this.validateWeightDimensions(dto);
 
-    const { brandId, slug, primaryImageUrl, ...rest } = dto;
+    const { brandId, slug, primaryImageUrl, categoryIds, attributes, ...rest } = dto;
     const updateData: any = { ...rest, updatedBy: userId };
     if (slug) {
       updateData.slug = await this.generateUniqueSlug(slug, id, true);
@@ -480,6 +480,14 @@ export class ProductsService {
     }
 
     await this.productsRepository.update(id, updateData);
+
+    if (categoryIds !== undefined && Array.isArray(categoryIds)) {
+      await this.productsRepository.assignCategories(id, categoryIds);
+    }
+
+    if (attributes !== undefined && Array.isArray(attributes)) {
+      await this.productsRepository.assignAttributes(id, attributes);
+    }
     await this.auditService.log({
       action: 'PRODUCT_UPDATED',
       module: 'products',
