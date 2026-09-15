@@ -8,6 +8,7 @@ import {
   Body,
   Query,
   Req,
+  Header,
   UseGuards,
 } from '@nestjs/common';
 import type { Request } from 'express';
@@ -64,6 +65,7 @@ export class ProductsController {
   // ─── Public ────────────────────────────────────────────
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
   @ApiOperation({
     summary: 'List products with search, pagination, filtering, sorting',
   })
@@ -75,6 +77,7 @@ export class ProductsController {
   }
 
   @Get(':id')
+  @Header('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600')
   @ApiOperation({ summary: 'Get product by ID' })
   async findById(@Param('id') id: string, @Req() req: Request) {
     const restrictToPublicChannels = !this.isInternalRequest(req);

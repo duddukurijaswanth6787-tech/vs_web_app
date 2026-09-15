@@ -7,6 +7,7 @@ import {
   Param,
   Body,
   Query,
+  Header,
   UseGuards,
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
@@ -34,6 +35,7 @@ export class CategoriesController {
   ) {}
 
   @Get()
+  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
   @ApiOperation({
     summary: 'List categories with search, pagination, filtering, sorting',
   })
@@ -42,18 +44,21 @@ export class CategoriesController {
   }
 
   @Get('tree')
+  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
   @ApiOperation({ summary: 'Get full category tree (unlimited nesting)' })
   async getTree() {
     return ResponseBuilder.success(await this.categoriesService.getTree());
   }
 
   @Get('featured')
+  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
   @ApiOperation({ summary: 'Get featured categories for the homepage' })
   async findFeatured() {
     return ResponseBuilder.success(await this.categoriesService.findFeatured());
   }
 
   @Get('slug/:slug')
+  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
   @ApiOperation({ summary: 'Get category by slug' })
   async findBySlug(@Param('slug') slug: string) {
     return ResponseBuilder.success(

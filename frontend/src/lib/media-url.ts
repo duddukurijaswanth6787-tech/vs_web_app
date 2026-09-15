@@ -70,15 +70,10 @@ export function resolveMediaUrl(url?: string | null): string {
 export function isLocalOrPlaceholder(url?: string | null): boolean {
   if (!url) return true;
   return (
-    url.startsWith('/') ||
     url.startsWith('data:') ||
     url.startsWith('blob:') ||
     url.endsWith('.svg') ||
-    url.includes('placehold.co') ||
-    url.includes('unsplash.com') ||
-    url.includes('railway.app') ||
-    url.includes('vasanthissignature.in') ||
-    url.includes('/api/v1/storage')
+    url.includes('placehold.co')
   );
 }
 
