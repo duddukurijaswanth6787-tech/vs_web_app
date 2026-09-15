@@ -34,6 +34,7 @@ export class CartItemResponse {
   @ApiProperty() savedForLater!: boolean;
   @ApiProperty() createdAt!: Date;
   @ApiPropertyOptional() imageUrl?: string;
+  @ApiPropertyOptional() availableQuantity?: number;
 }
 
 export class CartResponse {

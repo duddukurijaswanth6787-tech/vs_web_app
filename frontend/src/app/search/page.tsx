@@ -39,7 +39,7 @@ function SearchPageContent() {
   // Only hit the fallback endpoint once the primary search has actually
   // resolved with no usable results, instead of firing it on every keystroke
   // alongside the search query regardless of outcome.
-  const needsFallback = search.isSuccess && !(searchList.length > 0 && (searchList[0] as { name?: string })?.name);
+  const needsFallback = search.isSuccess && debouncedQ.trim().length >= 2 && !(searchList.length > 0 && (searchList[0] as { name?: string })?.name);
   const productsFallback = useCustomerProducts({ search: debouncedQ, limit: 48 }, { enabled: needsFallback });
 
   const products = useMemo(() => {

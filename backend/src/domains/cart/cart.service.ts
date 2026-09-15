@@ -43,7 +43,8 @@ export class CartService {
       totalPrice: Number(item.totalPrice),
       savedForLater: item.savedForLater,
       createdAt: item.createdAt,
-      imageUrl: primaryMedia?.url ?? undefined,
+      imageUrl: primaryMedia?.url ?? item.product?.primaryImageUrl ?? undefined,
+      availableQuantity: item.variant?.inventory?.availableQuantity ?? 99,
     };
   }
 
@@ -246,6 +247,21 @@ export class CartService {
     const item = await this.cartRepository.findItemById(itemId);
     if (!item || item.cartId !== cart.id)
       throw new BusinessException('Cart item not found', 'CART_006');
+
+    if (item.variantId) {
+      const inventory = await this.prisma.inventory.findUnique({
+        where: { variantId: item.variantId },
+      });
+      if (inventory && !inventory.allowBackorder) {
+        const available = inventory.availableQuantity - inventory.reservedQuantity;
+        if (dto.quantity > available) {
+          throw new BusinessException(
+            `Only ${Math.max(0, available)} units available in stock`,
+            'CART_005',
+          );
+        }
+      }
+    }
 
     await this.cartRepository.updateItemQuantity(
       itemId,

@@ -109,6 +109,7 @@ export class ProductsService {
       primaryImageUrl:
         p.media?.find((m: any) => m.isPrimary)?.url ??
         p.media?.[0]?.url ??
+        (p as any).primaryImageUrl ??
         undefined,
       images: p.media?.map((m: any) => ({
         id: m.id,

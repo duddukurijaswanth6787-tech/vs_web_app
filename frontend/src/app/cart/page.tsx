@@ -327,11 +327,15 @@ export default function CartPage() {
                               </span>
                               <button
                                 type="button"
-                                disabled={updateQuantity.isPending}
+                                disabled={
+                                  updateQuantity.isPending ||
+                                  (typeof (item as any).availableQuantity === 'number' &&
+                                    item.quantity >= (item as any).availableQuantity)
+                                }
                                 onClick={() =>
                                   updateQuantity.mutate({ itemId: item.id, quantity: item.quantity + 1 })
                                 }
-                                className="w-6 h-6 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100"
+                                className="w-6 h-6 rounded-full flex items-center justify-center text-neutral-600 hover:bg-neutral-100 disabled:opacity-30 disabled:cursor-not-allowed"
                               >
                                 <Plus className="w-3 h-3" />
                               </button>

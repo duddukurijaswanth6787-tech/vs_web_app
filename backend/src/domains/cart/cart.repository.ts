@@ -134,6 +134,11 @@ export class CartRepository {
             },
           },
         },
+        variant: {
+          include: {
+            inventory: true,
+          },
+        },
       },
       orderBy: { createdAt: 'asc' },
     });
