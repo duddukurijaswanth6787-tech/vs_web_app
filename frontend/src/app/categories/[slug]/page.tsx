@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShoppingBag } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
@@ -31,9 +31,6 @@ export default function CategorySlugPage() {
           ? { isFeatured: true }
           : null;
 
-  // Only the branch actually taken should hit the network -- previously all
-  // four queries fired unconditionally, including two that always ran with
-  // an empty slug or a limit of 0 on whichever branch wasn't active.
   const category = useCategoryBySlug(slug, !special);
   const categoryProducts = useCategoryProducts(slug, { limit: 48 }, !special);
   const specialProducts = useCustomerProducts(
@@ -45,36 +42,50 @@ export default function CategorySlugPage() {
     ? slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase())
     : category.data?.name || slug.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
 
-  const fetched = special
+  const products = special
     ? extractProducts(specialProducts.data)
     : extractProducts(categoryProducts.data);
-  const primaryDone = special ? specialProducts.isSuccess : categoryProducts.isSuccess;
-  const needsFallback = primaryDone && fetched.length === 0;
-
-  // Only fetched once the primary query has actually come back empty --
-  // previously this fired unconditionally on every category page load even
-  // when the category already had products.
-  const fallbackProducts = useCustomerProducts({ limit: 48 }, { enabled: needsFallback });
-  const fallback = extractProducts(fallbackProducts.data);
-  const products = fetched.length > 0 ? fetched : fallback;
-  const loading = special
-    ? specialProducts.isLoading
-    : categoryProducts.isLoading || (needsFallback && fallbackProducts.isLoading);
-  const error = special ? specialProducts.error : categoryProducts.error || category.error;
+  const loading = special ? specialProducts.isLoading : (categoryProducts.isLoading || category.isLoading);
+  const error = special ? specialProducts.error : (categoryProducts.error || category.error);
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 pb-20">
       <StorefrontHeader />
 
       <main className="flex-1">
-        {loading && <p className="px-4 py-6 text-sm text-neutral-500">Loading products…</p>}
-        {error && products.length === 0 && (
-          <p className="px-4 py-6 text-sm text-red-600 font-medium">{getApiErrorMessage(error)}</p>
+        {loading && (
+          <div className="max-w-7xl mx-auto px-4 py-16 text-center text-sm text-neutral-500">
+            <p>Loading products…</p>
+          </div>
         )}
-        {!loading && (
+        {error && products.length === 0 && (
+          <div className="max-w-7xl mx-auto px-4 py-12 text-center">
+            <p className="text-sm text-red-600 font-medium">{getApiErrorMessage(error)}</p>
+          </div>
+        )}
+        {!loading && !error && products.length === 0 && (
+          <div className="max-w-7xl mx-auto px-4 py-20 text-center space-y-4">
+            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto text-neutral-400">
+              <ShoppingBag className="w-8 h-8" />
+            </div>
+            <h1 className="text-2xl font-serif font-bold text-neutral-900">{title}</h1>
+            <p className="text-sm text-neutral-500 max-w-md mx-auto">
+              No products found in this category yet. New arrivals and designs will be added soon!
+            </p>
+            <div className="pt-2">
+              <Link
+                href="/categories"
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[var(--brand-primary)] text-white text-xs font-bold uppercase tracking-wider rounded-xl hover:opacity-90 transition-opacity"
+              >
+                <ArrowLeft className="w-4 h-4" /> Explore Other Categories
+              </Link>
+            </div>
+          </div>
+        )}
+        {!loading && products.length > 0 && (
           <ProductGridSection
             title={title}
-            subtitle={`${products.length} products`}
+            subtitle={`${products.length} ${products.length === 1 ? 'product' : 'products'}`}
             products={products.map(mapProductToItem)}
             viewAllHref="/categories"
           />
