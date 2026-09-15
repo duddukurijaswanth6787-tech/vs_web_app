@@ -276,6 +276,11 @@ export class CreateProductDto {
   @ValidateNested({ each: true })
   @Type(() => CreateProductMediaDto)
   media?: CreateProductMediaDto[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  primaryImageUrl?: string;
 }
 
 // ─── Update ──────────────────────────────────────────────
@@ -285,6 +290,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() brandId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() shortDescription?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() primaryImageUrl?: string;
   @ApiPropertyOptional({ enum: ProductType })
   @IsOptional()
   @IsEnum(ProductType)

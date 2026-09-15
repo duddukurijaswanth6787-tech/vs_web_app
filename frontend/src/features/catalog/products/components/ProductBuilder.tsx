@@ -1134,19 +1134,32 @@ export default function ProductBuilder({
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
-        ...(finalCardCoverUrl ? { primaryImageUrl: finalCardCoverUrl } : {}),
       };
+
+      // Explicitly strip virtual/read-only properties so neither POST /products nor PATCH /products/:id rejects them
+      const {
+        primaryImageUrl: _pUrl,
+        categoryIds: catIds,
+        images: _images,
+        media: _media,
+        variants: _variants,
+        colorGroups: _colorGroups,
+        colorVariants: _colorVariants,
+        ...cleanPayload
+      } = payload as Record<string, unknown>;
 
       let created: ProductResponse;
       if (productId) {
-        // Strip categoryIds and primaryImageUrl from update payload because PATCH /products/:id forbids them
-        const { categoryIds: catIds, primaryImageUrl: pUrl, ...updatePayload } = payload as Record<string, unknown>;
-        created = await productService.update(productId, updatePayload as UpdateProductDto);
+        created = await productService.update(productId, cleanPayload as UpdateProductDto);
         if (catIds && Array.isArray(catIds) && catIds.length > 0) {
           await productService.assignCategories(productId, { categoryIds: catIds as string[] }).catch(() => null);
         }
       } else {
-        created = await productService.create(payload as CreateProductDto);
+        const createPayload = {
+          ...cleanPayload,
+          ...(catIds && Array.isArray(catIds) && catIds.length > 0 ? { categoryIds: catIds } : {}),
+        };
+        created = await productService.create(createPayload as CreateProductDto);
       }
 
       // Dynamic attributes (fabric, pattern, neck, sleeve …). Sent as one call;

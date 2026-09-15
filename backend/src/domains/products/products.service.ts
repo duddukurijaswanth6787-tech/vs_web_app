@@ -461,7 +461,7 @@ export class ProductsService {
     this.validatePrices(dto);
     this.validateWeightDimensions(dto);
 
-    const { brandId, slug, ...rest } = dto;
+    const { brandId, slug, primaryImageUrl, ...rest } = dto;
     const updateData: any = { ...rest, updatedBy: userId };
     if (slug) {
       updateData.slug = await this.generateUniqueSlug(slug, id, true);
