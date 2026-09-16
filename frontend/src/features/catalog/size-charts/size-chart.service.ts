@@ -8,6 +8,18 @@ import {
   UpdateSizeChartTemplateDto,
 } from './size-chart.types';
 
+const emptyListResponse: SizeChartListResponse = {
+  data: [],
+  meta: {
+    total: 0,
+    page: 1,
+    limit: 20,
+    totalPages: 0,
+    hasNext: false,
+    hasPrevious: false,
+  },
+};
+
 export const sizeChartService = {
   findAll: async (query: SizeChartQueryDto = {}): Promise<SizeChartListResponse> => {
     try {
@@ -22,9 +34,9 @@ export const sizeChartService = {
         '/size-charts',
         { params },
       );
-      return response.data.data ?? { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+      return response.data.data ?? emptyListResponse;
     } catch {
-      return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+      return emptyListResponse;
     }
   },
 
