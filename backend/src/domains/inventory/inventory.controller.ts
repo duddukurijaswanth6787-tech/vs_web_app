@@ -76,15 +76,6 @@ export class InventoryController {
     );
   }
 
-  @Get(':id')
-  @UseGuards(JwtAuthGuard, PermissionsGuard)
-  @Permissions('inventory:view')
-  @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get inventory by ID' })
-  async findById(@Param('id') id: string) {
-    return ResponseBuilder.success(await this.inventoryService.findById(id));
-  }
-
   @Get('variant/:variantId')
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('inventory:view')
@@ -94,6 +85,15 @@ export class InventoryController {
     return ResponseBuilder.success(
       await this.inventoryService.findByVariantId(variantId),
     );
+  }
+
+  @Get(':id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('inventory:view')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get inventory by ID' })
+  async findById(@Param('id') id: string) {
+    return ResponseBuilder.success(await this.inventoryService.findById(id));
   }
 
   // ─── Admin: CRUD ───────────────────────────────────────
