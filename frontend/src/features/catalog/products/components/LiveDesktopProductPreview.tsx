@@ -27,6 +27,8 @@ export interface ColorVariantGroup {
     size: string;
     stock: number;
     price?: number;
+    salePrice?: number;
+    costPrice?: number;
     sku?: string;
     available: boolean;
     /** Low-stock warning threshold for this variant. */

@@ -319,16 +319,33 @@ export function ProductDetailClient() {
   // Find matching variant based on selections
   const matchingVariant = useMemo(() => {
     if (!variantsData?.data?.length) return null;
-    return variantsData.data.find(v => {
-      const colorMatch = v.attributeValues?.some(
-        av => av.attributeName.toLowerCase() === 'color' && av.value === selectedColor
-      ) || String(v.title || '').toLowerCase().startsWith(`${(selectedColor || '').toLowerCase()} /`);
-      const sizeMatch = v.attributeValues?.some(
-        av => av.attributeName.toLowerCase() === 'size' && av.value === selectedSize
-      ) || String(v.title || '').toLowerCase().endsWith(`/ ${(selectedSize || '').toLowerCase()}`);
+    const cleanColor = (selectedColor || '').toLowerCase().trim();
+    const cleanSize = (selectedSize || '').toLowerCase().trim();
+
+    const found = variantsData.data.find((v) => {
+      const colorMatch =
+        v.attributeValues?.some(
+          (av) =>
+            (av.attributeName?.toLowerCase() === 'color' || (av as any).attribute?.slug === 'color') &&
+            av.value?.toLowerCase().trim() === cleanColor
+        ) ||
+        String(v.title || '').toLowerCase().trim().startsWith(`${cleanColor} /`) ||
+        availableColors.length <= 1;
+
+      const sizeMatch =
+        v.attributeValues?.some(
+          (av) =>
+            (av.attributeName?.toLowerCase() === 'size' || (av as any).attribute?.slug === 'size') &&
+            av.value?.toLowerCase().trim() === cleanSize
+        ) ||
+        String(v.title || '').toLowerCase().trim().endsWith(`/ ${cleanSize}`) ||
+        availableSizes.length <= 1;
+
       return colorMatch && sizeMatch;
     });
-  }, [variantsData, selectedColor, selectedSize]);
+
+    return found || variantsData.data[0] || null;
+  }, [variantsData, selectedColor, selectedSize, availableColors.length, availableSizes.length]);
 
   const price = matchingVariant?.salePriceOverride ?? matchingVariant?.priceOverride ?? product?.salePrice ?? product?.basePrice ?? 0;
   const original = matchingVariant?.priceOverride ?? product?.basePrice ?? 0;

@@ -558,14 +558,25 @@ export default function ProductBuilder({
 
       if (hasExistingVariants) {
         const matchingVariantsForColor = variants.filter((v) => {
+          const colorAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'color' || av.attribute?.slug === 'color'
+          )?.value?.toLowerCase().trim();
+          if (colorAttr) return colorAttr === cName.toLowerCase().trim();
+
           const vTitle = (v.title || '').toLowerCase().trim();
-          const parts = vTitle.split('/').map((s) => s.trim());
-          return parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
+          if (vTitle.includes('/')) {
+            const parts = vTitle.split('/').map((s) => s.trim());
+            return parts[0] ? parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim()) : false;
+          }
+          return colorMap.size === 1 || vTitle === cName.toLowerCase().trim();
         });
 
         groupSizes = matchingVariantsForColor.map((v) => {
+          const sizeAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'size' || av.attribute?.slug === 'size'
+          )?.value;
           const parts = (v.title || '').split('/').map((s) => s.trim());
-          const sz = parts[1] || 'Free Size';
+          const sz = sizeAttr || (parts.length > 1 ? parts[1] : (v.title || 'Free Size'));
           const pOverride = (v as any).priceOverride ? Number((v as any).priceOverride) : undefined;
           const spOverride = (v as any).salePriceOverride ? Number((v as any).salePriceOverride) : undefined;
           const cp = (v as any).costPrice ? Number((v as any).costPrice) : undefined;
@@ -650,23 +661,40 @@ export default function ProductBuilder({
       return prevGroups.map((group) => {
         const cName = group.name.toLowerCase().trim();
         const matchingForColor = variants.filter((v) => {
+          const colorAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'color'
+          )?.value?.toLowerCase().trim();
+          if (colorAttr) return colorAttr === cName;
+
           const vTitle = (v.title || '').toLowerCase().trim();
-          const parts = vTitle.split('/').map((s) => s.trim());
-          return parts[0] ? parts[0] === cName || vTitle.includes(cName) : false;
+          if (vTitle.includes('/')) {
+            const parts = vTitle.split('/').map((s) => s.trim());
+            return parts[0] ? parts[0] === cName || vTitle.includes(cName) : false;
+          }
+          return prevGroups.length === 1 || vTitle === cName;
         });
 
         if (matchingForColor.length === 0) return group;
 
         const colorCode = getColorCodeHelper(group.name);
         const keptSizes = matchingForColor.map((v) => {
+          const sizeAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'size'
+          )?.value;
           const parts = (v.title || '').split('/').map((s) => s.trim());
-          const sz = parts[1] || 'Free Size';
+          const sz = sizeAttr || (parts.length > 1 ? parts[1] : (v.title || 'Free Size'));
           const inv = inventoryMap.get(v.id);
+          const pOverride = v.priceOverride !== undefined && v.priceOverride !== null ? Number(v.priceOverride) : undefined;
+          const spOverride = v.salePriceOverride !== undefined && v.salePriceOverride !== null ? Number(v.salePriceOverride) : undefined;
+          const cp = v.costPrice !== undefined && v.costPrice !== null ? Number(v.costPrice) : undefined;
           return {
             size: sz,
             stock: inv?.availableQuantity ?? 10,
             minStock: inv?.minimumStock ?? 5,
             reorderLevel: inv?.reorderLevel ?? 10,
+            price: pOverride,
+            salePrice: spOverride,
+            costPrice: cp,
             available: true,
             sku: v.sku || `${colorCode}-${sz}`,
           };
