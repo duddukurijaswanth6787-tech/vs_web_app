@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { useProduct } from '@/features/catalog/products/product.hooks';
 import ProductBuilder from '@/features/catalog/products/components/ProductBuilder';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
 function EditProductPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const fromPage = searchParams.get('fromPage') || '';
   const backUrl = fromPage ? `/admin/catalog/products?page=${fromPage}` : '/admin/catalog/products';
@@ -45,7 +46,7 @@ function EditProductPageContent() {
           productId={id}
           initialData={product}
           onSaveSuccess={() => {
-            refetch();
+            router.push(backUrl);
           }}
         />
       )}

@@ -30,6 +30,7 @@ import { offerService } from '@/features/offers/offer.service';
 import type { OfferResponse } from '@/features/offers/offer.types';
 import { useBatchStickers } from '@/features/pos/pos.hooks';
 import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
+import { generateCode128SvgDataUrl, generateQrCodeSvgDataUrl } from '@/utils/barcode-generator';
 import {
   LiveDesktopProductPreview,
   type ColorVariantGroup,
@@ -752,12 +753,12 @@ export default function ProductBuilder({
     return colorGroups.reduce((acc, g) => acc + g.sizes.filter((s) => s.available).length, 0);
   }, [colorGroups]);
 
-  // Auto-populate barcode variants whenever Tab 8 is opened
+  // Auto-populate barcode variants whenever Tab 8 is opened or active sizes change
   useEffect(() => {
-    if (activeTab === 'barcodes' && issuedVariants.length === 0 && totalActiveSizes > 0) {
+    if (activeTab === 'barcodes' && totalActiveSizes > 0) {
       generateBarcodeVariants();
     }
-  }, [activeTab, issuedVariants.length, totalActiveSizes, generateBarcodeVariants]);
+  }, [activeTab, totalActiveSizes, generateBarcodeVariants]);
 
   const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
 
@@ -1769,8 +1770,9 @@ export default function ProductBuilder({
     setPrintingSku(variant.sku);
     try {
       const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
-      const barcodeImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12`;
-      const qrImgUrl = `${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2`;
+      const barcodeCode = variant.barcode || variant.sku;
+      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 48, 2);
+      const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 120);
 
       const stickerCardsHtml = Array.from({ length: qty }).map(() => `
         <div class="sticker-card">
@@ -4022,9 +4024,9 @@ export default function ProductBuilder({
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode || variant.sku)}&scale=2&height=12`}
+                            src={generateCode128SvgDataUrl(variant.barcode || variant.sku, 48, 2)}
                             alt={`Barcode ${variant.barcode || variant.sku}`}
-                            className="h-12 object-contain"
+                            className="h-12 max-w-[140px] object-contain"
                           />
                           <span className="text-[10px] font-mono text-neutral-700 tracking-wider font-semibold -mt-1">
                             {variant.barcode || variant.sku}
@@ -4039,7 +4041,7 @@ export default function ProductBuilder({
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode || variant.sku)}&bcid=qrcode&scale=2`}
+                            src={generateQrCodeSvgDataUrl(variant.barcode || variant.sku, 120)}
                             alt={`QR ${variant.barcode || variant.sku}`}
                             className="h-12 w-12 object-contain"
                           />
