@@ -55,7 +55,7 @@ export default function CampaignsPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/promotions/campaigns?${params.toString()}`);
   };
 

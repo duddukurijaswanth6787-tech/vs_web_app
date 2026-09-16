@@ -27,7 +27,7 @@ export default function CustomersPage() {
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) { params.set(key, value); } else { params.delete(key); }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/customers?${params}`);
   };
 

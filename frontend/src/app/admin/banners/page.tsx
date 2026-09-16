@@ -130,7 +130,7 @@ export default function BannersPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/banners?${params}`);
   };
 

@@ -68,7 +68,9 @@ export default function ProductsPage() {
       } else {
         params.delete(key);
       }
-      params.set('page', '1');
+      if (key !== 'page') {
+        params.set('page', '1');
+      }
       router.push(`/admin/catalog/products?${params}`);
     },
     [searchParams, router],

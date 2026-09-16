@@ -44,7 +44,7 @@ export default function WarehousesPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/warehouses?${params.toString()}`);
   };
 

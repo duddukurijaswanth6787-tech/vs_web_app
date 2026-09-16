@@ -31,7 +31,7 @@ export default function StockMovementsPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/inventory/movements?${params.toString()}`);
   };
 

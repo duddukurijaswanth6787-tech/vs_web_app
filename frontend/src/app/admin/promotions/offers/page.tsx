@@ -71,7 +71,7 @@ export default function OffersPage() {
     } else {
       params.delete(key);
     }
-    params.set('page', '1');
+    if (key !== 'page') params.set('page', '1');
     router.push(`/admin/promotions/offers?${params.toString()}`);
   };
 
