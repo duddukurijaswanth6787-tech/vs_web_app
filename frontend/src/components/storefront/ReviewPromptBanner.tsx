@@ -5,7 +5,7 @@ import Image from 'next/image';
 import { Star, Sparkles, ChevronRight, Gift } from 'lucide-react';
 import { usePendingReviews } from '@/features/customer/hooks';
 import { ReviewFormModal } from './ReviewFormModal';
-import { resolveMediaUrl } from '@/lib/media-url';
+import { resolveMediaUrl, isLocalOrPlaceholder } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 
 import { PendingReviewItem } from '@/features/customer/reviews.service';
@@ -41,6 +41,7 @@ export function ReviewPromptBanner() {
             alt={currentItem.productTitle}
             width={56}
             height={56}
+            unoptimized={isLocalOrPlaceholder(imageUrl)}
             className="w-14 h-14 object-cover rounded-xl border border-neutral-200 shrink-0"
           />
           <div className="flex-1 min-w-0">

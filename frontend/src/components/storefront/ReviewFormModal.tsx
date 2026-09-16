@@ -4,8 +4,9 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { Star, X, CheckCircle2, Gift, Loader2 } from 'lucide-react';
 import { useCreateReview } from '@/features/customer/hooks';
-import { resolveMediaUrl } from '@/lib/media-url';
+import { resolveMediaUrl, isLocalOrPlaceholder } from '@/lib/media-url';
 import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
+import { customerReviewsService, PendingReviewItem } from '@/features/customer/reviews.service';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 interface ReviewFormModalProps {
@@ -16,20 +17,21 @@ interface ReviewFormModalProps {
     productTitle: string;
     productImage?: string;
     orderNumber?: string;
+    orderId?: string;
   };
+  onSuccess?: () => void;
 }
 
 const RATING_LABELS = ['Poor', 'Fair', 'Good', 'Very Good', 'Excellent'];
 
-export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalProps) {
+export function ReviewFormModal({ product, isOpen, onClose, onSuccess }: ReviewFormModalProps) {
   const [rating, setRating] = useState(5);
   const [hoverRating, setHoverRating] = useState(0);
   const [title, setTitle] = useState('');
   const [comment, setComment] = useState('');
-  const [error, setError] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
-
-  const createReviewMutation = useCreateReview();
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
@@ -37,10 +39,11 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
+    setError(null);
+    setIsSubmitting(true);
 
     try {
-      await createReviewMutation.mutateAsync({
+      await customerReviewsService.createReview({
         productId: product.productId,
         rating,
         title: title.trim() || undefined,
@@ -48,12 +51,14 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
       });
 
       setIsSuccess(true);
+      if (onSuccess) onSuccess();
       setTimeout(() => {
-        setIsSuccess(false);
         onClose();
-      }, 1800);
+      }, 2000);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to submit review'));
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -89,6 +94,7 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
                 alt={product.productTitle}
                 width={56}
                 height={56}
+                unoptimized={isLocalOrPlaceholder(imageUrl)}
                 className="w-14 h-14 object-cover rounded-xl border border-neutral-200 shrink-0"
               />
               <div className="overflow-hidden">
@@ -173,10 +179,10 @@ export function ReviewFormModal({ isOpen, onClose, product }: ReviewFormModalPro
 
             <button
               type="submit"
-              disabled={createReviewMutation.isPending}
+              disabled={isSubmitting}
               className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white font-bold py-3.5 rounded-2xl shadow-sm text-sm flex items-center justify-center gap-2 disabled:opacity-50 active:scale-[0.98] transition-all"
             >
-              {createReviewMutation.isPending && <Loader2 className="w-4 h-4 animate-spin" />}
+              {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
               <span>Submit Review</span>
             </button>
           </form>

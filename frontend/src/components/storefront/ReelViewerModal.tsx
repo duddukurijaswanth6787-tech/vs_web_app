@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { resolveMediaUrl } from '@/lib/media-url';
+import { resolveMediaUrl, isLocalOrPlaceholder } from '@/lib/media-url';
 import {
   X,
   ArrowLeft,
@@ -284,6 +284,7 @@ export function ReelViewerModal({
                   width={1080}
                   height={1920}
                   priority
+                  unoptimized={isLocalOrPlaceholder(currentReel.posterImage)}
                   onLoad={() => setIsVideoLoading(false)}
                   className="w-full h-full object-cover select-none"
                 />
@@ -368,6 +369,7 @@ export function ReelViewerModal({
                       alt={prod.name}
                       width={44}
                       height={48}
+                      unoptimized={isLocalOrPlaceholder(prod.image)}
                       className="w-11 h-12 object-cover rounded-xl shrink-0"
                     />
                     <div className="flex-1 min-w-0">
@@ -460,6 +462,7 @@ export function ReelViewerModal({
                     alt={prod.name}
                     width={64}
                     height={80}
+                    unoptimized={isLocalOrPlaceholder(prod.image)}
                     className="w-16 h-20 object-cover rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
                   />
                   <div className="space-y-1 flex-1 min-w-0">
