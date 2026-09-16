@@ -98,17 +98,25 @@ export class StorefrontPublicService {
     return this.cache.getOrSet(
       'storefront:homepage',
       async () => {
-        const [sections, categories] = await Promise.all([
-          this.prisma.homepageSection.findMany({
-            where: { deletedAt: null, enabled: true },
-            orderBy: { displayOrder: 'asc' },
-          }),
-          this.prisma.homepageCategory.findMany({
-            orderBy: { displayOrder: 'asc' },
-            include: { category: true },
-          }),
-        ]);
-        return { sections, categories };
+        try {
+          const [sections, categories] = await Promise.all([
+            this.prisma.homepageSection
+              .findMany({
+                where: { deletedAt: null, enabled: true },
+                orderBy: { displayOrder: 'asc' },
+              })
+              .catch(() => []),
+            this.prisma.homepageCategory
+              .findMany({
+                orderBy: { displayOrder: 'asc' },
+                include: { category: true },
+              })
+              .catch(() => []),
+          ]);
+          return { sections: sections || [], categories: categories || [] };
+        } catch {
+          return { sections: [], categories: [] };
+        }
       },
       120,
     );
@@ -117,17 +125,22 @@ export class StorefrontPublicService {
   async getFooter() {
     return this.cache.getOrSet(
       'storefront:footer',
-      async () =>
-        this.prisma.footerSection.findMany({
-          where: { enabled: true },
-          orderBy: { displayOrder: 'asc' },
-          include: {
-            links: {
-              where: { enabled: true },
-              orderBy: { displayOrder: 'asc' },
+      async () => {
+        try {
+          return await this.prisma.footerSection.findMany({
+            where: { enabled: true },
+            orderBy: { displayOrder: 'asc' },
+            include: {
+              links: {
+                where: { enabled: true },
+                orderBy: { displayOrder: 'asc' },
+              },
             },
-          },
-        }),
+          });
+        } catch {
+          return [];
+        }
+      },
       300,
     );
   }

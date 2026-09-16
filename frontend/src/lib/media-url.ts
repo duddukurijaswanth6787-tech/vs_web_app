@@ -73,7 +73,9 @@ export function isLocalOrPlaceholder(url?: string | null): boolean {
     url.startsWith('data:') ||
     url.startsWith('blob:') ||
     url.endsWith('.svg') ||
-    url.includes('placehold.co')
+    url.includes('placehold.co') ||
+    url.includes('unsplash.com') ||
+    url.includes('images.unsplash.com')
   );
 }
 

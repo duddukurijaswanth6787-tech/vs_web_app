@@ -221,6 +221,48 @@ async function bootstrap() {
       'CREATE INDEX IF NOT EXISTS "sms_logs_createdAt_idx" ON "sms_logs"("createdAt");',
     );
 
+    await prismaService.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "homepage_sections" (
+        "id" TEXT PRIMARY KEY,
+        "key" TEXT UNIQUE NOT NULL,
+        "title" TEXT NOT NULL,
+        "description" TEXT,
+        "enabled" BOOLEAN NOT NULL DEFAULT true,
+        "displayOrder" INTEGER NOT NULL DEFAULT 0,
+        "startDate" TIMESTAMP(3),
+        "endDate" TIMESTAMP(3),
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "deletedAt" TIMESTAMP(3)
+      );
+    `);
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "homepage_sections_displayOrder_idx" ON "homepage_sections"("displayOrder");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "homepage_sections_enabled_idx" ON "homepage_sections"("enabled");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "homepage_sections_deletedAt_idx" ON "homepage_sections"("deletedAt");',
+    );
+
+    await prismaService.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "homepage_categories" (
+        "id" TEXT PRIMARY KEY,
+        "categoryId" TEXT NOT NULL,
+        "enabled" BOOLEAN NOT NULL DEFAULT true,
+        "displayOrder" INTEGER NOT NULL DEFAULT 0,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "homepage_categories_categoryId_idx" ON "homepage_categories"("categoryId");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "homepage_categories_displayOrder_idx" ON "homepage_categories"("displayOrder");',
+    );
+
     await prismaService.productVariant.updateMany({
       where: { sku: 'COL1-XL' },
       data: { barcode: '890351069409' },
