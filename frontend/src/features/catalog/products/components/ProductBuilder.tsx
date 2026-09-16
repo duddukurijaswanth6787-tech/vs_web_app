@@ -3504,8 +3504,8 @@ export default function ProductBuilder({
                           </div>
                         </div>
 
-                        {/* Separate Price, Sale Price, Stock, and Thresholds Controls */}
-                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t border-neutral-100 text-xs">
+                        {/* Separate Price, Sale Price, Stock, and Min Alert Controls */}
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-2 border-t border-neutral-100 text-xs">
                           {/* Size-Specific Price (MRP) */}
                           <div className="space-y-1">
                             <label className="text-[11px] font-bold text-neutral-700 flex items-center justify-between">
@@ -3562,20 +3562,6 @@ export default function ProductBuilder({
                               placeholder="5"
                               onChange={(e) =>
                                 updateSizeField(group.id, sz.size, 'minStock', e.target.value === '' ? undefined : Number(e.target.value))
-                              }
-                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
-                            />
-                          </div>
-
-                          {/* Reorder Level */}
-                          <div className="space-y-1">
-                            <label className="text-[11px] font-bold text-neutral-700 block">Reorder</label>
-                            <input
-                              type="number"
-                              value={sz.reorderLevel ?? ''}
-                              placeholder="10"
-                              onChange={(e) =>
-                                updateSizeField(group.id, sz.size, 'reorderLevel', e.target.value === '' ? undefined : Number(e.target.value))
                               }
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />

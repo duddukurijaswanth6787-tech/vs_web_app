@@ -663,6 +663,22 @@ export class ProductResponse {
     color?: string;
   }>;
 
+  @ApiPropertyOptional({ type: [Object] })
+  variants?: Array<{
+    id: string;
+    title?: string;
+    sku: string;
+    priceOverride?: number;
+    salePriceOverride?: number;
+    costPrice?: number;
+    isDefault?: boolean;
+    attributeValues?: Array<{
+      attributeId: string;
+      attributeName?: string;
+      value?: string;
+    }>;
+  }>;
+
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

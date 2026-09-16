@@ -188,6 +188,24 @@ export class ProductsRepository {
       relatedFrom: {
         include: { product: { select: { id: true, name: true } } },
       },
+      variants: {
+        where: { deletedAt: null },
+        include: {
+          attributeValues: {
+            include: {
+              attribute: { select: { id: true, name: true, slug: true } },
+              option: {
+                select: {
+                  id: true,
+                  value: true,
+                  label: true,
+                  swatchImageUrl: true,
+                },
+              },
+            },
+          },
+        },
+      },
     };
   }
 

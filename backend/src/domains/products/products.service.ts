@@ -122,6 +122,20 @@ export class ProductsService {
         mediaType: m.mediaType,
         color: m.color ?? undefined,
       })),
+      variants: p.variants?.map((v: any) => ({
+        id: v.id,
+        title: v.title ?? undefined,
+        sku: v.sku,
+        priceOverride: v.priceOverride !== null && v.priceOverride !== undefined ? Number(v.priceOverride) : undefined,
+        salePriceOverride: v.salePriceOverride !== null && v.salePriceOverride !== undefined ? Number(v.salePriceOverride) : undefined,
+        costPrice: v.costPrice !== null && v.costPrice !== undefined ? Number(v.costPrice) : undefined,
+        isDefault: v.isDefault,
+        attributeValues: v.attributeValues?.map((av: any) => ({
+          attributeId: av.attributeId,
+          attributeName: av.attribute?.name ?? av.attributeId,
+          value: av.value ?? av.option?.label ?? undefined,
+        })),
+      })),
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     };
