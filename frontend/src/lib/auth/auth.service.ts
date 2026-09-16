@@ -1,4 +1,5 @@
-import { apiClient, setClientTokens } from '@/lib/api/client';
+import axios from 'axios';
+import { apiClient, setClientTokens, getClientRefreshToken, getApiBaseUrl } from '@/lib/api/client';
 import { AuthTokens, UserProfile } from '@/types/auth.types';
 import { StandardResponse } from '@/types/api.types';
 import { customerWishlistService } from '@/features/customer/wishlist.service';
@@ -15,8 +16,8 @@ export const authService = {
 
   logout: async (): Promise<void> => {
     try {
-      // Refresh token is in httpOnly cookie; server reads it automatically
-      await apiClient.post('/auth/logout', {});
+      const refreshToken = getClientRefreshToken();
+      await apiClient.post('/auth/logout', refreshToken ? { refreshToken } : {});
     } catch {
       // Silently catch so that frontend logout completes regardless
     }
@@ -39,8 +40,13 @@ export const authService = {
 
   refresh: async (): Promise<AuthTokens | null> => {
     try {
-      const response = await apiClient.post<StandardResponse<AuthTokens>>('/auth/refresh', {});
-      const tokens = response.data.data;
+      const refreshToken = getClientRefreshToken();
+      const response = await axios.post<StandardResponse<AuthTokens>>(
+        `${getApiBaseUrl()}/auth/refresh`,
+        refreshToken ? { refreshToken } : {},
+        { withCredentials: true }
+      );
+      const tokens = response.data?.data;
       if (tokens?.accessToken) {
         setClientTokens(tokens);
         return tokens;
@@ -51,3 +57,4 @@ export const authService = {
     }
   },
 };
+

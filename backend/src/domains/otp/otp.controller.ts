@@ -66,7 +66,7 @@ export class OtpController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(withoutRefreshToken(result), 'OTP login successful');
+    return ResponseBuilder.success(result, 'OTP login successful');
   }
 
   @ThrottleCredentials()
@@ -87,6 +87,6 @@ export class OtpController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(withoutRefreshToken(result), 'OTP login successful');
+    return ResponseBuilder.success(result, 'OTP login successful');
   }
 }

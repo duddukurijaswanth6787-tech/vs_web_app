@@ -13,15 +13,10 @@ export const getApiBaseUrl = () => {
   }
   return 'https://api.vasanthissignature.in/api/v1';
 };
+
 export const apiClient = axios.create({
   baseURL: getApiBaseUrl(),
-  timeout: 15000,
-  // The API lives on api.vasanthissignature.in while the app is served from
-  // vasanthissignature.in -- a different ORIGIN, even though it is the same
-  // site. Without this the browser discards the Set-Cookie on the login
-  // response outright, so the httpOnly refresh cookie was never stored and
-  // every reload logged the user out. Required on the instance, not just on
-  // the refresh call, because login is what mints the cookie.
+  timeout: 20000,
   withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
@@ -37,9 +32,7 @@ export const getUnprefixedBaseUrl = (): string => {
   return base.replace(/\/api\/v1\/?$/, '');
 };
 
-// Memory-only access token cache. Refresh token is stored in an httpOnly
-// cookie by the backend -- never accessible to JS, and automatically sent
-// on requests to /api/v1/auth/* due to credentials: include in apiClient config.
+// Memory-first access token cache with persistent localStorage fallback.
 let currentAccessToken: string | null = null;
 
 // Synchronization lock to ensure a single-flight refresh request
@@ -55,47 +48,89 @@ const onRefreshed = (token: string | null) => {
   refreshSubscribers = [];
 };
 
-// No-op: tokens no longer come from localStorage
 export const initializeClientTokens = () => {
-  // Access token is memory-only; refresh token lives in httpOnly cookie
+  if (typeof window !== 'undefined') {
+    const token = localStorage.getItem('vd_access_token') || sessionStorage.getItem('vd_access_token');
+    if (token) currentAccessToken = token;
+  }
 };
 
 export const setClientTokens = (tokens: AuthTokens | null) => {
-  // Store only the access token in memory. The backend set the refresh
-  // token in an httpOnly cookie, which we never read -- it's sent
-  // automatically on /api/v1/auth/* requests via credentials: include.
   currentAccessToken = tokens?.accessToken || null;
-  // A fresh login supersedes any earlier "this visitor has no session"
-  // conclusion, and a logout means we should not keep trying to bootstrap
-  // one. Either way the bootstrap question is now settled.
+  if (typeof window !== 'undefined') {
+    try {
+      if (tokens?.accessToken) {
+        localStorage.setItem('vd_access_token', tokens.accessToken);
+        sessionStorage.setItem('vd_access_token', tokens.accessToken);
+      } else {
+        localStorage.removeItem('vd_access_token');
+        sessionStorage.removeItem('vd_access_token');
+      }
+
+      if (tokens?.refreshToken) {
+        localStorage.setItem('vd_refresh_token', tokens.refreshToken);
+        sessionStorage.setItem('vd_refresh_token', tokens.refreshToken);
+      } else if (tokens === null) {
+        localStorage.removeItem('vd_refresh_token');
+        sessionStorage.removeItem('vd_refresh_token');
+      }
+    } catch {
+      // safe storage fallback
+    }
+  }
   bootstrapSettled = true;
 };
 
-export const getStoredAccessToken = (): string | null => currentAccessToken;
+export const getStoredAccessToken = (): string | null => {
+  if (currentAccessToken) return currentAccessToken;
+  if (typeof window !== 'undefined') {
+    try {
+      const stored = localStorage.getItem('vd_access_token') || sessionStorage.getItem('vd_access_token');
+      if (stored) {
+        currentAccessToken = stored;
+        return stored;
+      }
+    } catch {
+      // safe fallback
+    }
+  }
+  return null;
+};
 
-// The access token is memory-only, so a full page load starts with nothing --
-// but the httpOnly refresh cookie may still describe a live session. Without
-// this, every query on a cold load fires token-less, 401s, and only then
-// triggers the refresh: a burst of failed requests (5+ on the profile page)
-// before anything succeeds. Resolving the token once, up front, collapses
-// that into a single /auth/refresh.
-//
-// bootstrapSettled means "we know whether a session exists" -- true after a
-// login, a logout, or one completed bootstrap attempt (successful or not),
-// so a genuinely logged-out visitor retries this at most once per page load.
+export const getClientRefreshToken = (): string | null => {
+  if (typeof window !== 'undefined') {
+    try {
+      return localStorage.getItem('vd_refresh_token') || sessionStorage.getItem('vd_refresh_token') || null;
+    } catch {
+      return null;
+    }
+  }
+  return null;
+};
+
 let bootstrapSettled = false;
 let bootstrapPromise: Promise<void> | null = null;
 
 const bootstrapAccessToken = (): Promise<void> => {
+  if (getStoredAccessToken()) {
+    bootstrapSettled = true;
+    return Promise.resolve();
+  }
+
   if (!bootstrapPromise) {
+    const refreshToken = getClientRefreshToken();
     bootstrapPromise = axios
-      .post(`${getApiBaseUrl()}/auth/refresh`, {}, { withCredentials: true })
+      .post(
+        `${getApiBaseUrl()}/auth/refresh`,
+        refreshToken ? { refreshToken } : {},
+        { withCredentials: true }
+      )
       .then((res) => {
-        const token = res.data?.data?.accessToken;
-        if (token) currentAccessToken = token;
+        const tokens = res.data?.data;
+        if (tokens?.accessToken) {
+          setClientTokens(tokens);
+        }
       })
-      // A failure here is the normal path for a signed-out visitor, not an
-      // error worth surfacing -- requests simply proceed unauthenticated.
       .catch(() => undefined)
       .finally(() => {
         bootstrapSettled = true;
@@ -105,37 +140,21 @@ const bootstrapAccessToken = (): Promise<void> => {
   return bootstrapPromise;
 };
 
-// True when this tab currently holds an access token in memory. Callers that
-// used to probe localStorage('vd_access_token') must use this instead -- that
-// key is no longer written by anything.
-export const hasClientAccessToken = (): boolean => !!currentAccessToken;
+export const hasClientAccessToken = (): boolean => !!getStoredAccessToken();
 
 /**
  * Resolves whether this visitor has a session, doing the one-time bootstrap if
- * it has not run yet. Lets callers avoid firing authenticated requests for a
- * signed-out visitor: without this, /auth/me went out regardless and answered
- * 401, which the browser logs as a red console error that no amount of
- * try/catch can suppress (it is emitted at the network layer, not by JS).
+ * it has not run yet.
  */
 export const resolveSession = async (): Promise<boolean> => {
-  if (currentAccessToken) return true;
+  if (getStoredAccessToken()) return true;
   if (!bootstrapSettled) await bootstrapAccessToken();
-  return !!currentAccessToken;
-};
-
-export const getClientRefreshToken = (): string | null => {
-  // Refresh token is in an httpOnly cookie; client JS never sees it.
-  // Backend reads it from the cookie on /auth/refresh requests.
-  return null;
+  return !!getStoredAccessToken();
 };
 
 // Intercept outgoing requests to attach JWT Authorization Bearer header
 apiClient.interceptors.request.use(
   async (config: InternalAxiosRequestConfig) => {
-    // Resolve the session once before the first token-less request goes out.
-    // Skipped for the auth endpoints themselves -- /auth/refresh bootstrapping
-    // itself would recurse, and login/register/otp are how a session is
-    // created in the first place, so they have nothing to wait for.
     const url = config.url || '';
     const isAuthEntryPoint =
       url.includes('/auth/refresh') ||
@@ -143,14 +162,10 @@ apiClient.interceptors.request.use(
       url.includes('/auth/register') ||
       url.includes('/auth/google') ||
       url.includes('/auth/otp');
-    if (!currentAccessToken && !bootstrapSettled && !isAuthEntryPoint) {
+    if (!getStoredAccessToken() && !bootstrapSettled && !isAuthEntryPoint) {
       await bootstrapAccessToken();
     }
 
-    // LAN-dev convenience only: rewrite to <phone-hostname>:4000 so teammates on
-    // the same network can hit the local backend. Never applies once
-    // NEXT_PUBLIC_API_BASE_URL is set (UAT/production), since that value is
-    // already the correct absolute backend URL and must not be overridden here.
     if (!process.env.NEXT_PUBLIC_API_BASE_URL && typeof window !== 'undefined') {
       const hostname = window.location.hostname;
       if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
@@ -158,8 +173,9 @@ apiClient.interceptors.request.use(
       }
     }
 
-    if (currentAccessToken && config.headers) {
-      config.headers.Authorization = `Bearer ${currentAccessToken}`;
+    const token = getStoredAccessToken();
+    if (token && config.headers) {
+      config.headers.Authorization = `Bearer ${token}`;
     }
     // Correlation trace support
     const correlationId = (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') ? crypto.randomUUID() : Math.random().toString(36).substring(2);
@@ -215,9 +231,8 @@ apiClient.interceptors.response.use(
       isRefreshing = true;
 
       try {
-        // ponytail: call refresh token API directly via base axios client to avoid header interception loops.
-        // Refresh token is in an httpOnly cookie; server reads it automatically, so body is empty.
-        const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, {}, {
+        const refreshToken = getClientRefreshToken();
+        const response = await axios.post(`${getApiBaseUrl()}/auth/refresh`, refreshToken ? { refreshToken } : {}, {
           withCredentials: true,
         });
 

@@ -69,7 +69,7 @@ export class AuthController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.created(withoutRefreshToken(result), 'Registration successful');
+    return ResponseBuilder.created(result, 'Registration successful');
   }
 
   @ThrottleCredentials()
@@ -87,7 +87,7 @@ export class AuthController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(withoutRefreshToken(result), 'Login successful');
+    return ResponseBuilder.success(result, 'Login successful');
   }
 
   @Get('google/client-id')
@@ -116,7 +116,7 @@ export class AuthController {
       req.headers['user-agent'],
     );
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(withoutRefreshToken(result), 'Google login successful');
+    return ResponseBuilder.success(result, 'Google login successful');
   }
 
   @Post('logout')
@@ -155,7 +155,7 @@ export class AuthController {
       );
     }
     setRefreshTokenCookie(res, result.refreshToken);
-    return ResponseBuilder.success(withoutRefreshToken(result), 'Token refreshed');
+    return ResponseBuilder.success(result, 'Token refreshed');
   }
 
   @Get('me')

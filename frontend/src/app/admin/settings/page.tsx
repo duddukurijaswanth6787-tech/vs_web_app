@@ -7,6 +7,7 @@ import {
 } from '@/features/settings/settings.hooks';
 import { useHealth } from '@/features/rag-agent/rag-agent.hooks';
 import { SettingResponse } from '@/features/settings/settings.types';
+import Link from 'next/link';
 import {
   ShieldCheck,
   CheckCircle2,
@@ -14,6 +15,8 @@ import {
   AlertTriangle,
   RefreshCw,
   Activity,
+  Timer,
+  ArrowRight,
 } from 'lucide-react';
 import { SectionLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -98,34 +101,29 @@ export default function SettingsPage() {
       <div className="flex items-center justify-between p-3.5 rounded-xl border border-neutral-100 bg-neutral-50/50">
         <div>
           <span className="text-xs font-bold text-neutral-850 block">{service}</span>
-          <span className="text-[10px] text-neutral-400 mt-0.5 block">{desc}</span>
+          <span className="text-[11px] text-neutral-400 block mt-0.5">{desc}</span>
         </div>
-        <span
-          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded text-[10px] font-bold uppercase
-            ${
-              isUp
-                ? 'bg-green-50 text-green-700 border border-green-100'
-                : isOptional
-                  ? 'bg-amber-50 text-amber-700 border border-amber-100'
-                  : 'bg-red-50 text-red-700 border border-red-100'
-            }
-          `}
-        >
+        <div className="flex items-center gap-1.5">
           {isUp ? (
-            <CheckCircle2 className="h-3 w-3 text-green-600" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <CheckCircle2 className="w-3 h-3 text-emerald-600" /> ONLINE
+            </span>
           ) : isOptional ? (
-            <AlertTriangle className="h-3 w-3 text-amber-600" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-neutral-100 text-neutral-600 border border-neutral-200">
+              OPTIONAL / INACTIVE
+            </span>
           ) : (
-            <XCircle className="h-3 w-3 text-red-600" />
+            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+              <XCircle className="w-3 h-3 text-rose-600" /> DEGRADED
+            </span>
           )}
-          {isUp ? 'Healthy' : isOptional ? 'Optional' : 'Down'}
-        </span>
+        </div>
       </div>
     );
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-6 max-w-[1200px] mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
@@ -138,6 +136,28 @@ export default function SettingsPage() {
         >
           <RefreshCw className="h-3.5 w-3.5" /> Refresh status
         </button>
+      </div>
+
+      {/* Session Settings Quick Banner */}
+      <div className="p-4 bg-sky-50/70 border border-sky-200/80 rounded-2xl flex items-center justify-between gap-4 flex-wrap">
+        <div className="flex items-center gap-3">
+          <div className="p-2.5 bg-sky-600 text-white rounded-xl shadow-2xs">
+            <Timer className="w-5 h-5" />
+          </div>
+          <div>
+            <h2 className="text-sm font-bold text-neutral-900">Login & Session Duration Settings</h2>
+            <p className="text-xs text-neutral-600 mt-0.5">
+              Configure how many hours Super Admin & Staff stay logged in without timing out, and manage active sessions.
+            </p>
+          </div>
+        </div>
+        <Link
+          href="/admin/access/session-settings"
+          className="px-4 py-2 bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold rounded-xl shadow-xs transition-all inline-flex items-center gap-1.5 cursor-pointer"
+        >
+          <span>Manage Session Durations</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
       </div>
 
       {/* Tabs */}

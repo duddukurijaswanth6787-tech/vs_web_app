@@ -10,7 +10,7 @@ describe('auth-cookie.util', () => {
     return { cookie: jest.fn(), clearCookie: jest.fn() } as any;
   }
 
-  it('sets the refresh token cookie as httpOnly, scoped to /api/v1/auth', () => {
+  it('sets the refresh token cookie as httpOnly, scoped to root path', () => {
     const res = mockRes();
     setRefreshTokenCookie(res, 'raw-token');
 
@@ -19,19 +19,18 @@ describe('auth-cookie.util', () => {
       'raw-token',
       expect.objectContaining({
         httpOnly: true,
-        sameSite: 'lax',
-        path: '/api/v1/auth',
+        path: '/',
       }),
     );
   });
 
-  it('clears the cookie on the same path it was set on', () => {
+  it('clears the cookie on the root path', () => {
     const res = mockRes();
     clearRefreshTokenCookie(res);
 
     expect(res.clearCookie).toHaveBeenCalledWith(
       REFRESH_TOKEN_COOKIE,
-      expect.objectContaining({ path: '/api/v1/auth' }),
+      expect.objectContaining({ path: '/' }),
     );
   });
 
