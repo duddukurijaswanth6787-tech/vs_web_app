@@ -171,6 +171,56 @@ async function bootstrap() {
     await prismaService.$executeRawUnsafe(
       'ALTER TABLE orders ADD COLUMN IF NOT EXISTS "trackingUrl" TEXT;',
     );
+    await prismaService.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "otp_challenges" (
+        "id" TEXT PRIMARY KEY,
+        "phone" TEXT NOT NULL,
+        "email" TEXT,
+        "codeHash" TEXT NOT NULL,
+        "purpose" TEXT NOT NULL DEFAULT 'LOGIN',
+        "attempts" INTEGER NOT NULL DEFAULT 0,
+        "maxAttempts" INTEGER NOT NULL DEFAULT 5,
+        "verifiedAt" TIMESTAMP(3),
+        "expiresAt" TIMESTAMP(3) NOT NULL,
+        "userId" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "otp_challenges_phone_idx" ON "otp_challenges"("phone");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "otp_challenges_expiresAt_idx" ON "otp_challenges"("expiresAt");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "otp_challenges_purpose_idx" ON "otp_challenges"("purpose");',
+    );
+
+    await prismaService.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS "sms_logs" (
+        "id" TEXT PRIMARY KEY,
+        "userId" TEXT,
+        "phone" TEXT NOT NULL,
+        "template" TEXT NOT NULL,
+        "message" TEXT NOT NULL,
+        "status" TEXT NOT NULL DEFAULT 'PENDING',
+        "providerRef" TEXT,
+        "metadata" JSONB,
+        "error" TEXT,
+        "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP
+      );
+    `);
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "sms_logs_phone_idx" ON "sms_logs"("phone");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "sms_logs_status_idx" ON "sms_logs"("status");',
+    );
+    await prismaService.$executeRawUnsafe(
+      'CREATE INDEX IF NOT EXISTS "sms_logs_createdAt_idx" ON "sms_logs"("createdAt");',
+    );
+
     await prismaService.productVariant.updateMany({
       where: { sku: 'COL1-XL' },
       data: { barcode: '890351069409' },
