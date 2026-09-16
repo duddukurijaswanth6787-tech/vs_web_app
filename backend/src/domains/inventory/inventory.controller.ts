@@ -17,6 +17,7 @@ import {
   StockMovementDto,
   InventoryQueryDto,
   MovementQueryDto,
+  SubscribeRestockDto,
 } from './inventory.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import {
@@ -30,6 +31,16 @@ import type { JwtPayload } from '@domains/auth/services/jwt.service';
 @Controller('inventory')
 export class InventoryController {
   constructor(private readonly inventoryService: InventoryService) {}
+
+  @Post('notify-restock')
+  @ApiOperation({
+    summary: 'Public endpoint: Customer back-in-stock notification subscription',
+  })
+  async subscribeRestock(@Body() dto: SubscribeRestockDto) {
+    return ResponseBuilder.success(
+      await this.inventoryService.subscribeRestock(dto),
+    );
+  }
 
   // ─── Reads ─────────────────────────────────────────────
   //

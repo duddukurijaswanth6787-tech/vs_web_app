@@ -130,6 +130,8 @@ export class ProductsService {
         salePriceOverride: v.salePriceOverride !== null && v.salePriceOverride !== undefined ? Number(v.salePriceOverride) : undefined,
         costPrice: v.costPrice !== null && v.costPrice !== undefined ? Number(v.costPrice) : undefined,
         isDefault: v.isDefault,
+        availableQuantity: v.inventory?.availableQuantity ?? 0,
+        stockStatus: v.inventory?.stockStatus ?? (v.inventory ? (v.inventory.availableQuantity > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK') : 'IN_STOCK'),
         attributeValues: v.attributeValues?.map((av: any) => ({
           attributeId: av.attributeId,
           attributeName: av.attribute?.name ?? av.attributeId,

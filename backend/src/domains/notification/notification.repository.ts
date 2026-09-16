@@ -93,7 +93,7 @@ export class NotificationRepository {
   async notifyAdmins(type: string, title: string, message: string, data?: any) {
     const admins = await this.prisma.user.findMany({
       where: {
-        userType: { in: ['ADMIN', 'STAFF'] },
+        userType: { in: ['ADMIN', 'STAFF', 'SUPER_ADMIN'] },
         accountStatus: 'ACTIVE',
       },
       select: { id: true },

@@ -402,6 +402,9 @@ export class OrderWorkflowService {
       available: number;
     }[] = [];
 
+    const outOfStockItems: { variantId: string; productName: string; variantTitle?: string | null; remaining: number }[] = [];
+    const lowStockItems: { variantId: string; productName: string; variantTitle?: string | null; remaining: number }[] = [];
+
     for (const item of order.items) {
       if (!item.variantId) continue;
 
@@ -430,6 +433,23 @@ export class OrderWorkflowService {
         continue;
       }
 
+      const updatedRow = rows[0];
+      if (updatedRow.availableQuantity <= 0) {
+        outOfStockItems.push({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantTitle: item.variantTitle,
+          remaining: updatedRow.availableQuantity,
+        });
+      } else if (updatedRow.availableQuantity <= (updatedRow.minimumStock || 5)) {
+        lowStockItems.push({
+          variantId: item.variantId,
+          productName: item.productName,
+          variantTitle: item.variantTitle,
+          remaining: updatedRow.availableQuantity,
+        });
+      }
+
       await this.logMovement(tx, rows[0], {
         variantId: item.variantId,
         movementType: 'SALE',
@@ -449,6 +469,42 @@ export class OrderWorkflowService {
         { shortages },
       );
     }
+
+    // Trigger Admin alerts asynchronously after loop
+    for (const oos of outOfStockItems) {
+      this.notificationService.notifyAdmins(
+        'OUT_OF_STOCK',
+        `Out of Stock Alert: ${oos.productName}`,
+        `Variant "${oos.variantTitle || 'Default'}" of "${oos.productName}" is now DEPLETED (0 stock remaining) after order ${order.orderNumber}.`,
+        {
+          variantId: oos.variantId,
+          productName: oos.productName,
+          variantTitle: oos.variantTitle,
+          orderId,
+          orderNumber: order.orderNumber,
+          channel: order.channel,
+          stockStatus: 'OUT_OF_STOCK',
+        },
+      ).catch(() => {});
+    }
+
+    for (const ls of lowStockItems) {
+      this.notificationService.notifyAdmins(
+        'LOW_STOCK',
+        `Low Stock Alert: ${ls.productName}`,
+        `Variant "${ls.variantTitle || 'Default'}" of "${ls.productName}" is low (${ls.remaining} remaining) after order ${order.orderNumber}.`,
+        {
+          variantId: ls.variantId,
+          productName: ls.productName,
+          variantTitle: ls.variantTitle,
+          orderId,
+          orderNumber: order.orderNumber,
+          channel: order.channel,
+          remainingStock: ls.remaining,
+          stockStatus: 'LOW_STOCK',
+        },
+      ).catch(() => {});
+    }
   }
 
   async deductInventory(orderId: string, userId = 'SYSTEM') {
@@ -457,6 +513,9 @@ export class OrderWorkflowService {
       include: { items: true },
     });
     if (!order) return;
+
+    const outOfStockItems: { variantId: string; productName: string; variantTitle?: string | null; remaining: number }[] = [];
+    const lowStockItems: { variantId: string; productName: string; variantTitle?: string | null; remaining: number }[] = [];
 
     await this.prisma.$transaction(async (tx) => {
       const shortages: {
@@ -497,6 +556,23 @@ export class OrderWorkflowService {
           continue;
         }
 
+        const updatedRow = rows[0];
+        if (updatedRow.availableQuantity <= 0) {
+          outOfStockItems.push({
+            variantId: item.variantId,
+            productName: item.productName,
+            variantTitle: item.variantTitle,
+            remaining: updatedRow.availableQuantity,
+          });
+        } else if (updatedRow.availableQuantity <= (updatedRow.minimumStock || 5)) {
+          lowStockItems.push({
+            variantId: item.variantId,
+            productName: item.productName,
+            variantTitle: item.variantTitle,
+            remaining: updatedRow.availableQuantity,
+          });
+        }
+
         await this.logMovement(tx, rows[0], {
           variantId: item.variantId,
           movementType: 'SALE',
@@ -517,6 +593,41 @@ export class OrderWorkflowService {
         );
       }
     });
+
+    for (const oos of outOfStockItems) {
+      this.notificationService.notifyAdmins(
+        'OUT_OF_STOCK',
+        `Out of Stock Alert: ${oos.productName}`,
+        `Variant "${oos.variantTitle || 'Default'}" of "${oos.productName}" is now DEPLETED (0 stock remaining) after order ${order.orderNumber}.`,
+        {
+          variantId: oos.variantId,
+          productName: oos.productName,
+          variantTitle: oos.variantTitle,
+          orderId,
+          orderNumber: order.orderNumber,
+          channel: order.channel,
+          stockStatus: 'OUT_OF_STOCK',
+        },
+      ).catch(() => {});
+    }
+
+    for (const ls of lowStockItems) {
+      this.notificationService.notifyAdmins(
+        'LOW_STOCK',
+        `Low Stock Alert: ${ls.productName}`,
+        `Variant "${ls.variantTitle || 'Default'}" of "${ls.productName}" is low (${ls.remaining} remaining) after order ${order.orderNumber}.`,
+        {
+          variantId: ls.variantId,
+          productName: ls.productName,
+          variantTitle: ls.variantTitle,
+          orderId,
+          orderNumber: order.orderNumber,
+          channel: order.channel,
+          remainingStock: ls.remaining,
+          stockStatus: 'LOW_STOCK',
+        },
+      ).catch(() => {});
+    }
   }
 
   async restoreInventory(orderId: string, userId = 'SYSTEM') {

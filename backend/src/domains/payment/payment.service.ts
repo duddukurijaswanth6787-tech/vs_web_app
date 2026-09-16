@@ -4,6 +4,7 @@ import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
+import { NotificationService } from '@domains/notification/notification.service';
 import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
 import { PaymentRepository } from './payment.repository';
 import {
@@ -40,6 +41,7 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly settingRepository: AppSettingRepository,
+    private readonly notificationService: NotificationService,
   ) {}
 
   /**
@@ -331,11 +333,24 @@ export class PaymentService {
     try {
       await this.orderWorkflowService.deductInventory(payment.orderId, userId);
     } catch (err) {
+      this.notificationService.notifyAdmins(
+        'OUT_OF_STOCK',
+        `🚨 URGENT: Oversold Stock on Paid Order #${payment.paymentNumber}`,
+        `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
+        {
+          orderId: payment.orderId,
+          paymentNumber: payment.paymentNumber,
+          amount: Number(payment.amount),
+          providerPaymentId: razorpayPaymentId,
+          event: 'CONCURRENT_OVERSOLD_CONFLICT',
+        },
+      ).catch(() => {});
+
       await this.orderWorkflowService.transition(
         payment.orderId,
         'CANCELLED',
         userId,
-        'Auto-cancelled: insufficient stock after payment capture -- refund required',
+        'Auto-cancelled: insufficient stock after payment capture -- refund or restock required',
       );
       throw err;
     }
@@ -479,11 +494,24 @@ export class PaymentService {
       try {
         await this.orderWorkflowService.deductInventory(payment.orderId, payment.createdBy || 'SYSTEM');
       } catch (err) {
+        this.notificationService.notifyAdmins(
+          'OUT_OF_STOCK',
+          `🚨 URGENT: Oversold Stock on Webhook Paid Order #${payment.paymentNumber}`,
+          `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured via webhook, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
+          {
+            orderId: payment.orderId,
+            paymentNumber: payment.paymentNumber,
+            amount: Number(payment.amount),
+            providerPaymentId,
+            event: 'CONCURRENT_OVERSOLD_CONFLICT',
+          },
+        ).catch(() => {});
+
         await this.orderWorkflowService.transition(
           payment.orderId,
           'CANCELLED',
           payment.createdBy || 'SYSTEM',
-          'Auto-cancelled: insufficient stock after payment capture -- refund required',
+          'Auto-cancelled: insufficient stock after payment capture -- refund or restock required',
         );
         throw err;
       }

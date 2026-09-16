@@ -3,6 +3,7 @@ import { InventoryService } from './inventory.service';
 import { InventoryRepository } from './inventory.repository';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { PrismaService } from '@database/prisma.service';
 
 describe('InventoryService', () => {
   let service: InventoryService;
@@ -27,7 +28,14 @@ describe('InventoryService', () => {
         },
         {
           provide: NotificationService,
-          useValue: { create: jest.fn() },
+          useValue: { create: jest.fn(), notifyAdmins: jest.fn().mockResolvedValue(true) },
+        },
+        {
+          provide: PrismaService,
+          useValue: {
+            product: { findUnique: jest.fn() },
+            restockSubscription: { create: jest.fn(), findMany: jest.fn(), updateMany: jest.fn() },
+          },
         },
       ],
     }).compile();

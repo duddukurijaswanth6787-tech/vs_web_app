@@ -146,6 +146,7 @@ export class ProductsRepository {
           variants: {
             where: { deletedAt: null },
             include: {
+              inventory: true,
               attributeValues: {
                 include: {
                   attribute: { select: { id: true, name: true, slug: true } },
@@ -191,6 +192,7 @@ export class ProductsRepository {
       variants: {
         where: { deletedAt: null },
         include: {
+          inventory: true,
           attributeValues: {
             include: {
               attribute: { select: { id: true, name: true, slug: true } },

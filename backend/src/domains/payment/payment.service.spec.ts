@@ -6,6 +6,7 @@ import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@database/prisma.service';
 import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
+import { NotificationService } from '@domains/notification/notification.service';
 import * as crypto from 'crypto';
 
 describe('PaymentService', () => {
@@ -111,6 +112,7 @@ describe('PaymentService', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AppSettingRepository, useValue: mockSettingRepository },
+        { provide: NotificationService, useValue: { notifyAdmins: jest.fn().mockResolvedValue(true) } },
       ],
     }).compile();
 

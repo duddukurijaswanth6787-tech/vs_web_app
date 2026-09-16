@@ -241,3 +241,12 @@ export class StockSummaryResponse {
   @ApiProperty() totalAvailable!: number;
   @ApiProperty() totalReserved!: number;
 }
+
+export class SubscribeRestockDto {
+  @ApiProperty() @IsString() productId!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() variantId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() size?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() color?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() email?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() phone?: string;
+}

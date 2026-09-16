@@ -535,6 +535,7 @@ model Product {
   cartItems               ShoppingCartItem[]
   socialPosts             SocialPostProduct[]
   wishlistItems           WishlistItem[]
+  restockSubscriptions    RestockSubscription[]
 
   @@index([brandId])
   @@index([status])
@@ -2516,6 +2517,28 @@ model NewsletterSubscription {
   @@index([email])
   @@index([status])
   @@map("newsletter_subscriptions")
+}
+
+model RestockSubscription {
+  id             String    @id @default(uuid())
+  productId      String
+  variantId      String?
+  size           String?
+  color          String?
+  email          String?
+  phone          String?
+  status         String    @default("PENDING")
+  notifiedAt     DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  product        Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([productId])
+  @@index([variantId])
+  @@index([email])
+  @@index([phone])
+  @@index([status])
+  @@map("restock_subscriptions")
 }
 
 model OtpChallenge {

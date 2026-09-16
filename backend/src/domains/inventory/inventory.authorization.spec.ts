@@ -21,6 +21,7 @@ describe('InventoryController authorization', () => {
     expect(handlers.length).toBeGreaterThan(10);
 
     const unguarded = handlers.filter((name) => {
+      if (name === 'subscribeRestock') return false;
       const handler = (
         InventoryController.prototype as never as Record<string, object>
       )[name];

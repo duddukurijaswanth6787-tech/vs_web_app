@@ -29,6 +29,7 @@ import {
   Boxes,
   Check,
   Info,
+  Bell,
 } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -52,6 +53,7 @@ const ImageOverlayModal = dynamic(() => import('./ImageOverlayModal').then(mod =
 const SizeChartModal = dynamic(() => import('./SizeChartModal').then(mod => mod.SizeChartModal), { ssr: false });
 const ProductImageZoom = dynamic(() => import('./ProductImageZoom').then(mod => mod.ProductImageZoom), { ssr: false });
 const ShareModal = dynamic(() => import('./ShareModal').then(mod => mod.ShareModal), { ssr: false });
+const NotifyMeModal = dynamic(() => import('./NotifyMeModal').then(mod => mod.NotifyMeModal), { ssr: false });
 import { useAuth } from '@/hooks/useAuth';
 import {
   discountLabel,
@@ -133,6 +135,7 @@ export function ProductDetailClient() {
   // Dynamic Modal states
   const [showShare, setShowShare] = useState(false);
   const [showReviewForm, setShowReviewForm] = useState(false);
+  const [showNotifyMe, setShowNotifyMe] = useState(false);
 
   // Load related products from same category
   const { data: relatedData } = useCustomerProducts({
@@ -1097,17 +1100,21 @@ export function ProductDetailClient() {
                           <button
                             key={idx}
                             type="button"
-                            disabled={isOutOfStock}
                             onClick={() => setSelectedSize(sizeLabel)}
-                            className={`min-w-12 h-11 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center ${
+                            className={`min-w-12 h-11 px-3 rounded-xl border text-xs font-bold transition-all flex flex-col items-center justify-center relative ${
                               isSelected
-                                ? 'border-[#0284c7] bg-[#0284c7] text-white shadow-md'
+                                ? isOutOfStock
+                                  ? 'border-red-400 bg-red-50 text-red-700 shadow-sm ring-2 ring-red-400/30'
+                                  : 'border-[#0284c7] bg-[#0284c7] text-white shadow-md'
                                 : isOutOfStock
-                                ? 'border-neutral-200 bg-neutral-100 text-neutral-400 opacity-50 cursor-not-allowed line-through'
+                                ? 'border-neutral-200 bg-neutral-50 text-neutral-400 hover:border-neutral-300'
                                 : 'border-neutral-200 bg-white text-neutral-800 hover:border-neutral-400'
                             }`}
                           >
-                            <span>{sizeLabel}</span>
+                            <span className={isOutOfStock && !isSelected ? 'line-through opacity-60' : ''}>{sizeLabel}</span>
+                            {isOutOfStock && (
+                              <span className="text-[8px] font-black uppercase text-red-500 scale-90 -mt-0.5">Sold Out</span>
+                            )}
                           </button>
                         );
                       });
@@ -1369,6 +1376,36 @@ export function ProductDetailClient() {
                     </button>
                   </div>
                 </div>
+
+                {/* Out of Stock & Restock Alert Notice */}
+                {maxAllowedQty === 0 && (
+                  <div className="bg-gradient-to-br from-amber-50/70 via-sky-50/40 to-indigo-50/50 border border-sky-200/80 rounded-2xl p-4 shadow-sm space-y-2.5 animate-fade-in">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <div className="w-8 h-8 rounded-xl bg-sky-100 text-sky-700 flex items-center justify-center font-bold">
+                          <Bell className="w-4 h-4 text-sky-600" />
+                        </div>
+                        <div>
+                          <h4 className="text-xs font-extrabold text-neutral-900">
+                            Currently Out of Stock {selectedSize ? `in Size ${selectedSize}` : ''}
+                          </h4>
+                          <p className="text-[10px] text-neutral-500">
+                            Get an instant WhatsApp / SMS / Email alert the moment fresh stock arrives.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setShowNotifyMe(true)}
+                      className="w-full bg-gradient-to-r from-sky-600 via-sky-500 to-indigo-600 hover:from-sky-700 hover:to-indigo-700 text-white font-extrabold text-xs tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-500/20 active:scale-98 transition-all cursor-pointer"
+                    >
+                      <Bell className="w-4 h-4 fill-white" />
+                      NOTIFY ME WHEN AVAILABLE
+                    </button>
+                  </div>
+                )}
 
                 {/* Action buttons (Save & Share) */}
                 <div className="flex gap-2.5">
@@ -1795,13 +1832,25 @@ export function ProductDetailClient() {
               }}
             />
 
+            {/* Dynamic Notify Me Modal */}
+            <NotifyMeModal
+              isOpen={showNotifyMe}
+              onClose={() => setShowNotifyMe(false)}
+              productId={product.id}
+              productName={product.name}
+              productImage={visibleImages[0] as string | undefined}
+              selectedSize={selectedSize || undefined}
+              selectedColor={selectedColor || currentColorGroup?.name || undefined}
+              variantId={matchingVariant?.id}
+            />
+
             {/* Sticky Cart mobile navigation bar at the bottom */}
             <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-100 shadow-[0_-8px_20px_rgba(0,0,0,0.03)] px-4 py-3 flex items-center justify-between md:hidden">
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide">Price</span>
                 <span className="text-lg font-black text-[var(--brand-primary)] leading-none">{formatInr(price)}</span>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 items-center">
                 <select 
                   value={selectedSize}
                   onChange={(e) => setSelectedSize(e.target.value)}
@@ -1810,24 +1859,38 @@ export function ProductDetailClient() {
                   <option value="">Size</option>
                   {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
                 </select>
-                <button
-                  type="button"
-                  disabled={addItem.isPending}
-                  onClick={handleAddToCart}
-                  className="bg-[var(--brand-primary)] text-white font-bold text-[11px] px-3 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] flex items-center gap-1 shadow-2xs"
-                >
-                  <ShoppingBag className="w-3.5 h-3.5" />
-                  Bag
-                </button>
-                <button
-                  type="button"
-                  disabled={addItem.isPending}
-                  onClick={handleBuyNow}
-                  className="bg-amber-500 text-neutral-950 font-bold text-[11px] px-3.5 py-2.5 rounded-xl hover:bg-amber-600 flex items-center gap-1 shadow-2xs"
-                >
-                  <Zap className="w-3.5 h-3.5 fill-neutral-950" />
-                  Buy Now
-                </button>
+
+                {maxAllowedQty === 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowNotifyMe(true)}
+                    className="bg-gradient-to-r from-sky-600 to-indigo-600 text-white font-extrabold text-[11px] px-4 py-2.5 rounded-xl flex items-center gap-1.5 shadow-md shadow-sky-500/20 active:scale-98 transition-all"
+                  >
+                    <Bell className="w-3.5 h-3.5 fill-white" />
+                    Notify Me
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      type="button"
+                      disabled={addItem.isPending}
+                      onClick={handleAddToCart}
+                      className="bg-[var(--brand-primary)] text-white font-bold text-[11px] px-3 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] flex items-center gap-1 shadow-2xs"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      Bag
+                    </button>
+                    <button
+                      type="button"
+                      disabled={addItem.isPending}
+                      onClick={handleBuyNow}
+                      className="bg-amber-500 text-neutral-950 font-bold text-[11px] px-3.5 py-2.5 rounded-xl hover:bg-amber-600 flex items-center gap-1 shadow-2xs"
+                    >
+                      <Zap className="w-3.5 h-3.5 fill-neutral-950" />
+                      Buy Now
+                    </button>
+                  </>
+                )}
               </div>
             </div>
 

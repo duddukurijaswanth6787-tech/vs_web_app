@@ -3,6 +3,7 @@ import { BusinessException, ValidationException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
 import { calculateStockStatus } from '@shared/inventory/stock-status.util';
+import { PrismaService } from '@database/prisma.service';
 import { InventoryRepository } from './inventory.repository';
 import {
   CreateInventoryDto,
@@ -13,6 +14,7 @@ import {
   MovementQueryDto,
   InventoryResponse,
   InventoryMovementResponse,
+  SubscribeRestockDto,
 } from './inventory.types';
 
 @Injectable()
@@ -21,6 +23,7 @@ export class InventoryService {
     private readonly inventoryRepository: InventoryRepository,
     private readonly auditService: AuditService,
     private readonly notificationService: NotificationService,
+    private readonly prisma: PrismaService,
   ) {}
 
   private toResponse(i: any): InventoryResponse {
@@ -543,5 +546,62 @@ export class InventoryService {
 
   async getStockSummary() {
     return this.inventoryRepository.getStockSummary();
+  }
+
+  async subscribeRestock(dto: SubscribeRestockDto) {
+    if (!dto.phone?.trim() && !dto.email?.trim()) {
+      throw new BusinessException(
+        'Please provide either a phone number or email address to receive restock notifications.',
+        'INVALID_CONTACT_INFO',
+      );
+    }
+
+    const product = await this.prisma.product.findUnique({
+      where: { id: dto.productId },
+      select: { id: true, name: true, sku: true },
+    });
+
+    if (!product) {
+      throw new BusinessException('Product not found', 'PRODUCT_NOT_FOUND');
+    }
+
+    const subscription = await this.prisma.restockSubscription.create({
+      data: {
+        productId: dto.productId,
+        variantId: dto.variantId || null,
+        size: dto.size || null,
+        color: dto.color || null,
+        email: dto.email ? dto.email.trim().toLowerCase() : null,
+        phone: dto.phone ? dto.phone.trim() : null,
+        status: 'PENDING',
+      },
+    });
+
+    const contactStr = [dto.phone, dto.email].filter(Boolean).join(' / ');
+    const specStr = [dto.color ? `Color: ${dto.color}` : null, dto.size ? `Size: ${dto.size}` : null]
+      .filter(Boolean)
+      .join(', ');
+
+    this.notificationService.notifyAdmins(
+      'NEW_CUSTOMER',
+      `🔔 Customer Requested Restock Alert`,
+      `Customer requested alert for "${product.name}"${specStr ? ` (${specStr})` : ''}. Contact: ${contactStr}`,
+      {
+        productId: dto.productId,
+        variantId: dto.variantId,
+        productName: product.name,
+        size: dto.size,
+        color: dto.color,
+        phone: dto.phone,
+        email: dto.email,
+        subscriptionId: subscription.id,
+      },
+    ).catch(() => {});
+
+    return {
+      success: true,
+      message: 'You will be notified as soon as this item is back in stock!',
+      subscriptionId: subscription.id,
+    };
   }
 }
