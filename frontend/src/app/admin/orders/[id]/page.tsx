@@ -27,11 +27,16 @@ import {
   Building,
   Sparkles,
   RefreshCw,
+  Package,
+  ShoppingBag,
+  CreditCard,
+  Tag,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDateTime, formatDate } from '@/utils/format';
 import CreateCancellationDialog from '@/features/cancellations/components/CreateCancellationDialog';
 import CreateReturnDialog from '@/features/returns/components/CreateReturnDialog';
+import { useWarehouseList } from '@/features/warehouse/warehouse.hooks';
 import { categorizeApiError } from '@/lib/api-error-handler';
 import { apiClient } from '@/lib/api/client';
 
@@ -49,6 +54,8 @@ export default function OrderDetailPage() {
   const { data: payments, isLoading: isPaymentsLoading } = useOrderPayments(id, !!order);
   const { data: refunds } = useOrderRefunds(id, !!order);
   const { data: invoices, refetch: refetchInvoices } = useOrderInvoices(id, !!order);
+  const { data: warehouseData } = useWarehouseList({ limit: 100 });
+  const activeWarehouses = warehouseData?.data || [];
   
   // Try loading cancellation detail if status is CANCELLED
   const { data: cancellation } = useCancellationDetail(id, !!order && order.status === 'CANCELLED');
@@ -64,6 +71,16 @@ export default function OrderDetailPage() {
   const [trackingUrl, setTrackingUrl] = useState('');
   const [serviceSpeed, setServiceSpeed] = useState('Air Express (1-2 Days)');
   const [pickupWarehouse, setPickupWarehouse] = useState("Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)");
+
+  // Sync default pickup warehouse from DB if available
+  React.useEffect(() => {
+    if (activeWarehouses.length > 0 && pickupWarehouse.includes("Vasanthi's Signature Main Hub")) {
+      const defaultWh = activeWarehouses.find((w) => w.isDefault) || activeWarehouses[0];
+      if (defaultWh) {
+        setPickupWarehouse(`${defaultWh.name} (${defaultWh.city || 'Hub'}${defaultWh.postalCode ? ` - ${defaultWh.postalCode}` : ''})`);
+      }
+    }
+  }, [activeWarehouses]);
 
   // Pincode Serviceability State
   const [pincodeServiceability, setPincodeServiceability] = useState<{
@@ -446,6 +463,92 @@ export default function OrderDetailPage() {
         {/* Right Side: Customer Info, Addresses, Timeline */}
         <div className="space-y-6">
           
+          {/* Order Summary & Products Quick View (For Online Orders) */}
+          {isOnlineOrder && (
+            <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-neutral-800" />
+                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Order Summary ({order.items?.length || 0} Items)
+                  </h3>
+                </div>
+                {order.paymentMethod?.toUpperCase().includes('COD') ||
+                order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
+                payments?.some((p) => p.method?.toUpperCase().includes('COD')) ? (
+                  <span className="text-2xs font-bold bg-amber-50 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                    <CreditCard className="w-3 h-3 text-amber-700" /> COD: Collect at Doorstep
+                  </span>
+                ) : (
+                  <span className="text-2xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Prepaid Online
+                  </span>
+                )}
+              </div>
+
+              {/* Ordered Items Preview List */}
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {order.items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150/80 flex justify-between items-start text-xs hover:bg-neutral-50 transition"
+                  >
+                    <div className="space-y-0.5 pr-2">
+                      <span className="font-bold text-neutral-900 line-clamp-1">{item.productName}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {item.variantTitle && (
+                          <span className="text-[10px] bg-neutral-200/70 text-neutral-700 px-1.5 py-0.2 rounded font-medium">
+                            {item.variantTitle}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-neutral-500">SKU: {item.sku}</span>
+                      </div>
+                      <span className="text-2xs text-neutral-500 block">
+                        Qty: <strong>{item.quantity}</strong> × {formatMoney(item.unitPrice, order.currency)}
+                      </span>
+                    </div>
+                    <div className="font-bold text-neutral-900 shrink-0 text-right">
+                      {formatMoney(item.totalPrice, order.currency)}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Price Breakdown Strip */}
+              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-150 space-y-1.5 text-2xs">
+                <div className="flex justify-between text-neutral-600">
+                  <span>Subtotal:</span>
+                  <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
+                </div>
+                {Number(order.discountTotal) > 0 && (
+                  <div className="flex justify-between text-red-600 font-medium">
+                    <span>Discount Applied:</span>
+                    <span className="font-mono">-{formatMoney(order.discountTotal, order.currency)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-neutral-600">
+                  <span>Delivery / Shipping Fee:</span>
+                  <span className="font-mono">{Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : 'Free Shipping'}</span>
+                </div>
+                <div className="flex justify-between text-neutral-600">
+                  <span>Taxes (GST):</span>
+                  <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
+                </div>
+                <div className="pt-2 border-t border-neutral-200 flex justify-between items-center text-xs font-bold text-neutral-950">
+                  <span>Total Payable:</span>
+                  <span className="font-mono text-sm text-sky-900">{formatMoney(order.grandTotal, order.currency)}</span>
+                </div>
+                {(order.paymentMethod?.toUpperCase().includes('COD') ||
+                  order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
+                  payments?.some((p) => p.method?.toUpperCase().includes('COD'))) && (
+                  <div className="p-1.5 bg-amber-100/70 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-900 text-center">
+                    💵 Cash to be collected upon courier delivery: {formatMoney(order.grandTotal, order.currency)}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Delivery Partner / Fulfillment Section */}
           {isOnlineOrder ? (
             <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
@@ -553,19 +656,32 @@ export default function OrderDetailPage() {
               <div className="space-y-3 text-xs">
                 <div>
                   <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                    Pickup Warehouse / Origin Location
+                    Pickup Warehouse / Origin Location (Manual Select)
                   </label>
                   <select
                     value={pickupWarehouse}
                     onChange={(e) => setPickupWarehouse(e.target.value)}
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
-                    <option value="Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)">
-                      🏭 Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)
-                    </option>
-                    <option value="Madhapur Retail Store (Hyderabad - 500081)">
-                      🏬 Madhapur Retail Store (Hyderabad - 500081)
-                    </option>
+                    {activeWarehouses.length > 0 ? (
+                      activeWarehouses.map((wh) => (
+                        <option
+                          key={wh.id}
+                          value={`${wh.name} (${wh.city || 'Hub'}${wh.postalCode ? ` - ${wh.postalCode}` : ''})`}
+                        >
+                          🏭 {wh.name} {wh.city ? `(${wh.city}${wh.postalCode ? ` - ${wh.postalCode}` : ''})` : ''} {wh.isDefault ? '⭐ [Primary]' : ''}
+                        </option>
+                      ))
+                    ) : (
+                      <>
+                        <option value="Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)">
+                          🏭 Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033) ⭐ [Primary]
+                        </option>
+                        <option value="Madhapur Retail Store & Dispatch (Hyderabad - 500081)">
+                          🏬 Madhapur Retail Store & Dispatch (Hyderabad - 500081)
+                        </option>
+                      </>
+                    )}
                   </select>
                 </div>
 
@@ -605,8 +721,8 @@ export default function OrderDetailPage() {
                       onChange={(e) => setServiceSpeed(e.target.value)}
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
-                      <option value="Air Express (1-2 Days)">Air Express (1-2 Days)</option>
-                      <option value="Surface Cargo (3-5 Days)">Surface Cargo (3-5 Days)</option>
+                      <option value="Air Express (1-2 Days)">✈️ Air Express (1-2 Days)</option>
+                      <option value="Surface Cargo (3-5 Days)">🚚 Surface Cargo (3-5 Days)</option>
                     </select>
                   </div>
                 </div>
