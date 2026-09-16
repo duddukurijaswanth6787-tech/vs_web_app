@@ -531,18 +531,44 @@ export class ProductsService {
   }
 
   async delete(id: string, userId: string) {
-    const product = await this.productsRepository.findById(id);
-    if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
-    await this.productsRepository.softDelete(id);
+    const product = await this.prisma.product.findUnique({
+      where: { id },
+      select: { id: true, name: true, deletedAt: true },
+    });
+    if (!product) {
+      return;
+    }
+
+    await this.prisma.$transaction([
+      this.prisma.product.update({
+        where: { id },
+        data: {
+          deletedAt: new Date(),
+          status: 'ARCHIVED',
+          isPublished: false,
+        },
+      }),
+      this.prisma.productVariant.updateMany({
+        where: { productId: id, deletedAt: null },
+        data: { deletedAt: new Date() },
+      }),
+      this.prisma.shoppingCartItem.deleteMany({
+        where: { variant: { productId: id } },
+      }),
+      this.prisma.wishlistItem.deleteMany({
+        where: { productId: id },
+      }),
+    ]);
+
     await this.auditService.log({
       action: 'PRODUCT_DELETED',
       module: 'products',
       resource: 'product',
       resourceId: id,
-      userId,
+      userId: userId || 'system',
       oldValue: { name: product.name },
-    });
+    }).catch(() => null);
+
     this.loggerService.log(
       { action: 'product_deleted', productId: id },
       'ProductsService',

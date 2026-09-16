@@ -246,17 +246,19 @@ export class ProductVariantsService {
   }
 
   async delete(id: string, userId: string) {
-    const variant = await this.variantsRepository.findById(id);
-    if (!variant || variant.deletedAt)
-      throw new BusinessException('Variant not found', 'VARIANT_001');
+    const variant = await this.prisma.productVariant.findUnique({
+      where: { id },
+      select: { id: true, deletedAt: true },
+    });
+    if (!variant || variant.deletedAt) return;
     await this.variantsRepository.softDelete(id);
     await this.auditService.log({
       action: 'VARIANT_DELETED',
       module: 'product-variants',
       resource: 'variant',
       resourceId: id,
-      userId,
-    });
+      userId: userId || 'system',
+    }).catch(() => null);
   }
 
   async restore(id: string, userId: string) {
