@@ -1227,7 +1227,8 @@ export default function ProductBuilder({
       }
 
       // Organisation lives outside the react-hook-form schema, so merge it in.
-      const categoryIds = [primaryCategoryId, subCategoryId].filter(Boolean);
+      const validSubCategoryId = subCategories.some(c => c.id === subCategoryId) ? subCategoryId : '';
+      const categoryIds = [primaryCategoryId, validSubCategoryId].filter(Boolean);
       const cleanHsn = values.hsnCode?.trim() ? values.hsnCode.trim() : undefined;
 
       // Sync tags with custom tailoring & wholesale pricing customer visibility toggles
