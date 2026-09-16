@@ -1645,6 +1645,8 @@ export default function ProductBuilder({
 
       const variantResults = await Promise.all(
         variantTasks.map(async (task) => {
+          const { group, sizeRow, title, titleKey, order } = task;
+          const existingVar = existingVariantsByTitle.get(titleKey);
           const rawPrice = sizeRow.price !== undefined && sizeRow.price !== null && !isNaN(Number(sizeRow.price)) && Number(sizeRow.price) > 0 ? Number(sizeRow.price) : undefined;
           const rawSalePrice = sizeRow.salePrice !== undefined && sizeRow.salePrice !== null && !isNaN(Number(sizeRow.salePrice)) && Number(sizeRow.salePrice) > 0 ? Number(sizeRow.salePrice) : undefined;
           const rawCostPrice = sizeRow.costPrice !== undefined && sizeRow.costPrice !== null && !isNaN(Number(sizeRow.costPrice)) && Number(sizeRow.costPrice) > 0 ? Number(sizeRow.costPrice) : (values.costPrice ? Number(values.costPrice) : undefined);
