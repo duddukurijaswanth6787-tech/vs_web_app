@@ -49,11 +49,23 @@ export class GlobalResponseInterceptor<T> implements NestInterceptor<
     const response = ctx.getResponse<{
       statusCode?: number;
       status(code: number): void;
+      setHeader?(name: string, value: string): void;
     }>();
     const request = ctx.getRequest<{
       url: string;
       headers: Record<string, string | string[]>;
     }>();
+
+    // Enforce no-cache on all dynamic JSON API endpoints to ensure instantaneous UI updates across all clients
+    if (response && typeof response.setHeader === 'function') {
+      response.setHeader(
+        'Cache-Control',
+        'no-store, no-cache, must-revalidate, proxy-revalidate',
+      );
+      response.setHeader('Pragma', 'no-cache');
+      response.setHeader('Expires', '0');
+      response.setHeader('Surrogate-Control', 'no-store');
+    }
 
     // Skip formatting for health-check paths, raw streaming/storage endpoints, and swagger documents to prevent corrupting binary/raw responses
     if (

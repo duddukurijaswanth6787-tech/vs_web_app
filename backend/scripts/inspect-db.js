@@ -1,17 +1,23 @@
 const { Client } = require('pg');
 require('dotenv').config({ path: require('path').resolve(__dirname, '../.env') });
 
+const LIVE_DB_URL = 'postgresql://postgres:jlEKlMCjFYyJfSWDlJuCgvrqCVfBivQD@junction.proxy.rlwy.net:47577/railway';
+
 async function inspectDb() {
-  const dbUrl = process.env.DATABASE_URL;
+  const isLive = process.argv.includes('--live');
+  const dbUrl = isLive ? LIVE_DB_URL : process.env.DATABASE_URL;
   if (!dbUrl) {
     console.error('Error: DATABASE_URL not found in .env');
     process.exit(1);
   }
 
-  const client = new Client({ connectionString: dbUrl });
+  const client = new Client({
+    connectionString: dbUrl,
+    ssl: isLive ? { rejectUnauthorized: false } : undefined,
+  });
   try {
     await client.connect();
-    console.log('✔ Connected to Database successfully.\n');
+    console.log(`\n✔ Connected to ${isLive ? 'LIVE PRODUCTION (Railway)' : 'LOCAL (localhost:5432)'} Database successfully.\n`);
 
     // List all public tables and row counts
     const tablesRes = await client.query(`

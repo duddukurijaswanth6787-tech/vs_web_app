@@ -14,6 +14,8 @@ export function useProducts(query: ProductQueryDto = {}) {
   return useQuery({
     queryKey: productKeys.list(query),
     queryFn: () => productService.findAll(query),
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -22,6 +24,8 @@ export function useProduct(id: string, enabled = true) {
     queryKey: productKeys.detail(id),
     queryFn: () => productService.findById(id),
     enabled: !!id && enabled,
+    staleTime: 0,
+    refetchOnMount: 'always',
   });
 }
 
@@ -29,8 +33,9 @@ export function useCreateProduct() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (dto: CreateProductDto) => productService.create(dto),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
 }
@@ -41,7 +46,7 @@ export function useUpdateProduct() {
     mutationFn: ({ id, dto }: { id: string; dto: UpdateProductDto }) =>
       productService.update(id, dto),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -53,7 +58,6 @@ export function useDeleteProduct() {
     mutationFn: (id: string) => productService.delete(id),
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: productKeys.all });
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(id) });
     },
   });
@@ -64,7 +68,7 @@ export function useRestoreProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.restore(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -75,7 +79,7 @@ export function usePublishProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.publish(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -86,7 +90,7 @@ export function useUnpublishProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.unpublish(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -97,7 +101,7 @@ export function useFeatureProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.feature(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -109,6 +113,7 @@ export function useCreateColorGroup() {
     mutationFn: ({ id, dto }: { id: string; dto: { colorAttributeOptionId: string; label?: string } }) =>
       productService.createColorGroup(id, dto),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.id) });
     },
   });
@@ -120,6 +125,7 @@ export function useDeleteColorGroup() {
     mutationFn: ({ productId, groupId }: { productId: string; groupId: string }) =>
       productService.deleteColorGroup(productId, groupId),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.productId) });
     },
   });
@@ -131,6 +137,7 @@ export function useSyncColorGroups() {
     mutationFn: ({ id, dto }: { id: string; dto: { colorGroups: Array<Record<string, unknown>> } }) =>
       productService.syncColorGroups(id, dto),
     onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(variables.id) });
     },
   });
@@ -141,7 +148,7 @@ export function useUnfeatureProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.unfeature(id),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -153,7 +160,7 @@ export function useAssignCategories() {
     mutationFn: ({ id, dto }: { id: string; dto: AssignCategoriesDto }) =>
       productService.assignCategories(id, dto),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
@@ -165,7 +172,7 @@ export function useAssignAttributes() {
     mutationFn: ({ id, dto }: { id: string; dto: AssignAttributesDto }) =>
       productService.assignAttributes(id, dto),
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: productKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
     },
   });
