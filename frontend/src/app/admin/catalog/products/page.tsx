@@ -3,7 +3,8 @@
 import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useProducts, useDeleteProduct, useRestoreProduct } from '@/features/catalog/products/product.hooks';
+import { useQueryClient } from '@tanstack/react-query';
+import { useProducts, useDeleteProduct, useRestoreProduct, productKeys } from '@/features/catalog/products/product.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { ProductStatus } from '@/features/catalog/products/product.types';
@@ -29,6 +30,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function ProductsPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const searchParams = useSearchParams();
   const page = parseInt(searchParams.get('page') || '1');
   const search = searchParams.get('search') || '';
@@ -109,7 +111,15 @@ export default function ProductsPage() {
       await deleteProductMut.mutateAsync(productToDelete.id);
       showFeedback('success', `Product "${productToDelete.name}" deleted successfully.`);
       setProductToDelete(null);
-      refetch();
+      // Clear search term and navigate to all active products
+      setLocalSearch('');
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('search');
+      params.set('page', '1');
+      const targetQuery = params.toString();
+      router.push(targetQuery ? `/admin/catalog/products?${targetQuery}` : '/admin/catalog/products');
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+      await refetch();
     } catch (err) {
       showFeedback('error', getApiErrorMessage(err, 'Failed to delete product'));
     } finally {
@@ -126,7 +136,15 @@ export default function ProductsPage() {
       showFeedback('success', `${ids.length} products deleted successfully.`);
       setSelectedIds(new Set());
       setIsBulkDeleting(false);
-      refetch();
+      // Clear search term and navigate to all active products
+      setLocalSearch('');
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('search');
+      params.set('page', '1');
+      const targetQuery = params.toString();
+      router.push(targetQuery ? `/admin/catalog/products?${targetQuery}` : '/admin/catalog/products');
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+      await refetch();
     } catch (err) {
       showFeedback('error', getApiErrorMessage(err, 'Failed to delete selected products'));
     } finally {
