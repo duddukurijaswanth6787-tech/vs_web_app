@@ -286,8 +286,8 @@ export const adminNavigation: NavGroup[] = [
       },
       {
         id: 'delivery-partners',
-        title: 'Delhivery & DTDC Setup',
-        href: '/admin/shipping/dtdc',
+        title: 'Delhivery & Courier Dispatch',
+        href: '/admin/shipping/delhivery',
         icon: Truck,
         implemented: true,
       },

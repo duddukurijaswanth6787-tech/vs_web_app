@@ -444,10 +444,18 @@ export default function OrderDetailPage() {
                   </label>
                   <select
                     value={courierPartner}
-                    onChange={(e) => setCourierPartner(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    onChange={(e) => {
+                      const partner = e.target.value;
+                      setCourierPartner(partner);
+                      if (partner === 'Delhivery' && !waybillNumber) {
+                        const autoAwb = `DEL${Date.now().toString().slice(-9)}`;
+                        setWaybillNumber(autoAwb);
+                        setTrackingUrl(`https://www.delhivery.com/tracking?awb=${autoAwb}`);
+                      }
+                    }}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   >
-                    <option value="Delhivery">🚚 Delhivery (Express & Surface)</option>
+                    <option value="Delhivery">🚚 Delhivery (Approved Primary Partner)</option>
                     <option value="DTDC">📦 DTDC Courier & Cargo</option>
                     <option value="Professional Courier">🏎️ Professional Courier</option>
                     <option value="FedEx">✈️ FedEx Express</option>
@@ -459,27 +467,53 @@ export default function OrderDetailPage() {
                 </div>
 
                 <div>
-                  <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                    Waybill / AWB Number (Optional)
-                  </label>
+                  <div className="flex items-center justify-between mb-1">
+                    <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
+                      Waybill / AWB Number
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const autoAwb =
+                          courierPartner === 'Delhivery'
+                            ? `DEL${Date.now().toString().slice(-9)}`
+                            : `${courierPartner.slice(0, 3).toUpperCase()}${Date.now().toString().slice(-8)}`;
+                        setWaybillNumber(autoAwb);
+                        setTrackingUrl(
+                          courierPartner === 'Delhivery'
+                            ? `https://www.delhivery.com/tracking?awb=${autoAwb}`
+                            : `https://track.${courierPartner.toLowerCase()}.com/tracking?awb=${autoAwb}`,
+                        );
+                      }}
+                      className="text-2xs font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+                    >
+                      ⚡ Auto-Generate AWB
+                    </button>
+                  </div>
                   <input
                     type="text"
                     value={waybillNumber}
-                    onChange={(e) => setWaybillNumber(e.target.value)}
-                    placeholder={courierPartner === 'Delhivery' ? 'Auto-generated or enter AWB...' : 'Enter AWB / Waybill number'}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setWaybillNumber(val);
+                      if (courierPartner === 'Delhivery' && val) {
+                        setTrackingUrl(`https://www.delhivery.com/tracking?awb=${val}`);
+                      }
+                    }}
+                    placeholder="Enter AWB or click Auto-Generate"
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   />
                 </div>
 
                 <div>
                   <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                    Tracking Web Link (Optional)
+                    Tracking Web Link
                   </label>
                   <input
                     type="url"
                     value={trackingUrl}
                     onChange={(e) => setTrackingUrl(e.target.value)}
-                    placeholder="https://track.delhivery.com/..."
+                    placeholder="https://www.delhivery.com/tracking?awb=..."
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
                   />
                 </div>
@@ -487,7 +521,7 @@ export default function OrderDetailPage() {
                 <button
                   disabled={assignCourierMut.isPending}
                   onClick={handleAssignCourier}
-                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50"
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
                 </button>
