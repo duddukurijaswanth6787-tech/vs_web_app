@@ -32,7 +32,6 @@ import {
   REFRESH_TOKEN_COOKIE,
   setRefreshTokenCookie,
   clearRefreshTokenCookie,
-  withoutRefreshToken,
 } from './auth-cookie.util';
 
 @ApiTags('Authentication')

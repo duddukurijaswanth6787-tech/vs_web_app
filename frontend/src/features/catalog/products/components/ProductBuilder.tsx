@@ -1658,7 +1658,6 @@ export default function ProductBuilder({
                 priceOverride: rawPrice,
                 salePriceOverride: rawSalePrice,
                 costPrice: rawCostPrice,
-                sku: sizeRow.sku || undefined,
               })
               .catch(() => null);
 

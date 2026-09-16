@@ -17,7 +17,7 @@ import {
   FirebasePhoneLoginDto,
 } from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
-import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
+import { setRefreshTokenCookie } from '@domains/auth/auth-cookie.util';
 import {
   ThrottleOtpSend,
   ThrottleOtpVerify,
