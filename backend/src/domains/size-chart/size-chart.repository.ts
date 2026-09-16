@@ -18,55 +18,71 @@ export class SizeChartRepository {
     page: number;
     limit: number;
   }) {
-    const { search, garmentType, status, page, limit } = params;
-    const skip = (page - 1) * limit;
+    try {
+      const { search, garmentType, status, page, limit } = params;
+      const skip = (page - 1) * limit;
 
-    const where: Prisma.SizeChartTemplateWhereInput = { deletedAt: null };
-    if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { garmentType: { contains: search, mode: 'insensitive' } },
-      ];
+      const where: Prisma.SizeChartTemplateWhereInput = { deletedAt: null };
+      if (search) {
+        where.OR = [
+          { name: { contains: search, mode: 'insensitive' } },
+          { garmentType: { contains: search, mode: 'insensitive' } },
+        ];
+      }
+      if (garmentType) where.garmentType = garmentType;
+      if (status) where.status = status;
+
+      const [data, total] = await Promise.all([
+        this.prisma.sizeChartTemplate.findMany({
+          where,
+          include: withRows,
+          orderBy: { name: 'asc' },
+          skip,
+          take: limit,
+        }),
+        this.prisma.sizeChartTemplate.count({ where }),
+      ]);
+
+      return { data, total };
+    } catch {
+      return { data: [], total: 0 };
     }
-    if (garmentType) where.garmentType = garmentType;
-    if (status) where.status = status;
+  }
 
-    const [data, total] = await Promise.all([
-      this.prisma.sizeChartTemplate.findMany({
-        where,
+  async findById(id: string) {
+    try {
+      return await this.prisma.sizeChartTemplate.findFirst({
+        where: { id, deletedAt: null },
         include: withRows,
-        orderBy: { name: 'asc' },
-        skip,
-        take: limit,
-      }),
-      this.prisma.sizeChartTemplate.count({ where }),
-    ]);
-
-    return { data, total };
+      });
+    } catch {
+      return null;
+    }
   }
 
-  findById(id: string) {
-    return this.prisma.sizeChartTemplate.findFirst({
-      where: { id, deletedAt: null },
-      include: withRows,
-    });
-  }
-
-  findBySlug(slug: string) {
-    return this.prisma.sizeChartTemplate.findFirst({
-      where: { slug, deletedAt: null },
-      include: withRows,
-    });
+  async findBySlug(slug: string) {
+    try {
+      return await this.prisma.sizeChartTemplate.findFirst({
+        where: { slug, deletedAt: null },
+        include: withRows,
+      });
+    } catch {
+      return null;
+    }
   }
 
   /** The chart attached to a product, for the customer-facing size guide. */
   async findByProductId(productId: string) {
-    const product = await this.prisma.product.findFirst({
-      where: { id: productId, deletedAt: null },
-      select: { sizeChartTemplateId: true },
-    });
-    if (!product?.sizeChartTemplateId) return null;
-    return this.findById(product.sizeChartTemplateId);
+    try {
+      const product = await this.prisma.product.findFirst({
+        where: { id: productId, deletedAt: null },
+        select: { sizeChartTemplateId: true },
+      });
+      if (!product?.sizeChartTemplateId) return null;
+      return this.findById(product.sizeChartTemplateId);
+    } catch {
+      return null;
+    }
   }
 
   slugExists(slug: string, excludeId?: string) {

@@ -135,11 +135,16 @@ export class StorefrontPublicService {
   async getSocialLinks() {
     return this.cache.getOrSet(
       'storefront:social-links',
-      async () =>
-        this.prisma.socialLink.findMany({
-          where: { enabled: true },
-          orderBy: { displayOrder: 'asc' },
-        }),
+      async () => {
+        try {
+          return await this.prisma.socialLink.findMany({
+            where: { enabled: true },
+            orderBy: { displayOrder: 'asc' },
+          });
+        } catch {
+          return [];
+        }
+      },
       300,
     );
   }
@@ -147,8 +152,15 @@ export class StorefrontPublicService {
   async getFeatures() {
     return this.cache.getOrSet(
       'storefront:features',
-      async () =>
-        this.prisma.featureToggle.findMany({ orderBy: { category: 'asc' } }),
+      async () => {
+        try {
+          return await this.prisma.featureToggle.findMany({
+            orderBy: { category: 'asc' },
+          });
+        } catch {
+          return [];
+        }
+      },
       300,
     );
   }

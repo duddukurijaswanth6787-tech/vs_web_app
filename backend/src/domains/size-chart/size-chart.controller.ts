@@ -16,7 +16,7 @@ import {
   UpdateSizeChartTemplateDto,
   SizeChartQueryDto,
 } from './size-chart.types';
-import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -26,12 +26,14 @@ import { ResponseBuilder } from '@common/responses/response.builder';
 export class SizeChartController {
   constructor(private readonly sizeChartService: SizeChartService) {}
 
+  @Public()
   @Get()
   @ApiOperation({ summary: 'List size chart templates (public)' })
   async findAll(@Query() query: SizeChartQueryDto) {
     return ResponseBuilder.success(await this.sizeChartService.findAll(query));
   }
 
+  @Public()
   @Get('product/:productId')
   @ApiOperation({
     summary: 'Get the size chart attached to a product (public)',
@@ -42,6 +44,7 @@ export class SizeChartController {
     );
   }
 
+  @Public()
   @Get(':id')
   @ApiOperation({ summary: 'Get a size chart template (public)' })
   async findById(@Param('id') id: string) {

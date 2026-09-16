@@ -10,18 +10,22 @@ import {
 
 export const sizeChartService = {
   findAll: async (query: SizeChartQueryDto = {}): Promise<SizeChartListResponse> => {
-    const params: Record<string, string | number> = {};
-    if (query.search) params.search = query.search;
-    if (query.garmentType) params.garmentType = query.garmentType;
-    if (query.status) params.status = query.status;
-    if (query.page) params.page = query.page;
-    if (query.limit) params.limit = query.limit;
+    try {
+      const params: Record<string, string | number> = {};
+      if (query.search) params.search = query.search;
+      if (query.garmentType) params.garmentType = query.garmentType;
+      if (query.status) params.status = query.status;
+      if (query.page) params.page = query.page;
+      if (query.limit) params.limit = query.limit;
 
-    const response = await apiClient.get<StandardResponse<SizeChartListResponse>>(
-      '/size-charts',
-      { params },
-    );
-    return response.data.data!;
+      const response = await apiClient.get<StandardResponse<SizeChartListResponse>>(
+        '/size-charts',
+        { params },
+      );
+      return response.data.data ?? { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+    } catch {
+      return { data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } };
+    }
   },
 
   findById: async (id: string): Promise<SizeChartTemplateResponse> => {
@@ -35,10 +39,14 @@ export const sizeChartService = {
   findByProductId: async (
     productId: string,
   ): Promise<SizeChartTemplateResponse | null> => {
-    const response = await apiClient.get<StandardResponse<SizeChartTemplateResponse | null>>(
-      `/size-charts/product/${productId}`,
-    );
-    return response.data.data ?? null;
+    try {
+      const response = await apiClient.get<StandardResponse<SizeChartTemplateResponse | null>>(
+        `/size-charts/product/${productId}`,
+      );
+      return response.data.data ?? null;
+    } catch {
+      return null;
+    }
   },
 
   create: async (

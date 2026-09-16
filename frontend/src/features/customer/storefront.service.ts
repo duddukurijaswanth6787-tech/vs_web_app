@@ -65,16 +65,24 @@ export const customerStorefrontService = {
   },
 
   getSocialLinks: async (): Promise<Array<{ platform: string; url: string; title?: string }>> => {
-    const res = await apiClient.get<StandardResponse<Array<{ platform: string; url: string; title?: string }>>>('/social');
-    return res.data.data!;
+    try {
+      const res = await apiClient.get<StandardResponse<Array<{ platform: string; url: string; title?: string }>>>('/social');
+      return res.data.data ?? [];
+    } catch {
+      return [];
+    }
   },
 
   // The backend returns featureToggle.findMany() -- an array of rows, not a
   // key->bool map. The old Record<string, boolean> signature was simply wrong;
   // it went unnoticed because nothing consumed this until returns gating.
   getFeatures: async (): Promise<FeatureToggle[]> => {
-    const res = await apiClient.get<StandardResponse<FeatureToggle[]>>('/features');
-    return res.data.data ?? [];
+    try {
+      const res = await apiClient.get<StandardResponse<FeatureToggle[]>>('/features');
+      return res.data.data ?? [];
+    } catch {
+      return [];
+    }
   },
 
   subscribeNewsletter: async (email: string, source = 'storefront'): Promise<{ subscribed: boolean; message?: string }> => {
