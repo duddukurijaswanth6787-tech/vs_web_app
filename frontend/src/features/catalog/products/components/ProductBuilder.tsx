@@ -488,11 +488,14 @@ export default function ProductBuilder({
 
     images.forEach((img) => {
       const cName = img.color || 'Color 1';
-      const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || img.url;
+      const isFabric = img.mediaType === 'FABRIC' || (img as any).title === 'FABRIC_SWATCH';
+      const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || (isFabric ? img.url : undefined);
       if (!colorMap.has(cName)) {
         colorMap.set(cName, { swatch, images: [] });
+      } else if (swatch && !colorMap.get(cName)!.swatch) {
+        colorMap.get(cName)!.swatch = swatch;
       }
-      if (img.url) {
+      if (img.url && !isFabric) {
         colorMap.get(cName)!.images.push(img.url);
       }
     });
@@ -510,16 +513,19 @@ export default function ProductBuilder({
         colorName = v.title.split('/')[0].trim();
       }
       if (colorName && !colorMap.has(colorName)) {
-        colorMap.set(colorName, { swatch: primaryUrl, images: primaryUrl ? [primaryUrl] : [] });
+        colorMap.set(colorName, { swatch: undefined, images: primaryUrl ? [primaryUrl] : [] });
       }
     });
 
     if (colorMap.size === 0) {
-      const defaultImgs = images.map((i) => i.url).filter(Boolean);
+      const defaultImgs = images
+        .filter((i) => i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH')
+        .map((i) => i.url)
+        .filter(Boolean);
       if (primaryUrl && !defaultImgs.includes(primaryUrl)) {
         defaultImgs.unshift(primaryUrl);
       }
-      colorMap.set('Color 1', { swatch: primaryUrl || defaultImgs[0], images: defaultImgs });
+      colorMap.set('Color 1', { swatch: undefined, images: defaultImgs });
     }
 
     const groups: ColorVariantGroup[] = [];
@@ -928,7 +934,16 @@ export default function ProductBuilder({
    * ColorVariantGroup so the shared preview type stays a plain string[]; it is
    * sent as the media title on save.
    */
-  const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
+  const [imageLabels, setImageLabels] = useState<Record<string, string>>(() => {
+    const labels: Record<string, string> = {};
+    (initialData?.images || []).forEach((img: unknown) => {
+      const imgObj = img as { url?: string; title?: string };
+      if (imgObj?.url && imgObj?.title) {
+        labels[imgObj.url] = imgObj.title;
+      }
+    });
+    return labels;
+  });
 
   // Everything the AI Content Assistant may put in a prompt, in the order a
   // person would describe the garment. Empty entries are dropped downstream by
@@ -1275,16 +1290,36 @@ export default function ProductBuilder({
       });
 
       // Prepare all media upload and attachment tasks in parallel
-      const mediaTasks: Array<{ group: ColorVariantGroup; img: string; isPrimary: boolean; order: number }> = [];
+      const mediaTasks: Array<{ group: ColorVariantGroup; img: string; isPrimary: boolean; order: number; isFabric?: boolean }> = [];
       let displayOrder = 0;
       let primarySet = false;
 
+      // 1. First add all actual product gallery photos across color groups
       for (const group of colorGroups) {
-        const groupImages = Array.from(new Set([group.swatchImage, ...group.images].filter(Boolean) as string[]));
-        for (const img of groupImages) {
-          const isImgPrimary = !primarySet || (finalCardCoverUrl ? img === finalCardCoverUrl : false);
+        const groupImages = Array.from(new Set(group.images.filter(Boolean) as string[]));
+        for (let i = 0; i < groupImages.length; i++) {
+          const img = groupImages[i];
+          const isImgPrimary = finalCardCoverUrl ? img === finalCardCoverUrl : !primarySet;
           if (isImgPrimary) primarySet = true;
           mediaTasks.push({ group, img, isPrimary: isImgPrimary, order: displayOrder++ });
+        }
+      }
+
+      // 2. If separate fabric texture swatches are uploaded, attach them as FABRIC (never primary)
+      for (const group of colorGroups) {
+        if (group.swatchImage && !group.images.includes(group.swatchImage)) {
+          mediaTasks.push({ group, img: group.swatchImage, isPrimary: false, order: displayOrder++, isFabric: true });
+        }
+      }
+
+      // 3. Delete any orphaned media that the user deleted from the UI
+      const allCurrentImages = new Set<string>();
+      for (const task of mediaTasks) {
+        allCurrentImages.add(task.img);
+      }
+      for (const existing of existingMedia) {
+        if (existing.id && existing.url && !allCurrentImages.has(existing.url)) {
+          await productService.deleteMedia(String(existing.id)).catch(() => null);
         }
       }
 
@@ -1323,10 +1358,11 @@ export default function ProductBuilder({
             .addMedia({
               productId: created.id,
               url,
+              mediaType: task.isFabric ? 'FABRIC' : 'IMAGE',
               isPrimary: task.isPrimary,
               displayOrder: task.order,
               color: task.group.name,
-              ...(imageLabels[task.img] ? { title: imageLabels[task.img] } : {}),
+              ...(task.isFabric ? { title: 'FABRIC_SWATCH' } : (imageLabels[task.img] ? { title: imageLabels[task.img] } : {})),
             })
             .catch(() => null);
 
@@ -2685,9 +2721,6 @@ export default function ProductBuilder({
                               const url = ev.target?.result as string;
                               if (url) {
                                 setCardViewImage(url);
-                                if (activeColorTab) {
-                                  addImageToColorGroup(activeColorTab, url);
-                                }
                               }
                             };
                             reader.readAsDataURL(file);
@@ -2782,7 +2815,6 @@ export default function ProductBuilder({
                             const swatchUrl = ev.target?.result as string;
                             if (swatchUrl) {
                               setNewColorSwatch(swatchUrl);
-                              addColorGroup(undefined, undefined, swatchUrl);
                             }
                           };
                           reader.readAsDataURL(file);

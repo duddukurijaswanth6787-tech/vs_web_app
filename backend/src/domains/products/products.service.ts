@@ -114,6 +114,7 @@ export class ProductsService {
       images: p.media?.map((m: any) => ({
         id: m.id,
         url: m.url,
+        title: m.title ?? undefined,
         thumbnailUrl: m.thumbnailUrl ?? undefined,
         altText: m.altText ?? undefined,
         isPrimary: m.isPrimary,

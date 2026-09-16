@@ -69,8 +69,8 @@ export class MediaController {
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles('super_admin')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Soft delete media' })
   async delete(@Param('id') id: string, @CurrentUser() user: JwtPayload) {

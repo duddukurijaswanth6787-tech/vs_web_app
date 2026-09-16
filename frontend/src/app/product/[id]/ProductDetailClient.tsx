@@ -145,8 +145,14 @@ export function ProductDetailClient() {
   }, [relatedData, product]);
 
   const images = useMemo<string[]>(() => {
-    const list: string[] = product?.images?.map((i) => i.url).filter((u): u is string => Boolean(u)) || [];
-    if (product?.primaryImageUrl) list.unshift(product.primaryImageUrl);
+    const list: string[] =
+      product?.images
+        ?.filter((i) => i.mediaType !== 'FABRIC' && (i as unknown as { title?: string }).title !== 'FABRIC_SWATCH')
+        ?.map((i) => i.url)
+        .filter((u): u is string => Boolean(u)) || [];
+    if (product?.primaryImageUrl && !list.includes(product.primaryImageUrl)) {
+      list.unshift(product.primaryImageUrl);
+    }
     return Array.from(new Set(list.length ? list : [PLACEHOLDER_IMAGE]));
   }, [product]);
 
@@ -154,14 +160,20 @@ export function ProductDetailClient() {
   const colorGroups = useMemo(() => {
     const rawGroups = (product as unknown as Record<string, unknown>)?.colorGroups;
     if (Array.isArray(rawGroups) && rawGroups.length > 0) {
-      return rawGroups as Array<{
+      return (rawGroups as Array<{
         id: string;
         name: string;
         hex?: string;
         swatchImage?: string;
         images: string[];
         sizes: Array<{ size: string; stock: number; available: boolean }>;
-      }>;
+      }>).map((g) => ({
+        ...g,
+        images: (g.images || []).filter((imgUrl) => {
+          const matchedMedia = product?.images?.find((m) => m.url === imgUrl);
+          return matchedMedia?.mediaType !== 'FABRIC' && (matchedMedia as unknown as { title?: string })?.title !== 'FABRIC_SWATCH';
+        }),
+      }));
     }
 
     // Fallback: Group product.images by color name
@@ -183,14 +195,26 @@ export function ProductDetailClient() {
     const availableCols = Array.from(colors).length > 0 ? Array.from(colors) : ['Color 1'];
     return availableCols.map((colorName, idx) => {
       const colorImages = product?.images
-        ?.filter((img) => img.color && img.color.toLowerCase() === colorName.toLowerCase())
+        ?.filter(
+          (img) =>
+            img.mediaType !== 'FABRIC' &&
+            (img as unknown as { title?: string }).title !== 'FABRIC_SWATCH' &&
+            img.color &&
+            img.color.toLowerCase() === colorName.toLowerCase()
+        )
         ?.map((img) => img.url) || [];
+      const swatchImg = product?.images?.find(
+        (img) =>
+          (img.mediaType === 'FABRIC' || (img as unknown as { title?: string }).title === 'FABRIC_SWATCH') &&
+          img.color &&
+          img.color.toLowerCase() === colorName.toLowerCase()
+      )?.url;
       const finalImgs = colorImages.length > 0 ? colorImages : images;
       return {
         id: `col-${idx}-${colorName}`,
         name: colorName,
         hex: idx === 0 ? '#e8c4b8' : '#1e3a8a',
-        swatchImage: finalImgs[0],
+        swatchImage: swatchImg || finalImgs[0],
         images: finalImgs,
         sizes: [],
       };
@@ -264,7 +288,12 @@ export function ProductDetailClient() {
     if (product.images && product.images.length > 0) {
       const colorMatch = currentColorGroup?.name;
       const filtered = product.images
-        .filter((img) => !colorMatch || !img.color || img.color.toLowerCase().trim() === colorMatch.toLowerCase().trim())
+        .filter(
+          (img) =>
+            img.mediaType !== 'FABRIC' &&
+            (img as unknown as { title?: string }).title !== 'FABRIC_SWATCH' &&
+            (!colorMatch || !img.color || img.color.toLowerCase().trim() === colorMatch.toLowerCase().trim())
+        )
         .map((img) => img.url)
         .filter((u): u is string => Boolean(u));
       if (filtered.length > 0) return Array.from(new Set(filtered));

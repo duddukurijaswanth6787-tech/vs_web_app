@@ -39,6 +39,10 @@ export const productService = {
     return response.data.data!;
   },
 
+  deleteMedia: async (mediaId: string): Promise<void> => {
+    await apiClient.delete(`/media/${mediaId}`);
+  },
+
   findAll: async (query: ProductQueryDto = {}): Promise<ProductListResponse> => {
     // Build query params
     const params: Record<string, string | number | boolean> = {};
