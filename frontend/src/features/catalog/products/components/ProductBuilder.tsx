@@ -566,9 +566,15 @@ export default function ProductBuilder({
         groupSizes = matchingVariantsForColor.map((v) => {
           const parts = (v.title || '').split('/').map((s) => s.trim());
           const sz = parts[1] || 'Free Size';
+          const pOverride = (v as any).priceOverride ? Number((v as any).priceOverride) : undefined;
+          const spOverride = (v as any).salePriceOverride ? Number((v as any).salePriceOverride) : undefined;
+          const cp = (v as any).costPrice ? Number((v as any).costPrice) : undefined;
           return {
             size: sz,
-            stock: v.availableQuantity ?? 10,
+            stock: (v as any).availableQuantity ?? 10,
+            price: pOverride,
+            salePrice: spOverride,
+            costPrice: cp,
             available: true,
             sku: v.sku || `${colorCode}-${sz}`,
           };
@@ -579,6 +585,8 @@ export default function ProductBuilder({
         groupSizes = STANDARD_SIZES.map((sz) => ({
           size: sz,
           stock: 10,
+          price: undefined,
+          salePrice: undefined,
           available: true,
           sku: `${colorCode}-${sz}`,
         }));
@@ -789,8 +797,8 @@ export default function ProductBuilder({
   const updateSizeField = (
     colorGroupId: string,
     sizeName: string,
-    field: 'sku' | 'minStock' | 'reorderLevel',
-    value: string | number
+    field: 'sku' | 'minStock' | 'reorderLevel' | 'price' | 'salePrice' | 'costPrice',
+    value: string | number | undefined
   ) => {
     setColorGroups((prev) =>
       prev.map((g) => {
@@ -800,6 +808,52 @@ export default function ProductBuilder({
             sizes: g.sizes.map((s) =>
               s.size === sizeName ? { ...s, [field]: value } : s
             ),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const applyPriceToAllSizes = (colorGroupId: string, targetPrice: number | undefined) => {
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.map((s) => ({
+              ...s,
+              price: targetPrice && targetPrice > 0 ? targetPrice : undefined,
+            })),
+          };
+        }
+        return g;
+      })
+    );
+  };
+
+  const applyPlusSizeIncrements = (colorGroupId: string, stepIncrement = 100) => {
+    const base = Number(methods.getValues('basePrice')) || 0;
+    setColorGroups((prev) =>
+      prev.map((g) => {
+        if (g.id === colorGroupId) {
+          return {
+            ...g,
+            sizes: g.sizes.map((s) => {
+              const sz = s.size.toUpperCase().trim();
+              let inc = 0;
+              if (['XXL', '2XL'].includes(sz)) inc = stepIncrement;
+              else if (['XXXL', '3XL'].includes(sz)) inc = stepIncrement * 2;
+              else if (['4XL'].includes(sz)) inc = stepIncrement * 3;
+              else if (['5XL'].includes(sz)) inc = stepIncrement * 4;
+              if (inc > 0) {
+                return {
+                  ...s,
+                  price: (s.price && s.price > 0 ? s.price : base) + inc,
+                };
+              }
+              return s;
+            }),
           };
         }
         return g;
@@ -1563,11 +1617,21 @@ export default function ProductBuilder({
 
       const variantResults = await Promise.all(
         variantTasks.map(async (task) => {
-          const { group, sizeRow, title, titleKey, order } = task;
-          const existingVar = existingVariantsByTitle.get(titleKey);
+          const rawPrice = sizeRow.price !== undefined && sizeRow.price !== null && !isNaN(Number(sizeRow.price)) && Number(sizeRow.price) > 0 ? Number(sizeRow.price) : undefined;
+          const rawSalePrice = sizeRow.salePrice !== undefined && sizeRow.salePrice !== null && !isNaN(Number(sizeRow.salePrice)) && Number(sizeRow.salePrice) > 0 ? Number(sizeRow.salePrice) : undefined;
+          const rawCostPrice = sizeRow.costPrice !== undefined && sizeRow.costPrice !== null && !isNaN(Number(sizeRow.costPrice)) && Number(sizeRow.costPrice) > 0 ? Number(sizeRow.costPrice) : (values.costPrice ? Number(values.costPrice) : undefined);
 
           if (existingVar) {
             await syncVariantInventory(existingVar.id, sizeRow);
+            await variantService
+              .update(existingVar.id, {
+                priceOverride: rawPrice,
+                salePriceOverride: rawSalePrice,
+                costPrice: rawCostPrice,
+                sku: sizeRow.sku || undefined,
+              })
+              .catch(() => null);
+
             return {
               groupId: group.id,
               variantId: existingVar.id,
@@ -1576,7 +1640,7 @@ export default function ProductBuilder({
                 barcode: existingVar.barcode || existingVar.sku,
                 title,
                 stock: sizeRow.stock,
-                price: sizeRow.price ? Number(sizeRow.price) : Number(values.salePrice || values.basePrice || 0),
+                price: rawSalePrice || rawPrice || Number(values.salePrice || values.basePrice || 0),
               },
             };
           } else {
@@ -1585,8 +1649,9 @@ export default function ProductBuilder({
                 productId: created.id,
                 title,
                 sku: sizeRow.sku || undefined,
-                priceOverride: sizeRow.price ? Number(sizeRow.price) : undefined,
-                costPrice: values.costPrice ? Number(values.costPrice) : undefined,
+                priceOverride: rawPrice,
+                salePriceOverride: rawSalePrice,
+                costPrice: rawCostPrice,
                 displayOrder: order,
                 isDefault: order === 0 && existingVariantsByTitle.size === 0,
                 attributeValues: buildVariantAttributeValues(attributes, group.name, sizeRow.size),
@@ -1603,7 +1668,7 @@ export default function ProductBuilder({
                 barcode: variant.barcode || variant.sku,
                 title,
                 stock: sizeRow.stock,
-                price: sizeRow.price ? Number(sizeRow.price) : Number(values.salePrice || values.basePrice || 0),
+                price: rawSalePrice || rawPrice || Number(values.salePrice || values.basePrice || 0),
               },
             };
           }
@@ -3272,131 +3337,220 @@ export default function ProductBuilder({
               {colorGroups.map((group) => (
                 <div key={group.id} className="p-6 bg-neutral-50/80 rounded-2xl border border-neutral-200 space-y-4">
                   
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200/80 pb-3">
                     <div className="flex items-center gap-2">
-                      <span className="w-4 h-4 rounded-full border border-neutral-300" style={{ backgroundColor: group.hex }} />
+                      <span className="w-4 h-4 rounded-full border border-neutral-300 shadow-2xs shrink-0" style={{ backgroundColor: group.hex }} />
                       <h4 className="text-sm font-bold text-neutral-900">
-                        Sizes for &quot;{group.name}&quot;
+                        Sizes &amp; Custom Prices for &quot;{group.name}&quot;
                       </h4>
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setColorGroups((prev) =>
-                          prev.map((g) => {
-                            if (g.id === group.id) {
-                              return {
-                                ...g,
-                                sizes: STANDARD_SIZES.map((sz) => ({
-                                  size: sz,
-                                  stock: 15,
-                                  available: true,
-                                  sku: buildSmartVariantSku(g.name, sz),
-                                })),
-                              };
-                            }
-                            return g;
-                          })
-                        );
-                      }}
-                      className="text-xs font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-3 py-1.5 rounded-xl hover:bg-sky-100 transition-all"
-                    >
-                      ⚡ Add Standard Sizes (S, M, L, XL, XXL, 3XL)
-                    </button>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const base = Number(methods.getValues('basePrice')) || 0;
+                          applyPriceToAllSizes(group.id, base > 0 ? base : undefined);
+                        }}
+                        className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-lg hover:bg-emerald-100 transition-all cursor-pointer"
+                        title="Reset all size prices in this color to the product default MRP"
+                      >
+                        🏷️ Reset All to Base Price (₹{watchedValues?.basePrice || 0})
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => applyPlusSizeIncrements(group.id, 100)}
+                        className="text-[11px] font-bold text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg hover:bg-sky-100 transition-all cursor-pointer"
+                        title="Add +₹100 for 2XL/3XL, +₹200 for 4XL, +₹300 for 5XL"
+                      >
+                        📈 +₹100 for Plus Sizes (2XL+)
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setColorGroups((prev) =>
+                            prev.map((g) => {
+                              if (g.id === group.id) {
+                                return {
+                                  ...g,
+                                  sizes: STANDARD_SIZES.map((sz) => {
+                                    const existing = g.sizes.find((s) => s.size === sz);
+                                    return (
+                                      existing || {
+                                        size: sz,
+                                        stock: 15,
+                                        price: undefined,
+                                        salePrice: undefined,
+                                        available: true,
+                                        sku: buildSmartVariantSku(g.name, sz),
+                                      }
+                                    );
+                                  }),
+                                };
+                              }
+                              return g;
+                            })
+                          );
+                        }}
+                        className="text-[11px] font-bold text-[#0284c7] bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-lg hover:bg-sky-100 transition-all cursor-pointer"
+                      >
+                        ⚡ Add All Standard Sizes (XS–5XL)
+                      </button>
+                    </div>
                   </div>
 
                   {/* Sizes List Table */}
-                  <div className="space-y-2">
+                  <div className="space-y-2.5">
                     {group.sizes.map((sz) => (
                       <div
                         key={sz.size}
-                        className="flex flex-wrap items-center justify-between gap-4 p-3 bg-white border border-neutral-200 rounded-xl shadow-2xs"
+                        className="p-3.5 bg-white border border-neutral-200 rounded-2xl shadow-2xs hover:border-sky-200 transition-colors space-y-3"
                       >
-                        <div className="flex items-center gap-3">
-                          <button
-                            type="button"
-                            onClick={() => toggleSizeAvailability(group.id, sz.size)}
-                            className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-xs transition-all ${
-                              sz.available
-                                ? 'bg-[#0284c7] text-white border-[#0284c7]'
-                                : 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
-                            }`}
-                          >
-                            {sz.size}
-                          </button>
-                          <div>
-                            <span className="text-xs font-bold text-neutral-900 block">
-                              Size {sz.size}
-                            </span>
-                            <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className="text-[10px] font-bold text-sky-700 font-mono">SKU:</span>
-                              <input
-                                type="text"
-                                value={sz.sku || ''}
-                                onChange={(e) => updateSizeField(group.id, sz.size, 'sku', e.target.value.toUpperCase())}
-                                placeholder="SKU-ID"
-                                className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-32 shadow-2xs"
-                              />
+                        <div className="flex flex-wrap items-center justify-between gap-3">
+                          {/* Left: Size Toggle & SKU */}
+                          <div className="flex items-center gap-3">
+                            <button
+                              type="button"
+                              onClick={() => toggleSizeAvailability(group.id, sz.size)}
+                              className={`w-10 h-10 rounded-xl border flex items-center justify-center font-bold text-xs transition-all cursor-pointer shrink-0 ${
+                                sz.available
+                                  ? 'bg-[#0284c7] text-white border-[#0284c7] shadow-2xs'
+                                  : 'bg-neutral-100 text-neutral-400 border-neutral-200 line-through'
+                              }`}
+                              title={sz.available ? 'Click to disable size' : 'Click to enable size'}
+                            >
+                              {sz.size}
+                            </button>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs font-bold text-neutral-900">
+                                  Size {sz.size}
+                                </span>
+                                {sz.price && sz.price > 0 ? (
+                                  <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                                    Separate Price: ₹{sz.price.toLocaleString('en-IN')}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-md">
+                                    Inherits Base Price (₹{watchedValues?.salePrice || watchedValues?.basePrice || 0})
+                                  </span>
+                                )}
+                              </div>
+                              <div className="flex items-center gap-1.5 mt-1">
+                                <span className="text-[10px] font-bold text-sky-700 font-mono">SKU:</span>
+                                <input
+                                  type="text"
+                                  value={sz.sku || ''}
+                                  onChange={(e) => updateSizeField(group.id, sz.size, 'sku', e.target.value.toUpperCase())}
+                                  placeholder="SKU-ID"
+                                  className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-36 shadow-2xs"
+                                />
+                              </div>
                             </div>
+                          </div>
+
+                          {/* Right: Actions */}
+                          <div className="flex items-center gap-2">
+                            {(() => {
+                              const status = stockStatus(sz.stock, sz.minStock);
+                              return (
+                                <span
+                                  className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg border ${status.className}`}
+                                >
+                                  {status.label}
+                                </span>
+                              );
+                            })()}
+
+                            <button
+                              type="button"
+                              onClick={() => removeSizeFromColorGroup(group.id, sz.size)}
+                              className="text-neutral-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer"
+                              title="Delete this size variant"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-3 flex-wrap">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-neutral-600">Stock:</span>
+                        {/* Separate Price, Sale Price, Stock, and Thresholds Controls */}
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 pt-2 border-t border-neutral-100 text-xs">
+                          {/* Size-Specific Price (MRP) */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-neutral-700 flex items-center justify-between">
+                              <span>Size Price (₹)</span>
+                              <span className="text-[9px] text-neutral-400 font-normal">MRP / Base</span>
+                            </label>
+                            <input
+                              type="number"
+                              value={sz.price !== undefined && sz.price !== null ? sz.price : ''}
+                              placeholder={`Default (₹${watchedValues?.basePrice || 0})`}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                updateSizeField(group.id, sz.size, 'price', val);
+                              }}
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7]"
+                            />
+                          </div>
+
+                          {/* Size-Specific Sale Price */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-neutral-700 flex items-center justify-between">
+                              <span>Sale Price (₹)</span>
+                              <span className="text-[9px] text-neutral-400 font-normal">Optional</span>
+                            </label>
+                            <input
+                              type="number"
+                              value={sz.salePrice !== undefined && sz.salePrice !== null ? sz.salePrice : ''}
+                              placeholder={`Default (₹${watchedValues?.salePrice || watchedValues?.basePrice || 0})`}
+                              onChange={(e) => {
+                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                updateSizeField(group.id, sz.size, 'salePrice', val);
+                              }}
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7]"
+                            />
+                          </div>
+
+                          {/* Available Stock */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-neutral-700 block">Stock Qty</label>
                             <input
                               type="number"
                               value={sz.stock}
                               onChange={(e) => updateSizeStock(group.id, sz.size, Number(e.target.value))}
-                              className="w-20 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-neutral-600">Min:</span>
+                          {/* Low Stock Alert */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-neutral-700 block">Min Alert</label>
                             <input
                               type="number"
                               value={sz.minStock ?? ''}
-                              placeholder="0"
+                              placeholder="5"
                               onChange={(e) =>
-                                updateSizeField(group.id, sz.size, 'minStock', Number(e.target.value))
+                                updateSizeField(group.id, sz.size, 'minStock', e.target.value === '' ? undefined : Number(e.target.value))
                               }
-                              className="w-16 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-neutral-600">Reorder:</span>
+                          {/* Reorder Level */}
+                          <div className="space-y-1">
+                            <label className="text-[11px] font-bold text-neutral-700 block">Reorder</label>
                             <input
                               type="number"
                               value={sz.reorderLevel ?? ''}
-                              placeholder="0"
+                              placeholder="10"
                               onChange={(e) =>
-                                updateSizeField(group.id, sz.size, 'reorderLevel', Number(e.target.value))
+                                updateSizeField(group.id, sz.size, 'reorderLevel', e.target.value === '' ? undefined : Number(e.target.value))
                               }
-                              className="w-16 bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:outline-none text-center"
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />
                           </div>
-
-                          {(() => {
-                            const status = stockStatus(sz.stock, sz.minStock);
-                            return (
-                              <span
-                                className={`text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-lg border ${status.className}`}
-                              >
-                                {status.label}
-                              </span>
-                            );
-                          })()}
-
-                          <button
-                            type="button"
-                            onClick={() => removeSizeFromColorGroup(group.id, sz.size)}
-                            className="text-neutral-400 hover:text-sky-600 p-1.5"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </button>
                         </div>
                       </div>
                     ))}

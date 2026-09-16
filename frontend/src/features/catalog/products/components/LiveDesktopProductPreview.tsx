@@ -69,12 +69,19 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
   const images = currentColorGroup?.images?.length ? currentColorGroup.images : [];
   const mainImage = (images && activeImageIndex < images.length) ? images[activeImageIndex] : (images?.[0] || null);
 
-  const price = data.salePrice && data.salePrice > 0 && data.salePrice < data.basePrice
-    ? data.salePrice
-    : data.basePrice;
-  const originalPrice = data.basePrice > 0 ? data.basePrice : 0;
+  const currentSizeObj = currentColorGroup?.sizes?.find((s) => s.size === selectedSize);
+  const sizePrice = currentSizeObj?.price && currentSizeObj.price > 0
+    ? (currentSizeObj.salePrice && currentSizeObj.salePrice > 0 && currentSizeObj.salePrice < currentSizeObj.price ? currentSizeObj.salePrice : currentSizeObj.price)
+    : (data.salePrice && data.salePrice > 0 && data.salePrice < data.basePrice ? data.salePrice : data.basePrice);
+
+  const sizeOriginalPrice = currentSizeObj?.price && currentSizeObj.price > 0
+    ? currentSizeObj.price
+    : (data.basePrice > 0 ? data.basePrice : 0);
+
+  const price = sizePrice;
+  const originalPrice = sizeOriginalPrice;
   const hasDiscount = originalPrice > price;
-  const discountPct = hasDiscount ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const discountPct = hasDiscount && originalPrice > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
   const title = data.name || 'Untitled Product';
   const brand = data.brandName || 'Vasanthi Designers';
