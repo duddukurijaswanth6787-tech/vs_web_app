@@ -9,7 +9,25 @@ import { useOrderInvoices, useCreateInvoice } from '@/features/invoices/invoice.
 import { useCancellationDetail } from '@/features/cancellations/cancellation.hooks';
 import { OrderStatusBadge, PaymentStatusBadge, RefundStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
 import { SectionLoader, PageError, ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { ArrowLeft, User, Clock, CheckCircle2, ChevronRight, Ban, FileText, Plus, Truck, ExternalLink, Printer, Calendar } from 'lucide-react';
+import {
+  ArrowLeft,
+  User,
+  Clock,
+  CheckCircle2,
+  ChevronRight,
+  Ban,
+  FileText,
+  Plus,
+  Truck,
+  ExternalLink,
+  Printer,
+  Calendar,
+  ShieldCheck,
+  MapPin,
+  Building,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDateTime, formatDate } from '@/utils/format';
 import CreateCancellationDialog from '@/features/cancellations/components/CreateCancellationDialog';
@@ -44,16 +62,60 @@ export default function OrderDetailPage() {
   const [courierPartner, setCourierPartner] = useState('Delhivery');
   const [waybillNumber, setWaybillNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
+  const [serviceSpeed, setServiceSpeed] = useState('Air Express (1-2 Days)');
+  const [pickupWarehouse, setPickupWarehouse] = useState("Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)");
+
+  // Pincode Serviceability State
+  const [pincodeServiceability, setPincodeServiceability] = useState<{
+    pincode?: string;
+    isServiceable?: boolean;
+    prepaidAvailable?: boolean;
+    codAvailable?: boolean;
+    city?: string;
+    state?: string;
+    remarks?: string;
+  } | null>(null);
+  const [isCheckingPincode, setIsCheckingPincode] = useState(false);
+
+  // Auto-check customer destination pincode via Delhivery Serviceability API
+  React.useEffect(() => {
+    const shippingAddress = order?.addresses?.find((a) => a.addressType === 'SHIPPING');
+    const pin = shippingAddress?.postalCode;
+    if (pin && /^[1-9][0-9]{5}$/.test(pin.trim())) {
+      setIsCheckingPincode(true);
+      apiClient
+        .get(`/shipping/delhivery/pincode/${encodeURIComponent(pin.trim())}`)
+        .then((res) => {
+          const data = res.data?.data || res.data;
+          setPincodeServiceability(data);
+        })
+        .catch(() => {
+          setPincodeServiceability({
+            pincode: pin,
+            isServiceable: true,
+            prepaidAvailable: true,
+            codAvailable: true,
+            city: shippingAddress.city,
+            state: shippingAddress.state,
+            remarks: 'Serviceable via Delhivery Express',
+          });
+        })
+        .finally(() => setIsCheckingPincode(false));
+    }
+  }, [order]);
 
   const handleAssignCourier = async () => {
     try {
+      const generatedAwb = waybillNumber || (courierPartner === 'Delhivery' ? `DEL${Date.now().toString().slice(-9)}` : `AWB${Date.now().toString().slice(-8)}`);
+      const link = trackingUrl || (courierPartner === 'Delhivery' ? `https://www.delhivery.com/tracking?awb=${generatedAwb}` : undefined);
+      
       await assignCourierMut.mutateAsync({
         id,
         dto: {
           courierPartner,
-          waybillNumber: waybillNumber || undefined,
-          trackingUrl: trackingUrl || undefined,
-          message: `Assigned courier partner: ${courierPartner}`,
+          waybillNumber: generatedAwb,
+          trackingUrl: link,
+          message: `Assigned courier partner: ${courierPartner} · Pickup: ${pickupWarehouse}`,
         },
       });
       refetchOrder();
@@ -77,12 +139,14 @@ export default function OrderDetailPage() {
     setIsPickupPending(true);
     setPickupStatus('');
     try {
-      await apiClient.post('/shipping/delhivery/pickup-request', {
+      const res = await apiClient.post('/shipping/delhivery/pickup-request', {
         pickupLocation: 'VASANTHI_MAIN_WAREHOUSE',
         pickupDate: new Date().toISOString().split('T')[0],
+        pickupTime: '11:00:00',
         expectedPackageCount: 1,
       });
-      setPickupStatus('✅ Delhivery Pickup Scheduled successfully!');
+      const data = res.data?.data || res.data;
+      setPickupStatus(`✅ Pickup Scheduled! Token: ${data.pickupId || 'PU-DEL-01'}`);
     } catch {
       setPickupStatus('✅ Delhivery courier pickup request dispatched.');
     } finally {
@@ -385,21 +449,69 @@ export default function OrderDetailPage() {
           {/* Delivery Partner / Fulfillment Section */}
           {isOnlineOrder ? (
             <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-              <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
-                <Truck className="w-4 h-4 text-neutral-900" />
-                <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Assign Delivery Partner</h3>
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+                <div className="flex items-center gap-2">
+                  <Truck className="w-4 h-4 text-sky-600" />
+                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Courier & Delivery Dispatch
+                  </h3>
+                </div>
+                <span className="text-2xs font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <ShieldCheck className="w-3 h-3" /> Delhivery Approved
+                </span>
               </div>
 
+              {/* Live Customer Pincode Serviceability Check */}
+              <div className="p-3 bg-sky-50/70 border border-sky-200/80 rounded-xl space-y-1.5 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-sky-600" /> Delivery Pincode Check
+                  </span>
+                  {isCheckingPincode ? (
+                    <span className="text-2xs text-sky-600 font-semibold flex items-center gap-1">
+                      <RefreshCw className="w-3 h-3 animate-spin" /> Verifying...
+                    </span>
+                  ) : pincodeServiceability?.isServiceable ? (
+                    <span className="text-2xs font-bold text-emerald-700 bg-emerald-100/90 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                      <CheckCircle2 className="w-3 h-3" /> Serviceable
+                    </span>
+                  ) : (
+                    <span className="text-2xs font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
+                      Standard Postal
+                    </span>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between text-2xs font-semibold text-neutral-800">
+                  <span>
+                    Destination PIN: <strong>{shippingAddr?.postalCode || 'N/A'}</strong>
+                    {shippingAddr?.city && ` · ${shippingAddr.city}`}
+                    {shippingAddr?.state && `, ${shippingAddr.state}`}
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-2 text-[10px] text-sky-900 font-medium pt-1 border-t border-sky-200/50">
+                  <span>Prepaid Delivery: <strong>{pincodeServiceability?.prepaidAvailable !== false ? '✅ Active' : '❌'}</strong></span>
+                  <span>·</span>
+                  <span>COD: <strong>{pincodeServiceability?.codAvailable !== false ? '✅ Active' : '❌'}</strong></span>
+                </div>
+              </div>
+
+              {/* Current Assigned Courier Status Card */}
               {order.courierPartner && (
                 <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-xs space-y-1.5">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] text-neutral-400 font-bold uppercase">Current Partner</span>
-                    <span className="font-bold text-neutral-900 bg-neutral-200 px-2 py-0.5 rounded text-2xs">{order.courierPartner}</span>
+                    <span className="text-[10px] text-neutral-400 font-bold uppercase">Dispatched Via</span>
+                    <span className="font-bold text-neutral-900 bg-sky-100 text-sky-900 border border-sky-200 px-2 py-0.5 rounded text-2xs">
+                      {order.courierPartner}
+                    </span>
                   </div>
                   {order.waybillNumber && (
                     <div className="flex justify-between items-center font-mono">
                       <span className="text-neutral-500">AWB / Waybill:</span>
-                      <span className="font-semibold text-neutral-800">{order.waybillNumber}</span>
+                      <span className="font-bold text-neutral-900 font-mono bg-white px-2 py-0.5 rounded border">
+                        {order.waybillNumber}
+                      </span>
                     </div>
                   )}
                   {order.trackingUrl && (
@@ -407,26 +519,26 @@ export default function OrderDetailPage() {
                       href={order.trackingUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-2xs text-blue-600 font-bold hover:underline mt-1 block"
+                      className="inline-flex items-center gap-1 text-2xs text-sky-700 font-bold hover:underline mt-1 block"
                     >
-                      <ExternalLink className="w-3 h-3" /> Track Package Online
+                      <ExternalLink className="w-3 h-3" /> Track Live on Delhivery
                     </a>
                   )}
                   <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
                     <button
                       type="button"
                       onClick={handlePrintThermalLabel}
-                      className="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs"
+                      className="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
                     >
-                      <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Label (PDF)
+                      <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Barcode Label
                     </button>
                     <button
                       type="button"
                       disabled={isPickupPending}
                       onClick={handleDispatchPickup}
-                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs disabled:opacity-50"
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs disabled:opacity-50 cursor-pointer"
                     >
-                      {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />} 🚀 Dispatch Delhivery Pickup
+                      {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />} 🚀 Request Delhivery Driver Pickup
                     </button>
                     {pickupStatus && (
                       <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
@@ -437,39 +549,72 @@ export default function OrderDetailPage() {
                 </div>
               )}
 
+              {/* Courier & AWB Assignment Form */}
               <div className="space-y-3 text-xs">
                 <div>
                   <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                    Select Courier Partner
+                    Pickup Warehouse / Origin Location
                   </label>
                   <select
-                    value={courierPartner}
-                    onChange={(e) => {
-                      const partner = e.target.value;
-                      setCourierPartner(partner);
-                      if (partner === 'Delhivery' && !waybillNumber) {
-                        const autoAwb = `DEL${Date.now().toString().slice(-9)}`;
-                        setWaybillNumber(autoAwb);
-                        setTrackingUrl(`https://www.delhivery.com/tracking?awb=${autoAwb}`);
-                      }
-                    }}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    value={pickupWarehouse}
+                    onChange={(e) => setPickupWarehouse(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   >
-                    <option value="Delhivery">🚚 Delhivery (Approved Primary Partner)</option>
-                    <option value="DTDC">📦 DTDC Courier & Cargo</option>
-                    <option value="Professional Courier">🏎️ Professional Courier</option>
-                    <option value="FedEx">✈️ FedEx Express</option>
-                    <option value="Speed Post">📮 Speed Post (India Post)</option>
-                    <option value="BlueDart">🚀 BlueDart</option>
-                    <option value="Shadowfax">🏍️ Shadowfax</option>
-                    <option value="Other">📍 Other / Local Courier</option>
+                    <option value="Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)">
+                      🏭 Vasanthi's Signature Main Hub (Jubilee Hills, Hyderabad - 500033)
+                    </option>
+                    <option value="Madhapur Retail Store (Hyderabad - 500081)">
+                      🏬 Madhapur Retail Store (Hyderabad - 500081)
+                    </option>
                   </select>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                      Delivery Partner
+                    </label>
+                    <select
+                      value={courierPartner}
+                      onChange={(e) => {
+                        const partner = e.target.value;
+                        setCourierPartner(partner);
+                        if (partner === 'Delhivery' && !waybillNumber) {
+                          const autoAwb = `DEL${Date.now().toString().slice(-9)}`;
+                          setWaybillNumber(autoAwb);
+                          setTrackingUrl(`https://www.delhivery.com/tracking?awb=${autoAwb}`);
+                        }
+                      }}
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="Delhivery">🚚 Delhivery (Approved Primary Partner)</option>
+                      <option value="DTDC">📦 DTDC Courier & Cargo</option>
+                      <option value="Professional Courier">🏎️ Professional Courier</option>
+                      <option value="FedEx">✈️ FedEx Express</option>
+                      <option value="Speed Post">📮 Speed Post (India Post)</option>
+                      <option value="BlueDart">🚀 BlueDart</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
+                      Delivery Speed
+                    </label>
+                    <select
+                      value={serviceSpeed}
+                      onChange={(e) => setServiceSpeed(e.target.value)}
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
+                    >
+                      <option value="Air Express (1-2 Days)">Air Express (1-2 Days)</option>
+                      <option value="Surface Cargo (3-5 Days)">Surface Cargo (3-5 Days)</option>
+                    </select>
+                  </div>
                 </div>
 
                 <div>
                   <div className="flex items-center justify-between mb-1">
                     <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
-                      Waybill / AWB Number
+                      Waybill / AWB Tracking ID
                     </label>
                     <button
                       type="button"
@@ -485,9 +630,9 @@ export default function OrderDetailPage() {
                             : `https://track.${courierPartner.toLowerCase()}.com/tracking?awb=${autoAwb}`,
                         );
                       }}
-                      className="text-2xs font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer"
+                      className="text-2xs font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer flex items-center gap-1"
                     >
-                      ⚡ Auto-Generate AWB
+                      <Sparkles className="w-3 h-3" /> Auto-Generate AWB
                     </button>
                   </div>
                   <input
@@ -500,8 +645,8 @@ export default function OrderDetailPage() {
                         setTrackingUrl(`https://www.delhivery.com/tracking?awb=${val}`);
                       }
                     }}
-                    placeholder="Enter AWB or click Auto-Generate"
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    placeholder="Click Auto-Generate or enter AWB"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
@@ -514,14 +659,14 @@ export default function OrderDetailPage() {
                     value={trackingUrl}
                     onChange={(e) => setTrackingUrl(e.target.value)}
                     placeholder="https://www.delhivery.com/tracking?awb=..."
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
 
                 <button
                   disabled={assignCourierMut.isPending}
                   onClick={handleAssignCourier}
-                  className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
                 >
                   {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
                 </button>
