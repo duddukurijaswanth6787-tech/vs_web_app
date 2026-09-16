@@ -52,6 +52,7 @@ export function useDeleteProduct() {
   return useMutation({
     mutationFn: (id: string) => productService.delete(id),
     onSuccess: (_data, id) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
       queryClient.invalidateQueries({ queryKey: productKeys.lists() });
       queryClient.invalidateQueries({ queryKey: productKeys.detail(id) });
     },
