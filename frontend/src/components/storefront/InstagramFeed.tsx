@@ -2,191 +2,11 @@
 
 import React, { useState } from 'react';
 import Image from 'next/image';
-import { ReelViewerModal, ReelData } from './ReelViewerModal';
+import { ReelViewerModal, ReelData, TaggedProduct } from './ReelViewerModal';
 import { usePublicReels } from '@/features/social/social.hooks';
 import { resolveMediaUrl, withVariant, isLocalOrPlaceholder } from '@/lib/media-url';
-import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 
-const FALLBACK_REELS: ReelData[] = [
-  {
-    id: 'fallback-1',
-    title: 'Kanjeevaram Pure Silk Saree',
-    posterImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Pure handcrafted Kanjeevaram silk saree with gold zari weave.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '2.4K',
-    comments: '48',
-    shares: '120',
-    taggedProducts: [
-      {
-        id: 'prod-1',
-        name: 'Kanjeevaram Pure Silk Saree',
-        price: 9999,
-        originalPrice: 12999,
-        discount: '23% OFF',
-        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-2',
-    title: 'Royal Velvet Bridal Lehenga',
-    posterImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Heavy velvet bridal lehenga embroidered with zardozi and sequin work.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '4.8K',
-    comments: '92',
-    shares: '310',
-    taggedProducts: [
-      {
-        id: 'prod-2',
-        name: 'Royal Velvet Embroidered Lehenga',
-        price: 18999,
-        originalPrice: 24999,
-        discount: '24% OFF',
-        image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-3',
-    title: 'Floral Printed Anarkali Kurta',
-    posterImage: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Elegant floral printed rayon Anarkali kurta set with matching dupatta.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '1.9K',
-    comments: '34',
-    shares: '85',
-    taggedProducts: [
-      {
-        id: 'prod-3',
-        name: 'Floral Printed Anarkali Kurta Set',
-        price: 2499,
-        originalPrice: 3499,
-        discount: '28% OFF',
-        image: 'https://images.unsplash.com/photo-1609357605129-26f69add5d6e?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-4',
-    title: 'Handloomed Organza Silk Saree',
-    posterImage: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Lightweight organza saree with floral embroidery and scalloped border.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '3.1K',
-    comments: '67',
-    shares: '190',
-    taggedProducts: [
-      {
-        id: 'prod-4',
-        name: 'Handloomed Organza Silk Saree',
-        price: 4999,
-        originalPrice: 6999,
-        discount: '28% OFF',
-        image: 'https://images.unsplash.com/photo-1617627143750-d86bc21e42bb?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-5',
-    title: 'Embroidered Chanderi Kurti',
-    posterImage: 'https://images.unsplash.com/photo-1583391733975-d4001e3e7f6e?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Chanderi silk festive kurti styled with matching palazzos.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '1.7K',
-    comments: '29',
-    shares: '76',
-    taggedProducts: [
-      {
-        id: 'prod-5',
-        name: 'Embroidered Chanderi Kurti Set',
-        price: 3299,
-        originalPrice: 4499,
-        discount: '26% OFF',
-        image: 'https://images.unsplash.com/photo-1583391733975-d4001e3e7f6e?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-6',
-    title: 'Pastel Designer Gown',
-    posterImage: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Contemporary designer pastel silk gown with mirror embroidery.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '2.8K',
-    comments: '51',
-    shares: '142',
-    taggedProducts: [
-      {
-        id: 'prod-6',
-        name: 'Pastel Mirror Work Designer Gown',
-        price: 7999,
-        originalPrice: 10999,
-        discount: '27% OFF',
-        image: 'https://images.unsplash.com/photo-1515886657613-9f3515b0c78f?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-7',
-    title: 'Zari Woven Tissue Saree',
-    posterImage: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Luminous tissue silk saree woven with silver & gold metallic threads.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '3.6K',
-    comments: '73',
-    shares: '215',
-    taggedProducts: [
-      {
-        id: 'prod-7',
-        name: 'Zari Woven Tissue Silk Saree',
-        price: 8499,
-        originalPrice: 11999,
-        discount: '29% OFF',
-        image: 'https://images.unsplash.com/photo-1610030469983-98e550d6193c?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-  {
-    id: 'fallback-8',
-    title: 'Haute Couture Bridal Choli',
-    posterImage: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80',
-    accountName: "Vasanthi's Signature",
-    accountAvatar: 'VS',
-    caption: 'Custom tailored haute couture wedding bridal choli set.',
-    audioTrack: "Original Audio - Vasanthi's Signature",
-    likes: '5.2K',
-    comments: '110',
-    shares: '430',
-    taggedProducts: [
-      {
-        id: 'prod-8',
-        name: 'Haute Couture Bridal Choli',
-        price: 21999,
-        originalPrice: 28999,
-        discount: '24% OFF',
-        image: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=600&auto=format&fit=crop&q=80',
-      },
-    ],
-  },
-];
-
-function InstaIcon({ className = 'w-6 h-6' }: { className?: string }) {
+function InstaIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
@@ -203,7 +23,7 @@ export function InstagramFeed() {
   const { data: apiPosts, isLoading } = usePublicReels();
 
   // Map backend API posts to ReelData format
-  const dbReels: ReelData[] = (apiPosts?.data || []).map((post, idx) => {
+  const activeReels: ReelData[] = (apiPosts?.data || []).map((post) => {
     const firstMedia = post.media?.[0];
     const rawMediaUrl = firstMedia?.url;
     const resolvedUrl = rawMediaUrl ? resolveMediaUrl(rawMediaUrl) : undefined;
@@ -221,27 +41,72 @@ export function InstagramFeed() {
           ? post.productTags
           : [];
 
-    const taggedProducts = postProducts.map((pItem: unknown, i: number) => {
-      const pRecord = pItem as Record<string, unknown>;
-      const prod = (pRecord.product as Record<string, unknown>) || pRecord;
-      const primaryMedia = ((prod.media as Array<Record<string, unknown>>)?.[0]?.url) || prod.primaryImageUrl || prod.image;
-      return {
-        id: String(prod.id || pRecord.productId || `prod-${i}`),
-        name: String(pRecord.label || prod.name || prod.title || 'Vasanthi Signature Exclusive'),
-        price: Number(prod.salePrice ?? prod.basePrice ?? prod.price ?? 3499),
-        originalPrice: Number(prod.basePrice ?? prod.originalPrice ?? 5499),
-        discount: prod.salePrice && prod.basePrice && Number(prod.basePrice) > Number(prod.salePrice)
-          ? `${Math.round(((Number(prod.basePrice) - Number(prod.salePrice)) / Number(prod.basePrice)) * 100)}% OFF`
-          : '',
-        image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : FALLBACK_REELS[0].posterImage,
-        position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
-      };
-    });
+    const taggedProducts: TaggedProduct[] = postProducts
+      .map((pItem: unknown, i: number) => {
+        const pRecord = pItem as Record<string, unknown>;
+        const prod = (pRecord.product as Record<string, unknown>) || pRecord;
+        if (!prod || !prod.id) return null;
+
+        // If product or variant was soft-deleted, skip it
+        if (prod.deletedAt || (pRecord.variant as Record<string, unknown>)?.deletedAt) {
+          return null;
+        }
+
+        const primaryMedia = ((prod.media as Array<Record<string, unknown>>)?.[0]?.url) || prod.primaryImageUrl || prod.image;
+        const variantRecord = pRecord.variant as Record<string, unknown> | undefined;
+
+        // Determine stock availability live
+        let inStock = true;
+        let stockCount: number | undefined;
+
+        if (variantRecord?.inventory && typeof variantRecord.inventory === 'object') {
+          const vInv = variantRecord.inventory as Record<string, unknown>;
+          stockCount = Number(vInv.availableQuantity ?? 0);
+          inStock = stockCount > 0 || vInv.stockStatus === 'IN_STOCK';
+        } else if (Array.isArray(prod.variants) && prod.variants.length > 0) {
+          const variantsList = prod.variants as Array<Record<string, unknown>>;
+          const totalQty = variantsList.reduce((sum: number, v) => {
+            const inv = v.inventory as Record<string, unknown> | undefined;
+            return sum + Number(inv?.availableQuantity ?? 0);
+          }, 0);
+          stockCount = totalQty;
+          const anyInStockStatus = variantsList.some((v) => {
+            const inv = v.inventory as Record<string, unknown> | undefined;
+            return inv?.stockStatus === 'IN_STOCK';
+          });
+          inStock = totalQty > 0 || anyInStockStatus;
+        } else if (typeof prod.inStock === 'boolean') {
+          inStock = prod.inStock;
+        } else if (typeof prod.stock === 'number') {
+          stockCount = prod.stock;
+          inStock = prod.stock > 0;
+        }
+
+        const basePriceNum = Number(prod.basePrice ?? prod.originalPrice ?? 0);
+        const salePriceNum = Number(prod.salePrice ?? prod.price ?? basePriceNum);
+        const hasDiscount = basePriceNum > salePriceNum && salePriceNum > 0;
+        const discountStr = hasDiscount
+          ? `${Math.round(((basePriceNum - salePriceNum) / basePriceNum) * 100)}% OFF`
+          : '';
+
+        return {
+          id: String(prod.id || pRecord.productId || `prod-${i}`),
+          name: String(pRecord.label || prod.name || prod.title || "Vasanthi's Signature Exclusive"),
+          price: salePriceNum > 0 ? salePriceNum : basePriceNum,
+          originalPrice: basePriceNum > 0 ? basePriceNum : salePriceNum,
+          discount: discountStr,
+          image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : '/images/placeholder.jpg',
+          inStock,
+          stock: stockCount,
+          position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
+        };
+      })
+      .filter((p): p is NonNullable<typeof p> => p !== null);
 
     const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
       || (!isVideo && resolvedUrl ? resolvedUrl : undefined)
       || (taggedProducts[0]?.image ? taggedProducts[0].image : undefined)
-      || FALLBACK_REELS[idx % FALLBACK_REELS.length].posterImage;
+      || (videoUrl ? videoUrl : '/images/placeholder.jpg');
 
     return {
       id: post.id,
@@ -255,15 +120,14 @@ export function InstagramFeed() {
       likes: `${post.likeCount || 0}`,
       comments: `${post.commentCount || 0}`,
       shares: `${post.shareCount || 0}`,
-      taggedProducts: taggedProducts.length > 0 ? taggedProducts : FALLBACK_REELS[0].taggedProducts,
+      taggedProducts,
     };
   });
 
-  // Seamlessly merge DB published reels with curated fallback reels.
-  // Real DB reels appear first, and remaining slots (up to 6) are filled so the grid is never half-empty!
-  const activeReels = dbReels.length > 0
-    ? [...dbReels, ...FALLBACK_REELS.slice(0, Math.max(0, 6 - dbReels.length))]
-    : FALLBACK_REELS;
+  // If no reels have been published yet or still loading, don't show fake fallback reels
+  if (activeReels.length === 0) {
+    return null;
+  }
 
   return (
     <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-2.5 sm:py-8">
@@ -274,28 +138,26 @@ export function InstagramFeed() {
         </h2>
       </div>
 
-      {/* Horizontal Side-Scrolling Carousel on Mobile, Grid on Desktop. */}
-      <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory lg:grid lg:grid-cols-6 lg:gap-4">
+      {/* Responsive Grid / Horizontal Scroll for Published Reels */}
+      <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
         {activeReels.map((reel, index) => {
           const isVideo = !!reel.videoUrl;
-          /* Always use an Image poster for grid tiles — never a <video> tag.
-             This avoids browser connection pool exhaustion. Videos play in modal. */
           const posterSrc = reel.posterImage && !reel.posterImage.endsWith('.mp4') && !reel.posterImage.includes('/videos/')
             ? reel.posterImage
-            : reel.taggedProducts?.[0]?.image || FALLBACK_REELS[index % FALLBACK_REELS.length].posterImage;
+            : reel.taggedProducts?.[0]?.image || '/images/placeholder.jpg';
 
           return (
             <button
               key={reel.id}
               onClick={() => setSelectedReelIndex(index)}
-              className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-[160px] lg:w-auto shrink-0 snap-start text-left cursor-pointer"
+              className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-auto shrink-0 snap-start text-left cursor-pointer transition-transform hover:-translate-y-1"
             >
               <Image
                 src={withVariant(posterSrc, 'medium')}
                 alt={reel.title}
                 fill
                 loading={index < 3 ? 'eager' : 'lazy'}
-                sizes="(max-width: 640px) 50vw, 33vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
                 unoptimized={isLocalOrPlaceholder(posterSrc)}
                 className="object-cover group-hover:scale-110 transition-transform duration-500"
               />

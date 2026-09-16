@@ -60,6 +60,20 @@ export class SocialRepository {
                 slug: true,
                 basePrice: true,
                 salePrice: true,
+                status: true,
+                deletedAt: true,
+                variants: {
+                  where: { deletedAt: null },
+                  select: {
+                    id: true,
+                    inventory: {
+                      select: {
+                        availableQuantity: true,
+                        stockStatus: true,
+                      },
+                    },
+                  },
+                },
                 media: {
                   where: { isPrimary: true },
                   select: { url: true },
@@ -74,6 +88,13 @@ export class SocialRepository {
                 sku: true,
                 priceOverride: true,
                 salePriceOverride: true,
+                deletedAt: true,
+                inventory: {
+                  select: {
+                    availableQuantity: true,
+                    stockStatus: true,
+                  },
+                },
               },
             },
           },
@@ -524,6 +545,20 @@ export class SocialRepository {
                   slug: true,
                   basePrice: true,
                   salePrice: true,
+                  status: true,
+                  deletedAt: true,
+                  variants: {
+                    where: { deletedAt: null },
+                    select: {
+                      id: true,
+                      inventory: {
+                        select: {
+                          availableQuantity: true,
+                          stockStatus: true,
+                        },
+                      },
+                    },
+                  },
                   media: {
                     where: { isPrimary: true },
                     select: { url: true },
@@ -538,6 +573,13 @@ export class SocialRepository {
                   sku: true,
                   priceOverride: true,
                   salePriceOverride: true,
+                  deletedAt: true,
+                  inventory: {
+                    select: {
+                      availableQuantity: true,
+                      stockStatus: true,
+                    },
+                  },
                 },
               },
             },
@@ -589,6 +631,20 @@ export class SocialRepository {
                   slug: true,
                   basePrice: true,
                   salePrice: true,
+                  status: true,
+                  deletedAt: true,
+                  variants: {
+                    where: { deletedAt: null },
+                    select: {
+                      id: true,
+                      inventory: {
+                        select: {
+                          availableQuantity: true,
+                          stockStatus: true,
+                        },
+                      },
+                    },
+                  },
                   media: {
                     where: { isPrimary: true },
                     select: { url: true },
@@ -603,6 +659,13 @@ export class SocialRepository {
                   sku: true,
                   priceOverride: true,
                   salePriceOverride: true,
+                  deletedAt: true,
+                  inventory: {
+                    select: {
+                      availableQuantity: true,
+                      stockStatus: true,
+                    },
+                  },
                 },
               },
             },

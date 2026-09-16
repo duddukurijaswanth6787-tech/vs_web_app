@@ -511,11 +511,17 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
   const [hashtags, setHashtags] = useState('#vasanthissignature #ethnicwear #festive');
   const [visibility] = useState<SocialPostVisibility>(SocialPostVisibility.PUBLIC);
   const [allowComments] = useState(true);
+  const [displayOrder, setDisplayOrder] = useState<number>(0);
 
   // Media state
   const [mediaFile, setMediaFile] = useState<File | null>(null);
   const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string>('');
   const [showMediaPicker, setShowMediaPicker] = useState(false);
+
+  // Poster / Cover Image state
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterPreviewUrl, setPosterPreviewUrl] = useState<string>('');
+  const [showPosterPicker, setShowPosterPicker] = useState(false);
 
   // Tagged Products state
   const [taggedProducts, setTaggedProducts] = useState<ProductResponse[]>([]);
@@ -536,6 +542,14 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
     setMediaFile(file);
     const objectUrl = URL.createObjectURL(file);
     setMediaPreviewUrl(objectUrl);
+  };
+
+  const handlePosterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setPosterFile(file);
+    const objectUrl = URL.createObjectURL(file);
+    setPosterPreviewUrl(objectUrl);
   };
 
   const handleAddHashtag = (tag: string) => {
@@ -574,7 +588,16 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         allowComments,
       });
 
-      // 2. Upload and attach Media file if provided
+      // 2. Upload optional Cover / Poster Image
+      let uploadedThumbnailUrl = posterPreviewUrl || undefined;
+      if (posterFile) {
+        const posterExt = posterFile.name.split('.').pop() || 'jpg';
+        const { uploadUrl, url } = await socialService.getUploadUrl(newPost.id, SocialMediaType.IMAGE, posterExt);
+        await mediaService.uploadToS3(uploadUrl, posterFile);
+        uploadedThumbnailUrl = url;
+      }
+
+      // 3. Upload and attach Media file if provided
       if (mediaFile) {
         const ext = mediaFile.name.split('.').pop() || (contentType === SocialPostContentType.REEL ? 'mp4' : 'jpg');
         const mediaType = contentType === SocialPostContentType.REEL ? SocialMediaType.VIDEO : SocialMediaType.IMAGE;
@@ -587,9 +610,10 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             mediaType,
             s3Key,
             url,
+            thumbnailUrl: uploadedThumbnailUrl,
             mimeType: mediaFile.type || (contentType === SocialPostContentType.REEL ? 'video/mp4' : 'image/jpeg'),
             size: mediaFile.size,
-            displayOrder: 0,
+            displayOrder,
           },
         ]);
       } else if (mediaPreviewUrl && mediaPreviewUrl.startsWith('http')) {
@@ -599,14 +623,15 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             mediaType,
             s3Key: `external/${Date.now()}`,
             url: mediaPreviewUrl,
+            thumbnailUrl: uploadedThumbnailUrl,
             mimeType: contentType === SocialPostContentType.REEL ? 'video/mp4' : 'image/jpeg',
             size: 1000,
-            displayOrder: 0,
+            displayOrder,
           },
         ]);
       }
 
-      // 3. Tag products if selected
+      // 4. Tag products if selected
       if (taggedProducts.length > 0) {
         const tagDtos = taggedProducts.map((p, idx) => ({
           productId: p.id,
@@ -618,7 +643,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         await socialService.tagProducts(newPost.id, tagDtos);
       }
 
-      // 4. Publish immediately if requested
+      // 5. Publish immediately if requested
       if (publishImmediately) {
         await socialService.updateStatus(newPost.id, 'PUBLISH');
       }
@@ -645,7 +670,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
             </div>
             <div>
               <h3 className="text-base font-extrabold text-neutral-900 tracking-tight font-serif">Create Shoppable Social Reel</h3>
-              <p className="text-[11px] text-neutral-400 font-medium">Upload video/image, tag store products, and preview live before publishing.</p>
+              <p className="text-[11px] text-neutral-400 font-medium">Upload video/image, set cover photo, tag store products, and preview live before publishing.</p>
             </div>
           </div>
           <button onClick={onClose} className="rounded-full p-2 text-neutral-400 hover:bg-neutral-100 hover:text-neutral-700 transition">
@@ -708,7 +733,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               <div className="flex items-center gap-2 mt-2">
                 <input
                   type="text"
-                  placeholder="Or paste media URL (e.g. https://images.unsplash.com/...)"
+                  placeholder="Or paste media URL (e.g. https://...)"
                   value={mediaPreviewUrl}
                   onChange={(e) => setMediaPreviewUrl(e.target.value)}
                   className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono"
@@ -723,7 +748,76 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               </div>
             </div>
 
-            {/* 3. Caption & Hashtags */}
+            {/* 2B. Optional Cover / Poster Image for Video Reels */}
+            {contentType === SocialPostContentType.REEL && (
+              <div className="bg-sky-50/40 p-3 rounded-2xl border border-sky-100 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="block text-[10px] font-extrabold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <ImageIcon className="w-3.5 h-3.5 text-[#0284c7]" />
+                    <span>Cover / Poster Image (Optional)</span>
+                  </label>
+                  <span className="text-[9px] text-neutral-400 font-medium">Auto-extracted from video if omitted</span>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="file"
+                    id="create-poster-upload"
+                    accept="image/*"
+                    onChange={handlePosterChange}
+                    className="hidden"
+                  />
+                  <label
+                    htmlFor="create-poster-upload"
+                    className="bg-white border border-neutral-200 hover:border-[#0284c7] text-neutral-700 font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer flex items-center gap-1.5 transition shadow-2xs shrink-0"
+                  >
+                    <Upload className="w-3.5 h-3.5 text-[#0284c7]" />
+                    <span>{posterFile ? 'Change Cover' : 'Upload Cover'}</span>
+                  </label>
+
+                  <input
+                    type="text"
+                    placeholder="Or paste cover image URL..."
+                    value={posterPreviewUrl}
+                    onChange={(e) => setPosterPreviewUrl(e.target.value)}
+                    className="flex-1 bg-white border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono"
+                  />
+
+                  <button
+                    type="button"
+                    onClick={() => setShowPosterPicker(true)}
+                    className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 font-bold px-3 py-1.5 rounded-xl text-xs shrink-0"
+                  >
+                    Media Library
+                  </button>
+
+                  {posterPreviewUrl && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPosterFile(null);
+                        setPosterPreviewUrl('');
+                      }}
+                      className="p-1.5 text-neutral-400 hover:text-red-500 rounded-lg"
+                      title="Remove Cover Image"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
+
+                {posterPreviewUrl && (
+                  <div className="flex items-center gap-2 pt-1">
+                    <div className="w-10 h-14 rounded-lg overflow-hidden relative border border-neutral-200 shrink-0">
+                      <Image src={posterPreviewUrl} alt="Cover preview" fill className="object-cover" />
+                    </div>
+                    <span className="text-[10px] text-emerald-700 font-bold">✓ Custom cover image attached</span>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* 3. Caption & Hashtags & Display Order */}
             <div className="space-y-2">
               <div>
                 <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1">Caption Description</label>
@@ -736,28 +830,41 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 />
               </div>
 
-              <div>
-                <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1">Hashtags</label>
-                <input
-                  type="text"
-                  value={hashtags}
-                  onChange={(e) => setHashtags(e.target.value)}
-                  placeholder="#vasanthissignature #ethnicwear #festive"
-                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-900"
-                />
-                {/* Popular Hashtags Pill Chips */}
-                <div className="flex flex-wrap gap-1 mt-1.5">
-                  {['#vasanthissignature', '#saree', '#lehenga', '#anarkali', '#festive', '#wedding'].map((tag) => (
-                    <button
-                      key={tag}
-                      type="button"
-                      onClick={() => handleAddHashtag(tag)}
-                      className="px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-sky-100 hover:text-[#0284c7] text-[9px] font-mono text-neutral-600 transition"
-                    >
-                      {tag}
-                    </button>
-                  ))}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-2">
+                <div className="sm:col-span-3">
+                  <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1">Hashtags</label>
+                  <input
+                    type="text"
+                    value={hashtags}
+                    onChange={(e) => setHashtags(e.target.value)}
+                    placeholder="#vasanthissignature #ethnicwear #festive"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-900"
+                  />
                 </div>
+                <div>
+                  <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1">Display Order</label>
+                  <input
+                    type="number"
+                    value={displayOrder}
+                    onChange={(e) => setDisplayOrder(parseInt(e.target.value) || 0)}
+                    min={0}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono text-neutral-900"
+                  />
+                </div>
+              </div>
+
+              {/* Popular Hashtags Pill Chips */}
+              <div className="flex flex-wrap gap-1 mt-1">
+                {['#vasanthissignature', '#saree', '#lehenga', '#anarkali', '#festive', '#wedding'].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => handleAddHashtag(tag)}
+                    className="px-2 py-0.5 rounded-full bg-neutral-100 hover:bg-sky-100 hover:text-[#0284c7] text-[9px] font-mono text-neutral-600 transition"
+                  >
+                    {tag}
+                  </button>
+                ))}
               </div>
             </div>
 
@@ -782,7 +889,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
                 className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-hidden focus:ring-2 focus:ring-[#0284c7]/20"
               />
 
-              {/* Product Selection List (Always visible!) */}
+              {/* Product Selection List */}
               <div className="border border-neutral-200/80 rounded-2xl p-2 bg-neutral-50/60 max-h-48 overflow-y-auto space-y-1.5">
                 <div className="text-[9px] font-extrabold text-neutral-400 uppercase tracking-wider px-1">
                   {productSearch ? `Search Results for "${productSearch}"` : 'Select Store Products to Attach:'}
@@ -859,10 +966,20 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
               {/* Media Content Layer */}
               {mediaPreviewUrl ? (
                 contentType === SocialPostContentType.REEL && mediaFile?.type?.includes('video') ? (
-                  <video src={mediaPreviewUrl} className="absolute inset-0 w-full h-full object-cover" autoPlay loop muted playsInline />
+                  <video
+                    src={mediaPreviewUrl}
+                    poster={posterPreviewUrl || undefined}
+                    className="absolute inset-0 w-full h-full object-cover"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
                 ) : (
-                  <Image src={mediaPreviewUrl} alt="Preview" fill sizes="220px" className="object-cover" />
+                  <Image src={posterPreviewUrl || mediaPreviewUrl} alt="Preview" fill sizes="220px" className="object-cover" />
                 )
+              ) : posterPreviewUrl ? (
+                <Image src={posterPreviewUrl} alt="Preview" fill sizes="220px" className="object-cover" />
               ) : (
                 <div className="absolute inset-0 flex flex-col items-center justify-center p-4 text-center bg-neutral-800 text-neutral-500">
                   <Play className="w-8 h-8 text-neutral-600 mb-1" />
@@ -962,6 +1079,19 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
         }}
         mimeFilter={contentType === SocialPostContentType.REEL ? 'video/' : 'image/'}
       />
+
+      <MediaPickerModal
+        open={showPosterPicker}
+        onClose={() => setShowPosterPicker(false)}
+        onSelect={(m) => {
+          const media = Array.isArray(m) ? m[0] : m;
+          if (media) {
+            setPosterPreviewUrl(media.publicUrl);
+          }
+          setShowPosterPicker(false);
+        }}
+        mimeFilter="image/"
+      />
     </div>
   );
 }
@@ -971,45 +1101,66 @@ function AttachMediaModal({ post, onClose, onSuccess }: { post: SocialPostRespon
   const [error, setError] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [progress, setProgress] = useState<number | null>(null);
+  const [posterFile, setPosterFile] = useState<File | null>(null);
+  const [posterPreviewUrl, setPosterPreviewUrl] = useState<string>('');
+  const [mediaFile, setMediaFile] = useState<File | null>(null);
+  const [mediaPreviewUrl, setMediaPreviewUrl] = useState<string>('');
+  const [displayOrder, setDisplayOrder] = useState<number>(0);
   const attachMut = useAttachMedia();
 
-  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleUploadAndSave = async () => {
+    if (!mediaFile && !mediaPreviewUrl) {
+      setError('Please select or upload a media file.');
+      return;
+    }
 
     setError(null);
     setIsUploading(true);
     setProgress(0);
 
     try {
-      const ext = file.name.split('.').pop() || 'jpg';
+      let finalMediaUrl = mediaPreviewUrl;
+      let finalS3Key = `external/${Date.now()}`;
+      let finalMimeType = post.contentType === SocialPostContentType.REEL ? 'video/mp4' : 'image/jpeg';
+      let finalSize = 1000;
+
       const mediaType =
         post.contentType === SocialPostContentType.REEL ? SocialMediaType.VIDEO : SocialMediaType.IMAGE;
 
-      // 1. Generate presigned URL via social admin helper
-      const { uploadUrl, s3Key, url } = await socialService.getUploadUrl(post.id, mediaType, ext);
+      if (mediaFile) {
+        const ext = mediaFile.name.split('.').pop() || (mediaType === SocialMediaType.VIDEO ? 'mp4' : 'jpg');
+        const { uploadUrl, s3Key, url } = await socialService.getUploadUrl(post.id, mediaType, ext);
+        await mediaService.uploadToS3(uploadUrl, mediaFile, (pct) => setProgress(pct));
+        finalMediaUrl = url;
+        finalS3Key = s3Key;
+        finalMimeType = mediaFile.type || finalMimeType;
+        finalSize = mediaFile.size;
+      }
 
-      // 2. Upload file binary directly to S3/Local storage
-      await mediaService.uploadToS3(uploadUrl, file, (pct) => {
-        setProgress(pct);
-      });
+      // Upload optional cover poster
+      let uploadedThumbnailUrl = posterPreviewUrl || undefined;
+      if (posterFile) {
+        const posterExt = posterFile.name.split('.').pop() || 'jpg';
+        const { uploadUrl, url } = await socialService.getUploadUrl(post.id, SocialMediaType.IMAGE, posterExt);
+        await mediaService.uploadToS3(uploadUrl, posterFile);
+        uploadedThumbnailUrl = url;
+      }
 
-      // 3. Construct media details object matching DTO
       const mediaDto = {
         mediaType,
-        s3Key,
-        url,
-        mimeType: file.type || 'image/jpeg',
-        size: file.size,
-        displayOrder: 0,
+        s3Key: finalS3Key,
+        url: finalMediaUrl,
+        thumbnailUrl: uploadedThumbnailUrl,
+        mimeType: finalMimeType,
+        size: finalSize,
+        displayOrder,
       };
 
-      // 4. Attach media in database
       await attachMut.mutateAsync({ id: post.id, media: [mediaDto] });
       onSuccess();
     } catch (err: unknown) {
       console.error(err);
-      setError(getApiErrorMessage(err, 'Media S3 upload attachment failed. Validate local storage permissions.'));
+      setError(getApiErrorMessage(err, 'Media upload attachment failed.'));
     } finally {
       setIsUploading(false);
       setProgress(null);
@@ -1018,48 +1169,123 @@ function AttachMediaModal({ post, onClose, onSuccess }: { post: SocialPostRespon
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-900/60 p-4">
-      <div className="w-full max-w-sm rounded-2xl bg-white p-6 shadow-xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200 text-xs">
+      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl border border-neutral-200 animate-in fade-in zoom-in-95 duration-200 text-xs space-y-4">
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
-          <h3 className="text-sm font-bold text-neutral-900">Upload Media Attachment</h3>
+          <h3 className="text-sm font-bold text-neutral-900">Upload / Replace Media Attachment</h3>
           <button onClick={onClose} className="rounded-lg p-1 text-neutral-400 hover:bg-neutral-50 hover:text-neutral-600 transition">
             <X className="h-5 w-5" />
           </button>
         </div>
 
-        {error && <div className="mt-4 rounded-lg bg-red-50 border border-red-100 p-2.5 text-2xs text-red-655 font-semibold">{error}</div>}
+        {error && <div className="rounded-lg bg-red-50 border border-red-100 p-2.5 text-2xs text-red-655 font-semibold">{error}</div>}
 
-        <div className="mt-6 flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-2xl p-6 bg-neutral-50 hover:bg-neutral-100/55 transition cursor-pointer relative">
-          <Upload className="w-8 h-8 text-neutral-300 mb-2" />
-          <span className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider block">
-            {post.contentType === 'REEL' ? 'Select MP4 Video File' : 'Select JPEG/PNG Image'}
-          </span>
+        {/* Primary Video / Image Upload */}
+        <div className="space-y-1">
+          <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider">
+            {post.contentType === 'REEL' ? 'Reel MP4 Video' : 'Post Image'}
+          </label>
+          <div className="flex flex-col items-center justify-center border-2 border-dashed border-neutral-200 rounded-2xl p-5 bg-neutral-50 hover:bg-neutral-100/55 transition cursor-pointer relative">
+            <Upload className="w-7 h-7 text-[#0284c7] mb-1.5" />
+            <span className="text-[11px] font-bold text-neutral-700">
+              {mediaFile ? mediaFile.name : `Select ${post.contentType === 'REEL' ? 'MP4 Video' : 'Image'} File`}
+            </span>
+            <input
+              type="file"
+              accept={post.contentType === 'REEL' ? 'video/mp4' : 'image/*'}
+              disabled={isUploading}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                setMediaFile(file);
+                setMediaPreviewUrl(URL.createObjectURL(file));
+              }}
+              className="absolute inset-0 opacity-0 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        {/* Cover / Poster Image for Reels */}
+        {post.contentType === SocialPostContentType.REEL && (
+          <div className="space-y-1 bg-sky-50/40 p-3 rounded-xl border border-sky-100">
+            <label className="block text-[10px] font-extrabold text-neutral-700 uppercase tracking-wider">
+              Cover / Poster Image (Optional)
+            </label>
+            <div className="flex items-center gap-2">
+              <input
+                type="file"
+                id="attach-poster-upload"
+                accept="image/*"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  setPosterFile(file);
+                  setPosterPreviewUrl(URL.createObjectURL(file));
+                }}
+                className="hidden"
+              />
+              <label
+                htmlFor="attach-poster-upload"
+                className="bg-white border border-neutral-200 text-neutral-700 font-bold px-3 py-1.5 rounded-xl text-xs cursor-pointer flex items-center gap-1 shrink-0"
+              >
+                <Upload className="w-3.5 h-3.5 text-[#0284c7]" />
+                <span>{posterFile ? 'Change' : 'Upload Cover'}</span>
+              </label>
+              <input
+                type="text"
+                placeholder="Or paste cover URL..."
+                value={posterPreviewUrl}
+                onChange={(e) => setPosterPreviewUrl(e.target.value)}
+                className="flex-1 bg-white border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs font-mono"
+              />
+            </div>
+            {posterPreviewUrl && (
+              <div className="text-[10px] text-emerald-700 font-bold pt-1">
+                ✓ Cover image selected
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Display Order */}
+        <div>
+          <label className="block text-[10px] font-extrabold text-neutral-500 uppercase tracking-wider mb-1">
+            Display Order / Position
+          </label>
           <input
-            type="file"
-            accept={post.contentType === 'REEL' ? 'video/mp4' : 'image/*'}
-            disabled={isUploading}
-            onChange={handleUploadFile}
-            className="absolute inset-0 opacity-0 cursor-pointer"
+            type="number"
+            value={displayOrder}
+            onChange={(e) => setDisplayOrder(parseInt(e.target.value) || 0)}
+            min={0}
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs font-mono"
           />
         </div>
 
         {isUploading && progress !== null && (
-          <div className="mt-4 space-y-1">
+          <div className="space-y-1">
             <div className="flex justify-between text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
               <span>Uploading to S3...</span>
               <span>{progress}%</span>
             </div>
             <div className="w-full bg-neutral-100 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-neutral-900 h-full transition-all duration-150" style={{ width: `${progress}%` }} />
+              <div className="bg-[#0284c7] h-full transition-all duration-150" style={{ width: `${progress}%` }} />
             </div>
           </div>
         )}
 
-        <div className="flex justify-end gap-3 mt-6 pt-3 border-t border-neutral-100">
+        <div className="flex justify-end gap-2 pt-3 border-t border-neutral-100">
           <button
             onClick={onClose}
+            disabled={isUploading}
             className="px-4 py-2 text-xs font-semibold text-neutral-500 hover:text-neutral-700 transition"
           >
             Cancel
+          </button>
+          <button
+            onClick={handleUploadAndSave}
+            disabled={isUploading}
+            className="bg-[#0284c7] hover:bg-[#0B3B78] text-white font-bold px-4 py-2 rounded-xl text-xs transition shadow-sm flex items-center gap-1.5 disabled:opacity-50"
+          >
+            {isUploading ? <ButtonLoader /> : 'Save & Attach Media'}
           </button>
         </div>
       </div>

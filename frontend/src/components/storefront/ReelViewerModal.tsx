@@ -361,32 +361,47 @@ export function ReelViewerModal({
               </div>
             </div>
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 max-h-[26vh] scroll-smooth">
-              {currentReel.taggedProducts.map((prod) => (
-                <div key={prod.id} className="flex items-center justify-between gap-3 p-2 rounded-2xl border border-neutral-100 bg-neutral-50/70">
-                  <Link href={`/product/${prod.id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
-                    <Image
-                      src={resolveMediaUrl(prod.image)}
-                      alt={prod.name}
-                      width={44}
-                      height={48}
-                      unoptimized={isLocalOrPlaceholder(prod.image)}
-                      className="w-11 h-12 object-cover rounded-xl shrink-0"
-                    />
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">{prod.name}</h4>
-                      <div className="flex items-baseline gap-1.5">
-                        <span className="text-xs font-extrabold text-[var(--brand-primary)]">₹{prod.price.toLocaleString('en-IN')}</span>
-                        {prod.originalPrice > prod.price && (
-                          <span className="text-[10px] text-neutral-400 line-through">₹{prod.originalPrice.toLocaleString('en-IN')}</span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                  <Link href={`/product/${prod.id}`} className="p-2 text-white bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] rounded-xl shrink-0 text-[11px] font-bold">
-                    Buy
-                  </Link>
+              {currentReel.taggedProducts.length === 0 ? (
+                <div className="p-4 text-center text-neutral-400 text-xs">
+                  No products tagged in this reel.
                 </div>
-              ))}
+              ) : (
+                currentReel.taggedProducts.map((prod) => (
+                  <div key={prod.id} className="flex items-center justify-between gap-3 p-2 rounded-2xl border border-neutral-100 bg-neutral-50/70">
+                    <Link href={`/product/${prod.id}`} className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <Image
+                        src={resolveMediaUrl(prod.image)}
+                        alt={prod.name}
+                        width={44}
+                        height={48}
+                        unoptimized={isLocalOrPlaceholder(prod.image)}
+                        className="w-11 h-12 object-cover rounded-xl shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="text-xs font-bold text-neutral-900 line-clamp-1">{prod.name}</h4>
+                        <div className="flex items-baseline gap-1.5">
+                          <span className="text-xs font-extrabold text-[var(--brand-primary)]">₹{prod.price.toLocaleString('en-IN')}</span>
+                          {prod.originalPrice > prod.price && (
+                            <span className="text-[10px] text-neutral-400 line-through">₹{prod.originalPrice.toLocaleString('en-IN')}</span>
+                          )}
+                        </div>
+                        <span className={`text-[9px] font-semibold block ${prod.inStock === false ? 'text-rose-600' : 'text-emerald-700'}`}>
+                          {prod.inStock === false ? 'Out of Stock' : 'In Stock'}
+                        </span>
+                      </div>
+                    </Link>
+                    {prod.inStock === false ? (
+                      <button disabled className="p-2 text-neutral-400 bg-neutral-200 rounded-xl shrink-0 text-[10px] font-bold cursor-not-allowed">
+                        Out of Stock
+                      </button>
+                    ) : (
+                      <Link href={`/product/${prod.id}`} className="p-2 text-white bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] rounded-xl shrink-0 text-[11px] font-bold">
+                        Buy
+                      </Link>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </div>
 
@@ -451,67 +466,90 @@ export function ReelViewerModal({
 
           {/* Desktop Product Cards List (Scrollable) */}
           <div className="flex-1 overflow-y-auto space-y-3.5 pr-1.5 max-h-[44vh] scrollbar-thin scrollbar-thumb-neutral-200">
-            {currentReel.taggedProducts.map((prod) => (
-              <div
-                key={prod.id}
-                className="p-3.5 rounded-2xl border border-neutral-200/80 bg-white hover:border-[var(--brand-primary)]/40 transition-all duration-300 shadow-2xs hover:shadow-xs flex items-center justify-between gap-4 group"
-              >
-                <div className="flex items-center gap-3.5 flex-1 min-w-0">
-                  <Image
-                    src={resolveMediaUrl(prod.image)}
-                    alt={prod.name}
-                    width={64}
-                    height={80}
-                    unoptimized={isLocalOrPlaceholder(prod.image)}
-                    className="w-16 h-20 object-cover rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="space-y-1 flex-1 min-w-0">
-                    <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[var(--brand-primary)] transition-colors">
-                      {prod.name}
-                    </h4>
-                    
-                    <div className="flex items-baseline gap-2">
-                      <span className="text-sm font-extrabold text-[var(--brand-primary)]">
-                        ₹{prod.price.toLocaleString('en-IN')}
-                      </span>
-                      {prod.originalPrice > prod.price && (
-                        <span className="text-xs text-neutral-400 line-through">
-                          ₹{prod.originalPrice.toLocaleString('en-IN')}
+            {currentReel.taggedProducts.length === 0 ? (
+              <div className="h-full min-h-[180px] flex flex-col items-center justify-center p-6 text-center text-neutral-400 bg-neutral-50/50 rounded-2xl border border-dashed border-neutral-200">
+                <ShoppingBag className="w-9 h-9 text-neutral-300 mb-2 stroke-1" />
+                <p className="text-xs font-bold text-neutral-700">No tagged products for this reel</p>
+                <p className="text-[11px] text-neutral-400 mt-0.5">Explore our collections below</p>
+              </div>
+            ) : (
+              currentReel.taggedProducts.map((prod) => (
+                <div
+                  key={prod.id}
+                  className="p-3.5 rounded-2xl border border-neutral-200/80 bg-white hover:border-[var(--brand-primary)]/40 transition-all duration-300 shadow-2xs hover:shadow-xs flex items-center justify-between gap-4 group"
+                >
+                  <div className="flex items-center gap-3.5 flex-1 min-w-0">
+                    <Image
+                      src={resolveMediaUrl(prod.image)}
+                      alt={prod.name}
+                      width={64}
+                      height={80}
+                      unoptimized={isLocalOrPlaceholder(prod.image)}
+                      className="w-16 h-20 object-cover rounded-xl shrink-0 group-hover:scale-105 transition-transform duration-300"
+                    />
+                    <div className="space-y-1 flex-1 min-w-0">
+                      <h4 className="text-xs font-bold text-neutral-900 line-clamp-1 group-hover:text-[var(--brand-primary)] transition-colors">
+                        {prod.name}
+                      </h4>
+                      
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm font-extrabold text-[var(--brand-primary)]">
+                          ₹{prod.price.toLocaleString('en-IN')}
                         </span>
-                      )}
-                      {prod.discount && (
-                        <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
-                          {prod.discount}
+                        {prod.originalPrice > prod.price && (
+                          <span className="text-xs text-neutral-400 line-through">
+                            ₹{prod.originalPrice.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                        {prod.discount && (
+                          <span className="text-[10px] font-bold text-sky-700 bg-sky-50 px-1.5 py-0.5 rounded-md">
+                            {prod.discount}
+                          </span>
+                        )}
+                      </div>
+
+                      {prod.inStock === false ? (
+                        <span className="text-[10px] font-semibold text-rose-700 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-md inline-block">
+                          Out of Stock
+                        </span>
+                      ) : (
+                        <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md inline-block">
+                          Size: {prod.size || 'Free Size'} | In Stock
                         </span>
                       )}
                     </div>
+                  </div>
 
-                    <span className="text-[10px] font-semibold text-emerald-700 block">
-                      Size: {prod.size || 'Free Size'} | In Stock
-                    </span>
+                  {/* Right Action Buttons for Each Product */}
+                  <div className="flex flex-col gap-2 shrink-0">
+                    {prod.inStock === false ? (
+                      <button
+                        disabled
+                        className="bg-neutral-100 text-neutral-400 border border-neutral-200 text-xs font-bold py-2 px-3 rounded-xl cursor-not-allowed text-center"
+                      >
+                        Out of Stock
+                      </button>
+                    ) : (
+                      <Link
+                        href={`/product/${prod.id}`}
+                        className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-2xs text-center flex items-center gap-1 justify-center"
+                      >
+                        <Zap className="w-3.5 h-3.5 fill-white" />
+                        <span>Buy</span>
+                      </Link>
+                    )}
+
+                    <Link
+                      href={`/product/${prod.id}`}
+                      className="border border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[#F3F8FF] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1 text-center justify-center"
+                    >
+                      <ShoppingBag className="w-3.5 h-3.5" />
+                      <span>View</span>
+                    </Link>
                   </div>
                 </div>
-
-                {/* Right Action Buttons for Each Product */}
-                <div className="flex flex-col gap-2 shrink-0">
-                  <Link
-                    href={`/product/${prod.id}`}
-                    className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold py-2 px-3.5 rounded-xl transition-colors shadow-2xs text-center flex items-center gap-1"
-                  >
-                    <Zap className="w-3.5 h-3.5 fill-white" />
-                    <span>Buy</span>
-                  </Link>
-
-                  <Link
-                    href={`/product/${prod.id}`}
-                    className="border border-[var(--brand-primary)] text-[var(--brand-primary)] hover:bg-[#F3F8FF] text-xs font-bold py-1.5 px-3.5 rounded-xl transition-colors flex items-center gap-1 text-center justify-center"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>View</span>
-                  </Link>
-                </div>
-              </div>
-            ))}
+              ))
+            )}
           </div>
 
           {/* Bottom Desktop Actions */}

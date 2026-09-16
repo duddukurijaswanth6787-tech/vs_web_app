@@ -124,14 +124,38 @@ export interface SocialPostResponse {
     postId: string;
     productId: string;
     label?: string;
+    displayOrder?: number;
+    tagX?: number;
+    tagY?: number;
     product?: {
       id: string;
       name: string;
       slug?: string;
       basePrice?: number | string;
       salePrice?: number | string;
+      status?: string;
+      deletedAt?: string | null;
       media?: Array<{ url: string }>;
+      variants?: Array<{
+        id: string;
+        inventory?: {
+          availableQuantity?: number;
+          stockStatus?: string;
+        } | null;
+      }>;
     };
+    variant?: {
+      id: string;
+      title: string;
+      sku: string;
+      priceOverride?: number | string | null;
+      salePriceOverride?: number | string | null;
+      deletedAt?: string | null;
+      inventory?: {
+        availableQuantity?: number;
+        stockStatus?: string;
+      } | null;
+    } | null;
   }>;
   createdAt: string;
   updatedAt: string;
