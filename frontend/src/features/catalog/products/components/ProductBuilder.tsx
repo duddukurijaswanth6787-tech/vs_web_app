@@ -358,6 +358,21 @@ export default function ProductBuilder({
   const [subCategoryId, setSubCategoryId] = useState(
     initialData?.categories?.[1]?.categoryId ?? '',
   );
+
+  // Synchronize and correctly identify root category vs child sub-category on edit load
+  useEffect(() => {
+    if (!initialData?.categories?.length || !categories.length) return;
+    const assignedIds = initialData.categories.map((c) => c.categoryId);
+    const root = categories.find((c) => assignedIds.includes(c.id) && !c.parentId);
+    if (root) {
+      setPrimaryCategoryId(root.id);
+      const sub = categories.find((c) => assignedIds.includes(c.id) && c.parentId === root.id);
+      if (sub) {
+        setSubCategoryId(sub.id);
+      }
+    }
+  }, [categories, initialData?.categories]);
+
   const [collections, setCollections] = useState<string[]>(initialData?.collections ?? []);
   const [tags, setTags] = useState<string[]>(initialData?.tags ?? []);
   const [occasion, setOccasion] = useState(initialData?.occasion ?? '');
@@ -1269,10 +1284,11 @@ export default function ProductBuilder({
 
       let created: ProductResponse;
       if (productId) {
-        created = await productService.update(productId, cleanPayload as UpdateProductDto);
-        if (catIds && Array.isArray(catIds) && catIds.length > 0) {
-          await productService.assignCategories(productId, { categoryIds: catIds as string[] }).catch(() => null);
-        }
+        const updatePayload = {
+          ...cleanPayload,
+          categoryIds: (catIds as string[]) || [],
+        };
+        created = await productService.update(productId, updatePayload as UpdateProductDto);
       } else {
         const createPayload = {
           ...cleanPayload,
