@@ -59,6 +59,7 @@ export class CreateMediaDto {
 
 export class UpdateMediaDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() colorGroupId?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() mediaType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() title?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() altText?: string;
   @ApiPropertyOptional()

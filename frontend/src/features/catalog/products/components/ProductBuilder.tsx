@@ -444,7 +444,10 @@ export default function ProductBuilder({
 
   // Dedicated Storefront Product Card View Image state
   const [productCardImageUrl, setProductCardImageUrl] = useState<string>(
-    () => ((initialData as unknown as Record<string, unknown>)?.productCardImageUrl as string) || initialData?.primaryImageUrl || ''
+    () => ((initialData as unknown as Record<string, unknown>)?.productCardImageUrl as string) ||
+          (initialData?.images?.find((m) => m.isPrimary && m.mediaType !== 'FABRIC' && (m as any).title !== 'FABRIC_SWATCH')?.url) ||
+          initialData?.primaryImageUrl ||
+          ''
   );
 
   const setCardViewImage = (url: string, colorGroupId?: string) => {
@@ -488,7 +491,7 @@ export default function ProductBuilder({
 
     images.forEach((img) => {
       const cName = img.color || 'Color 1';
-      const isFabric = img.mediaType === 'FABRIC' || (img as any).title === 'FABRIC_SWATCH';
+      const isFabric = img.mediaType === 'FABRIC' || (img as any).title === 'FABRIC_SWATCH' || (img as any).title === 'Fabric';
       const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || (isFabric ? img.url : undefined);
       if (!colorMap.has(cName)) {
         colorMap.set(cName, { swatch, images: [] });
@@ -496,7 +499,9 @@ export default function ProductBuilder({
         colorMap.get(cName)!.swatch = swatch;
       }
       if (img.url && !isFabric) {
-        colorMap.get(cName)!.images.push(img.url);
+        if (!colorMap.get(cName)!.images.includes(img.url)) {
+          colorMap.get(cName)!.images.push(img.url);
+        }
       }
     });
 
@@ -519,13 +524,14 @@ export default function ProductBuilder({
 
     if (colorMap.size === 0) {
       const defaultImgs = images
-        .filter((i) => i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH')
+        .filter((i) => i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH' && (i as any).title !== 'Fabric')
         .map((i) => i.url)
         .filter(Boolean);
-      if (primaryUrl && !defaultImgs.includes(primaryUrl)) {
+      const isPrimaryFabric = images.find((i) => i.url === primaryUrl && (i.mediaType === 'FABRIC' || (i as any).title === 'FABRIC_SWATCH' || (i as any).title === 'Fabric'));
+      if (primaryUrl && !defaultImgs.includes(primaryUrl) && !isPrimaryFabric) {
         defaultImgs.unshift(primaryUrl);
       }
-      colorMap.set('Color 1', { swatch: undefined, images: defaultImgs });
+      colorMap.set('Color 1', { swatch: isPrimaryFabric ? primaryUrl : undefined, images: Array.from(new Set(defaultImgs)) });
     }
 
     const groups: ColorVariantGroup[] = [];
@@ -563,12 +569,13 @@ export default function ProductBuilder({
         }));
       }
 
+      const cleanGroupImages = Array.from(new Set(data.images)).filter((u) => u !== data.swatch);
       groups.push({
         id: `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
         name: cName,
         hex: idx === 1 ? '#e8c4b8' : '#1e3a8a',
         swatchImage: data.swatch,
-        images: data.images.length > 0 ? data.images : (primaryUrl ? [primaryUrl] : []),
+        images: cleanGroupImages.length > 0 ? cleanGroupImages : (primaryUrl && primaryUrl !== data.swatch ? [primaryUrl] : []),
         sizes: groupSizes,
       });
       idx++;
@@ -1290,25 +1297,61 @@ export default function ProductBuilder({
       });
 
       // Prepare all media upload and attachment tasks in parallel
-      const mediaTasks: Array<{ group: ColorVariantGroup; img: string; isPrimary: boolean; order: number; isFabric?: boolean }> = [];
+      const mediaTasks: Array<{
+        group: ColorVariantGroup;
+        img: string;
+        isPrimary: boolean;
+        order: number;
+        isFabric?: boolean;
+        title?: string;
+      }> = [];
       let displayOrder = 0;
-      let primarySet = false;
+      let primaryFound = false;
 
-      // 1. First add all actual product gallery photos across color groups
+      const primaryUrlTarget = finalCardCoverUrl || undefined;
+
+      // 1. First add all actual product gallery photos across color groups (excluding swatch photos)
       for (const group of colorGroups) {
-        const groupImages = Array.from(new Set(group.images.filter(Boolean) as string[]));
+        const groupImages = Array.from(new Set(group.images.filter(Boolean) as string[])).filter(
+          (u) => u !== group.swatchImage
+        );
         for (let i = 0; i < groupImages.length; i++) {
           const img = groupImages[i];
-          const isImgPrimary = finalCardCoverUrl ? img === finalCardCoverUrl : !primarySet;
-          if (isImgPrimary) primarySet = true;
-          mediaTasks.push({ group, img, isPrimary: isImgPrimary, order: displayOrder++ });
+          const isImgPrimary = primaryUrlTarget ? img === primaryUrlTarget : (!primaryFound && i === 0 && group === colorGroups[0]);
+          if (isImgPrimary) primaryFound = true;
+          const label = imageLabels[img] || (i === 0 ? 'Front' : undefined);
+          mediaTasks.push({
+            group,
+            img,
+            isPrimary: isImgPrimary,
+            order: displayOrder++,
+            title: label,
+          });
         }
       }
 
-      // 2. If separate fabric texture swatches are uploaded, attach them as FABRIC (never primary)
+      // If a dedicated card cover image exists and wasn't in any gallery images, add it as primary
+      if (primaryUrlTarget && !mediaTasks.some((t) => t.img === primaryUrlTarget) && colorGroups[0]) {
+        mediaTasks.unshift({
+          group: colorGroups[0],
+          img: primaryUrlTarget,
+          isPrimary: true,
+          order: 0,
+          title: 'Catalog Cover Photo',
+        });
+      }
+
+      // 2. Add separate fabric texture swatches as FABRIC with title 'FABRIC_SWATCH' (never primary)
       for (const group of colorGroups) {
-        if (group.swatchImage && !group.images.includes(group.swatchImage)) {
-          mediaTasks.push({ group, img: group.swatchImage, isPrimary: false, order: displayOrder++, isFabric: true });
+        if (group.swatchImage) {
+          mediaTasks.push({
+            group,
+            img: group.swatchImage,
+            isPrimary: false,
+            order: displayOrder++,
+            isFabric: true,
+            title: 'FABRIC_SWATCH',
+          });
         }
       }
 
@@ -1328,13 +1371,20 @@ export default function ProductBuilder({
         mediaIdsByGroup[g.id] = [];
       });
 
-      // Upload and attach all images in parallel
+      // Upload and attach or update existing images in parallel
       await Promise.all(
         mediaTasks.map(async (task) => {
           let url = task.img;
           const existingId = existingMediaMap.get(url);
           if (existingId) {
             mediaIdsByGroup[task.group.id].push(existingId);
+            await productService.updateMedia(existingId, {
+              isPrimary: task.isPrimary,
+              displayOrder: task.order,
+              mediaType: task.isFabric ? 'FABRIC' : 'IMAGE',
+              color: task.group.name,
+              title: task.title,
+            }).catch(() => null);
             return;
           }
 
@@ -1351,6 +1401,13 @@ export default function ProductBuilder({
           const uploadedExistingId = existingMediaMap.get(url);
           if (uploadedExistingId) {
             mediaIdsByGroup[task.group.id].push(uploadedExistingId);
+            await productService.updateMedia(uploadedExistingId, {
+              isPrimary: task.isPrimary,
+              displayOrder: task.order,
+              mediaType: task.isFabric ? 'FABRIC' : 'IMAGE',
+              color: task.group.name,
+              title: task.title,
+            }).catch(() => null);
             return;
           }
 
@@ -1362,7 +1419,7 @@ export default function ProductBuilder({
               isPrimary: task.isPrimary,
               displayOrder: task.order,
               color: task.group.name,
-              ...(task.isFabric ? { title: 'FABRIC_SWATCH' } : (imageLabels[task.img] ? { title: imageLabels[task.img] } : {})),
+              title: task.title,
             })
             .catch(() => null);
 

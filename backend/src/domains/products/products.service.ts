@@ -107,7 +107,8 @@ export class ProductsService {
         })) ?? []),
       ],
       primaryImageUrl:
-        p.media?.find((m: any) => m.isPrimary)?.url ??
+        p.media?.find((m: any) => m.isPrimary && m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH')?.url ??
+        p.media?.find((m: any) => m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH')?.url ??
         p.media?.[0]?.url ??
         (p as any).primaryImageUrl ??
         undefined,

@@ -43,6 +43,20 @@ export const productService = {
     await apiClient.delete(`/media/${mediaId}`);
   },
 
+  updateMedia: async (
+    mediaId: string,
+    dto: {
+      mediaType?: string;
+      isPrimary?: boolean;
+      displayOrder?: number;
+      color?: string;
+      title?: string;
+    },
+  ): Promise<Record<string, unknown>> => {
+    const response = await apiClient.patch<StandardResponse<Record<string, unknown>>>(`/media/${mediaId}`, dto);
+    return response.data.data!;
+  },
+
   findAll: async (query: ProductQueryDto = {}): Promise<ProductListResponse> => {
     // Build query params
     const params: Record<string, string | number | boolean> = {};
