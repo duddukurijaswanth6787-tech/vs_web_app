@@ -10,10 +10,11 @@ import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 const EMPTY_FORM: SessionExpirySettingsDto = {
-  accessTokenMinutes: 15,
+  adminSessionHours: 24,
+  accessTokenMinutes: 60,
   rememberMeAccessTokenDays: 30,
-  refreshTokenDays: 7,
-  rememberMeRefreshTokenDays: 30,
+  refreshTokenDays: 30,
+  rememberMeRefreshTokenDays: 90,
 };
 
 export default function SessionSettingsAdminPage() {
@@ -27,7 +28,15 @@ export default function SessionSettingsAdminPage() {
   });
 
   useEffect(() => {
-    if (settings) setForm(settings);
+    if (settings) {
+      setForm({
+        adminSessionHours: settings.adminSessionHours || 24,
+        accessTokenMinutes: settings.accessTokenMinutes || 60,
+        rememberMeAccessTokenDays: settings.rememberMeAccessTokenDays || 30,
+        refreshTokenDays: settings.refreshTokenDays || 30,
+        rememberMeRefreshTokenDays: settings.rememberMeRefreshTokenDays || 90,
+      });
+    }
   }, [settings]);
 
   const handleSave = async (e: React.FormEvent) => {
@@ -35,7 +44,7 @@ export default function SessionSettingsAdminPage() {
     setSaving(true);
     try {
       await adminOpsApi.updateSessionSettings(form);
-      toast('success', 'Session settings saved', 'New logins will use the updated expiry.');
+      toast('success', 'Session settings saved', 'Super Admin and user sessions updated successfully.');
       await refetch();
     } catch (err) {
       toast('error', 'Save failed', getApiErrorMessage(err));
@@ -44,23 +53,16 @@ export default function SessionSettingsAdminPage() {
     }
   };
 
-  const numberField = (
-    key: keyof SessionExpirySettingsDto,
-    label: string,
-    helper: string,
-  ) => (
-    <div className="space-y-1">
-      <label className="text-xs font-bold text-neutral-700 block">{label}</label>
-      <input
-        type="number"
-        min={1}
-        value={form[key]}
-        onChange={(e) => setForm((f) => ({ ...f, [key]: Math.max(1, Number(e.target.value) || 1) }))}
-        className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
-      />
-      <p className="text-[11px] text-neutral-500">{helper}</p>
-    </div>
-  );
+  const applyRecommended = () => {
+    setForm({
+      adminSessionHours: 48,
+      accessTokenMinutes: 120,
+      rememberMeAccessTokenDays: 30,
+      refreshTokenDays: 30,
+      rememberMeRefreshTokenDays: 90,
+    });
+    toast('info', 'Recommended values selected', 'Click "Save Configuration" below to apply.');
+  };
 
   return (
     <div className="p-6 space-y-6 max-w-[1000px] mx-auto">
@@ -68,64 +70,182 @@ export default function SessionSettingsAdminPage() {
         <div>
           <h1 className="text-2xl font-bold font-serif text-neutral-900 flex items-center gap-2.5">
             <Timer className="w-6 h-6 text-[#0284c7]" />
-            <span>Login Sessions</span>
+            <span>Login & Session Expiration Settings</span>
           </h1>
           <p className="text-xs text-neutral-500 font-medium">
-            Control how long a customer or staff login stays valid before they're signed out.
+            Control how many hours or days Super Admin, Staff, and Customer sessions stay signed in before expiring.
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => void refetch()}
-          className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors"
-        >
-          <RefreshCw className="w-4 h-4 text-neutral-500" />
-          <span>Refresh</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={applyRecommended}
+            className="px-3 py-2 border border-sky-200 bg-sky-50/50 hover:bg-sky-50 text-sky-700 rounded-xl text-xs font-bold transition-colors cursor-pointer"
+          >
+            Recommended Setup
+          </button>
+          <button
+            type="button"
+            onClick={() => void refetch()}
+            className="p-2 border border-neutral-300 rounded-xl hover:bg-neutral-50 text-neutral-700 flex items-center gap-1.5 text-xs font-bold transition-colors cursor-pointer"
+          >
+            <RefreshCw className="w-4 h-4 text-neutral-500" />
+            <span>Refresh</span>
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSave} className="bg-white border border-neutral-200 rounded-2xl p-6 shadow-2xs space-y-6">
-        <div className="space-y-3">
-          <h2 className="text-sm font-bold text-neutral-900">Normal login</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {numberField(
-              'accessTokenMinutes',
-              'Access token validity (minutes)',
-              'How long a session stays signed in before it silently needs a refresh.',
-            )}
-            {numberField(
-              'refreshTokenDays',
-              'Session validity (days)',
-              'How many days after login the customer can be silently refreshed before being asked to log in again.',
-            )}
+        {/* Super Admin & Staff Session Settings */}
+        <div className="p-4 bg-sky-50/60 border border-sky-200/80 rounded-xl space-y-3">
+          <div className="flex items-center justify-between flex-wrap gap-2">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-2 py-0.5 bg-sky-600 text-white text-[10px] font-black rounded-md uppercase tracking-wider">
+                  High Priority
+                </span>
+                <h2 className="text-sm font-bold text-neutral-900">
+                  Super Admin & Staff Session Duration (Hours)
+                </h2>
+              </div>
+              <p className="text-xs text-neutral-600 mt-1">
+                How many continuous hours Super Admin, Admin, and Staff remain securely logged in without premature timeouts.
+              </p>
+            </div>
+            <div className="text-right">
+              <span className="text-xs font-bold text-sky-800 bg-white px-3 py-1 rounded-lg border border-sky-200">
+                Current: {form.adminSessionHours} Hours ({Math.round((form.adminSessionHours / 24) * 10) / 10} Days)
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <input
+                type="number"
+                min={1}
+                max={8760}
+                value={form.adminSessionHours}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, adminSessionHours: Math.max(1, Number(e.target.value) || 1) }))
+                }
+                className="w-48 border border-neutral-300 rounded-xl px-3.5 py-2 text-sm font-bold text-neutral-900 bg-white focus:outline-hidden focus:border-[#0284c7]"
+              />
+              <span className="text-xs font-bold text-neutral-600">Hours</span>
+            </div>
+
+            {/* Quick Presets */}
+            <div className="flex items-center gap-2 flex-wrap pt-1">
+              <span className="text-[11px] font-semibold text-neutral-500">Quick Presets:</span>
+              {[
+                { label: '8 Hours (Work shift)', hours: 8 },
+                { label: '24 Hours (1 Day)', hours: 24 },
+                { label: '48 Hours (2 Days)', hours: 48 },
+                { label: '7 Days (168h)', hours: 168 },
+                { label: '30 Days (720h)', hours: 720 },
+              ].map((p) => (
+                <button
+                  key={p.hours}
+                  type="button"
+                  onClick={() => setForm((f) => ({ ...f, adminSessionHours: p.hours }))}
+                  className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-colors cursor-pointer ${
+                    form.adminSessionHours === p.hours
+                      ? 'bg-sky-600 text-white border-sky-600 shadow-2xs'
+                      : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
           </div>
         </div>
 
+        {/* Customer Normal Login */}
+        <div className="space-y-3 pt-2">
+          <h2 className="text-sm font-bold text-neutral-900">Customer Normal Login (Default)</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-neutral-700 block">Access token validity (minutes)</label>
+              <input
+                type="number"
+                min={1}
+                value={form.accessTokenMinutes}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, accessTokenMinutes: Math.max(1, Number(e.target.value) || 1) }))
+                }
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
+              />
+              <p className="text-[11px] text-neutral-500">
+                Duration of each active JWT token before transparent background renewal (e.g. 60 min).
+              </p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-neutral-700 block">Session validity (days)</label>
+              <input
+                type="number"
+                min={1}
+                value={form.refreshTokenDays}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, refreshTokenDays: Math.max(1, Number(e.target.value) || 1) }))
+                }
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
+              />
+              <p className="text-[11px] text-neutral-500">
+                How many days a customer remains logged in without needing to enter password again.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Customer "Remember me" login */}
         <div className="pt-4 border-t border-neutral-100 space-y-3">
-          <h2 className="text-sm font-bold text-neutral-900">"Remember me" login</h2>
+          <h2 className="text-sm font-bold text-neutral-900">Customer "Remember me" Login</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {numberField(
-              'rememberMeAccessTokenDays',
-              'Access token validity (days)',
-              'Used when the customer checked "Remember me" at login.',
-            )}
-            {numberField(
-              'rememberMeRefreshTokenDays',
-              'Session validity (days)',
-              'How many days a "Remember me" session is kept before requiring a fresh login.',
-            )}
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-neutral-700 block">Access token validity (days)</label>
+              <input
+                type="number"
+                min={1}
+                value={form.rememberMeAccessTokenDays}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, rememberMeAccessTokenDays: Math.max(1, Number(e.target.value) || 1) }))
+                }
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
+              />
+              <p className="text-[11px] text-neutral-500">Used when the customer checked "Remember me" at login.</p>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-xs font-bold text-neutral-700 block">Session validity (days)</label>
+              <input
+                type="number"
+                min={1}
+                value={form.rememberMeRefreshTokenDays}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, rememberMeRefreshTokenDays: Math.max(1, Number(e.target.value) || 1) }))
+                }
+                className="w-full border border-neutral-300 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
+              />
+              <p className="text-[11px] text-neutral-500">
+                How many days a "Remember me" session is kept active (e.g. 90 days).
+              </p>
+            </div>
           </div>
         </div>
 
-        <button
-          type="submit"
-          disabled={saving}
-          className="px-5 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2"
-        >
-          <Save className="w-3.5 h-3.5" />
-          <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
-        </button>
+        <div className="pt-2">
+          <button
+            type="submit"
+            disabled={saving}
+            className="px-6 py-2.5 bg-[#0284c7] hover:bg-[#0B3B78] disabled:opacity-60 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <Save className="w-4 h-4" />
+            <span>{saving ? 'Saving…' : 'Save Configuration'}</span>
+          </button>
+        </div>
       </form>
 
       <ActiveUserSessionsSection />

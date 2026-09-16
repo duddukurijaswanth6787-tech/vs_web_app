@@ -3,7 +3,10 @@ import { IsInt, IsOptional, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class SessionExpirySettingsResponse {
-  @ApiProperty({ description: 'Access token validity in minutes (normal login).' })
+  @ApiProperty({ description: 'Super Admin & Staff session duration in hours.' })
+  adminSessionHours!: number;
+
+  @ApiProperty({ description: 'Access token validity in minutes (customer normal login).' })
   accessTokenMinutes!: number;
 
   @ApiProperty({ description: 'Access token validity in days ("Remember me" login).' })
@@ -17,6 +20,13 @@ export class SessionExpirySettingsResponse {
 }
 
 export class UpdateSessionExpirySettingsDto {
+  @ApiPropertyOptional({ description: 'Super Admin & Staff session duration in hours' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  adminSessionHours?: number;
+
   @ApiPropertyOptional() @IsOptional() @Type(() => Number) @IsInt() @Min(1)
   accessTokenMinutes?: number;
 

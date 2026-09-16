@@ -44,6 +44,7 @@ export interface OtpTemplateOptionDto {
 }
 
 export interface SessionExpirySettingsDto {
+  adminSessionHours: number;
   accessTokenMinutes: number;
   rememberMeAccessTokenDays: number;
   refreshTokenDays: number;

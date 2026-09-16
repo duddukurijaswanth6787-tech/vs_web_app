@@ -135,7 +135,6 @@ export class AuthController {
     return ResponseBuilder.success(null, 'Logout successful');
   }
 
-  @ThrottleCredentials()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Refresh access token using refresh token' })

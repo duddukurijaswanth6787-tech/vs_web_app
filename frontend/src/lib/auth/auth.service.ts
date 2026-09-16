@@ -36,4 +36,18 @@ export const authService = {
       newPassword,
     });
   },
+
+  refresh: async (): Promise<AuthTokens | null> => {
+    try {
+      const response = await apiClient.post<StandardResponse<AuthTokens>>('/auth/refresh', {});
+      const tokens = response.data.data;
+      if (tokens?.accessToken) {
+        setClientTokens(tokens);
+        return tokens;
+      }
+      return null;
+    } catch {
+      return null;
+    }
+  },
 };

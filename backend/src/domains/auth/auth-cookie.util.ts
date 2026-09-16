@@ -8,11 +8,9 @@ import type { Response } from 'express';
 // the JSON response body instead.
 export const REFRESH_TOKEN_COOKIE = 'vd_rt';
 
-// Cookie maxAge is just a browser-side retention hint -- the real expiry is
-// still enforced server-side in RefreshTokenService.validate(). 30 days
-// covers the longest configurable session (rememberMeRefreshTokenDays);
+// 90 days covers the longest configurable session (rememberMeRefreshTokenDays);
 // a shorter server-side expiry just means the server rejects it sooner.
-const MAX_COOKIE_AGE_MS = 30 * 24 * 60 * 60 * 1000;
+const MAX_COOKIE_AGE_MS = 90 * 24 * 60 * 60 * 1000;
 
 export function setRefreshTokenCookie(res: Response, token: string) {
   res.cookie(REFRESH_TOKEN_COOKIE, token, {

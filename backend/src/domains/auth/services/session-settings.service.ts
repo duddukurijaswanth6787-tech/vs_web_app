@@ -9,6 +9,7 @@ import {
 
 const GROUP = 'session_settings';
 const KEYS = {
+  adminSessionHours: 'session.admin_session_hours',
   accessTokenMinutes: 'session.access_token_minutes',
   rememberMeAccessTokenDays: 'session.remember_me_access_token_days',
   refreshTokenDays: 'session.refresh_token_days',
@@ -37,20 +38,32 @@ export class SessionSettingsService {
   }
 
   async getSettings(): Promise<SessionExpirySettings> {
-    const [accessTokenMinutes, rememberMeAccessTokenDays, refreshTokenDays, rememberMeRefreshTokenDays] =
-      await Promise.all([
-        this.getInt(
-          KEYS.accessTokenMinutes,
-          Math.round(this.configService.get<number>('app.jwt.expiresIn', 900) / 60),
-        ),
-        this.getInt(
-          KEYS.rememberMeAccessTokenDays,
-          Math.round(this.configService.get<number>('app.jwt.rememberMeExpiresIn', 2592000) / 86400),
-        ),
-        this.getInt(KEYS.refreshTokenDays, this.configService.get<number>('app.jwt.refreshTokenExpiryDays', 7)),
-        this.getInt(KEYS.rememberMeRefreshTokenDays, 30),
-      ]);
-    return { accessTokenMinutes, rememberMeAccessTokenDays, refreshTokenDays, rememberMeRefreshTokenDays };
+    const [
+      adminSessionHours,
+      accessTokenMinutes,
+      rememberMeAccessTokenDays,
+      refreshTokenDays,
+      rememberMeRefreshTokenDays,
+    ] = await Promise.all([
+      this.getInt(KEYS.adminSessionHours, 24),
+      this.getInt(
+        KEYS.accessTokenMinutes,
+        Math.max(60, Math.round(this.configService.get<number>('app.jwt.expiresIn', 3600) / 60)),
+      ),
+      this.getInt(
+        KEYS.rememberMeAccessTokenDays,
+        Math.max(30, Math.round(this.configService.get<number>('app.jwt.rememberMeExpiresIn', 2592000) / 86400)),
+      ),
+      this.getInt(KEYS.refreshTokenDays, Math.max(30, this.configService.get<number>('app.jwt.refreshTokenExpiryDays', 30))),
+      this.getInt(KEYS.rememberMeRefreshTokenDays, 90),
+    ]);
+    return {
+      adminSessionHours,
+      accessTokenMinutes,
+      rememberMeAccessTokenDays,
+      refreshTokenDays,
+      rememberMeRefreshTokenDays,
+    };
   }
 
   async updateSettings(
@@ -58,6 +71,11 @@ export class SessionSettingsService {
     userId: string,
   ): Promise<SessionExpirySettings> {
     const updates: Array<[string, number | undefined, string]> = [
+      [
+        KEYS.adminSessionHours,
+        dto.adminSessionHours,
+        'Super Admin & Staff session duration in hours',
+      ],
       [KEYS.accessTokenMinutes, dto.accessTokenMinutes, 'Access token validity in minutes (normal login)'],
       [
         KEYS.rememberMeAccessTokenDays,

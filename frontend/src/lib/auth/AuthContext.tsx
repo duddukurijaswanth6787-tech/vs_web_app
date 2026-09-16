@@ -58,6 +58,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  // Proactive background silent refresh every 10 minutes when session is active
+  useEffect(() => {
+    if (session !== 'active') return;
+    const interval = setInterval(() => {
+      authService.refresh().catch(() => {});
+    }, 10 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [session]);
+
   const {
     data: user = null,
     isLoading,

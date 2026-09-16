@@ -21,7 +21,8 @@ export class RefreshTokenService {
     rememberMe = false,
   ): Promise<string> {
     const settings = await this.sessionSettingsService.getSettings();
-    const expiryDays = rememberMe ? settings.rememberMeRefreshTokenDays : settings.refreshTokenDays;
+    const minDays = Math.max(settings.refreshTokenDays || 30, Math.ceil((settings.adminSessionHours || 24) / 24), 30);
+    const expiryDays = rememberMe ? (settings.rememberMeRefreshTokenDays || 90) : minDays;
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + expiryDays);
 

@@ -167,7 +167,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: await this.jwtService.getExpiresIn(rememberMe),
+      expiresIn: await this.jwtService.getExpiresIn(payload, rememberMe),
     };
   }
 
@@ -205,7 +205,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken,
-      expiresIn: await this.jwtService.getExpiresIn(rememberMe),
+      expiresIn: await this.jwtService.getExpiresIn(payload, rememberMe),
     };
   }
 
@@ -248,7 +248,7 @@ export class AuthService {
     return {
       accessToken,
       refreshToken: newRefreshToken,
-      expiresIn: await this.jwtService.getExpiresIn(),
+      expiresIn: await this.jwtService.getExpiresIn(payload),
     };
   }
 

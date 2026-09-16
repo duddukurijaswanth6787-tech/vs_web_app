@@ -34,8 +34,9 @@ export class JwtService {
   }
 
   async sign(payload: JwtPayload, rememberMe = false): Promise<string> {
+    const expiresIn = await this.getExpiresIn(payload, rememberMe);
     return jwt.sign(payload, this.secret, {
-      expiresIn: await this.getExpiresIn(rememberMe),
+      expiresIn,
       issuer: this.issuer,
     });
   }
@@ -47,10 +48,42 @@ export class JwtService {
   }
 
   /** Admin-configurable via SessionSettingsService, falling back to env-var defaults. */
-  async getExpiresIn(rememberMe = false): Promise<number> {
+  async getExpiresIn(
+    payloadOrRoles?: JwtPayload | string[] | boolean,
+    rememberMe = false,
+  ): Promise<number> {
     const settings = await this.sessionSettingsService.getSettings();
-    return rememberMe
-      ? settings.rememberMeAccessTokenDays * 86400
-      : settings.accessTokenMinutes * 60;
+
+    let isRemember = rememberMe;
+    let roles: string[] = [];
+    let userType: string | undefined;
+
+    if (typeof payloadOrRoles === 'boolean') {
+      isRemember = payloadOrRoles;
+    } else if (Array.isArray(payloadOrRoles)) {
+      roles = payloadOrRoles;
+    } else if (payloadOrRoles && typeof payloadOrRoles === 'object') {
+      roles = payloadOrRoles.roles || [];
+      userType = payloadOrRoles.userType;
+    }
+
+    const isAdminOrStaff =
+      roles.some((r) =>
+        ['super_admin', 'admin', 'staff', 'pos_operator', 'pos_staff'].includes(
+          (r || '').toLowerCase(),
+        ),
+      ) ||
+      userType === 'ADMIN' ||
+      userType === 'SUPER_ADMIN' ||
+      userType === 'STAFF';
+
+    if (isAdminOrStaff) {
+      const hours = settings.adminSessionHours && settings.adminSessionHours > 0 ? settings.adminSessionHours : 24;
+      return hours * 3600;
+    }
+
+    return isRemember
+      ? (settings.rememberMeAccessTokenDays || 30) * 86400
+      : (settings.accessTokenMinutes || 60) * 60;
   }
 }
