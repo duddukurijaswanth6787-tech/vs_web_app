@@ -16,6 +16,7 @@ import { Public } from '@domains/auth/guards/jwt-auth.guard';
 import { ThrottleOtpSend } from '@common/security/throttle.decorators';
 
 @ApiTags('Storefront Public')
+@Public()
 @Controller()
 export class StorefrontPublicController {
   constructor(

@@ -13,7 +13,7 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtService } from '@domains/auth/services/jwt.service';
-import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { SocialService } from './social.service';
@@ -47,6 +47,7 @@ export class SocialController {
     return null;
   }
 
+  @Public()
   @Get('social/feed')
   @ApiOperation({
     summary: 'Get main customer social feed (weighted catalog posts)',
@@ -69,6 +70,7 @@ export class SocialController {
     return ResponseBuilder.success(feed);
   }
 
+  @Public()
   @Get('social/reels')
   @ApiOperation({ summary: 'Get reels feed (video-only catalog posts)' })
   async getReels(@Query() query: SocialReelsQueryDto, @Req() req: Request) {
@@ -88,6 +90,7 @@ export class SocialController {
     return ResponseBuilder.success(reels);
   }
 
+  @Public()
   @Get('social/trending')
   @ApiOperation({
     summary: 'Get trending posts based on engagement weighted score',
@@ -109,6 +112,7 @@ export class SocialController {
     return ResponseBuilder.success(trending);
   }
 
+  @Public()
   @Get('social/posts/:id')
   @ApiOperation({
     summary: 'Get social post or reel by ID with tagged product details',
@@ -161,6 +165,7 @@ export class SocialController {
     return ResponseBuilder.created(comment, 'Comment added');
   }
 
+  @Public()
   @Get('social/posts/:id/comments')
   @ApiOperation({ summary: 'List comments and replies for a social post' })
   async getComments(
