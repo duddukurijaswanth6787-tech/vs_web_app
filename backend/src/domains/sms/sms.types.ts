@@ -1,8 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { IsString, IsOptional, IsUUID, Matches } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class SendSmsDto {
   @ApiProperty({ example: '9876543210' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\D/g, '').slice(-10) : value,
+  )
   @IsString()
   @Matches(/^[6-9]\d{9}$/)
   phone!: string;

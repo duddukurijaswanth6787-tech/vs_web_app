@@ -8,12 +8,17 @@ import {
   IsBoolean,
   IsIn,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class SendOtpDto {
   @ApiProperty({ example: '9876543210' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\D/g, '').slice(-10) : value,
+  )
   @IsString()
   @Matches(/^[6-9]\d{9}$/, {
-    message: 'Phone must be a valid 10-digit Indian mobile number',
+    message:
+      'Phone must be a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9',
   })
   phone!: string;
 
@@ -28,8 +33,14 @@ export class SendOtpDto {
 
 export class VerifyOtpDto {
   @ApiProperty({ example: '9876543210' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\D/g, '').slice(-10) : value,
+  )
   @IsString()
-  @Matches(/^[6-9]\d{9}$/)
+  @Matches(/^[6-9]\d{9}$/, {
+    message:
+      'Phone must be a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9',
+  })
   phone!: string;
 
   @ApiProperty({ example: '123456' })
@@ -49,8 +60,14 @@ export class VerifyOtpDto {
 
 export class OtpLoginDto {
   @ApiProperty({ example: '9876543210' })
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value.replace(/\D/g, '').slice(-10) : value,
+  )
   @IsString()
-  @Matches(/^[6-9]\d{9}$/)
+  @Matches(/^[6-9]\d{9}$/, {
+    message:
+      'Phone must be a valid 10-digit Indian mobile number starting with 6, 7, 8 or 9',
+  })
   phone!: string;
 
   @ApiProperty({ example: '123456' })

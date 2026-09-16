@@ -55,18 +55,19 @@ function CustomerLoginForm() {
   const handleSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    if (normalizedPhone.length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.');
+    const cleanPhone = normalizedPhone;
+    if (cleanPhone.length !== 10 || !/^[6-9]\d{9}$/.test(cleanPhone)) {
+      setError('Please enter a valid 10-digit Indian mobile number starting with 6, 7, 8, or 9.');
       return;
     }
     setIsLoading(true);
     try {
       // Backend generates the code and sends it via the configured OTP
       // gateway (StartMessaging) -- see admin/communication/otp.
-      await customerAuthService.sendOtp(normalizedPhone, 'LOGIN');
+      await customerAuthService.sendOtp(cleanPhone, 'LOGIN');
       setOtpSent(true);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Failed to send OTP'));
+      setError(getApiErrorMessage(err, 'Failed to send OTP. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -75,17 +76,27 @@ function CustomerLoginForm() {
   const handleVerifyAndLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    const cleanPhone = normalizedPhone;
+    const cleanOtp = otp.replace(/\D/g, '').trim();
+    if (cleanPhone.length !== 10) {
+      setError('Please enter a valid 10-digit mobile number.');
+      return;
+    }
+    if (cleanOtp.length < 4) {
+      setError('Please enter the OTP sent to your mobile number.');
+      return;
+    }
     setIsLoading(true);
     try {
       await customerAuthService.loginWithOtp({
-        phone: normalizedPhone,
-        code: otp,
+        phone: cleanPhone,
+        code: cleanOtp,
         rememberMe: true,
       });
-      const profileResult = await completeTokenLogin() as { data?: { roles?: string[] } | null };
+      const profileResult = (await completeTokenLogin()) as { data?: { roles?: string[] } | null };
       redirectAfterLogin(profileResult?.data);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'OTP login failed'));
+      setError(getApiErrorMessage(err, 'OTP verification failed. Please check the code and try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -183,17 +194,26 @@ function CustomerLoginForm() {
               <form onSubmit={handleSendOTP} className="space-y-4">
                 <label className="block space-y-1.5">
                   <span className="text-xs font-semibold text-neutral-700">Mobile Number <span className="text-red-500">*</span></span>
-                  <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5">
+                  <div className="flex items-center gap-2 border border-neutral-200 rounded-xl px-3 py-2.5 focus-within:border-[var(--brand-primary)] focus-within:ring-1 focus-within:ring-[var(--brand-primary)] transition-all">
                     <Phone className="w-4 h-4 text-neutral-400" />
-                    <span className="text-sm text-neutral-500">+91</span>
+                    <span className="text-sm font-medium text-neutral-600">+91</span>
                     <input
                       required
                       value={phone}
-                      onChange={(e) => setPhone(e.target.value)}
-                      className="flex-1 text-sm outline-none"
-                      placeholder="10-digit mobile"
+                      onChange={(e) => {
+                        let val = e.target.value.replace(/\D/g, '');
+                        if (val.length > 10 && val.startsWith('91')) {
+                          val = val.slice(2);
+                        }
+                        if (val.length > 10) {
+                          val = val.slice(-10);
+                        }
+                        setPhone(val);
+                      }}
+                      className="flex-1 text-sm outline-none bg-transparent"
+                      placeholder="10-digit mobile number"
                       inputMode="numeric"
-                      maxLength={10}
+                      maxLength={15}
                     />
                   </div>
                 </label>
