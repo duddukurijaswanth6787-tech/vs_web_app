@@ -59,13 +59,19 @@ export class ProductsRepository {
     } = params;
     const where: Prisma.ProductWhereInput = { deletedAt: null };
 
-    if (search)
+    if (search) {
+      const cleanSearch = search.trim();
       where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { shortDescription: { contains: search, mode: 'insensitive' } },
-        { searchKeywords: { contains: search, mode: 'insensitive' } },
-        { sku: { contains: search, mode: 'insensitive' } },
+        { name: { contains: cleanSearch, mode: 'insensitive' } },
+        { shortDescription: { contains: cleanSearch, mode: 'insensitive' } },
+        { searchKeywords: { contains: cleanSearch, mode: 'insensitive' } },
+        { sku: { contains: cleanSearch, mode: 'insensitive' } },
+        { brand: { name: { contains: cleanSearch, mode: 'insensitive' } } },
+        { variants: { some: { title: { contains: cleanSearch, mode: 'insensitive' } } } },
+        { variants: { some: { sku: { contains: cleanSearch, mode: 'insensitive' } } } },
+        { variants: { some: { barcode: { contains: cleanSearch, mode: 'insensitive' } } } },
       ];
+    }
     if (brandId) where.brandId = brandId;
     if (status) where.status = status;
     if (visibility) where.visibility = visibility;

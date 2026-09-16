@@ -39,6 +39,27 @@ export default function ProductsPage() {
   const [localSearch, setLocalSearch] = useState(search);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
 
+  // Sync localSearch when URL search param changes externally
+  React.useEffect(() => {
+    setLocalSearch(search);
+  }, [search]);
+
+  // Debounce search update when user stops typing
+  React.useEffect(() => {
+    if (localSearch === search) return;
+    const timer = setTimeout(() => {
+      const params = new URLSearchParams(searchParams.toString());
+      if (localSearch.trim()) {
+        params.set('search', localSearch.trim());
+      } else {
+        params.delete('search');
+      }
+      params.set('page', '1');
+      router.push(`/admin/catalog/products?${params}`);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [localSearch, search, searchParams, router]);
+
   // Modal State for Single Product Deletion
   const [productToDelete, setProductToDelete] = useState<Product | null>(null);
   // Modal State for Bulk Product Deletion
@@ -49,7 +70,7 @@ export default function ProductsPage() {
   const { data: productsData, isLoading, isError, refetch } = useProducts({
     page,
     limit: 10,
-    search,
+    search: search || undefined,
     status: status || undefined,
     categoryId: categoryId || undefined,
     brandId: brandId || undefined,
@@ -215,7 +236,7 @@ export default function ProductsPage() {
               <Eye className="w-4 h-4" />
             </Link>
             <Link
-              href={`/admin/catalog/products/${p.id}/edit`}
+              href={`/admin/catalog/products/${p.id}/edit${page > 1 ? `?fromPage=${page}` : ''}`}
               className="p-1.5 hover:bg-neutral-100 rounded text-neutral-600 transition-colors"
               title="Edit product"
             >
@@ -302,21 +323,40 @@ export default function ProductsPage() {
       {/* Filter / Search Bar */}
       <div className="bg-white p-3.5 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
         <div className="flex flex-col lg:flex-row gap-3 items-stretch lg:items-center justify-between">
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              updateQuery('search', localSearch);
-            }}
-            className="relative w-full lg:w-80"
-          >
+          <div className="relative w-full lg:w-80">
             <input
               value={localSearch}
-              onChange={(e) => setLocalSearch(e.target.value)}
-              placeholder="Search by name, SKU..."
-              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-4 py-2 text-xs focus:outline-none focus:border-neutral-900"
+              onChange={(e) => {
+                const val = e.target.value;
+                setLocalSearch(val);
+                if (val === '') {
+                  updateQuery('search', '');
+                }
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  updateQuery('search', localSearch);
+                }
+              }}
+              placeholder="Search by name, SKU, variant, color..."
+              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-9 pr-8 py-2 text-xs focus:outline-none focus:border-neutral-900"
             />
             <Search className="w-4 h-4 text-neutral-400 absolute left-3 top-2.5" />
-          </form>
+            {localSearch && (
+              <button
+                type="button"
+                onClick={() => {
+                  setLocalSearch('');
+                  updateQuery('search', '');
+                }}
+                className="absolute right-2.5 top-2.5 text-neutral-400 hover:text-neutral-700 p-0.5 rounded-full cursor-pointer"
+                title="Clear search to show all products"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
           <div className="flex flex-col sm:flex-row flex-wrap gap-2.5 w-full lg:w-auto">
             <select
               value={status}

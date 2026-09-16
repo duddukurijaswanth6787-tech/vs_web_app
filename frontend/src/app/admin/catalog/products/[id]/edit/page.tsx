@@ -1,15 +1,17 @@
 'use client';
 
 import React from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useSearchParams } from 'next/navigation';
 import { useProduct } from '@/features/catalog/products/product.hooks';
 import ProductBuilder from '@/features/catalog/products/components/ProductBuilder';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 import Link from 'next/link';
 import { ArrowLeft } from 'lucide-react';
 
-export default function EditProductPage() {
-  const router = useRouter();
+function EditProductPageContent() {
+  const searchParams = useSearchParams();
+  const fromPage = searchParams.get('fromPage') || '';
+  const backUrl = fromPage ? `/admin/catalog/products?page=${fromPage}` : '/admin/catalog/products';
   const params = useParams();
   const id = params.id as string;
 
@@ -19,10 +21,12 @@ export default function EditProductPage() {
     <div className="space-y-6">
       <div className="flex items-center gap-4 bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <Link
-          href="/admin/catalog/products"
-          className="p-2 border border-neutral-200 rounded-xl hover:border-neutral-300 transition-colors"
+          href={backUrl}
+          className="p-2 border border-neutral-200 rounded-xl hover:border-neutral-300 transition-colors flex items-center gap-1.5 text-xs font-semibold text-neutral-700"
+          title={fromPage ? `Back to Products (Page ${fromPage})` : 'Back to Products'}
         >
           <ArrowLeft className="w-4 h-4" />
+          {fromPage && <span className="text-[11px] font-bold text-neutral-500">Page {fromPage}</span>}
         </Link>
         <div>
           <h1 className="text-xl font-bold text-neutral-900 font-sans tracking-tight">Edit Catalog Product</h1>
@@ -41,10 +45,19 @@ export default function EditProductPage() {
           productId={id}
           initialData={product}
           onSaveSuccess={() => {
-            router.push('/admin/catalog/products');
+            refetch();
           }}
         />
       )}
     </div>
   );
 }
+
+export default function EditProductPage() {
+  return (
+    <React.Suspense fallback={<SectionLoader message="Loading editor..." />}>
+      <EditProductPageContent />
+    </React.Suspense>
+  );
+}
+
