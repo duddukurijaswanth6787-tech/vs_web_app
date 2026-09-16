@@ -211,8 +211,9 @@ export class PosController {
   ) {
     const buffer = await this.posService.generateBarcodeImage(query);
     res.setHeader('Content-Type', 'image/png');
+    res.setHeader('Content-Length', String(buffer.length));
     res.setHeader('Cache-Control', 'public, max-age=86400');
-    res.send(buffer);
+    return res.end(buffer);
   }
 
   @Post('barcodes/batch-stickers')

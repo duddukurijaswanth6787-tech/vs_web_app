@@ -4017,17 +4017,17 @@ export default function ProductBuilder({
                     </div>
 
                     {/* Barcode + QR Code Side by Side */}
-                    {variant.barcode ? (
+                    {variant.barcode || variant.sku ? (
                       <div className="flex items-center justify-center gap-3 my-1 py-1 w-full">
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&scale=2&height=12${getStoredAccessToken() ? `&token=${encodeURIComponent(getStoredAccessToken()!)}` : ''}`}
-                            alt={`Barcode ${variant.barcode}`}
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode || variant.sku)}&scale=2&height=12`}
+                            alt={`Barcode ${variant.barcode || variant.sku}`}
                             className="h-12 object-contain"
                           />
                           <span className="text-[10px] font-mono text-neutral-700 tracking-wider font-semibold -mt-1">
-                            {variant.barcode}
+                            {variant.barcode || variant.sku}
                           </span>
                           <span className="text-[9px] font-mono text-neutral-500 tracking-wider">
                             {variant.sku}
@@ -4039,8 +4039,8 @@ export default function ProductBuilder({
                         <div className="flex flex-col items-center">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode)}&bcid=qrcode&scale=2${getStoredAccessToken() ? `&token=${encodeURIComponent(getStoredAccessToken()!)}` : ''}`}
-                            alt={`QR ${variant.barcode}`}
+                            src={`${getApiBaseUrl()}/pos/barcodes/generate?code=${encodeURIComponent(variant.barcode || variant.sku)}&bcid=qrcode&scale=2`}
+                            alt={`QR ${variant.barcode || variant.sku}`}
                             className="h-12 w-12 object-contain"
                           />
                         </div>

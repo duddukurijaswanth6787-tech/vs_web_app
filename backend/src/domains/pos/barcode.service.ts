@@ -17,15 +17,20 @@ export class BarcodeService {
     height = 10,
   ): Promise<Buffer> {
     try {
-      const pngBuffer = await bwipjs.toBuffer({
-        bcid,
-        text,
-        scale,
-        height,
-        includetext: true,
-        textxalign: 'center',
-        textsize: 8,
-      });
+      const cleanBcid = (bcid || 'code128').toLowerCase();
+      const is2D = cleanBcid === 'qrcode' || cleanBcid === 'datamatrix' || cleanBcid === 'pdf417' || cleanBcid === 'azteccode';
+      const options: Record<string, unknown> = {
+        bcid: cleanBcid,
+        text: String(text || 'SKU'),
+        scale: Number(scale) || 2,
+      };
+      if (!is2D) {
+        options.height = Number(height) || 10;
+        options.includetext = true;
+        options.textxalign = 'center';
+        options.textsize = 8;
+      }
+      const pngBuffer = await bwipjs.toBuffer(options as any);
       return pngBuffer;
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);

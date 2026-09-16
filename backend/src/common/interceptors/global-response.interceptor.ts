@@ -55,8 +55,13 @@ export class GlobalResponseInterceptor<T> implements NestInterceptor<
       headers: Record<string, string | string[]>;
     }>();
 
-    // Skip formatting for health-check paths and swagger documents to prevent corrupting their structure
-    if (request.url.includes('/health') || request.url.includes('/api/docs')) {
+    // Skip formatting for health-check paths, raw streaming/storage endpoints, and swagger documents to prevent corrupting binary/raw responses
+    if (
+      request.url.includes('/health') ||
+      request.url.includes('/api/docs') ||
+      request.url.includes('/storage') ||
+      request.url.includes('/barcodes/generate')
+    ) {
       return next.handle() as Observable<StandardResponse<T>>;
     }
 
