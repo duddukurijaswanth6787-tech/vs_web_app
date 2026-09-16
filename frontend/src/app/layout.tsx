@@ -111,6 +111,17 @@ export default async function RootLayout({
           type="application/ld+json"
           dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              window.addEventListener('error', function(e) {
+                if (e && e.message && e.message.indexOf('startTime') !== -1) {
+                  e.stopImmediatePropagation();
+                }
+              }, true);
+            `,
+          }}
+        />
         {/* Overrides the :root defaults in globals.css. Every value is
             validated as a hex colour server-side before it gets here. */}
         {themeCss && (
