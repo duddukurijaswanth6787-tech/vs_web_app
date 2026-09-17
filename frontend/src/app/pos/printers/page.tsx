@@ -1,14 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Printer, CheckCircle2, QrCode, Usb, AlertTriangle, X } from 'lucide-react';
+import { Printer, CheckCircle2, QrCode, Usb, Bluetooth, AlertTriangle, X } from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
 import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
+import { webBluetoothPrinterService } from '@/features/pos/webbluetooth-printer';
 import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function PrintersConfigPage() {
-  const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS'>('BROWSER');
+  const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS' | 'BLUETOOTH'>('BROWSER');
   const [testLabelSize, setTestLabelSize] = useState<LabelSize>('SMALL');
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
@@ -17,6 +18,13 @@ export default function PrintersConfigPage() {
   const [usbDeviceName, setUsbDeviceName] = useState<string | null>(null);
   const [usbConnecting, setUsbConnecting] = useState(false);
   const [usbError, setUsbError] = useState('');
+
+  const [btSupported, setBtSupported] = useState(true);
+  const [btConnected, setBtConnected] = useState(false);
+  const [btDeviceName, setBtDeviceName] = useState<string | null>(null);
+  const [btConnecting, setBtConnecting] = useState(false);
+  const [btError, setBtError] = useState('');
+
   const [testPrintError, setTestPrintError] = useState('');
 
   const previewReceiptMutation = usePreviewReceipt();
@@ -24,6 +32,7 @@ export default function PrintersConfigPage() {
 
   useEffect(() => {
     setUsbSupported(webUsbPrinterService.isSupported());
+    setBtSupported(webBluetoothPrinterService.isSupported());
     webUsbPrinterService.reconnectPrevious().then((reconnected) => {
       if (reconnected) {
         setUsbConnected(true);
@@ -32,6 +41,30 @@ export default function PrintersConfigPage() {
       }
     });
   }, []);
+
+  const handleConnectBt = async () => {
+    setBtError('');
+    setBtConnecting(true);
+    try {
+      const name = await webBluetoothPrinterService.requestAndConnect();
+      setBtConnected(true);
+      setBtDeviceName(name);
+      setPrintMode('BLUETOOTH');
+      setTestSuccessMessage(`Connected to Bluetooth printer "${name}"!`);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setBtError(msg || 'Could not connect to Bluetooth printer.');
+    } finally {
+      setBtConnecting(false);
+    }
+  };
+
+  const handleDisconnectBt = async () => {
+    await webBluetoothPrinterService.disconnect();
+    setBtConnected(false);
+    setBtDeviceName(null);
+    setPrintMode('BROWSER');
+  };
 
   const handleConnectUsb = async () => {
     setUsbError('');
@@ -189,6 +222,15 @@ export default function PrintersConfigPage() {
       },
       {
         onSuccess: async (res) => {
+          if (printMode === 'BLUETOOTH' && btConnected) {
+            try {
+              await webBluetoothPrinterService.printBase64(res.escposBase64);
+              setTestSuccessMessage('Test receipt sent directly via Bluetooth to KPC printer!');
+            } catch (err) {
+              setBtError(getApiErrorMessage(err, 'Bluetooth print failed.'));
+            }
+            return;
+          }
           if (printMode === 'ESCPOS' && usbConnected) {
             try {
               await webUsbPrinterService.printBase64(res.escposBase64);
@@ -225,6 +267,15 @@ export default function PrintersConfigPage() {
       },
       {
         onSuccess: async (res) => {
+          if (printMode === 'BLUETOOTH' && btConnected) {
+            try {
+              await webBluetoothPrinterService.printText(res.tspl);
+              setTestSuccessMessage('Test barcode sticker labels sent directly via Bluetooth to KPC printer!');
+            } catch (err) {
+              setBtError(getApiErrorMessage(err, 'Bluetooth print failed.'));
+            }
+            return;
+          }
           if (printMode === 'ESCPOS' && usbConnected) {
             try {
               await webUsbPrinterService.printText(res.tspl);
@@ -258,13 +309,13 @@ export default function PrintersConfigPage() {
               Thermal Printers & Barcode Label Setup
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
-              USB Direct-Connect & Browser Print Integration
+              Bluetooth Wireless, USB Direct-Connect & Universal Browser Print Integration
             </p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto space-y-6">
+      <div className="max-w-5xl mx-auto space-y-6">
         {testSuccessMessage && (
           <div className="bg-emerald-50 text-emerald-900 border border-emerald-200 p-4 rounded-2xl text-xs font-bold flex items-center justify-between animate-in fade-in">
             <div className="flex items-center gap-2">
@@ -277,86 +328,166 @@ export default function PrintersConfigPage() {
           </div>
         )}
 
-        {/* Printer Mode Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Printer Mode Cards (3-column grid) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Mode 1: Universal Browser Print */}
           <div
             onClick={() => setPrintMode('BROWSER')}
-            className={`bg-white p-5 rounded-2xl border-2 cursor-pointer transition-all ${
+            className={`bg-white p-5 rounded-2xl border-2 cursor-pointer transition-all flex flex-col justify-between ${
               printMode === 'BROWSER'
                 ? 'border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10 shadow-sm'
                 : 'border-neutral-200 hover:border-neutral-300'
             }`}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 1 (Standard)</span>
-              {printMode === 'BROWSER' && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 1 (Standard)</span>
+                {printMode === 'BROWSER' && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
+              </div>
+              <h3 className="text-sm font-bold text-neutral-900 mb-1">Universal Browser Print</h3>
+              <p className="text-xs text-neutral-600 leading-relaxed">
+                Uses system browser dialogs (`window.print()`). Compatible with all USB cables, Windows system drivers, Bluetooth, and Wi-Fi printers.
+              </p>
             </div>
-            <h3 className="text-sm font-bold text-neutral-900 mb-1">Universal Browser Print</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed">
-              Uses system browser dialogs (`window.print()`). Compatible with all standard USB, Bluetooth, and Wireless printers.
-            </p>
+            <div className="mt-4 pt-3 border-t border-neutral-100">
+              <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
+                ✓ Ready for USB & Windows Printers
+              </span>
+            </div>
           </div>
 
+          {/* Mode 2: Bluetooth Wireless (Web Bluetooth) */}
           <div
-            className={`bg-white p-5 rounded-2xl border-2 transition-all ${
+            className={`bg-white p-5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
+              !btSupported
+                ? 'border-neutral-200 opacity-60'
+                : printMode === 'BLUETOOTH' && btConnected
+                  ? 'border-blue-600 ring-2 ring-blue-600/10 shadow-sm cursor-pointer'
+                  : 'border-neutral-200 hover:border-neutral-300 cursor-pointer'
+            }`}
+            onClick={() => btSupported && btConnected && setPrintMode('BLUETOOTH')}
+          >
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-blue-600">Mode 2 (Wireless)</span>
+                {printMode === 'BLUETOOTH' && btConnected && <CheckCircle2 className="w-5 h-5 text-blue-600" />}
+              </div>
+              <h3 className="text-sm font-bold text-neutral-900 mb-1 flex items-center gap-1.5">
+                <Bluetooth className="w-4 h-4 text-blue-600" />
+                <span>Bluetooth Direct-Connect</span>
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+                Connects wirelessly over Bluetooth without any print dialogs — works directly with KPC, Xprinter, and POS thermal printers.
+              </p>
+            </div>
+
+            <div>
+              {!btSupported ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Web Bluetooth is supported on Chrome, Edge, and Opera.</span>
+                </div>
+              ) : btConnected ? (
+                <div className="flex items-center justify-between gap-2 bg-blue-50 p-2.5 rounded-xl border border-blue-200">
+                  <div className="flex items-center gap-2 text-xs font-bold text-blue-800 truncate">
+                    <Bluetooth className="w-4 h-4 text-blue-600 shrink-0" />
+                    <span className="truncate">{btDeviceName || 'Bluetooth Printer'}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDisconnectBt();
+                    }}
+                    className="text-xs font-bold text-blue-700 hover:text-blue-900 shrink-0 underline"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleConnectBt();
+                  }}
+                  disabled={btConnecting}
+                  className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all shadow-2xs"
+                >
+                  <Bluetooth className="w-3.5 h-3.5" />
+                  <span>{btConnecting ? 'Searching Bluetooth…' : 'Connect Bluetooth Printer'}</span>
+                </button>
+              )}
+
+              {btError && (
+                <p className="text-[11px] font-medium text-sky-700 mt-2 leading-relaxed">{btError}</p>
+              )}
+            </div>
+          </div>
+
+          {/* Mode 3: USB Direct-Connect (WebUSB) */}
+          <div
+            className={`bg-white p-5 rounded-2xl border-2 transition-all flex flex-col justify-between ${
               !usbSupported
                 ? 'border-neutral-200 opacity-60'
-                : printMode === 'ESCPOS'
+                : printMode === 'ESCPOS' && usbConnected
                   ? 'border-[var(--brand-primary)] ring-2 ring-[var(--brand-primary)]/10 shadow-sm cursor-pointer'
                   : 'border-neutral-200 hover:border-neutral-300 cursor-pointer'
             }`}
             onClick={() => usbSupported && usbConnected && setPrintMode('ESCPOS')}
           >
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 2 (Direct Hardware)</span>
-              {printMode === 'ESCPOS' && usbConnected && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
-            </div>
-            <h3 className="text-sm font-bold text-neutral-900 mb-1">USB Direct-Connect (WebUSB)</h3>
-            <p className="text-xs text-neutral-600 leading-relaxed mb-3">
-              Streams raw ESC/POS receipt and TSPL label bytes straight to a printer plugged in by USB-C -- no
-              browser print dialog. Chrome/Edge/Opera desktop only, and only works if the printer exposes a raw
-              USB interface rather than registering itself as a standard system printer (some do, some don&apos;t --
-              there&apos;s no way to know without trying).
-            </p>
-
-            {!usbSupported ? (
-              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-                <span>This browser doesn&apos;t support WebUSB. Use Chrome, Edge, or Opera.</span>
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 3 (Raw USB)</span>
+                {printMode === 'ESCPOS' && usbConnected && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
               </div>
-            ) : usbConnected ? (
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2 text-xs font-bold text-emerald-700">
-                  <Usb className="w-4 h-4" />
-                  <span>Connected: {usbDeviceName || 'USB printer'}</span>
+              <h3 className="text-sm font-bold text-neutral-900 mb-1 flex items-center gap-1.5">
+                <Usb className="w-4 h-4 text-neutral-800" />
+                <span>USB Direct-Connect (WebUSB)</span>
+              </h3>
+              <p className="text-xs text-neutral-600 leading-relaxed mb-3">
+                Direct raw USB bulk transfer for printers without OS driver locks.
+              </p>
+            </div>
+
+            <div>
+              {!usbSupported ? (
+                <div className="flex items-center gap-2 text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+                  <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
+                  <span>Use Chrome, Edge, or Opera.</span>
                 </div>
+              ) : usbConnected ? (
+                <div className="flex items-center justify-between gap-2 bg-emerald-50 p-2.5 rounded-xl border border-emerald-200">
+                  <div className="flex items-center gap-2 text-xs font-bold text-emerald-800 truncate">
+                    <Usb className="w-4 h-4 text-emerald-600 shrink-0" />
+                    <span className="truncate">{usbDeviceName || 'USB printer'}</span>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDisconnectUsb();
+                    }}
+                    className="text-xs font-bold text-emerald-700 hover:text-emerald-900 shrink-0 underline"
+                  >
+                    Disconnect
+                  </button>
+                </div>
+              ) : (
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleDisconnectUsb();
+                    handleConnectUsb();
                   }}
-                  className="text-xs font-bold text-sky-700 hover:text-sky-900"
+                  disabled={usbConnecting}
+                  className="w-full bg-neutral-900 hover:bg-black text-white py-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-all"
                 >
-                  Disconnect
+                  <Usb className="w-3.5 h-3.5" />
+                  <span>{usbConnecting ? 'Connecting…' : 'Connect USB Printer'}</span>
                 </button>
-              </div>
-            ) : (
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleConnectUsb();
-                }}
-                disabled={usbConnecting}
-                className="w-full bg-neutral-900 hover:bg-black text-white py-2.5 rounded-lg text-xs font-bold flex items-center justify-center gap-2 disabled:opacity-50"
-              >
-                <Usb className="w-3.5 h-3.5" />
-                <span>{usbConnecting ? 'Connecting…' : 'Connect USB Printer'}</span>
-              </button>
-            )}
+              )}
 
-            {usbError && (
-              <p className="text-[11px] font-medium text-sky-700 mt-2 leading-relaxed">{usbError}</p>
-            )}
+              {usbError && (
+                <p className="text-[11px] font-medium text-sky-700 mt-2 leading-relaxed">{usbError}</p>
+              )}
+            </div>
           </div>
         </div>
 
