@@ -270,11 +270,11 @@ class BluetoothPrinterService {
     await P.printerInit();
     await P.setWidth(PAGE_WIDTH.WIDTH_80);
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText('================================\n\r', {});
+    await P.printText('================================================\n\r', {});
     await P.printText("VASANTHI'S SIGNATURE\n\r", { widthtimes: 1, heigthtimes: 1 });
-    await P.printText('POS Printer Demo OK\n\r', {});
-    await P.printText('Bluetooth Thermal Print Test\n\r', {});
-    await P.printText('================================\n\r\n\r\n\r\n\r', {});
+    await P.printText('3-Inch POS Thermal Printer Test\n\r', {});
+    await P.printText('Bluetooth Connection: OK\n\r', {});
+    await P.printText('================================================\n\r\n\r\n\r\n\r', {});
     if (P.cutPaper) {
       try {
         await P.cutPaper();
@@ -284,7 +284,7 @@ class BluetoothPrinterService {
     }
   }
 
-  /** Prints a POS sale receipt using the printer's built-in ESC/POS text/column commands with precise column alignment and auto-cut. */
+  /** Prints a POS sale receipt using the printer's built-in ESC/POS text commands with exact 48-char alignment and auto-cut. */
   async printReceipt(receipt: PrinterReceiptData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
@@ -299,7 +299,6 @@ class BluetoothPrinterService {
     // Set printable width in dots (576 dots for 80mm, 384 dots for 58mm)
     await P.setWidth(is80mm ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
 
-    // Standard character budget per line: 48 chars for 80mm, 32 chars for 58mm
     const lineChars = is80mm ? 48 : 32;
     const divider = '-'.repeat(lineChars);
     const doubleDivider = '='.repeat(lineChars);
@@ -325,90 +324,83 @@ class BluetoothPrinterService {
     }
     await P.printText(`${divider}\n\r`, {});
 
-    // 3. Item List with crisp column alignment
+    // 3. Item List (Strict 48-char / 32-char fixed alignment)
     if (is80mm) {
-      // 80mm Layout: 22 + 6 + 8 + 12 = 48 chars total
-      await P.printColumn(
-        [22, 6, 8, 12],
-        [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT, ALIGN.RIGHT],
-        ['ITEM', 'QTY', 'RATE', 'TOTAL'],
-        {},
-      );
+      // Columns: Item(24) Qty(4) Rate(8) Total(12) = 48 chars
+      const header = 'ITEM'.padEnd(24) + 'QTY'.padStart(4) + 'RATE'.padStart(8) + 'TOTAL'.padStart(12);
+      await P.printText(`${header}\n\r`, {});
       await P.printText(`${divider}\n\r`, {});
 
       for (const item of receipt.items) {
-        const itemTotal = item.unitPrice * item.quantity;
-        const mainTitle = item.title.slice(0, 22);
-        await P.printColumn(
-          [22, 6, 8, 12],
-          [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT, ALIGN.RIGHT],
-          [mainTitle, `${item.quantity}`, `${Math.round(item.unitPrice)}`, `${itemTotal.toFixed(2)}`],
-          {},
-        );
-        if (item.title.length > 22) {
-          await P.printText(` ${item.title.slice(22, 46)}\n\r`, {});
+        const itemTotal = (item.unitPrice * item.quantity).toFixed(2);
+        const rateStr = Math.round(item.unitPrice).toString();
+        const qtyStr = item.quantity.toString();
+
+        if (item.title.length <= 24) {
+          const row = item.title.padEnd(24) + qtyStr.padStart(4) + rateStr.padStart(8) + itemTotal.padStart(12);
+          await P.printText(`${row}\n\r`, {});
+        } else {
+          const row1 = item.title.slice(0, 23).padEnd(24) + qtyStr.padStart(4) + rateStr.padStart(8) + itemTotal.padStart(12);
+          await P.printText(`${row1}\n\r`, {});
+          const rest = item.title.slice(23).trim();
+          if (rest) {
+            await P.printText(`  ${rest.slice(0, 44)}\n\r`, {});
+          }
         }
       }
     } else {
-      // 58mm Layout: 32 chars total
-      await P.printColumn(
-        [16, 4, 12],
-        [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT],
-        ['ITEM', 'QTY', 'TOTAL'],
-        {},
-      );
+      // 58mm (32 chars)
+      const header = 'ITEM'.padEnd(16) + 'QTY'.padStart(4) + 'TOTAL'.padStart(12);
+      await P.printText(`${header}\n\r`, {});
       await P.printText(`${divider}\n\r`, {});
 
       for (const item of receipt.items) {
-        const itemTotal = item.unitPrice * item.quantity;
+        const itemTotal = (item.unitPrice * item.quantity).toFixed(2);
         await P.printText(`${item.title}\n\r`, {});
-        await P.printColumn(
-          [12, 6, 14],
-          [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT],
-          ['', `x${item.quantity}`, `${itemTotal.toFixed(2)}`],
-          {},
-        );
+        const row = ''.padEnd(14) + `x${item.quantity}`.padStart(4) + itemTotal.padStart(14);
+        await P.printText(`${row}\n\r`, {});
       }
     }
     await P.printText(`${divider}\n\r`, {});
 
-    // 4. Totals Block
-    const labelWidth = is80mm ? 32 : 18;
-    const valueWidth = is80mm ? 16 : 14;
+    // 4. Totals (Strict 48-char / 32-char fixed alignment)
+    if (is80mm) {
+      const subtotalRow = 'Subtotal'.padEnd(32) + money(receipt.subtotal).padStart(16);
+      await P.printText(`${subtotalRow}\n\r`, {});
 
-    await P.printColumn(
-      [labelWidth, valueWidth],
-      [ALIGN.LEFT, ALIGN.RIGHT],
-      ['Subtotal', money(receipt.subtotal)],
-      {},
-    );
+      if (receipt.discountTotal && receipt.discountTotal > 0) {
+        const discRow = 'Discount'.padEnd(32) + (`-${money(receipt.discountTotal)}`).padStart(16);
+        await P.printText(`${discRow}\n\r`, {});
+      }
 
-    if (receipt.discountTotal && receipt.discountTotal > 0) {
-      await P.printColumn(
-        [labelWidth, valueWidth],
-        [ALIGN.LEFT, ALIGN.RIGHT],
-        ['Discount', `-${money(receipt.discountTotal)}`],
-        {},
-      );
+      if (receipt.taxTotal && receipt.taxTotal > 0) {
+        const gstRow = 'GST (5% CGST+SGST)'.padEnd(32) + money(receipt.taxTotal).padStart(16);
+        await P.printText(`${gstRow}\n\r`, {});
+      }
+
+      await P.printText(`${divider}\n\r`, {});
+
+      const totalRow = 'GRAND TOTAL'.padEnd(28) + money(receipt.grandTotal).padStart(20);
+      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1 });
+    } else {
+      const subtotalRow = 'Subtotal'.padEnd(16) + money(receipt.subtotal).padStart(16);
+      await P.printText(`${subtotalRow}\n\r`, {});
+
+      if (receipt.discountTotal && receipt.discountTotal > 0) {
+        const discRow = 'Discount'.padEnd(16) + (`-${money(receipt.discountTotal)}`).padStart(16);
+        await P.printText(`${discRow}\n\r`, {});
+      }
+
+      if (receipt.taxTotal && receipt.taxTotal > 0) {
+        const gstRow = 'GST'.padEnd(16) + money(receipt.taxTotal).padStart(16);
+        await P.printText(`${gstRow}\n\r`, {});
+      }
+
+      await P.printText(`${divider}\n\r`, {});
+
+      const totalRow = 'TOTAL'.padEnd(16) + money(receipt.grandTotal).padStart(16);
+      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1 });
     }
-
-    if (receipt.taxTotal && receipt.taxTotal > 0) {
-      await P.printColumn(
-        [labelWidth, valueWidth],
-        [ALIGN.LEFT, ALIGN.RIGHT],
-        ['GST (5%)', money(receipt.taxTotal)],
-        {},
-      );
-    }
-
-    await P.printText(`${divider}\n\r`, {});
-
-    await P.printColumn(
-      [labelWidth, valueWidth],
-      [ALIGN.LEFT, ALIGN.RIGHT],
-      ['GRAND TOTAL', money(receipt.grandTotal)],
-      { widthtimes: is80mm ? 1 : 0, heigthtimes: 1 },
-    );
 
     if (receipt.paymentMethod) {
       await P.printText(`Payment Mode: ${receipt.paymentMethod}\n\r`, {});
@@ -421,10 +413,10 @@ class BluetoothPrinterService {
     await P.printText('❖ THANK YOU FOR SHOPPING WITH US! ❖\n\r', {});
     await P.printText('Visit again • vasanthissignature.in\n\r', {});
 
-    // Feed lines to clear the tear-bar / cutter mechanism
+    // Feed lines before cutting
     await P.printText('\n\r\n\r\n\r\n\r', {});
 
-    // 6. Automatic Paper Cut
+    // 6. Cut Paper
     if (P.cutPaper) {
       try {
         await P.cutPaper();
