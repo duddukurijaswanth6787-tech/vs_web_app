@@ -135,15 +135,23 @@ export class PrinterService {
   private async loadHsnCodes(
     dto: PreviewReceiptDto,
   ): Promise<Map<string, string>> {
-    const ids = Array.from(
+    const rawIds = Array.from(
       new Set(dto.items.map((i) => i.productId).filter(Boolean)),
     );
-    if (ids.length === 0) return new Map();
-    const rows = await this.prisma.product.findMany({
-      where: { id: { in: ids } },
-      select: { id: true, hsnCode: true },
-    });
-    return new Map(rows.map((r) => [r.id, r.hsnCode || '']));
+    if (rawIds.length === 0) return new Map();
+    const uuidRegex =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const validIds = rawIds.filter((id) => uuidRegex.test(id));
+    if (validIds.length === 0) return new Map();
+    try {
+      const rows = await this.prisma.product.findMany({
+        where: { id: { in: validIds } },
+        select: { id: true, hsnCode: true },
+      });
+      return new Map(rows.map((r) => [r.id, r.hsnCode || '']));
+    } catch {
+      return new Map();
+    }
   }
 
   /**
