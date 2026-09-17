@@ -83,7 +83,9 @@ export const envValidationSchema = Joi.object({
     then: Joi.string()
       .required()
       .invalid('', '*')
-      .description('Comma-separated allowlist of real frontend origins, required in production'),
+      .description(
+        'Comma-separated allowlist of real frontend origins, required in production',
+      ),
     otherwise: Joi.string().allow('').default('*'),
   }),
 
@@ -167,7 +169,9 @@ export const envValidationSchema = Joi.object({
       .required()
       .invalid('dev-secret-change-in-production-vasanthi-key')
       .description('Real, unique JWT signing secret, required in production'),
-    otherwise: Joi.string().min(16).default('dev-secret-change-in-production-vasanthi-key'),
+    otherwise: Joi.string()
+      .min(16)
+      .default('dev-secret-change-in-production-vasanthi-key'),
   }),
   JWT_EXPIRES_IN: Joi.number().integer().min(60).default(900),
   JWT_REMEMBER_ME_EXPIRES_IN: Joi.number().integer().min(3600).default(2592000),

@@ -33,7 +33,7 @@ export function clearRefreshTokenCookie(res: Response) {
 export function withoutRefreshToken<T extends { refreshToken?: string }>(
   result: T,
 ): Omit<T, 'refreshToken'> {
-  const { refreshToken: _refreshToken, ...rest } = result;
+  const rest = { ...result };
+  delete rest.refreshToken;
   return rest;
 }
-

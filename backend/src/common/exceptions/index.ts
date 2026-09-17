@@ -225,7 +225,9 @@ export class GlobalExceptionMapper {
         process.env.NODE_ENV === 'production' ||
         process.env.APP_ENV === 'production';
       return new ValidationException(
-        isProd ? 'Invalid query parameter' : exception.message.split('\n').pop() || 'Invalid query parameter',
+        isProd
+          ? 'Invalid query parameter'
+          : exception.message.split('\n').pop() || 'Invalid query parameter',
         'INVALID_INPUT',
       );
     }

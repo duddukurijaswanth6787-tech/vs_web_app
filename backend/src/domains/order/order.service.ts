@@ -170,7 +170,12 @@ export class OrderService {
 
   async assignCourier(
     id: string,
-    dto: { courierPartner: string; waybillNumber?: string; trackingUrl?: string; message?: string },
+    dto: {
+      courierPartner: string;
+      waybillNumber?: string;
+      trackingUrl?: string;
+      message?: string;
+    },
     userId: string,
   ): Promise<OrderResponse> {
     const order = await this.orderRepository.findById(id);
@@ -198,7 +203,8 @@ export class OrderService {
     await this.orderRepository.createTimeline(
       id,
       'SHIPPED',
-      dto.message || `Courier Partner Assigned: ${dto.courierPartner}${waybill ? ` (AWB: ${waybill})` : ''}`,
+      dto.message ||
+        `Courier Partner Assigned: ${dto.courierPartner}${waybill ? ` (AWB: ${waybill})` : ''}`,
       userId,
     );
 

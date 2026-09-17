@@ -47,7 +47,10 @@ export class SupportService {
 
   private toTicketResponse(t: any): SupportTicketResponse {
     const customerName = t.customer?.user
-      ? [t.customer.user.firstName, t.customer.user.lastName].filter(Boolean).join(' ').trim()
+      ? [t.customer.user.firstName, t.customer.user.lastName]
+          .filter(Boolean)
+          .join(' ')
+          .trim()
       : undefined;
     return {
       id: t.id,
@@ -157,7 +160,11 @@ export class SupportService {
     return this.findTicketById(id);
   }
 
-  async addReply(ticketId: string, dto: CreateSupportReplyDto, isStaff: boolean) {
+  async addReply(
+    ticketId: string,
+    dto: CreateSupportReplyDto,
+    isStaff: boolean,
+  ) {
     const ticket = await this.supportRepository.findTicketById(ticketId);
     if (!ticket) throw new BusinessException('Ticket not found', 'SUPPORT_001');
     const reply = await this.supportRepository.createReply({

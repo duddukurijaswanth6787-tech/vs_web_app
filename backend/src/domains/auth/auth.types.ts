@@ -54,7 +54,9 @@ export class LoginDto {
 }
 
 export class GoogleLoginDto {
-  @ApiProperty({ description: 'The signed ID token credential from Google Sign-In (GIS).' })
+  @ApiProperty({
+    description: 'The signed ID token credential from Google Sign-In (GIS).',
+  })
   @IsString()
   credential!: string;
 

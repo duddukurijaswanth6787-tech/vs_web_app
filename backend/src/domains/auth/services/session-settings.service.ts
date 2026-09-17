@@ -48,13 +48,32 @@ export class SessionSettingsService {
       this.getInt(KEYS.adminSessionHours, 24),
       this.getInt(
         KEYS.accessTokenMinutes,
-        Math.max(60, Math.round(this.configService.get<number>('app.jwt.expiresIn', 3600) / 60)),
+        Math.max(
+          60,
+          Math.round(
+            this.configService.get<number>('app.jwt.expiresIn', 3600) / 60,
+          ),
+        ),
       ),
       this.getInt(
         KEYS.rememberMeAccessTokenDays,
-        Math.max(30, Math.round(this.configService.get<number>('app.jwt.rememberMeExpiresIn', 2592000) / 86400)),
+        Math.max(
+          30,
+          Math.round(
+            this.configService.get<number>(
+              'app.jwt.rememberMeExpiresIn',
+              2592000,
+            ) / 86400,
+          ),
+        ),
       ),
-      this.getInt(KEYS.refreshTokenDays, Math.max(30, this.configService.get<number>('app.jwt.refreshTokenExpiryDays', 30))),
+      this.getInt(
+        KEYS.refreshTokenDays,
+        Math.max(
+          30,
+          this.configService.get<number>('app.jwt.refreshTokenExpiryDays', 30),
+        ),
+      ),
       this.getInt(KEYS.rememberMeRefreshTokenDays, 90),
     ]);
     return {
@@ -76,13 +95,21 @@ export class SessionSettingsService {
         dto.adminSessionHours,
         'Super Admin & Staff session duration in hours',
       ],
-      [KEYS.accessTokenMinutes, dto.accessTokenMinutes, 'Access token validity in minutes (normal login)'],
+      [
+        KEYS.accessTokenMinutes,
+        dto.accessTokenMinutes,
+        'Access token validity in minutes (normal login)',
+      ],
       [
         KEYS.rememberMeAccessTokenDays,
         dto.rememberMeAccessTokenDays,
         'Access token validity in days ("Remember me" login)',
       ],
-      [KEYS.refreshTokenDays, dto.refreshTokenDays, 'Refresh token / session validity in days (normal login)'],
+      [
+        KEYS.refreshTokenDays,
+        dto.refreshTokenDays,
+        'Refresh token / session validity in days (normal login)',
+      ],
       [
         KEYS.rememberMeRefreshTokenDays,
         dto.rememberMeRefreshTokenDays,
@@ -93,9 +120,16 @@ export class SessionSettingsService {
       if (value === undefined) continue;
       const existing = await this.settingRepository.findByKey(key);
       if (existing) {
-        await this.settingRepository.update(existing.id, { value: String(value) });
+        await this.settingRepository.update(existing.id, {
+          value: String(value),
+        });
       } else {
-        await this.settingRepository.create({ key, value: String(value), group: GROUP, description });
+        await this.settingRepository.create({
+          key,
+          value: String(value),
+          group: GROUP,
+          description,
+        });
       }
     }
     await this.auditService.log({

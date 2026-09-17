@@ -102,7 +102,7 @@ export class PosCustomerInfoDto {
     description:
       "Customer's state. When it differs from the shop's state the invoice " +
       'switches from CGST + SGST to a single IGST line, as GST law requires. ' +
-      'Optional; walk-in sales default to the shop\'s state.',
+      "Optional; walk-in sales default to the shop's state.",
   })
   @IsOptional()
   @IsString()
@@ -293,7 +293,7 @@ export class PosGiftCardTenderDto {
 
   @ApiProperty({
     description:
-      'Amount to redeem off this card. Server caps this at the card\'s ' +
+      "Amount to redeem off this card. Server caps this at the card's " +
       'remaining balance; overspending the card is refused.',
   })
   @IsMoneyCustom()
@@ -366,7 +366,7 @@ export class CompletePosSaleDto {
     type: [PosGiftCardTenderDto],
     description:
       'Gift cards used to pay. Each is booked as its own payment row with ' +
-      'method GIFT_CARD, and the card\'s balance is decremented after the ' +
+      "method GIFT_CARD, and the card's balance is decremented after the " +
       'order exists so a sale that never commits leaves the balance intact.',
   })
   @IsOptional()
@@ -387,7 +387,8 @@ export class CompletePosSaleDto {
   loyaltyPointsRedeem?: number;
 
   @ApiPropertyOptional({
-    description: 'Customer profile id whose loyalty account is being drawn from.',
+    description:
+      'Customer profile id whose loyalty account is being drawn from.',
   })
   @IsOptional()
   @IsString()
@@ -609,7 +610,9 @@ export class ClosePosShiftDto {
  * customer's tax history and the shop's ledger stay right.
  */
 export class CreatePosExchangeDto {
-  @ApiProperty({ description: 'Order number the returned items were originally sold under.' })
+  @ApiProperty({
+    description: 'Order number the returned items were originally sold under.',
+  })
   @IsString()
   originalOrderNumber!: string;
 
@@ -649,7 +652,9 @@ export class CreatePosExchangeDto {
   @IsEnum(PosPaymentMethodType)
   paymentMethod!: PosPaymentMethodType;
 
-  @ApiProperty({ description: 'Why the exchange was made (size wrong, defect, etc).' })
+  @ApiProperty({
+    description: 'Why the exchange was made (size wrong, defect, etc).',
+  })
   @IsString()
   reason!: string;
 
@@ -681,7 +686,10 @@ export class PosCashMovementDto {
   direction!: 'IN' | 'OUT';
 
   @ApiProperty({ description: 'Amount moved. Always positive.' })
-  @IsMoneyCustom({ message: 'Cash movement amount must be zero or positive with at most 2 decimals' })
+  @IsMoneyCustom({
+    message:
+      'Cash movement amount must be zero or positive with at most 2 decimals',
+  })
   amount!: number;
 
   @ApiProperty({
@@ -728,7 +736,10 @@ export class GiftCardBalanceQueryDto {
 }
 
 export class SetCashierPinDto {
-  @ApiProperty({ description: 'Current password, so a stolen session cannot silently set a new PIN.' })
+  @ApiProperty({
+    description:
+      'Current password, so a stolen session cannot silently set a new PIN.',
+  })
   @IsString()
   currentPassword!: string;
 
@@ -739,7 +750,9 @@ export class SetCashierPinDto {
 }
 
 export class SwitchCashierDto {
-  @ApiProperty({ description: '4 to 6 digit PIN belonging to the cashier taking over.' })
+  @ApiProperty({
+    description: '4 to 6 digit PIN belonging to the cashier taking over.',
+  })
   @IsString()
   @Matches(/^\d{4,6}$/, { message: 'PIN must be 4 to 6 digits.' })
   pin!: string;
@@ -774,7 +787,7 @@ export class PreviewReceiptDto {
   @ApiPropertyOptional({
     description:
       'True when this is a re-issued receipt. The header stamps "DUPLICATE COPY" ' +
-      'so a reprint can\'t be mistaken for the original tax invoice.',
+      "so a reprint can't be mistaken for the original tax invoice.",
   })
   @IsOptional()
   @IsBoolean()

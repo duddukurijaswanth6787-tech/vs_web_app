@@ -16,7 +16,10 @@ import {
   ReviewQueryDto,
 } from './review.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 

@@ -74,7 +74,8 @@ export class CreateProductDto {
   @ApiPropertyOptional({
     enum: ProductChannel,
     default: ProductChannel.BOTH,
-    description: 'Where this product is sellable: STORE (POS only), ONLINE (storefront only), or BOTH.',
+    description:
+      'Where this product is sellable: STORE (POS only), ONLINE (storefront only), or BOTH.',
   })
   @IsOptional()
   @IsEnum(ProductChannel)
@@ -297,7 +298,10 @@ export class UpdateProductDto {
   type?: ProductType;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() visibility?: string;
-  @ApiPropertyOptional({ enum: ProductChannel }) @IsOptional() @IsEnum(ProductChannel) channel?: ProductChannel;
+  @ApiPropertyOptional({ enum: ProductChannel })
+  @IsOptional()
+  @IsEnum(ProductChannel)
+  channel?: ProductChannel;
 
   @ApiPropertyOptional()
   @IsOptional()
@@ -452,7 +456,10 @@ export class ProductQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsUUID() brandId?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() visibility?: string;
-  @ApiPropertyOptional({ enum: ProductChannel }) @IsOptional() @IsEnum(ProductChannel) channel?: ProductChannel;
+  @ApiPropertyOptional({ enum: ProductChannel })
+  @IsOptional()
+  @IsEnum(ProductChannel)
+  channel?: ProductChannel;
   @ApiPropertyOptional({ enum: ProductType })
   @IsOptional()
   @IsEnum(ProductType)
@@ -469,22 +476,46 @@ export class ProductQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() season?: string;
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === 1 || value === '1'
+      ? true
+      : value === 'false' || value === false || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
   @IsBoolean()
   isFeatured?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === 1 || value === '1'
+      ? true
+      : value === 'false' || value === false || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
   @IsBoolean()
   isNewArrival?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === 1 || value === '1'
+      ? true
+      : value === 'false' || value === false || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
   @IsBoolean()
   isBestSeller?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
-  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === 1 || value === '1'
+      ? true
+      : value === 'false' || value === false || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
   @IsBoolean()
   isPublished?: boolean;
   @ApiPropertyOptional()

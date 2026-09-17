@@ -16,7 +16,11 @@ import {
   BulkShippingLabelDto,
 } from './shipping.types';
 
-import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+  CurrentUser,
+  Public,
+} from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import { ResponseBuilder } from '@common/responses/response.builder';
@@ -35,7 +39,9 @@ export class ShippingController {
   @ThrottleCredentials()
   @Get('delhivery/pincode/:pincode')
   @Public()
-  @ApiOperation({ summary: 'Check Delhivery pincode serviceability & COD availability' })
+  @ApiOperation({
+    summary: 'Check Delhivery pincode serviceability & COD availability',
+  })
   async checkDelhiveryPincode(@Param('pincode') pincode: string) {
     return ResponseBuilder.success(
       await this.delhiveryService.checkPincode(pincode),
@@ -74,7 +80,9 @@ export class ShippingController {
 
   @Get('delhivery/label/:waybill')
   @Public()
-  @ApiOperation({ summary: 'Get direct Delhivery 4x6 thermal printable shipping label' })
+  @ApiOperation({
+    summary: 'Get direct Delhivery 4x6 thermal printable shipping label',
+  })
   async getDelhiveryLabel(@Param('waybill') waybill: string) {
     return ResponseBuilder.success({
       waybill,
@@ -87,7 +95,10 @@ export class ShippingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Generate End-of-Day Courier Dispatch Manifest for Delhivery driver handover' })
+  @ApiOperation({
+    summary:
+      'Generate End-of-Day Courier Dispatch Manifest for Delhivery driver handover',
+  })
   async getDelhiveryManifest(@Query('date') date?: string) {
     return ResponseBuilder.success(
       await this.delhiveryService.generateManifest(date),
@@ -172,7 +183,9 @@ export class ShippingController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Bulk generate thermal 4x6 / A4 printable shipping barcode labels' })
+  @ApiOperation({
+    summary: 'Bulk generate thermal 4x6 / A4 printable shipping barcode labels',
+  })
   async generateBulkShippingLabels(@Body() dto: BulkShippingLabelDto) {
     return ResponseBuilder.success(
       await this.shippingService.generateBulkShippingLabels(dto),
@@ -180,4 +193,3 @@ export class ShippingController {
     );
   }
 }
-

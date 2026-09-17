@@ -105,7 +105,12 @@ export class DashboardService {
       }),
       this.prisma.orderItem.aggregate({
         _sum: { quantity: true },
-        where: { order: { deletedAt: null, createdAt: { gte: startOfToday, lt: endOfToday } } },
+        where: {
+          order: {
+            deletedAt: null,
+            createdAt: { gte: startOfToday, lt: endOfToday },
+          },
+        },
       }),
     ]);
 

@@ -22,13 +22,21 @@ describe('PhoneChangeService', () => {
       $transaction: jest.fn().mockResolvedValue([]),
     };
     const otp = {
-      sendOtp: jest.fn().mockResolvedValue({ phone: '9', expiresInSeconds: 300 }),
-      verifyOtp: jest.fn().mockResolvedValue({ verified: otpVerified, phone: '9' }),
+      sendOtp: jest
+        .fn()
+        .mockResolvedValue({ phone: '9', expiresInSeconds: 300 }),
+      verifyOtp: jest
+        .fn()
+        .mockResolvedValue({ verified: otpVerified, phone: '9' }),
     };
     const audit = { log: jest.fn().mockResolvedValue(undefined) };
 
     return {
-      service: new PhoneChangeService(prisma as never, otp as never, audit as never),
+      service: new PhoneChangeService(
+        prisma as never,
+        otp as never,
+        audit as never,
+      ),
       prisma,
       otp,
     };
@@ -39,16 +47,18 @@ describe('PhoneChangeService', () => {
     // OTP login -- takeover with no password required.
     const { service, otp } = buildService({ phoneOwnedBy: 'someone-else' });
 
-    await expect(service.requestChange('user-1', '07660922416')).rejects.toThrow(
-      /already registered/i,
-    );
+    await expect(
+      service.requestChange('user-1', '07660922416'),
+    ).rejects.toThrow(/already registered/i);
     expect(otp.sendOtp).not.toHaveBeenCalled();
   });
 
   it('allows re-verifying a number the caller already owns', async () => {
     const { service, otp } = buildService({ phoneOwnedBy: 'user-1' });
 
-    await expect(service.requestChange('user-1', '07660922416')).resolves.toBeDefined();
+    await expect(
+      service.requestChange('user-1', '07660922416'),
+    ).resolves.toBeDefined();
     expect(otp.sendOtp).toHaveBeenCalled();
   });
 

@@ -27,7 +27,6 @@ export class CartService {
     private readonly notificationService: NotificationService,
   ) {}
 
-
   private toCartItemResponse(item: any): CartItemResponse {
     const primaryMedia =
       item.product?.media?.find((m: any) => m.isPrimary) ||
@@ -253,7 +252,8 @@ export class CartService {
         where: { variantId: item.variantId },
       });
       if (inventory && !inventory.allowBackorder) {
-        const available = inventory.availableQuantity - inventory.reservedQuantity;
+        const available =
+          inventory.availableQuantity - inventory.reservedQuantity;
         if (dto.quantity > available) {
           throw new BusinessException(
             `Only ${Math.max(0, available)} units available in stock`,
@@ -464,7 +464,9 @@ export class CartService {
   /**
    * Retrieve all abandoned shopping carts (active carts with no updates for > hoursThreshold)
    */
-  async getAbandonedCarts(hoursThreshold: number = 2): Promise<AbandonedCartListResponse> {
+  async getAbandonedCarts(
+    hoursThreshold: number = 2,
+  ): Promise<AbandonedCartListResponse> {
     const cutoffDate = new Date(Date.now() - hoursThreshold * 60 * 60 * 1000);
 
     const carts = await this.prisma.shoppingCart.findMany({
@@ -521,8 +523,8 @@ export class CartService {
         custUser?.firstName || custUser?.lastName
           ? `${custUser.firstName || ''} ${custUser.lastName || ''}`.trim()
           : c.guestId
-          ? `Guest (${c.guestId.slice(0, 8)})`
-          : 'Store Visitor';
+            ? `Guest (${c.guestId.slice(0, 8)})`
+            : 'Store Visitor';
 
       const diffMs = Date.now() - c.updatedAt.getTime();
       const durationHours = Math.round(diffMs / (60 * 60 * 1000));
@@ -532,11 +534,14 @@ export class CartService {
       const hours = Math.floor(diffMs / (60 * 60 * 1000));
       const mins = Math.floor(diffMs / (60 * 1000));
       if (days > 0) durationFormatted = `${days} day${days > 1 ? 's' : ''} ago`;
-      else if (hours > 0) durationFormatted = `${hours} hr${hours > 1 ? 's' : ''} ago`;
+      else if (hours > 0)
+        durationFormatted = `${hours} hr${hours > 1 ? 's' : ''} ago`;
       else durationFormatted = `${mins} min${mins > 1 ? 's' : ''} ago`;
 
       const itemsSummary = activeItems.map((it) => {
-        const media = it.product?.media?.find((m: any) => m.isPrimary) || it.product?.media?.[0];
+        const media =
+          it.product?.media?.find((m: any) => m.isPrimary) ||
+          it.product?.media?.[0];
         return {
           productId: it.productId,
           productName: it.product?.name || 'Item',
@@ -569,7 +574,10 @@ export class CartService {
     });
 
     const totalAbandonedCarts = formattedCarts.length;
-    const averageCartValue = totalAbandonedCarts > 0 ? Math.round(totalPotentialRevenue / totalAbandonedCarts) : 0;
+    const averageCartValue =
+      totalAbandonedCarts > 0
+        ? Math.round(totalPotentialRevenue / totalAbandonedCarts)
+        : 0;
     const recoveredCartsCount = Math.round(totalAbandonedCarts * 0.18); // Estimated historical recovery benchmark
     const recoveryRatePercent = totalAbandonedCarts > 0 ? 18.5 : 0;
 
@@ -613,7 +621,10 @@ export class CartService {
     }
 
     if (!cart.items.length) {
-      throw new BusinessException('Cart contains no active items', 'CART_EMPTY');
+      throw new BusinessException(
+        'Cart contains no active items',
+        'CART_EMPTY',
+      );
     }
 
     const discountCode = dto?.discountCode || 'COMEBACK10';
@@ -622,7 +633,10 @@ export class CartService {
     const custName = custUser?.firstName || 'Valued Customer';
     const firstItemName = cart.items[0]?.product?.name || 'Exclusive Attire';
     const moreCount = cart.items.length - 1;
-    const itemDesc = moreCount > 0 ? `"${firstItemName}" and ${moreCount} other item(s)` : `"${firstItemName}"`;
+    const itemDesc =
+      moreCount > 0
+        ? `"${firstItemName}" and ${moreCount} other item(s)`
+        : `"${firstItemName}"`;
 
     const message =
       dto?.customMessage ||
@@ -646,7 +660,9 @@ export class CartService {
           },
         });
       } catch (err: any) {
-        this.logger.warn(`Failed to dispatch in-app notification for cart ${cartId}: ${err.message}`);
+        this.logger.warn(
+          `Failed to dispatch in-app notification for cart ${cartId}: ${err.message}`,
+        );
       }
     }
 
@@ -656,10 +672,16 @@ export class CartService {
       resource: 'cart',
       resourceId: cart.id,
       userId: custUser?.id,
-      newValue: { discountCode, discountPercent, recipient: custUser?.email || cart.customer?.phone },
+      newValue: {
+        discountCode,
+        discountPercent,
+        recipient: custUser?.email || cart.customer?.phone,
+      },
     });
 
-    this.logger.log(`Abandoned cart recovery dispatched for Cart #${cartId} to ${custUser?.email || custUser?.phone || 'Guest'}`);
+    this.logger.log(
+      `Abandoned cart recovery dispatched for Cart #${cartId} to ${custUser?.email || custUser?.phone || 'Guest'}`,
+    );
 
     return {
       success: true,
@@ -702,7 +724,6 @@ export class CartService {
       }
     }
 
-
     return {
       total: targetCartIds.length,
       successful,
@@ -720,8 +741,9 @@ export class CartService {
       discountCode: 'RECOVER10',
       discountPercent: 10,
     });
-    this.logger.log(`Automated recovery completed: ${result.successful} carts notified, ${result.failed} skipped.`);
+    this.logger.log(
+      `Automated recovery completed: ${result.successful} carts notified, ${result.failed} skipped.`,
+    );
     return result;
   }
 }
-

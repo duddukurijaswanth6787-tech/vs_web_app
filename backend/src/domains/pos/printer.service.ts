@@ -137,7 +137,7 @@ export class PrinterService {
   ): Promise<Map<string, string>> {
     const ids = Array.from(
       new Set(dto.items.map((i) => i.productId).filter(Boolean)),
-    ) as string[];
+    );
     if (ids.length === 0) return new Map();
     const rows = await this.prisma.product.findMany({
       where: { id: { in: ids } },
@@ -168,16 +168,13 @@ export class PrinterService {
     const taxableAmount = Math.max(0, subtotal - discountTotal);
     const taxTotal = dto.taxTotal || 0;
     const igstAmount = interstate ? taxTotal : 0;
-    const cgstAmount = interstate
-      ? 0
-      : Math.round((taxTotal / 2) * 100) / 100;
+    const cgstAmount = interstate ? 0 : Math.round((taxTotal / 2) * 100) / 100;
     const sgstAmount = interstate ? 0 : taxTotal - cgstAmount;
     const fullGstRate =
       taxableAmount > 0
         ? Math.round((taxTotal / taxableAmount) * 1000) / 10
         : 0;
-    const halfGstRate =
-      Math.round((fullGstRate / 2) * 10) / 10;
+    const halfGstRate = Math.round((fullGstRate / 2) * 10) / 10;
     return {
       subtotal,
       discountTotal,

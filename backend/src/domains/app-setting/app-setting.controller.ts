@@ -15,8 +15,15 @@ import {
   UpdateSettingDto,
   SettingQueryDto,
 } from './app-setting.types';
-import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  JwtAuthGuard,
+  CurrentUser,
+  Public,
+} from '@domains/auth/guards/jwt-auth.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -37,7 +44,9 @@ export class AppSettingController {
   @Public()
   @ApiOperation({ summary: 'Get public store settings' })
   async getPublic() {
-    return ResponseBuilder.success(await this.settingService.getPublicSettingsFallback());
+    return ResponseBuilder.success(
+      await this.settingService.getPublicSettingsFallback(),
+    );
   }
 
   @Get(':key')

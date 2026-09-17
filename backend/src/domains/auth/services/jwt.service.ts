@@ -78,7 +78,10 @@ export class JwtService {
       userType === 'STAFF';
 
     if (isAdminOrStaff) {
-      const hours = settings.adminSessionHours && settings.adminSessionHours > 0 ? settings.adminSessionHours : 24;
+      const hours =
+        settings.adminSessionHours && settings.adminSessionHours > 0
+          ? settings.adminSessionHours
+          : 24;
       return hours * 3600;
     }
 

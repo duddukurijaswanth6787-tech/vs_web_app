@@ -11,8 +11,18 @@ import { PaymentService } from './payment.service';
 import { PaymentRepository } from './payment.repository';
 
 @Module({
-  imports: [ConfigModule, AuthModule, AuditModule, OrderModule, AppSettingModule],
-  controllers: [PaymentMethodsController, PaymentController, PaymentSettingsController],
+  imports: [
+    ConfigModule,
+    AuthModule,
+    AuditModule,
+    OrderModule,
+    AppSettingModule,
+  ],
+  controllers: [
+    PaymentMethodsController,
+    PaymentController,
+    PaymentSettingsController,
+  ],
   providers: [PaymentService, PaymentRepository],
   exports: [PaymentService],
 })

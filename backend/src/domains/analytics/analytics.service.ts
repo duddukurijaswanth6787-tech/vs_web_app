@@ -29,7 +29,9 @@ export class AnalyticsService {
     }
   }
 
-  async getOmnichannelOverview(period: AnalyticsPeriod = 'monthly'): Promise<OmnichannelSummary> {
+  async getOmnichannelOverview(
+    period: AnalyticsPeriod = 'monthly',
+  ): Promise<OmnichannelSummary> {
     const startDate = this.getStartDate(period);
 
     const orders = await this.prisma.order.findMany({
@@ -65,10 +67,13 @@ export class AnalyticsService {
 
     const totalRevenue = offlineRev + onlineRev;
     const totalOrders = offlineCount + onlineCount;
-    const averageOrderValue = totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
+    const averageOrderValue =
+      totalOrders > 0 ? Math.round(totalRevenue / totalOrders) : 0;
 
-    const offlineShare = totalRevenue > 0 ? Math.round((offlineRev / totalRevenue) * 100) : 50;
-    const onlineShare = totalRevenue > 0 ? Math.round((onlineRev / totalRevenue) * 100) : 50;
+    const offlineShare =
+      totalRevenue > 0 ? Math.round((offlineRev / totalRevenue) * 100) : 50;
+    const onlineShare =
+      totalRevenue > 0 ? Math.round((onlineRev / totalRevenue) * 100) : 50;
 
     const trendMap: Record<string, { offline: number; online: number }> = {};
 
@@ -106,13 +111,16 @@ export class AnalyticsService {
       },
       trend: {
         labels: labels.length > 0 ? labels : ['Today'],
-        offlineRevenue: offlineRevenue.length > 0 ? offlineRevenue : [offlineRev],
+        offlineRevenue:
+          offlineRevenue.length > 0 ? offlineRevenue : [offlineRev],
         onlineRevenue: onlineRevenue.length > 0 ? onlineRevenue : [onlineRev],
       },
     };
   }
 
-  async getOfflinePosAnalytics(period: AnalyticsPeriod = 'monthly'): Promise<OfflinePosAnalytics> {
+  async getOfflinePosAnalytics(
+    period: AnalyticsPeriod = 'monthly',
+  ): Promise<OfflinePosAnalytics> {
     const startDate = this.getStartDate(period);
 
     const posOrders = await this.prisma.order.findMany({
@@ -135,20 +143,24 @@ export class AnalyticsService {
       QUOTATION: { amount: 0, count: 0 },
     };
 
-    const dailyMap: Record<string, { revenue: number; transactions: number }> = {};
+    const dailyMap: Record<string, { revenue: number; transactions: number }> =
+      {};
 
     posOrders.forEach((o) => {
       const val = Number(o.grandTotal || 0);
       totalRevenue += val;
 
       const dateKey = new Date(o.createdAt).toISOString().split('T')[0];
-      if (!dailyMap[dateKey]) dailyMap[dateKey] = { revenue: 0, transactions: 0 };
+      if (!dailyMap[dateKey])
+        dailyMap[dateKey] = { revenue: 0, transactions: 0 };
       dailyMap[dateKey].revenue += val;
       dailyMap[dateKey].transactions += 1;
 
       if (o.payments && o.payments.length > 0) {
         o.payments.forEach((p) => {
-          const method = String(p.provider || o.paymentMethod || 'CASH').toUpperCase();
+          const method = String(
+            p.provider || o.paymentMethod || 'CASH',
+          ).toUpperCase();
           if (!paymentMap[method]) paymentMap[method] = { amount: 0, count: 0 };
           paymentMap[method].amount += Number(p.amount || 0);
           paymentMap[method].count += 1;
@@ -162,7 +174,8 @@ export class AnalyticsService {
     });
 
     const totalTransactions = posOrders.length;
-    const averageBasketValue = totalTransactions > 0 ? Math.round(totalRevenue / totalTransactions) : 0;
+    const averageBasketValue =
+      totalTransactions > 0 ? Math.round(totalRevenue / totalTransactions) : 0;
 
     const byPaymentMethod = Object.keys(paymentMap).map((method) => {
       const amt = Math.round(paymentMap[method].amount);
@@ -189,7 +202,9 @@ export class AnalyticsService {
     };
   }
 
-  async getOnlineSalesAnalytics(period: AnalyticsPeriod = 'monthly'): Promise<OnlineSalesAnalytics> {
+  async getOnlineSalesAnalytics(
+    period: AnalyticsPeriod = 'monthly',
+  ): Promise<OnlineSalesAnalytics> {
     const startDate = this.getStartDate(period);
 
     const onlineOrders = await this.prisma.order.findMany({
@@ -208,7 +223,10 @@ export class AnalyticsService {
     let returnedCount = 0;
 
     const statusMap: Record<string, number> = {};
-    const gatewayMap: Record<string, { amount: number; successCount: number; totalCount: number }> = {
+    const gatewayMap: Record<
+      string,
+      { amount: number; successCount: number; totalCount: number }
+    > = {
       RAZORPAY: { amount: 0, successCount: 0, totalCount: 0 },
       ONLINE: { amount: 0, successCount: 0, totalCount: 0 },
     };
@@ -228,21 +246,33 @@ export class AnalyticsService {
 
       o.payments.forEach((p) => {
         const provider = String(p.provider || 'RAZORPAY').toUpperCase();
-        if (!gatewayMap[provider]) gatewayMap[provider] = { amount: 0, successCount: 0, totalCount: 0 };
+        if (!gatewayMap[provider])
+          gatewayMap[provider] = { amount: 0, successCount: 0, totalCount: 0 };
         gatewayMap[provider].totalCount += 1;
-        if (p.status === 'COMPLETED' || p.status === 'SUCCESS' || p.status === 'PAID') {
+        if (
+          p.status === 'COMPLETED' ||
+          p.status === 'SUCCESS' ||
+          p.status === 'PAID'
+        ) {
           gatewayMap[provider].amount += Number(p.amount || 0);
           gatewayMap[provider].successCount += 1;
         }
       });
     });
 
-    const averageOrderValue = validCount > 0 ? Math.round(totalRevenue / validCount) : 0;
-    const returnRatePercentage = onlineOrders.length > 0 ? Math.round((returnedCount / onlineOrders.length) * 100) : 0;
+    const averageOrderValue =
+      validCount > 0 ? Math.round(totalRevenue / validCount) : 0;
+    const returnRatePercentage =
+      onlineOrders.length > 0
+        ? Math.round((returnedCount / onlineOrders.length) * 100)
+        : 0;
 
     const paymentGatewayBreakdown = Object.keys(gatewayMap).map((provider) => {
       const g = gatewayMap[provider];
-      const rate = g.totalCount > 0 ? Math.round((g.successCount / g.totalCount) * 100) : 100;
+      const rate =
+        g.totalCount > 0
+          ? Math.round((g.successCount / g.totalCount) * 100)
+          : 100;
       return {
         provider,
         amount: Math.round(g.amount),
@@ -283,7 +313,9 @@ export class AnalyticsService {
         orderItems: {
           where: {
             order: {
-              createdAt: { gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000) },
+              createdAt: {
+                gte: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000),
+              },
               status: { notIn: ['CANCELLED'] },
             },
           },
@@ -292,23 +324,34 @@ export class AnalyticsService {
     });
 
     let totalStockUnits = 0;
-    const categoryMap: Record<string, { totalStock: number; unitsSold: number }> = {};
+    const categoryMap: Record<
+      string,
+      { totalStock: number; unitsSold: number }
+    > = {};
 
     const velocityList: ProductVelocityItem[] = products.map((p) => {
-      const stock = p.variants.reduce((sum, v) => sum + (v.inventory?.availableQuantity || 0), 0);
+      const stock = p.variants.reduce(
+        (sum, v) => sum + (v.inventory?.availableQuantity || 0),
+        0,
+      );
       totalStockUnits += stock;
 
-      const unitsSold = p.orderItems.reduce((sum, item) => sum + (item.quantity || 0), 0);
+      const unitsSold = p.orderItems.reduce(
+        (sum, item) => sum + (item.quantity || 0),
+        0,
+      );
       const dailyVelocity = Math.round((unitsSold / 30) * 10) / 10;
 
       const firstCat = p.categories[0]?.category?.name;
       const catName = firstCat || 'General Apparels';
 
-      if (!categoryMap[catName]) categoryMap[catName] = { totalStock: 0, unitsSold: 0 };
+      if (!categoryMap[catName])
+        categoryMap[catName] = { totalStock: 0, unitsSold: 0 };
       categoryMap[catName].totalStock += stock;
       categoryMap[catName].unitsSold += unitsSold;
 
-      const daysRemaining = dailyVelocity > 0 ? Math.round(stock / dailyVelocity) : 999;
+      const daysRemaining =
+        dailyVelocity > 0 ? Math.round(stock / dailyVelocity) : 999;
 
       let classification: 'FAST_MOVING' | 'REGULAR' | 'SLOW_MOVING' = 'REGULAR';
       if (dailyVelocity >= 0.5 || unitsSold >= 5) {
@@ -338,9 +381,15 @@ export class AnalyticsService {
       };
     });
 
-    const fastMoving = velocityList.filter((v) => v.classification === 'FAST_MOVING');
-    const slowMoving = velocityList.filter((v) => v.classification === 'SLOW_MOVING');
-    const criticalStockouts = velocityList.filter((v) => v.stockoutRisk === 'CRITICAL' || v.stockoutRisk === 'WARNING');
+    const fastMoving = velocityList.filter(
+      (v) => v.classification === 'FAST_MOVING',
+    );
+    const slowMoving = velocityList.filter(
+      (v) => v.classification === 'SLOW_MOVING',
+    );
+    const criticalStockouts = velocityList.filter(
+      (v) => v.stockoutRisk === 'CRITICAL' || v.stockoutRisk === 'WARNING',
+    );
 
     velocityList.sort((a, b) => b.unitsSold - a.unitsSold);
     const topVelocityProducts = velocityList.slice(0, 5);

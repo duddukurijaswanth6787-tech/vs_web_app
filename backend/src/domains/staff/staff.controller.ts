@@ -12,7 +12,6 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { StaffService } from './staff.service';
 import {
-
   CreateStaffDto,
   UpdateStaffDto,
   StaffQueryDto,
@@ -25,7 +24,10 @@ import {
 
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
@@ -41,7 +43,9 @@ export class StaffController {
   // ==========================================
 
   @Get('me')
-  @ApiOperation({ summary: 'Get current logged in staff profile with employee ID' })
+  @ApiOperation({
+    summary: 'Get current logged in staff profile with employee ID',
+  })
   async getMyProfile(@CurrentUser() user: JwtPayload) {
     return ResponseBuilder.success(
       await this.staffService.findByUserId(user.sub),
@@ -71,7 +75,9 @@ export class StaffController {
   }
 
   @Get('attendance/today')
-  @ApiOperation({ summary: 'Get current punch-in/out status for logged in staff' })
+  @ApiOperation({
+    summary: 'Get current punch-in/out status for logged in staff',
+  })
   async getTodayAttendance(@CurrentUser() user: JwtPayload) {
     return ResponseBuilder.success(
       await this.staffService.getTodayAttendance(user.sub),
@@ -139,10 +145,7 @@ export class StaffController {
 
   @Patch('tasks/:id')
   @ApiOperation({ summary: 'Update staff task status or notes' })
-  async updateTask(
-    @Param('id') id: string,
-    @Body() dto: UpdateStaffTaskDto,
-  ) {
+  async updateTask(@Param('id') id: string, @Body() dto: UpdateStaffTaskDto) {
     return ResponseBuilder.success(
       await this.staffService.updateTask(id, dto),
       'Task updated',
@@ -155,7 +158,9 @@ export class StaffController {
 
   @Get('performance/:staffProfileId')
   @Roles('super_admin', 'admin')
-  @ApiOperation({ summary: 'Get ERP staff performance & payable hours summary' })
+  @ApiOperation({
+    summary: 'Get ERP staff performance & payable hours summary',
+  })
   async getStaffPerformance(
     @Param('staffProfileId') staffProfileId: string,
     @Query('month') month?: string,
@@ -273,4 +278,3 @@ export class StaffController {
     );
   }
 }
-

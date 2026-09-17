@@ -29,7 +29,10 @@ export class CreateBannerDto {
   @IsOptional()
   @IsBoolean()
   isActive?: boolean;
-  @ApiPropertyOptional({ default: true, description: 'Show the CTA (Shop Now) button on this banner' })
+  @ApiPropertyOptional({
+    default: true,
+    description: 'Show the CTA (Shop Now) button on this banner',
+  })
   @IsOptional()
   @IsBoolean()
   ctaEnabled?: boolean;
@@ -55,7 +58,9 @@ export class UpdateBannerDto {
   @Min(0)
   displayOrder?: number;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isActive?: boolean;
-  @ApiPropertyOptional({ description: 'Show the CTA (Shop Now) button on this banner' })
+  @ApiPropertyOptional({
+    description: 'Show the CTA (Shop Now) button on this banner',
+  })
   @IsOptional()
   @IsBoolean()
   ctaEnabled?: boolean;

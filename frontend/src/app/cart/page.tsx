@@ -87,7 +87,6 @@ export default function CartPage() {
     return () => {
       cancelled = true;
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [couponApplied?.code, subtotal]);
 
   const handleApplyCoupon = async (e: React.FormEvent) => {

@@ -56,7 +56,8 @@ export class GoogleAuthService {
         key: CLIENT_ID_KEY,
         value: clientId,
         group: GROUP,
-        description: 'Google OAuth Web Client ID (Google Cloud Console > Google Auth Platform > Clients)',
+        description:
+          'Google OAuth Web Client ID (Google Cloud Console > Google Auth Platform > Clients)',
       });
     }
     return { clientId: await this.getEffectiveClientId() };
@@ -74,11 +75,19 @@ export class GoogleAuthService {
 
     let payload: TokenPayload | undefined;
     try {
-      const ticket = await client.verifyIdToken({ idToken: credential, audience: clientId });
+      const ticket = await client.verifyIdToken({
+        idToken: credential,
+        audience: clientId,
+      });
       payload = ticket.getPayload();
     } catch (err) {
-      this.logger.warn(`Google ID token verification failed: ${(err as Error).message}`);
-      throw new AuthenticationException('Invalid or expired Google credential', 'GOOGLE_001');
+      this.logger.warn(
+        `Google ID token verification failed: ${(err as Error).message}`,
+      );
+      throw new AuthenticationException(
+        'Invalid or expired Google credential',
+        'GOOGLE_001',
+      );
     }
 
     if (!payload?.sub || !payload.email) {

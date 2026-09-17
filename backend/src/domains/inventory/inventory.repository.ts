@@ -48,7 +48,15 @@ export class InventoryRepository {
           title: true,
           barcode: true,
           productId: true,
-          product: { select: { id: true, name: true, basePrice: true, status: true, channel: true } },
+          product: {
+            select: {
+              id: true,
+              name: true,
+              basePrice: true,
+              status: true,
+              channel: true,
+            },
+          },
         },
       },
     };
@@ -93,7 +101,6 @@ export class InventoryRepository {
       },
     });
   }
-
 
   async findByVariantId(variantId: string) {
     return this.prisma.inventory.findUnique({ where: { variantId } });

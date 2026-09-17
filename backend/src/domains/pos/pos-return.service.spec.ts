@@ -76,32 +76,44 @@ describe('PosService returns', () => {
         { provide: OrderWorkflowService, useValue: workflow },
         { provide: AuditService, useValue: { log: jest.fn() } },
         {
-          provide: (await import('@domains/coupon/coupon.service')).CouponService,
+          provide: (await import('@domains/coupon/coupon.service'))
+            .CouponService,
           useValue: { checkCoupon: jest.fn(), applyCoupon: jest.fn() },
         },
         {
-          provide: (await import('@domains/gift-card/gift-card.service')).GiftCardService,
+          provide: (await import('@domains/gift-card/gift-card.service'))
+            .GiftCardService,
           useValue: { getBalance: jest.fn(), redeem: jest.fn() },
         },
         {
-          provide: (await import('@domains/loyalty/loyalty.service')).LoyaltyService,
+          provide: (await import('@domains/loyalty/loyalty.service'))
+            .LoyaltyService,
           useValue: { adminBalance: jest.fn(), adminRedeem: jest.fn() },
         },
         {
-          provide: (await import('@domains/auth/services/password.service')).PasswordService,
+          provide: (await import('@domains/auth/services/password.service'))
+            .PasswordService,
           useValue: { hash: jest.fn(), verify: jest.fn() },
         },
         {
-          provide: (await import('@domains/auth/services/jwt.service')).JwtService,
+          provide: (await import('@domains/auth/services/jwt.service'))
+            .JwtService,
           useValue: { sign: jest.fn() },
         },
         {
-          provide: (await import('@domains/auth/services/refresh-token.service')).RefreshTokenService,
+          provide: (
+            await import('@domains/auth/services/refresh-token.service')
+          ).RefreshTokenService,
           useValue: { create: jest.fn().mockResolvedValue('rt-mock') },
         },
         {
-          provide: (await import('@domains/notification/notification.service')).NotificationService,
-          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true), sendSms: jest.fn().mockResolvedValue(true), sendEmail: jest.fn().mockResolvedValue(true) },
+          provide: (await import('@domains/notification/notification.service'))
+            .NotificationService,
+          useValue: {
+            notifyAdmins: jest.fn().mockResolvedValue(true),
+            sendSms: jest.fn().mockResolvedValue(true),
+            sendEmail: jest.fn().mockResolvedValue(true),
+          },
         },
         {
           provide: (await import('@database/prisma.service')).PrismaService,

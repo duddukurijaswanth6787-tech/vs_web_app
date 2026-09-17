@@ -13,7 +13,11 @@ import {
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import type { Request } from 'express';
 import { JwtService } from '@domains/auth/services/jwt.service';
-import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+  CurrentUser,
+  Public,
+} from '@domains/auth/guards/jwt-auth.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { SocialService } from './social.service';

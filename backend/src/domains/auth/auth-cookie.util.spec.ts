@@ -35,7 +35,11 @@ describe('auth-cookie.util', () => {
   });
 
   it('strips refreshToken from what gets sent back to the client', () => {
-    const result = { accessToken: 'access', refreshToken: 'raw-token', expiresIn: 3600 };
+    const result = {
+      accessToken: 'access',
+      refreshToken: 'raw-token',
+      expiresIn: 3600,
+    };
 
     expect(withoutRefreshToken(result)).toEqual({
       accessToken: 'access',
@@ -44,7 +48,11 @@ describe('auth-cookie.util', () => {
   });
 
   it('leaves the original object untouched, since the controller still reads .refreshToken off it for the cookie', () => {
-    const result = { accessToken: 'access', refreshToken: 'raw-token', expiresIn: 3600 };
+    const result = {
+      accessToken: 'access',
+      refreshToken: 'raw-token',
+      expiresIn: 3600,
+    };
     withoutRefreshToken(result);
 
     expect(result.refreshToken).toBe('raw-token');

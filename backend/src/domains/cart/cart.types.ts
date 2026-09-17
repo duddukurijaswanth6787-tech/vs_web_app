@@ -79,7 +79,10 @@ export class SendCartRecoveryDto {
   @IsString()
   customMessage?: string;
 
-  @ApiPropertyOptional({ enum: ['EMAIL', 'SMS', 'WHATSAPP', 'IN_APP', 'ALL'], default: 'ALL' })
+  @ApiPropertyOptional({
+    enum: ['EMAIL', 'SMS', 'WHATSAPP', 'IN_APP', 'ALL'],
+    default: 'ALL',
+  })
   @IsOptional()
   @IsString()
   channel?: 'EMAIL' | 'SMS' | 'WHATSAPP' | 'IN_APP' | 'ALL';
@@ -133,4 +136,3 @@ export interface AbandonedCartListResponse {
   stats: AbandonedCartStats;
   carts: AbandonedCartEntry[];
 }
-

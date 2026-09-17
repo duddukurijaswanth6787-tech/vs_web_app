@@ -1,7 +1,11 @@
 import 'reflect-metadata';
 import { AiPromptController } from './ai-prompt.controller';
 import { ROLES_KEY } from '@domains/auth/guards/roles.guard';
-import { DEFAULT_TEMPLATES, PROMPT_TYPES, unsupportedVariables } from './ai-prompt.types';
+import {
+  DEFAULT_TEMPLATES,
+  PROMPT_TYPES,
+  unsupportedVariables,
+} from './ai-prompt.types';
 
 /**
  * Prompt templates shape copy that ends up on the storefront, so they are
@@ -19,13 +23,15 @@ describe('AiPromptController authorization', () => {
   });
 
   it('has no route that opts out of the class guard', () => {
-    const routes = Object.getOwnPropertyNames(AiPromptController.prototype).filter(
-      (n) => n !== 'constructor',
-    );
+    const routes = Object.getOwnPropertyNames(
+      AiPromptController.prototype,
+    ).filter((n) => n !== 'constructor');
     expect(routes.length).toBeGreaterThan(3);
 
     for (const name of routes) {
-      const handler = (AiPromptController.prototype as never as Record<string, object>)[name];
+      const handler = (
+        AiPromptController.prototype as never as Record<string, object>
+      )[name];
       const override = Reflect.getMetadata(ROLES_KEY, handler);
       // A handler may repeat the roles, but must never widen them.
       if (override) expect(override).toEqual(['super_admin']);
@@ -37,7 +43,9 @@ describe('AiPromptController authorization', () => {
 /** Every shipped template must be usable, not just the one anyone edits. */
 describe('the eight default templates', () => {
   it('covers all eight prompt types', () => {
-    expect(Object.keys(DEFAULT_TEMPLATES).sort()).toEqual([...PROMPT_TYPES].sort());
+    expect(Object.keys(DEFAULT_TEMPLATES).sort()).toEqual(
+      [...PROMPT_TYPES].sort(),
+    );
   });
 
   it.each(PROMPT_TYPES)('%s is complete and valid', (type) => {

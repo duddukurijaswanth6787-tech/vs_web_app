@@ -16,21 +16,30 @@ export class AwsBillingController {
   @ApiOperation({ summary: 'Get AWS Billing & Storage Summary' })
   async getBillingSummary() {
     const summary = await this.awsBillingService.getBillingSummary();
-    return ResponseBuilder.success(summary, 'AWS billing summary fetched successfully');
+    return ResponseBuilder.success(
+      summary,
+      'AWS billing summary fetched successfully',
+    );
   }
 
   @Get('summary')
   @ApiOperation({ summary: 'Get AWS Billing Summary Alias' })
   async getBillingSummaryAlias() {
     const summary = await this.awsBillingService.getBillingSummary();
-    return ResponseBuilder.success(summary, 'AWS billing summary fetched successfully');
+    return ResponseBuilder.success(
+      summary,
+      'AWS billing summary fetched successfully',
+    );
   }
 
   @Post('sync')
   @ApiOperation({ summary: 'Sync AWS Billing Data' })
   async syncBillingData() {
     const summary = await this.awsBillingService.getBillingSummary();
-    return ResponseBuilder.success(summary, 'AWS billing data synced successfully');
+    return ResponseBuilder.success(
+      summary,
+      'AWS billing data synced successfully',
+    );
   }
 
   @Post('credits')
@@ -39,16 +48,23 @@ export class AwsBillingController {
   @ApiOperation({ summary: 'Configure AWS Promotional Credits Details' })
   async updateCredits(@Body() body: UpdateAwsCreditsDto) {
     const summary = await this.awsBillingService.updateCreditsSettings(body);
-    return ResponseBuilder.success(summary, 'AWS promotional credits updated successfully');
+    return ResponseBuilder.success(
+      summary,
+      'AWS promotional credits updated successfully',
+    );
   }
 
   @Put('credits')
   @UseGuards(RolesGuard)
   @Roles('super_admin', 'admin')
-  @ApiOperation({ summary: 'Configure AWS Promotional Credits Details (PUT alias)' })
+  @ApiOperation({
+    summary: 'Configure AWS Promotional Credits Details (PUT alias)',
+  })
   async putCredits(@Body() body: UpdateAwsCreditsDto) {
     const summary = await this.awsBillingService.updateCreditsSettings(body);
-    return ResponseBuilder.success(summary, 'AWS promotional credits updated successfully');
+    return ResponseBuilder.success(
+      summary,
+      'AWS promotional credits updated successfully',
+    );
   }
 }
-

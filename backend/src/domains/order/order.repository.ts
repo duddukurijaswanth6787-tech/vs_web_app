@@ -40,9 +40,9 @@ export class OrderRepository {
     }
     if (channel) {
       if (channel === 'ONLINE' || channel === 'ONLINE_STORE') {
-        where.channel = 'ONLINE_STORE' as any;
+        where.channel = 'ONLINE_STORE';
       } else if (channel === 'POS' || channel === 'POS_SHOPORA') {
-        where.channel = 'POS_SHOPORA' as any;
+        where.channel = 'POS_SHOPORA';
       } else {
         where.channel = channel as any;
       }

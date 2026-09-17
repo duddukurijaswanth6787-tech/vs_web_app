@@ -235,7 +235,7 @@ export default function StaffAttendancePage() {
         let punchInCount = 0;
         let totalHoursWorked = 0;
         let isLate = false;
-        let employeeNames: string[] = [];
+        const employeeNames: string[] = [];
 
         dayItems.forEach((item) => {
           if (item.punchInAt) {

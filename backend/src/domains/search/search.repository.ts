@@ -177,7 +177,7 @@ export class SearchRepository {
       const sorted =
         sortBy === 'relevance'
           ? matches.sort(
-              (a, b) => (rankMap!.get(b.id) ?? 0) - (rankMap!.get(a.id) ?? 0),
+              (a, b) => (rankMap.get(b.id) ?? 0) - (rankMap.get(a.id) ?? 0),
             )
           : matches.sort((a: any, b: any) => {
               const av = a[sortBy];

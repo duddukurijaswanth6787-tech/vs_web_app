@@ -57,7 +57,10 @@ export class CartController {
       }
     }
     const rawGuestId = req.query['guestId'];
-    const guestId = typeof rawGuestId === 'string' && rawGuestId.trim() ? rawGuestId.trim() : undefined;
+    const guestId =
+      typeof rawGuestId === 'string' && rawGuestId.trim()
+        ? rawGuestId.trim()
+        : undefined;
     return { guestId };
   }
 
@@ -205,7 +208,9 @@ export class CartController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get all abandoned carts with analytics (Admin only)' })
+  @ApiOperation({
+    summary: 'Get all abandoned carts with analytics (Admin only)',
+  })
   async getAbandonedCarts(@Req() req: Request) {
     const hours = req.query['hours'] ? Number(req.query['hours']) : 2;
     return ResponseBuilder.success(
@@ -218,7 +223,9 @@ export class CartController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Dispatch recovery reminder to a specific cart (Admin only)' })
+  @ApiOperation({
+    summary: 'Dispatch recovery reminder to a specific cart (Admin only)',
+  })
   async sendRecoveryReminder(
     @Param('cartId') cartId: string,
     @Body() dto: SendCartRecoveryDto,
@@ -245,7 +252,9 @@ export class CartController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Run automated recovery pipeline on all eligible carts' })
+  @ApiOperation({
+    summary: 'Run automated recovery pipeline on all eligible carts',
+  })
   async runAutoRecovery() {
     return ResponseBuilder.success(
       await this.cartService.runAutoRecovery(),
@@ -253,4 +262,3 @@ export class CartController {
     );
   }
 }
-

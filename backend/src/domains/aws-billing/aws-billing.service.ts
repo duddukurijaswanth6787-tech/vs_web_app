@@ -146,10 +146,16 @@ export class AwsBillingService {
       const map = new Map(settings.map((s) => [s.key, s.value]));
 
       return {
-        totalGrantUSD: parseFloat(map.get('AWS_CREDIT_GRANT_AMOUNT') || '1000.00'),
+        totalGrantUSD: parseFloat(
+          map.get('AWS_CREDIT_GRANT_AMOUNT') || '1000.00',
+        ),
         expiryDate: map.get('AWS_CREDIT_EXPIRY_DATE') || '2026-12-31',
-        grantName: map.get('AWS_CREDIT_GRANT_NAME') || 'AWS Promotional Credit / Free Tier',
-        notes: map.get('AWS_CREDIT_NOTES') || 'Active AWS Promotional Credits applied on AWS Account',
+        grantName:
+          map.get('AWS_CREDIT_GRANT_NAME') ||
+          'AWS Promotional Credit / Free Tier',
+        notes:
+          map.get('AWS_CREDIT_NOTES') ||
+          'Active AWS Promotional Credits applied on AWS Account',
       };
     } catch {
       return {
@@ -231,21 +237,29 @@ export class AwsBillingService {
       this.logger.debug(`S3 stats fetch notice: ${e?.message}`);
     }
 
-    const s3TotalSizeMB = Math.round((s3TotalSizeBytes / (1024 * 1024)) * 100) / 100;
-    const s3TotalSizeGB = Math.round((s3TotalSizeBytes / (1024 * 1024 * 1024)) * 1000) / 1000;
+    const s3TotalSizeMB =
+      Math.round((s3TotalSizeBytes / (1024 * 1024)) * 100) / 100;
+    const s3TotalSizeGB =
+      Math.round((s3TotalSizeBytes / (1024 * 1024 * 1024)) * 1000) / 1000;
 
     // AWS ap-south-2 S3 pricing: $0.023 / GB/month
     const ratePerGB = 0.023;
     const freeTierLimitGB = 5.0;
     const freeTierUsedGB = Math.min(freeTierLimitGB, s3TotalSizeGB);
-    const freeTierRemainingGB = Math.max(0, Math.round((freeTierLimitGB - s3TotalSizeGB) * 100) / 100);
+    const freeTierRemainingGB = Math.max(
+      0,
+      Math.round((freeTierLimitGB - s3TotalSizeGB) * 100) / 100,
+    );
     const isUnderFreeTier = s3TotalSizeGB <= freeTierLimitGB;
 
     const billableGB = Math.max(0, s3TotalSizeGB - freeTierLimitGB);
-    const monthlyStorageCostUSD = Math.round(billableGB * ratePerGB * 100) / 100;
+    const monthlyStorageCostUSD =
+      Math.round(billableGB * ratePerGB * 100) / 100;
     // Estimated API operations cost ($0.005 / 1000 PUT/POST, $0.0004 / 1000 GET)
-    const monthlyRequestsCostUSD = Math.round((s3ObjectCount * 0.000005) * 100) / 100;
-    const monthlyTotalCostUSD = Math.round((monthlyStorageCostUSD + monthlyRequestsCostUSD) * 100) / 100;
+    const monthlyRequestsCostUSD =
+      Math.round(s3ObjectCount * 0.000005 * 100) / 100;
+    const monthlyTotalCostUSD =
+      Math.round((monthlyStorageCostUSD + monthlyRequestsCostUSD) * 100) / 100;
 
     const s3StorageInfo: S3StorageInfo = {
       bucket: this.bucket,
@@ -278,12 +292,21 @@ export class AwsBillingService {
     const calculateCredits = (spend: number): AwsCreditsInfo => {
       const totalGrant = creditConfig.totalGrantUSD || 1000;
       const used = Math.round(spend * 100) / 100;
-      const remaining = Math.max(0, Math.round((totalGrant - used) * 100) / 100);
-      const percentageUsed = Math.min(100, Math.round((used / totalGrant) * 1000) / 10);
+      const remaining = Math.max(
+        0,
+        Math.round((totalGrant - used) * 100) / 100,
+      );
+      const percentageUsed = Math.min(
+        100,
+        Math.round((used / totalGrant) * 1000) / 10,
+      );
 
       const expiry = new Date(creditConfig.expiryDate);
       const diffTime = expiry.getTime() - now.getTime();
-      const daysRemaining = Math.max(0, Math.ceil(diffTime / (1000 * 60 * 60 * 24)));
+      const daysRemaining = Math.max(
+        0,
+        Math.ceil(diffTime / (1000 * 60 * 60 * 24)),
+      );
 
       let status: 'ACTIVE' | 'EXPIRING_SOON' | 'EXPIRED' = 'ACTIVE';
       if (daysRemaining <= 0) {
@@ -312,7 +335,7 @@ export class AwsBillingService {
         GetCostAndUsageCommand,
         GetCostForecastCommand,
         Granularity,
-      } = require('@aws-sdk/client-cost-explorer');
+      } = await import('@aws-sdk/client-cost-explorer');
 
       const costExplorerClient = new CostExplorerClient({
         region: 'us-east-1',

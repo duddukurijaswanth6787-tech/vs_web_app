@@ -4,6 +4,7 @@ import { BusinessException } from '@common/exceptions';
 import { AuditService } from '@domains/audit/audit.service';
 import { PrismaService } from '@database/prisma.service';
 import { LlmProviderRegistry } from '@domains/rag-agent/rag-providers.service';
+import { LlmMessage } from '@domains/rag-agent/rag-agent.types';
 import { AiChatRepository } from './ai-chat.repository';
 import {
   CreateConversationDto,
@@ -182,15 +183,13 @@ export class AiChatService {
       const provider = this.llmRegistry.getProvider(providerName);
       const healthy = await provider.healthCheck();
       if (healthy) {
-        const messages = [
-          { role: 'system' as const, content: systemPrompt },
+        const messages: LlmMessage[] = [
+          { role: 'system', content: systemPrompt },
           ...history.slice(-10).map((m) => ({
-            role: (m.role === 'ASSISTANT'
-              ? 'assistant'
-              : 'user') as 'assistant' | 'user',
+            role: (m.role === 'ASSISTANT' ? 'assistant' : 'user') as 'assistant' | 'user',
             content: m.content,
           })),
-          { role: 'user' as const, content: userMessage },
+          { role: 'user', content: userMessage },
         ];
         const response = await provider.chat(messages, {
           model:

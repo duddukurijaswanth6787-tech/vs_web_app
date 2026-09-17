@@ -1,4 +1,6 @@
-console.log('[STARTUP] Executing main.ts module script v1.0.3 (Omnichannel & Barcode Patch Active)...');
+console.log(
+  '[STARTUP] Executing main.ts module script v1.0.3 (Omnichannel & Barcode Patch Active)...',
+);
 
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -273,7 +275,9 @@ async function bootstrap() {
       where: { sku: 'COL1-XL' },
       data: { barcode: '890351069409' },
     });
-    console.log('[BOOTSTRAP] Successfully auto-healed production database schema & barcode mappings');
+    console.log(
+      '[BOOTSTRAP] Successfully auto-healed production database schema & barcode mappings',
+    );
   } catch (err: any) {
     console.warn('[BOOTSTRAP] Database bootstrap notice:', err.message);
   }

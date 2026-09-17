@@ -191,7 +191,6 @@ export class InventoryResponse {
   @ApiProperty() updatedAt!: Date;
 }
 
-
 export class InventoryMovementResponse {
   @ApiProperty() id!: string;
   @ApiProperty() inventoryId!: string;

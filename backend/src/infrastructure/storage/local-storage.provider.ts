@@ -11,7 +11,11 @@ import {
 } from 'fs/promises';
 import { createReadStream } from 'fs';
 import { resolve, join } from 'path';
-import type { StorageProvider, FileMetadata, StreamResult } from './storage.types';
+import type {
+  StorageProvider,
+  FileMetadata,
+  StreamResult,
+} from './storage.types';
 import { StorageUtils } from './storage.utils';
 
 @Injectable()

@@ -76,17 +76,53 @@ const PERMISSION_MODULES: Record<string, string[]> = {
   quotations: ['view', 'create', 'update', 'convert'],
 };
 
-const EXPLICIT_PERMISSION_DETAILS: Record<string, { name: string; description: string }> = {
-  'pos:view': { name: 'View POS Terminal', description: 'Allows opening the POS Billing Counter terminal (/pos).' },
-  'pos:manage': { name: 'Manage POS Privileges', description: 'Controls whether cashier can give custom discounts or process returns.' },
-  'pos:add-stock': { name: 'POS Add Stock', description: 'Controls access to Add Stock & Print Barcode Labels (/pos/add-stock).' },
-  'pos:printers': { name: 'POS Hardware & Printers', description: 'Controls access to Thermal Receipt & Hardware Printer Settings (/pos/printers).' },
-  'pos:billing': { name: 'POS Billing', description: 'Allows processing counter billing sales.' },
-  'pos:refund': { name: 'POS Counter Refund', description: 'Allows processing counter cash returns and refunds.' },
-  'quotations:create': { name: 'Create Quotations', description: 'Controls whether cashier can create Draft Quotations.' },
-  'quotations:view': { name: 'View Quotations', description: 'Allows viewing quotations list.' },
-  'quotations:update': { name: 'Update Quotations', description: 'Allows editing draft quotations.' },
-  'quotations:convert': { name: 'Convert Quotations', description: 'Allows converting draft quotations to billed orders.' },
+const EXPLICIT_PERMISSION_DETAILS: Record<
+  string,
+  { name: string; description: string }
+> = {
+  'pos:view': {
+    name: 'View POS Terminal',
+    description: 'Allows opening the POS Billing Counter terminal (/pos).',
+  },
+  'pos:manage': {
+    name: 'Manage POS Privileges',
+    description:
+      'Controls whether cashier can give custom discounts or process returns.',
+  },
+  'pos:add-stock': {
+    name: 'POS Add Stock',
+    description:
+      'Controls access to Add Stock & Print Barcode Labels (/pos/add-stock).',
+  },
+  'pos:printers': {
+    name: 'POS Hardware & Printers',
+    description:
+      'Controls access to Thermal Receipt & Hardware Printer Settings (/pos/printers).',
+  },
+  'pos:billing': {
+    name: 'POS Billing',
+    description: 'Allows processing counter billing sales.',
+  },
+  'pos:refund': {
+    name: 'POS Counter Refund',
+    description: 'Allows processing counter cash returns and refunds.',
+  },
+  'quotations:create': {
+    name: 'Create Quotations',
+    description: 'Controls whether cashier can create Draft Quotations.',
+  },
+  'quotations:view': {
+    name: 'View Quotations',
+    description: 'Allows viewing quotations list.',
+  },
+  'quotations:update': {
+    name: 'Update Quotations',
+    description: 'Allows editing draft quotations.',
+  },
+  'quotations:convert': {
+    name: 'Convert Quotations',
+    description: 'Allows converting draft quotations to billed orders.',
+  },
 };
 
 @Injectable()
@@ -175,7 +211,9 @@ export class AutoSeedService implements OnModuleInit {
     // 1c. Assign every non-POS permission to the admin role so that staff
     // with the admin role can access all admin screens, including the dashboard.
     // super_admin bypasses the guard entirely; this covers the admin role.
-    const adminRole = await this.prisma.role.findUnique({ where: { name: 'admin' } });
+    const adminRole = await this.prisma.role.findUnique({
+      where: { name: 'admin' },
+    });
     if (adminRole) {
       const allNonPosPermissions = await this.prisma.permission.findMany({
         where: { code: { not: { startsWith: 'pos:' } } },
@@ -183,7 +221,12 @@ export class AutoSeedService implements OnModuleInit {
       });
       for (const perm of allNonPosPermissions) {
         await this.prisma.rolePermission.upsert({
-          where: { roleId_permissionId: { roleId: adminRole.id, permissionId: perm.id } },
+          where: {
+            roleId_permissionId: {
+              roleId: adminRole.id,
+              permissionId: perm.id,
+            },
+          },
           update: {},
           create: { roleId: adminRole.id, permissionId: perm.id },
         });
@@ -257,16 +300,22 @@ export class AutoSeedService implements OnModuleInit {
     // `create` on first run -- `update: {}` deliberately touches nothing on
     // later restarts, so an admin's change via Admin > Settings survives a
     // redeploy instead of being reset back to this default every boot.
-    const sessionSettings: { key: string; value: string; description: string }[] = [
+    const sessionSettings: {
+      key: string;
+      value: string;
+      description: string;
+    }[] = [
       {
         key: 'security.sessionExpiryMinutes',
         value: '15',
-        description: 'How long a normal login session stays valid, in minutes, before the user must sign in again.',
+        description:
+          'How long a normal login session stays valid, in minutes, before the user must sign in again.',
       },
       {
         key: 'security.rememberMeExpiryDays',
         value: '30',
-        description: 'How long a "Remember Me" login session stays valid, in days.',
+        description:
+          'How long a "Remember Me" login session stays valid, in days.',
       },
     ];
     for (const s of sessionSettings) {
@@ -285,7 +334,10 @@ export class AutoSeedService implements OnModuleInit {
 
     // 4. Seed Demo Customer Account
     const custPassword = await argon2.hash('Customer@123');
-    for (const custEmail of ['customer@vasanthi.com', 'customer@vasanthidesigners.com']) {
+    for (const custEmail of [
+      'customer@vasanthi.com',
+      'customer@vasanthidesigners.com',
+    ]) {
       await this.prisma.user.upsert({
         where: { email: custEmail },
         update: {
@@ -308,6 +360,8 @@ export class AutoSeedService implements OnModuleInit {
         },
       });
     }
-    this.logger.log('Essential security roles, permissions and admin users initialized.');
+    this.logger.log(
+      'Essential security roles, permissions and admin users initialized.',
+    );
   }
 }

@@ -208,7 +208,10 @@ export class CreateStaffTaskDto {
   @IsString()
   description?: string;
 
-  @ApiPropertyOptional({ enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'], default: 'MEDIUM' })
+  @ApiPropertyOptional({
+    enum: ['LOW', 'MEDIUM', 'HIGH', 'URGENT'],
+    default: 'MEDIUM',
+  })
   @IsOptional()
   @IsString()
   priority?: string;
@@ -225,7 +228,9 @@ export class CreateStaffTaskDto {
 }
 
 export class UpdateStaffTaskDto {
-  @ApiPropertyOptional({ enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'] })
+  @ApiPropertyOptional({
+    enum: ['PENDING', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED'],
+  })
   @IsOptional()
   @IsString()
   status?: string;
@@ -273,4 +278,3 @@ export class StaffPerformanceSummaryResponse {
   @ApiProperty() taskCompletionRatePercent!: number;
   @ApiProperty() estimatedPayableHours!: number;
 }
-

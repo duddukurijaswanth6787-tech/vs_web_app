@@ -70,7 +70,7 @@ export class ReturnRequestController {
   @ApiOperation({ summary: 'Get return by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     const result = await this.returnService.findById(id);
-    if (!await this.isAdmin(user.sub)) {
+    if (!(await this.isAdmin(user.sub))) {
       const customerId = await this.resolveCustomerId(user.sub);
       const order = await this.prisma.order.findUnique({
         where: { id: result.orderId },

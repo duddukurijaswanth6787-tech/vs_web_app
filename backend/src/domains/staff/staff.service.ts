@@ -46,7 +46,8 @@ export class StaffService {
       accountStatus: u.accountStatus,
       emergencyContact: profile.emergencyContact ?? undefined,
       address: profile.address ?? undefined,
-      roles: u.userRoles?.map((ur: any) => ur.role?.name || ur.role) ?? undefined,
+      roles:
+        u.userRoles?.map((ur: any) => ur.role?.name || ur.role) ?? undefined,
       joinedAt: profile.joinedAt ?? undefined,
       phone: u.phone ?? undefined,
       profileImage: profile.profileImage ?? undefined,
@@ -104,7 +105,10 @@ export class StaffService {
     if (dto.roleId && !role)
       throw new BusinessException('Role not found', 'ROLE_001');
     if (role?.name === 'super_admin')
-      throw new BusinessException('Cannot assign super_admin role via staff creation', 'ROLE_PROTECTED');
+      throw new BusinessException(
+        'Cannot assign super_admin role via staff creation',
+        'ROLE_PROTECTED',
+      );
 
     const passwordHash = await this.passwordService.hash(dto.password);
     // ponytail: create user + staff profile in one prisma nested create
@@ -323,7 +327,8 @@ export class StaffService {
     let profile = await this.staffRepository.findByUserId(userId);
     if (!profile) {
       const user = await this.prisma.user.findUnique({ where: { id: userId } });
-      if (!user) throw new AuthenticationException('User not found', 'USER_404');
+      if (!user)
+        throw new AuthenticationException('User not found', 'USER_404');
       const employeeId = await this.staffRepository.generateEmployeeId();
       await this.staffRepository.create({
         userId: user.id,
@@ -336,7 +341,10 @@ export class StaffService {
       profile = await this.staffRepository.findByUserId(userId);
     }
     if (!profile) {
-      throw new AuthenticationException('Staff profile could not be created', 'STAFF_404');
+      throw new AuthenticationException(
+        'Staff profile could not be created',
+        'STAFF_404',
+      );
     }
     return profile;
   }
@@ -344,18 +352,26 @@ export class StaffService {
   /**
    * Daily staff clock-in / punch-in
    */
-  async punchIn(userId: string, dto: PunchInDto, ip?: string): Promise<StaffAttendanceResponse> {
+  async punchIn(
+    userId: string,
+    dto: PunchInDto,
+    ip?: string,
+  ): Promise<StaffAttendanceResponse> {
     const staff = await this.getOrCreateStaffProfileForUser(userId);
     const today = new Date().toISOString().split('T')[0];
 
-    const existing = await this.staffRepository.findAttendanceByStaffAndDate(staff.id, today);
+    const existing = await this.staffRepository.findAttendanceByStaffAndDate(
+      staff.id,
+      today,
+    );
     if (existing) {
       if (!existing.punchOutAt) {
         return this.toAttendanceResponse(existing);
       }
       // Re-punch in / resume shift for the day
       const now = new Date();
-      const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 45);
+      const isLate =
+        now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 45);
       const updated = await this.staffRepository.updateAttendance(existing.id, {
         punchInAt: now,
         punchOutAt: null,
@@ -365,7 +381,12 @@ export class StaffService {
         notes: dto.notes || existing.notes || undefined,
       });
       this.loggerService.log(
-        { action: 'staff_punched_in', staffId: staff.id, time: now.toISOString(), status: updated.status },
+        {
+          action: 'staff_punched_in',
+          staffId: staff.id,
+          time: now.toISOString(),
+          status: updated.status,
+        },
         'StaffService',
       );
       return this.toAttendanceResponse(updated);
@@ -373,7 +394,8 @@ export class StaffService {
 
     const now = new Date();
     // Shift threshold: 09:45 AM (after 09:45 marked as LATE)
-    const isLate = now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 45);
+    const isLate =
+      now.getHours() > 9 || (now.getHours() === 9 && now.getMinutes() > 45);
     const status = isLate ? 'LATE' : 'PRESENT';
 
     const record = await this.staffRepository.createAttendance({
@@ -388,7 +410,12 @@ export class StaffService {
     });
 
     this.loggerService.log(
-      { action: 'staff_punched_in', staffId: staff.id, time: now.toISOString(), status },
+      {
+        action: 'staff_punched_in',
+        staffId: staff.id,
+        time: now.toISOString(),
+        status,
+      },
       'StaffService',
     );
 
@@ -398,33 +425,50 @@ export class StaffService {
   /**
    * Daily staff clock-out / punch-out
    */
-  async punchOut(userId: string, dto: PunchOutDto, ip?: string): Promise<StaffAttendanceResponse> {
+  async punchOut(
+    userId: string,
+    dto: PunchOutDto,
+    ip?: string,
+  ): Promise<StaffAttendanceResponse> {
     const staff = await this.getOrCreateStaffProfileForUser(userId);
     const today = new Date().toISOString().split('T')[0];
 
-    const activeRecord = await this.staffRepository.findAttendanceByStaffAndDate(staff.id, today);
+    const activeRecord =
+      await this.staffRepository.findAttendanceByStaffAndDate(staff.id, today);
     if (!activeRecord || activeRecord.punchOutAt) {
-      throw new BusinessException('No active clock-in session found for today', 'ATT_NOT_ACTIVE');
+      throw new BusinessException(
+        'No active clock-in session found for today',
+        'ATT_NOT_ACTIVE',
+      );
     }
 
     const now = new Date();
-    const diffMs = Math.max(0, now.getTime() - activeRecord.punchInAt.getTime());
+    const diffMs = Math.max(
+      0,
+      now.getTime() - activeRecord.punchInAt.getTime(),
+    );
     const breakMins = dto.breakMinutes || activeRecord.breakMinutes || 0;
-    const totalHours = Math.max(0, Math.round(((diffMs / 3600000) - (breakMins / 60)) * 100) / 100);
+    const totalHours = Math.max(
+      0,
+      Math.round((diffMs / 3600000 - breakMins / 60) * 100) / 100,
+    );
 
     let status = activeRecord.status;
     if (totalHours < 4 && status === 'PRESENT') {
       status = 'HALF_DAY';
     }
 
-    const updated = await this.staffRepository.updateAttendance(activeRecord.id, {
-      punchOutAt: now,
-      totalHours,
-      breakMinutes: breakMins,
-      status,
-      notes: dto.notes || activeRecord.notes || undefined,
-      punchOutIp: ip,
-    });
+    const updated = await this.staffRepository.updateAttendance(
+      activeRecord.id,
+      {
+        punchOutAt: now,
+        totalHours,
+        breakMinutes: breakMins,
+        status,
+        notes: dto.notes || activeRecord.notes || undefined,
+        punchOutIp: ip,
+      },
+    );
 
     this.loggerService.log(
       { action: 'staff_punched_out', staffId: staff.id, totalHours },
@@ -446,7 +490,10 @@ export class StaffService {
       return { isPunchedIn: false };
     }
     const today = new Date().toISOString().split('T')[0];
-    const record = await this.staffRepository.findAttendanceByStaffAndDate(staff.id, today);
+    const record = await this.staffRepository.findAttendanceByStaffAndDate(
+      staff.id,
+      today,
+    );
 
     if (!record) {
       return { isPunchedIn: false };
@@ -516,7 +563,9 @@ export class StaffService {
 
     const roster = allStaff.map((st) => {
       const att = attendanceMap.get(st.id);
-      const name = `${st.user?.firstName || ''} ${st.user?.lastName || ''}`.trim() || 'Staff';
+      const name =
+        `${st.user?.firstName || ''} ${st.user?.lastName || ''}`.trim() ||
+        'Staff';
 
       if (att) {
         if (!att.punchOutAt) clockedInCount++;
@@ -587,7 +636,10 @@ export class StaffService {
   // STAFF TASK MANAGEMENT
   // ==========================================
 
-  async createTask(dto: CreateStaffTaskDto, assignedByUserId: string): Promise<StaffTaskResponse> {
+  async createTask(
+    dto: CreateStaffTaskDto,
+    assignedByUserId: string,
+  ): Promise<StaffTaskResponse> {
     const task = await this.staffRepository.createTask({
       staffProfileId: dto.staffProfileId,
       title: dto.title,
@@ -609,7 +661,11 @@ export class StaffService {
     if (!existing) throw new BusinessException('Task not found', 'TASK_404');
 
     const completedAt =
-      dto.status === 'COMPLETED' ? new Date() : dto.status ? null : existing.completedAt;
+      dto.status === 'COMPLETED'
+        ? new Date()
+        : dto.status
+          ? null
+          : existing.completedAt;
 
     const updated = await this.staffRepository.updateTask(taskId, {
       priority: dto.priority,
@@ -621,15 +677,25 @@ export class StaffService {
     return this.toTaskResponse(updated);
   }
 
-  async getStaffTasks(staffProfileId?: string, status?: string, priority?: string) {
-    const list = await this.staffRepository.findTasks({ staffProfileId, status, priority });
+  async getStaffTasks(
+    staffProfileId?: string,
+    status?: string,
+    priority?: string,
+  ) {
+    const list = await this.staffRepository.findTasks({
+      staffProfileId,
+      status,
+      priority,
+    });
     return list.map((t) => this.toTaskResponse(t));
   }
 
   async getMyTasks(userId: string) {
     const staff = await this.staffRepository.findByUserId(userId);
     if (!staff) return [];
-    const list = await this.staffRepository.findTasks({ staffProfileId: staff.id });
+    const list = await this.staffRepository.findTasks({
+      staffProfileId: staff.id,
+    });
     return list.map((t) => this.toTaskResponse(t));
   }
 
@@ -642,7 +708,8 @@ export class StaffService {
     month?: string,
   ): Promise<StaffPerformanceSummaryResponse> {
     const staff = await this.staffRepository.findById(staffProfileId);
-    if (!staff) throw new BusinessException('Staff profile not found', 'STAFF_001');
+    if (!staff)
+      throw new BusinessException('Staff profile not found', 'STAFF_001');
 
     const targetMonth = month || new Date().toISOString().slice(0, 7); // YYYY-MM
     const attendances = await this.staffRepository.findAttendanceList({
@@ -656,7 +723,11 @@ export class StaffService {
     let totalHoursWorked = 0;
 
     for (const att of attendances) {
-      if (att.status === 'PRESENT' || att.status === 'LATE' || att.status === 'HALF_DAY') {
+      if (
+        att.status === 'PRESENT' ||
+        att.status === 'LATE' ||
+        att.status === 'HALF_DAY'
+      ) {
         presentDays += att.status === 'HALF_DAY' ? 0.5 : 1;
       }
       if (att.status === 'LATE') lateDays++;
@@ -664,15 +735,21 @@ export class StaffService {
     }
 
     const totalWorkingDays = 26; // Standard working days in month
-    const attendanceRatePercent = Math.min(100, Math.round((presentDays / totalWorkingDays) * 100));
+    const attendanceRatePercent = Math.min(
+      100,
+      Math.round((presentDays / totalWorkingDays) * 100),
+    );
 
     const totalTasksAssigned = tasks.length;
     const tasksCompleted = tasks.filter((t) => t.status === 'COMPLETED').length;
     const taskCompletionRatePercent =
-      totalTasksAssigned > 0 ? Math.round((tasksCompleted / totalTasksAssigned) * 100) : 100;
+      totalTasksAssigned > 0
+        ? Math.round((tasksCompleted / totalTasksAssigned) * 100)
+        : 100;
 
     const u = staff.user;
-    const staffName = `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Staff';
+    const staffName =
+      `${u.firstName || ''} ${u.lastName || ''}`.trim() || 'Staff';
 
     return {
       staffProfileId: staff.id,
@@ -692,4 +769,3 @@ export class StaffService {
     };
   }
 }
-

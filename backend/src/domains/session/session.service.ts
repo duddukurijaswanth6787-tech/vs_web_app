@@ -58,7 +58,9 @@ export class SessionService {
   }
 
   async findById(id: string, userId: string) {
-    const session = await this.prisma.refreshToken.findUnique({ where: { id } });
+    const session = await this.prisma.refreshToken.findUnique({
+      where: { id },
+    });
     if (!session) throw new NotFoundException('Session not found');
     if (session.userId !== userId) {
       const isAdmin = await this.prisma.userRole.findFirst({
@@ -83,7 +85,9 @@ export class SessionService {
   }
 
   async revoke(id: string, userId: string, revokedBy?: string) {
-    const session = await this.prisma.refreshToken.findUnique({ where: { id } });
+    const session = await this.prisma.refreshToken.findUnique({
+      where: { id },
+    });
     if (!session) throw new NotFoundException('Session not found');
     if (session.userId !== userId) {
       const isAdmin = await this.prisma.userRole.findFirst({

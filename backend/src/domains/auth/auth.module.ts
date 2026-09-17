@@ -17,7 +17,11 @@ import { PermissionsGuard } from './guards/permissions.guard';
 
 @Global()
 @Module({
-  controllers: [AuthController, SessionSettingsController, GoogleAuthAdminController],
+  controllers: [
+    AuthController,
+    SessionSettingsController,
+    GoogleAuthAdminController,
+  ],
   providers: [
     AuthService,
     AuthRepository,

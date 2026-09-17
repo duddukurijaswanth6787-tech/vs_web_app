@@ -27,7 +27,9 @@ export class JwtAuthGuard {
     const request = context.switchToHttp().getRequest();
     const authHeader = request.headers['authorization'];
     const token =
-      (authHeader && authHeader.startsWith('Bearer ') ? authHeader.slice(7) : null) ||
+      (authHeader && authHeader.startsWith('Bearer ')
+        ? authHeader.slice(7)
+        : null) ||
       (request.query?.token as string) ||
       (request.query?.accessToken as string) ||
       (request.query?.access_token as string);
@@ -44,9 +46,7 @@ export class JwtAuthGuard {
 
     if (isPublic) return true;
 
-    throw new UnauthorizedException(
-      'Missing or invalid authorization header',
-    );
+    throw new UnauthorizedException('Missing or invalid authorization header');
   }
 }
 

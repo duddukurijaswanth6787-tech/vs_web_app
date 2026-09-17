@@ -67,9 +67,21 @@ export class ProductsRepository {
         { searchKeywords: { contains: cleanSearch, mode: 'insensitive' } },
         { sku: { contains: cleanSearch, mode: 'insensitive' } },
         { brand: { name: { contains: cleanSearch, mode: 'insensitive' } } },
-        { variants: { some: { title: { contains: cleanSearch, mode: 'insensitive' } } } },
-        { variants: { some: { sku: { contains: cleanSearch, mode: 'insensitive' } } } },
-        { variants: { some: { barcode: { contains: cleanSearch, mode: 'insensitive' } } } },
+        {
+          variants: {
+            some: { title: { contains: cleanSearch, mode: 'insensitive' } },
+          },
+        },
+        {
+          variants: {
+            some: { sku: { contains: cleanSearch, mode: 'insensitive' } },
+          },
+        },
+        {
+          variants: {
+            some: { barcode: { contains: cleanSearch, mode: 'insensitive' } },
+          },
+        },
       ];
     }
     if (brandId) where.brandId = brandId;

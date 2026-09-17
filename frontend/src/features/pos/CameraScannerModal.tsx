@@ -63,7 +63,6 @@ export default function CameraScannerModal({
 
         // Check for BarcodeDetector API
         if ('BarcodeDetector' in window) {
-          // @ts-ignore
           const detector = new (window as any).BarcodeDetector({
             formats: ['code_128', 'code_39', 'ean_13', 'ean_8', 'qr_code', 'upc_a', 'upc_e'],
           });

@@ -9,7 +9,11 @@ import {
   CopyObjectCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
-import type { StorageProvider, FileMetadata, StreamResult } from './storage.types';
+import type {
+  StorageProvider,
+  FileMetadata,
+  StreamResult,
+} from './storage.types';
 
 @Injectable()
 export class S3StorageProvider implements StorageProvider {

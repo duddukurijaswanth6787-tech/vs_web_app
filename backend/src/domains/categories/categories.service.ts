@@ -225,8 +225,10 @@ export class CategoriesService {
       );
     }
     if (dto.icon) updateData.icon = this.storageService.sanitizeUrl(dto.icon);
-    if (dto.image) updateData.image = this.storageService.sanitizeUrl(dto.image);
-    if (dto.bannerImage) updateData.bannerImage = this.storageService.sanitizeUrl(dto.bannerImage);
+    if (dto.image)
+      updateData.image = this.storageService.sanitizeUrl(dto.image);
+    if (dto.bannerImage)
+      updateData.bannerImage = this.storageService.sanitizeUrl(dto.bannerImage);
 
     await this.categoriesRepository.update(id, updateData);
 
@@ -328,7 +330,11 @@ export class CategoriesService {
       throw new BusinessException('Category not found', 'CAT_001');
 
     // Safely unlink sub-categories to parent level before deletion
-    await this.categoriesRepository.unlinkChildren(id, cat.parentId || null, cat.level || 0);
+    await this.categoriesRepository.unlinkChildren(
+      id,
+      cat.parentId || null,
+      cat.level || 0,
+    );
 
     await this.categoriesRepository.softDelete(id);
 

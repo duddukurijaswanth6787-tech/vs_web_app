@@ -57,7 +57,6 @@ export class InventoryService {
     };
   }
 
-
   private toMovementResponse(m: any): InventoryMovementResponse {
     return {
       id: m.id,
@@ -578,25 +577,30 @@ export class InventoryService {
     });
 
     const contactStr = [dto.phone, dto.email].filter(Boolean).join(' / ');
-    const specStr = [dto.color ? `Color: ${dto.color}` : null, dto.size ? `Size: ${dto.size}` : null]
+    const specStr = [
+      dto.color ? `Color: ${dto.color}` : null,
+      dto.size ? `Size: ${dto.size}` : null,
+    ]
       .filter(Boolean)
       .join(', ');
 
-    this.notificationService.notifyAdmins(
-      'NEW_CUSTOMER',
-      `🔔 Customer Requested Restock Alert`,
-      `Customer requested alert for "${product.name}"${specStr ? ` (${specStr})` : ''}. Contact: ${contactStr}`,
-      {
-        productId: dto.productId,
-        variantId: dto.variantId,
-        productName: product.name,
-        size: dto.size,
-        color: dto.color,
-        phone: dto.phone,
-        email: dto.email,
-        subscriptionId: subscription.id,
-      },
-    ).catch(() => {});
+    this.notificationService
+      .notifyAdmins(
+        'NEW_CUSTOMER',
+        `🔔 Customer Requested Restock Alert`,
+        `Customer requested alert for "${product.name}"${specStr ? ` (${specStr})` : ''}. Contact: ${contactStr}`,
+        {
+          productId: dto.productId,
+          variantId: dto.variantId,
+          productName: product.name,
+          size: dto.size,
+          color: dto.color,
+          phone: dto.phone,
+          email: dto.email,
+          subscriptionId: subscription.id,
+        },
+      )
+      .catch(() => {});
 
     return {
       success: true,

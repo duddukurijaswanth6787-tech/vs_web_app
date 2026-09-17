@@ -1,6 +1,9 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
-import { CreateTestimonialDto, UpdateTestimonialDto } from './testimonials.types';
+import {
+  CreateTestimonialDto,
+  UpdateTestimonialDto,
+} from './testimonials.types';
 
 @Injectable()
 export class TestimonialsService {
@@ -14,10 +17,7 @@ export class TestimonialsService {
           status: 'ACTIVE',
           deletedAt: null,
         },
-        orderBy: [
-          { displayOrder: 'asc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
       });
     } catch {
       return [];
@@ -30,10 +30,7 @@ export class TestimonialsService {
         where: {
           deletedAt: null,
         },
-        orderBy: [
-          { displayOrder: 'asc' },
-          { createdAt: 'desc' },
-        ],
+        orderBy: [{ displayOrder: 'asc' }, { createdAt: 'desc' }],
       });
     } catch {
       return [];

@@ -139,7 +139,11 @@ export class MeController {
     @Body() dto: ConfirmPhoneChangeDto,
   ) {
     return ResponseBuilder.success(
-      await this.phoneChangeService.confirmChange(user.sub, dto.phone, dto.code),
+      await this.phoneChangeService.confirmChange(
+        user.sub,
+        dto.phone,
+        dto.code,
+      ),
       'Phone number updated',
     );
   }

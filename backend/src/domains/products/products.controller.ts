@@ -26,7 +26,10 @@ import {
 } from './products.types';
 import { CreateColorGroupDto, SyncColorGroupsDto } from './dto/color-group.dto';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { AuthService } from '@domains/auth/auth.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
@@ -65,7 +68,10 @@ export class ProductsController {
   // ─── Public ────────────────────────────────────────────
 
   @Get()
-  @Header('Cache-Control', 'public, max-age=30, s-maxage=60, stale-while-revalidate=300')
+  @Header(
+    'Cache-Control',
+    'public, max-age=30, s-maxage=60, stale-while-revalidate=300',
+  )
   @ApiOperation({
     summary: 'List products with search, pagination, filtering, sorting',
   })
@@ -77,7 +83,10 @@ export class ProductsController {
   }
 
   @Get(':id')
-  @Header('Cache-Control', 'public, max-age=60, s-maxage=120, stale-while-revalidate=600')
+  @Header(
+    'Cache-Control',
+    'public, max-age=60, s-maxage=120, stale-while-revalidate=600',
+  )
   @ApiOperation({ summary: 'Get product by ID' })
   async findById(@Param('id') id: string, @Req() req: Request) {
     const restrictToPublicChannels = !this.isInternalRequest(req);

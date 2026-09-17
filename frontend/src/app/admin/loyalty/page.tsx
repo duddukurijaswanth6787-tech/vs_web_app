@@ -29,7 +29,6 @@ export default function LoyaltyAdminPage() {
     } finally {
       setStatsLoading(false);
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {

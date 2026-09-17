@@ -18,14 +18,21 @@ import {
   ApiResponse,
   ApiBearerAuth,
 } from '@nestjs/swagger';
-import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+  CurrentUser,
+  Public,
+} from '@domains/auth/guards/jwt-auth.guard';
 import {
   PermissionsGuard,
   Permissions,
 } from '@domains/auth/guards/permissions.guard';
 import { ThrottleCredentials } from '@common/security/throttle.decorators';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
-import { setRefreshTokenCookie, withoutRefreshToken } from '@domains/auth/auth-cookie.util';
+import {
+  setRefreshTokenCookie,
+  withoutRefreshToken,
+} from '@domains/auth/auth-cookie.util';
 import { PosService } from './pos.service';
 import {
   ScanBarcodeDto,
@@ -119,7 +126,9 @@ export class PosController {
   @UseGuards(JwtAuthGuard, PermissionsGuard)
   @Permissions('pos:view')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Sellable Products in a Category (Quick-Buy Tile Grid)' })
+  @ApiOperation({
+    summary: 'Sellable Products in a Category (Quick-Buy Tile Grid)',
+  })
   @ApiResponse({ status: 200, type: [BarcodeScanResultResponse] })
   async listByCategory(
     @CurrentUser() user: JwtPayload,
@@ -258,13 +267,18 @@ export class PosController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Set or change the cashier\'s short POS PIN (requires current password)',
+    summary:
+      "Set or change the cashier's short POS PIN (requires current password)",
   })
   async setCashierPin(
     @CurrentUser() user: JwtPayload,
     @Body() dto: SetCashierPinDto,
   ) {
-    return this.posService.setCashierPin(user.sub, dto.currentPassword, dto.newPin);
+    return this.posService.setCashierPin(
+      user.sub,
+      dto.currentPassword,
+      dto.newPin,
+    );
   }
 
   @Post('cashier/switch')
@@ -273,14 +287,18 @@ export class PosController {
   @ApiBearerAuth()
   @HttpCode(HttpStatus.OK)
   @ApiOperation({
-    summary: 'Switch active cashier by PIN, returns a fresh JWT for that cashier',
+    summary:
+      'Switch active cashier by PIN, returns a fresh JWT for that cashier',
   })
   async switchCashier(
     @Body() dto: SwitchCashierDto,
     @Res({ passthrough: true }) res: import('express').Response,
     @Query('terminalId') terminalId?: string,
   ) {
-    const result = await this.posService.switchCashierByPin(dto.pin, terminalId);
+    const result = await this.posService.switchCashierByPin(
+      dto.pin,
+      terminalId,
+    );
     setRefreshTokenCookie(res, result.refreshToken);
     return withoutRefreshToken(result);
   }
@@ -300,7 +318,8 @@ export class PosController {
   @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Look up a Customer Loyalty Balance and Rupee Equivalent for the Till',
+    summary:
+      'Look up a Customer Loyalty Balance and Rupee Equivalent for the Till',
   })
   async lookupLoyaltyBalance(@Query('customerId') customerId: string) {
     if (!customerId || !customerId.trim()) {
@@ -322,7 +341,9 @@ export class PosController {
     @Query('orderNumber') orderNumber: string,
   ) {
     if (!orderNumber || !orderNumber.trim()) {
-      throw new BadRequestException('orderNumber is required to reprint a receipt.');
+      throw new BadRequestException(
+        'orderNumber is required to reprint a receipt.',
+      );
     }
     return this.posService.reprintReceipt(orderNumber.trim(), user.sub);
   }
@@ -354,7 +375,8 @@ export class PosController {
   @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'List Offline Store / POS Customers with Order History for Super Admin',
+    summary:
+      'List Offline Store / POS Customers with Order History for Super Admin',
   })
   async listPosCustomers(
     @Query('search') search?: string,
@@ -373,7 +395,8 @@ export class PosController {
   @Permissions('pos:view')
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Generate Dynamic NPCI UPI QR Code for in-store instant scan-to-pay',
+    summary:
+      'Generate Dynamic NPCI UPI QR Code for in-store instant scan-to-pay',
   })
   async generateUpiQr(@Body() dto: GenerateUpiQrDto) {
     return this.posService.generateUpiQrCode(dto);
@@ -536,16 +559,29 @@ export class PosController {
 
   @Post('razorpay-qr')
   @Public()
-  @ApiOperation({ summary: 'Generate live Razorpay Dynamic UPI QR code for POS' })
+  @ApiOperation({
+    summary: 'Generate live Razorpay Dynamic UPI QR code for POS',
+  })
   async createRazorpayQr(
-    @Body() body: { amount: number; description?: string; notes?: Record<string, string> },
+    @Body()
+    body: {
+      amount: number;
+      description?: string;
+      notes?: Record<string, string>;
+    },
   ) {
-    return this.posService.createRazorpayQrCode(body.amount, body.description, body.notes);
+    return this.posService.createRazorpayQrCode(
+      body.amount,
+      body.description,
+      body.notes,
+    );
   }
 
   @Get('razorpay-qr/:qrId/status')
   @Public()
-  @ApiOperation({ summary: 'Poll real-time status of Razorpay QR for POS auto-complete' })
+  @ApiOperation({
+    summary: 'Poll real-time status of Razorpay QR for POS auto-complete',
+  })
   async getRazorpayQrStatus(@Param('qrId') qrId: string) {
     return this.posService.fetchRazorpayQrStatus(qrId);
   }

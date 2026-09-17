@@ -107,10 +107,17 @@ export class ProductsService {
         })) ?? []),
       ],
       primaryImageUrl:
-        p.media?.find((m: any) => m.isPrimary && m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH')?.url ??
-        p.media?.find((m: any) => m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH')?.url ??
+        p.media?.find(
+          (m: any) =>
+            m.isPrimary &&
+            m.mediaType !== 'FABRIC' &&
+            m.title !== 'FABRIC_SWATCH',
+        )?.url ??
+        p.media?.find(
+          (m: any) => m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH',
+        )?.url ??
         p.media?.[0]?.url ??
-        (p as any).primaryImageUrl ??
+        p.primaryImageUrl ??
         undefined,
       images: p.media?.map((m: any) => ({
         id: m.id,
@@ -126,12 +133,27 @@ export class ProductsService {
         id: v.id,
         title: v.title ?? undefined,
         sku: v.sku,
-        priceOverride: v.priceOverride !== null && v.priceOverride !== undefined ? Number(v.priceOverride) : undefined,
-        salePriceOverride: v.salePriceOverride !== null && v.salePriceOverride !== undefined ? Number(v.salePriceOverride) : undefined,
-        costPrice: v.costPrice !== null && v.costPrice !== undefined ? Number(v.costPrice) : undefined,
+        priceOverride:
+          v.priceOverride !== null && v.priceOverride !== undefined
+            ? Number(v.priceOverride)
+            : undefined,
+        salePriceOverride:
+          v.salePriceOverride !== null && v.salePriceOverride !== undefined
+            ? Number(v.salePriceOverride)
+            : undefined,
+        costPrice:
+          v.costPrice !== null && v.costPrice !== undefined
+            ? Number(v.costPrice)
+            : undefined,
         isDefault: v.isDefault,
         availableQuantity: v.inventory?.availableQuantity ?? 0,
-        stockStatus: v.inventory?.stockStatus ?? (v.inventory ? (v.inventory.availableQuantity > 0 ? 'IN_STOCK' : 'OUT_OF_STOCK') : 'IN_STOCK'),
+        stockStatus:
+          v.inventory?.stockStatus ??
+          (v.inventory
+            ? v.inventory.availableQuantity > 0
+              ? 'IN_STOCK'
+              : 'OUT_OF_STOCK'
+            : 'IN_STOCK'),
         attributeValues: v.attributeValues?.map((av: any) => ({
           attributeId: av.attributeId,
           attributeName: av.attribute?.name ?? av.attributeId,
@@ -415,7 +437,8 @@ export class ProductsService {
               barcode: v.barcode,
             },
           });
-          const stockQty = Number((v as any).stock ?? (v as any).inventoryQuantity ?? 10) || 0;
+          const stockQty =
+            Number((v as any).stock ?? (v as any).inventoryQuantity ?? 10) || 0;
           await tx.inventory.create({
             data: {
               variantId: createdVariant.id,
@@ -426,14 +449,18 @@ export class ProductsService {
               minimumStock: 5,
               maximumStock: 100,
               reorderLevel: 10,
-              stockStatus: stockQty > 10 ? 'IN_STOCK' : stockQty > 0 ? 'LOW_STOCK' : 'OUT_OF_STOCK',
+              stockStatus:
+                stockQty > 10
+                  ? 'IN_STOCK'
+                  : stockQty > 0
+                    ? 'LOW_STOCK'
+                    : 'OUT_OF_STOCK',
               allowBackorder: false,
               trackInventory: true,
             },
           });
         }
       }
-
 
       if (dto.media?.length) {
         await tx.productMedia.createMany({
@@ -480,8 +507,9 @@ export class ProductsService {
     this.validatePrices(dto);
     this.validateWeightDimensions(dto);
 
-    const { brandId, slug, primaryImageUrl, categoryIds, attributes, ...rest } = dto;
+    const { brandId, slug, categoryIds, attributes, ...rest } = dto;
     const updateData: any = { ...rest, updatedBy: userId };
+    delete updateData.primaryImageUrl;
     if (slug) {
       updateData.slug = await this.generateUniqueSlug(slug, id, true);
     } else if (dto.name) {
@@ -560,14 +588,16 @@ export class ProductsService {
       }),
     ]);
 
-    await this.auditService.log({
-      action: 'PRODUCT_DELETED',
-      module: 'products',
-      resource: 'product',
-      resourceId: id,
-      userId: userId || 'system',
-      oldValue: { name: product.name },
-    }).catch(() => null);
+    await this.auditService
+      .log({
+        action: 'PRODUCT_DELETED',
+        module: 'products',
+        resource: 'product',
+        resourceId: id,
+        userId: userId || 'system',
+        oldValue: { name: product.name },
+      })
+      .catch(() => null);
 
     this.loggerService.log(
       { action: 'product_deleted', productId: id },

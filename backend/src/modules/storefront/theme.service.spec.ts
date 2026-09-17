@@ -43,7 +43,9 @@ describe('ThemeService', () => {
       if (value === '') {
         // Empty is the documented way to clear one colour back to its default.
         await service.updateColors('admin-1', { 'footer-bg': value });
-        const saved = JSON.parse(prisma.appSetting.upsert.mock.calls[0][0].create.value);
+        const saved = JSON.parse(
+          prisma.appSetting.upsert.mock.calls[0][0].create.value,
+        );
         expect(saved['footer-bg']).toBeUndefined();
         return;
       }
@@ -68,7 +70,9 @@ describe('ThemeService', () => {
     const { service, prisma } = build();
     await service.updateColors('admin-1', { 'footer-bg': '  #AABBCC ' });
 
-    const saved = JSON.parse(prisma.appSetting.upsert.mock.calls[0][0].create.value);
+    const saved = JSON.parse(
+      prisma.appSetting.upsert.mock.calls[0][0].create.value,
+    );
     expect(saved['footer-bg']).toBe('#aabbcc');
   });
 

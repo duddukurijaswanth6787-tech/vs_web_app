@@ -9,7 +9,15 @@ import { PhoneChangeService } from './phone-change.service';
   // OtpModule supplies the same send/verify used by OTP login, so a phone
   // change reuses that delivery and rate-limiting rather than duplicating it.
   imports: [AuditModule, OtpModule],
-  providers: [CustomerProfileService, CustomerProfileRepository, PhoneChangeService],
-  exports: [CustomerProfileService, CustomerProfileRepository, PhoneChangeService],
+  providers: [
+    CustomerProfileService,
+    CustomerProfileRepository,
+    PhoneChangeService,
+  ],
+  exports: [
+    CustomerProfileService,
+    CustomerProfileRepository,
+    PhoneChangeService,
+  ],
 })
 export class CustomerProfileModule {}

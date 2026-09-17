@@ -119,13 +119,20 @@ export class CheckoutService {
     return SHIPPING_RATES[method] ?? SHIPPING_RATES.STANDARD;
   }
 
-  private async buildItems(
-    cartItems: any[],
-  ): Promise<{ items: CheckoutItemResponse[]; brandByProduct: Map<string, string | undefined> }> {
+  private async buildItems(cartItems: any[]): Promise<{
+    items: CheckoutItemResponse[];
+    brandByProduct: Map<string, string | undefined>;
+  }> {
     const productIds = cartItems.map((i) => i.productId);
     const products = await this.prisma.product.findMany({
       where: { id: { in: productIds }, deletedAt: null },
-      select: { id: true, name: true, status: true, taxPercentage: true, brandId: true },
+      select: {
+        id: true,
+        name: true,
+        status: true,
+        taxPercentage: true,
+        brandId: true,
+      },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
     const brandByProduct = new Map(
@@ -372,7 +379,8 @@ export class CheckoutService {
         providerOrderId: payment.providerOrderId ?? '',
         amount: payment.amount,
         currency: payment.currency,
-        razorpayKeyId: this.configService.get<string>('app.razorpay.keyId') || '',
+        razorpayKeyId:
+          this.configService.get<string>('app.razorpay.keyId') || '',
       };
       return { ...order, payment: paymentInfo };
     }

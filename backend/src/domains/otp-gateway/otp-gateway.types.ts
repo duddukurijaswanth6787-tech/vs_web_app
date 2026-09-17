@@ -52,13 +52,18 @@ export class OtpGatewayConfigResponse {
   @ApiProperty() templateRegister!: string;
   @ApiProperty() templateVerifyPhone!: string;
   @ApiProperty({
-    description: 'StartMessaging template ID for order-confirmed SMS (a non-OTP template you create yourself).',
+    description:
+      'StartMessaging template ID for order-confirmed SMS (a non-OTP template you create yourself).',
   })
   templateOrderConfirmed!: string;
-  @ApiProperty({ description: 'OTP validity window in minutes, also substituted into {{expiry}} in templates.' })
+  @ApiProperty({
+    description:
+      'OTP validity window in minutes, also substituted into {{expiry}} in templates.',
+  })
   expiryMinutes!: number;
   @ApiProperty({
-    description: 'Whether STARTMESSAGING_API_KEY is set on the server (never returns the key itself).',
+    description:
+      'Whether STARTMESSAGING_API_KEY is set on the server (never returns the key itself).',
   })
   apiKeyConfigured!: boolean;
 }
@@ -75,13 +80,17 @@ export class UpdateOtpGatewayConfigDto {
   @ApiPropertyOptional() @IsOptional() @IsString() templateVerifyPhone?: string;
 
   @ApiPropertyOptional({
-    description: 'StartMessaging template ID for order-confirmed SMS (a non-OTP template you create yourself).',
+    description:
+      'StartMessaging template ID for order-confirmed SMS (a non-OTP template you create yourself).',
   })
   @IsOptional()
   @IsString()
   templateOrderConfirmed?: string;
 
-  @ApiPropertyOptional({ description: 'OTP validity window in minutes (also used as {{expiry}} in templates).' })
+  @ApiPropertyOptional({
+    description:
+      'OTP validity window in minutes (also used as {{expiry}} in templates).',
+  })
   @IsOptional()
   @Type(() => Number)
   @IsInt()

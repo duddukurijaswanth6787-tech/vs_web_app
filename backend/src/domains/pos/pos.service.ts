@@ -74,14 +74,13 @@ export class PosService {
    * attacker knows -- setting a PIN would give them a shortcut past
    * password rotation.
    */
-  async setCashierPin(
-    userId: string,
-    currentPassword: string,
-    newPin: string,
-  ) {
+  async setCashierPin(userId: string, currentPassword: string, newPin: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
-    const ok = await this.passwordService.verify(user.passwordHash, currentPassword);
+    const ok = await this.passwordService.verify(
+      user.passwordHash,
+      currentPassword,
+    );
     if (!ok) throw new BadRequestException('Current password is wrong.');
     if (!/^\d{4,6}$/.test(newPin)) {
       throw new BadRequestException('PIN must be 4 to 6 digits.');
@@ -138,7 +137,14 @@ export class PosService {
       },
     });
 
-    type CashierMatch = { id: string; email: string; firstName: string | null; lastName: string | null; roles: string[]; userType: string };
+    type CashierMatch = {
+      id: string;
+      email: string;
+      firstName: string | null;
+      lastName: string | null;
+      roles: string[];
+      userType: string;
+    };
     const matches: CashierMatch[] = [];
     for (const c of candidates) {
       if (!c.posPinHash) continue;
@@ -157,8 +163,10 @@ export class PosService {
 
     // Deliberately generic: don't hint whether the PIN matched an inactive
     // user, no user, or multiple users (PIN collision).
-    if (matches.length === 0) throw new BadRequestException('PIN not recognised.');
-    if (matches.length > 1) throw new BadRequestException('PIN not recognised.');
+    if (matches.length === 0)
+      throw new BadRequestException('PIN not recognised.');
+    if (matches.length > 1)
+      throw new BadRequestException('PIN not recognised.');
 
     const matched = matches[0];
 
@@ -186,7 +194,9 @@ export class PosService {
       refreshToken,
       user: {
         id: matched.id,
-        fullName: [matched.firstName, matched.lastName].filter(Boolean).join(' ') || matched.email,
+        fullName:
+          [matched.firstName, matched.lastName].filter(Boolean).join(' ') ||
+          matched.email,
         email: matched.email,
         roles: matched.roles,
       },
@@ -315,7 +325,9 @@ export class PosService {
     wholesale = false,
   ): Promise<BarcodeScanResultResponse[]> {
     const rows = await this.repository.searchVariantsByName(query, limit);
-    return rows.map((row) => this.toScanResult(row, isOwnerOrManager, wholesale));
+    return rows.map((row) =>
+      this.toScanResult(row, isOwnerOrManager, wholesale),
+    );
   }
 
   /**
@@ -328,8 +340,13 @@ export class PosService {
     limit = 24,
     wholesale = false,
   ): Promise<BarcodeScanResultResponse[]> {
-    const rows = await this.repository.findVariantsByCategory(categoryId, limit);
-    return rows.map((row) => this.toScanResult(row, isOwnerOrManager, wholesale));
+    const rows = await this.repository.findVariantsByCategory(
+      categoryId,
+      limit,
+    );
+    return rows.map((row) =>
+      this.toScanResult(row, isOwnerOrManager, wholesale),
+    );
   }
 
   async createCheckoutSession(
@@ -639,8 +656,7 @@ export class PosService {
     let couponValidated: { id: string; code: string } | null = null;
     if (dto.couponCode?.trim()) {
       const grossForCoupon = itemsToProcess.reduce(
-        (sum, i) =>
-          sum + i.quantity * i.unitPrice - (i.discountAmount || 0),
+        (sum, i) => sum + i.quantity * i.unitPrice - (i.discountAmount || 0),
         0,
       );
       try {
@@ -656,7 +672,8 @@ export class PosService {
         );
         couponDiscount = Number(checked.discountAmount) || 0;
         couponValidated = { id: checked.coupon.id, code: checked.coupon.code };
-        discountTotal = Math.round((discountTotal + couponDiscount) * 100) / 100;
+        discountTotal =
+          Math.round((discountTotal + couponDiscount) * 100) / 100;
       } catch (err) {
         throw new BadRequestException(
           err instanceof Error ? err.message : 'Invalid coupon',
@@ -708,9 +725,14 @@ export class PosService {
         );
       }
       try {
-        const bal = await this.loyaltyService.adminBalance(dto.loyaltyCustomerId);
+        const bal = await this.loyaltyService.adminBalance(
+          dto.loyaltyCustomerId,
+        );
         if (!bal.isActive) {
-          throw new BusinessException('Loyalty account inactive', 'LOYALTY_001');
+          throw new BusinessException(
+            'Loyalty account inactive',
+            'LOYALTY_001',
+          );
         }
         const askedPoints = Math.floor(dto.loyaltyPointsRedeem);
         const cappedByBalance = Math.min(askedPoints, bal.pointsBalance);
@@ -719,7 +741,10 @@ export class PosService {
           Math.floor(grandTotal / PosService.LOYALTY_POINT_VALUE_RUPEES),
         );
         if (cappedByGrand > 0) {
-          const rupees = Math.round(cappedByGrand * PosService.LOYALTY_POINT_VALUE_RUPEES * 100) / 100;
+          const rupees =
+            Math.round(
+              cappedByGrand * PosService.LOYALTY_POINT_VALUE_RUPEES * 100,
+            ) / 100;
           loyaltyTender = { method: 'LOYALTY', amount: rupees };
           loyaltyBooking = {
             customerId: dto.loyaltyCustomerId,
@@ -745,17 +770,21 @@ export class PosService {
         const bal = await this.giftCardService.getBalance(t.code);
         const capped = Math.min(Number(t.amount) || 0, Number(bal.balance));
         if (capped <= 0) continue;
-        giftCardAllocations.push({ method: 'GIFT_CARD', amount: Math.round(capped * 100) / 100 });
-        giftCardBookings.push({ code: bal.code, amount: Math.round(capped * 100) / 100 });
+        giftCardAllocations.push({
+          method: 'GIFT_CARD',
+          amount: Math.round(capped * 100) / 100,
+        });
+        giftCardBookings.push({
+          code: bal.code,
+          amount: Math.round(capped * 100) / 100,
+        });
       }
     }
 
     // Split tenders are validated against the total the server just worked
     // out, never the one the till sent -- otherwise a tampered payload could
     // settle a Rs.5000 bill with Rs.100 of tenders.
-    let tenderAllocations:
-      | { method: string; amount: number }[]
-      | undefined;
+    let tenderAllocations: { method: string; amount: number }[] | undefined;
     let changeDue = 0;
     // Non-cash redemption tenders (gift card + loyalty) come first, then
     // the rest of the bill is settled on whatever the customer hands over.
@@ -763,7 +792,10 @@ export class PosService {
       ...giftCardAllocations,
       ...(loyaltyTender ? [loyaltyTender] : []),
     ];
-    const redemptionTotal = redemptionAllocations.reduce((s, a) => s + a.amount, 0);
+    const redemptionTotal = redemptionAllocations.reduce(
+      (s, a) => s + a.amount,
+      0,
+    );
     if (dto.splitPayments?.length) {
       const totalToSplit = Math.max(0, grandTotal - redemptionTotal);
       try {
@@ -778,10 +810,16 @@ export class PosService {
     } else if (redemptionAllocations.length) {
       // Redemption tenders without a split: they cover part or all of the
       // bill; any remainder is settled on the primary paymentMethod.
-      const remainder = Math.max(0, Math.round((grandTotal - redemptionTotal) * 100) / 100);
+      const remainder = Math.max(
+        0,
+        Math.round((grandTotal - redemptionTotal) * 100) / 100,
+      );
       tenderAllocations = [...redemptionAllocations];
       if (remainder > 0) {
-        tenderAllocations.push({ method: dto.paymentMethod, amount: remainder });
+        tenderAllocations.push({
+          method: dto.paymentMethod,
+          amount: remainder,
+        });
       }
     }
 
@@ -846,7 +884,7 @@ export class PosService {
         );
       } catch (err) {
         this.logger.warn(
-          `Loyalty redeem failed for ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+          `Loyalty redeem failed for ${order.orderNumber}: ${err instanceof Error ? err.message : String(err)}`,
         );
         await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
@@ -878,7 +916,7 @@ export class PosService {
         // the sale half-booked. Cancel and let the till try again with a
         // different tender split.
         this.logger.warn(
-          `Gift card ${gc.code} failed to redeem against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+          `Gift card ${gc.code} failed to redeem against ${order.orderNumber}: ${err instanceof Error ? err.message : String(err)}`,
         );
         await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
@@ -894,18 +932,17 @@ export class PosService {
       }
     }
 
-    // Book the coupon usage now that the order has both a real id and a real
-    // grand total. applyCoupon runs its own row-locked transaction, so a
-    // second sale trying to use the last copy of a limited coupon at the same
-    // instant is serialised against this one rather than both slipping through.
+    // Book the validated coupon redemption against the order if one was
+    // attached.
     if (couponValidated) {
       try {
         await this.couponService.applyCoupon(customerProfile.id, {
           code: couponValidated.code,
           orderId: order.id,
-          orderAmount: Math.round(
-            (totals.subtotal - totals.discountTotal + couponDiscount) * 100,
-          ) / 100,
+          orderAmount:
+            Math.round(
+              (totals.subtotal - totals.discountTotal + couponDiscount) * 100,
+            ) / 100,
           items: itemsToProcess.map((i) => ({
             productId: i.productId,
             price: i.unitPrice,
@@ -917,7 +954,7 @@ export class PosService {
         // usage limit shouldn't leave the sale hanging. Cancel back and let
         // the till try again without the code.
         this.logger.warn(
-          `Coupon ${couponValidated.code} failed to book against ${order.orderNumber}: ${err instanceof Error ? err.message : err}`,
+          `Coupon ${couponValidated.code} failed to book against ${order.orderNumber}: ${err instanceof Error ? err.message : String(err)}`,
         );
         await this.workflow.restoreInventory(order.id, cashierId);
         await this.workflow.transition(
@@ -979,7 +1016,8 @@ export class PosService {
                 sku: item.sku || 'SKU-UNKNOWN',
                 quantity: item.quantity,
                 unitPrice: item.unitPrice,
-                totalPrice: Math.round(item.unitPrice * item.quantity * 100) / 100,
+                totalPrice:
+                  Math.round(item.unitPrice * item.quantity * 100) / 100,
                 taxAmount: 0,
                 discountAmount: item.discountAmount || 0,
               })),
@@ -989,7 +1027,7 @@ export class PosService {
       }
     } catch (invErr) {
       this.logger.warn(
-        `Auto-invoice creation non-fatal error for order ${order.orderNumber}: ${invErr}`,
+        `Auto-invoice creation non-fatal error for order ${order.orderNumber}: ${invErr instanceof Error ? invErr.message : String(invErr)}`,
       );
     }
 
@@ -1034,19 +1072,23 @@ export class PosService {
     });
 
     // 8. In-App Notification for Super Admin & Staff
-    this.notificationService.notifyAdmins(
-      'ORDER_CREATED',
-      `New In-Store Sale: ${order.orderNumber}`,
-      `POS Sale of ₹${Number(order.grandTotal).toLocaleString('en-IN')} processed via ${dto.paymentMethod}${dto.notes ? ` (Remarks: ${dto.notes})` : ''}`,
-      {
-        orderId: order.id,
-        orderNumber: order.orderNumber,
-        grandTotal: Number(order.grandTotal),
-        channel: order.channel,
-        paymentMethod: dto.paymentMethod,
-        notes: dto.notes,
-      },
-    ).catch((err) => this.logger.warn(`Failed to notify admins of POS sale: ${err.message}`));
+    this.notificationService
+      .notifyAdmins(
+        'ORDER_CREATED',
+        `New In-Store Sale: ${order.orderNumber}`,
+        `POS Sale of ₹${Number(order.grandTotal).toLocaleString('en-IN')} processed via ${dto.paymentMethod}${dto.notes ? ` (Remarks: ${dto.notes})` : ''}`,
+        {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          grandTotal: Number(order.grandTotal),
+          channel: order.channel,
+          paymentMethod: dto.paymentMethod,
+          notes: dto.notes,
+        },
+      )
+      .catch((err) =>
+        this.logger.warn(`Failed to notify admins of POS sale: ${err.message}`),
+      );
 
     return {
       success: true,
@@ -1068,14 +1110,22 @@ export class PosService {
     return result;
   }
 
-  async upsertCustomer(dto: { fullName: string; phone: string; email?: string }) {
+  async upsertCustomer(dto: {
+    fullName: string;
+    phone: string;
+    email?: string;
+  }) {
     if (!dto.phone || !dto.fullName) {
       throw new BadRequestException('Full name and phone number are required.');
     }
     return this.repository.upsertPosCustomer(dto);
   }
 
-  async listPosCustomers(params: { search?: string; page?: number; limit?: number }) {
+  async listPosCustomers(params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
     return this.repository.listPosCustomers(params);
   }
 
@@ -1520,7 +1570,9 @@ export class PosService {
   async createExchange(cashierId: string, dto: CreatePosExchangeDto) {
     const orderNumber = (dto.originalOrderNumber || '').trim();
     if (!orderNumber) {
-      throw new BadRequestException('originalOrderNumber is required for an exchange.');
+      throw new BadRequestException(
+        'originalOrderNumber is required for an exchange.',
+      );
     }
     if (!dto.returnItems?.length) {
       throw new BadRequestException('Pick at least one item to return.');
@@ -1804,8 +1856,7 @@ export class PosService {
 
   /** Every drawer movement recorded against a shift, newest first. */
   async listCashMovements(shiftId: string) {
-    const movements =
-      await this.repository.findCashMovementsForShift(shiftId);
+    const movements = await this.repository.findCashMovementsForShift(shiftId);
     const totals = await this.repository.sumCashMovementsForShift(shiftId);
     return {
       movements: movements.map((m) => ({
@@ -1949,11 +2000,21 @@ export class PosService {
 
   private async getRazorpayClient(): Promise<Razorpay> {
     const [keyIdSetting, keySecretSetting] = await Promise.all([
-      this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_id' } }),
-      this.repository.prisma.appSetting.findFirst({ where: { key: 'razorpay.key_secret' } }),
+      this.repository.prisma.appSetting.findFirst({
+        where: { key: 'razorpay.key_id' },
+      }),
+      this.repository.prisma.appSetting.findFirst({
+        where: { key: 'razorpay.key_secret' },
+      }),
     ]);
-    const keyId = keyIdSetting?.value || process.env.RAZORPAY_KEY_ID || 'rzp_live_TSGHBbQLHYa2MW';
-    const keySecret = keySecretSetting?.value || process.env.RAZORPAY_KEY_SECRET || 'B2o4qv6I0YuWX785GDPjwZpS';
+    const keyId =
+      keyIdSetting?.value ||
+      process.env.RAZORPAY_KEY_ID ||
+      'rzp_live_TSGHBbQLHYa2MW';
+    const keySecret =
+      keySecretSetting?.value ||
+      process.env.RAZORPAY_KEY_SECRET ||
+      'B2o4qv6I0YuWX785GDPjwZpS';
     return new Razorpay({ key_id: keyId, key_secret: keySecret });
   }
 
@@ -1999,7 +2060,9 @@ export class PosService {
           imageUrl = `data:image/png;base64,${base64}`;
         }
       } catch (imgErr) {
-        this.logger.warn(`Could not inline Razorpay QR image: ${imgErr}`);
+        this.logger.warn(
+          `Could not inline Razorpay QR image: ${imgErr instanceof Error ? imgErr.message : String(imgErr)}`,
+        );
       }
 
       return {
@@ -2008,7 +2071,8 @@ export class PosService {
         amount: Number(qr.payment_amount) / 100,
         status: qr.status,
         closeBy: qr.close_by,
-        paymentsAmountReceived: (Number(qr.payments_amount_received) || 0) / 100,
+        paymentsAmountReceived:
+          (Number(qr.payments_amount_received) || 0) / 100,
       };
     } catch (err: any) {
       const errMsg =

@@ -13,12 +13,16 @@ import { PERMISSIONS_KEY } from '@domains/auth/guards/permissions.guard';
  * a route added later is covered the day it is written.
  */
 describe('PosController authorization', () => {
-  const routeNames = Object.getOwnPropertyNames(PosController.prototype).filter((name) => {
-    if (name === 'constructor') return false;
-    const prop = (PosController.prototype as never as Record<string, unknown>)[name];
-    if (typeof prop !== 'function') return false;
-    return Reflect.getMetadata('path', prop) !== undefined;
-  });
+  const routeNames = Object.getOwnPropertyNames(PosController.prototype).filter(
+    (name) => {
+      if (name === 'constructor') return false;
+      const prop = (
+        PosController.prototype as never as Record<string, unknown>
+      )[name];
+      if (typeof prop !== 'function') return false;
+      return Reflect.getMetadata('path', prop) !== undefined;
+    },
+  );
 
   it('has routes to check', () => {
     expect(routeNames.length).toBeGreaterThan(10);
@@ -36,15 +40,18 @@ describe('PosController authorization', () => {
   };
   const guardedRouteNames = routeNames.filter((n) => !isPublicHandler(n));
 
-  it.each(guardedRouteNames)('%s requires a permission, not just a login', (name) => {
-    const handler = (
-      PosController.prototype as never as Record<string, object>
-    )[name];
-    const permissions = Reflect.getMetadata(PERMISSIONS_KEY, handler);
+  it.each(guardedRouteNames)(
+    '%s requires a permission, not just a login',
+    (name) => {
+      const handler = (
+        PosController.prototype as never as Record<string, object>
+      )[name];
+      const permissions = Reflect.getMetadata(PERMISSIONS_KEY, handler);
 
-    expect(permissions).toBeDefined();
-    expect(permissions).toContain('pos:view');
-  });
+      expect(permissions).toBeDefined();
+      expect(permissions).toContain('pos:view');
+    },
+  );
 
   it.each(guardedRouteNames)('%s is guarded', (name) => {
     const handler = (

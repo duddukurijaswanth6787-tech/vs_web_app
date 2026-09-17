@@ -79,7 +79,10 @@ export class MeReturnsController {
     @CurrentUser() user: JwtPayload,
   ) {
     const adminRole = await this.prisma.userRole.findFirst({
-      where: { userId: user.sub, role: { name: { in: ['super_admin', 'admin'] } } },
+      where: {
+        userId: user.sub,
+        role: { name: { in: ['super_admin', 'admin'] } },
+      },
       select: { userId: true },
     });
     if (!adminRole) {

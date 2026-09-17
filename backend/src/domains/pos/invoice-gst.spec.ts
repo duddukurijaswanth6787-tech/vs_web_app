@@ -23,22 +23,21 @@ describe('invoice GST split', () => {
     pincode: '',
   };
 
-  const dto = (state?: string): PreviewReceiptDto =>
-    ({
-      orderNumber: 'ORD-1',
-      grandTotal: 1120,
-      taxTotal: 120,
-      discountTotal: 0,
-      items: [
-        {
-          productId: 'p1',
-          productName: 'Kurti',
-          quantity: 1,
-          unitPrice: 1000,
-        } as unknown,
-      ],
-      customer: state ? { state } : undefined,
-    }) as PreviewReceiptDto;
+  const dto = (state?: string): PreviewReceiptDto => ({
+    orderNumber: 'ORD-1',
+    grandTotal: 1120,
+    taxTotal: 120,
+    discountTotal: 0,
+    items: [
+      {
+        productId: 'p1',
+        productName: 'Kurti',
+        quantity: 1,
+        unitPrice: 1000,
+      },
+    ],
+    customer: state ? { state } : undefined,
+  });
 
   it('splits into CGST + SGST when the customer is in the shop state', () => {
     const inter = (svc as any).isInterstate(store, dto('telangana'));

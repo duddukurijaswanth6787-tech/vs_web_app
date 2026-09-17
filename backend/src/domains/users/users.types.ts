@@ -8,9 +8,7 @@ import {
   MaxLength,
 } from 'class-validator';
 import { Gender } from '@shared/identity/identity.enums';
-import {
-  IsPhoneNumberCustom,
-} from '@common/validation/decorators.validation';
+import { IsPhoneNumberCustom } from '@common/validation/decorators.validation';
 
 export class CreateUserDto {
   @ApiProperty() @IsEmail() email!: string;

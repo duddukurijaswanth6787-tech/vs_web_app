@@ -131,7 +131,8 @@ export default registerAs('app', () => ({
   },
   startMessaging: {
     apiKey: process.env.STARTMESSAGING_API_KEY || '',
-    baseUrl: process.env.STARTMESSAGING_BASE_URL || 'https://api.startmessaging.com',
+    baseUrl:
+      process.env.STARTMESSAGING_BASE_URL || 'https://api.startmessaging.com',
   },
   email: {
     smtpHost: process.env.SMTP_HOST || '',

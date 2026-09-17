@@ -1,5 +1,13 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsNotEmpty, IsOptional, IsNumber, IsBoolean, Min, Max } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsNumber,
+  IsBoolean,
+  Min,
+  Max,
+} from 'class-validator';
 
 export class CreateTestimonialDto {
   @ApiProperty({ description: 'Customer Name' })
@@ -7,7 +15,9 @@ export class CreateTestimonialDto {
   @IsNotEmpty()
   name!: string;
 
-  @ApiPropertyOptional({ description: 'Customer Role or Title (e.g. Verified Buyer)' })
+  @ApiPropertyOptional({
+    description: 'Customer Role or Title (e.g. Verified Buyer)',
+  })
   @IsString()
   @IsOptional()
   role?: string;
@@ -29,7 +39,9 @@ export class CreateTestimonialDto {
   @IsOptional()
   avatarUrl?: string;
 
-  @ApiPropertyOptional({ description: 'Customer Location (e.g. Hyderabad, India)' })
+  @ApiPropertyOptional({
+    description: 'Customer Location (e.g. Hyderabad, India)',
+  })
   @IsString()
   @IsOptional()
   location?: string;

@@ -34,7 +34,8 @@ export class InventoryController {
 
   @Post('notify-restock')
   @ApiOperation({
-    summary: 'Public endpoint: Customer back-in-stock notification subscription',
+    summary:
+      'Public endpoint: Customer back-in-stock notification subscription',
   })
   async subscribeRestock(@Body() dto: SubscribeRestockDto) {
     return ResponseBuilder.success(

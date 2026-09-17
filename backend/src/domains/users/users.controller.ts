@@ -20,7 +20,10 @@ import {
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 @ApiTags('Users')

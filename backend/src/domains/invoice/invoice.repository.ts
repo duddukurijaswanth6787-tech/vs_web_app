@@ -64,7 +64,6 @@ export class InvoiceRepository {
     });
   }
 
-
   async create(data: Prisma.InvoiceCreateInput) {
     return this.prisma.invoice.create({
       data,

@@ -3,7 +3,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { PaymentService } from './payment.service';
 import { UpdateRazorpayConfigDto } from './payment.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 

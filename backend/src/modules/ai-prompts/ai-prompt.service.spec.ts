@@ -7,7 +7,10 @@ import { DEFAULT_TEMPLATES, unsupportedVariables } from './ai-prompt.types';
  * information in it just produces bad copy for a real product page.
  */
 describe('AiPromptService', () => {
-  const build = (stored: Record<string, unknown> = {}, history: Record<string, unknown> = {}) => {
+  const build = (
+    stored: Record<string, unknown> = {},
+    history: Record<string, unknown> = {},
+  ) => {
     const rows: Record<string, { value: string }> = {};
     if (Object.keys(stored).length) {
       rows['ai.prompt.templates'] = { value: JSON.stringify(stored) };
@@ -24,13 +27,21 @@ describe('AiPromptService', () => {
       },
     };
     return {
-      service: new AiPromptService(prisma as never, { log: jest.fn() } as never),
+      service: new AiPromptService(
+        prisma as never,
+        { log: jest.fn() } as never,
+      ),
       prisma,
     };
   };
 
-  const saved = (prisma: { appSetting: { upsert: jest.Mock } }, key: string) => {
-    const call = prisma.appSetting.upsert.mock.calls.find((c) => c[0].where.key === key);
+  const saved = (
+    prisma: { appSetting: { upsert: jest.Mock } },
+    key: string,
+  ) => {
+    const call = prisma.appSetting.upsert.mock.calls.find(
+      (c) => c[0].where.key === key,
+    );
     return call ? JSON.parse(call[0].create.value) : null;
   };
 
@@ -39,7 +50,9 @@ describe('AiPromptService', () => {
     const list = await service.list();
 
     expect(list).toHaveLength(8);
-    expect(list.every((t) => t.template.includes('{{product_fields}}'))).toBe(true);
+    expect(list.every((t) => t.template.includes('{{product_fields}}'))).toBe(
+      true,
+    );
     expect(list.every((t) => t.status === 'ACTIVE')).toBe(true);
   });
 
@@ -94,7 +107,9 @@ describe('AiPromptService', () => {
     expect(next.version).toBe(2);
     expect(next.updatedBy).toBe('admin-1');
     expect(next.updatedAt).not.toBe('');
-    expect(saved(prisma, 'ai.prompt.templates').PRODUCT_DESCRIPTION.template).toContain('New copy');
+    expect(
+      saved(prisma, 'ai.prompt.templates').PRODUCT_DESCRIPTION.template,
+    ).toContain('New copy');
   });
 
   it('keeps the previous version instead of destroying it', async () => {
@@ -122,12 +137,16 @@ describe('AiPromptService', () => {
       template: 'Newer {{product_fields}}',
     });
 
-    expect(saved(prisma, 'ai.prompt.templates.history').PRODUCT_DESCRIPTION).toHaveLength(10);
+    expect(
+      saved(prisma, 'ai.prompt.templates.history').PRODUCT_DESCRIPTION,
+    ).toHaveLength(10);
   });
 
   it('rejects an unknown prompt type', async () => {
     const { service } = build();
-    await expect(service.get('NOT_A_TYPE')).rejects.toThrow(/Unknown prompt type/);
+    await expect(service.get('NOT_A_TYPE')).rejects.toThrow(
+      /Unknown prompt type/,
+    );
   });
 
   it('rejects an empty template', async () => {
@@ -144,7 +163,10 @@ describe('AiPromptService', () => {
         upsert: jest.fn(),
       },
     };
-    const service = new AiPromptService(prisma as never, { log: jest.fn() } as never);
+    const service = new AiPromptService(
+      prisma as never,
+      { log: jest.fn() } as never,
+    );
 
     await expect(service.list()).resolves.toHaveLength(8);
   });

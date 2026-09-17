@@ -1,5 +1,10 @@
 import { Controller, Get, Put, Body, UseGuards } from '@nestjs/common';
-import { ApiTags, ApiBearerAuth, ApiOperation, ApiProperty } from '@nestjs/swagger';
+import {
+  ApiTags,
+  ApiBearerAuth,
+  ApiOperation,
+  ApiProperty,
+} from '@nestjs/swagger';
 import { IsString, MinLength } from 'class-validator';
 import { GoogleAuthService } from './services/google-auth.service';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
@@ -7,7 +12,10 @@ import { PermissionsGuard, Permissions } from './guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 
 export class UpdateGoogleAuthConfigDto {
-  @ApiProperty({ description: 'Google OAuth Web Client ID (ends with .apps.googleusercontent.com)' })
+  @ApiProperty({
+    description:
+      'Google OAuth Web Client ID (ends with .apps.googleusercontent.com)',
+  })
   @IsString()
   @MinLength(10)
   clientId!: string;
@@ -24,7 +32,9 @@ export class GoogleAuthAdminController {
   @Permissions('settings:view')
   @ApiOperation({ summary: 'Get the configured Google OAuth Client ID' })
   async getConfig() {
-    return ResponseBuilder.success({ clientId: await this.googleAuthService.getEffectiveClientId() });
+    return ResponseBuilder.success({
+      clientId: await this.googleAuthService.getEffectiveClientId(),
+    });
   }
 
   @Put('config')

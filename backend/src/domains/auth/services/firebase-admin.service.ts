@@ -36,8 +36,12 @@ export class FirebaseAdminService {
     }
 
     const projectId = this.configService.get<string>('app.firebase.projectId');
-    const clientEmail = this.configService.get<string>('app.firebase.clientEmail');
-    const privateKey = this.configService.get<string>('app.firebase.privateKey');
+    const clientEmail = this.configService.get<string>(
+      'app.firebase.clientEmail',
+    );
+    const privateKey = this.configService.get<string>(
+      'app.firebase.privateKey',
+    );
 
     if (!projectId || !clientEmail || !privateKey) {
       throw new BusinessException(
@@ -57,18 +61,25 @@ export class FirebaseAdminService {
   }
 
   /** Verifies a Firebase ID token and returns the caller's Firebase uid + verified phone number. */
-  async verifyPhoneIdToken(idToken: string): Promise<{ uid: string; phone: string }> {
+  async verifyPhoneIdToken(
+    idToken: string,
+  ): Promise<{ uid: string; phone: string }> {
     let decoded: DecodedIdToken;
     try {
       const { getAuth } = await import('firebase-admin/auth');
       decoded = await getAuth(await this.getApp()).verifyIdToken(idToken);
     } catch (err) {
       if (err instanceof BusinessException) throw err;
-      this.logger.warn(`Firebase ID token verification failed: ${(err as Error).message}`);
-      throw new AuthenticationException('Invalid or expired Firebase ID token', 'FIREBASE_001');
+      this.logger.warn(
+        `Firebase ID token verification failed: ${(err as Error).message}`,
+      );
+      throw new AuthenticationException(
+        'Invalid or expired Firebase ID token',
+        'FIREBASE_001',
+      );
     }
 
-    const phoneNumber = decoded.phone_number as string | undefined;
+    const phoneNumber = decoded.phone_number;
     if (!phoneNumber) {
       throw new AuthenticationException(
         'This Firebase token has no verified phone number on it',

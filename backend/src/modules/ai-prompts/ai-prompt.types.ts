@@ -226,5 +226,8 @@ export class PromptHistoryEntry {
 }
 
 export class PromptTemplateBody {
-  @ApiPropertyOptional() @IsOptional() @IsObject() body?: Record<string, unknown>;
+  @ApiPropertyOptional() @IsOptional() @IsObject() body?: Record<
+    string,
+    unknown
+  >;
 }

@@ -26,9 +26,11 @@ describe('OtpService.loginWithFirebasePhone', () => {
       findById: jest.fn(),
     };
     authService = {
-      issueTokensForUser: jest
-        .fn()
-        .mockResolvedValue({ accessToken: 'a', refreshToken: 'r', expiresIn: 900 }),
+      issueTokensForUser: jest.fn().mockResolvedValue({
+        accessToken: 'a',
+        refreshToken: 'r',
+        expiresIn: 900,
+      }),
     };
     firebaseAdminService = {
       verifyPhoneIdToken: jest.fn(),
@@ -36,7 +38,12 @@ describe('OtpService.loginWithFirebasePhone', () => {
     prisma = {
       user: { update: jest.fn() },
       customerProfile: { findUnique: jest.fn(), create: jest.fn() },
-      otpChallenge: { updateMany: jest.fn(), create: jest.fn(), findFirst: jest.fn(), update: jest.fn() },
+      otpChallenge: {
+        updateMany: jest.fn(),
+        create: jest.fn(),
+        findFirst: jest.fn(),
+        update: jest.fn(),
+      },
       smsLog: { create: jest.fn() },
     };
 
@@ -47,10 +54,19 @@ describe('OtpService.loginWithFirebasePhone', () => {
         { provide: ConfigService, useValue: { get: jest.fn() } },
         { provide: AuthService, useValue: authService },
         { provide: AuthRepository, useValue: authRepository },
-        { provide: PasswordService, useValue: { hash: jest.fn().mockResolvedValue('hashed') } },
+        {
+          provide: PasswordService,
+          useValue: { hash: jest.fn().mockResolvedValue('hashed') },
+        },
         { provide: FirebaseAdminService, useValue: firebaseAdminService },
         { provide: AuditService, useValue: { log: jest.fn() } },
-        { provide: OtpGatewayService, useValue: { sendOtp: jest.fn(), getExpiryMinutes: jest.fn().mockResolvedValue(10) } },
+        {
+          provide: OtpGatewayService,
+          useValue: {
+            sendOtp: jest.fn(),
+            getExpiryMinutes: jest.fn().mockResolvedValue(10),
+          },
+        },
       ],
     }).compile();
 
@@ -59,7 +75,10 @@ describe('OtpService.loginWithFirebasePhone', () => {
 
   it('propagates the FirebaseAdminService verification failure without touching the DB', async () => {
     firebaseAdminService.verifyPhoneIdToken.mockRejectedValue(
-      new AuthenticationException('Invalid or expired Firebase ID token', 'FIREBASE_001'),
+      new AuthenticationException(
+        'Invalid or expired Firebase ID token',
+        'FIREBASE_001',
+      ),
     );
 
     await expect(
@@ -76,7 +95,9 @@ describe('OtpService.loginWithFirebasePhone', () => {
     authRepository.findByPhone.mockResolvedValue({ id: 'user-1' });
     prisma.customerProfile.findUnique.mockResolvedValue({ id: 'profile-1' });
 
-    const result = await service.loginWithFirebasePhone({ idToken: 'good-token' });
+    const result = await service.loginWithFirebasePhone({
+      idToken: 'good-token',
+    });
 
     // normalizePhone strips non-digits and keeps the last 10 -- +919876543210 -> 9876543210
     expect(authRepository.findByPhone).toHaveBeenCalledWith('9876543210');
@@ -91,7 +112,11 @@ describe('OtpService.loginWithFirebasePhone', () => {
       undefined,
       false,
     );
-    expect(result).toEqual({ accessToken: 'a', refreshToken: 'r', expiresIn: 900 });
+    expect(result).toEqual({
+      accessToken: 'a',
+      refreshToken: 'r',
+      expiresIn: 900,
+    });
   });
 
   it('provisions a new customer account when no user has this phone yet', async () => {
@@ -103,15 +128,30 @@ describe('OtpService.loginWithFirebasePhone', () => {
     authRepository.createUser.mockResolvedValue({ id: 'user-2' });
     authRepository.findById.mockResolvedValue({ id: 'user-2' });
 
-    await service.loginWithFirebasePhone({ idToken: 'good-token', firstName: 'Anjali' });
+    await service.loginWithFirebasePhone({
+      idToken: 'good-token',
+      firstName: 'Anjali',
+    });
 
     expect(authRepository.createUser).toHaveBeenCalledWith(
-      expect.objectContaining({ phone: '9000011111', firstName: 'Anjali', isPhoneVerified: true }),
+      expect.objectContaining({
+        phone: '9000011111',
+        firstName: 'Anjali',
+        isPhoneVerified: true,
+      }),
     );
-    expect(authRepository.assignRole).toHaveBeenCalledWith('user-2', 'role-customer');
+    expect(authRepository.assignRole).toHaveBeenCalledWith(
+      'user-2',
+      'role-customer',
+    );
     expect(prisma.customerProfile.create).toHaveBeenCalledWith({
       data: { userId: 'user-2', phone: '9000011111' },
     });
-    expect(authService.issueTokensForUser).toHaveBeenCalledWith('user-2', undefined, undefined, false);
+    expect(authService.issueTokensForUser).toHaveBeenCalledWith(
+      'user-2',
+      undefined,
+      undefined,
+      false,
+    );
   });
 });

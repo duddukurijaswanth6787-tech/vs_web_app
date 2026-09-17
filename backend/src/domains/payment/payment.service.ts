@@ -59,12 +59,17 @@ export class PaymentService {
 
   private async getEffectiveKeySecret(): Promise<string> {
     const dbValue = await this.settingRepository.getByKey(KEYS.keySecret);
-    return dbValue || this.configService.get<string>('app.razorpay.keySecret', '');
+    return (
+      dbValue || this.configService.get<string>('app.razorpay.keySecret', '')
+    );
   }
 
   private async getEffectiveWebhookSecret(): Promise<string> {
     const dbValue = await this.settingRepository.getByKey(KEYS.webhookSecret);
-    return dbValue || this.configService.get<string>('app.razorpay.webhookSecret', '');
+    return (
+      dbValue ||
+      this.configService.get<string>('app.razorpay.webhookSecret', '')
+    );
   }
 
   async getConfig(): Promise<RazorpayConfigResponse> {
@@ -80,23 +85,43 @@ export class PaymentService {
     };
   }
 
-  async updateConfig(dto: UpdateRazorpayConfigDto, userId: string): Promise<RazorpayConfigResponse> {
+  async updateConfig(
+    dto: UpdateRazorpayConfigDto,
+    userId: string,
+  ): Promise<RazorpayConfigResponse> {
     const upsert = async (key: string, value: string, description: string) => {
       const existing = await this.settingRepository.findByKey(key);
       if (existing) {
         await this.settingRepository.update(existing.id, { value });
       } else {
-        await this.settingRepository.create({ key, value, group: GROUP, description });
+        await this.settingRepository.create({
+          key,
+          value,
+          group: GROUP,
+          description,
+        });
       }
     };
     if (dto.keyId !== undefined) {
-      await upsert(KEYS.keyId, dto.keyId, 'Razorpay Key ID (public, safe to expose to frontend)');
+      await upsert(
+        KEYS.keyId,
+        dto.keyId,
+        'Razorpay Key ID (public, safe to expose to frontend)',
+      );
     }
     if (dto.keySecret !== undefined) {
-      await upsert(KEYS.keySecret, dto.keySecret, 'Razorpay Key Secret (private)');
+      await upsert(
+        KEYS.keySecret,
+        dto.keySecret,
+        'Razorpay Key Secret (private)',
+      );
     }
     if (dto.webhookSecret !== undefined) {
-      await upsert(KEYS.webhookSecret, dto.webhookSecret, 'Razorpay Webhook Secret (private)');
+      await upsert(
+        KEYS.webhookSecret,
+        dto.webhookSecret,
+        'Razorpay Webhook Secret (private)',
+      );
     }
     await this.auditService.log({
       action: 'RAZORPAY_CONFIG_UPDATED',
@@ -107,21 +132,34 @@ export class PaymentService {
       newValue: {
         keyId: dto.keyId,
         keySecret: dto.keySecret !== undefined ? '[redacted]' : undefined,
-        webhookSecret: dto.webhookSecret !== undefined ? '[redacted]' : undefined,
+        webhookSecret:
+          dto.webhookSecret !== undefined ? '[redacted]' : undefined,
       },
     });
     return this.getConfig();
   }
 
   private async isRazorpayEnabled(): Promise<boolean> {
-    const enabled = this.configService.get<boolean>('app.razorpay.enabled', true);
-    const [keyId, keySecret] = await Promise.all([this.getEffectiveKeyId(), this.getEffectiveKeySecret()]);
+    const enabled = this.configService.get<boolean>(
+      'app.razorpay.enabled',
+      true,
+    );
+    const [keyId, keySecret] = await Promise.all([
+      this.getEffectiveKeyId(),
+      this.getEffectiveKeySecret(),
+    ]);
     return enabled && !!keyId && !!keySecret;
   }
 
   private async getRazorpayClient(): Promise<Razorpay> {
-    const [keyId, keySecret] = await Promise.all([this.getEffectiveKeyId(), this.getEffectiveKeySecret()]);
-    return new Razorpay({ key_id: keyId || 'mock_key', key_secret: keySecret || 'mock_secret' });
+    const [keyId, keySecret] = await Promise.all([
+      this.getEffectiveKeyId(),
+      this.getEffectiveKeySecret(),
+    ]);
+    return new Razorpay({
+      key_id: keyId || 'mock_key',
+      key_secret: keySecret || 'mock_secret',
+    });
   }
 
   private toResponse(p: any, includeTransactions = false): PaymentResponse {
@@ -290,11 +328,14 @@ export class PaymentService {
       }
     }
 
-    const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(id, {
-      status: 'CAPTURED',
-      providerPaymentId: razorpayPaymentId,
-      metadata: { razorpayPaymentId, razorpaySignature },
-    });
+    const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(
+      id,
+      {
+        status: 'CAPTURED',
+        providerPaymentId: razorpayPaymentId,
+        metadata: { razorpayPaymentId, razorpaySignature },
+      },
+    );
     if (capturedCount === 0) {
       // Lost the race to a concurrent verify/webhook call that captured
       // this payment first -- it already ran the confirm/deduct/notify
@@ -333,18 +374,20 @@ export class PaymentService {
     try {
       await this.orderWorkflowService.deductInventory(payment.orderId, userId);
     } catch (err) {
-      this.notificationService.notifyAdmins(
-        'OUT_OF_STOCK',
-        `🚨 URGENT: Oversold Stock on Paid Order #${payment.paymentNumber}`,
-        `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
-        {
-          orderId: payment.orderId,
-          paymentNumber: payment.paymentNumber,
-          amount: Number(payment.amount),
-          providerPaymentId: razorpayPaymentId,
-          event: 'CONCURRENT_OVERSOLD_CONFLICT',
-        },
-      ).catch(() => {});
+      this.notificationService
+        .notifyAdmins(
+          'OUT_OF_STOCK',
+          `🚨 URGENT: Oversold Stock on Paid Order #${payment.paymentNumber}`,
+          `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
+          {
+            orderId: payment.orderId,
+            paymentNumber: payment.paymentNumber,
+            amount: Number(payment.amount),
+            providerPaymentId: razorpayPaymentId,
+            event: 'CONCURRENT_OVERSOLD_CONFLICT',
+          },
+        )
+        .catch(() => {});
 
       await this.orderWorkflowService.transition(
         payment.orderId,
@@ -378,7 +421,10 @@ export class PaymentService {
   async refundPayment(
     paymentId: string,
     amount: number,
-  ): Promise<{ razorpayRefundId: string; status: 'pending' | 'processed' | 'failed' }> {
+  ): Promise<{
+    razorpayRefundId: string;
+    status: 'pending' | 'processed' | 'failed';
+  }> {
     const payment = await this.paymentRepository.findById(paymentId);
     if (!payment) {
       throw new BusinessException('Payment not found', 'PAYMENT_001');
@@ -391,7 +437,10 @@ export class PaymentService {
     }
 
     if (!(await this.isRazorpayEnabled())) {
-      return { razorpayRefundId: `rfnd_mock_${Date.now()}`, status: 'processed' };
+      return {
+        razorpayRefundId: `rfnd_mock_${Date.now()}`,
+        status: 'processed',
+      };
     }
 
     try {
@@ -464,10 +513,12 @@ export class PaymentService {
       // concurrent verifyPayment call for the same payment. Only the
       // first to reach the row wins; the loser gets 0 rows affected here
       // instead of re-running the confirm/deduct/notify flow a second time.
-      const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(
-        payment.id,
-        { status: 'CAPTURED', providerPaymentId, metadata: paymentEntity },
-      );
+      const capturedCount =
+        await this.paymentRepository.markCapturedIfNotAlready(payment.id, {
+          status: 'CAPTURED',
+          providerPaymentId,
+          metadata: paymentEntity,
+        });
       if (capturedCount === 0) {
         return { status: 'ignored', reason: 'Already captured' };
       }
@@ -492,20 +543,25 @@ export class PaymentService {
       // genuine oversold-and-paid conflict that needs a human to resolve
       // the refund, not something this fix silently papers over.
       try {
-        await this.orderWorkflowService.deductInventory(payment.orderId, payment.createdBy || 'SYSTEM');
+        await this.orderWorkflowService.deductInventory(
+          payment.orderId,
+          payment.createdBy || 'SYSTEM',
+        );
       } catch (err) {
-        this.notificationService.notifyAdmins(
-          'OUT_OF_STOCK',
-          `🚨 URGENT: Oversold Stock on Webhook Paid Order #${payment.paymentNumber}`,
-          `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured via webhook, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
-          {
-            orderId: payment.orderId,
-            paymentNumber: payment.paymentNumber,
-            amount: Number(payment.amount),
-            providerPaymentId,
-            event: 'CONCURRENT_OVERSOLD_CONFLICT',
-          },
-        ).catch(() => {});
+        this.notificationService
+          .notifyAdmins(
+            'OUT_OF_STOCK',
+            `🚨 URGENT: Oversold Stock on Webhook Paid Order #${payment.paymentNumber}`,
+            `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured via webhook, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
+            {
+              orderId: payment.orderId,
+              paymentNumber: payment.paymentNumber,
+              amount: Number(payment.amount),
+              providerPaymentId,
+              event: 'CONCURRENT_OVERSOLD_CONFLICT',
+            },
+          )
+          .catch(() => {});
 
         await this.orderWorkflowService.transition(
           payment.orderId,
@@ -673,7 +729,8 @@ export class PaymentService {
         amount: Number(qr.payment_amount) / 100,
         status: qr.status,
         closeBy: qr.close_by,
-        paymentsAmountReceived: (Number(qr.payments_amount_received) || 0) / 100,
+        paymentsAmountReceived:
+          (Number(qr.payments_amount_received) || 0) / 100,
       };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
@@ -705,8 +762,12 @@ export class PaymentService {
       };
     } catch (err: unknown) {
       const errorMessage = err instanceof Error ? err.message : String(err);
-      this.logger.error(`Failed to fetch Razorpay QR status for ${qrId}: ${errorMessage}`);
-      throw new BadRequestException(`Failed to check Razorpay QR status: ${errorMessage}`);
+      this.logger.error(
+        `Failed to fetch Razorpay QR status for ${qrId}: ${errorMessage}`,
+      );
+      throw new BadRequestException(
+        `Failed to check Razorpay QR status: ${errorMessage}`,
+      );
     }
   }
 }

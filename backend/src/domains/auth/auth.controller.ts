@@ -91,7 +91,8 @@ export class AuthController {
 
   @Get('google/client-id')
   @ApiOperation({
-    summary: 'Get the Google OAuth Client ID (public, no secret) for the frontend Sign-In button',
+    summary:
+      'Get the Google OAuth Client ID (public, no secret) for the frontend Sign-In button',
   })
   async googleClientId() {
     const clientId = await this.googleAuthService.getEffectiveClientId();

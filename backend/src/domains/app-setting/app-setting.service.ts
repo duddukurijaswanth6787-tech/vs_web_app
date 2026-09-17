@@ -134,15 +134,33 @@ export class AppSettingService {
       this.settingRepository.findByKey('announcement_bar_bg_color'),
       this.settingRepository.findByKey('announcement_bar_text_color'),
     ]);
-    const announcementText = announcementTextSetting ? announcementTextSetting.value : 'Festive Sale is Live! Get up to 30% OFF';
-    const mobileEnabled = mobileAnnouncementSetting ? mobileAnnouncementSetting.value === 'true' : true;
-    const autoplayInterval = autoplaySetting ? parseInt(autoplaySetting.value, 10) : 5;
-    const autoplayEnabled = enabledSetting ? enabledSetting.value === 'true' : true;
-    const announcementEnabled = announcementEnabledSetting ? announcementEnabledSetting.value === 'true' : true;
-    const announcementLink = announcementLinkSetting ? announcementLinkSetting.value : '/offers';
-    const announcementLinkText = announcementLinkTextSetting ? announcementLinkTextSetting.value : 'Shop Now →';
-    const announcementBgColor = announcementBgColorSetting ? announcementBgColorSetting.value : '#0284c7';
-    const announcementTextColor = announcementTextColorSetting ? announcementTextColorSetting.value : '#FFFFFF';
+    const announcementText = announcementTextSetting
+      ? announcementTextSetting.value
+      : 'Festive Sale is Live! Get up to 30% OFF';
+    const mobileEnabled = mobileAnnouncementSetting
+      ? mobileAnnouncementSetting.value === 'true'
+      : true;
+    const autoplayInterval = autoplaySetting
+      ? parseInt(autoplaySetting.value, 10)
+      : 5;
+    const autoplayEnabled = enabledSetting
+      ? enabledSetting.value === 'true'
+      : true;
+    const announcementEnabled = announcementEnabledSetting
+      ? announcementEnabledSetting.value === 'true'
+      : true;
+    const announcementLink = announcementLinkSetting
+      ? announcementLinkSetting.value
+      : '/offers';
+    const announcementLinkText = announcementLinkTextSetting
+      ? announcementLinkTextSetting.value
+      : 'Shop Now →';
+    const announcementBgColor = announcementBgColorSetting
+      ? announcementBgColorSetting.value
+      : '#0284c7';
+    const announcementTextColor = announcementTextColorSetting
+      ? announcementTextColorSetting.value
+      : '#FFFFFF';
 
     return {
       bannerAutoplayInterval: autoplayInterval,

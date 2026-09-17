@@ -50,7 +50,9 @@ export class SocialAdminController {
   }
 
   @Get('analytics/timeline')
-  @ApiOperation({ summary: 'Get daily engagement timeline (likes/comments/shares/plays)' })
+  @ApiOperation({
+    summary: 'Get daily engagement timeline (likes/comments/shares/plays)',
+  })
   async getAnalyticsTimeline(@Query('days') days?: string) {
     const parsed = days ? parseInt(days, 10) : 14;
     const clamped = Math.min(Math.max(parsed || 14, 1), 90);

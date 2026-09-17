@@ -19,7 +19,10 @@ import {
   UpdateRazorpayConfigDto,
 } from './payment.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
@@ -136,10 +139,19 @@ export class PaymentController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Generate a Razorpay Dynamic UPI QR code' })
   async createRazorpayQr(
-    @Body() body: { amount: number; description?: string; notes?: Record<string, string> },
+    @Body()
+    body: {
+      amount: number;
+      description?: string;
+      notes?: Record<string, string>;
+    },
   ) {
     return ResponseBuilder.success(
-      await this.paymentService.createDynamicUpiQr(body.amount, body.description, body.notes),
+      await this.paymentService.createDynamicUpiQr(
+        body.amount,
+        body.description,
+        body.notes,
+      ),
       'Razorpay Dynamic QR generated',
     );
   }
@@ -147,7 +159,9 @@ export class PaymentController {
   @Get('razorpay-qr/:qrId/status')
   @UseGuards(JwtAuthGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Poll real-time status of a Razorpay Dynamic QR code' })
+  @ApiOperation({
+    summary: 'Poll real-time status of a Razorpay Dynamic QR code',
+  })
   async getRazorpayQrStatus(@Param('qrId') qrId: string) {
     return ResponseBuilder.success(
       await this.paymentService.fetchQrStatus(qrId),

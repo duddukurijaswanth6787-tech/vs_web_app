@@ -115,7 +115,11 @@ export class ReturnRequestService {
 
     const itemsToProcess = dto.items?.length
       ? dto.items
-      : order.items.map((i) => ({ orderItemId: i.id, quantity: i.quantity, reason: dto.reason }));
+      : order.items.map((i) => ({
+          orderItemId: i.id,
+          quantity: i.quantity,
+          reason: dto.reason,
+        }));
 
     const orderItemMap = new Map(order.items.map((i) => [i.id, i]));
     for (const item of itemsToProcess) {

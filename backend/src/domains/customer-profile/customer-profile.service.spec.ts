@@ -9,7 +9,12 @@ import { CustomerProfileService } from './customer-profile.service';
  */
 describe('CustomerProfileService profile auto-creation', () => {
   const buildService = ({ profileExists }: { profileExists: boolean }) => {
-    const existing = { id: 'profile-1', userId: 'user-1', createdAt: new Date(), updatedAt: new Date() };
+    const existing = {
+      id: 'profile-1',
+      userId: 'user-1',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
     const created = { ...existing, id: 'profile-created' };
 
     // Stateful, because updateProfile re-reads via getProfile once it is done:
@@ -39,11 +44,17 @@ describe('CustomerProfileService profile auto-creation', () => {
     const { service, repo } = buildService({ profileExists: false });
 
     await expect(
-      service.updateProfile('user-1', { firstName: 'Duddukuri', lastName: 'Jaswanth' }),
+      service.updateProfile('user-1', {
+        firstName: 'Duddukuri',
+        lastName: 'Jaswanth',
+      }),
     ).resolves.toBeDefined();
 
     expect(repo.create).toHaveBeenCalledTimes(1);
-    expect(repo.update).toHaveBeenCalledWith('profile-created', expect.anything());
+    expect(repo.update).toHaveBeenCalledWith(
+      'profile-created',
+      expect.anything(),
+    );
   });
 
   it('reuses the existing profile rather than creating a duplicate', async () => {
@@ -52,7 +63,9 @@ describe('CustomerProfileService profile auto-creation', () => {
     await service.updateProfile('user-1', { phone: '07660922416' });
 
     expect(repo.create).not.toHaveBeenCalled();
-    expect(repo.update).toHaveBeenCalledWith('profile-1', { phone: '07660922416' });
+    expect(repo.update).toHaveBeenCalledWith('profile-1', {
+      phone: '07660922416',
+    });
   });
 
   it('writes firstName/lastName to the User row, not the profile row', async () => {
@@ -60,13 +73,18 @@ describe('CustomerProfileService profile auto-creation', () => {
     // split out of the payload before it reaches profileRepository.update.
     const { service, repo, prisma } = buildService({ profileExists: true });
 
-    await service.updateProfile('user-1', { firstName: 'Duddukuri', phone: '07660922416' });
+    await service.updateProfile('user-1', {
+      firstName: 'Duddukuri',
+      phone: '07660922416',
+    });
 
     expect(prisma.user.update).toHaveBeenCalledWith({
       where: { id: 'user-1' },
       data: { firstName: 'Duddukuri' },
     });
-    expect(repo.update).toHaveBeenCalledWith('profile-1', { phone: '07660922416' });
+    expect(repo.update).toHaveBeenCalledWith('profile-1', {
+      phone: '07660922416',
+    });
   });
 
   it('returns the identity fields from the User row, so the edit form can prefill', async () => {
@@ -107,7 +125,9 @@ describe('CustomerProfileService profile auto-creation', () => {
 
     const [, data] = repo.update.mock.calls[0];
     expect(data.dateOfBirth).toBeInstanceOf(Date);
-    expect((data.dateOfBirth as Date).toISOString()).toBe('2004-07-09T00:00:00.000Z');
+    expect((data.dateOfBirth as Date).toISOString()).toBe(
+      '2004-07-09T00:00:00.000Z',
+    );
   });
 
   it('omits dateOfBirth entirely when it was not supplied', async () => {

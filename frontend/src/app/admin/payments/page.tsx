@@ -55,6 +55,40 @@ type ChannelFilter = 'ALL' | 'POS_SHOPORA' | 'ONLINE_STORE';
 type PaymentMethodFilter = 'ALL' | 'CASH' | 'UPI' | 'CARD' | 'RAZORPAY';
 type ViewMode = 'LEDGER' | 'ANALYTICS';
 
+// Custom Chart Tooltip declared outside component to avoid recreate-during-render
+function ChartCurrencyTooltip({ active, payload, label }: any) {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-neutral-900/95 text-white px-3.5 py-2.5 rounded-xl text-xs shadow-xl border border-neutral-700/80 backdrop-blur-md z-50 min-w-[140px]">
+        <p className="font-bold text-neutral-300 mb-1.5 border-b border-neutral-700/60 pb-1">{label}</p>
+        <div className="space-y-1">
+          {payload.map((entry: any, index: number) => {
+            const isCount =
+              entry.name?.toLowerCase().includes('count') ||
+              entry.name?.toLowerCase().includes('order') ||
+              entry.name?.toLowerCase().includes('bill');
+            return (
+              <div key={`entry-${index}`} className="flex items-center justify-between gap-3 text-2xs">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    className="w-2 h-2 rounded-full inline-block shrink-0"
+                    style={{ backgroundColor: entry.color || entry.stroke || entry.fill || '#38bdf8' }}
+                  />
+                  <span className="text-neutral-300 font-medium">{entry.name}:</span>
+                </div>
+                <span className="font-mono font-bold text-white">
+                  {isCount ? `${entry.value}` : `₹${Number(entry.value).toLocaleString('en-IN')}`}
+                </span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    );
+  }
+  return null;
+}
+
 export default function PaymentsPage() {
   // View Mode: 'LEDGER' (Transaction Records) | 'ANALYTICS' (Deep Visual Charts & Performance)
   const [viewMode, setViewMode] = useState<ViewMode>('LEDGER');
@@ -167,7 +201,7 @@ export default function PaymentsPage() {
     let upiTotal = 0;
     let cardTotal = 0;
     let discountTotal = 0;
-    let totalTransactions = filteredOrders.length;
+    const totalTransactions = filteredOrders.length;
 
     // Staff Performance Map
     const staffStats: Record<string, { name: string; sales: number; count: number; channel: string }> = {};
@@ -284,40 +318,6 @@ export default function PaymentsPage() {
       onlinePaymentMix,
     };
   }, [filteredOrders, datePreset]);
-
-  // Custom Chart Tooltip
-  const ChartCurrencyTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="bg-neutral-900/95 text-white px-3.5 py-2.5 rounded-xl text-xs shadow-xl border border-neutral-700/80 backdrop-blur-md z-50 min-w-[140px]">
-          <p className="font-bold text-neutral-300 mb-1.5 border-b border-neutral-700/60 pb-1">{label}</p>
-          <div className="space-y-1">
-            {payload.map((entry: any, index: number) => {
-              const isCount =
-                entry.name?.toLowerCase().includes('count') ||
-                entry.name?.toLowerCase().includes('order') ||
-                entry.name?.toLowerCase().includes('bill');
-              return (
-                <div key={`entry-${index}`} className="flex items-center justify-between gap-3 text-2xs">
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className="w-2 h-2 rounded-full inline-block shrink-0"
-                      style={{ backgroundColor: entry.color || entry.stroke || entry.fill || '#38bdf8' }}
-                    />
-                    <span className="text-neutral-300 font-medium">{entry.name}:</span>
-                  </div>
-                  <span className="font-mono font-bold text-white">
-                    {isCount ? `${entry.value}` : `₹${Number(entry.value).toLocaleString('en-IN')}`}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
 
   // Customer purchase history for selected customer in modal
   const customerPastOrders = useMemo(() => {

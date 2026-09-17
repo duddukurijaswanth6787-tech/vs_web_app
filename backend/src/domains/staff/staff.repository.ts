@@ -312,7 +312,9 @@ export class StaffRepository {
         ...(data.punchInLocation && { punchInLocation: data.punchInLocation }),
         ...(data.punchInIp && { punchInIp: data.punchInIp }),
         ...(data.totalHours !== undefined && { totalHours: data.totalHours }),
-        ...(data.breakMinutes !== undefined && { breakMinutes: data.breakMinutes }),
+        ...(data.breakMinutes !== undefined && {
+          breakMinutes: data.breakMinutes,
+        }),
         ...(data.status && { status: data.status }),
         ...(data.notes !== undefined && { notes: data.notes }),
         ...(data.punchOutIp && { punchOutIp: data.punchOutIp }),
@@ -352,7 +354,12 @@ export class StaffRepository {
         staffProfile: {
           include: {
             user: {
-              select: { firstName: true, lastName: true, email: true, phone: true },
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
             },
           },
         },
@@ -378,7 +385,9 @@ export class StaffRepository {
         description: data.description,
         priority: data.priority || 'MEDIUM',
         dueDate: data.dueDate,
-        assignedBy: data.assignedById ? { connect: { id: data.assignedById } } : undefined,
+        assignedBy: data.assignedById
+          ? { connect: { id: data.assignedById } }
+          : undefined,
         notes: data.notes,
       },
       include: {
@@ -471,4 +480,3 @@ export class StaffRepository {
     });
   }
 }
-

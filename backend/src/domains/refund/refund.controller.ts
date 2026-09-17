@@ -39,7 +39,9 @@ export class RefundController {
   }
 
   private async resolveCustomerId(userId: string): Promise<string | null> {
-    const p = await this.prisma.customerProfile.findUnique({ where: { userId } });
+    const p = await this.prisma.customerProfile.findUnique({
+      where: { userId },
+    });
     return p?.id ?? null;
   }
 
@@ -60,7 +62,7 @@ export class RefundController {
     @Param('orderId') orderId: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    if (!await this.isAdmin(user.sub)) {
+    if (!(await this.isAdmin(user.sub))) {
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
         select: { customerId: true },
@@ -80,7 +82,7 @@ export class RefundController {
   @ApiOperation({ summary: 'Get refund by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     const refund = await this.refundService.findById(id);
-    if (!await this.isAdmin(user.sub)) {
+    if (!(await this.isAdmin(user.sub))) {
       const order = await this.prisma.order.findUnique({
         where: { id: (refund as any).orderId },
         select: { customerId: true },

@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  UseGuards,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
@@ -21,7 +29,9 @@ export class AiPromptController {
   constructor(private readonly service: AiPromptService) {}
 
   @Get()
-  @ApiOperation({ summary: 'List prompt templates, variables and the accuracy rule' })
+  @ApiOperation({
+    summary: 'List prompt templates, variables and the accuracy rule',
+  })
   async list() {
     return ResponseBuilder.success(await this.service.listWithMeta());
   }
@@ -52,7 +62,9 @@ export class AiPromptController {
   }
 
   @Post(':type/reset')
-  @ApiOperation({ summary: 'Restore a prompt template to its built-in default' })
+  @ApiOperation({
+    summary: 'Restore a prompt template to its built-in default',
+  })
   async reset(@CurrentUser() user: JwtPayload, @Param('type') type: string) {
     return ResponseBuilder.success(
       await this.service.reset(user.sub, type),

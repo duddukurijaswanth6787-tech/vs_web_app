@@ -29,7 +29,8 @@ describe('envValidationSchema (JWT_SECRET / CORS_ORIGIN production rules)', () =
   });
 
   it('rejects a missing JWT_SECRET in production', () => {
-    const { JWT_SECRET, ...rest } = baseEnv;
+    const rest: Record<string, string> = { ...baseEnv };
+    delete rest.JWT_SECRET;
     const { error } = envValidationSchema.validate(rest, {
       allowUnknown: true,
       abortEarly: false,
@@ -45,7 +46,8 @@ describe('envValidationSchema (JWT_SECRET / CORS_ORIGIN production rules)', () =
   });
 
   it('rejects a missing CORS_ORIGIN in production', () => {
-    const { CORS_ORIGIN, ...rest } = baseEnv;
+    const rest: Record<string, string> = { ...baseEnv };
+    delete rest.CORS_ORIGIN;
     const { error } = envValidationSchema.validate(rest, {
       allowUnknown: true,
       abortEarly: false,

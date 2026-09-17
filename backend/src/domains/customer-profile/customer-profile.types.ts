@@ -9,9 +9,7 @@ import {
   Min,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import {
-  IsPhoneNumberCustom,
-} from '@common/validation/decorators.validation';
+import { IsPhoneNumberCustom } from '@common/validation/decorators.validation';
 
 export class CreateProfileDto {
   @ApiProperty() @IsString() userId!: string;

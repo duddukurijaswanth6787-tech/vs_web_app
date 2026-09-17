@@ -28,13 +28,20 @@ describe('InventoryService', () => {
         },
         {
           provide: NotificationService,
-          useValue: { create: jest.fn(), notifyAdmins: jest.fn().mockResolvedValue(true) },
+          useValue: {
+            create: jest.fn(),
+            notifyAdmins: jest.fn().mockResolvedValue(true),
+          },
         },
         {
           provide: PrismaService,
           useValue: {
             product: { findUnique: jest.fn() },
-            restockSubscription: { create: jest.fn(), findMany: jest.fn(), updateMany: jest.fn() },
+            restockSubscription: {
+              create: jest.fn(),
+              findMany: jest.fn(),
+              updateMany: jest.fn(),
+            },
           },
         },
       ],

@@ -33,7 +33,11 @@ describe('CategoriesService', () => {
         },
         {
           provide: StorageService,
-          useValue: { getPublicUrl: jest.fn(), deleteFile: jest.fn(), sanitizeUrl: jest.fn().mockImplementation((url) => url) },
+          useValue: {
+            getPublicUrl: jest.fn(),
+            deleteFile: jest.fn(),
+            sanitizeUrl: jest.fn().mockImplementation((url) => url),
+          },
         },
       ],
     }).compile();

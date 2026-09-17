@@ -45,7 +45,6 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
       width: 320,
       text: 'continue_with',
     });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [clientId, scriptLoaded]);
 
   if (clientId === '') return null;

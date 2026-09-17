@@ -176,9 +176,8 @@ export class OtpService {
     ip?: string,
     userAgent?: string,
   ): Promise<AuthTokensResponse> {
-    const { phone: rawPhone } = await this.firebaseAdminService.verifyPhoneIdToken(
-      dto.idToken,
-    );
+    const { phone: rawPhone } =
+      await this.firebaseAdminService.verifyPhoneIdToken(dto.idToken);
     const phone = this.normalizePhone(rawPhone);
     const user = await this.findOrCreateUserByPhone(phone, dto.firstName);
 

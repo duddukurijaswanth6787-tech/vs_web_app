@@ -52,7 +52,11 @@ export default function OffersPage() {
 
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
-    value ? params.set(key, value) : params.delete(key);
+    if (value) {
+      params.set(key, value);
+    } else {
+      params.delete(key);
+    }
     if (key !== 'page') params.set('page', '1');
     router.push(`/admin/offers?${params}`);
   };

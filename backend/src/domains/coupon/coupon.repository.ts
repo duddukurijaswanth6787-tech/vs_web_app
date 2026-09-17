@@ -51,7 +51,10 @@ export class CouponRepository {
     return this.prisma.coupon.findUnique({ where: { id } });
   }
 
-  async findByCode(code: string, client: Prisma.TransactionClient = this.prisma) {
+  async findByCode(
+    code: string,
+    client: Prisma.TransactionClient = this.prisma,
+  ) {
     return client.coupon.findUnique({ where: { code } });
   }
 

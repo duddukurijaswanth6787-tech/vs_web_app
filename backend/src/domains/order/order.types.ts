@@ -115,7 +115,10 @@ export class OrderResponse {
 }
 
 export class AssignCourierDto {
-  @ApiProperty({ description: 'Courier Partner Name (e.g. Delhivery, DTDC, Professional Courier, FedEx)' })
+  @ApiProperty({
+    description:
+      'Courier Partner Name (e.g. Delhivery, DTDC, Professional Courier, FedEx)',
+  })
   @IsString()
   courierPartner!: string;
 

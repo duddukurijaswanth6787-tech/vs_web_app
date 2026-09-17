@@ -129,7 +129,10 @@ export class RefundService {
         Number(refund.amount),
       );
       transactionId = result.razorpayRefundId;
-      finalStatus = result.status === 'processed' ? RefundStatus.COMPLETED : RefundStatus.APPROVED;
+      finalStatus =
+        result.status === 'processed'
+          ? RefundStatus.COMPLETED
+          : RefundStatus.APPROVED;
     }
 
     const updated = await this.refundRepository.update(id, {

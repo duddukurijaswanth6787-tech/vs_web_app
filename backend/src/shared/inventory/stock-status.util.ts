@@ -13,8 +13,11 @@ export function calculateStockStatus(inventory: {
   allowBackorder: boolean;
 }): string {
   const available = inventory.availableQuantity - inventory.reservedQuantity;
-  if (available <= 0) return inventory.allowBackorder ? 'BACKORDER' : 'OUT_OF_STOCK';
-  if (inventory.minimumStock > 0 && available <= inventory.minimumStock) return 'LOW_STOCK';
-  if (inventory.reorderLevel > 0 && available <= inventory.reorderLevel) return 'LOW_STOCK';
+  if (available <= 0)
+    return inventory.allowBackorder ? 'BACKORDER' : 'OUT_OF_STOCK';
+  if (inventory.minimumStock > 0 && available <= inventory.minimumStock)
+    return 'LOW_STOCK';
+  if (inventory.reorderLevel > 0 && available <= inventory.reorderLevel)
+    return 'LOW_STOCK';
   return 'IN_STOCK';
 }

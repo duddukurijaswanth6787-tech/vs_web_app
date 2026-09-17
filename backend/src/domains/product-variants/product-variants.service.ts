@@ -228,7 +228,8 @@ export class ProductVariantsService {
     if (dto.barcode && dto.barcode !== variant.barcode) {
       updateBarcode = await this.ensureUniqueBarcode(dto.barcode);
     }
-    const { barcode, ...restDto } = dto;
+    const restDto = { ...dto };
+    delete restDto.barcode;
     await this.variantsRepository.update(id, {
       ...restDto,
       ...(updateBarcode ? { barcode: updateBarcode } : {}),
@@ -252,13 +253,15 @@ export class ProductVariantsService {
     });
     if (!variant || variant.deletedAt) return;
     await this.variantsRepository.softDelete(id);
-    await this.auditService.log({
-      action: 'VARIANT_DELETED',
-      module: 'product-variants',
-      resource: 'variant',
-      resourceId: id,
-      userId: userId || 'system',
-    }).catch(() => null);
+    await this.auditService
+      .log({
+        action: 'VARIANT_DELETED',
+        module: 'product-variants',
+        resource: 'variant',
+        resourceId: id,
+        userId: userId || 'system',
+      })
+      .catch(() => null);
   }
 
   async restore(id: string, userId: string) {

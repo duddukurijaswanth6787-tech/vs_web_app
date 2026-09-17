@@ -59,8 +59,14 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
         { provide: PrismaService, useValue: prisma },
         { provide: AuditService, useValue: { log: jest.fn() } },
         { provide: NotificationService, useValue: { create: jest.fn() } },
-        { provide: EmailService, useValue: { sendOrderConfirmationEmail: jest.fn() } },
-        { provide: OtpGatewayService, useValue: { sendOrderConfirmedSms: jest.fn() } },
+        {
+          provide: EmailService,
+          useValue: { sendOrderConfirmationEmail: jest.fn() },
+        },
+        {
+          provide: OtpGatewayService,
+          useValue: { sendOrderConfirmedSms: jest.fn() },
+        },
       ],
     }).compile();
 
@@ -121,7 +127,9 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
       prisma.order.findUnique.mockResolvedValue(orderWithOneItem);
       tx.$queryRaw.mockResolvedValue([inventoryRow]);
 
-      await expect(service.reserveInventory('order-1')).resolves.toBeUndefined();
+      await expect(
+        service.reserveInventory('order-1'),
+      ).resolves.toBeUndefined();
       expect(tx.inventoryMovement.create).toHaveBeenCalledTimes(1);
     });
 
@@ -153,7 +161,9 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
       prisma.order.findUnique.mockResolvedValue(orderWithOneItem);
       tx.$queryRaw.mockResolvedValue([inventoryRow]);
 
-      await expect(service.releaseInventory('order-1')).resolves.toBeUndefined();
+      await expect(
+        service.releaseInventory('order-1'),
+      ).resolves.toBeUndefined();
       expect(prisma.order.findUnique).toHaveBeenCalledWith(
         expect.objectContaining({ where: { id: 'order-1' } }),
       );
@@ -162,7 +172,9 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
 
     it('restoreInventory is a no-op when the order does not exist', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
-      await expect(service.restoreInventory('missing')).resolves.toBeUndefined();
+      await expect(
+        service.restoreInventory('missing'),
+      ).resolves.toBeUndefined();
     });
   });
 });

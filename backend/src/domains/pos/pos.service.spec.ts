@@ -8,7 +8,11 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 import { NotFoundException, BadRequestException } from '@nestjs/common';
 import { BusinessException } from '@common/exceptions';
-import { DEFAULT_TERMINAL_ID, PosPaymentMethodType, PosRefundMethodType } from './pos.types';
+import {
+  DEFAULT_TERMINAL_ID,
+  PosPaymentMethodType,
+  PosRefundMethodType,
+} from './pos.types';
 import { CheckoutSessionStatus } from '@prisma/client';
 
 describe('PosService (Phase 1 Backend)', () => {
@@ -34,7 +38,9 @@ describe('PosService (Phase 1 Backend)', () => {
       findOrderForReprint: jest.fn(),
       findSaleForReturn: jest.fn(),
       createPosExchange: jest.fn(),
-      findOrCreateWalkInCustomer: jest.fn().mockResolvedValue({ id: 'cust-walkin' }),
+      findOrCreateWalkInCustomer: jest
+        .fn()
+        .mockResolvedValue({ id: 'cust-walkin' }),
       closeShift: jest.fn(),
       getCashMovementForWindow: jest
         .fn()
@@ -88,12 +94,13 @@ describe('PosService (Phase 1 Backend)', () => {
       checkCoupon: jest.fn(),
       applyCoupon: jest.fn(),
     };
-    couponServiceToken = (
-      await import('@domains/coupon/coupon.service')
-    ).CouponService;
+    couponServiceToken = (await import('@domains/coupon/coupon.service'))
+      .CouponService;
 
     giftCardService = {
-      getBalance: jest.fn().mockResolvedValue({ code: 'GC1', balance: 0, status: 'ACTIVE' }),
+      getBalance: jest
+        .fn()
+        .mockResolvedValue({ code: 'GC1', balance: 0, status: 'ACTIVE' }),
       redeem: jest.fn().mockResolvedValue({}),
     };
     giftCardServiceToken = (
@@ -109,9 +116,8 @@ describe('PosService (Phase 1 Backend)', () => {
       }),
       adminRedeem: jest.fn().mockResolvedValue({}),
     };
-    loyaltyServiceToken = (
-      await import('@domains/loyalty/loyalty.service')
-    ).LoyaltyService;
+    loyaltyServiceToken = (await import('@domains/loyalty/loyalty.service'))
+      .LoyaltyService;
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -148,26 +154,39 @@ describe('PosService (Phase 1 Backend)', () => {
           useValue: loyaltyService,
         },
         {
-          provide: (await import('@domains/auth/services/password.service')).PasswordService,
+          provide: (await import('@domains/auth/services/password.service'))
+            .PasswordService,
           useValue: (passwordMock = { hash: jest.fn(), verify: jest.fn() }),
         },
         {
-          provide: (await import('@domains/auth/services/jwt.service')).JwtService,
+          provide: (await import('@domains/auth/services/jwt.service'))
+            .JwtService,
           useValue: { sign: jest.fn().mockResolvedValue('tok') },
         },
         {
-          provide: (await import('@domains/auth/services/refresh-token.service')).RefreshTokenService,
+          provide: (
+            await import('@domains/auth/services/refresh-token.service')
+          ).RefreshTokenService,
           useValue: { create: jest.fn().mockResolvedValue('rt-mock') },
         },
         {
           provide: (await import('@database/prisma.service')).PrismaService,
           useValue: (prismaMock = {
-            user: { findUnique: jest.fn(), findMany: jest.fn(), update: jest.fn() },
+            user: {
+              findUnique: jest.fn(),
+              findMany: jest.fn(),
+              update: jest.fn(),
+            },
           }),
         },
         {
-          provide: (await import('@domains/notification/notification.service')).NotificationService,
-          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true), sendSms: jest.fn().mockResolvedValue(true), sendEmail: jest.fn().mockResolvedValue(true) },
+          provide: (await import('@domains/notification/notification.service'))
+            .NotificationService,
+          useValue: {
+            notifyAdmins: jest.fn().mockResolvedValue(true),
+            sendSms: jest.fn().mockResolvedValue(true),
+            sendEmail: jest.fn().mockResolvedValue(true),
+          },
         },
       ],
     }).compile();
@@ -393,7 +412,9 @@ describe('PosService (Phase 1 Backend)', () => {
         generateHtmlInvoiceReceipt: jest
           .fn()
           .mockResolvedValue('<html>duplicate html</html>'),
-        buildEscPosInvoiceReceipt: jest.fn().mockResolvedValue(Buffer.from('esc')),
+        buildEscPosInvoiceReceipt: jest
+          .fn()
+          .mockResolvedValue(Buffer.from('esc')),
       };
 
       const result = await service.reprintReceipt('ORD-2026-001', 'cashier-1');
@@ -406,9 +427,9 @@ describe('PosService (Phase 1 Backend)', () => {
         expect.objectContaining({ action: 'POS_RECEIPT_REPRINTED' }),
       );
       // Duplicate flag is set on the DTO passed to the printer.
-      expect(svcAny.printerService.generateHtmlInvoiceReceipt).toHaveBeenCalledWith(
-        expect.objectContaining({ isReprint: true }),
-      );
+      expect(
+        svcAny.printerService.generateHtmlInvoiceReceipt,
+      ).toHaveBeenCalledWith(expect.objectContaining({ isReprint: true }));
     });
 
     it('refuses to reprint an online-store order (there was no over-the-counter receipt)', async () => {
@@ -570,7 +591,9 @@ describe('PosService (Phase 1 Backend)', () => {
           userRoles: [{ role: { name: 'pos_operator' } }],
         },
       ]);
-      passwordMock.verify.mockImplementation(async (hash: string) => hash === 'hash-arun');
+      passwordMock.verify.mockImplementation(
+        async (hash: string) => hash === 'hash-arun',
+      );
 
       const res = await service.switchCashierByPin('4321', 'COUNTER_1');
       expect(res.user.id).toBe('u-arun');
@@ -582,31 +605,68 @@ describe('PosService (Phase 1 Backend)', () => {
 
     it('refuses with a generic message when no PIN matches (no enumeration hint)', async () => {
       prismaMock.user.findMany.mockResolvedValue([
-        { id: 'u1', posPinHash: 'h', email: 'a@a', firstName: 'A', lastName: null, userType: 'STAFF', userRoles: [] },
+        {
+          id: 'u1',
+          posPinHash: 'h',
+          email: 'a@a',
+          firstName: 'A',
+          lastName: null,
+          userType: 'STAFF',
+          userRoles: [],
+        },
       ]);
       passwordMock.verify.mockResolvedValue(false);
-      await expect(service.switchCashierByPin('9999')).rejects.toThrow('PIN not recognised.');
+      await expect(service.switchCashierByPin('9999')).rejects.toThrow(
+        'PIN not recognised.',
+      );
     });
 
     it('rejects a non-numeric or wrong-length PIN before touching the DB', async () => {
-      await expect(service.switchCashierByPin('ab12')).rejects.toThrow(/4 to 6 digit/);
-      await expect(service.switchCashierByPin('12')).rejects.toThrow(/4 to 6 digit/);
+      await expect(service.switchCashierByPin('ab12')).rejects.toThrow(
+        /4 to 6 digit/,
+      );
+      await expect(service.switchCashierByPin('12')).rejects.toThrow(
+        /4 to 6 digit/,
+      );
       expect(prismaMock.user.findMany).not.toHaveBeenCalled();
     });
 
     it('refuses with a generic message when two cashiers share the same PIN (collision)', async () => {
       prismaMock.user.findMany.mockResolvedValue([
-        { id: 'u1', email: 'a@a', firstName: 'A', lastName: null, userType: 'STAFF', posPinHash: 'h1', userRoles: [{ role: { name: 'pos_operator' } }] },
-        { id: 'u2', email: 'b@b', firstName: 'B', lastName: null, userType: 'STAFF', posPinHash: 'h2', userRoles: [{ role: { name: 'pos_operator' } }] },
+        {
+          id: 'u1',
+          email: 'a@a',
+          firstName: 'A',
+          lastName: null,
+          userType: 'STAFF',
+          posPinHash: 'h1',
+          userRoles: [{ role: { name: 'pos_operator' } }],
+        },
+        {
+          id: 'u2',
+          email: 'b@b',
+          firstName: 'B',
+          lastName: null,
+          userType: 'STAFF',
+          posPinHash: 'h2',
+          userRoles: [{ role: { name: 'pos_operator' } }],
+        },
       ]);
       passwordMock.verify.mockResolvedValue(true);
-      await expect(service.switchCashierByPin('1234')).rejects.toThrow('PIN not recognised.');
+      await expect(service.switchCashierByPin('1234')).rejects.toThrow(
+        'PIN not recognised.',
+      );
     });
 
     it('setCashierPin requires the current password', async () => {
-      prismaMock.user.findUnique.mockResolvedValue({ id: 'u1', passwordHash: 'h' });
+      prismaMock.user.findUnique.mockResolvedValue({
+        id: 'u1',
+        passwordHash: 'h',
+      });
       passwordMock.verify.mockResolvedValue(false);
-      await expect(service.setCashierPin('u1', 'wrong', '1234')).rejects.toThrow(/wrong/);
+      await expect(
+        service.setCashierPin('u1', 'wrong', '1234'),
+      ).rejects.toThrow(/wrong/);
       expect(prismaMock.user.update).not.toHaveBeenCalled();
     });
   });
@@ -742,7 +802,11 @@ describe('PosService (Phase 1 Backend)', () => {
       // the capped amount -- not the 700 the till optimistically sent.
       expect(giftCardService.redeem).toHaveBeenCalledWith(
         'cashier-1',
-        expect.objectContaining({ code: 'GC1000', amount: 500, orderId: 'order-1' }),
+        expect.objectContaining({
+          code: 'GC1000',
+          amount: 500,
+          orderId: 'order-1',
+        }),
       );
     });
 
@@ -752,7 +816,9 @@ describe('PosService (Phase 1 Backend)', () => {
         balance: 500,
         status: 'ACTIVE',
       });
-      giftCardService.redeem.mockRejectedValue(new Error('Insufficient gift card balance'));
+      giftCardService.redeem.mockRejectedValue(
+        new Error('Insufficient gift card balance'),
+      );
       workflow.transition = jest.fn().mockResolvedValue(true);
       repository.createPosOrder.mockResolvedValue({
         id: 'order-2',
@@ -816,7 +882,7 @@ describe('PosService (Phase 1 Backend)', () => {
             productName: 'Kurti',
             quantity: 1,
             unitPrice: 1000,
-          } as unknown as never,
+          },
         ],
       });
 
@@ -835,7 +901,7 @@ describe('PosService (Phase 1 Backend)', () => {
               productName: 'Kurti',
               quantity: 1,
               unitPrice: 1000,
-            } as unknown as never,
+            },
           ],
         }),
       ).rejects.toThrow(/Coupon expired/);
@@ -1191,7 +1257,10 @@ describe('PosService (Phase 1 Backend)', () => {
       const res = await service.completeSale('cashier-1', sale);
       expect(res.success).toBe(true);
       expect(repository.createShift).toHaveBeenCalledWith(
-        expect.objectContaining({ terminalId: DEFAULT_TERMINAL_ID, cashierId: 'cashier-1' }),
+        expect.objectContaining({
+          terminalId: DEFAULT_TERMINAL_ID,
+          cashierId: 'cashier-1',
+        }),
       );
     });
 
@@ -1207,7 +1276,10 @@ describe('PosService (Phase 1 Backend)', () => {
         items: [],
       });
 
-      await service.completeSale('cashier-1', { ...sale, terminalId: 'MOBILE_1' });
+      await service.completeSale('cashier-1', {
+        ...sale,
+        terminalId: 'MOBILE_1',
+      });
       expect(repository.findOpenShiftForTerminal).toHaveBeenCalledWith(
         'MOBILE_1',
       );

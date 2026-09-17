@@ -34,7 +34,9 @@ export class InvoiceController {
   }
 
   private async resolveCustomerId(userId: string): Promise<string | null> {
-    const p = await this.prisma.customerProfile.findUnique({ where: { userId } });
+    const p = await this.prisma.customerProfile.findUnique({
+      where: { userId },
+    });
     return p?.id ?? null;
   }
 
@@ -55,7 +57,7 @@ export class InvoiceController {
     @Param('orderId') orderId: string,
     @CurrentUser() user: JwtPayload,
   ) {
-    if (!await this.isAdmin(user.sub)) {
+    if (!(await this.isAdmin(user.sub))) {
       const order = await this.prisma.order.findUnique({
         where: { id: orderId },
         select: { customerId: true },
@@ -75,7 +77,7 @@ export class InvoiceController {
   @ApiOperation({ summary: 'Get invoice by ID' })
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     const invoice = await this.invoiceService.findById(id);
-    if (!await this.isAdmin(user.sub)) {
+    if (!(await this.isAdmin(user.sub))) {
       const order = await this.prisma.order.findUnique({
         where: { id: (invoice as any).orderId },
         select: { customerId: true },

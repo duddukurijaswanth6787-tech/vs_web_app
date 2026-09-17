@@ -148,7 +148,10 @@ export class WarehouseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin', 'staff')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Update an existing warehouse inventory count (staff portal stock counts)' })
+  @ApiOperation({
+    summary:
+      'Update an existing warehouse inventory count (staff portal stock counts)',
+  })
   async updateInventoryCount(
     @Param('id') id: string,
     @Param('variantId') variantId: string,
@@ -170,7 +173,10 @@ export class WarehouseController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin', 'staff')
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Transfer stock between warehouses -- also used by the warehouse staff portal' })
+  @ApiOperation({
+    summary:
+      'Transfer stock between warehouses -- also used by the warehouse staff portal',
+  })
   async transferStock(
     @Body() dto: TransferStockDto,
     @CurrentUser() user: JwtPayload,

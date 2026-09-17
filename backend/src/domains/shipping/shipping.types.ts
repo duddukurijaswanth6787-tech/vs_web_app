@@ -154,4 +154,3 @@ export interface BulkShippingLabelsResponse {
   orders: ShippingLabelOrderData[];
   html: string;
 }
-

@@ -174,7 +174,10 @@ export class ShippingService {
   ): Promise<BulkShippingLabelsResponse> {
     const { orderIds, format = '4x6' } = dto;
     if (!orderIds || !orderIds.length) {
-      throw new BusinessException('At least one order ID is required', 'SHIPPING_004');
+      throw new BusinessException(
+        'At least one order ID is required',
+        'SHIPPING_004',
+      );
     }
 
     const orders = await this.prisma.order.findMany({
@@ -200,12 +203,16 @@ export class ShippingService {
     });
 
     if (!orders.length) {
-      throw new BusinessException('No valid orders found for label generation', 'SHIPPING_005');
+      throw new BusinessException(
+        'No valid orders found for label generation',
+        'SHIPPING_005',
+      );
     }
 
     const defaultSender = {
       name: "Vasanthi's Signature",
-      address: 'Plot 42, Road No 36, Jubilee Hills, Hyderabad, Telangana - 500033',
+      address:
+        'Plot 42, Road No 36, Jubilee Hills, Hyderabad, Telangana - 500033',
       phone: '+91 98765 43210',
       gstin: '36ABCDE1234F1Z5',
     };
@@ -236,11 +243,15 @@ export class ShippingService {
         paymentMethodStr.toUpperCase() === 'COD' ||
         paymentMethodStr.toUpperCase() === 'PAY_ON_DELIVERY';
 
-
       const totalAmount = Number(o.grandTotal);
       const waybillNumber =
         o.waybillNumber ||
-        `DEL${o.orderNumber.replace(/[^0-9]/g, '').slice(-9).padStart(9, '1') || Date.now().toString().slice(-9)}`;
+        `DEL${
+          o.orderNumber
+            .replace(/[^0-9]/g, '')
+            .slice(-9)
+            .padStart(9, '1') || Date.now().toString().slice(-9)
+        }`;
 
       const courierPartner = o.courierPartner || 'Delhivery Surface / Express';
 
@@ -253,7 +264,11 @@ export class ShippingService {
       }));
 
       const totalWeightGrams = 500 * Math.max(1, o.items.length);
-      const barcodeSvg = generateCode128Svg(waybillNumber, { height: 42, barWidth: 1.8, includeText: true });
+      const barcodeSvg = generateCode128Svg(waybillNumber, {
+        height: 42,
+        barWidth: 1.8,
+        includeText: true,
+      });
 
       return {
         orderId: o.id,
@@ -267,7 +282,8 @@ export class ShippingService {
         recipient: {
           name: custName,
           phone: custPhone,
-          addressLine1: shippingAddress?.addressLine1 || 'Store Pickup / Counter Sale',
+          addressLine1:
+            shippingAddress?.addressLine1 || 'Store Pickup / Counter Sale',
           addressLine2: shippingAddress?.addressLine2 || undefined,
           city: shippingAddress?.city || 'Hyderabad',
           state: shippingAddress?.state || 'Telangana',
@@ -603,4 +619,3 @@ export class ShippingService {
 </html>`;
   }
 }
-

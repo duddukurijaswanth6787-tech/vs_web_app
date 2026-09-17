@@ -733,13 +733,25 @@ export class SocialService {
     const dayKey = (d: Date) => d.toISOString().slice(0, 10);
     const buckets = new Map<
       string,
-      { date: string; likes: number; comments: number; shares: number; plays: number }
+      {
+        date: string;
+        likes: number;
+        comments: number;
+        shares: number;
+        plays: number;
+      }
     >();
     for (let i = 0; i < days; i++) {
       const d = new Date(since);
       d.setDate(since.getDate() + i);
       const key = dayKey(d);
-      buckets.set(key, { date: key, likes: 0, comments: 0, shares: 0, plays: 0 });
+      buckets.set(key, {
+        date: key,
+        likes: 0,
+        comments: 0,
+        shares: 0,
+        plays: 0,
+      });
     }
 
     for (const row of likes) {

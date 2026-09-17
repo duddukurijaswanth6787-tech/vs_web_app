@@ -31,7 +31,6 @@ describe('ShippingService', () => {
       ],
     }).compile();
 
-
     service = module.get<ShippingService>(ShippingService);
     repository = module.get<ShippingRepository>(ShippingRepository);
   });

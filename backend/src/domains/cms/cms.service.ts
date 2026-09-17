@@ -99,7 +99,9 @@ export class CmsService {
       title: bannerInput.title,
       description: bannerInput.description,
       imageUrl: this.storageService.sanitizeUrl(bannerInput.imageUrl),
-      mobileImageUrl: this.storageService.sanitizeUrl(bannerInput.mobileImageUrl),
+      mobileImageUrl: this.storageService.sanitizeUrl(
+        bannerInput.mobileImageUrl,
+      ),
       linkUrl: bannerInput.linkUrl,
       placement: bannerInput.placement,
       displayOrder: bannerInput.displayOrder ?? 0,
@@ -132,8 +134,12 @@ export class CmsService {
     if (!banner || banner.deletedAt)
       throw new BusinessException('Banner not found', 'BANNER_001');
     const updateData: any = { ...dto, updatedBy: userId };
-    if (dto.imageUrl) updateData.imageUrl = this.storageService.sanitizeUrl(dto.imageUrl);
-    if (dto.mobileImageUrl) updateData.mobileImageUrl = this.storageService.sanitizeUrl(dto.mobileImageUrl);
+    if (dto.imageUrl)
+      updateData.imageUrl = this.storageService.sanitizeUrl(dto.imageUrl);
+    if (dto.mobileImageUrl)
+      updateData.mobileImageUrl = this.storageService.sanitizeUrl(
+        dto.mobileImageUrl,
+      );
     if (dto.startDate) updateData.startDate = new Date(dto.startDate);
     if (dto.endDate) updateData.endDate = new Date(dto.endDate);
     await this.cmsRepository.updateBanner(id, updateData);

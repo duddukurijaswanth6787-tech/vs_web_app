@@ -10,9 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TestimonialsService } from './testimonials.service';
-import { CreateTestimonialDto, UpdateTestimonialDto } from './testimonials.types';
+import {
+  CreateTestimonialDto,
+  UpdateTestimonialDto,
+} from './testimonials.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -22,9 +28,13 @@ export class TestimonialsController {
   constructor(private readonly testimonialsService: TestimonialsService) {}
 
   @Get('featured')
-  @ApiOperation({ summary: 'Get active featured customer testimonials for homepage' })
+  @ApiOperation({
+    summary: 'Get active featured customer testimonials for homepage',
+  })
   async findFeatured() {
-    return ResponseBuilder.success(await this.testimonialsService.findFeatured());
+    return ResponseBuilder.success(
+      await this.testimonialsService.findFeatured(),
+    );
   }
 
   @Get()

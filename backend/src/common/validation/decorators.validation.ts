@@ -667,7 +667,6 @@ export function IsDocumentCustom(validationOptions?: ValidationOptions) {
   );
 }
 
-
 /**
  * Validates a 6-digit Indian PIN code. Leading zero allowed (110001, 500034).
  */
@@ -715,7 +714,8 @@ export function IsHsnCodeCustom(validationOptions?: ValidationOptions) {
         options: validationOptions,
         validator: {
           validate(value: any) {
-            if (value === undefined || value === null || value === '') return true;
+            if (value === undefined || value === null || value === '')
+              return true;
             return typeof value === 'string' && /^\d{4,8}$/.test(value.trim());
           },
           defaultMessage(args: ValidationArguments) {
@@ -806,7 +806,11 @@ export function IsRequiredStringCustom(
   validationOptions?: ValidationOptions,
 ) {
   return applyDecorators(
-    ApiProperty({ description: 'Required text', minLength: min, maxLength: max }),
+    ApiProperty({
+      description: 'Required text',
+      minLength: min,
+      maxLength: max,
+    }),
     (target: object, propertyKey: string | symbol) => {
       registerDecorator({
         name: 'isRequiredStringCustom',

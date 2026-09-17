@@ -23,7 +23,10 @@ export class PosRepository {
       channel: { in: ['STORE', 'BOTH'] },
     };
 
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(trimmed);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        trimmed,
+      );
     const variantMatchConditions: Prisma.ProductVariantWhereInput[] = [
       { barcode: { equals: trimmed, mode: 'insensitive' } },
       { sku: { equals: trimmed, mode: 'insensitive' } },
@@ -37,7 +40,9 @@ export class PosRepository {
       '890351069409': 'COL1-XL',
     };
     if (barcodeAliases[trimmed]) {
-      variantMatchConditions.push({ sku: { equals: barcodeAliases[trimmed], mode: 'insensitive' } });
+      variantMatchConditions.push({
+        sku: { equals: barcodeAliases[trimmed], mode: 'insensitive' },
+      });
     }
 
     // 1. Search directly on ProductVariant (barcode, sku, id)
@@ -72,10 +77,16 @@ export class PosRepository {
 
     if (variant) {
       if (variant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
-        this.prisma.productVariant.update({
-          where: { id: variant.id },
-          data: { barcode: trimmed },
-        }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+        this.prisma.productVariant
+          .update({
+            where: { id: variant.id },
+            data: { barcode: trimmed },
+          })
+          .catch((e) =>
+            this.logger.warn(
+              `Failed to auto-sync barcode ${trimmed}: ${e.message}`,
+            ),
+          );
       }
       return variant;
     }
@@ -110,11 +121,21 @@ export class PosRepository {
     });
 
     if (fallbackVariant) {
-      if (fallbackVariant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
-        this.prisma.productVariant.update({
-          where: { id: fallbackVariant.id },
-          data: { barcode: trimmed },
-        }).catch((e) => this.logger.warn(`Failed to auto-sync barcode ${trimmed}: ${e.message}`));
+      if (
+        fallbackVariant.barcode !== trimmed &&
+        !isUuid &&
+        /^\d+$/.test(trimmed)
+      ) {
+        this.prisma.productVariant
+          .update({
+            where: { id: fallbackVariant.id },
+            data: { barcode: trimmed },
+          })
+          .catch((e) =>
+            this.logger.warn(
+              `Failed to auto-sync barcode ${trimmed}: ${e.message}`,
+            ),
+          );
       }
       return fallbackVariant;
     }
@@ -300,7 +321,11 @@ export class PosRepository {
         },
       },
       include: {
-        product: { include: { media: { where: { isPrimary: true, deletedAt: null }, take: 1 } } },
+        product: {
+          include: {
+            media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
+          },
+        },
         inventory: true,
         attributeValues: { include: { attribute: true, option: true } },
         media: { where: { isPrimary: true, deletedAt: null }, take: 1 },
@@ -502,7 +527,11 @@ export class PosRepository {
     };
   }
 
-  async upsertPosCustomer(dto: { fullName: string; phone: string; email?: string }) {
+  async upsertPosCustomer(dto: {
+    fullName: string;
+    phone: string;
+    email?: string;
+  }) {
     const cleanPhone = dto.phone.replace(/\D/g, '').slice(-10);
     if (cleanPhone.length < 10) {
       throw new Error('Valid 10-digit phone number is required.');
@@ -514,7 +543,11 @@ export class PosRepository {
 
     let user = await this.prisma.user.findFirst({
       where: {
-        OR: [{ phone: cleanPhone }, { email }, { phone: { contains: cleanPhone } }],
+        OR: [
+          { phone: cleanPhone },
+          { email },
+          { phone: { contains: cleanPhone } },
+        ],
       },
       include: { customerProfile: true },
     });
@@ -558,7 +591,11 @@ export class PosRepository {
     return this.findCustomerByPhone(cleanPhone);
   }
 
-  async listPosCustomers(params: { search?: string; page?: number; limit?: number }) {
+  async listPosCustomers(params: {
+    search?: string;
+    page?: number;
+    limit?: number;
+  }) {
     const page = Math.max(1, params.page || 1);
     const limit = Math.max(1, Math.min(100, params.limit || 20));
     const skip = (page - 1) * limit;
@@ -602,11 +639,15 @@ export class PosRepository {
 
     const data = users.map((u) => {
       const orders = u.customerProfile?.orders || [];
-      const totalSpent = orders.reduce((sum, o) => sum + Number(o.grandTotal), 0);
+      const totalSpent = orders.reduce(
+        (sum, o) => sum + Number(o.grandTotal),
+        0,
+      );
       return {
         id: u.id,
         customerProfileId: u.customerProfile?.id,
-        fullName: [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
+        fullName:
+          [u.firstName, u.lastName].filter(Boolean).join(' ') || u.email,
         phone: u.phone || u.customerProfile?.phone || 'N/A',
         email: u.email,
         ordersCount: orders.length,

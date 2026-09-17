@@ -58,15 +58,15 @@ export class DelhiveryService {
       '0bfb0bcc34ee8ff06f6e06d36b40c96830d20f44';
   }
 
-
-
   /**
    * Check pincode serviceability via Delhivery API / MCP
    */
   async checkPincode(pincode: string): Promise<DelhiveryPincodeResponse> {
     try {
-      this.logger.log(`Checking Delhivery pincode serviceability for ${pincode}`);
-      
+      this.logger.log(
+        `Checking Delhivery pincode serviceability for ${pincode}`,
+      );
+
       const res = await fetch(
         `https://track.delhivery.com/c/api/pin-codes/json/?token=${encodeURIComponent(this.apiToken)}&filter_codes=${pincode}`,
       );
@@ -97,7 +97,9 @@ export class DelhiveryService {
       isServiceable: isValidPin,
       prepaidAvailable: isValidPin,
       codAvailable: isValidPin,
-      remarks: isValidPin ? 'Serviceable via Delhivery Surface/Express' : 'Invalid Pincode',
+      remarks: isValidPin
+        ? 'Serviceable via Delhivery Surface/Express'
+        : 'Invalid Pincode',
     };
   }
 
@@ -171,21 +173,26 @@ export class DelhiveryService {
     pickupTime?: string;
     expectedPackageCount: number;
   }) {
-    this.logger.log(`Requesting Delhivery courier pickup at ${dto.pickupLocation}`);
+    this.logger.log(
+      `Requesting Delhivery courier pickup at ${dto.pickupLocation}`,
+    );
     try {
-      const res = await fetch('https://track.delhivery.com/fm/request/create/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Token ${this.apiToken}`,
+      const res = await fetch(
+        'https://track.delhivery.com/fm/request/create/',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Token ${this.apiToken}`,
+          },
+          body: JSON.stringify({
+            pickup_location: dto.pickupLocation,
+            pickup_date: dto.pickupDate,
+            pickup_time: dto.pickupTime || '10:00:00',
+            expected_package_count: dto.expectedPackageCount,
+          }),
         },
-        body: JSON.stringify({
-          pickup_location: dto.pickupLocation,
-          pickup_date: dto.pickupDate,
-          pickup_time: dto.pickupTime || '10:00:00',
-          expected_package_count: dto.expectedPackageCount,
-        }),
-      });
+      );
 
       if (res.ok) {
         const data = await res.json();
@@ -204,7 +211,8 @@ export class DelhiveryService {
       success: true,
       pickupId: `PU-${Date.now().toString().slice(-6)}`,
       status: 'SCHEDULED',
-      message: 'Delhivery pickup request scheduled for assigned warehouse location.',
+      message:
+        'Delhivery pickup request scheduled for assigned warehouse location.',
     };
   }
 
@@ -221,7 +229,8 @@ export class DelhiveryService {
       courierPartner: 'Delhivery Surface & Express B2C',
       pickupLocation: {
         name: "Vasanthi's Signature Main Warehouse",
-        address: 'Plot 42, Jubilee Hills Road No 36, Hyderabad, Telangana - 500033',
+        address:
+          'Plot 42, Jubilee Hills Road No 36, Hyderabad, Telangana - 500033',
         contact: '+91 98765 43210',
       },
       packages: [

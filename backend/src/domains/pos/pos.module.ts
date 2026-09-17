@@ -14,7 +14,15 @@ import { BarcodeService } from './barcode.service';
 import { PrinterService } from './printer.service';
 
 @Module({
-  imports: [DatabaseModule, OrderModule, AuditModule, CouponModule, GiftCardModule, LoyaltyModule, AuthModule],
+  imports: [
+    DatabaseModule,
+    OrderModule,
+    AuditModule,
+    CouponModule,
+    GiftCardModule,
+    LoyaltyModule,
+    AuthModule,
+  ],
   controllers: [PosController],
   providers: [
     PosRepository,

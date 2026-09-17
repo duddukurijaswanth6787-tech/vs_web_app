@@ -112,7 +112,10 @@ describe('PaymentService', () => {
         { provide: ConfigService, useValue: mockConfig },
         { provide: PrismaService, useValue: mockPrisma },
         { provide: AppSettingRepository, useValue: mockSettingRepository },
-        { provide: NotificationService, useValue: { notifyAdmins: jest.fn().mockResolvedValue(true) } },
+        {
+          provide: NotificationService,
+          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true) },
+        },
       ],
     }).compile();
 
@@ -128,7 +131,9 @@ describe('PaymentService', () => {
         create: jest.fn().mockResolvedValue({ id: 'order_mock_999' }),
       },
       payments: {
-        refund: jest.fn().mockResolvedValue({ id: 'rfnd_mock_999', status: 'processed' }),
+        refund: jest
+          .fn()
+          .mockResolvedValue({ id: 'rfnd_mock_999', status: 'processed' }),
       },
     });
 

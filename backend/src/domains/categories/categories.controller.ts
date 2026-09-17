@@ -22,7 +22,10 @@ import {
   CategoryQueryDto,
 } from './categories.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
@@ -35,7 +38,10 @@ export class CategoriesController {
   ) {}
 
   @Get()
-  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
+  @Header(
+    'Cache-Control',
+    'public, max-age=120, s-maxage=300, stale-while-revalidate=86400',
+  )
   @ApiOperation({
     summary: 'List categories with search, pagination, filtering, sorting',
   })
@@ -44,21 +50,30 @@ export class CategoriesController {
   }
 
   @Get('tree')
-  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
+  @Header(
+    'Cache-Control',
+    'public, max-age=120, s-maxage=300, stale-while-revalidate=86400',
+  )
   @ApiOperation({ summary: 'Get full category tree (unlimited nesting)' })
   async getTree() {
     return ResponseBuilder.success(await this.categoriesService.getTree());
   }
 
   @Get('featured')
-  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
+  @Header(
+    'Cache-Control',
+    'public, max-age=120, s-maxage=300, stale-while-revalidate=86400',
+  )
   @ApiOperation({ summary: 'Get featured categories for the homepage' })
   async findFeatured() {
     return ResponseBuilder.success(await this.categoriesService.findFeatured());
   }
 
   @Get('slug/:slug')
-  @Header('Cache-Control', 'public, max-age=120, s-maxage=300, stale-while-revalidate=86400')
+  @Header(
+    'Cache-Control',
+    'public, max-age=120, s-maxage=300, stale-while-revalidate=86400',
+  )
   @ApiOperation({ summary: 'Get category by slug' })
   async findBySlug(@Param('slug') slug: string) {
     return ResponseBuilder.success(

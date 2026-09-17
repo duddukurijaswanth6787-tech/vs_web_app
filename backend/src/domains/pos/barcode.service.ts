@@ -18,7 +18,11 @@ export class BarcodeService {
   ): Promise<Buffer> {
     try {
       const cleanBcid = (bcid || 'code128').toLowerCase();
-      const is2D = cleanBcid === 'qrcode' || cleanBcid === 'datamatrix' || cleanBcid === 'pdf417' || cleanBcid === 'azteccode';
+      const is2D =
+        cleanBcid === 'qrcode' ||
+        cleanBcid === 'datamatrix' ||
+        cleanBcid === 'pdf417' ||
+        cleanBcid === 'azteccode';
       const options: Record<string, unknown> = {
         bcid: cleanBcid,
         text: String(text || 'SKU'),
@@ -142,7 +146,9 @@ export class BarcodeService {
       // auditor asks for on a return counter -- both belong on the tag when
       // there's room.
       const mrpBlock =
-        typeof params.mrp === 'number' && params.mrp > 0 && params.mrp !== params.price
+        typeof params.mrp === 'number' &&
+        params.mrp > 0 &&
+        params.mrp !== params.price
           ? `<div class="mrp-line">MRP ₹${params.mrp} <span class="mrp-note">(incl. of all taxes)</span></div>`
           : '';
       const hsnBlock = params.hsnCode
@@ -173,11 +179,16 @@ export class BarcodeService {
     // MEDIUM has enough room for MRP and HSN; SMALL does not, so it stays as-is.
     const isMedium = labelSize === 'MEDIUM';
     const mrpBlock =
-      isMedium && typeof params.mrp === 'number' && params.mrp > 0 && params.mrp !== params.price
+      isMedium &&
+      typeof params.mrp === 'number' &&
+      params.mrp > 0 &&
+      params.mrp !== params.price
         ? `<div class="mrp-line">MRP ₹${params.mrp} <span class="mrp-note">incl. tax</span></div>`
         : '';
     const hsnBlock =
-      isMedium && params.hsnCode ? `<span class="hsn">HSN ${params.hsnCode}</span>` : '';
+      isMedium && params.hsnCode
+        ? `<span class="hsn">HSN ${params.hsnCode}</span>`
+        : '';
     return `
   <div class="store-name">${store}</div>
   <div class="product-title">${title}</div>

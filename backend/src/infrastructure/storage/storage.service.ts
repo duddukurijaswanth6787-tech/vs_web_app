@@ -118,7 +118,10 @@ export class StorageService {
     return this.provider.read(storagePath);
   }
 
-  async getStream(storagePath: string, range?: string): Promise<StreamResult | null> {
+  async getStream(
+    storagePath: string,
+    range?: string,
+  ): Promise<StreamResult | null> {
     if (typeof this.provider.getStream === 'function') {
       return this.provider.getStream(storagePath, range);
     }

@@ -163,13 +163,7 @@ function createQrMatrix(text: string): boolean[][] {
   }
 
   // 6. Data Encoding (Byte Mode)
-  const dataBytes: number[] = [];
-  // Mode indicator: 0100 (Byte)
-  // Character count indicator (8 bits)
   const rawBytes = new TextEncoder().encode(safeText);
-  let bitBuffer = (4 << 12) | (rawBytes.length << 4);
-  let bitCount = 12;
-
   const bits: number[] = [];
   // 4 bits mode (0100)
   bits.push(0, 1, 0, 0);

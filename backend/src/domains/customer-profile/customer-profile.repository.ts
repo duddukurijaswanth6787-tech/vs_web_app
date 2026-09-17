@@ -27,7 +27,10 @@ export class CustomerProfileRepository {
   // Same shape as findByUserId: a freshly created profile is returned straight
   // to the client on first load, so it must carry the user fields too.
   async create(data: Prisma.CustomerProfileCreateInput) {
-    return this.prisma.customerProfile.create({ data, include: { user: true } });
+    return this.prisma.customerProfile.create({
+      data,
+      include: { user: true },
+    });
   }
 
   async update(id: string, data: Prisma.CustomerProfileUpdateInput) {

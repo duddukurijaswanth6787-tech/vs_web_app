@@ -16,7 +16,11 @@ import {
   UpdateSizeChartTemplateDto,
   SizeChartQueryDto,
 } from './size-chart.types';
-import { JwtAuthGuard, CurrentUser, Public } from '@domains/auth/guards/jwt-auth.guard';
+import {
+  JwtAuthGuard,
+  CurrentUser,
+  Public,
+} from '@domains/auth/guards/jwt-auth.guard';
 import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import { ResponseBuilder } from '@common/responses/response.builder';

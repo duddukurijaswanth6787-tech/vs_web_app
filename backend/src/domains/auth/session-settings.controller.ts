@@ -12,13 +12,17 @@ import type { JwtPayload } from './services/jwt.service';
 @UseGuards(JwtAuthGuard, PermissionsGuard)
 @ApiBearerAuth()
 export class SessionSettingsController {
-  constructor(private readonly sessionSettingsService: SessionSettingsService) {}
+  constructor(
+    private readonly sessionSettingsService: SessionSettingsService,
+  ) {}
 
   @Get()
   @Permissions('settings:view')
   @ApiOperation({ summary: 'Get login token expiry settings' })
   async getSettings() {
-    return ResponseBuilder.success(await this.sessionSettingsService.getSettings());
+    return ResponseBuilder.success(
+      await this.sessionSettingsService.getSettings(),
+    );
   }
 
   @Put()

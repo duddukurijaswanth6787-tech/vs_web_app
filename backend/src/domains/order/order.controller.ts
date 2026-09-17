@@ -11,7 +11,10 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { OrderService } from './order.service';
 import { OrderQueryDto, AssignCourierDto } from './order.types';
 import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
-import { PermissionsGuard, Permissions } from '@domains/auth/guards/permissions.guard';
+import {
+  PermissionsGuard,
+  Permissions,
+} from '@domains/auth/guards/permissions.guard';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import { PrismaService } from '@database/prisma.service';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
@@ -50,7 +53,9 @@ export class OrderController {
     @CurrentUser() user: JwtPayload,
   ) {
     const isAdmin = await this.isAdmin(user.sub);
-    const customerId = isAdmin ? query.customerId : ((await this.resolveCustomerId(user.sub)) ?? '__none__');
+    const customerId = isAdmin
+      ? query.customerId
+      : ((await this.resolveCustomerId(user.sub)) ?? '__none__');
     const q = isAdmin ? query : { ...query, customerId };
     return ResponseBuilder.success(await this.orderService.findAll(q, isAdmin));
   }
@@ -65,7 +70,10 @@ export class OrderController {
   ) {
     const isAdmin = await this.isAdmin(user.sub);
     const order = await this.orderService.findByOrderNumber(orderNumber);
-    if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
+    if (
+      !isAdmin &&
+      order.customerId !== (await this.resolveCustomerId(user.sub))
+    ) {
       return ResponseBuilder.success(null, 'Order not found');
     }
     return ResponseBuilder.success(order);
@@ -78,7 +86,10 @@ export class OrderController {
   async findById(@Param('id') id: string, @CurrentUser() user: JwtPayload) {
     const isAdmin = await this.isAdmin(user.sub);
     const order = await this.orderService.findById(id, isAdmin);
-    if (!isAdmin && order.customerId !== (await this.resolveCustomerId(user.sub))) {
+    if (
+      !isAdmin &&
+      order.customerId !== (await this.resolveCustomerId(user.sub))
+    ) {
       return ResponseBuilder.success(null, 'Order not found');
     }
     return ResponseBuilder.success(order);

@@ -39,7 +39,10 @@ export class EmailService {
     if (this.transporter) return this.transporter;
     const host = this.configService.get<string>('app.email.smtpHost', '');
     const port = this.configService.get<number>('app.email.smtpPort', 587);
-    const secure = this.configService.get<boolean>('app.email.smtpSecure', false);
+    const secure = this.configService.get<boolean>(
+      'app.email.smtpSecure',
+      false,
+    );
     const user = this.configService.get<string>('app.email.smtpUser', '');
     const pass = this.configService.get<string>('app.email.smtpPassword', '');
     this.transporter = nodemailer.createTransport({
@@ -52,7 +55,10 @@ export class EmailService {
   }
 
   private fromHeader(): string {
-    const name = this.configService.get<string>('app.email.fromName', STORE_NAME);
+    const name = this.configService.get<string>(
+      'app.email.fromName',
+      STORE_NAME,
+    );
     const address = this.configService.get<string>(
       'app.email.fromAddress',
       'no-reply@vsboutique.shop',
@@ -108,7 +114,10 @@ export class EmailService {
       });
       return updated;
     } catch (err: any) {
-      this.logger.error(`Email send failed: ${dto.to} / ${dto.template}`, err?.stack);
+      this.logger.error(
+        `Email send failed: ${dto.to} / ${dto.template}`,
+        err?.stack,
+      );
       return this.prisma.emailLog.update({
         where: { id: log.id },
         data: { status: 'FAILED', error: err?.message ?? 'Email send failed' },
@@ -152,12 +161,20 @@ export class EmailService {
       </p>
       <p style="color:#78716c;font-size:12px;">If you didn't request this, you can safely ignore this email -- your password won't change.</p>
     `);
-    return this.send(
-      { to, template: 'PASSWORD_RESET', subject: `${STORE_NAME}: Reset your password`, html, userId },
-    );
+    return this.send({
+      to,
+      template: 'PASSWORD_RESET',
+      subject: `${STORE_NAME}: Reset your password`,
+      html,
+      userId,
+    });
   }
 
-  async sendWelcomeEmail(to: string, firstName: string | undefined, userId?: string) {
+  async sendWelcomeEmail(
+    to: string,
+    firstName: string | undefined,
+    userId?: string,
+  ) {
     const html = this.layout(`
       <h2 style="margin:0 0 12px;color:#0284c7;font-size:18px;">Welcome${firstName ? `, ${firstName}` : ''}!</h2>
       <p>Thank you for creating an account with ${STORE_NAME}. Explore our latest sarees, lehengas and designer wear online.</p>
@@ -165,14 +182,25 @@ export class EmailService {
         <a href="${this.configService.get<string>('app.frontendUrl')}" style="background:#0284c7;color:#ffffff;padding:12px 28px;border-radius:8px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Start Shopping</a>
       </p>
     `);
-    return this.send({ to, template: 'WELCOME', subject: `Welcome to ${STORE_NAME}`, html, userId });
+    return this.send({
+      to,
+      template: 'WELCOME',
+      subject: `Welcome to ${STORE_NAME}`,
+      html,
+      userId,
+    });
   }
 
   async sendOrderConfirmationEmail(params: {
     to: string;
     userId?: string;
     orderNumber: string;
-    items: { productName: string; variantTitle?: string; quantity: number; unitPrice: number }[];
+    items: {
+      productName: string;
+      variantTitle?: string;
+      quantity: number;
+      unitPrice: number;
+    }[];
     subtotal: number;
     discountTotal?: number;
     taxTotal?: number;

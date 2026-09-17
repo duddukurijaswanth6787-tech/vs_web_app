@@ -155,8 +155,7 @@ export function useOfflineSync(terminalId: string) {
   useEffect(() => {
     if (!isBackendReachable) return;
     syncNow();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isBackendReachable]);
+  }, [isBackendReachable, syncNow]);
 
   useEffect(() => {
     if (!isBackendReachable) return;

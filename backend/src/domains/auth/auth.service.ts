@@ -99,7 +99,10 @@ export class AuthService {
   ): Promise<AuthTokensResponse> {
     const inputIdentifier = (dto.email || dto.username || '').trim();
     if (!inputIdentifier) {
-      throw new AuthenticationException('Email or username is required', 'AUTH_001');
+      throw new AuthenticationException(
+        'Email or username is required',
+        'AUTH_001',
+      );
     }
     const user = await this.authRepository.findByEmail(inputIdentifier);
     if (!user) {
@@ -324,9 +327,14 @@ export class AuthService {
     let user = await this.authRepository.findByGoogleId(profile.googleId);
 
     if (!user) {
-      const existingByEmail = await this.authRepository.findByEmailBasic(profile.email);
+      const existingByEmail = await this.authRepository.findByEmailBasic(
+        profile.email,
+      );
       if (existingByEmail) {
-        await this.authRepository.linkGoogleId(existingByEmail.id, profile.googleId);
+        await this.authRepository.linkGoogleId(
+          existingByEmail.id,
+          profile.googleId,
+        );
         user = await this.authRepository.findById(existingByEmail.id);
       } else {
         const randomPass = await this.passwordService.hash(
@@ -351,12 +359,21 @@ export class AuthService {
       }
     }
 
-    if (!user) throw new AuthenticationException('Unable to login', 'GOOGLE_003');
+    if (!user)
+      throw new AuthenticationException('Unable to login', 'GOOGLE_003');
 
-    this.loggerService.log({ action: 'google_login', userId: user.id }, 'AuthService');
+    this.loggerService.log(
+      { action: 'google_login', userId: user.id },
+      'AuthService',
+    );
     // Routes through the same role-aware token issuance as every other login
     // path, instead of hardcoding a customer-only JWT payload -- important
     // for the account-linking case, where the matched user could be staff.
-    return this.issueTokensForUser(user.id, ip, userAgent, dto.rememberMe ?? false);
+    return this.issueTokensForUser(
+      user.id,
+      ip,
+      userAgent,
+      dto.rememberMe ?? false,
+    );
   }
 }
