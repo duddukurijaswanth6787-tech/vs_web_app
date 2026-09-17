@@ -41,8 +41,13 @@ export default function PrintersConfigPage() {
       setUsbConnected(true);
       setUsbDeviceName(webUsbPrinterService.connectedDeviceName());
       setPrintMode('ESCPOS');
-    } catch (err) {
-      setUsbError(getApiErrorMessage(err, 'Could not connect to a USB printer.'));
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('Access denied') || msg.includes('SecurityError') || msg.includes('open')) {
+        setUsbError('Windows has registered this printer with the system driver (usbprint.sys), which locks direct WebUSB. Simply click Mode 1 (Universal Browser Print) on the left to print to your KPC307 directly!');
+      } else {
+        setUsbError(getApiErrorMessage(err, 'Could not connect to a USB printer.'));
+      }
     } finally {
       setUsbConnecting(false);
     }
