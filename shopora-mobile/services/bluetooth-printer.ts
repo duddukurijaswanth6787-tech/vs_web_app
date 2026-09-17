@@ -36,6 +36,8 @@ interface NativeEscposPrinter {
     columnTexts: string[],
     options: Record<string, unknown>,
   ): Promise<void>;
+  printAndFeed(feed: number): Promise<void>;
+  cutPaper?(): Promise<void>;
   setWidth(width: number): void;
 }
 
@@ -57,14 +59,9 @@ const TSC_ROTATION = { ROTATION_0: 0 };
 const TSC_BARCODETYPE = { CODE128: '128' };
 const DIRECTION = { FORWARD: 0, BACKWARD: 1 };
 /**
- * Printable-width constants in dots, read from the native Android source
- * (RNBluetoothEscposPrinterModule.java) rather than the library's index.js
- * (which doesn't export these at all, despite the .d.ts claiming a
- * PAGE_WIDTH enum exists). printColumn() rejects any call whose column
- * widths sum past deviceWidth/8 characters, and deviceWidth defaults to
- * WIDTH_58 until setWidth() is called -- printReceipt() below calls it once
- * per print so a genuinely 80mm printer isn't silently capped at the 58mm
- * character budget.
+ * Printable-width constants in dots:
+ * 576 dots = 80mm width (48 chars standard font A)
+ * 384 dots = 58mm width (32 chars standard font A)
  */
 const PAGE_WIDTH = { WIDTH_58: 384, WIDTH_80: 576 };
 
@@ -261,20 +258,33 @@ class BluetoothPrinterService {
     return this.connectedName;
   }
 
-  /** Sends a short line to confirm the connection actually reaches the printer. */
+  /** Sends a short line to confirm the connection actually reaches the printer and cuts the paper. */
   async testPrint(): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
-    if (!BluetoothEscposPrinter) {
+    const P = BluetoothEscposPrinter;
+    if (!P) {
       throw new Error('Bluetooth ESC/POS printer native module is not available.');
     }
-    await BluetoothEscposPrinter.printerInit();
-    await BluetoothEscposPrinter.printerAlign(ALIGN.CENTER);
-    await BluetoothEscposPrinter.printText('Shopora POS -- Test Print OK\n\n\n', {});
+    await P.printerInit();
+    await P.setWidth(PAGE_WIDTH.WIDTH_80);
+    await P.printerAlign(ALIGN.CENTER);
+    await P.printText('================================\n\r', {});
+    await P.printText("VASANTHI'S SIGNATURE\n\r", { widthtimes: 1, heigthtimes: 1 });
+    await P.printText('POS Printer Demo OK\n\r', {});
+    await P.printText('Bluetooth Thermal Print Test\n\r', {});
+    await P.printText('================================\n\r\n\r\n\r\n\r', {});
+    if (P.cutPaper) {
+      try {
+        await P.cutPaper();
+      } catch (err) {
+        console.warn('[BluetoothPrinter] cutPaper error in testPrint:', err);
+      }
+    }
   }
 
-  /** Prints a POS sale receipt using the printer's built-in ESC/POS text/column commands. */
+  /** Prints a POS sale receipt using the printer's built-in ESC/POS text/column commands with precise column alignment and auto-cut. */
   async printReceipt(receipt: PrinterReceiptData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
@@ -284,78 +294,144 @@ class BluetoothPrinterService {
       throw new Error('Bluetooth ESC/POS printer native module is not available.');
     }
     const paperWidthMm = receipt.paperWidthMm ?? 80;
+    const is80mm = paperWidthMm >= 80;
 
-    // printColumn() rejects any call whose column widths sum past the
-    // printer's configured character budget (deviceWidth/8, native-side --
-    // see the PAGE_WIDTH comment above), which defaults to the 58mm budget
-    // (48 chars) until setWidth() is called. Tell it the real width so an
-    // 80mm printer isn't stuck using little more than half its paper.
-    await P.setWidth(paperWidthMm >= 80 ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
-    // Leaves a safety margin under the hard cap (72 chars at 80mm, 48 at
-    // 58mm) rather than using every last character.
-    const lineChars = paperWidthMm >= 80 ? 64 : 42;
+    // Set printable width in dots (576 dots for 80mm, 384 dots for 58mm)
+    await P.setWidth(is80mm ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
+
+    // Standard character budget per line: 48 chars for 80mm, 32 chars for 58mm
+    const lineChars = is80mm ? 48 : 32;
     const divider = '-'.repeat(lineChars);
-    const itemNameChars = lineChars - 12;
-    const totalsLabelChars = lineChars - 16;
+    const doubleDivider = '='.repeat(lineChars);
 
     await P.printerInit();
+
+    // 1. Header (Centered)
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText(`${receipt.storeName}\n\r`, { widthtimes: 1, heigthtimes: 1 });
+    await P.printText(`${receipt.storeName.toUpperCase()}\n\r`, { widthtimes: 1, heigthtimes: 1 });
     if (receipt.storeTagline) await P.printText(`${receipt.storeTagline}\n\r`, {});
     if (receipt.address) await P.printText(`${receipt.address}\n\r`, {});
     if (receipt.phone) await P.printText(`Ph: ${receipt.phone}\n\r`, {});
     await P.printText(`${divider}\n\r`, {});
 
+    // 2. Metadata (Left aligned)
     await P.printerAlign(ALIGN.LEFT);
-    await P.printText(`Invoice: ${receipt.orderNumber}\n\r`, {});
-    await P.printText(`Date: ${receipt.dateStr}\n\r`, {});
-    if (receipt.cashierName) await P.printText(`Cashier: ${receipt.cashierName}\n\r`, {});
+    await P.printText(`Invoice : ${receipt.orderNumber}\n\r`, {});
+    await P.printText(`Date    : ${receipt.dateStr}\n\r`, {});
+    if (receipt.cashierName) await P.printText(`Cashier : ${receipt.cashierName}\n\r`, {});
     if (receipt.customerName) {
       const suffix = receipt.customerPhone ? ` (${receipt.customerPhone})` : '';
       await P.printText(`Customer: ${receipt.customerName}${suffix}\n\r`, {});
     }
     await P.printText(`${divider}\n\r`, {});
 
-    for (const item of receipt.items) {
+    // 3. Item List with crisp column alignment
+    if (is80mm) {
+      // 80mm Layout: 22 + 6 + 8 + 12 = 48 chars total
       await P.printColumn(
-        [itemNameChars, 12],
-        [ALIGN.LEFT, ALIGN.RIGHT],
-        [item.title, `x${item.quantity}`],
+        [22, 6, 8, 12],
+        [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT, ALIGN.RIGHT],
+        ['ITEM', 'QTY', 'RATE', 'TOTAL'],
         {},
       );
+      await P.printText(`${divider}\n\r`, {});
+
+      for (const item of receipt.items) {
+        const itemTotal = item.unitPrice * item.quantity;
+        const mainTitle = item.title.slice(0, 22);
+        await P.printColumn(
+          [22, 6, 8, 12],
+          [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT, ALIGN.RIGHT],
+          [mainTitle, `${item.quantity}`, `${Math.round(item.unitPrice)}`, `${itemTotal.toFixed(2)}`],
+          {},
+        );
+        if (item.title.length > 22) {
+          await P.printText(` ${item.title.slice(22, 46)}\n\r`, {});
+        }
+      }
+    } else {
+      // 58mm Layout: 32 chars total
       await P.printColumn(
-        [itemNameChars, 12],
-        [ALIGN.LEFT, ALIGN.RIGHT],
-        ['', money(item.unitPrice * item.quantity)],
+        [16, 4, 12],
+        [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT],
+        ['ITEM', 'QTY', 'TOTAL'],
         {},
       );
+      await P.printText(`${divider}\n\r`, {});
+
+      for (const item of receipt.items) {
+        const itemTotal = item.unitPrice * item.quantity;
+        await P.printText(`${item.title}\n\r`, {});
+        await P.printColumn(
+          [12, 6, 14],
+          [ALIGN.LEFT, ALIGN.CENTER, ALIGN.RIGHT],
+          ['', `x${item.quantity}`, `${itemTotal.toFixed(2)}`],
+          {},
+        );
+      }
     }
     await P.printText(`${divider}\n\r`, {});
 
-    await P.printColumn([totalsLabelChars, 16], [ALIGN.LEFT, ALIGN.RIGHT], ['Subtotal', money(receipt.subtotal)], {});
-    if (receipt.discountTotal) {
+    // 4. Totals Block
+    const labelWidth = is80mm ? 32 : 18;
+    const valueWidth = is80mm ? 16 : 14;
+
+    await P.printColumn(
+      [labelWidth, valueWidth],
+      [ALIGN.LEFT, ALIGN.RIGHT],
+      ['Subtotal', money(receipt.subtotal)],
+      {},
+    );
+
+    if (receipt.discountTotal && receipt.discountTotal > 0) {
       await P.printColumn(
-        [totalsLabelChars, 16],
+        [labelWidth, valueWidth],
         [ALIGN.LEFT, ALIGN.RIGHT],
         ['Discount', `-${money(receipt.discountTotal)}`],
         {},
       );
     }
-    if (receipt.taxTotal) {
-      await P.printColumn([totalsLabelChars, 16], [ALIGN.LEFT, ALIGN.RIGHT], ['GST', money(receipt.taxTotal)], {});
-    }
-    await P.printText('\n\r', {});
-    await P.printColumn(
-      [totalsLabelChars, 16],
-      [ALIGN.LEFT, ALIGN.RIGHT],
-      ['TOTAL', money(receipt.grandTotal)],
-      { widthtimes: 1, heigthtimes: 1 },
-    );
-    if (receipt.paymentMethod) await P.printText(`Payment: ${receipt.paymentMethod}\n\r`, {});
 
-    await P.printText('\n\r', {});
+    if (receipt.taxTotal && receipt.taxTotal > 0) {
+      await P.printColumn(
+        [labelWidth, valueWidth],
+        [ALIGN.LEFT, ALIGN.RIGHT],
+        ['GST (5%)', money(receipt.taxTotal)],
+        {},
+      );
+    }
+
+    await P.printText(`${divider}\n\r`, {});
+
+    await P.printColumn(
+      [labelWidth, valueWidth],
+      [ALIGN.LEFT, ALIGN.RIGHT],
+      ['GRAND TOTAL', money(receipt.grandTotal)],
+      { widthtimes: is80mm ? 1 : 0, heigthtimes: 1 },
+    );
+
+    if (receipt.paymentMethod) {
+      await P.printText(`Payment Mode: ${receipt.paymentMethod}\n\r`, {});
+    }
+
+    await P.printText(`${doubleDivider}\n\r`, {});
+
+    // 5. Footer (Centered)
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText('Thank You For Shopping With Us!\n\r\n\r\n\r', {});
+    await P.printText('❖ THANK YOU FOR SHOPPING WITH US! ❖\n\r', {});
+    await P.printText('Visit again • vasanthissignature.in\n\r', {});
+
+    // Feed lines to clear the tear-bar / cutter mechanism
+    await P.printText('\n\r\n\r\n\r\n\r', {});
+
+    // 6. Automatic Paper Cut
+    if (P.cutPaper) {
+      try {
+        await P.cutPaper();
+      } catch (cutErr) {
+        console.warn('[BluetoothPrinter] cutPaper failed:', cutErr);
+      }
+    }
   }
 
   /**

@@ -17,3 +17,28 @@ index 0d3f5e8..8ec5a89 100644
      maven {url "https://repo.spring.io/plugins-release/"}
      mavenCentral()
      maven {
+diff --git a/node_modules/tp-react-native-bluetooth-printer/android/src/main/java/cn/jystudio/bluetooth/escpos/RNBluetoothEscposPrinterModule.java b/node_modules/tp-react-native-bluetooth-printer/android/src/main/java/cn/jystudio/bluetooth/escpos/RNBluetoothEscposPrinterModule.java
+index a1b2c3d..e4f5a6b 100644
+--- a/node_modules/tp-react-native-bluetooth-printer/android/src/main/java/cn/jystudio/bluetooth/escpos/RNBluetoothEscposPrinterModule.java
++++ b/node_modules/tp-react-native-bluetooth-printer/android/src/main/java/cn/jystudio/bluetooth/escpos/RNBluetoothEscposPrinterModule.java
+@@ -77,6 +77,22 @@ public class RNBluetoothEscposPrinterModule extends ReactContextBaseJavaModule
+     }
+ 
++    @ReactMethod
++    public void cutPaper(final Promise promise){
++        byte[] cutCmd = PrinterCommand.POS_Set_Cut(0);
++        if(cutCmd != null && sendDataByte(cutCmd)){
++            promise.resolve(null);
++        }else{
++            // Fallback to sending standard ESC/POS GS V 66 0 full cut command
++            byte[] rawCut = new byte[]{0x1D, 0x56, 0x42, 0x00};
++            if(sendDataByte(rawCut)){
++                promise.resolve(null);
++            }else{
++                promise.reject("COMMAND_NOT_SEND");
++            }
++        }
++    }
++
+     @ReactMethod
+     public void printerLeftSpace(int sp,final Promise promise){
