@@ -28,11 +28,7 @@ index a1b2c3d..e4f5a6b 100644
 +    public void cutPaper(final Promise promise){
 +        try {
 +            byte[] cutSeq = new byte[]{
-+                0x1B, 0x64, 0x04,
-+                0x1D, 0x56, 0x41, 0x03,
-+                0x1D, 0x56, 0x42, 0x03,
-+                0x1D, 0x56, 0x00,
-+                0x1D, 0x56, 0x01
++                0x1D, 0x56, 0x00
 +            };
 +            if(sendDataByte(cutSeq)){
 +                promise.resolve(null);
