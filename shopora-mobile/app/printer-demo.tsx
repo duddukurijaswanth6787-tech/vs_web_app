@@ -229,7 +229,7 @@ function getReceiptDemos(): ReceiptDemoItem[] {
 export default function PrinterDemoScreen() {
   const router = useRouter();
 
-  const [activeTab, setActiveTab] = useState<DemoCategory>('SHIPPING');
+  const [activeTab, setActiveTab] = useState<DemoCategory>('POS_RECEIPT');
   const [selectedShippingIdx, setSelectedShippingIdx] = useState(0);
   const [selectedBarcodeIdx, setSelectedBarcodeIdx] = useState(0);
   const [barcodeSize, setBarcodeSize] = useState<BarcodeLabelSize>('SMALL');

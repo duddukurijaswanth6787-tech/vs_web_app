@@ -126,7 +126,30 @@ export default function ShoporaHomeScreen() {
         </View>
       </View>
 
-      {/* Main 4 Action Cards Grid */}
+      {/* PROMINENT TOP 3-INCH PRINTER TEST LAB BANNER */}
+      <TouchableOpacity
+        style={styles.topPrinterBanner}
+        onPress={() => router.push('/printer-demo')}
+        activeOpacity={0.85}
+      >
+        <View style={styles.topPrinterIconBox}>
+          <Printer size={26} color="#ffffff" />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.topPrinterTitle}>🖨️ 3-INCH PRINTER DEMO</Text>
+            <View style={styles.readyBadge}>
+              <Text style={styles.readyBadgeText}>80MM OK</Text>
+            </View>
+          </View>
+          <Text style={styles.topPrinterSub}>
+            Test POS Receipts & Auto Paper-Cutter
+          </Text>
+        </View>
+        <ChevronRight size={20} color="#ffffff" />
+      </TouchableOpacity>
+
+      {/* Main Action Cards Grid */}
       <Text style={styles.sectionTitle}>Quick Actions</Text>
 
       <View style={styles.grid}>
@@ -143,7 +166,20 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubLight}>Scan barcode & checkout</Text>
         </TouchableOpacity>
 
-        {/* 2. + ADD PRODUCT (Wizard) */}
+        {/* 2. PRINTER DEMO & TEST LAB (Prominent Top Row) */}
+        <TouchableOpacity
+          style={[styles.actionCard, { backgroundColor: '#0f172a', borderColor: '#0f172a' }]}
+          onPress={() => router.push('/printer-demo')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleLight, { backgroundColor: '#334155' }]}>
+            <Printer size={24} color="#38bdf8" />
+          </View>
+          <Text style={styles.actionCardTitleLight}>🖨️ Printer Demo</Text>
+          <Text style={styles.actionCardSubLight}>Test 3-inch slips & labels</Text>
+        </TouchableOpacity>
+
+        {/* 3. + ADD PRODUCT (Wizard) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-product')}
@@ -156,7 +192,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Single or multi-variant</Text>
         </TouchableOpacity>
 
-        {/* 3. + ADD STOCK (Replenishment & Labels) */}
+        {/* 4. + ADD STOCK (Replenishment & Labels) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-stock')}
@@ -169,7 +205,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Receive & print labels</Text>
         </TouchableOpacity>
 
-        {/* 4. RETURNS -- the other half of selling; was web-POS only. */}
+        {/* 5. RETURNS */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/returns')}
@@ -182,20 +218,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Refund & restock</Text>
         </TouchableOpacity>
 
-        {/* 5. CLOSE SHIFT -- the app could open one but never close it. */}
-        <TouchableOpacity
-          style={styles.actionCardWhite}
-          onPress={() => router.push('/close-shift')}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconCircleDark, { backgroundColor: '#eff6ff' }]}>
-            <LockKeyhole size={24} color="#1d4ed8" />
-          </View>
-          <Text style={styles.actionCardTitleDark}>Close Shift</Text>
-          <Text style={styles.actionCardSubDark}>Count drawer & reconcile</Text>
-        </TouchableOpacity>
-
-        {/* 4. SCAN / INSPECT PRODUCT */}
+        {/* 6. SCAN / INSPECT PRODUCT */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/view-product')}
@@ -208,20 +231,20 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
         </TouchableOpacity>
 
-        {/* 6. PRINTER DEMO & TEST LAB */}
+        {/* 7. CLOSE SHIFT */}
         <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: '#0f172a', borderColor: '#0f172a' }]}
-          onPress={() => router.push('/printer-demo')}
+          style={styles.actionCardWhite}
+          onPress={() => router.push('/close-shift')}
           activeOpacity={0.85}
         >
-          <View style={[styles.iconCircleLight, { backgroundColor: '#334155' }]}>
-            <Printer size={24} color="#38bdf8" />
+          <View style={[styles.iconCircleDark, { backgroundColor: '#eff6ff' }]}>
+            <LockKeyhole size={24} color="#1d4ed8" />
           </View>
-          <Text style={styles.actionCardTitleLight}>🖨️ Printer Demo</Text>
-          <Text style={styles.actionCardSubLight}>Test 4x6 labels, POS slips</Text>
+          <Text style={styles.actionCardTitleDark}>Close Shift</Text>
+          <Text style={styles.actionCardSubDark}>Count drawer & reconcile</Text>
         </TouchableOpacity>
 
-        {/* 7. PRINTER SETTINGS / PAIRING */}
+        {/* 8. PRINTER SETTINGS / PAIRING */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/printer-settings')}
@@ -369,6 +392,52 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#0284c7',
     marginTop: 2,
+  },
+  topPrinterBanner: {
+    backgroundColor: '#0f172a',
+    borderRadius: 18,
+    padding: 16,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 20,
+    borderWidth: 1.5,
+    borderColor: '#38bdf8',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  topPrinterIconBox: {
+    width: 46,
+    height: 46,
+    borderRadius: 14,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  topPrinterTitle: {
+    color: '#ffffff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    letterSpacing: 0.3,
+  },
+  topPrinterSub: {
+    color: '#94a3b8',
+    fontSize: 11,
+    marginTop: 2,
+  },
+  readyBadge: {
+    backgroundColor: '#16a34a',
+    borderRadius: 6,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
+  },
+  readyBadgeText: {
+    color: '#ffffff',
+    fontSize: 9,
+    fontWeight: 'bold',
   },
   sectionTitle: {
     fontSize: 12,
