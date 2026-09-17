@@ -2607,7 +2607,8 @@ export default function ProductBuilder({
                 </select>
               </div>
 
-              {/* Season */}
+              {/* Season / Collection Year (Commented out: already configured in Tab 1 Basic Information) */}
+              {/*
               <div className="space-y-1.5">
                 <label className="text-xs font-bold text-neutral-800">Season / Collection Year</label>
                 <input
@@ -2617,6 +2618,7 @@ export default function ProductBuilder({
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                 />
               </div>
+              */}
 
               {/* Collections */}
               <div className="md:col-span-2 space-y-1.5">
@@ -4029,6 +4031,8 @@ export default function ProductBuilder({
                 <span className="text-xs font-bold text-neutral-800">Trending Section</span>
               </label>
 
+              {/* Limited Stock (Commented out: already configured as dedicated toggle card in Tab 1 Basic Information) */}
+              {/*
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
                   type="checkbox"
@@ -4037,6 +4041,7 @@ export default function ProductBuilder({
                 />
                 <span className="text-xs font-bold text-neutral-800">Limited Stock</span>
               </label>
+              */}
 
               <label className="flex items-center gap-3 cursor-pointer">
                 <input
