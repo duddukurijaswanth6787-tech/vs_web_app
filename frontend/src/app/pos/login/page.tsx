@@ -41,12 +41,6 @@ function PosLoginForm() {
     setError('');
 
     try {
-      if (pin && pin !== '1234' && pin !== '0000') {
-        setError('Invalid Quick POS Security PIN. Default PIN is 1234.');
-        setIsLoading(false);
-        return;
-      }
-
       await login({ email, password });
       router.push(redirectUrl);
     } catch (err: any) {
