@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsBoolean,
   IsInt,
+  IsNumber,
   Min,
   Max,
 } from 'class-validator';
@@ -36,6 +37,8 @@ export const NotificationType = {
   BUILD_STATUS: 'BUILD_STATUS',
   BACKGROUND_JOB: 'BACKGROUND_JOB',
   ERROR: 'ERROR',
+  SYSTEM_ERROR: 'SYSTEM_ERROR',
+  USER_ERROR: 'USER_ERROR',
   WARNING: 'WARNING',
   INFO: 'INFO',
   SUCCESS: 'SUCCESS',
@@ -50,6 +53,17 @@ export class CreateNotificationDto {
   @ApiProperty() @IsString() title!: string;
   @ApiProperty() @IsString() message!: string;
   @ApiPropertyOptional() @IsOptional() data?: any;
+}
+
+export class ReportClientErrorDto {
+  @ApiProperty() @IsString() message!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() url?: string;
+  @ApiPropertyOptional() @IsOptional() @IsNumber() status?: number;
+  @ApiPropertyOptional() @IsOptional() @IsString() errorCode?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() stack?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() userAgent?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() customerId?: string;
+  @ApiPropertyOptional() @IsOptional() metadata?: any;
 }
 
 export class NotificationQueryDto {

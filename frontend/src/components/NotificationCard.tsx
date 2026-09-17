@@ -28,8 +28,9 @@ const typeStyles: Record<string, { bg: string; text: string }> = {
   PRODUCT_UPDATED: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
   NEW_CUSTOMER: { bg: 'bg-purple-100', text: 'text-purple-700' },
   REVIEW_SUBMITTED: { bg: 'bg-indigo-100', text: 'text-indigo-700' },
-  UPLOAD_COMPLETE: { bg: 'bg-teal-100', text: 'text-teal-700' },
   ERROR: { bg: 'bg-red-100', text: 'text-red-700' },
+  USER_ERROR: { bg: 'bg-red-100', text: 'text-red-700' },
+  SYSTEM_ERROR: { bg: 'bg-red-100', text: 'text-red-700' },
   WARNING: { bg: 'bg-yellow-100', text: 'text-yellow-700' },
   INFO: { bg: 'bg-blue-100', text: 'text-blue-700' },
 };

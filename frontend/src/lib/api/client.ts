@@ -1,5 +1,6 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { AuthTokens } from '@/types/auth.types';
+import { reportClientError } from '@/lib/error-reporter';
 
 export const getApiBaseUrl = () => {
   const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
@@ -196,13 +197,53 @@ apiClient.interceptors.response.use(
     if (!error.response) {
       if (error.code === 'ECONNABORTED') {
         console.warn('[API] Request timeout:', originalRequest?.url);
+        reportClientError({
+          message: `Request timeout: ${originalRequest?.url || 'API'}`,
+          status: 408,
+          errorCode: 'TIMEOUT',
+        });
       } else {
         console.warn('[API] Network error:', originalRequest?.url, error.message);
+        reportClientError({
+          message: `Network error reaching ${originalRequest?.url || 'backend'}: ${error.message}`,
+          status: 0,
+          errorCode: error.code || 'ERR_NETWORK',
+        });
       }
       return Promise.reject(error);
     }
 
-    const { status } = error.response;
+    const { status, data } = error.response;
+
+    // Report unexpected server and client errors to admin notifications (except normal auth check 401/403)
+    const reqUrl = originalRequest?.url || '';
+    const isReportingEndpoint = reqUrl.includes('/notifications/client-error');
+    const isNormalAuthCheck =
+      (status === 401 || status === 403) &&
+      (reqUrl.includes('/auth/me') || reqUrl.includes('/auth/refresh') || reqUrl.includes('/auth/login'));
+
+    if (status >= 400 && !isReportingEndpoint && !isNormalAuthCheck) {
+      const serverMsg =
+        (data as Record<string, unknown>)?.message ||
+        (data as Record<string, unknown>)?.error ||
+        error.message ||
+        `HTTP ${status} error`;
+      const code =
+        (data as Record<string, unknown>)?.code ||
+        (data as Record<string, unknown>)?.errorCode ||
+        `HTTP_${status}`;
+
+      reportClientError({
+        message: typeof serverMsg === 'string' ? serverMsg : JSON.stringify(serverMsg),
+        status,
+        errorCode: String(code),
+        url: typeof window !== 'undefined' ? window.location.href : reqUrl,
+        metadata: {
+          endpoint: reqUrl,
+          method: originalRequest?.method?.toUpperCase(),
+        },
+      });
+    }
 
     // Handle session expirations and token refresh
     if (status === 401 && !originalRequest._retry) {

@@ -36,11 +36,13 @@ export const NotificationType = {
   UPLOAD_COMPLETE: 'UPLOAD_COMPLETE',
   REPLACE_COMPLETE: 'REPLACE_COMPLETE',
   DELETE_WARNING: 'DELETE_WARNING',
-  // System
+  // System & Errors
   BUILD_STATUS: 'BUILD_STATUS',
   BACKGROUND_JOB: 'BACKGROUND_JOB',
   ERROR: 'ERROR',
   WARNING: 'WARNING',
+  USER_ERROR: 'USER_ERROR',
+  SYSTEM_ERROR: 'SYSTEM_ERROR',
 } as const;
 
 export type NotificationTypeValue = (typeof NotificationType)[keyof typeof NotificationType];
@@ -51,5 +53,7 @@ export const NOTIFICATION_GROUPS = {
   Inventory: [NotificationType.LOW_STOCK, NotificationType.OUT_OF_STOCK, NotificationType.NEGATIVE_STOCK, NotificationType.PRODUCT_DISABLED],
   Customers: [NotificationType.NEW_CUSTOMER, NotificationType.REVIEW_SUBMITTED, NotificationType.REVIEW_REPORTED],
   Media: [NotificationType.UPLOAD_COMPLETE, NotificationType.REPLACE_COMPLETE, NotificationType.DELETE_WARNING],
-  System: [NotificationType.BUILD_STATUS, NotificationType.BACKGROUND_JOB, NotificationType.ERROR, NotificationType.WARNING],
+  Errors: [NotificationType.USER_ERROR, NotificationType.SYSTEM_ERROR, NotificationType.ERROR, NotificationType.PAYMENT_FAILED],
+  System: [NotificationType.BUILD_STATUS, NotificationType.BACKGROUND_JOB, NotificationType.ERROR, NotificationType.WARNING, NotificationType.USER_ERROR, NotificationType.SYSTEM_ERROR],
 } as const;
+

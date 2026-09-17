@@ -6,6 +6,7 @@ import { VDQueryProvider } from "@/lib/query/provider";
 import { AuthProvider } from "@/lib/auth/AuthContext";
 import { prefetchStorefrontData } from "@/lib/query/prefetch";
 import { fetchThemeCss } from "@/lib/theme/server-theme";
+import { GlobalErrorListener } from "@/components/common/GlobalErrorListener";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -134,6 +135,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable} min-h-full flex flex-col`} suppressHydrationWarning>
         <VDQueryProvider dehydratedState={dehydrate(queryClient)}>
           <AuthProvider>
+            <GlobalErrorListener />
             {children}
           </AuthProvider>
         </VDQueryProvider>
