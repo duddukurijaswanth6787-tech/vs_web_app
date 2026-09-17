@@ -710,6 +710,26 @@ export class ProductResponse {
     }>;
   }>;
 
+  @ApiPropertyOptional({ type: [Object] })
+  colorGroups?: Array<{
+    id?: string;
+    colorGroupId?: string;
+    name?: string;
+    label?: string;
+    hexColor?: string;
+    swatchImageUrl?: string;
+    colorAttributeOptionId?: string;
+    displayOrder?: number;
+    images?: Array<{
+      id: string;
+      url: string;
+      thumbnailUrl?: string;
+      altText?: string;
+      isPrimary: boolean;
+      mediaType: string;
+    }>;
+  }>;
+
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

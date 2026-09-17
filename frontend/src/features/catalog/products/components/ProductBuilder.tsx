@@ -492,17 +492,88 @@ export default function ProductBuilder({
   const [colorGroups, setColorGroups] = useState<ColorVariantGroup[]>(() => {
     if (!initialData) return [];
 
+    const images = initialData.images || [];
+    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; availableQuantity?: number; priceOverride?: number; salePriceOverride?: number; costPrice?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
+    const primaryUrl = initialData.primaryImageUrl;
+
     // 1. Direct colorGroups on initialData if saved
     const rawGroups = (initialData as unknown as Record<string, unknown>)?.colorGroups;
     if (Array.isArray(rawGroups) && rawGroups.length > 0) {
-      return rawGroups as ColorVariantGroup[];
+      return rawGroups.map((rg: any, idx: number) => {
+        if (rg.name && Array.isArray(rg.sizes) && rg.sizes.length > 0) {
+          return rg as ColorVariantGroup;
+        }
+
+        const cName = rg.label || rg.colorAttributeOption?.label || rg.colorAttributeOption?.value || rg.name || `Color ${idx + 1}`;
+        const swatch = rg.colorAttributeOption?.swatchImageUrl || rg.swatchImage || images.find((i) => i.color === cName && (i.mediaType === 'FABRIC' || (i as any).title === 'FABRIC_SWATCH'))?.url;
+
+        const groupMedia = images
+          .filter((i) => (i.colorGroupId === rg.id || i.color === cName) && i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH')
+          .map((i) => i.url);
+        if (rg.images && Array.isArray(rg.images)) {
+          rg.images.forEach((u: string) => {
+            if (u && !groupMedia.includes(u)) groupMedia.push(u);
+          });
+        }
+        if (groupMedia.length === 0 && primaryUrl) {
+          groupMedia.push(primaryUrl);
+        }
+
+        const matchingVariants = variants.filter((v) => {
+          const colorAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'color' || av.attribute?.slug === 'color'
+          )?.value?.toLowerCase().trim();
+          if (colorAttr) return colorAttr === cName.toLowerCase().trim();
+          const vTitle = (v.title || '').toLowerCase().trim();
+          if (vTitle.includes('/')) {
+            const parts = vTitle.split('/').map((s) => s.trim());
+            return parts[0] === cName.toLowerCase().trim() || vTitle.includes(cName.toLowerCase().trim());
+          }
+          return rawGroups.length === 1 || vTitle === cName.toLowerCase().trim();
+        });
+
+        const colorCode = getColorCodeHelper(cName);
+        let groupSizes = matchingVariants.map((v) => {
+          const sizeAttr = v.attributeValues?.find(
+            (av) => av.attributeName?.toLowerCase() === 'size' || av.attribute?.slug === 'size'
+          )?.value;
+          const parts = (v.title || '').split('/').map((s) => s.trim());
+          const sz = sizeAttr || (parts.length > 1 ? parts[1] : (v.title || 'Free Size'));
+          return {
+            size: sz,
+            stock: v.availableQuantity ?? 10,
+            price: v.priceOverride ? Number(v.priceOverride) : undefined,
+            salePrice: v.salePriceOverride ? Number(v.salePriceOverride) : undefined,
+            costPrice: v.costPrice ? Number(v.costPrice) : undefined,
+            available: true,
+            sku: v.sku || `${colorCode}-${sz}`,
+          };
+        });
+
+        if (groupSizes.length === 0) {
+          groupSizes = STANDARD_SIZES.map((sz) => ({
+            size: sz,
+            stock: 10,
+            price: undefined,
+            salePrice: undefined,
+            costPrice: undefined,
+            available: true,
+            sku: `${colorCode}-${sz}`,
+          }));
+        }
+
+        return {
+          id: rg.id || `col-${idx + 1}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+          name: cName,
+          hex: rg.colorAttributeOption?.value?.startsWith('#') ? rg.colorAttributeOption.value : (idx === 0 ? '#e8c4b8' : '#1e3a8a'),
+          swatchImage: swatch,
+          images: Array.from(new Set(groupMedia)),
+          sizes: groupSizes,
+        };
+      });
     }
 
     // 2. Derive from initialData.images and initialData.variants when editing
-    const images = initialData.images || [];
-    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; availableQuantity?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
-    const primaryUrl = initialData.primaryImageUrl;
-
     const colorMap = new Map<string, { swatch?: string; images: string[] }>();
 
     images.forEach((img) => {
@@ -973,21 +1044,120 @@ export default function ProductBuilder({
 
   const fileInputRef = React.useRef<HTMLInputElement>(null);
 
-  const handleLocalImageUpload = (colorGroupId: string, files: FileList | null) => {
+  const [uploadingImageUrls, setUploadingImageUrls] = useState<Record<string, boolean>>({});
+
+  const handleLocalImageUpload = async (colorGroupId: string, files: FileList | null) => {
     if (!files || files.length === 0) return;
     const fileArray = Array.from(files);
 
-    fileArray.forEach((file) => {
+    for (const file of fileArray) {
+      // 1. Instant UI preview using local object URL
+      const localPreviewUrl = URL.createObjectURL(file);
+
+      setColorGroups((prev) =>
+        prev.map((group) => {
+          if (group.id === colorGroupId) {
+            return {
+              ...group,
+              images: [...group.images, localPreviewUrl],
+            };
+          }
+          return group;
+        })
+      );
+
+      setUploadingImageUrls((prev) => ({ ...prev, [localPreviewUrl]: true }));
+
+      try {
+        const uploaded = await productService.uploadImage(file, file.name);
+        const serverUrl = uploaded.url;
+
+        // Replace temporary preview URL with uploaded permanent server URL
+        setColorGroups((prev) =>
+          prev.map((group) => {
+            if (group.id === colorGroupId) {
+              return {
+                ...group,
+                images: group.images.map((img) => (img === localPreviewUrl ? serverUrl : img)),
+              };
+            }
+            return group;
+          })
+        );
+      } catch (err) {
+        console.warn('Background upload failed, keeping base64 fallback:', err);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          const resultUrl = e.target?.result as string;
+          if (resultUrl) {
+            setColorGroups((prev) =>
+              prev.map((group) => {
+                if (group.id === colorGroupId) {
+                  return {
+                    ...group,
+                    images: group.images.map((img) => (img === localPreviewUrl ? resultUrl : img)),
+                  };
+                }
+                return group;
+              })
+            );
+          }
+        };
+        reader.readAsDataURL(file);
+      } finally {
+        setUploadingImageUrls((prev) => {
+          const next = { ...prev };
+          delete next[localPreviewUrl];
+          return next;
+        });
+      }
+    }
+  };
+
+  const handleSwatchImageUpload = async (colorGroupId: string, file: File | undefined) => {
+    if (!file) return;
+    const localPreviewUrl = URL.createObjectURL(file);
+
+    setColorGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === colorGroupId) {
+          return {
+            ...group,
+            swatchImage: localPreviewUrl,
+          };
+        }
+        return group;
+      })
+    );
+
+    setUploadingImageUrls((prev) => ({ ...prev, [localPreviewUrl]: true }));
+
+    try {
+      const uploaded = await productService.uploadImage(file, file.name, 'swatches');
+      const serverUrl = uploaded.url;
+      setColorGroups((prev) =>
+        prev.map((group) => {
+          if (group.id === colorGroupId) {
+            return {
+              ...group,
+              swatchImage: serverUrl,
+            };
+          }
+          return group;
+        })
+      );
+    } catch (err) {
+      console.warn('Swatch upload failed, keeping base64 fallback:', err);
       const reader = new FileReader();
       reader.onload = (e) => {
-        const resultUrl = e.target?.result as string;
-        if (resultUrl) {
+        const swatchUrl = e.target?.result as string;
+        if (swatchUrl) {
           setColorGroups((prev) =>
             prev.map((group) => {
               if (group.id === colorGroupId) {
                 return {
                   ...group,
-                  images: [...group.images, resultUrl],
+                  swatchImage: swatchUrl,
                 };
               }
               return group;
@@ -996,29 +1166,13 @@ export default function ProductBuilder({
         }
       };
       reader.readAsDataURL(file);
-    });
-  };
-
-  const handleSwatchImageUpload = (colorGroupId: string, file: File | undefined) => {
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const swatchUrl = e.target?.result as string;
-      if (swatchUrl) {
-        setColorGroups((prev) =>
-          prev.map((group) => {
-            if (group.id === colorGroupId) {
-              return {
-                ...group,
-                swatchImage: swatchUrl,
-              };
-            }
-            return group;
-          })
-        );
-      }
-    };
-    reader.readAsDataURL(file);
+    } finally {
+      setUploadingImageUrls((prev) => {
+        const next = { ...prev };
+        delete next[localPreviewUrl];
+        return next;
+      });
+    }
   };
 
   const removeSwatchImage = (colorGroupId: string) => {
@@ -1488,7 +1642,7 @@ export default function ProductBuilder({
             return;
           }
 
-          if (url.startsWith('data:')) {
+          if (url.startsWith('data:') || url.startsWith('blob:')) {
             try {
               const blob = await dataUrlToBlob(url);
               const uploaded = await productService.uploadImage(blob, `${task.group.name}-${task.order}.png`);
@@ -1511,6 +1665,11 @@ export default function ProductBuilder({
             return;
           }
 
+          if (url.startsWith('data:') || url.startsWith('blob:')) {
+            console.warn('Skipping un-uploadable blob image:', url);
+            return;
+          }
+
           const media = await productService
             .addMedia({
               productId: created.id,
@@ -1521,7 +1680,10 @@ export default function ProductBuilder({
               color: task.group.name,
               title: task.title,
             })
-            .catch(() => null);
+            .catch((err) => {
+              console.warn('Failed to add product media:', err);
+              return null;
+            });
 
           if (media?.id) {
             mediaIdsByGroup[task.group.id].push(String(media.id));
@@ -1713,23 +1875,22 @@ export default function ProductBuilder({
       });
 
       // Bind color groups, coupons, and offers in parallel
-      const syncPayload = colorGroups.flatMap((group) => {
+      const syncPayload = colorGroups.map((group) => {
         const optionId = findColorOptionId(attributes, group.name);
-        if (!optionId) return [];
-        return [
-          {
-            colorAttributeOptionId: optionId,
-            label: group.name,
-            variantIds: variantIdsByGroup[group.id] ?? [],
-            mediaIds: mediaIdsByGroup[group.id] ?? [],
-          },
-        ];
+        return {
+          id: group.id && !group.id.startsWith('col-') ? group.id : undefined,
+          colorAttributeOptionId: optionId || undefined,
+          label: group.name,
+          variantIds: variantIdsByGroup[group.id] ?? [],
+          mediaIds: mediaIdsByGroup[group.id] ?? [],
+        };
       });
 
       await Promise.all([
-        syncPayload.length > 0
-          ? productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch(() => null)
-          : Promise.resolve(),
+        productService.syncColorGroups(created.id, { colorGroups: syncPayload }).catch((err) => {
+          console.warn('Failed to sync color groups:', err);
+          return null;
+        }),
         ...coupons.map((coupon) => {
           const diff = diffProductAttachment(coupon, created.id, selectedCouponIds.includes(coupon.id));
           return diff ? couponService.update(coupon.id, diff).catch(() => null) : Promise.resolve();
@@ -2883,9 +3044,18 @@ export default function ProductBuilder({
                         type="file"
                         accept="image/*"
                         className="hidden"
-                        onChange={(e) => {
+                        onChange={async (e) => {
                           const file = e.target.files?.[0];
                           if (file) {
+                            try {
+                              const uploaded = await productService.uploadImage(file, file.name);
+                              if (uploaded?.url) {
+                                setCardViewImage(uploaded.url);
+                                return;
+                              }
+                            } catch (err) {
+                              console.warn('Card image upload failed, falling back to local preview:', err);
+                            }
                             const reader = new FileReader();
                             reader.onload = (ev) => {
                               const url = ev.target?.result as string;
@@ -2977,9 +3147,18 @@ export default function ProductBuilder({
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={(e) => {
+                      onChange={async (e) => {
                         const file = e.target.files?.[0];
                         if (file) {
+                          try {
+                            const uploaded = await productService.uploadImage(file, file.name, 'swatches');
+                            if (uploaded?.url) {
+                              setNewColorSwatch(uploaded.url);
+                              return;
+                            }
+                          } catch (err) {
+                            console.warn('Swatch upload failed, falling back to local preview:', err);
+                          }
                           const reader = new FileReader();
                           reader.onload = (ev) => {
                             const swatchUrl = ev.target?.result as string;

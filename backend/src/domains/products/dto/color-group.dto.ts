@@ -59,9 +59,10 @@ export class SyncColorGroupItemDto {
   @IsString()
   id?: string;
 
-  @ApiProperty()
+  @ApiPropertyOptional()
+  @IsOptional()
   @IsUUID()
-  colorAttributeOptionId!: string;
+  colorAttributeOptionId?: string;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -128,6 +128,35 @@ export class ProductsService {
         isPrimary: m.isPrimary,
         mediaType: m.mediaType,
         color: m.color ?? undefined,
+        colorGroupId: m.colorGroupId ?? undefined,
+      })),
+      colorGroups: p.colorGroups?.map((cg: any) => ({
+        id: cg.id,
+        productId: cg.productId,
+        colorAttributeOptionId: cg.colorAttributeOptionId,
+        label:
+          cg.label ??
+          cg.colorAttributeOption?.label ??
+          cg.colorAttributeOption?.value ??
+          undefined,
+        sortOrder: cg.sortOrder ?? 0,
+        isActive: cg.isActive ?? true,
+        colorAttributeOption: cg.colorAttributeOption
+          ? {
+              id: cg.colorAttributeOption.id,
+              value: cg.colorAttributeOption.value,
+              label: cg.colorAttributeOption.label,
+              swatchImageUrl:
+                cg.colorAttributeOption.swatchImageUrl ?? undefined,
+            }
+          : undefined,
+        images:
+          cg.media
+            ?.filter(
+              (m: any) =>
+                m.mediaType !== 'FABRIC' && m.title !== 'FABRIC_SWATCH',
+            )
+            ?.map((m: any) => m.url) || [],
       })),
       variants: p.variants?.map((v: any) => ({
         id: v.id,
@@ -978,31 +1007,96 @@ export class ProductsService {
       throw new BusinessException('Product not found', 'PRODUCT_001');
 
     await this.prisma.$transaction(async (tx) => {
-      for (const item of dto.colorGroups) {
-        let group;
-        if (item.id && !item.id.startsWith('legacy-fallback-')) {
-          group = await tx.productColorGroup.update({
-            where: { id: item.id },
-            data: { label: item.label },
-          });
-        } else {
+      const existingGroups = await tx.productColorGroup.findMany({
+        where: { productId },
+      });
+
+      // Find or create color attribute if needed
+      let colorAttr = await tx.attribute.findFirst({
+        where: { slug: 'color' },
+        include: { options: true },
+      });
+      if (!colorAttr) {
+        colorAttr = await tx.attribute.findFirst({
+          where: { name: { equals: 'Color', mode: 'insensitive' } },
+          include: { options: true },
+        });
+      }
+
+      const keptGroupIds = new Set<string>();
+
+      for (let i = 0; i < (dto.colorGroups || []).length; i++) {
+        const item = dto.colorGroups[i];
+        let optionId = item.colorAttributeOptionId;
+
+        if (!optionId && item.label && colorAttr) {
+          const match = colorAttr.options.find(
+            (o) =>
+              o.value.toLowerCase().trim() ===
+                item.label!.toLowerCase().trim() ||
+              o.label.toLowerCase().trim() === item.label!.toLowerCase().trim(),
+          );
+          if (match) {
+            optionId = match.id;
+          } else {
+            const newOpt = await tx.attributeOption.create({
+              data: {
+                attributeId: colorAttr.id,
+                value: item.label.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+                label: item.label,
+              },
+            });
+            optionId = newOpt.id;
+          }
+        }
+
+        if (!optionId && colorAttr?.options?.[0]) {
+          optionId = colorAttr.options[0].id;
+        }
+
+        if (!optionId) continue;
+
+        let group: any;
+        if (
+          item.id &&
+          !item.id.startsWith('legacy-fallback-') &&
+          !item.id.startsWith('col-')
+        ) {
+          const existing = existingGroups.find((g) => g.id === item.id);
+          if (existing) {
+            group = await tx.productColorGroup.update({
+              where: { id: item.id },
+              data: {
+                label: item.label,
+                colorAttributeOptionId: optionId,
+                sortOrder: i,
+              },
+            });
+          }
+        }
+
+        if (!group) {
           group = await tx.productColorGroup.upsert({
             where: {
               productId_colorAttributeOptionId: {
                 productId,
-                colorAttributeOptionId: item.colorAttributeOptionId,
+                colorAttributeOptionId: optionId,
               },
             },
             create: {
               productId,
-              colorAttributeOptionId: item.colorAttributeOptionId,
+              colorAttributeOptionId: optionId,
               label: item.label,
+              sortOrder: i,
             },
             update: {
               label: item.label,
+              sortOrder: i,
             },
           });
         }
+
+        keptGroupIds.add(group.id);
 
         if (item.variantIds && item.variantIds.length > 0) {
           await tx.productVariant.updateMany({
@@ -1017,6 +1111,22 @@ export class ProductsService {
             data: { colorGroupId: group.id },
           });
         }
+      }
+
+      // Clean up removed color groups and unlink
+      const removedGroups = existingGroups.filter(
+        (g) => !keptGroupIds.has(g.id),
+      );
+      for (const g of removedGroups) {
+        await tx.productVariant.updateMany({
+          where: { colorGroupId: g.id },
+          data: { colorGroupId: null },
+        });
+        await tx.productMedia.updateMany({
+          where: { colorGroupId: g.id },
+          data: { colorGroupId: null },
+        });
+        await tx.productColorGroup.delete({ where: { id: g.id } });
       }
     });
 
