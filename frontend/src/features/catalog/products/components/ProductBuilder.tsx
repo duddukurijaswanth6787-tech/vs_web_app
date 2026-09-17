@@ -1857,6 +1857,11 @@ export default function ProductBuilder({
           const rawSalePrice = sizeRow.salePrice !== undefined && sizeRow.salePrice !== null && !isNaN(Number(sizeRow.salePrice)) && Number(sizeRow.salePrice) > 0 ? Number(sizeRow.salePrice) : undefined;
           const rawCostPrice = sizeRow.costPrice !== undefined && sizeRow.costPrice !== null && !isNaN(Number(sizeRow.costPrice)) && Number(sizeRow.costPrice) > 0 ? Number(sizeRow.costPrice) : (values.costPrice ? Number(values.costPrice) : undefined);
 
+          const candidateSku = sizeRow.sku || buildSmartVariantSku(group.name, sizeRow.size);
+          const candidateBarcode =
+            existingVar?.barcode ||
+            candidateSku.replace(/[^A-Z0-9]/gi, '');
+
           if (existingVar) {
             await syncVariantInventory(existingVar.id, sizeRow);
             await variantService
@@ -1864,6 +1869,7 @@ export default function ProductBuilder({
                 priceOverride: rawPrice,
                 salePriceOverride: rawSalePrice,
                 costPrice: rawCostPrice,
+                ...(existingVar.barcode ? {} : { barcode: candidateBarcode }),
               })
               .catch(() => null);
 
@@ -1872,7 +1878,7 @@ export default function ProductBuilder({
               variantId: existingVar.id,
               issued: {
                 sku: existingVar.sku,
-                barcode: existingVar.barcode || existingVar.sku,
+                barcode: existingVar.barcode || candidateBarcode,
                 title,
                 stock: sizeRow.stock,
                 price: rawSalePrice || rawPrice || Number(values.salePrice || values.basePrice || 0),
@@ -1884,6 +1890,7 @@ export default function ProductBuilder({
                 productId: created.id,
                 title,
                 sku: sizeRow.sku || undefined,
+                barcode: candidateBarcode,
                 priceOverride: rawPrice,
                 salePriceOverride: rawSalePrice,
                 costPrice: rawCostPrice,
@@ -1900,7 +1907,7 @@ export default function ProductBuilder({
               variantId: variant.id,
               issued: {
                 sku: variant.sku,
-                barcode: variant.barcode || variant.sku,
+                barcode: variant.barcode || candidateBarcode,
                 title,
                 stock: sizeRow.stock,
                 price: rawSalePrice || rawPrice || Number(values.salePrice || values.basePrice || 0),

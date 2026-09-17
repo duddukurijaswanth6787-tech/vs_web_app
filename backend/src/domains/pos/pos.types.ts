@@ -460,6 +460,8 @@ export class BarcodeScanResultResponse {
   @ApiPropertyOptional() mrp?: number;
   /** Required on a GST invoice. */
   @ApiPropertyOptional() hsnCode?: string;
+  @ApiPropertyOptional() isArchived?: boolean;
+  @ApiPropertyOptional() status?: string;
 }
 
 export class CheckoutSessionResponse {

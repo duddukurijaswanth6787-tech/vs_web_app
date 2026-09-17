@@ -8,6 +8,7 @@ export interface CreateVariantDto {
   productId: string;
   colorGroupId?: string;
   sku?: string;
+  barcode?: string;
   title?: string;
   priceOverride?: number;
   salePriceOverride?: number;
@@ -23,6 +24,7 @@ export interface CreateVariantDto {
 
 export interface UpdateVariantDto {
   colorGroupId?: string;
+  barcode?: string;
   title?: string;
   priceOverride?: number;
   salePriceOverride?: number;

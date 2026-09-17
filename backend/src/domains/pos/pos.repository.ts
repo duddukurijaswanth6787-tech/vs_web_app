@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { CheckoutSessionStatus, Prisma } from '@prisma/client';
 import {
@@ -11,8 +11,6 @@ import {
 
 @Injectable()
 export class PosRepository {
-  private readonly logger = new Logger(PosRepository.name);
-
   constructor(readonly prisma: PrismaService) {}
 
   async findVariantByBarcode(code: string) {
@@ -76,18 +74,6 @@ export class PosRepository {
     });
 
     if (variant) {
-      if (variant.barcode !== trimmed && !isUuid && /^\d+$/.test(trimmed)) {
-        this.prisma.productVariant
-          .update({
-            where: { id: variant.id },
-            data: { barcode: trimmed },
-          })
-          .catch((e) =>
-            this.logger.warn(
-              `Failed to auto-sync barcode ${trimmed}: ${e.message}`,
-            ),
-          );
-      }
       return variant;
     }
 
@@ -121,22 +107,6 @@ export class PosRepository {
     });
 
     if (fallbackVariant) {
-      if (
-        fallbackVariant.barcode !== trimmed &&
-        !isUuid &&
-        /^\d+$/.test(trimmed)
-      ) {
-        this.prisma.productVariant
-          .update({
-            where: { id: fallbackVariant.id },
-            data: { barcode: trimmed },
-          })
-          .catch((e) =>
-            this.logger.warn(
-              `Failed to auto-sync barcode ${trimmed}: ${e.message}`,
-            ),
-          );
-      }
       return fallbackVariant;
     }
 
@@ -188,13 +158,41 @@ export class PosRepository {
         salePriceOverride: product.salePrice,
         product,
         media: product.media,
-        // No ProductVariant row exists for this product, so there is no
-        // Inventory row either (Inventory is keyed off variantId) -- report
-        // it the same way every other untracked variant is reported
-        // (scanBarcode's `inventory?.availableQuantity ?? 0`), not a fake
-        // in-stock number.
         inventory: null,
         attributeValues: [],
+      };
+    }
+
+    // 3. Fallback: Search archived / deleted variants so physical barcode labels can still be scanned and identified on POS/mobile
+    const archivedVariant = await this.prisma.productVariant.findFirst({
+      where: {
+        OR: variantMatchConditions,
+      },
+      include: {
+        product: {
+          include: {
+            media: {
+              take: 1,
+            },
+          },
+        },
+        inventory: true,
+        attributeValues: {
+          include: {
+            attribute: true,
+            option: true,
+          },
+        },
+        media: {
+          take: 1,
+        },
+      },
+    });
+
+    if (archivedVariant) {
+      return {
+        ...archivedVariant,
+        isArchived: true,
       };
     }
 
