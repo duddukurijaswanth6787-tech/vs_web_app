@@ -1,5 +1,5 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Type, Transform } from 'class-transformer';
 import { IsHsnCodeCustom } from '@common/validation/decorators.validation';
 import {
   IsString,
@@ -469,23 +469,23 @@ export class ProductQueryDto {
   @ApiPropertyOptional() @IsOptional() @IsString() season?: string;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   isFeatured?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   isNewArrival?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   isBestSeller?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) => (value === 'true' || value === true || value === 1 || value === '1' ? true : value === 'false' || value === false || value === 0 || value === '0' ? false : undefined))
   @IsBoolean()
-  @Type(() => Boolean)
   isPublished?: boolean;
   @ApiPropertyOptional()
   @IsOptional()

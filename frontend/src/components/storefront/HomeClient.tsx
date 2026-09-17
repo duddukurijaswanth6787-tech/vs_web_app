@@ -18,6 +18,20 @@ import { NewsletterSection } from '@/components/storefront/NewsletterSection'; /
 
 import { ChevronUp } from 'lucide-react';
 import { useCustomerProducts, useHomepage } from '@/features/customer/hooks';
+import { resolveMediaUrl } from '@/lib/media-url';
+import { PLACEHOLDER_IMAGE, discountLabel } from '@/features/customer/mappers';
+
+function extractProductsList(response: unknown): unknown[] {
+  if (!response) return [];
+  if (Array.isArray(response)) return response;
+  if (typeof response === 'object') {
+    const obj = response as Record<string, unknown>;
+    if (Array.isArray(obj.data)) return obj.data;
+    if (Array.isArray(obj.items)) return obj.items;
+    if (Array.isArray(obj.products)) return obj.products;
+  }
+  return [];
+}
 
 export function HomeClient() {
   const [showScrollTop, setShowScrollTop] = useState(false);
@@ -28,6 +42,11 @@ export function HomeClient() {
   const { data: featured } = useCustomerProducts({
     isFeatured: true,
     limit: 12,
+  });
+  const { data: allProducts } = useCustomerProducts({
+    limit: 12,
+    sortBy: 'createdAt',
+    sortOrder: 'desc',
   });
   const { data: homepageData } = useHomepage();
 
@@ -50,9 +69,42 @@ export function HomeClient() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const newArrivalsList = Array.isArray(newArrivals) ? newArrivals : Array.isArray((newArrivals as { items?: unknown[] })?.items) ? (newArrivals as { items?: unknown[] }).items! : [];
-  const featuredList = Array.isArray(featured) ? featured : Array.isArray((featured as { items?: unknown[] })?.items) ? (featured as { items?: unknown[] }).items! : [];
-  const newItems = newArrivalsList.length ? newArrivalsList : featuredList;
+  const newArrivalsList = extractProductsList(newArrivals);
+  const featuredList = extractProductsList(featured);
+  const allList = extractProductsList(allProducts);
+
+  // If newArrivals query returned products, use them; otherwise fallback to featured or latest products
+  const newItems = newArrivalsList.length > 0 ? newArrivalsList : (featuredList.length > 0 ? featuredList : allList);
+  const bestSellerItems = featuredList.length > 0 ? featuredList : (allList.length > 0 ? allList : newItems);
+
+  const mapToProductItem = (pItem: unknown, isNewDefault = false, isBestSellerDefault = false) => {
+    const p = pItem as Record<string, unknown>;
+    const basePrice = Number(p.basePrice ?? p.originalPrice ?? 0);
+    const salePrice = p.salePrice !== undefined && p.salePrice !== null ? Number(p.salePrice) : undefined;
+    const price = salePrice ?? (basePrice || Number(p.price || 0));
+    const origPrice = basePrice || price;
+    const rawImage = String(
+      p.primaryImageUrl ||
+      (Array.isArray(p.images) && p.images.length > 0 ? (p.images[0] as Record<string, unknown>)?.url : '') ||
+      p.image ||
+      p.productCardImageUrl ||
+      ''
+    );
+    return {
+      id: String(p.id || ''),
+      brand: String(p.brandName || p.brand || "Vasanthi's Signature"),
+      title: String(p.name || p.title || 'Product'),
+      price,
+      originalPrice: origPrice,
+      discount: discountLabel(origPrice, salePrice),
+      rating: Number(p.rating || 5),
+      reviewsCount: Number(p.reviewsCount || 0),
+      image: resolveMediaUrl(rawImage) || PLACEHOLDER_IMAGE,
+      isNew: p.isNewArrival !== undefined ? Boolean(p.isNewArrival) : isNewDefault,
+      isBestSeller: p.isBestSeller !== undefined ? Boolean(p.isBestSeller) : isBestSellerDefault,
+      slug: p.slug ? String(p.slug) : undefined,
+    };
+  };
 
   return (
     <div className="min-h-screen bg-white flex flex-col font-sans antialiased text-neutral-900 selection:bg-[#EAF4FF] selection:text-[#1769D2]">
@@ -79,21 +131,7 @@ export function HomeClient() {
                 ? 'Loading latest styles…'
                 : 'Handpicked latest styles for you'
             }
-            products={newItems.map((pItem) => {
-              const p = pItem as Record<string, unknown>;
-              return {
-                id: String(p.id || ''),
-                brand: String(p.brand || 'Vasanthi Designers'),
-                title: String(p.title || p.name || ''),
-                price: Number(p.price || p.salePrice || 0),
-                originalPrice: Number(p.originalPrice || p.basePrice || 0),
-                discount: String(p.discount || ''),
-                rating: Number(p.rating || 5),
-                reviewsCount: Number(p.reviewsCount || 0),
-                image: String(p.image || p.primaryImageUrl || ''),
-                isNew: true,
-              };
-            })}
+            products={newItems.map((p) => mapToProductItem(p, true, false))}
             viewAllHref="/categories/new-arrivals"
           />
         )}
@@ -112,22 +150,7 @@ export function HomeClient() {
           <ProductGridSection
             title="Best Sellers"
             subtitle="Top rated customer favorites"
-            products={(featuredList.length > 0 ? featuredList : newItems).map((pItem) => {
-              const p = pItem as Record<string, unknown>;
-              return {
-                id: String(p.id || ''),
-                brand: String(p.brand || 'Vasanthi Designers'),
-                title: String(p.title || p.name || ''),
-                price: Number(p.price || p.salePrice || 0),
-                originalPrice: Number(p.originalPrice || p.basePrice || 0),
-                discount: String(p.discount || ''),
-                rating: Number(p.rating || 5),
-                reviewsCount: Number(p.reviewsCount || 0),
-                image: String(p.image || p.primaryImageUrl || ''),
-                isBestSeller: true,
-                isNew: false,
-              };
-            })}
+            products={bestSellerItems.map((p) => mapToProductItem(p, false, true))}
             viewAllHref="/categories/best-sellers"
           />
         )}
