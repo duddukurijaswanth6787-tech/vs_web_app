@@ -599,7 +599,7 @@ Authorized Signatory: For Vasanthi's Signature
                 <Text style={styles.sectionSub}>Supported Sizes: Small (50x25mm), Medium (75x40mm), Large (100x50mm)</Text>
               </View>
               <View style={styles.badgeBlue}>
-                <Text style={styles.badgeBlueText}>TSPL Sticker</Text>
+                <Text style={styles.badgeBlueText}>3-Inch / ESC/POS</Text>
               </View>
             </View>
 

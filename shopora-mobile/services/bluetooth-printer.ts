@@ -37,6 +37,14 @@ interface NativeEscposPrinter {
     options: Record<string, unknown>,
   ): Promise<void>;
   printAndFeed(feed: number): Promise<void>;
+  printBarCode?(
+    str: string,
+    nType: number,
+    nWidthX: number,
+    nHeight: number,
+    nHriFontType: number,
+    nHriFontPosition: number,
+  ): Promise<void>;
   cutPaper?(): Promise<void>;
   setWidth(width: number): void;
 }
@@ -437,93 +445,163 @@ class BluetoothPrinterService {
    * will be a bit small/off-center but still on the label; adjust this
    * constant to match your printer's real resolution if so.
    */
+  /**
+   * Prints `quantity` copies of a barcode sticker label using the printer's
+   * built-in ESC/POS commands (for standard 3-inch thermal printers) with real scannable
+   * Code 128 barcode lines, centered product details, formatted pricing, and auto-cut.
+   */
   async printLabel(label: PrinterLabelData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
-    if (!BluetoothTscPrinter) {
-      throw new Error('Bluetooth TSC printer native module is not available.');
+
+    const P = BluetoothEscposPrinter;
+    if (P) {
+      const copies = Math.max(1, label.quantity ?? 1);
+      const is80mm = (label.widthMm ?? 80) >= 80 || true; // standard 3-inch (80mm) ESC/POS thermal printer
+      await P.printerInit();
+      await P.setWidth(is80mm ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
+
+      const divider = '------------------------------------------------';
+
+      for (let i = 0; i < copies; i++) {
+        await P.printerInit();
+        await P.printerAlign(ALIGN.CENTER);
+
+        // Header / Store Name
+        await P.printText(`${divider}\n\r`, {});
+        await P.printText(`${(label.storeName || "VASANTHI'S SIGNATURE").toUpperCase()}\n\r`, {
+          widthtimes: 1,
+          heigthtimes: 1,
+        });
+        await P.printText(`${divider}\n\r`, {});
+
+        // Product Details
+        await P.printText(`${label.productName}\n\r`, {});
+        if (label.variantTitle) {
+          await P.printText(`${label.variantTitle}\n\r`, {});
+        }
+        await P.printText(`SKU: ${label.sku}\n\r\n\r`, {});
+
+        // Barcode (ESC/POS Code 128)
+        // nType: 73 (CODE128), nWidthX: 3, nHeight: 70, nHriFontType: 0 (Font A), nHriFontPosition: 2 (Below barcode)
+        if (P.printBarCode) {
+          try {
+            await P.printBarCode(label.barcode, 73, 3, 70, 0, 2);
+          } catch (err) {
+            console.warn('[BluetoothPrinter] printBarCode fallback:', err);
+            await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
+          }
+        } else {
+          await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
+        }
+
+        // Price Section
+        await P.printText('\n\r', {});
+        await P.printText(`PRICE: Rs.${label.price.toFixed(2)}\n\r`, {
+          widthtimes: 1,
+          heigthtimes: 1,
+        });
+        await P.printText(`${divider}\n\r`, {});
+
+        // Feed margin before cutting (4 lines)
+        await P.printText('\n\r\n\r\n\r\n\r', {});
+
+        // Clean single cut
+        if (P.cutPaper) {
+          try {
+            await P.cutPaper();
+          } catch (cutErr) {
+            console.warn('[BluetoothPrinter] cutPaper failed in printLabel:', cutErr);
+          }
+        }
+      }
+      return;
     }
-    const copies = Math.max(1, label.quantity ?? 1);
-    const widthMm = label.widthMm ?? 50;
-    const heightMm = label.heightMm ?? 30;
-    const gapMm = label.gapMm ?? 2;
 
-    const DOTS_PER_MM = 8;
-    const heightDots = heightMm * DOTS_PER_MM;
-    const marginDots = Math.round(DOTS_PER_MM * 2);
-    // Rough character budget for the default font at this width -- narrower
-    // labels get titles truncated harder rather than overflowing the edge.
-    const maxChars = Math.max(10, Math.round(widthMm * 0.9));
+    if (BluetoothTscPrinter) {
+      const copies = Math.max(1, label.quantity ?? 1);
+      const widthMm = label.widthMm ?? 50;
+      const heightMm = label.heightMm ?? 30;
+      const gapMm = label.gapMm ?? 2;
 
-    const textFields = [
-      {
-        text: (label.storeName || 'VASANTHI').toUpperCase(),
-        x: marginDots,
-        y: marginDots,
-        fonttype: FONTTYPE.FONT_2,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
-      },
-      {
-        text: label.productName.slice(0, maxChars),
-        x: marginDots,
-        y: Math.round(heightDots * 0.32),
-        fonttype: FONTTYPE.FONT_1,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
-      },
-      ...(label.variantTitle
-        ? [
+      const DOTS_PER_MM = 8;
+      const heightDots = heightMm * DOTS_PER_MM;
+      const marginDots = Math.round(DOTS_PER_MM * 2);
+      const maxChars = Math.max(10, Math.round(widthMm * 0.9));
+
+      const textFields = [
+        {
+          text: (label.storeName || 'VASANTHI').toUpperCase(),
+          x: marginDots,
+          y: marginDots,
+          fonttype: FONTTYPE.FONT_2,
+          rotation: TSC_ROTATION.ROTATION_0,
+          xscal: 1,
+          yscal: 1,
+        },
+        {
+          text: label.productName.slice(0, maxChars),
+          x: marginDots,
+          y: Math.round(heightDots * 0.32),
+          fonttype: FONTTYPE.FONT_1,
+          rotation: TSC_ROTATION.ROTATION_0,
+          xscal: 1,
+          yscal: 1,
+        },
+        ...(label.variantTitle
+          ? [
+              {
+                text: label.variantTitle.slice(0, maxChars),
+                x: marginDots,
+                y: Math.round(heightDots * 0.5),
+                fonttype: FONTTYPE.FONT_1,
+                rotation: TSC_ROTATION.ROTATION_0,
+                xscal: 1,
+                yscal: 1,
+              },
+            ]
+          : []),
+        {
+          text: `Rs.${label.price}`,
+          x: marginDots,
+          y: Math.round(heightDots * 0.66),
+          fonttype: FONTTYPE.FONT_2,
+          rotation: TSC_ROTATION.ROTATION_0,
+          xscal: 1,
+          yscal: 1,
+        },
+      ];
+
+      for (let i = 0; i < copies; i++) {
+        await BluetoothTscPrinter.printLabel({
+          width: widthMm,
+          height: heightMm,
+          gap: gapMm,
+          direction: DIRECTION.FORWARD,
+          reference: [0, 0],
+          tear: TEAR.ON,
+          sound: 0,
+          text: textFields,
+          barcode: [
             {
-              text: label.variantTitle.slice(0, maxChars),
               x: marginDots,
-              y: Math.round(heightDots * 0.5),
-              fonttype: FONTTYPE.FONT_1,
+              y: Math.round(heightDots * 0.8),
+              type: TSC_BARCODETYPE.CODE128,
+              height: Math.round(heightDots * 0.16),
+              readable: READABLE.ENABLE,
               rotation: TSC_ROTATION.ROTATION_0,
-              xscal: 1,
-              yscal: 1,
+              code: label.barcode,
+              wide: 2,
+              narrow: 1,
             },
-          ]
-        : []),
-      {
-        text: `Rs.${label.price}`,
-        x: marginDots,
-        y: Math.round(heightDots * 0.66),
-        fonttype: FONTTYPE.FONT_2,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
-      },
-    ];
-
-    for (let i = 0; i < copies; i++) {
-      await BluetoothTscPrinter.printLabel({
-        width: widthMm,
-        height: heightMm,
-        gap: gapMm,
-        direction: DIRECTION.FORWARD,
-        reference: [0, 0],
-        tear: TEAR.ON,
-        sound: 0,
-        text: textFields,
-        barcode: [
-          {
-            x: marginDots,
-            y: Math.round(heightDots * 0.8),
-            type: TSC_BARCODETYPE.CODE128,
-            height: Math.round(heightDots * 0.16),
-            readable: READABLE.ENABLE,
-            rotation: TSC_ROTATION.ROTATION_0,
-            code: label.barcode,
-            wide: 2,
-            narrow: 1,
-          },
-        ],
-      });
+          ],
+        });
+      }
+      return;
     }
+
+    throw new Error('Bluetooth printer native module is not available.');
   }
 
   /**

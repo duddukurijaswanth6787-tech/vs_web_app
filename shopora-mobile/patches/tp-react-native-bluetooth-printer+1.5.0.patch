@@ -42,3 +42,34 @@ index a1b2c3d..e4f5a6b 100644
 +
      @ReactMethod
      public void printerLeftSpace(int sp,final Promise promise){
+@@ -453,6 +469,27 @@ public class RNBluetoothEscposPrinterModule extends ReactContextBaseJavaModule
+     @ReactMethod
+     public void printBarCode(String str, int nType, int nWidthX, int nHeight,
+-                             int nHriFontType, int nHriFontPosition) {
+-        byte[] command = PrinterCommand.getBarCodeCommand(str, nType, nWidthX, nHeight, nHriFontType, nHriFontPosition);
+-        sendDataByte(command);
++                             int nHriFontType, int nHriFontPosition, final Promise promise) {
++        try {
++            byte[] command = PrinterCommand.getBarCodeCommand(str, nType, nWidthX, nHeight, nHriFontType, nHriFontPosition);
++            if(command != null && sendDataByte(command)){
++                promise.resolve(null);
++            } else {
++                byte[] data = str.getBytes("GBK");
++                byte[] fallback = new byte[]{
++                    0x1D, 0x77, (byte) nWidthX,
++                    0x1D, 0x68, (byte) nHeight,
++                    0x1D, 0x66, (byte) (nHriFontType & 0x01),
++                    0x1D, 0x48, (byte) (nHriFontPosition & 0x03),
++                    0x1D, 0x6B, (byte) nType, (byte) data.length
++                };
++                byte[] full = PrinterCommand.concatAll(fallback, data);
++                if(sendDataByte(full)){
++                    promise.resolve(null);
++                } else {
++                    promise.reject("COMMAND_NOT_SEND");
++                }
++            }
++        } catch(Exception e) {
++            promise.reject(e.getMessage());
++        }
+     }
