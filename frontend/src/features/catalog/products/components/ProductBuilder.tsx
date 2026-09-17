@@ -493,7 +493,7 @@ export default function ProductBuilder({
     if (!initialData) return [];
 
     const images = initialData.images || [];
-    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; availableQuantity?: number; priceOverride?: number; salePriceOverride?: number; costPrice?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
+    const variants = (initialData as unknown as { variants?: Array<{ id: string; title?: string; sku?: string; barcode?: string; availableQuantity?: number; priceOverride?: number; salePriceOverride?: number; costPrice?: number; attributeValues?: Array<{ value?: string; attributeName?: string; attribute?: { slug?: string } }> }> })?.variants || [];
     const primaryUrl = initialData.primaryImageUrl;
 
     // 1. Direct colorGroups on initialData if saved
@@ -505,18 +505,36 @@ export default function ProductBuilder({
         }
 
         const cName = rg.label || rg.colorAttributeOption?.label || rg.colorAttributeOption?.value || rg.name || `Color ${idx + 1}`;
-        const swatch = rg.colorAttributeOption?.swatchImageUrl || rg.swatchImage || images.find((i) => i.color === cName && (i.mediaType === 'FABRIC' || (i as any).title === 'FABRIC_SWATCH'))?.url;
+        const swatch = rg.colorAttributeOption?.swatchImageUrl || rg.swatchImage || images.find((i) => (i.colorGroupId === rg.id || i.color?.toLowerCase() === cName.toLowerCase()) && (i.mediaType === 'FABRIC' || (i as any).title === 'FABRIC_SWATCH' || (i as any).title === 'Fabric'))?.url;
 
         const groupMedia = images
-          .filter((i) => (i.colorGroupId === rg.id || i.color === cName) && i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH')
+          .filter((i) => (i.colorGroupId === rg.id || i.color?.toLowerCase() === cName.toLowerCase()) && i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH' && (i as any).title !== 'Fabric')
           .map((i) => i.url);
+
         if (rg.images && Array.isArray(rg.images)) {
           rg.images.forEach((u: string) => {
             if (u && !groupMedia.includes(u)) groupMedia.push(u);
           });
         }
+
+        // If there's only 1 color group, or if this is the first group and has missing images, attach all unassigned non-fabric images
+        if (rawGroups.length === 1) {
+          images
+            .filter((i) => i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH' && (i as any).title !== 'Fabric')
+            .forEach((i) => {
+              if (i.url && !groupMedia.includes(i.url)) groupMedia.push(i.url);
+            });
+        } else if (idx === 0) {
+          images
+            .filter((i) => !i.colorGroupId && !i.color && i.mediaType !== 'FABRIC' && (i as any).title !== 'FABRIC_SWATCH' && (i as any).title !== 'Fabric')
+            .forEach((i) => {
+              if (i.url && !groupMedia.includes(i.url)) groupMedia.push(i.url);
+            });
+        }
+
         if (groupMedia.length === 0 && primaryUrl) {
-          groupMedia.push(primaryUrl);
+          const isPrimaryFabric = images.find((i) => i.url === primaryUrl && (i.mediaType === 'FABRIC' || (i as any).title === 'FABRIC_SWATCH' || (i as any).title === 'Fabric'));
+          if (!isPrimaryFabric) groupMedia.push(primaryUrl);
         }
 
         const matchingVariants = variants.filter((v) => {
@@ -573,17 +591,19 @@ export default function ProductBuilder({
       });
     }
 
-    // 2. Derive from initialData.images and initialData.variants when editing
-    const colorMap = new Map<string, { swatch?: string; images: string[] }>();
+    // 2. Derive from initialData.images and initialData.variants when editing legacy product
+    const colorMap = new Map<string, { swatch?: string; images: string[]; id?: string }>();
 
     images.forEach((img) => {
       const cName = img.color || 'Color 1';
       const isFabric = img.mediaType === 'FABRIC' || (img as any).title === 'FABRIC_SWATCH' || (img as any).title === 'Fabric';
       const swatch = (img as unknown as { swatchUrl?: string }).swatchUrl || (isFabric ? img.url : undefined);
       if (!colorMap.has(cName)) {
-        colorMap.set(cName, { swatch, images: [] });
-      } else if (swatch && !colorMap.get(cName)!.swatch) {
-        colorMap.get(cName)!.swatch = swatch;
+        colorMap.set(cName, { swatch, images: [], id: img.colorGroupId });
+      } else {
+        const entry = colorMap.get(cName)!;
+        if (swatch && !entry.swatch) entry.swatch = swatch;
+        if (img.colorGroupId && !entry.id) entry.id = img.colorGroupId;
       }
       if (img.url && !isFabric) {
         if (!colorMap.get(cName)!.images.includes(img.url)) {
@@ -677,7 +697,7 @@ export default function ProductBuilder({
 
       const cleanGroupImages = Array.from(new Set(data.images)).filter((u) => u !== data.swatch);
       groups.push({
-        id: `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        id: data.id || `col-${idx}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
         name: cName,
         hex: idx === 1 ? '#e8c4b8' : '#1e3a8a',
         swatchImage: data.swatch,
@@ -713,21 +733,6 @@ export default function ProductBuilder({
     const variants = fetchedVariantsData.data;
     if (variants.length === 0) return;
 
-    // Auto-populate barcode stickers panel for existing product variants
-    const pName = (initialData?.name || methods.getValues('name') || 'Product').toString();
-    const existingIssued: IssuedVariant[] = variants.map((v) => {
-      const inv = inventoryMap.get(v.id);
-      return {
-        sku: v.sku,
-        barcode: v.barcode || v.sku,
-        title: v.title || pName,
-        stock: inv?.availableQuantity ?? 10,
-        price: v.priceOverride ? Number(v.priceOverride) : Number(methods.getValues('salePrice') || methods.getValues('basePrice') || 0),
-      };
-    });
-    setIssuedVariants(existingIssued);
-    setLabelQtyBySku(Object.fromEntries(existingIssued.map((v) => [v.sku, Math.max(1, v.stock || 1)])));
-
     setColorGroups((prevGroups) => {
       if (!prevGroups.length) return prevGroups;
       return prevGroups.map((group) => {
@@ -759,15 +764,20 @@ export default function ProductBuilder({
           const pOverride = v.priceOverride !== undefined && v.priceOverride !== null ? Number(v.priceOverride) : undefined;
           const spOverride = v.salePriceOverride !== undefined && v.salePriceOverride !== null ? Number(v.salePriceOverride) : undefined;
           const cp = v.costPrice !== undefined && v.costPrice !== null ? Number(v.costPrice) : undefined;
+
+          // Preserve any in-session size edits / toggles
+          const existingInState = group.sizes.find((s) => s.size.toLowerCase().trim() === sz.toLowerCase().trim());
+          const isAvail = existingInState ? existingInState.available : true;
+
           return {
             size: sz,
-            stock: inv?.availableQuantity ?? 10,
+            stock: existingInState?.stock ?? (inv?.availableQuantity ?? 10),
             minStock: inv?.minimumStock ?? 5,
             reorderLevel: inv?.reorderLevel ?? 10,
-            price: pOverride,
-            salePrice: spOverride,
-            costPrice: cp,
-            available: true,
+            price: existingInState?.price ?? pOverride,
+            salePrice: existingInState?.salePrice ?? spOverride,
+            costPrice: existingInState?.costPrice ?? cp,
+            available: isAvail,
             sku: v.sku || `${colorCode}-${sz}`,
           };
         });
@@ -778,7 +788,7 @@ export default function ProductBuilder({
         };
       });
     });
-  }, [productId, fetchedVariantsData, inventoryMap, initialData?.name, methods]);
+  }, [productId, fetchedVariantsData, inventoryMap]);
 
   // Auto-generate preview barcode stickers and QR codes from color groups and sizes
   const generateBarcodeVariants = useCallback(() => {
@@ -791,13 +801,34 @@ export default function ProductBuilder({
       0
     );
 
+    // Map existing barcodes from initialData & fetchedVariants so we PRESERVE existing labels
+    const existingVariantsList: Array<{ sku?: string; barcode?: string; title?: string }> = [
+      ...((initialData as any)?.variants || []),
+      ...(fetchedVariantsData?.data || []),
+    ];
+    const existingBarcodeMap = new Map<string, string>();
+    existingVariantsList.forEach((v) => {
+      const bCode = v.barcode || v.sku;
+      if (bCode) {
+        if (v.sku) existingBarcodeMap.set(v.sku.toLowerCase().trim(), bCode);
+        if (v.title) existingBarcodeMap.set(v.title.toLowerCase().trim(), bCode);
+      }
+    });
+
     const generated: IssuedVariant[] = [];
     colorGroups.forEach((group) => {
       group.sizes.forEach((sizeRow) => {
+        // DO NOT show removed or unavailable sizes in barcode labels
         if (!sizeRow.available) return;
+
         const title = `${group.name} / ${sizeRow.size}`;
         const sku = sizeRow.sku || buildSmartVariantSku(group.name, sizeRow.size);
-        const barcode = sku.replace(/[^A-Z0-9]/gi, '');
+        const existingBarcode =
+          existingBarcodeMap.get(sku.toLowerCase().trim()) ||
+          existingBarcodeMap.get(title.toLowerCase().trim());
+
+        // Preserve existing assigned barcode; do not overwrite or change existing barcodes
+        const barcode = existingBarcode || sku.replace(/[^A-Z0-9]/gi, '');
         const stock = Number(sizeRow.stock) || 10;
         const price = sizeRow.price ? Number(sizeRow.price) : pPrice;
         generated.push({
@@ -810,14 +841,12 @@ export default function ProductBuilder({
       });
     });
 
-    if (generated.length > 0) {
-      setIssuedVariants(generated);
-      setLabelQtyBySku(
-        Object.fromEntries(generated.map((v) => [v.sku, Math.max(1, v.stock || 1)]))
-      );
-    }
+    setIssuedVariants(generated);
+    setLabelQtyBySku(
+      Object.fromEntries(generated.map((v) => [v.sku, Math.max(1, v.stock || 1)]))
+    );
     return generated;
-  }, [colorGroups, initialData?.basePrice, initialData?.name, initialData?.salePrice, methods]);
+  }, [colorGroups, initialData?.basePrice, initialData?.name, initialData?.salePrice, (initialData as any)?.variants, fetchedVariantsData?.data, methods]);
 
   // Total active sizes count for instant tab badge
   const totalActiveSizes = useMemo(() => {
@@ -831,7 +860,18 @@ export default function ProductBuilder({
     }
   }, [activeTab, totalActiveSizes, generateBarcodeVariants]);
 
-  const [activeColorTab, setActiveColorTab] = useState<string>(colorGroups[0]?.id || '');
+  const [activeColorTab, setActiveColorTab] = useState<string>(() => colorGroups[0]?.id || '');
+
+  // Auto-sync activeColorTab when colorGroups list changes or first group loads
+  useEffect(() => {
+    if (colorGroups.length > 0) {
+      if (!activeColorTab || !colorGroups.some((c) => c.id === activeColorTab)) {
+        setActiveColorTab(colorGroups[0].id);
+      }
+    } else {
+      setActiveColorTab('');
+    }
+  }, [colorGroups, activeColorTab]);
 
   // Add New Color Group
   const [newColorName, setNewColorName] = useState('');
@@ -846,7 +886,7 @@ export default function ProductBuilder({
     const cSwatch = swatch !== undefined ? swatch : newColorSwatch;
     const cImages = initialImgs && initialImgs.length > 0 ? initialImgs : newColorImages;
 
-    const newId = `col-${colorGroups.length + 1}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
+    const newId = `col-${Date.now()}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`;
     const newGroup: ColorVariantGroup = {
       id: newId,
       name: cName,
@@ -869,10 +909,13 @@ export default function ProductBuilder({
   };
 
   const removeColorGroup = (id: string) => {
-    setColorGroups((prev) => prev.filter((c) => c.id !== id));
-    if (activeColorTab === id && colorGroups.length > 1) {
-      setActiveColorTab(colorGroups.find((c) => c.id !== id)?.id || '');
-    }
+    setColorGroups((prev) => {
+      const remaining = prev.filter((c) => c.id !== id);
+      if (activeColorTab === id && remaining.length > 0) {
+        setActiveColorTab(remaining[0].id);
+      }
+      return remaining;
+    });
   };
 
   // Size management within color groups
