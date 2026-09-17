@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Image from 'next/image';
 import { ReelViewerModal, ReelData, TaggedProduct } from './ReelViewerModal';
 import { usePublicReels } from '@/features/social/social.hooks';
 import { resolveMediaUrl, withVariant, isLocalOrPlaceholder } from '@/lib/media-url';
+import { PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 
 function InstaIcon({ className = 'w-5 h-5' }: { className?: string }) {
   return (
@@ -16,11 +17,103 @@ function InstaIcon({ className = 'w-5 h-5' }: { className?: string }) {
   );
 }
 
+function ReelCard({
+  reel,
+  index,
+  onSelect,
+}: {
+  reel: ReelData;
+  index: number;
+  onSelect: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const isVideo = !!reel.videoUrl;
+  const [imgError, setImgError] = useState(false);
+
+  const hasStaticImage =
+    reel.posterImage &&
+    !reel.posterImage.endsWith('.mp4') &&
+    !reel.posterImage.endsWith('.webm') &&
+    !reel.posterImage.endsWith('.mov') &&
+    !reel.posterImage.includes('/videos/');
+
+  const posterSrc = imgError
+    ? PLACEHOLDER_IMAGE
+    : hasStaticImage
+    ? reel.posterImage
+    : reel.taggedProducts?.[0]?.image || '';
+
+  const handleMouseEnter = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+      videoRef.current.currentTime = 0;
+    }
+  };
+
+  return (
+    <button
+      onClick={onSelect}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-sm border border-neutral-200/60 w-[140px] sm:w-auto shrink-0 snap-start text-left cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md"
+    >
+      {isVideo && (!hasStaticImage || imgError) ? (
+        <video
+          ref={videoRef}
+          src={`${reel.videoUrl}#t=0.001`}
+          preload="metadata"
+          muted
+          playsInline
+          loop
+          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 pointer-events-none"
+        />
+      ) : posterSrc ? (
+        <Image
+          src={withVariant(posterSrc, 'medium')}
+          alt={reel.title}
+          fill
+          loading={index < 3 ? 'eager' : 'lazy'}
+          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+          unoptimized={isLocalOrPlaceholder(posterSrc)}
+          onError={() => setImgError(true)}
+          className="object-cover group-hover:scale-110 transition-transform duration-500"
+        />
+      ) : (
+        <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-neutral-950 flex items-center justify-center p-3 text-center">
+          <InstaIcon className="w-8 h-8 text-neutral-500" />
+        </div>
+      )}
+
+      {/* Reel Play Badge Icon */}
+      <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10 shadow-xs">
+        {isVideo ? (
+          <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
+            <path d="M8 5v14l11-7z" />
+          </svg>
+        ) : (
+          <InstaIcon className="w-3.5 h-3.5" />
+        )}
+      </div>
+
+      {/* Hover Overlay */}
+      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center text-white text-xs font-semibold z-10">
+        <span className="line-clamp-2">{reel.caption || reel.title}</span>
+      </div>
+    </button>
+  );
+}
+
 export function InstagramFeed() {
   const [selectedReelIndex, setSelectedReelIndex] = useState<number | null>(null);
 
   // Fetch published reels & posts live from public API
-  const { data: apiPosts, isLoading } = usePublicReels();
+  const { data: apiPosts } = usePublicReels();
 
   // Map backend API posts to ReelData format
   const activeReels: ReelData[] = (apiPosts?.data || []).map((post) => {
@@ -28,7 +121,11 @@ export function InstagramFeed() {
     const rawMediaUrl = firstMedia?.url;
     const resolvedUrl = rawMediaUrl ? resolveMediaUrl(rawMediaUrl) : undefined;
 
-    const isVideo = post.contentType === 'REEL' || firstMedia?.mediaType === 'VIDEO' || (resolvedUrl ? resolvedUrl.endsWith('.mp4') || resolvedUrl.includes('/videos/') : false);
+    const isVideo =
+      post.contentType === 'REEL' ||
+      firstMedia?.mediaType === 'VIDEO' ||
+      (resolvedUrl ? resolvedUrl.endsWith('.mp4') || resolvedUrl.endsWith('.webm') || resolvedUrl.includes('/videos/') : false);
+
     const rawThumbUrl = firstMedia?.thumbnailUrl;
     const videoUrl = isVideo ? resolvedUrl : undefined;
 
@@ -95,7 +192,7 @@ export function InstagramFeed() {
           price: salePriceNum > 0 ? salePriceNum : basePriceNum,
           originalPrice: basePriceNum > 0 ? basePriceNum : salePriceNum,
           discount: discountStr,
-          image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : '/images/placeholder.jpg',
+          image: primaryMedia ? resolveMediaUrl(String(primaryMedia)) : PLACEHOLDER_IMAGE,
           inStock,
           stock: stockCount,
           position: { top: `${30 + i * 15}%`, left: `${20 + i * 10}%` },
@@ -103,10 +200,11 @@ export function InstagramFeed() {
       })
       .filter((p): p is NonNullable<typeof p> => p !== null);
 
-    const posterImage = (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined)
-      || (!isVideo && resolvedUrl ? resolvedUrl : undefined)
-      || (taggedProducts[0]?.image ? taggedProducts[0].image : undefined)
-      || (videoUrl ? videoUrl : '/images/placeholder.jpg');
+    const posterImage =
+      (rawThumbUrl ? resolveMediaUrl(rawThumbUrl) : undefined) ||
+      (!isVideo && resolvedUrl ? resolvedUrl : undefined) ||
+      (taggedProducts[0]?.image ? taggedProducts[0].image : undefined) ||
+      (videoUrl ? videoUrl : PLACEHOLDER_IMAGE);
 
     return {
       id: post.id,
@@ -140,46 +238,14 @@ export function InstagramFeed() {
 
       {/* Responsive Grid / Horizontal Scroll for Published Reels */}
       <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
-        {activeReels.map((reel, index) => {
-          const isVideo = !!reel.videoUrl;
-          const posterSrc = reel.posterImage && !reel.posterImage.endsWith('.mp4') && !reel.posterImage.includes('/videos/')
-            ? reel.posterImage
-            : reel.taggedProducts?.[0]?.image || '/images/placeholder.jpg';
-
-          return (
-            <button
-              key={reel.id}
-              onClick={() => setSelectedReelIndex(index)}
-              className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-2xs border border-neutral-200/60 w-[140px] sm:w-auto shrink-0 snap-start text-left cursor-pointer transition-transform hover:-translate-y-1"
-            >
-              <Image
-                src={withVariant(posterSrc, 'medium')}
-                alt={reel.title}
-                fill
-                loading={index < 3 ? 'eager' : 'lazy'}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
-                unoptimized={isLocalOrPlaceholder(posterSrc)}
-                className="object-cover group-hover:scale-110 transition-transform duration-500"
-              />
-
-              {/* Reel Play Badge Icon */}
-              <div className="absolute top-2 right-2 bg-black/60 backdrop-blur-xs p-1.5 rounded-full text-white z-10 shadow-xs">
-                {isVideo ? (
-                  <svg className="w-3.5 h-3.5 fill-white" viewBox="0 0 24 24">
-                    <path d="M8 5v14l11-7z" />
-                  </svg>
-                ) : (
-                  <InstaIcon className="w-3.5 h-3.5" />
-                )}
-              </div>
-
-              {/* Hover Overlay */}
-              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center p-2 text-center text-white text-xs font-semibold z-10">
-                <span className="line-clamp-2">{reel.caption || reel.title}</span>
-              </div>
-            </button>
-          );
-        })}
+        {activeReels.map((reel, index) => (
+          <ReelCard
+            key={reel.id}
+            reel={reel}
+            index={index}
+            onSelect={() => setSelectedReelIndex(index)}
+          />
+        ))}
       </div>
 
       {selectedReelIndex !== null && (

@@ -53,7 +53,22 @@ export function resolveMediaUrl(url?: string | null): string {
     return url;
   }
 
-  // 4. Relative paths (/storage/... or /api/v1/storage/...) -> map to backendOrigin
+  // 4. Local frontend static assets (in Next.js public/ folder)
+  if (
+    url.startsWith('/images/') ||
+    url.startsWith('/assets/') ||
+    url.startsWith('/icons/') ||
+    url.startsWith('/brand/') ||
+    url.startsWith('/brand-') ||
+    url.startsWith('/favicon') ||
+    url.startsWith('/placeholder') ||
+    url.startsWith('/next.svg') ||
+    url.startsWith('/vercel.svg')
+  ) {
+    return url;
+  }
+
+  // 5. Relative paths (/storage/... or /api/v1/storage/...) -> map to backendOrigin
   if (url.startsWith('/storage/')) {
     return `${backendOrigin}/api/v1${url}`;
   }
