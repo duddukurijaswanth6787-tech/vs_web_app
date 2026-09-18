@@ -297,6 +297,14 @@ export function useOrderTracking(orderNumber: string, enabled = true) {
   });
 }
 
+export function useOrderInvoice(orderNumber: string, enabled = true) {
+  return useQuery({
+    queryKey: [...customerKeys.orders(), orderNumber, 'invoice'],
+    queryFn: () => customerOrdersService.invoice(orderNumber).catch(() => null),
+    enabled: enabled && !!orderNumber,
+  });
+}
+
 export function useMyReturns(query: Record<string, string | number> = {}, enabled = true) {
   return useQuery({
     queryKey: ['customer', 'returns', query],
