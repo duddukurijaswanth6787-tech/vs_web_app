@@ -65,7 +65,21 @@ export default function AddressListPage() {
         {error && <p className="text-sm text-red-600">{getApiErrorMessage(error)}</p>}
         {actionError && <p className="text-sm text-red-600">{actionError}</p>}
         {!isLoading && addresses.length === 0 && (
-          <p className="text-sm text-neutral-500 text-center py-10">No saved addresses</p>
+          <div className="bg-white border border-neutral-200 rounded-3xl p-8 text-center space-y-4 shadow-xs">
+            <div className="w-12 h-12 rounded-full bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center mx-auto">
+              <Plus className="w-6 h-6" />
+            </div>
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-neutral-900">No Saved Addresses Found</h3>
+              <p className="text-xs text-neutral-500">Add a delivery address to complete your order</p>
+            </div>
+            <Link
+              href="/checkout/address/add"
+              className="inline-flex items-center justify-center gap-2 w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl text-xs font-bold hover:opacity-95 shadow-xs"
+            >
+              <Plus className="w-4 h-4" /> Add Delivery Address
+            </Link>
+          </div>
         )}
         {addresses.map((addr: AddressDto) => (
           <div key={addr.id} className="bg-white border border-neutral-200 rounded-2xl p-4 space-y-2">

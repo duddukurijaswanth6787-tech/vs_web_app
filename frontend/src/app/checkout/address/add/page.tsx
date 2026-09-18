@@ -82,9 +82,13 @@ export default function AddAddressPage() {
 
     setLoading(true);
     try {
-      await customerMeService.createAddress(form);
+      const created = await customerMeService.createAddress(form);
       qc.invalidateQueries({ queryKey: customerKeys.address() });
-      router.push('/checkout/address');
+      if (created?.id) {
+        router.push(`/checkout/payment?addressId=${created.id}`);
+      } else {
+        router.push('/checkout/address');
+      }
     } catch (err) {
       setError(getApiErrorMessage(err, 'Failed to save address'));
     } finally {
