@@ -229,7 +229,22 @@ export interface ProductResponse {
   categories?: ProductCategoryInfo[];
   attributes?: ProductAttributeInfo[];
   colorGroups?: ProductColorGroupResponse[];
-  relatedProducts?: ProductRelatedInfo[];
+  variants?: Array<{
+    id: string;
+    title?: string;
+    sku: string;
+    priceOverride?: number;
+    salePriceOverride?: number;
+    costPrice?: number;
+    isDefault?: boolean;
+    availableQuantity?: number;
+    stockStatus?: string;
+    attributeValues?: Array<{
+      attributeId: string;
+      attributeName?: string;
+      value?: string;
+    }>;
+  }>;
   primaryImageUrl?: string;
   images?: Array<{
     id: string;

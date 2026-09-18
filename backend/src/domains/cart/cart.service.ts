@@ -203,6 +203,27 @@ export class CartService {
       resolvedVariantId ?? undefined,
     );
 
+    if (resolvedVariantId) {
+      const inventory = await this.prisma.inventory.findUnique({
+        where: { variantId: resolvedVariantId },
+      });
+      if (inventory && !inventory.allowBackorder) {
+        const available = Math.max(
+          0,
+          inventory.availableQuantity - inventory.reservedQuantity,
+        );
+        const requestedTotal = (existing?.quantity ?? 0) + quantity;
+        if (requestedTotal > available) {
+          throw new BusinessException(
+            available <= 0
+              ? 'This product is out of stock'
+              : `Only ${available} unit${available === 1 ? '' : 's'} available in stock`,
+            'CART_005',
+          );
+        }
+      }
+    }
+
     if (existing) {
       const newQty = existing.quantity + quantity;
       await this.cartRepository.updateItemQuantity(

@@ -33,6 +33,7 @@ export class ProductVariantsRepository {
     if (isDefault !== undefined) where.isDefault = isDefault;
 
     const include: Prisma.ProductVariantInclude = {
+      inventory: true,
       attributeValues: {
         include: {
           attribute: { select: { id: true, name: true, type: true } },

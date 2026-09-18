@@ -220,6 +220,8 @@ export class VariantResponse {
   @ApiProperty() status!: string;
   @ApiProperty() isDefault!: boolean;
   @ApiProperty() isActive!: boolean;
+  @ApiPropertyOptional() availableQuantity?: number;
+  @ApiPropertyOptional() stockStatus?: string;
   @ApiPropertyOptional({ type: [VariantAttributeInfo] })
   attributeValues?: VariantAttributeInfo[];
   @ApiProperty() createdAt!: Date;

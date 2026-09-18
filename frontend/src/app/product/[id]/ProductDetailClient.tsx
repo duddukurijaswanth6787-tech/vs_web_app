@@ -30,6 +30,7 @@ import {
   Check,
   Info,
   Bell,
+  AlertTriangle,
 } from 'lucide-react';
 import { StorefrontHeader } from '@/components/layout/StorefrontHeader';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
@@ -101,6 +102,7 @@ export function ProductDetailClient() {
   const [qty, setQty] = useState(1);
   const [msg, setMsg] = useState('');
   const [err, setErr] = useState('');
+  const [stockWarning, setStockWarning] = useState('');
   const [selectedSize, setSelectedSize] = useState('');
   const [selectedColor, setSelectedColor] = useState('');
   const [showSizeChart, setShowSizeChart] = useState(false);
@@ -451,9 +453,18 @@ export function ProductDetailClient() {
     if (typeof vStock === 'number') {
       return Math.max(0, vStock);
     }
-    // 3) Default fallback
+    // 3) Read from product.variants fallback if matching
+    const pv = product?.variants?.find((v) => v.id === matchingVariant?.id);
+    if (typeof pv?.availableQuantity === 'number') {
+      return Math.max(0, pv.availableQuantity);
+    }
+    // 4) Check max order quantity setting on product
+    if (typeof product?.maximumOrderQuantity === 'number' && product.maximumOrderQuantity > 0) {
+      return product.maximumOrderQuantity;
+    }
+    // 5) Default fallback
     return 10;
-  }, [currentSizeObj, matchingVariant]);
+  }, [currentSizeObj, matchingVariant, product]);
 
   // Keep qty constrained within [1, maxAllowedQty]
   useEffect(() => {
@@ -561,6 +572,21 @@ export function ProductDetailClient() {
     if (!product) return;
     setErr('');
     setMsg('');
+    setStockWarning('');
+
+    if (maxAllowedQty === 0) {
+      setStockWarning('This item is currently out of stock.');
+      setTimeout(() => setStockWarning(''), 3500);
+      return;
+    }
+
+    if (qty > maxAllowedQty) {
+      setQty(maxAllowedQty);
+      setStockWarning(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
+      setTimeout(() => setStockWarning(''), 3500);
+      return;
+    }
+
     try {
       await addItem.mutateAsync({ 
         productId: product.id, 
@@ -596,6 +622,21 @@ export function ProductDetailClient() {
     if (!product) return;
     setErr('');
     setMsg('');
+    setStockWarning('');
+
+    if (maxAllowedQty === 0) {
+      setStockWarning('This item is currently out of stock.');
+      setTimeout(() => setStockWarning(''), 3500);
+      return;
+    }
+
+    if (qty > maxAllowedQty) {
+      setQty(maxAllowedQty);
+      setStockWarning(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
+      setTimeout(() => setStockWarning(''), 3500);
+      return;
+    }
+
     try {
       if (customTailoring) {
         try {
@@ -1306,75 +1347,118 @@ export function ProductDetailClient() {
                     <div className="flex items-center gap-2 pt-0.5">
                       <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider shrink-0">Quick Bulk:</span>
                       <div className="flex flex-wrap gap-1.5 flex-1">
-                        {[5, 10, 25, 50].map((bulkQty) => (
-                          <button
-                            key={bulkQty}
-                            type="button"
-                            onClick={() => setQty(bulkQty)}
-                            className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
-                              qty === bulkQty
-                                ? 'bg-neutral-900 text-white border-neutral-900'
-                                : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
-                            }`}
-                          >
-                            {bulkQty} Pcs
-                          </button>
-                        ))}
+                        {[5, 10, 25, 50].map((bulkQty) => {
+                          const isExceeded = maxAllowedQty > 0 && bulkQty > maxAllowedQty;
+                          return (
+                            <button
+                              key={bulkQty}
+                              type="button"
+                              disabled={isExceeded || maxAllowedQty === 0}
+                              onClick={() => {
+                                if (bulkQty <= maxAllowedQty) {
+                                  setQty(bulkQty);
+                                  setStockWarning('');
+                                } else {
+                                  setQty(maxAllowedQty);
+                                  setStockWarning(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
+                                  setTimeout(() => setStockWarning(''), 3500);
+                                }
+                              }}
+                              className={`text-[10px] font-bold px-2.5 py-1 rounded-lg border transition-all ${
+                                isExceeded || maxAllowedQty === 0
+                                  ? 'opacity-35 bg-neutral-100 text-neutral-400 border-neutral-200 cursor-not-allowed'
+                                  : qty === bulkQty
+                                  ? 'bg-neutral-900 text-white border-neutral-900'
+                                  : 'bg-white text-neutral-700 border-neutral-200 hover:bg-neutral-100'
+                              }`}
+                              title={isExceeded ? `Only ${maxAllowedQty} units available` : undefined}
+                            >
+                              {bulkQty} Pcs
+                            </button>
+                          );
+                        })}
                       </div>
                     </div>
                   </div>
                 )}
 
                 {/* Counter, ADD TO BAG & BUY NOW section */}
-                <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-0.5">
-                  <div className="flex items-center justify-between sm:justify-center gap-3 border border-neutral-200 bg-white rounded-xl px-3 py-3 shadow-2xs shrink-0">
-                    <button 
-                      type="button" 
-                      disabled={qty <= 1}
-                      onClick={() => setQty((q) => Math.max(1, q - 1))} 
-                      className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Minus className="w-3.5 h-3.5 text-neutral-500" />
-                    </button>
-                    <span className="text-sm font-bold w-5 text-center text-neutral-800">{qty}</span>
-                    <button 
-                      type="button" 
-                      disabled={qty >= maxAllowedQty}
-                      onClick={() => {
-                        if (qty < maxAllowedQty) {
-                          setQty((q) => q + 1);
-                        } else {
-                          setMsg(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
-                          setTimeout(() => setMsg(''), 3000);
-                        }
-                      }} 
-                      className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
-                    >
-                      <Plus className="w-3.5 h-3.5 text-neutral-500" />
-                    </button>
+                <div className="flex flex-col gap-2 pt-0.5">
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3">
+                    <div className="flex items-center justify-between sm:justify-center gap-3 border border-neutral-200 bg-white rounded-xl px-3 py-3 shadow-2xs shrink-0">
+                      <button 
+                        type="button" 
+                        disabled={qty <= 1}
+                        onClick={() => {
+                          setQty((q) => Math.max(1, q - 1));
+                          setStockWarning('');
+                        }} 
+                        className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        title="Decrease quantity"
+                      >
+                        <Minus className="w-3.5 h-3.5 text-neutral-500" />
+                      </button>
+                      <span className="text-sm font-bold w-5 text-center text-neutral-800">{qty}</span>
+                      <button 
+                        type="button" 
+                        disabled={qty >= maxAllowedQty || maxAllowedQty === 0}
+                        onClick={() => {
+                          if (maxAllowedQty === 0) {
+                            setStockWarning('This item is currently out of stock.');
+                            setTimeout(() => setStockWarning(''), 3500);
+                          } else if (qty < maxAllowedQty) {
+                            setQty((q) => q + 1);
+                            setStockWarning('');
+                          } else {
+                            setStockWarning(`Only ${maxAllowedQty} unit${maxAllowedQty === 1 ? '' : 's'} available in stock.`);
+                            setTimeout(() => setStockWarning(''), 3500);
+                          }
+                        }} 
+                        className="p-0.5 hover:bg-neutral-50 rounded disabled:opacity-30 disabled:cursor-not-allowed"
+                        title={qty >= maxAllowedQty ? `Max stock limit (${maxAllowedQty}) reached` : 'Increase quantity'}
+                      >
+                        <Plus className="w-3.5 h-3.5 text-neutral-500" />
+                      </button>
+                    </div>
+
+                    <div className="flex items-center gap-2.5 flex-1">
+                      <button
+                        type="button"
+                        disabled={addItem.isPending || maxAllowedQty === 0}
+                        onClick={handleAddToCart}
+                        className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
+                      >
+                        <ShoppingBag className="w-4 h-4" />
+                        {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={addItem.isPending || maxAllowedQty === 0}
+                        onClick={handleBuyNow}
+                        className="flex-1 bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 border border-amber-400/50"
+                      >
+                        <Zap className="w-4 h-4 fill-neutral-950" />
+                        {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'BUYING…' : 'BUY NOW'}
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-2.5 flex-1">
-                    <button
-                      type="button"
-                      disabled={addItem.isPending || maxAllowedQty === 0}
-                      onClick={handleAddToCart}
-                      className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
-                    >
-                      <ShoppingBag className="w-4 h-4" />
-                      {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'ADDING…' : 'ADD TO BAG'}
-                    </button>
+                  {/* Inline Stock Limit Warning Alert */}
+                  {stockWarning && (
+                    <div className="flex items-center gap-2 p-2.5 px-3 bg-amber-50 border border-amber-300/90 rounded-xl text-amber-900 text-xs font-semibold animate-fade-in shadow-2xs">
+                      <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>{stockWarning}</span>
+                    </div>
+                  )}
 
-                    <button
-                      type="button"
-                      disabled={addItem.isPending || maxAllowedQty === 0}
-                      onClick={handleBuyNow}
-                      className="flex-1 bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 border border-amber-400/50"
-                    >
-                      <Zap className="w-4 h-4 fill-neutral-950" />
-                      {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'BUYING…' : 'BUY NOW'}
-                    </button>
-                  </div>
+                  {/* Max Limit Note when quantity equals max stock and stock is limited */}
+                  {!stockWarning && maxAllowedQty > 0 && maxAllowedQty <= 5 && qty >= maxAllowedQty && (
+                    <div className="text-[11px] font-semibold text-amber-700 flex items-center gap-1.5 px-1">
+                      <span>⚠️</span>
+                      <span>Stock limit reached — maximum {maxAllowedQty} unit{maxAllowedQty === 1 ? '' : 's'} can be ordered for this selection.</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* Out of Stock & Restock Alert Notice */}

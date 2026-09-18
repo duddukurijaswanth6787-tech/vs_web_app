@@ -76,6 +76,8 @@ export interface VariantResponse {
   status: string;
   isDefault: boolean;
   isActive: boolean;
+  availableQuantity?: number;
+  stockStatus?: string;
   attributeValues?: VariantAttributeInfo[];
   createdAt: string;
   updatedAt: string;

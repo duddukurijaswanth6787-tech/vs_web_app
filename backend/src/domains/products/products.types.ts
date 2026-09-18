@@ -703,6 +703,8 @@ export class ProductResponse {
     salePriceOverride?: number;
     costPrice?: number;
     isDefault?: boolean;
+    availableQuantity?: number;
+    stockStatus?: string;
     attributeValues?: Array<{
       attributeId: string;
       attributeName?: string;

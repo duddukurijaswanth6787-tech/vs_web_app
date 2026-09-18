@@ -47,6 +47,14 @@ export class ProductVariantsService {
       status: v.status,
       isDefault: v.isDefault,
       isActive: v.isActive,
+      availableQuantity: v.inventory?.availableQuantity ?? 0,
+      stockStatus:
+        v.inventory?.stockStatus ??
+        (v.inventory
+          ? v.inventory.availableQuantity > 0
+            ? 'IN_STOCK'
+            : 'OUT_OF_STOCK'
+          : 'IN_STOCK'),
       attributeValues: v.attributeValues?.map((av: any) => ({
         attributeId: av.attributeId,
         attributeName: av.attribute?.name ?? av.attributeId,
