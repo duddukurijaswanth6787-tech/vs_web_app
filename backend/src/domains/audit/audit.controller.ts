@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Param, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { AuditLogQueryDto } from './audit.types';
@@ -49,5 +49,12 @@ export class AuditController {
   @ApiOperation({ summary: 'Get audit log by ID' })
   async findById(@Param('id') id: string) {
     return ResponseBuilder.success(await this.auditService.findById(id));
+  }
+
+  @Post('prune')
+  @ApiOperation({ summary: 'Prune audit logs older than N days (default 3 days)' })
+  async pruneLogs(@Query('days') days?: string) {
+    const parsedDays = days ? Math.max(1, parseInt(days, 10)) : 3;
+    return ResponseBuilder.success(await this.auditService.purgeOlderThan(parsedDays));
   }
 }

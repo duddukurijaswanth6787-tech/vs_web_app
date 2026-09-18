@@ -153,4 +153,14 @@ export class AuditRepository {
       take: limit,
     });
   }
+
+  async purgeOlderThan(days: number = 3) {
+    const cutoff = new Date(Date.now() - days * 24 * 60 * 60 * 1000);
+    const result = await this.prisma.auditLog.deleteMany({
+      where: {
+        createdAt: { lt: cutoff },
+      },
+    });
+    return { deletedCount: result.count, cutoffDate: cutoff.toISOString() };
+  }
 }

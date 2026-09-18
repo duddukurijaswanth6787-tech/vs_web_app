@@ -138,4 +138,18 @@ export class AuditService {
       newValue: newVal,
     };
   }
+
+  async purgeOlderThan(days: number = 3) {
+    const result = await this.auditRepository.purgeOlderThan(days);
+    this.loggerService.log(
+      {
+        auditAction: 'AUDIT_PURGE_ROLLING_WINDOW',
+        retentionDays: days,
+        deletedCount: result.deletedCount,
+        cutoffDate: result.cutoffDate,
+      },
+      'AuditService',
+    );
+    return result;
+  }
 }
