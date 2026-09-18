@@ -40,7 +40,31 @@ function EditProductPageContent() {
       {isLoading ? (
         <SectionLoader message="Fetching product specifications..." />
       ) : isError || !product ? (
-        <PageError title="Loading Failed" message="Could not fetch product information." retry={refetch} />
+        <div className="bg-white p-12 rounded-2xl border border-neutral-200 shadow-sm text-center space-y-4">
+          <div className="mx-auto w-12 h-12 rounded-full bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-600 font-bold text-lg">
+            !
+          </div>
+          <div>
+            <h2 className="text-lg font-bold text-neutral-900">Product Not Found</h2>
+            <p className="text-xs text-neutral-500 max-w-md mx-auto mt-1">
+              This product ID ({id}) could not be found or has been removed from the catalog.
+            </p>
+          </div>
+          <div className="flex justify-center gap-3 pt-2">
+            <Link
+              href={backUrl}
+              className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white text-xs font-bold rounded-xl transition"
+            >
+              Return to Products Catalog
+            </Link>
+            <button
+              onClick={() => refetch()}
+              className="px-4 py-2 border border-neutral-200 hover:bg-neutral-50 text-neutral-700 text-xs font-bold rounded-xl transition"
+            >
+              Try Again
+            </button>
+          </div>
+        </div>
       ) : (
         <ProductBuilder
           productId={id}

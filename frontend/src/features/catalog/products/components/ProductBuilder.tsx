@@ -1093,68 +1093,83 @@ export default function ProductBuilder({
     if (!files || files.length === 0) return;
     const fileArray = Array.from(files);
 
-    for (const file of fileArray) {
-      // 1. Instant UI preview using local object URL
-      const localPreviewUrl = URL.createObjectURL(file);
+    // 1. Create local preview URLs for ALL uploaded files immediately
+    const fileEntries = fileArray.map((file) => ({
+      file,
+      localPreviewUrl: URL.createObjectURL(file),
+    }));
 
-      setColorGroups((prev) =>
-        prev.map((group) => {
-          if (group.id === colorGroupId) {
-            return {
-              ...group,
-              images: [...group.images, localPreviewUrl],
-            };
-          }
-          return group;
-        })
-      );
+    // 2. Instantly display ALL uploaded image previews in the UI (0ms latency)
+    const allPreviews = fileEntries.map((e) => e.localPreviewUrl);
+    setColorGroups((prev) =>
+      prev.map((group) => {
+        if (group.id === colorGroupId) {
+          return {
+            ...group,
+            images: [...group.images, ...allPreviews],
+          };
+        }
+        return group;
+      })
+    );
 
-      setUploadingImageUrls((prev) => ({ ...prev, [localPreviewUrl]: true }));
+    // 3. Mark all previews as actively uploading in parallel
+    setUploadingImageUrls((prev) => {
+      const next = { ...prev };
+      allPreviews.forEach((url) => {
+        next[url] = true;
+      });
+      return next;
+    });
 
-      try {
-        const uploaded = await productService.uploadImage(file, file.name);
-        const serverUrl = uploaded.url;
+    // 4. Upload all images in parallel concurrently
+    await Promise.all(
+      fileEntries.map(async ({ file, localPreviewUrl }) => {
+        try {
+          const uploaded = await productService.uploadImage(file, file.name);
+          const serverUrl = uploaded.url;
 
-        // Replace temporary preview URL with uploaded permanent server URL
-        setColorGroups((prev) =>
-          prev.map((group) => {
-            if (group.id === colorGroupId) {
-              return {
-                ...group,
-                images: group.images.map((img) => (img === localPreviewUrl ? serverUrl : img)),
-              };
+          // Seamlessly swap temporary preview URL with permanent uploaded server URL
+          setColorGroups((prev) =>
+            prev.map((group) => {
+              if (group.id === colorGroupId) {
+                return {
+                  ...group,
+                  images: group.images.map((img) => (img === localPreviewUrl ? serverUrl : img)),
+                };
+              }
+              return group;
+            })
+          );
+        } catch (err) {
+          console.warn('Background upload failed, keeping base64 fallback:', err);
+          const reader = new FileReader();
+          reader.onload = (e) => {
+            const resultUrl = e.target?.result as string;
+            if (resultUrl) {
+              setColorGroups((prev) =>
+                prev.map((group) => {
+                  if (group.id === colorGroupId) {
+                    return {
+                      ...group,
+                      images: group.images.map((img) => (img === localPreviewUrl ? resultUrl : img)),
+                    };
+                  }
+                  return group;
+                })
+              );
             }
-            return group;
-          })
-        );
-      } catch (err) {
-        console.warn('Background upload failed, keeping base64 fallback:', err);
-        const reader = new FileReader();
-        reader.onload = (e) => {
-          const resultUrl = e.target?.result as string;
-          if (resultUrl) {
-            setColorGroups((prev) =>
-              prev.map((group) => {
-                if (group.id === colorGroupId) {
-                  return {
-                    ...group,
-                    images: group.images.map((img) => (img === localPreviewUrl ? resultUrl : img)),
-                  };
-                }
-                return group;
-              })
-            );
-          }
-        };
-        reader.readAsDataURL(file);
-      } finally {
-        setUploadingImageUrls((prev) => {
-          const next = { ...prev };
-          delete next[localPreviewUrl];
-          return next;
-        });
-      }
-    }
+          };
+          reader.readAsDataURL(file);
+        } finally {
+          setUploadingImageUrls((prev) => {
+            const next = { ...prev };
+            delete next[localPreviewUrl];
+            return next;
+          });
+        }
+      })
+    );
   };
 
   const handleSwatchImageUpload = async (colorGroupId: string, file: File | undefined) => {

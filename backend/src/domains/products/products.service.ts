@@ -1,6 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { LoggerService } from '@common/logger/logger.service';
-import { BusinessException, ValidationException } from '@common/exceptions';
+import {
+  BusinessException,
+  ValidationException,
+  ResourceNotFoundException,
+} from '@common/exceptions';
 import {
   SlugGenerator,
   SkuGenerator,
@@ -246,11 +250,11 @@ export class ProductsService {
       product = await this.productsRepository.findBySlug(id);
     }
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     if (restrictToPublicChannels && product.channel === 'STORE') {
       // Hide existence entirely rather than a 403 -- a STORE-only product
       // shouldn't be discoverable by a direct ID guess from the storefront.
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     }
     return this.toResponse(product);
   }
@@ -531,7 +535,7 @@ export class ProductsService {
   async update(id: string, dto: UpdateProductDto, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
 
     this.validatePrices(dto);
     this.validateWeightDimensions(dto);
@@ -637,7 +641,7 @@ export class ProductsService {
   async restore(id: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     if (!product.deletedAt)
       throw new BusinessException('Product is not deleted', 'PRODUCT_002');
     await this.productsRepository.restore(id);
@@ -658,7 +662,7 @@ export class ProductsService {
   async publish(id: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     if (product.isPublished)
       throw new BusinessException(
         'Product is already published',
@@ -720,7 +724,7 @@ export class ProductsService {
   async unpublish(id: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     if (!product.isPublished)
       throw new BusinessException('Product is not published', 'PRODUCT_004');
     await this.productsRepository.update(id, {
@@ -745,7 +749,7 @@ export class ProductsService {
   async feature(id: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.update(id, {
       isFeatured: true,
       updatedBy: userId,
@@ -767,7 +771,7 @@ export class ProductsService {
   async unfeature(id: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.update(id, {
       isFeatured: false,
       updatedBy: userId,
@@ -782,7 +786,7 @@ export class ProductsService {
   async assignCategories(id: string, dto: AssignCategoriesDto, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.assignCategories(id, dto.categoryIds);
     await this.auditService.log({
       action: 'PRODUCT_CATEGORY_ASSIGNED',
@@ -798,7 +802,7 @@ export class ProductsService {
   async removeCategory(id: string, categoryId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.removeCategory(id, categoryId);
     return this.findById(id);
   }
@@ -806,7 +810,7 @@ export class ProductsService {
   async assignAttributes(id: string, dto: AssignAttributesDto, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.assignAttributes(id, dto.attributes);
     await this.auditService.log({
       action: 'PRODUCT_ATTRIBUTE_ASSIGNED',
@@ -822,7 +826,7 @@ export class ProductsService {
   async removeAttribute(id: string, attributeId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.removeAttribute(id, attributeId);
     return this.findById(id);
   }
@@ -830,7 +834,7 @@ export class ProductsService {
   async assignRelatedProducts(id: string, dto: AssignRelatedProductsDto) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.assignRelatedProducts(
       id,
       dto.relatedProductIds,
@@ -841,7 +845,7 @@ export class ProductsService {
   async removeRelatedProduct(id: string, relatedProductId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     await this.productsRepository.removeRelatedProduct(id, relatedProductId);
     return this.findById(id);
   }
@@ -850,7 +854,7 @@ export class ProductsService {
   async assignTags(id: string, dto: AssignTagsDto, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     const merged = [...new Set([...(product.tags ?? []), ...dto.tags])];
     await this.productsRepository.update(id, {
       tags: merged,
@@ -862,7 +866,7 @@ export class ProductsService {
   async removeTag(id: string, tag: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     const filtered = (product.tags ?? []).filter((t) => t !== tag);
     await this.productsRepository.update(id, {
       tags: filtered,
@@ -878,7 +882,7 @@ export class ProductsService {
   ) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     const merged = [
       ...new Set([...(product.collections ?? []), ...dto.collections]),
     ];
@@ -892,7 +896,7 @@ export class ProductsService {
   async removeCollection(id: string, collection: string, userId: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
     const filtered = (product.collections ?? []).filter(
       (c) => c !== collection,
     );
@@ -908,7 +912,7 @@ export class ProductsService {
   async createColorGroup(id: string, dto: CreateColorGroupDto) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
 
     const existing = await this.prisma.productColorGroup.findUnique({
       where: {
@@ -946,7 +950,7 @@ export class ProductsService {
   async getColorGroups(id: string) {
     const product = await this.productsRepository.findById(id);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
 
     return this.prisma.productColorGroup.findMany({
       where: { productId: id },
@@ -1004,7 +1008,7 @@ export class ProductsService {
   async syncColorGroups(productId: string, dto: SyncColorGroupsDto) {
     const product = await this.productsRepository.findById(productId);
     if (!product || product.deletedAt)
-      throw new BusinessException('Product not found', 'PRODUCT_001');
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
 
     await this.prisma.$transaction(async (tx) => {
       const existingGroups = await tx.productColorGroup.findMany({
