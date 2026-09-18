@@ -25,14 +25,18 @@ export class CategoriesService {
   ) {}
 
   private toResponse(cat: any): CategoryResponse {
+    const primaryImg = cat.image ?? cat.imageUrl ?? cat.icon ?? undefined;
+    const banner = cat.bannerImage ?? cat.bannerUrl ?? undefined;
     return {
       id: cat.id,
       name: cat.name,
       slug: cat.slug,
       description: cat.description ?? undefined,
       icon: cat.icon ?? undefined,
-      image: cat.image ?? undefined,
-      bannerImage: cat.bannerImage ?? undefined,
+      image: primaryImg,
+      imageUrl: primaryImg,
+      bannerImage: banner,
+      bannerUrl: banner,
       parentId: cat.parentId ?? undefined,
       level: cat.level,
       path: cat.path,

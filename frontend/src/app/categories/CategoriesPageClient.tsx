@@ -32,7 +32,7 @@ export default function CategoriesPage() {
         // No stock-photo fallback: showing a random Unsplash model for a
         // category the admin never gave an image to made the catalog look
         // populated when it was not. Null here renders an explicit Empty tile.
-        const rawImg = c.image || c.imageUrl || c.primaryImageUrl;
+        const rawImg = c.icon || c.image || c.imageUrl || c.primaryImageUrl || (c as any).bannerImage || (c as any).bannerUrl;
         const hasImage = !!rawImg && !rawImg.includes('data:image/svg');
         return { ...c, imageUrl: hasImage ? resolveMediaUrl(rawImg) : null };
       });

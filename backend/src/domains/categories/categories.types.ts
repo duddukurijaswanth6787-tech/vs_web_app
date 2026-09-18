@@ -125,7 +125,9 @@ export class CategoryResponse {
   @ApiPropertyOptional() description?: string;
   @ApiPropertyOptional() icon?: string;
   @ApiPropertyOptional() image?: string;
+  @ApiPropertyOptional() imageUrl?: string;
   @ApiPropertyOptional() bannerImage?: string;
+  @ApiPropertyOptional() bannerUrl?: string;
   @ApiPropertyOptional() parentId?: string;
   @ApiProperty() level!: number;
   @ApiProperty() path!: string;

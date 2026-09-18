@@ -87,7 +87,6 @@ export default function CategorySlugPage() {
             title={title}
             subtitle={`${products.length} ${products.length === 1 ? 'product' : 'products'}`}
             products={products.map(mapProductToItem)}
-            viewAllHref="/categories"
           />
         )}
       </main>

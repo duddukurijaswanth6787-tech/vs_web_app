@@ -133,7 +133,7 @@ const FALLBACK_PRODUCTS: ProductItem[] = [];
 export function ProductGridSection({
   title,
   subtitle,
-  viewAllHref = '/shop',
+  viewAllHref,
   products,
   icon,
 }: ProductGridSectionProps) {
@@ -156,10 +156,12 @@ export function ProductGridSection({
           </h2>
           {subtitle && <p className="text-xs text-neutral-500 mt-0.5 hidden sm:block">{subtitle}</p>}
         </div>
-        <Link href={viewAllHref} className="text-xs font-semibold text-[#1769D2] hover:text-[var(--brand-primary-dark)] flex items-center gap-1">
-          <span>View All</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+        {viewAllHref && (
+          <Link href={viewAllHref} className="text-xs font-semibold text-[#1769D2] hover:text-[var(--brand-primary-dark)] flex items-center gap-1">
+            <span>View All</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        )}
       </div>
 
       {displayProducts.length === 0 ? (
