@@ -116,27 +116,27 @@ export default function StaffPunchWidget() {
 
   return (
     <>
-      <div className="flex items-center gap-1.5 sm:gap-2">
+      <div className="flex items-center gap-1 sm:gap-2">
         {isPunchedIn ? (
           <button
             onClick={() => {
               setModalMode('OUT');
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-2.5 sm:px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs min-h-[36px]"
+            className="flex items-center gap-1.5 sm:gap-2 rounded-full border border-emerald-300 bg-emerald-50 px-2 sm:px-3 py-1 text-xs font-bold text-emerald-800 hover:bg-emerald-100 transition shadow-2xs min-h-[34px] sm:min-h-[36px] cursor-pointer"
             title={`Punched in at ${new Date(data.attendance!.punchInAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`}
           >
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600"></span>
             </span>
-            <span className="font-mono font-bold text-[11px] sm:text-xs">{formatElapsed(elapsedSecs)}</span>
-            <span className="hidden md:inline font-semibold text-[11px] text-emerald-700">· Clock Out</span>
+            <span className="font-mono font-bold text-[10px] sm:text-xs">{formatElapsed(elapsedSecs)}</span>
+            <span className="hidden lg:inline font-semibold text-[11px] text-emerald-700">· Clock Out</span>
           </button>
         ) : isCompleted ? (
-          <div className="flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 sm:px-3 py-1 text-xs font-semibold text-neutral-600 min-h-[36px]">
-            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="text-[11px]">Shift Done ({data.attendance?.totalHours}h)</span>
+          <div className="flex items-center gap-1 sm:gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-2 sm:px-3 py-1 text-xs font-semibold text-neutral-600 min-h-[34px] sm:min-h-[36px]">
+            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+            <span className="text-[10px] sm:text-[11px] whitespace-nowrap">Done ({data.attendance?.totalHours}h)</span>
           </div>
         ) : (
           <button
@@ -144,10 +144,10 @@ export default function StaffPunchWidget() {
               setModalMode('IN');
               setIsModalOpen(true);
             }}
-            className="flex items-center gap-1.5 rounded-full border border-neutral-300 bg-neutral-900 px-3 py-1 text-xs font-bold text-white hover:bg-neutral-800 transition shadow-xs min-h-[36px]"
+            className="flex items-center gap-1 sm:gap-1.5 rounded-full border border-neutral-300 bg-neutral-900 px-2.5 sm:px-3 py-1 text-xs font-bold text-white hover:bg-neutral-800 transition shadow-xs min-h-[34px] sm:min-h-[36px] cursor-pointer whitespace-nowrap"
           >
-            <LogIn className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Punch In</span>
+            <LogIn className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+            <span className="text-[11px] sm:text-xs">Punch In</span>
           </button>
         )}
       </div>

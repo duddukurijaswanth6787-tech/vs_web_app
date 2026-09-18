@@ -89,62 +89,62 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
   const brand = data.brandName || 'Vasanthi Designers';
 
   return (
-    <div className="bg-neutral-900 rounded-3xl border border-neutral-800 shadow-xl overflow-hidden text-neutral-100">
+    <div className="bg-neutral-900 rounded-2xl sm:rounded-3xl border border-neutral-800 shadow-xl overflow-hidden text-neutral-100">
       
       {/* Top Preview Bar Header */}
-      <div className="bg-neutral-950/90 backdrop-blur-md px-6 py-4 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <div className="w-3 h-3 rounded-full bg-emerald-500 animate-pulse" />
-          <div>
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Eye className="w-4 h-4 text-sky-400" />
-              <span>LIVE CUSTOMER DESKTOP PREVIEW</span>
+      <div className="bg-neutral-950/90 backdrop-blur-md px-3 sm:px-6 py-3 sm:py-4 border-b border-neutral-800 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+          <div className="w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+          <div className="min-w-0">
+            <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5 sm:gap-2 truncate">
+              <Eye className="w-4 h-4 text-sky-400 shrink-0" />
+              <span>LIVE CUSTOMER PREVIEW</span>
             </h3>
-            <p className="text-[11px] text-neutral-400">
-              See in real-time how your product will look to customers on the website
+            <p className="text-[10px] sm:text-[11px] text-neutral-400 truncate">
+              See in real-time how your product will look to customers on the storefront
             </p>
           </div>
         </div>
 
         {/* View Mode Toggle Switch */}
-        <div className="flex items-center bg-neutral-900 border border-neutral-800 p-1 rounded-xl gap-1">
+        <div className="flex items-center bg-neutral-900 border border-neutral-800 p-1 rounded-xl gap-1 w-full sm:w-auto justify-center sm:justify-start">
           <button
             type="button"
             onClick={() => setPreviewMode('detail')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               previewMode === 'detail'
                 ? 'bg-[#0284c7] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
             <Monitor className="w-3.5 h-3.5" />
-            <span>Product Page View</span>
+            <span>Product Page</span>
           </button>
 
           <button
             type="button"
             onClick={() => setPreviewMode('card')}
-            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
               previewMode === 'card'
                 ? 'bg-[#0284c7] text-white shadow-xs'
                 : 'text-neutral-400 hover:text-white'
             }`}
           >
             <LayoutGrid className="w-3.5 h-3.5" />
-            <span>Product Card View</span>
+            <span>Card View</span>
           </button>
         </div>
       </div>
 
       {/* PREVIEW CONTAINER (DESKTOP WATERMARK BACKGROUND) */}
-      <div className="p-6 sm:p-10 bg-neutral-950/50 min-h-[500px]">
+      <div className="p-3 sm:p-6 lg:p-10 bg-neutral-950/50 min-h-[400px]">
 
         {/* MODE 1: FULL DESKTOP PRODUCT DETAIL PAGE PREVIEW */}
         {previewMode === 'detail' && (
-          <div className="max-w-5xl mx-auto bg-white text-neutral-900 rounded-3xl p-6 sm:p-10 shadow-2xl border border-neutral-200">
+          <div className="max-w-5xl mx-auto bg-white text-neutral-900 rounded-2xl sm:rounded-3xl p-4 sm:p-8 lg:p-10 shadow-2xl border border-neutral-200">
             
             {/* Breadcrumbs */}
-            <div className="flex items-center gap-2 text-xs text-neutral-400 mb-6 font-medium">
+            <div className="flex items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs text-neutral-400 mb-4 sm:mb-6 font-medium flex-wrap">
               <span>Home</span>
               <ChevronRight className="w-3 h-3" />
               <span>Catalog</span>

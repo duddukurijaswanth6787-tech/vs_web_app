@@ -274,21 +274,21 @@ export default function OrdersPage() {
 
       {/* Date & Channel Preset Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-100 pb-3">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-neutral-100 pb-3">
           {/* Quick Date Presets */}
-          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
-            <button onClick={() => setDatePreset('ALL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${!startDate && !endDate ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'}`}>All Time</button>
-            <button onClick={() => setDatePreset('TODAY')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition">Today</button>
-            <button onClick={() => setDatePreset('YESTERDAY')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition">Yesterday</button>
-            <button onClick={() => setDatePreset('WEEK')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition">Last 7 Days</button>
-            <button onClick={() => setDatePreset('MONTH')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition">This Month</button>
+          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
+            <button onClick={() => setDatePreset('ALL')} className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 ${!startDate && !endDate ? 'bg-white text-neutral-900 shadow-xs' : 'text-neutral-500 hover:text-neutral-900'}`}>All Time</button>
+            <button onClick={() => setDatePreset('TODAY')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition shrink-0">Today</button>
+            <button onClick={() => setDatePreset('YESTERDAY')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition shrink-0">Yesterday</button>
+            <button onClick={() => setDatePreset('WEEK')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition shrink-0">Last 7 Days</button>
+            <button onClick={() => setDatePreset('MONTH')} className="px-2.5 py-1 rounded-lg text-xs font-bold text-neutral-500 hover:text-neutral-900 transition shrink-0">This Month</button>
           </div>
 
           {/* Quick Channel Presets */}
-          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
-            <button onClick={() => updateQuery('channel', '')} className={`px-2.5 py-1 rounded-lg text-xs font-bold transition ${!channel ? 'bg-neutral-900 text-white shadow-xs' : 'text-neutral-600 hover:text-neutral-900'}`}>All Channels</button>
-            <button onClick={() => updateQuery('channel', 'POS_SHOPORA')} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${channel === 'POS_SHOPORA' ? 'bg-sky-600 text-white shadow-xs' : 'text-neutral-600 hover:text-sky-700'}`}><Store className="w-3 h-3" /> In-Store (POS)</button>
-            <button onClick={() => updateQuery('channel', 'ONLINE_STORE')} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition ${channel === 'ONLINE_STORE' ? 'bg-purple-600 text-white shadow-xs' : 'text-neutral-600 hover:text-purple-700'}`}><Globe className="w-3 h-3" /> Online Web</button>
+          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
+            <button onClick={() => updateQuery('channel', '')} className={`px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 ${!channel ? 'bg-neutral-900 text-white shadow-xs' : 'text-neutral-600 hover:text-neutral-900'}`}>All Channels</button>
+            <button onClick={() => updateQuery('channel', 'POS_SHOPORA')} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 ${channel === 'POS_SHOPORA' ? 'bg-sky-600 text-white shadow-xs' : 'text-neutral-600 hover:text-sky-700'}`}><Store className="w-3 h-3" /> In-Store</button>
+            <button onClick={() => updateQuery('channel', 'ONLINE_STORE')} className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition shrink-0 ${channel === 'ONLINE_STORE' ? 'bg-purple-600 text-white shadow-xs' : 'text-neutral-600 hover:text-purple-700'}`}><Globe className="w-3 h-3" /> Online Web</button>
           </div>
         </div>
 

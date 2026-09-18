@@ -423,11 +423,11 @@ export default function InventoryPage() {
       <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-2xs space-y-3">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
           {/* Channel Multi-Selector Tabs */}
-          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl">
+          <div className="flex items-center gap-1 bg-neutral-100 p-1 rounded-xl overflow-x-auto scrollbar-none flex-nowrap shrink-0 max-w-full">
             <button
               type="button"
               onClick={() => setChannelTab('ALL')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shrink-0 ${
                 channelTab === 'ALL'
                   ? 'bg-neutral-900 text-white shadow-2xs'
                   : 'text-neutral-600 hover:text-neutral-900'
@@ -438,7 +438,7 @@ export default function InventoryPage() {
             <button
               type="button"
               onClick={() => setChannelTab('POS_STORE')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shrink-0 ${
                 channelTab === 'POS_STORE'
                   ? 'bg-sky-600 text-white shadow-2xs'
                   : 'text-neutral-600 hover:text-sky-700'
@@ -450,7 +450,7 @@ export default function InventoryPage() {
             <button
               type="button"
               onClick={() => setChannelTab('ONLINE_WEB')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition cursor-pointer shrink-0 ${
                 channelTab === 'ONLINE_WEB'
                   ? 'bg-purple-600 text-white shadow-2xs'
                   : 'text-neutral-600 hover:text-purple-700'

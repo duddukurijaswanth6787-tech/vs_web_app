@@ -242,26 +242,26 @@ export default function CategoriesPage() {
                   const isExpanded = !!expandedNodes[node.id];
 
                   return (
-                    <div key={node.id} className="border-l border-neutral-100 ml-4 pl-2">
-                      <div className="flex items-center justify-between py-2 group hover:bg-neutral-50 rounded px-2 transition-all">
-                        <div className="flex items-center gap-2 text-xs">
+                    <div key={node.id} className="border-l border-neutral-100 ml-2 sm:ml-4 pl-1.5 sm:pl-2">
+                      <div className="flex items-center justify-between py-2 group hover:bg-neutral-50 rounded px-1.5 sm:px-2 transition-all gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2 text-xs min-w-0 flex-1">
                           {hasChildren ? (
-                            <button onClick={() => handleToggleExpand(node.id)} className="p-0.5 text-neutral-400">
+                            <button onClick={() => handleToggleExpand(node.id)} className="p-0.5 text-neutral-400 shrink-0">
                               {isExpanded ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                             </button>
                           ) : (
-                            <Folder className="w-4 h-4 text-neutral-300" />
+                            <Folder className="w-4 h-4 text-neutral-300 shrink-0" />
                           )}
-                          <span className={`font-semibold ${node.status === 'ARCHIVED' ? 'text-neutral-400 line-through' : 'text-neutral-800'}`}>
+                          <span className={`font-semibold truncate ${node.status === 'ARCHIVED' ? 'text-neutral-400 line-through' : 'text-neutral-800'}`}>
                             {node.name}
                           </span>
-                          <span className="text-[9px] font-mono text-neutral-400">/{node.slug}</span>
+                          <span className="text-[9px] font-mono text-neutral-400 truncate hidden sm:inline">/{node.slug}</span>
                         </div>
 
-                        <div className="flex items-center gap-1.5">
+                        <div className="flex items-center gap-1 shrink-0">
                           <button
                             onClick={() => selectCategoryForEdit(node)}
-                            className="p-1 hover:bg-neutral-200/60 rounded text-neutral-600 hover:text-neutral-900 transition-colors"
+                            className="p-1 hover:bg-neutral-200/60 rounded text-neutral-600 hover:text-neutral-900 transition-colors cursor-pointer"
                             title="Edit Category"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -270,7 +270,7 @@ export default function CategoriesPage() {
                             isSuperAdmin && (
                               <button
                                 onClick={() => handleRestore(node.id)}
-                                className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors"
+                                className="p-1 hover:bg-green-100 rounded text-green-600 transition-colors cursor-pointer"
                                 title="Restore Category"
                               >
                                 <RefreshCw className="w-3.5 h-3.5" />
@@ -280,7 +280,7 @@ export default function CategoriesPage() {
                             isSuperAdmin && (
                               <button
                                 onClick={() => handleDelete(node.id, node.name)}
-                                className="p-1 hover:bg-red-100 rounded text-red-600 transition-colors"
+                                className="p-1 hover:bg-red-100 rounded text-red-600 transition-colors cursor-pointer"
                                 title="Delete / Archive Category"
                               >
                                 <Trash2 className="w-3.5 h-3.5" />

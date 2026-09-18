@@ -43,50 +43,50 @@ export default function AdminHeader() {
   const healthIndicator = getHealthIndicator();
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-3 sm:px-4">
+    <header className="sticky top-0 z-30 flex h-14 sm:h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-2.5 sm:px-4">
       {/* Left section: mobile trigger and page title */}
-      <div className="flex items-center gap-2 min-w-0 flex-1">
+      <div className="flex items-center gap-1.5 sm:gap-2 min-w-0 flex-1 mr-2">
         <button
           onClick={toggleMobileSidebar}
-          className="rounded-lg p-2 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0 min-h-[40px] min-w-[40px] flex items-center justify-center"
+          className="rounded-lg p-1.5 sm:p-2 text-neutral-600 hover:bg-neutral-100 lg:hidden shrink-0 min-h-[36px] min-w-[36px] sm:min-h-[40px] sm:min-w-[40px] flex items-center justify-center cursor-pointer"
           aria-label="Open navigation menu"
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-sm sm:text-base font-bold text-neutral-900 capitalize truncate">
+        <h1 className="text-xs sm:text-base font-bold text-neutral-900 capitalize truncate max-w-[120px] xs:max-w-[180px] sm:max-w-none">
           {pathname?.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || 'Dashboard'}
         </h1>
       </div>
 
       {/* Right section: Search, System health indicator and profile dropdown */}
-      <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+      <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
         {/* Command Palette Trigger */}
         <button
           onClick={openCommandPalette}
-          className="flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-2 sm:px-3 sm:py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors min-h-[38px]"
+          className="flex items-center justify-center gap-1.5 rounded-lg border border-neutral-200 bg-neutral-50 p-1.5 sm:px-3 sm:py-1.5 text-xs text-neutral-500 hover:bg-neutral-100 transition-colors min-h-[34px] sm:min-h-[38px] cursor-pointer"
           aria-label="Open command palette"
         >
           <Search className="h-4 w-4 sm:h-3.5 sm:w-3.5" />
-          <span className="hidden sm:inline">Search...</span>
-          <kbd className="hidden sm:inline-flex items-center gap-0.5 rounded border border-neutral-200 bg-white px-1 py-0.5 text-[10px] font-mono text-neutral-400">
+          <span className="hidden md:inline">Search...</span>
+          <kbd className="hidden md:inline-flex items-center gap-0.5 rounded border border-neutral-200 bg-white px-1 py-0.5 text-[10px] font-mono text-neutral-400">
             ⌘K
           </kbd>
         </button>
+
         {/* Staff Attendance Punch-In / Live Stopwatch Widget */}
         <StaffPunchWidget />
 
         {/* Notification Bell */}
         <NotificationBell />
 
-
         {/* Real-time Health Indicator */}
         <Link
           href="/admin/system/health"
-          className="flex items-center justify-center gap-2 rounded-full border border-neutral-100 bg-neutral-50 p-2 sm:px-3 sm:py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors min-h-[38px]"
+          className="hidden sm:flex items-center justify-center gap-2 rounded-full border border-neutral-100 bg-neutral-50 px-3 py-1 text-xs font-semibold text-neutral-600 hover:bg-neutral-100 transition-colors min-h-[38px]"
           title={healthIndicator.text}
         >
           <span className={`h-2 w-2 rounded-full shrink-0 ${healthIndicator.color}`} />
-          <span className="hidden sm:inline">{healthIndicator.text}</span>
+          <span>{healthIndicator.text}</span>
         </Link>
 
         {/* Profile Dropdown */}

@@ -3685,9 +3685,9 @@ export default function ProductBuilder({
                         key={sz.size}
                         className="p-3.5 bg-white border border-neutral-200 rounded-2xl shadow-2xs hover:border-sky-200 transition-colors space-y-3"
                       >
-                        <div className="flex flex-wrap items-center justify-between gap-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                           {/* Left: Size Toggle & SKU */}
-                          <div className="flex items-center gap-3">
+                          <div className="flex items-start sm:items-center gap-3 min-w-0">
                             <button
                               type="button"
                               onClick={() => toggleSizeAvailability(group.id, sz.size)}
@@ -3700,8 +3700,8 @@ export default function ProductBuilder({
                             >
                               {sz.size}
                             </button>
-                            <div>
-                              <div className="flex items-center gap-2">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
                                 <span className="text-xs font-bold text-neutral-900">
                                   Size {sz.size}
                                 </span>
@@ -3711,25 +3711,25 @@ export default function ProductBuilder({
                                   </span>
                                 ) : (
                                   <span className="text-[10px] font-medium text-neutral-400 bg-neutral-100 px-2 py-0.5 rounded-md">
-                                    Inherits Base Price (₹{watchedValues?.salePrice || watchedValues?.basePrice || 0})
+                                    Inherits Base Price
                                   </span>
                                 )}
                               </div>
-                              <div className="flex items-center gap-1.5 mt-1">
+                              <div className="flex items-center gap-1.5 mt-1.5 flex-wrap">
                                 <span className="text-[10px] font-bold text-sky-700 font-mono">SKU:</span>
                                 <input
                                   type="text"
                                   value={sz.sku || ''}
                                   onChange={(e) => updateSizeField(group.id, sz.size, 'sku', e.target.value.toUpperCase())}
                                   placeholder="SKU-ID"
-                                  className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-36 shadow-2xs"
+                                  className="bg-sky-50/80 border border-sky-200 rounded px-2 py-0.5 text-[10px] font-mono font-bold text-neutral-800 focus:bg-white focus:outline-none focus:ring-1 focus:ring-[#0284c7] uppercase w-32 sm:w-36 shadow-2xs"
                                 />
                               </div>
                             </div>
                           </div>
 
                           {/* Right: Actions */}
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center justify-between sm:justify-end gap-2 shrink-0 border-t sm:border-t-0 pt-2 sm:pt-0 border-neutral-100">
                             {(() => {
                               const status = stockStatus(sz.stock, sz.minStock);
                               return (
@@ -3744,7 +3744,7 @@ export default function ProductBuilder({
                             <button
                               type="button"
                               onClick={() => removeSizeFromColorGroup(group.id, sz.size)}
-                              className="text-neutral-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer"
+                              className="text-neutral-400 hover:text-rose-600 p-1.5 transition-colors cursor-pointer ml-auto sm:ml-0"
                               title="Delete this size variant"
                             >
                               <Trash2 className="w-4 h-4" />
