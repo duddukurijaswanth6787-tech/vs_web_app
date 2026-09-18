@@ -2,10 +2,11 @@ import { useQuery } from '@tanstack/react-query';
 import { auditService } from './audit.service';
 import { AuditLogQueryDto } from './audit.types';
 
-export function useAuditLogs(query: AuditLogQueryDto) {
+export function useAuditLogs(query: AuditLogQueryDto, options?: { refetchInterval?: number | false }) {
   return useQuery({
     queryKey: ['auditLogs', query],
     queryFn: () => auditService.getAuditLogs(query),
+    refetchInterval: options?.refetchInterval,
   });
 }
 
