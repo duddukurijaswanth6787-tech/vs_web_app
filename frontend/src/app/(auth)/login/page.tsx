@@ -317,7 +317,10 @@ function CustomerLoginForm() {
 
         <p className="text-center text-xs text-neutral-500">
           New here?{' '}
-          <Link href="/register" className="font-bold text-[var(--brand-primary)]">
+          <Link
+            href={redirectTo && redirectTo !== '/' ? `/register?redirect=${encodeURIComponent(redirectTo)}` : '/register'}
+            className="font-bold text-[var(--brand-primary)]"
+          >
             Create an account
           </Link>
         </p>

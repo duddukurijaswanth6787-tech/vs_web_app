@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { usePaymentMethods, usePlaceOrder, useCheckoutPreview } from '@/features/customer/hooks';
 import { formatInr } from '@/features/customer/mappers';
@@ -36,12 +36,30 @@ function CheckoutPaymentPageContent() {
   );
   const { data: preview } = useCheckoutPreview(addressId, couponCode || undefined);
 
-  if (!isInitializing && !isAuthenticated) {
+  useEffect(() => {
+    if (!isInitializing && !isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [isInitializing, isAuthenticated, router]);
+
+  if (isInitializing || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/checkout/payment" className="text-sm font-bold text-[var(--brand-primary)]">
-          Login required
-        </Link>
+      <div className="min-h-screen bg-[var(--page-bg)] flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-neutral-200 rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-md animate-fadeIn">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center mx-auto">
+            <Loader2 className="w-6 h-6 animate-spin text-[var(--brand-primary)]" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-neutral-900 font-serif">Secure Payment</h3>
+            <p className="text-xs text-neutral-500">Redirecting to login / account...</p>
+          </div>
+          <Link
+            href="/login?redirect=/checkout"
+            className="block w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl text-xs font-bold hover:opacity-95 shadow-xs"
+          >
+            Click here to Login
+          </Link>
+        </div>
       </div>
     );
   }
@@ -114,7 +132,7 @@ function CheckoutPaymentPageContent() {
     <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3">
-        <Link href="/checkout/address" className="p-1 rounded-lg hover:bg-neutral-100">
+        <Link href="/checkout" className="p-1 rounded-lg hover:bg-neutral-100">
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Payment</h1>

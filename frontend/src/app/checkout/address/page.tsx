@@ -1,7 +1,8 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ArrowLeft, Plus, Pencil, Trash2 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
@@ -36,12 +37,32 @@ export default function AddressListPage() {
     }
   };
 
-  if (!isInitializing && !isAuthenticated) {
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!isInitializing && !isAuthenticated) {
+      router.push('/login?redirect=/checkout/address');
+    }
+  }, [isInitializing, isAuthenticated, router]);
+
+  if (isInitializing || !isAuthenticated) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <Link href="/login?redirect=/checkout/address" className="text-sm font-bold text-[var(--brand-primary)]">
-          Login to manage addresses
-        </Link>
+      <div className="min-h-screen bg-[var(--page-bg)] flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-neutral-200 rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-md animate-fadeIn">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center mx-auto">
+            <Plus className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-neutral-900 font-serif">Delivery Addresses</h3>
+            <p className="text-xs text-neutral-500">Redirecting to login / account...</p>
+          </div>
+          <Link
+            href="/login?redirect=/checkout/address"
+            className="block w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl text-xs font-bold hover:opacity-95 shadow-xs"
+          >
+            Click here to Login
+          </Link>
+        </div>
       </div>
     );
   }

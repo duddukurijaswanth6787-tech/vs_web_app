@@ -2,15 +2,17 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Mail, Lock, User, Phone, Tag, CheckSquare, Square } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { customerAuthService } from '@/features/customer/auth.service';
 import { useAuth } from '@/hooks/useAuth';
 import { getApiErrorMessage } from '@/utils/api-error';
 
-export default function RegisterPage() {
+function RegisterForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/';
   const { completeTokenLogin } = useAuth();
   const [form, setForm] = useState({
     firstName: '',
@@ -66,7 +68,7 @@ export default function RegisterPage() {
         referralCode: form.referralCode || undefined,
       });
       await completeTokenLogin();
-      router.push('/');
+      router.push(redirectTo);
     } catch (err) {
       setError(getApiErrorMessage(err, 'Registration failed'));
     } finally {
@@ -77,7 +79,10 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900">
       <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center justify-between">
-        <Link href="/login" className="p-1 rounded-lg hover:bg-neutral-100">
+        <Link
+          href={redirectTo && redirectTo !== '/' ? `/login?redirect=${encodeURIComponent(redirectTo)}` : '/login'}
+          className="p-1 rounded-lg hover:bg-neutral-100"
+        >
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Create Account</h1>
@@ -247,5 +252,13 @@ export default function RegisterPage() {
       </main>
       <StorefrontFooter />
     </div>
+  );
+}
+
+export default function RegisterPage() {
+  return (
+    <React.Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-neutral-50 text-neutral-500 font-sans">Loading...</div>}>
+      <RegisterForm />
+    </React.Suspense>
   );
 }

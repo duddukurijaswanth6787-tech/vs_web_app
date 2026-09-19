@@ -92,9 +92,32 @@ function CheckoutPageContent() {
   const preview = useCheckoutPreview(activeAddressId || undefined, couponCode || undefined);
   const selectedAddress = addresses.find((a: any) => a.id === activeAddressId);
 
-  if (!isInitializing && !isAuthenticated) {
-    router.push('/login?redirect=/checkout');
-    return null;
+  useEffect(() => {
+    if (!isInitializing && !isAuthenticated) {
+      router.push('/login?redirect=/checkout');
+    }
+  }, [isInitializing, isAuthenticated, router]);
+
+  if (isInitializing || !isAuthenticated) {
+    return (
+      <div className="min-h-screen bg-[var(--page-bg)] flex flex-col items-center justify-center p-4">
+        <div className="bg-white border border-neutral-200 rounded-3xl p-8 max-w-sm w-full text-center space-y-4 shadow-md animate-fadeIn">
+          <div className="w-12 h-12 rounded-2xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center mx-auto">
+            <Lock className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1">
+            <h3 className="text-base font-bold text-neutral-900 font-serif">Secure Checkout</h3>
+            <p className="text-xs text-neutral-500">Redirecting to login / account...</p>
+          </div>
+          <Link
+            href="/login?redirect=/checkout"
+            className="block w-full py-3 bg-[var(--brand-primary)] text-white rounded-xl text-xs font-bold hover:opacity-95 shadow-xs"
+          >
+            Click here to Login
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   const openRazorpayModal = (payment: OrderPlacePaymentDto, orderNumber: string) => {
@@ -223,7 +246,7 @@ function CheckoutPageContent() {
                 </button>
               )}
               <Link
-                href="/checkout/address/edit"
+                href="/checkout/address/add"
                 className="text-xs font-bold text-[var(--brand-primary)] hover:underline flex items-center gap-1"
               >
                 <Plus className="w-3.5 h-3.5" /> Add New
@@ -251,7 +274,7 @@ function CheckoutPageContent() {
             <div className="p-4 text-center text-neutral-500 space-y-2">
               <p>No delivery address found.</p>
               <Link
-                href="/checkout/address/edit"
+                href="/checkout/address/add"
                 className="inline-flex items-center gap-1 text-[var(--brand-primary)] font-bold text-xs underline"
               >
                 <Plus className="w-3.5 h-3.5" /> Add Address to Proceed

@@ -497,8 +497,8 @@ export default function CartPage() {
 
                 <button
                   type="button"
-                  onClick={() => router.push('/checkout/address')}
-                  className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs sm:text-sm font-bold tracking-wider uppercase py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2"
+                  onClick={() => router.push('/checkout')}
+                  className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs sm:text-sm font-bold tracking-wider uppercase py-3.5 rounded-xl shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-98"
                 >
                   <Lock className="w-4 h-4 text-white/80" />
                   <span>Proceed to Checkout</span>
