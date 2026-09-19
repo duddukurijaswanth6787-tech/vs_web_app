@@ -103,7 +103,7 @@ export default function AddressListPage() {
               </div>
             </div>
             <Link
-              href={`/checkout/payment?addressId=${addr.id}`}
+              href={`/checkout?addressId=${addr.id}`}
               className="inline-block text-xs font-bold text-white bg-[var(--brand-primary)] px-3 py-1.5 rounded-lg"
             >
               Deliver here
