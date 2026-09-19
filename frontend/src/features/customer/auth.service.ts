@@ -2,6 +2,7 @@ import { apiClient, setClientTokens } from '@/lib/api/client';
 import { StandardResponse } from '@/types/api.types';
 import { AuthTokens } from '@/types/auth.types';
 import { customerWishlistService } from './wishlist.service';
+import { customerCartService } from './cart.service';
 
 export const customerAuthService = {
   sendOtp: async (phone: string, purpose: 'LOGIN' | 'REGISTER' | 'VERIFY_PHONE' = 'LOGIN') => {
@@ -30,6 +31,7 @@ export const customerAuthService = {
     const res = await apiClient.post<StandardResponse<AuthTokens>>('/auth/otp/login', dto);
     const tokens = res.data.data!;
     setClientTokens(tokens);
+    customerCartService.merge().catch(() => {});
     customerWishlistService.syncGuestWishlist().catch(() => {});
     return tokens;
   },
@@ -52,6 +54,7 @@ export const customerAuthService = {
     );
     const tokens = res.data.data!;
     setClientTokens(tokens);
+    customerCartService.merge().catch(() => {});
     customerWishlistService.syncGuestWishlist().catch(() => {});
     return tokens;
   },
@@ -68,6 +71,7 @@ export const customerAuthService = {
     });
     const tokens = res.data.data!;
     setClientTokens(tokens);
+    customerCartService.merge().catch(() => {});
     customerWishlistService.syncGuestWishlist().catch(() => {});
     return tokens;
   },
@@ -76,6 +80,7 @@ export const customerAuthService = {
     const res = await apiClient.post<StandardResponse<AuthTokens>>('/auth/register', dto);
     const tokens = res.data.data!;
     setClientTokens(tokens);
+    customerCartService.merge().catch(() => {});
     customerWishlistService.syncGuestWishlist().catch(() => {});
     return tokens;
   },

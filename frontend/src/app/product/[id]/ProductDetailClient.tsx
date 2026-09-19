@@ -652,12 +652,27 @@ export function ProductDetailClient() {
           localStorage.setItem('vs_tailoring_specs', JSON.stringify(tailoringStore));
         } catch {}
       }
+      if (typeof window !== 'undefined') {
+        sessionStorage.setItem(
+          'vs_buy_now_item',
+          JSON.stringify({
+            productId: product.id,
+            variantId: matchingVariant?.id,
+            quantity: qty,
+            createdAt: Date.now(),
+          }),
+        );
+      }
       await addItem.mutateAsync({ 
         productId: product.id, 
         variantId: matchingVariant?.id, 
         quantity: qty 
       });
-      router.push('/checkout/address');
+      if (!isAuthenticated) {
+        router.push('/login?redirect=/checkout');
+      } else {
+        router.push('/checkout');
+      }
     } catch (e) {
       setErr(getApiErrorMessage(e, 'Could not proceed to checkout'));
     }

@@ -36,6 +36,7 @@ import {
 } from '@/features/customer/hooks';
 import { usePincodeLookup } from '@/hooks/usePincodeLookup';
 import { customerMeService } from '@/features/customer/me.service';
+import { customerCartService } from '@/features/customer/cart.service';
 import { useQueryClient } from '@tanstack/react-query';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -120,6 +121,59 @@ function CheckoutPageContent() {
     return Array.isArray(addressesData) ? addressesData : (addressesData as any).data || [];
   }, [addressesData]);
 
+  // Pre-fill user details into address form
+  useEffect(() => {
+    if (user) {
+      const u = user as unknown as { firstName?: string; lastName?: string; name?: string; phone?: string };
+      setNewAddrForm((prev) => ({
+        ...prev,
+        fullName: prev.fullName || (u.firstName ? `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}` : u.name || ''),
+        phone: prev.phone || u.phone || '',
+      }));
+    }
+  }, [user]);
+
+  // Auto-merge cart and restore Buy Now intent on mount
+  useEffect(() => {
+    if (isAuthenticated) {
+      customerCartService
+        .merge()
+        .then(() => {
+          qc.invalidateQueries({ queryKey: customerKeys.cart() });
+        })
+        .catch(() => {});
+
+      if (typeof window !== 'undefined') {
+        try {
+          const buyNowRaw = sessionStorage.getItem('vs_buy_now_item');
+          if (buyNowRaw) {
+            const buyNowItem = JSON.parse(buyNowRaw);
+            if (buyNowItem?.productId && (!cartData?.items || cartData.items.length === 0)) {
+              customerCartService
+                .addItem({
+                  productId: buyNowItem.productId,
+                  variantId: buyNowItem.variantId,
+                  quantity: buyNowItem.quantity || 1,
+                })
+                .then(() => {
+                  sessionStorage.removeItem('vs_buy_now_item');
+                  qc.invalidateQueries({ queryKey: customerKeys.cart() });
+                })
+                .catch(() => {});
+            }
+          }
+        } catch {}
+      }
+    }
+  }, [isAuthenticated, cartData?.items?.length, qc]);
+
+  // If user has no addresses once loading finishes, automatically show the address form
+  useEffect(() => {
+    if (!addressesLoading && addresses.length === 0) {
+      setShowNewAddressForm(true);
+    }
+  }, [addressesLoading, addresses.length]);
+
   // Sync default address if not set
   useEffect(() => {
     if (!selectedAddressId && addresses.length > 0) {
@@ -143,6 +197,22 @@ function CheckoutPageContent() {
     }
     return [];
   }, [preview.data?.items, cartData?.items]);
+
+  const fallbackSubtotal = useMemo(() => {
+    return cartItems.reduce(
+      (acc: number, item: any) => acc + Number(item.totalPrice || Number(item.unitPrice || 0) * (item.quantity || 1) || 0),
+      0,
+    );
+  }, [cartItems]);
+  const isFreeShipping = fallbackSubtotal >= 999;
+  const fallbackShipping = fallbackSubtotal === 0 || isFreeShipping ? 0 : 99;
+  const fallbackGrandTotal = Math.max(0, fallbackSubtotal + fallbackShipping);
+
+  const displaySubtotal = preview.data ? Number(preview.data.subtotal) : fallbackSubtotal;
+  const displayDiscount = preview.data ? Number(preview.data.discountTotal) : 0;
+  const displayTax = preview.data ? Number(preview.data.taxTotal) : Math.round(displaySubtotal * 0.05);
+  const displayShipping = preview.data ? Number(preview.data.shippingCharge) : fallbackShipping;
+  const displayGrandTotal = preview.data ? Number(preview.data.grandTotal) : fallbackGrandTotal;
 
   useEffect(() => {
     if (!isInitializing && !isAuthenticated) {
@@ -913,32 +983,32 @@ function CheckoutPageContent() {
               </div>
 
               {/* DETAILED PRICE BREAKDOWN */}
-              {preview.data ? (
+              {cartItems.length > 0 ? (
                 <div className="space-y-2.5 pt-3 border-t border-neutral-100 text-xs text-neutral-600">
                   <div className="flex justify-between">
                     <span>Total MRP / Subtotal</span>
-                    <span className="font-semibold text-neutral-900">{formatInr(Number(preview.data.subtotal))}</span>
+                    <span className="font-semibold text-neutral-900">{formatInr(displaySubtotal)}</span>
                   </div>
 
-                  {Number(preview.data.discountTotal) > 0 && (
+                  {displayDiscount > 0 && (
                     <div className="flex justify-between text-emerald-700 font-bold">
                       <span>Coupon & Offer Discount</span>
-                      <span>-{formatInr(Number(preview.data.discountTotal))}</span>
+                      <span>-{formatInr(displayDiscount)}</span>
                     </div>
                   )}
 
                   <div className="flex justify-between">
                     <span>Estimated GST (5% / 12%)</span>
-                    <span>{formatInr(Number(preview.data.taxTotal))}</span>
+                    <span>{formatInr(displayTax)}</span>
                   </div>
 
                   <div className="flex justify-between items-center">
                     <span>Delivery / Courier Shipping</span>
                     <span>
-                      {Number(preview.data.shippingCharge) === 0 ? (
+                      {displayShipping === 0 ? (
                         <span className="text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-md">FREE</span>
                       ) : (
-                        formatInr(Number(preview.data.shippingCharge))
+                        formatInr(displayShipping)
                       )}
                     </span>
                   </div>
@@ -946,32 +1016,52 @@ function CheckoutPageContent() {
                   <div className="flex justify-between items-center font-bold text-base pt-3 border-t border-neutral-200 text-neutral-900">
                     <span className="font-serif">Total Amount</span>
                     <span className="text-[var(--brand-primary)] text-lg">
-                      {formatInr(Number(preview.data.grandTotal))}
+                      {formatInr(displayGrandTotal)}
                     </span>
                   </div>
 
-                  {/* PLACE ORDER BUTTON */}
-                  <button
-                    onClick={onPlaceOrder}
-                    disabled={isBusy || !activeAddressId}
-                    className="w-full mt-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
-                  >
-                    <Lock className="w-4 h-4" />
-                    <span>
-                      {isVerifyingPayment
-                        ? 'Verifying Payment…'
-                        : placeOrder.isPending
-                        ? 'Placing Order…'
-                        : paymentMethod === 'RAZORPAY'
-                        ? `Proceed to Pay ${formatInr(Number(preview.data.grandTotal))}`
-                        : `Confirm Order (${formatInr(Number(preview.data.grandTotal))})`}
-                    </span>
-                  </button>
+                  {/* PLACE ORDER / ADDRESS CTA BUTTON */}
+                  {!activeAddressId ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowNewAddressForm(true);
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                      }}
+                      className="w-full mt-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Add Delivery Address to Proceed</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={onPlaceOrder}
+                      disabled={isBusy || !activeAddressId}
+                      className="w-full mt-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
+                    >
+                      <Lock className="w-4 h-4" />
+                      <span>
+                        {isVerifyingPayment
+                          ? 'Verifying Payment…'
+                          : placeOrder.isPending
+                          ? 'Placing Order…'
+                          : paymentMethod === 'RAZORPAY'
+                          ? `Proceed to Pay ${formatInr(displayGrandTotal)}`
+                          : `Confirm Order (${formatInr(displayGrandTotal)})`}
+                      </span>
+                    </button>
+                  )}
                 </div>
               ) : (
-                <div className="py-6 text-center text-xs text-neutral-400">
-                  <Loader2 className="w-4 h-4 animate-spin mx-auto text-[var(--brand-primary)] mb-1" />
-                  Calculating price breakdown...
+                <div className="py-6 text-center text-xs text-neutral-400 space-y-2">
+                  <ShoppingBag className="w-6 h-6 text-neutral-300 mx-auto" />
+                  <p>Your bag is currently empty.</p>
+                  <Link
+                    href="/"
+                    className="inline-block text-[var(--brand-primary)] font-bold text-xs hover:underline mt-1"
+                  >
+                    Browse Collections & Add Items
+                  </Link>
                 </div>
               )}
 

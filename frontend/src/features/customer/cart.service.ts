@@ -101,18 +101,12 @@ export const customerCartService = {
     if (!guestId) return null;
 
     try {
-      const summary = await customerCartService.getSummary();
-      if (!summary || summary.itemCount === 0) {
-        clearGuestId();
-        return null;
-      }
+      const res = await apiClient.post<StandardResponse<CartDto>>('/cart/merge', { guestId });
+      clearGuestId();
+      return res.data.data!;
     } catch {
       clearGuestId();
       return null;
     }
-
-    const res = await apiClient.post<StandardResponse<CartDto>>('/cart/merge', { guestId });
-    clearGuestId();
-    return res.data.data!;
   },
 };
