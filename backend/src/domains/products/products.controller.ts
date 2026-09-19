@@ -32,6 +32,7 @@ import {
 } from '@domains/auth/guards/permissions.guard';
 import { AuthService } from '@domains/auth/auth.service';
 import { ResponseBuilder } from '@common/responses/response.builder';
+import { ResourceNotFoundException } from '@common/exceptions';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
 
 const INTERNAL_ROLES = ['super_admin', 'admin', 'staff'];
@@ -80,6 +81,24 @@ export class ProductsController {
     return ResponseBuilder.success(
       await this.productsService.findAll(query, restrictToPublicChannels),
     );
+  }
+
+  @Get('slug/:slug')
+  @Header(
+    'Cache-Control',
+    'public, max-age=60, s-maxage=120, stale-while-revalidate=600',
+  )
+  @ApiOperation({ summary: 'Get product by slug' })
+  async findBySlug(@Param('slug') slug: string, @Req() req: Request) {
+    const restrictToPublicChannels = !this.isInternalRequest(req);
+    const product = await this.productsService.findBySlug(
+      slug,
+      restrictToPublicChannels,
+    );
+    if (!product) {
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
+    }
+    return ResponseBuilder.success(product);
   }
 
   @Get(':id')

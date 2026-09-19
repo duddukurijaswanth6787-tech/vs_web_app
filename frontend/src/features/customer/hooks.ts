@@ -125,10 +125,15 @@ export function useCustomerProducts(
 }
 
 export function useCustomerProduct(idOrSlug: string, enabled = true) {
+  const looksLikeUuid =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(idOrSlug);
   return useQuery({
-    queryKey: ['customer', 'product', idOrSlug],
-    queryFn: () => productService.findById(idOrSlug),
-    enabled,
+    queryKey: looksLikeUuid ? ['customer', 'product', idOrSlug] : ['customer', 'product-slug', idOrSlug],
+    queryFn: () =>
+      looksLikeUuid
+        ? productService.findById(idOrSlug)
+        : customerStorefrontService.getProductBySlug(idOrSlug),
+    enabled: enabled && !!idOrSlug,
     staleTime: 2 * 60 * 1000,
   });
 }
