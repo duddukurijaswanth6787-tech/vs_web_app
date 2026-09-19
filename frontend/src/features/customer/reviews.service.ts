@@ -50,13 +50,12 @@ export const customerReviewsService = {
       }>;
       meta: Record<string, unknown>;
       summary: { averageRating: number; totalReviews: number; ratingBreakdown: Record<string, number> };
-    }>>(`/products/${productId}/reviews`);
+    }>>(`/reviews/product/${productId}`);
     return res.data.data!;
   },
 
   async createReview(payload: CreateReviewPayload) {
-    const { productId, ...body } = payload;
-    const res = await apiClient.post<{ data: Record<string, unknown> }>(`/products/${productId}/reviews`, body);
+    const res = await apiClient.post<StandardResponse<Record<string, unknown>>>('/reviews', payload);
     return res.data;
   },
 

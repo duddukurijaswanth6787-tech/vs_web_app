@@ -34,6 +34,25 @@ export class ReviewController {
     return ResponseBuilder.success(await this.reviewService.findAll(query));
   }
 
+  @Get('product/:productId')
+  @ApiOperation({ summary: 'Get approved reviews for a product with rating summary' })
+  async findByProductId(
+    @Param('productId') productId: string,
+    @Query() query: ReviewQueryDto,
+  ) {
+    const reviews = await this.reviewService.findAll({
+      ...query,
+      productId,
+      status: 'APPROVED',
+    });
+    const summary = await this.reviewService.getProductRatingSummary(productId);
+    return ResponseBuilder.success({
+      data: reviews.data,
+      meta: reviews.meta,
+      summary,
+    });
+  }
+
   @Get('product/:productId/summary')
   @ApiOperation({ summary: 'Get product rating summary' })
   async getProductRatingSummary(@Param('productId') productId: string) {
