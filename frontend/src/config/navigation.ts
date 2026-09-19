@@ -669,6 +669,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'email-gateway',
+        title: 'Transactional Email & SES',
+        href: '/admin/communication/email',
+        icon: Mail,
+        roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
         id: 'operations',
         title: 'Store Operations',
         href: '/admin/operations',

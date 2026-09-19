@@ -207,10 +207,46 @@ export const adminOpsApi = {
     return res.data.data!;
   },
 
-  dtdcByOrder: async (orderId: string): Promise<DtdcShipmentDto> => {
-    const res = await apiClient.get<StandardResponse<DtdcShipmentDto>>(
-      `/shipping/dtdc/shipments/order/${orderId}`,
-    );
+  // ── Email & Invoices ──────────────────────────────────
+  getEmailConfig: async (): Promise<EmailConfigDto> => {
+    const res = await apiClient.get<StandardResponse<EmailConfigDto>>('/email/config');
+    return res.data.data!;
+  },
+
+  updateEmailConfig: async (dto: Partial<EmailConfigDto> & { smtpPassword?: string }): Promise<EmailConfigDto> => {
+    const res = await apiClient.patch<StandardResponse<EmailConfigDto>>('/email/config', dto);
+    return res.data.data!;
+  },
+
+  sendTestEmail: async (dto: { to: string }): Promise<{ status: string }> => {
+    const res = await apiClient.post<StandardResponse<{ status: string }>>('/email/test', dto);
+    return res.data.data!;
+  },
+
+  sendEmail: async (dto: { to: string; subject: string; template: string; html: string }): Promise<any> => {
+    const res = await apiClient.post<StandardResponse<any>>('/email/send', dto);
+    return res.data.data!;
+  },
+
+  emailLogs: async (page = 1, limit = 20): Promise<{ data: Array<Record<string, unknown>>; meta: { total: number } }> => {
+    const res = await apiClient.get<StandardResponse<{ data: Array<Record<string, unknown>>; meta: { total: number } }>>('/email/logs', {
+      params: { page, limit },
+    });
     return res.data.data!;
   },
 };
+
+export interface EmailConfigDto {
+  enabled: boolean;
+  provider: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpSecure: boolean;
+  smtpUser: string;
+  hasPassword: boolean;
+  fromAddress: string;
+  fromName: string;
+  enableOrderConfirmation: boolean;
+  enableInvoicePdf: boolean;
+}
+
