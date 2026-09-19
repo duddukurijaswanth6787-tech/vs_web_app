@@ -1,5 +1,7 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { PrismaService } from '@database/prisma.service';
+import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 
 export interface DelhiveryPincodeResponse {
   pincode: string;
@@ -52,7 +54,12 @@ export class DelhiveryService {
   private readonly logger = new Logger(DelhiveryService.name);
   private readonly apiToken: string;
 
-  constructor(private readonly configService: ConfigService) {
+  constructor(
+    private readonly configService: ConfigService,
+    private readonly prisma: PrismaService,
+    @Inject(forwardRef(() => OrderWorkflowService))
+    private readonly workflowService: OrderWorkflowService,
+  ) {
     this.apiToken =
       this.configService.get<string>('DELHIVERY_API_TOKEN') ||
       '0bfb0bcc34ee8ff06f6e06d36b40c96830d20f44';
@@ -246,6 +253,130 @@ export class DelhiveryService {
       ],
       totalPackages: 1,
       totalWeightGrams: 500,
+    };
+  }
+
+  /**
+   * Process incoming Delhivery tracking webhook push notification
+   */
+  async handleWebhook(payload: any) {
+    this.logger.log(
+      `Received Delhivery Webhook: ${JSON.stringify(payload).slice(0, 300)}`,
+    );
+
+    const waybill =
+      payload?.Shipment?.AWB ||
+      payload?.waybill ||
+      payload?.awb ||
+      payload?.ShipmentData?.[0]?.Shipment?.AWB;
+
+    const rawStatus =
+      payload?.Shipment?.Status?.Status ||
+      payload?.status ||
+      payload?.Status ||
+      payload?.ShipmentData?.[0]?.Shipment?.Status?.Status ||
+      '';
+
+    const location =
+      payload?.Shipment?.Status?.StatusLocation ||
+      payload?.location ||
+      payload?.ShipmentData?.[0]?.Shipment?.Status?.StatusLocation ||
+      'Delhivery Hub';
+
+    const instructions =
+      payload?.Shipment?.Status?.Instructions ||
+      payload?.remarks ||
+      payload?.instructions ||
+      '';
+
+    if (!waybill) {
+      this.logger.warn('Delhivery webhook received without waybill/AWB');
+      return { success: false, message: 'Missing waybill identifier' };
+    }
+
+    const order = await this.prisma.order.findFirst({
+      where: {
+        OR: [
+          { waybillNumber: waybill },
+          { orderNumber: payload?.orderNumber || '' },
+          { id: payload?.orderId || '' },
+        ],
+      },
+    });
+
+    if (!order) {
+      this.logger.warn(
+        `Delhivery webhook could not find order for waybill: ${waybill}`,
+      );
+      return { success: true, message: 'No matching order for waybill' };
+    }
+
+    const normalizedStatus = rawStatus.toUpperCase();
+
+    try {
+      if (
+        normalizedStatus.includes('DELIVER') ||
+        normalizedStatus.includes('DLVD')
+      ) {
+        if (order.status !== 'DELIVERED') {
+          await this.workflowService.transition(
+            order.id,
+            'DELIVERED',
+            'DELHIVERY_WEBHOOK',
+            `Delivered by Delhivery courier at ${location}. ${instructions}`.trim(),
+          );
+        }
+      } else if (
+        normalizedStatus.includes('OUT FOR DELIVERY') ||
+        normalizedStatus.includes('OFD')
+      ) {
+        if (order.status === 'SHIPPED') {
+          await this.workflowService.transition(
+            order.id,
+            'OUT_FOR_DELIVERY',
+            'DELHIVERY_WEBHOOK',
+            `Package out for delivery from ${location}. ${instructions}`.trim(),
+          );
+        }
+      } else if (
+        normalizedStatus.includes('IN TRANSIT') ||
+        normalizedStatus.includes('DISPATCH') ||
+        normalizedStatus.includes('MANIFEST')
+      ) {
+        if (
+          order.status === 'PACKING' ||
+          order.status === 'READY_TO_SHIP' ||
+          order.status === 'PROCESSING'
+        ) {
+          await this.workflowService.transition(
+            order.id,
+            'SHIPPED',
+            'DELHIVERY_WEBHOOK',
+            `In transit with Delhivery at ${location}. ${instructions}`.trim(),
+          );
+        }
+      } else {
+        // Log checkpoint scan in timeline
+        await this.prisma.orderTimeline.create({
+          data: {
+            orderId: order.id,
+            status: order.status,
+            message: `Delhivery Scan (${location}): ${rawStatus} - ${instructions}`.trim(),
+            createdBy: 'DELHIVERY_WEBHOOK',
+          },
+        });
+      }
+    } catch (err: any) {
+      this.logger.error(
+        `Error executing webhook transition for order ${order.orderNumber}: ${err.message}`,
+      );
+    }
+
+    return {
+      success: true,
+      orderNumber: order.orderNumber,
+      status: order.status,
+      waybill,
     };
   }
 }

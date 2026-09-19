@@ -91,6 +91,30 @@ export class ShippingController {
     });
   }
 
+  @Post('delhivery/webhook')
+  @Public()
+  @ApiOperation({
+    summary: 'Receive real-time courier tracking push updates from Delhivery',
+  })
+  async receiveDelhiveryWebhook(@Body() payload: any) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.handleWebhook(payload),
+      'Delhivery webhook processed successfully',
+    );
+  }
+
+  @Post('webhook/delhivery')
+  @Public()
+  @ApiOperation({
+    summary: 'Alias endpoint for Delhivery tracking push updates',
+  })
+  async receiveDelhiveryWebhookAlias(@Body() payload: any) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.handleWebhook(payload),
+      'Delhivery webhook processed successfully',
+    );
+  }
+
   @Get('delhivery/manifest')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
