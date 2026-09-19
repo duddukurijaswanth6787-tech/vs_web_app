@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   ArrowLeft,
   Lock,
-  Gift,
   MapPin,
   Truck,
   Clock,
@@ -24,7 +23,6 @@ import {
   CheckCircle2,
   Phone,
   Sparkles,
-  RefreshCw,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -120,8 +118,6 @@ function CheckoutPageContent() {
   // Form states
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
   const [preferredDeliverySlot, setPreferredDeliverySlot] = useState('MORNING');
-  const [isGift, setIsGift] = useState(false);
-  const [giftWrapMessage, setGiftWrapMessage] = useState('');
   const [notes, setNotes] = useState('');
 
   // Status & error states
@@ -133,13 +129,15 @@ function CheckoutPageContent() {
     return Array.isArray(addressesData) ? addressesData : (addressesData as any).data || [];
   }, [addressesData]);
 
-  // Pre-fill user details into address form
+  // Pre-fill user details into address form (avoid generic 'customer' or 'user')
   useEffect(() => {
     if (user) {
       const u = user as unknown as { firstName?: string; lastName?: string; name?: string; phone?: string };
+      const rawName = (u.firstName ? `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}` : u.name || '').trim();
+      const isGeneric = !rawName || ['customer', 'user', 'guest', 'admin', 'pos_operator'].includes(rawName.toLowerCase());
       setNewAddrForm((prev) => ({
         ...prev,
-        fullName: prev.fullName || (u.firstName ? `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}` : u.name || ''),
+        fullName: prev.fullName || (isGeneric ? '' : rawName),
         phone: prev.phone || u.phone || '',
       }));
     }
@@ -368,8 +366,6 @@ function CheckoutPageContent() {
         notes: notes || undefined,
         deliveryInstructions: deliveryInstructions || undefined,
         preferredDeliverySlot: preferredDeliverySlot || undefined,
-        isGift,
-        giftWrapMessage: isGift ? giftWrapMessage || undefined : undefined,
       });
 
       if (paymentMethod === 'RAZORPAY' && order.payment) {
@@ -596,6 +592,16 @@ function CheckoutPageContent() {
                     </label>
                   </div>
 
+                  {/* Delivery Serviceability Verification Banner */}
+                  {pincodeFilled && (
+                    <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-800 text-xs animate-fadeIn">
+                      <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span className="leading-snug">
+                        <strong>Pincode Serviceable:</strong> Express delivery supported to <strong>{newAddrForm.city}, {newAddrForm.state}</strong> via <strong>Delhivery &amp; DTDC Express</strong> (3-5 Days).
+                      </span>
+                    </div>
+                  )}
+
                   <label className="block space-y-1">
                     <span className="text-[11px] font-semibold text-neutral-700">Flat / House No / Building / Street *</span>
                     <input
@@ -633,8 +639,8 @@ function CheckoutPageContent() {
               ) : selectedAddress ? (
                 <div className="space-y-3">
                   {/* Selected Address Card */}
-                  <div className="bg-sky-50/50 border-2 border-[var(--brand-primary)] rounded-2xl p-4 sm:p-5 relative transition-all shadow-xs">
-                    <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="bg-sky-50/50 border-2 border-[var(--brand-primary)] rounded-2xl p-4 sm:p-5 relative transition-all shadow-xs space-y-2.5">
+                    <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-neutral-900 text-sm">{selectedAddress.fullName}</span>
                         <span className="text-[10px] font-bold bg-[var(--brand-primary)] text-white px-2 py-0.5 rounded-md uppercase">
@@ -651,10 +657,18 @@ function CheckoutPageContent() {
                       {selectedAddress.addressLine2 ? `, ${selectedAddress.addressLine2}` : ''}, {selectedAddress.city},{' '}
                       {selectedAddress.state} – <span className="font-bold text-neutral-900">{selectedAddress.postalCode}</span>
                     </p>
-                    <p className="text-neutral-500 font-mono text-[11px] mt-2 flex items-center gap-1.5">
+                    <p className="text-neutral-500 font-mono text-[11px] flex items-center gap-1.5">
                       <Phone className="w-3.5 h-3.5 text-neutral-400" />
                       Phone: <span className="text-neutral-800 font-semibold">{selectedAddress.phone}</span>
                     </p>
+
+                    {/* Delivery Serviceability Badge on Selected Address */}
+                    <div className="pt-2 border-t border-sky-100 flex items-center gap-2 text-emerald-800 text-xs font-medium">
+                      <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>
+                        Serviceable to PIN <strong>{selectedAddress.postalCode}</strong> • Delivery verified via <strong>Delhivery &amp; DTDC Express</strong> (3-5 Days)
+                      </span>
+                    </div>
                   </div>
 
                   {/* Switch to Other Addresses */}
@@ -783,50 +797,7 @@ function CheckoutPageContent() {
               </div>
             </section>
 
-            {/* STEP 3: LUXURY GIFT WRAPPING */}
-            <section className="bg-white rounded-3xl p-5 sm:p-6 border border-neutral-200/90 shadow-2xs space-y-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center">
-                    <Gift className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <span className="font-bold text-neutral-900 text-xs sm:text-sm block font-serif">
-                      Complimentary Luxury Gift Box
-                    </span>
-                    <span className="text-[11px] text-neutral-500">Premium ribbon box & personalized greeting note</span>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setIsGift(!isGift)}
-                  className={`w-11 h-6 rounded-full transition-colors p-0.5 cursor-pointer ${
-                    isGift ? 'bg-[var(--brand-primary)]' : 'bg-neutral-300'
-                  }`}
-                >
-                  <div
-                    className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                      isGift ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-              </div>
-
-              {isGift && (
-                <div className="space-y-1.5 pt-3 border-t border-neutral-100 animate-fadeIn">
-                  <span className="font-semibold text-neutral-700 block text-xs">Personal Greeting Card Message</span>
-                  <textarea
-                    rows={2}
-                    placeholder="Wishing you a blessed occasion! With love..."
-                    value={giftWrapMessage}
-                    onChange={(e) => setGiftWrapMessage(e.target.value)}
-                    className="w-full p-3 border border-neutral-200 rounded-xl outline-none focus:border-[var(--brand-primary)] text-xs bg-neutral-50/40"
-                  />
-                </div>
-              )}
-            </section>
-
-            {/* STEP 4: PAYMENT METHOD SELECTION */}
+            {/* STEP 3: PAYMENT METHOD SELECTION */}
             <section className="bg-white rounded-3xl p-4 sm:p-6 border border-neutral-200/90 shadow-2xs space-y-4">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
                 <div className="w-7 h-7 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs shrink-0">
@@ -1084,10 +1055,6 @@ function CheckoutPageContent() {
                 <div className="flex items-center gap-2">
                   <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
                   <span>100% Genuine Designer Apparel Guarantee</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>7-Day Easy Returns & Size Exchange Policy</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
