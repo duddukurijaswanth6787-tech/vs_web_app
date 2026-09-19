@@ -114,8 +114,15 @@ export class CartService {
   }
 
   private async validateProduct(productId: string, variantId?: string) {
-    const product = await this.prisma.product.findUnique({
-      where: { id: productId },
+    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
+    const product = await this.prisma.product.findFirst({
+      where: {
+        OR: [
+          ...(isUuid ? [{ id: productId }] : []),
+          { slug: productId },
+        ],
+        deletedAt: null,
+      },
       include: {
         variants: { where: { isDefault: true, deletedAt: null }, take: 1 },
       },
@@ -125,7 +132,8 @@ export class CartService {
     if (product.status !== 'ACTIVE')
       throw new BusinessException('Product is not available', 'CART_004');
 
-    const resolvedVariantId = variantId ?? product.variants[0]?.id;
+    const cleanVariantId = variantId && variantId.trim() ? variantId.trim() : undefined;
+    const resolvedVariantId = cleanVariantId ?? product.variants[0]?.id;
     if (resolvedVariantId) {
       const inventory = await this.prisma.inventory.findUnique({
         where: { variantId: resolvedVariantId },
@@ -387,11 +395,11 @@ export class CartService {
     }
 
     const guestCart = await this.cartRepository.findActiveByGuestId(guestId);
-    if (!guestCart)
-      throw new BusinessException('Guest cart not found', 'CART_007');
+    if (!guestCart) {
+      return this.getCart(userId);
+    }
 
     const customerCart = await this.getOrCreateCart(userId);
-
     const guestItems = await this.cartRepository.getItems(guestCart.id);
     for (const item of guestItems) {
       const existing = await this.cartRepository.findItem(

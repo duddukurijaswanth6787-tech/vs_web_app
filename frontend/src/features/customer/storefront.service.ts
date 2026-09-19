@@ -9,6 +9,7 @@ export interface PublicSettingsDto {
   supportEmail?: string;
   supportPhone?: string;
   currency?: string;
+  codEnabled?: boolean;
   [key: string]: unknown;
 }
 

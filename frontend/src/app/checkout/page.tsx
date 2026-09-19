@@ -32,6 +32,8 @@ import {
   useCustomerAddresses,
   useCustomerCart,
   usePlaceOrder,
+  usePublicSettings,
+  useFeatureEnabled,
   customerKeys,
 } from '@/features/customer/hooks';
 import { usePincodeLookup } from '@/hooks/usePincodeLookup';
@@ -68,6 +70,9 @@ function CheckoutPageContent() {
 
   const { data: cartData } = useCustomerCart();
   const { data: addressesData, isLoading: addressesLoading } = useCustomerAddresses(isAuthenticated);
+  const { data: publicSettings } = usePublicSettings();
+  const isCodFeatureOn = useFeatureEnabled('cod');
+  const codEnabled = Boolean(publicSettings?.codEnabled ?? isCodFeatureOn);
   const placeOrder = usePlaceOrder();
 
   // Stored coupon
@@ -82,6 +87,13 @@ function CheckoutPageContent() {
 
   // Selected payment method: 'RAZORPAY' | 'COD'
   const [paymentMethod, setPaymentMethod] = useState<'RAZORPAY' | 'COD'>('RAZORPAY');
+
+  // Auto-reset payment method to RAZORPAY if COD is disabled by admin
+  useEffect(() => {
+    if (!codEnabled && paymentMethod === 'COD') {
+      setPaymentMethod('RAZORPAY');
+    }
+  }, [codEnabled, paymentMethod]);
 
   // Selected address state
   const [selectedAddressId, setSelectedAddressId] = useState<string>(addressIdParam);
@@ -815,24 +827,24 @@ function CheckoutPageContent() {
             </section>
 
             {/* STEP 4: PAYMENT METHOD SELECTION */}
-            <section className="bg-white rounded-3xl p-5 sm:p-6 border border-neutral-200/90 shadow-2xs space-y-4">
+            <section className="bg-white rounded-3xl p-4 sm:p-6 border border-neutral-200/90 shadow-2xs space-y-4">
               <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
-                <div className="w-7 h-7 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs">
+                <div className="w-7 h-7 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs shrink-0">
                   3
                 </div>
-                <div>
+                <div className="min-w-0">
                   <h2 className="font-bold text-neutral-900 text-sm font-serif flex items-center gap-1.5">
-                    <CreditCard className="w-4 h-4 text-[var(--brand-primary)]" />
+                    <CreditCard className="w-4 h-4 text-[var(--brand-primary)] shrink-0" />
                     Payment Options
                   </h2>
-                  <p className="text-[11px] text-neutral-500">All transactions are encrypted with 256-bit security</p>
+                  <p className="text-[11px] text-neutral-500 truncate">All transactions are encrypted with 256-bit security</p>
                 </div>
               </div>
 
               <div className="space-y-3">
                 {/* Razorpay Online Payment */}
                 <label
-                  className={`flex items-start gap-3.5 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                  className={`flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all ${
                     paymentMethod === 'RAZORPAY'
                       ? 'border-[var(--brand-primary)] bg-sky-50/40 shadow-xs'
                       : 'border-neutral-200 hover:bg-neutral-50'
@@ -843,14 +855,14 @@ function CheckoutPageContent() {
                     name="checkoutPaymentMethod"
                     checked={paymentMethod === 'RAZORPAY'}
                     onChange={() => setPaymentMethod('RAZORPAY')}
-                    className="mt-1 accent-[var(--brand-primary)]"
+                    className="mt-1 accent-[var(--brand-primary)] shrink-0"
                   />
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
                       <span className="font-bold text-neutral-900 text-xs flex items-center gap-2">
                         Online Payment (UPI, Cards, NetBanking, Wallets)
                       </span>
-                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md">
+                      <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md shrink-0">
                         Recommended
                       </span>
                     </div>
@@ -860,35 +872,37 @@ function CheckoutPageContent() {
                   </div>
                 </label>
 
-                {/* Cash on Delivery */}
-                <label
-                  className={`flex items-start gap-3.5 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'COD'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/40 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="checkoutPaymentMethod"
-                    checked={paymentMethod === 'COD'}
-                    onChange={() => setPaymentMethod('COD')}
-                    className="mt-1 accent-[var(--brand-primary)]"
-                  />
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-neutral-900 text-xs flex items-center gap-1.5">
-                        <Banknote className="w-4 h-4 text-neutral-600" /> Cash on Delivery (COD)
-                      </span>
-                      <span className="text-[10px] font-semibold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md">
-                        Pay at Doorstep
-                      </span>
+                {/* Cash on Delivery - ONLY rendered if Super Admin has enabled COD */}
+                {codEnabled && (
+                  <label
+                    className={`flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                      paymentMethod === 'COD'
+                        ? 'border-[var(--brand-primary)] bg-sky-50/40 shadow-xs'
+                        : 'border-neutral-200 hover:bg-neutral-50'
+                    }`}
+                  >
+                    <input
+                      type="radio"
+                      name="checkoutPaymentMethod"
+                      checked={paymentMethod === 'COD'}
+                      onChange={() => setPaymentMethod('COD')}
+                      className="mt-1 accent-[var(--brand-primary)] shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 space-y-1">
+                      <div className="flex flex-wrap items-center justify-between gap-1.5">
+                        <span className="font-bold text-neutral-900 text-xs flex items-center gap-1.5">
+                          <Banknote className="w-4 h-4 text-neutral-600 shrink-0" /> Cash on Delivery (COD)
+                        </span>
+                        <span className="text-[10px] font-semibold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md shrink-0">
+                          Pay at Doorstep
+                        </span>
+                      </div>
+                      <p className="text-neutral-500 text-[11px] leading-relaxed">
+                        Pay via Cash or UPI QR scan directly to the delivery courier when your package arrives.
+                      </p>
                     </div>
-                    <p className="text-neutral-500 text-[11px] leading-relaxed">
-                      Pay via Cash or UPI QR scan directly to the delivery courier when your package arrives.
-                    </p>
-                  </div>
-                </label>
+                  </label>
+                )}
               </div>
             </section>
           </div>

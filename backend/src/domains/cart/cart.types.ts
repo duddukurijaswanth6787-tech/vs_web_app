@@ -1,10 +1,10 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min, IsUUID } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class AddToCartDto {
-  @ApiProperty() @IsUUID() productId!: string;
-  @ApiPropertyOptional() @IsOptional() @IsUUID() variantId?: string;
+  @ApiProperty() @IsString() productId!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() variantId?: string;
   @ApiPropertyOptional({ default: 1 })
   @IsOptional()
   @Type(() => Number)

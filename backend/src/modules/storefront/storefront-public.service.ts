@@ -29,6 +29,7 @@ export class StorefrontPublicService {
           announcementLinkTextSetting,
           announcementBgColorSetting,
           announcementTextColorSetting,
+          codSetting,
         ] = await Promise.all([
           this.prisma.appSetting.findUnique({
             where: { key: 'banner_autoplay_interval' },
@@ -57,7 +58,13 @@ export class StorefrontPublicService {
           this.prisma.appSetting.findUnique({
             where: { key: 'announcement_bar_text_color' },
           }),
+          this.prisma.appSetting.findFirst({
+            where: {
+              key: { in: ['cod_enabled', 'payment_cod_enabled', 'payment.cod_enabled'] },
+            },
+          }),
         ]);
+        const codEnabled = codSetting ? codSetting.value === 'true' : false;
         const announcementText =
           announcementTextSetting?.value ||
           'Festive Sale is Live! Get up to 30% OFF';
@@ -83,6 +90,7 @@ export class StorefrontPublicService {
 
         return {
           ...settings,
+          codEnabled,
           bannerAutoplayInterval: autoplayInterval,
           bannerAutoplayEnabled: autoplayEnabled,
           announcementBarEnabled: announcementEnabled,
