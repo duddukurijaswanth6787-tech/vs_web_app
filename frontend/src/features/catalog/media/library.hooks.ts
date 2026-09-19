@@ -124,6 +124,19 @@ export function useDeleteFolder() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => libraryService.deleteFolder(id),
-    onSuccess: () => qc.invalidateQueries({ queryKey: libraryKeys.folders() }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: libraryKeys.folders() });
+      qc.invalidateQueries({ queryKey: libraryKeys.media() });
+    },
+  });
+}
+
+export function useSyncCatalogMedia() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: () => libraryService.syncCatalogMedia(),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: libraryKeys.all });
+    },
   });
 }

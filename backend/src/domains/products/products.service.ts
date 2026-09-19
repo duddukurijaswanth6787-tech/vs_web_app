@@ -77,6 +77,7 @@ export class ProductsService {
       isOnlineOnly: p.isOnlineOnly ?? false,
       hsnCode: p.hsnCode ?? undefined,
       sizeChartTemplateId: p.sizeChartTemplateId ?? undefined,
+      sizeChartTemplate: p.sizeChartTemplate ?? undefined,
       taxInclusive: p.taxInclusive ?? true,
       isPublished: p.isPublished,
       publishedAt: p.publishedAt ?? undefined,
@@ -427,6 +428,10 @@ export class ProductsService {
           tags: dto.tags ?? [],
           collections: dto.collections ?? [],
           highlights: dto.highlights ?? [],
+          hsnCode: dto.hsnCode,
+          sizeChartTemplate: dto.sizeChartTemplateId
+            ? { connect: { id: dto.sizeChartTemplateId } }
+            : undefined,
           createdBy: userId,
         },
       });
@@ -549,6 +554,9 @@ export class ProductsService {
       updateData.slug = await this.generateUniqueSlug(dto.name, id);
     }
     if (brandId) updateData.brand = { connect: { id: brandId } };
+    if (dto.sizeChartTemplateId !== undefined) {
+      updateData.sizeChartTemplateId = dto.sizeChartTemplateId ? dto.sizeChartTemplateId : null;
+    }
     // Kept in sync with `channel` for any older code still reading this flag directly.
     if (dto.channel) updateData.isOnlineOnly = dto.channel === 'ONLINE';
     if (dto.isPublished === true) {

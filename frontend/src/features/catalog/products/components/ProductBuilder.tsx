@@ -1562,7 +1562,7 @@ export default function ProductBuilder({
         tags: finalTags,
         ...(collections.length > 0 ? { collections } : {}),
         ...(occasion ? { occasion } : {}),
-        ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
+        sizeChartTemplateId: sizeChartTemplateId || undefined,
       };
 
       // Explicitly strip virtual/read-only properties so neither POST /products nor PATCH /products/:id rejects them

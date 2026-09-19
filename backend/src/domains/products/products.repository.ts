@@ -207,6 +207,11 @@ export class ProductsRepository {
       relatedFrom: {
         include: { product: { select: { id: true, name: true } } },
       },
+      sizeChartTemplate: {
+        include: {
+          rows: { orderBy: { displayOrder: 'asc' } },
+        },
+      },
       variants: {
         where: { deletedAt: null },
         include: {

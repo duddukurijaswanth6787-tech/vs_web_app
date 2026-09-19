@@ -121,4 +121,79 @@ export class LibraryRepository {
   async deleteFolder(id: string) {
     return this.prisma.mediaFolder.delete({ where: { id } });
   }
+
+  async syncProductMedia() {
+    let productFolder = await this.prisma.mediaFolder.findFirst({
+      where: { name: 'Product Catalog' },
+    });
+    if (!productFolder) {
+      productFolder = await this.prisma.mediaFolder.create({
+        data: {
+          name: 'Product Catalog',
+          description: 'Auto-synced photos from product catalog listings',
+        },
+      });
+    }
+
+    const productMedias = await this.prisma.productMedia.findMany({
+      where: { deletedAt: null, status: 'ACTIVE' },
+      include: { product: { select: { name: true } } },
+    });
+
+    const existingMedias = await this.prisma.media.findMany({
+      where: { isDeleted: false },
+      select: { publicUrl: true, storageKey: true },
+    });
+    const existingUrls = new Set([
+      ...existingMedias.map((m) => m.publicUrl),
+      ...existingMedias.map((m) => m.storageKey),
+    ]);
+
+    let createdCount = 0;
+    for (const pm of productMedias) {
+      if (!pm.url || existingUrls.has(pm.url)) continue;
+
+      const urlParts = pm.url.split('/');
+      const rawFileName = urlParts[urlParts.length - 1] || 'product-image.jpg';
+      const ext = rawFileName.includes('.')
+        ? rawFileName.split('.').pop() || 'jpg'
+        : 'jpg';
+      const cleanTitle =
+        pm.title || pm.product?.name || `Product Image ${pm.id.slice(0, 6)}`;
+
+      await this.prisma.media.create({
+        data: {
+          filename: rawFileName,
+          originalFilename: `${cleanTitle}.${ext}`,
+          mimeType:
+            ext === 'png'
+              ? 'image/png'
+              : ext === 'webp'
+                ? 'image/webp'
+                : 'image/jpeg',
+          extension: ext,
+          size: 102400,
+          folderId: productFolder.id,
+          storageProvider: 's3',
+          storageKey: pm.url,
+          publicUrl: pm.url,
+          thumbnailUrl: pm.thumbnailUrl || pm.url,
+          mediumUrl: pm.url,
+          largeUrl: pm.url,
+          altText: pm.altText || cleanTitle,
+          caption: pm.product?.name,
+          uploadedBy: pm.createdBy || 'system',
+        },
+      });
+
+      existingUrls.add(pm.url);
+      createdCount++;
+    }
+
+    return {
+      totalFound: productMedias.length,
+      syncedCount: createdCount,
+      folderId: productFolder.id,
+    };
+  }
 }

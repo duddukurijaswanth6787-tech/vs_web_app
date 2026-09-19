@@ -253,4 +253,16 @@ export class LibraryController {
     await this.libraryService.deleteFolder(id, user.sub);
     return ResponseBuilder.deleted('Folder deleted');
   }
+
+  @Post('sync-catalog-media')
+  @Roles('super_admin', 'admin')
+  @ApiOperation({
+    summary: 'Sync all product images from catalog into media library',
+  })
+  async syncCatalogMedia(@CurrentUser() user: JwtPayload) {
+    return ResponseBuilder.success(
+      await this.libraryService.syncCatalogMedia(user.sub),
+      'Product catalog images synced to media library successfully',
+    );
+  }
 }

@@ -141,4 +141,9 @@ export const libraryService = {
   deleteFolder: async (id: string): Promise<void> => {
     await apiClient.delete(`/library/folders/${id}`);
   },
+
+  syncCatalogMedia: async (): Promise<{ totalFound: number; syncedCount: number; folderId: string }> => {
+    const res = await apiClient.post<StandardResponse<{ totalFound: number; syncedCount: number; folderId: string }>>('/library/sync-catalog-media');
+    return res.data.data!;
+  },
 };

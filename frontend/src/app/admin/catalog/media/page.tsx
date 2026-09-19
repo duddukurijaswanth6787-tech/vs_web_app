@@ -6,6 +6,7 @@ import {
   useLibraryMedia, useLibraryMediaDetail, useCreateLibraryMedia, useUpdateLibraryMedia, useDeleteLibraryMedia,
   useLibraryFolders, useCreateFolder, useDeleteFolder,
   useRenameLibraryMedia, useReplaceLibraryMedia, useBulkDeleteLibraryMedia, useBulkMoveLibraryMedia,
+  useSyncCatalogMedia,
 } from '@/features/catalog/media/library.hooks';
 import { libraryService } from '@/features/catalog/media/library.service';
 import type { LibraryMedia } from '@/features/catalog/media/library.types';
@@ -16,7 +17,7 @@ import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
 import {
   Upload, Image as ImageIcon, FolderPlus, Trash2, Search, X, Grid3X3, List, FileType, FolderOpen, Folder,
   Edit3, Check, AlertCircle, Download, ArrowUpDown, Copy,
-  CheckSquare, Square,
+  CheckSquare, Square, RefreshCw,
 } from 'lucide-react';
 
 function formatSize(bytes: number) {
@@ -380,6 +381,19 @@ export default function MediaLibraryPage() {
   const { data: folders = [] } = useLibraryFolders();
   const createFolder = useCreateFolder();
   const deleteFolder = useDeleteFolder();
+  const syncCatalog = useSyncCatalogMedia();
+  const [syncMessage, setSyncMessage] = useState('');
+
+  const handleSyncCatalog = async () => {
+    try {
+      const res = await syncCatalog.mutateAsync();
+      setSyncMessage(`Synced ${res.syncedCount} new catalog images (Total ${res.totalFound} product photos)`);
+      setTimeout(() => setSyncMessage(''), 5000);
+    } catch {
+      setSyncMessage('Failed to sync catalog images');
+      setTimeout(() => setSyncMessage(''), 4000);
+    }
+  };
 
   const handleSearch = useCallback((val: string) => {
     setSearch(val);
@@ -408,19 +422,36 @@ export default function MediaLibraryPage() {
 
   return (
     <div className="space-y-6">
+      {syncMessage && (
+        <div className="p-3 bg-sky-50 border border-sky-200 text-sky-800 text-xs font-bold rounded-xl flex items-center justify-between animate-fade-in shadow-2xs">
+          <span>{syncMessage}</span>
+          <button onClick={() => setSyncMessage('')} className="text-sky-600 hover:text-sky-900"><X className="w-4 h-4" /></button>
+        </div>
+      )}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
           <h1 className="text-lg sm:text-xl font-bold text-neutral-900 font-sans tracking-tight">Media Library</h1>
           <p className="text-xs text-neutral-400 mt-1">Manage uploaded images, videos and documents</p>
         </div>
-        <div className="flex items-center gap-2 shrink-0">
+        <div className="flex items-center gap-2 shrink-0 flex-wrap">
           <button onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')} className="p-2 border border-neutral-200 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-50">
             {viewMode === 'grid' ? <List className="w-4 h-4" /> : <Grid3X3 className="w-4 h-4" />}
           </button>
           {canUpload && (
-            <button onClick={() => setShowUpload(true)} className="bg-neutral-950 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
-              <Upload className="w-4 h-4" /> Upload
-            </button>
+            <>
+              <button
+                onClick={handleSyncCatalog}
+                disabled={syncCatalog.isPending}
+                className="bg-sky-50 border border-sky-200 hover:bg-sky-100 text-[#0284c7] font-bold py-2.5 px-3.5 rounded-xl text-xs flex items-center gap-2 transition-all shadow-2xs disabled:opacity-60"
+                title="Sync all photos from product catalog listings into Media Library"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncCatalog.isPending ? 'animate-spin' : ''}`} />
+                <span>{syncCatalog.isPending ? 'Syncing...' : 'Sync Catalog Images'}</span>
+              </button>
+              <button onClick={() => setShowUpload(true)} className="bg-neutral-950 hover:bg-neutral-800 text-white font-bold py-2.5 px-4 rounded-xl text-xs flex items-center gap-2 transition-all shadow-sm">
+                <Upload className="w-4 h-4" /> Upload
+              </button>
+            </>
           )}
         </div>
       </div>

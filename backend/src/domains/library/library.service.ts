@@ -348,4 +348,19 @@ export class LibraryService {
       sortOrder: 'desc',
     });
   }
+
+  async syncCatalogMedia(userId?: string) {
+    const result = await this.libraryRepository.syncProductMedia();
+    if (userId) {
+      await this.auditService.log({
+        action: 'LIBRARY_CATALOG_SYNCED',
+        module: 'library',
+        resource: 'media',
+        resourceId: result.folderId,
+        userId,
+        newValue: result,
+      });
+    }
+    return result;
+  }
 }

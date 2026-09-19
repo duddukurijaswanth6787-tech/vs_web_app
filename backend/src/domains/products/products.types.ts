@@ -656,6 +656,7 @@ export class ProductResponse {
   @ApiProperty() isOnlineOnly!: boolean;
   @ApiPropertyOptional() hsnCode?: string;
   @ApiPropertyOptional() sizeChartTemplateId?: string;
+  @ApiPropertyOptional() sizeChartTemplate?: any;
   @ApiProperty() taxInclusive!: boolean;
   @ApiProperty() isPublished!: boolean;
   @ApiPropertyOptional() publishedAt?: Date;
