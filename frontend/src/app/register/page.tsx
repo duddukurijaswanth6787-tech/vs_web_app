@@ -46,8 +46,8 @@ function RegisterForm() {
       return;
     }
 
-    if (form.password.length < 6) {
-      setError('Password must be at least 6 characters long.');
+    if (form.password.length < 8) {
+      setError('Password must be at least 8 characters long.');
       return;
     }
 
@@ -59,13 +59,11 @@ function RegisterForm() {
     setLoading(true);
     try {
       await customerAuthService.register({
-        firstName: form.firstName,
-        lastName: form.lastName || undefined,
-        email: form.email,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName ? form.lastName.trim() : undefined,
+        email: form.email.trim().toLowerCase(),
         phone: cleanPhone,
         password: form.password,
-        gender: form.gender,
-        referralCode: form.referralCode || undefined,
       });
       await completeTokenLogin();
       router.push(redirectTo);

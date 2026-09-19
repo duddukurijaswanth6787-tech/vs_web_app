@@ -96,11 +96,14 @@ export class CheckoutService {
   }
 
   private async validateAddress(addressId: string, userId: string) {
-    const profile = await this.prisma.customerProfile.findUnique({
+    let profile = await this.prisma.customerProfile.findUnique({
       where: { userId },
     });
-    if (!profile)
-      throw new BusinessException('Customer profile not found', 'CHECKOUT_001');
+    if (!profile) {
+      profile = await this.prisma.customerProfile.create({
+        data: { userId },
+      });
+    }
     const address = await this.prisma.customerAddress.findUnique({
       where: { id: addressId },
     });

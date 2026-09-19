@@ -334,6 +334,9 @@ export class AuthRepository {
         googleId: data.googleId,
         avatar: data.avatar,
         accountStatus: 'ACTIVE',
+        customerProfile: {
+          create: {},
+        },
       },
     });
   }

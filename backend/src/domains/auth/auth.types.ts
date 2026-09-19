@@ -31,6 +31,16 @@ export class RegisterDto {
   @IsOptional()
   @IsString()
   phone?: string;
+
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsString()
+  gender?: string;
+
+  @ApiPropertyOptional({ required: false })
+  @IsOptional()
+  @IsString()
+  referralCode?: string;
 }
 
 export class LoginDto {
