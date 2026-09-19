@@ -62,6 +62,8 @@ export function generateOfflineReceiptHtml(sale: PendingSale): string {
     .text-center { text-align: center; }
     .text-right { text-align: right; }
     .font-bold { font-weight: bold; }
+    .brand-logo-container { text-align: center; margin: 0 auto 4px; }
+    .brand-logo { max-width: 44mm; max-height: 14mm; object-fit: contain; margin: 0 auto; display: block; filter: grayscale(100%) contrast(140%); }
     .header { margin-bottom: 8px; }
     .brand-title { font-size: 14px; font-weight: bold; margin-bottom: 2px; }
     .subtitle { font-size: 10px; margin-bottom: 4px; }
@@ -89,6 +91,9 @@ export function generateOfflineReceiptHtml(sale: PendingSale): string {
   <div class="offline-banner">OFFLINE SALE -- PENDING SYNC<br/>Ref: ${sale.clientOrderNumber}</div>
 
   <div class="header text-center">
+    <div class="brand-logo-container">
+      <img src="/brand/logo-full.png" alt="${storeName}" class="brand-logo" onerror="this.style.display='none'" />
+    </div>
     <div class="brand-title">${storeName}</div>
     <div class="subtitle">${storeTagline}</div>
     <div>${address}</div>

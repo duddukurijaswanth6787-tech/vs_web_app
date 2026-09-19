@@ -147,6 +147,8 @@ export default function PrintersConfigPage() {
           .text-center { text-align: center; }
           .text-right { text-align: right; }
           .font-bold { font-weight: bold; }
+          .brand-logo-container { text-align: center; margin: 0 auto 4px; }
+          .brand-logo { max-width: 44mm; max-height: 14mm; object-fit: contain; margin: 0 auto; display: block; filter: grayscale(100%) contrast(140%); }
           .border-top { border-top: 1px dashed #000; margin: 6px 0; }
           .border-bottom { border-bottom: 1px dashed #000; margin: 6px 0; }
           .flex-between { display: flex; justify-content: space-between; }
@@ -155,9 +157,13 @@ export default function PrintersConfigPage() {
         </style>
       </head>
       <body>
-        <div class="text-center font-bold" style="font-size: 15px;">VASANTHI DESIGNERS</div>
-        <div class="text-center" style="font-size: 10px;">Boutique & Fashion Studio</div>
-        <div class="text-center" style="font-size: 10px;">Ph: +91 9999999999</div>
+        <div class="brand-logo-container">
+          <img src="/brand/logo-full.png" alt="VASANTHI'S SIGNATURE" class="brand-logo" onerror="this.style.display='none'" />
+        </div>
+        <div class="text-center font-bold" style="font-size: 15px;">VASANTHI&apos;S SIGNATURE</div>
+        <div class="text-center" style="font-size: 10px;">Premium Ethnic Wear &amp; Boutique</div>
+        <div class="text-center" style="font-size: 10px;">Road No. 12, Banjara Hills, Hyderabad</div>
+        <div class="text-center" style="font-size: 10px;">Ph: +91 98765 43210</div>
         <div class="border-top"></div>
         <div class="flex-between" style="font-size: 10px;">
           <span>INV: TEST-ORD-001</span>

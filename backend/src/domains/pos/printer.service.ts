@@ -15,6 +15,7 @@ interface StoreSettings {
   city: string;
   state: string;
   pincode: string;
+  logoUrl?: string;
 }
 
 const FALLBACK_SETTINGS: StoreSettings = {
@@ -22,14 +23,15 @@ const FALLBACK_SETTINGS: StoreSettings = {
   storeDescription: 'Premium ethnic wear & boutique',
   address: 'Road No. 12, Banjara Hills, Hyderabad - 500034',
   phone: '+91 98765 43210',
-  email: 'support@vsboutique.shop',
-  website: 'www.vsboutique.shop',
+  email: 'support@vasanthissignature.in',
+  website: 'vasanthissignature.in',
   // Left blank when the shop hasn't configured them yet -- rendering shows
   // a dash rather than fake data, so an unset GSTIN is visible on the paper.
   gstin: '',
   city: 'Hyderabad',
   state: 'Telangana',
   pincode: '500034',
+  logoUrl: 'https://vasanthissignature.in/brand/logo-full.png',
 };
 
 const BELOW_TWENTY = [
@@ -91,6 +93,7 @@ export class PrinterService {
       city: settings.companyCity || FALLBACK_SETTINGS.city,
       state: settings.companyState || FALLBACK_SETTINGS.state,
       pincode: settings.companyPincode || FALLBACK_SETTINGS.pincode,
+      logoUrl: settings.logo || FALLBACK_SETTINGS.logoUrl,
     };
   }
 
@@ -285,6 +288,8 @@ export class PrinterService {
     }
     .center { text-align: center; }
     .right { text-align: right; }
+    .brand-logo-container { text-align: center; margin-bottom: 4px; }
+    .brand-logo { max-width: 48mm; max-height: 16mm; object-fit: contain; margin: 0 auto; display: block; filter: grayscale(100%) contrast(140%); }
     .brand-mark { font-size: 16px; color: #0284c7; }
     .store-name-1 { font-family: Georgia, 'Times New Roman', serif; font-size: 20px; font-weight: 800; letter-spacing: 2px; margin-top: 2px; }
     .store-name-2 { font-family: Georgia, 'Times New Roman', serif; font-size: 13px; font-weight: 700; letter-spacing: 4px; margin-top: 1px; }
@@ -326,6 +331,13 @@ export class PrinterService {
 </head>
 <body>
   <div class="center">
+    ${
+      store.logoUrl
+        ? `<div class="brand-logo-container">
+      <img src="${store.logoUrl}" alt="${store.storeName}" class="brand-logo" onerror="this.style.display='none'" />
+    </div>`
+        : ''
+    }
     <div class="brand-mark">❖</div>
     <div class="store-name-1">${nameLine1.toUpperCase()}</div>
     ${nameLine2 ? `<div class="store-name-2">${nameLine2.toUpperCase()}</div>` : ''}

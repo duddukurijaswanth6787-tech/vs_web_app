@@ -45,6 +45,7 @@ describe('PrinterService (Phase 2)', () => {
     expect(html).toContain('ORD-20260811-POS101');
     expect(html).toContain("VASANTHI'S");
     expect(html).toContain('SIGNATURE');
+    expect(html).toContain('brand-logo');
     expect(html).toContain('Anjali');
     expect(html).toContain('₹1468.00');
     expect(html).toContain('UPI');
