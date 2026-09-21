@@ -551,77 +551,12 @@ class BluetoothPrinterService {
    * constant to match your printer's real resolution if so.
    */
   /**
-   * Prints `quantity` copies of a barcode sticker label using the printer's
-   * built-in ESC/POS commands (for standard 3-inch thermal printers) with real scannable
-   * Code 128 barcode lines, centered product details, formatted pricing, and auto-cut.
+   * Prints `quantity` copies of a barcode sticker label (e.g. 3x2" or 50x30mm)
+   * using the printer's built-in TSC/TSPL commands.
    */
   async printLabel(label: PrinterLabelData): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
-    }
-
-    const P = BluetoothEscposPrinter;
-    if (P) {
-      const copies = Math.max(1, label.quantity ?? 1);
-      const is80mm = (label.widthMm ?? 80) >= 80 || true; // standard 3-inch (80mm) ESC/POS thermal printer
-      await P.printerInit();
-      await P.setWidth(is80mm ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
-
-      const divider = '------------------------------------------------';
-
-      for (let i = 0; i < copies; i++) {
-        await P.printerInit();
-        await P.printerAlign(ALIGN.CENTER);
-
-        // Header / Store Name
-        await P.printText(`${divider}\n\r`, {});
-        await P.printText(`${(label.storeName || "VASANTHI'S SIGNATURE").toUpperCase()}\n\r`, {
-          widthtimes: 1,
-          heigthtimes: 1,
-        });
-        await P.printText(`${divider}\n\r`, {});
-
-        // Product Details
-        await P.printText(`${label.productName}\n\r`, {});
-        if (label.variantTitle) {
-          await P.printText(`${label.variantTitle}\n\r`, {});
-        }
-        await P.printText(`SKU: ${label.sku}\n\r\n\r`, {});
-
-        // Barcode (ESC/POS Code 128)
-        // nType: 73 (CODE128), nWidthX: 3, nHeight: 70, nHriFontType: 0 (Font A), nHriFontPosition: 2 (Below barcode)
-        if (P.printBarCode) {
-          try {
-            await P.printBarCode(label.barcode, 73, 3, 70, 0, 2);
-          } catch (err) {
-            console.warn('[BluetoothPrinter] printBarCode fallback:', err);
-            await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
-          }
-        } else {
-          await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
-        }
-
-        // Price Section
-        await P.printText('\n\r', {});
-        await P.printText(`PRICE: Rs.${label.price.toFixed(2)}\n\r`, {
-          widthtimes: 1,
-          heigthtimes: 1,
-        });
-        await P.printText(`${divider}\n\r`, {});
-
-        // Feed margin before cutting (4 lines)
-        await P.printText('\n\r\n\r\n\r\n\r', {});
-
-        // Clean single cut
-        if (P.cutPaper) {
-          try {
-            await P.cutPaper();
-          } catch (cutErr) {
-            console.warn('[BluetoothPrinter] cutPaper failed in printLabel:', cutErr);
-          }
-        }
-      }
-      return;
     }
 
     if (BluetoothTscPrinter) {
@@ -637,44 +572,47 @@ class BluetoothPrinterService {
         ? [
             {
               text: "VASANTHI'S SIGNATURE",
-              x: 50,
+              x: 55,
               y: 20,
               fonttype: FONTTYPE.FONT_3,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 2,
               yscal: 2,
+              bold: true,
             },
             {
               text: 'LUXURY COUTURE - HYDERABAD',
-              x: 130,
-              y: 65,
-              fonttype: FONTTYPE.FONT_1,
-              rotation: TSC_ROTATION.ROTATION_0,
-              xscal: 1,
-              yscal: 1,
-            },
-            {
-              text: '--------------------------------------------------------',
-              x: 20,
-              y: 90,
-              fonttype: FONTTYPE.FONT_1,
-              rotation: TSC_ROTATION.ROTATION_0,
-              xscal: 1,
-              yscal: 1,
-            },
-            {
-              text: label.productName.slice(0, 32),
-              x: 30,
-              y: 110,
+              x: 125,
+              y: 75,
               fonttype: FONTTYPE.FONT_2,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
               yscal: 1,
+              bold: true,
             },
             {
-              text: (label.variantTitle || 'Standard Size').slice(0, 32),
+              text: '--------------------------------------------------------',
+              x: 20,
+              y: 105,
+              fonttype: FONTTYPE.FONT_1,
+              rotation: TSC_ROTATION.ROTATION_0,
+              xscal: 1,
+              yscal: 1,
+            },
+            {
+              text: (label.productName || 'Designer Saree').slice(0, 30),
               x: 30,
-              y: 145,
+              y: 125,
+              fonttype: FONTTYPE.FONT_3,
+              rotation: TSC_ROTATION.ROTATION_0,
+              xscal: 1,
+              yscal: 1,
+              bold: true,
+            },
+            {
+              text: (label.variantTitle || 'Standard Size').slice(0, 30),
+              x: 30,
+              y: 160,
               fonttype: FONTTYPE.FONT_2,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
@@ -683,8 +621,8 @@ class BluetoothPrinterService {
             {
               text: `SKU: ${label.sku || 'VS-001'}`,
               x: 30,
-              y: 180,
-              fonttype: FONTTYPE.FONT_1,
+              y: 190,
+              fonttype: FONTTYPE.FONT_2,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
               yscal: 1,
@@ -692,8 +630,8 @@ class BluetoothPrinterService {
             {
               text: `MRP: Rs.${Math.round(label.price * 1.35)}`,
               x: 30,
-              y: 215,
-              fonttype: FONTTYPE.FONT_1,
+              y: 220,
+              fonttype: FONTTYPE.FONT_2,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
               yscal: 1,
@@ -701,16 +639,17 @@ class BluetoothPrinterService {
             {
               text: `PRICE: Rs.${label.price.toFixed(2)}`,
               x: 30,
-              y: 245,
+              y: 250,
               fonttype: FONTTYPE.FONT_3,
               rotation: TSC_ROTATION.ROTATION_0,
-              xscal: 2,
-              yscal: 2,
+              xscal: 1,
+              yscal: 1,
+              bold: true,
             },
             {
               text: '(Incl. of all taxes)',
-              x: 170,
-              y: 375,
+              x: 380,
+              y: 250,
               fonttype: FONTTYPE.FONT_1,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
@@ -763,10 +702,10 @@ class BluetoothPrinterService {
       const barcodeConfig = is3x2
         ? [
             {
-              x: 50,
-              y: 295,
+              x: 70,
+              y: 285,
               type: TSC_BARCODETYPE.CODE128,
-              height: 65,
+              height: 60,
               readable: READABLE.ENABLE,
               rotation: TSC_ROTATION.ROTATION_0,
               code: label.barcode || '890123456789',
@@ -800,6 +739,68 @@ class BluetoothPrinterService {
           text: textFields,
           barcode: barcodeConfig,
         });
+      }
+      return;
+    }
+
+    const P = BluetoothEscposPrinter;
+    if (P) {
+      const copies = Math.max(1, label.quantity ?? 1);
+      const is80mm = (label.widthMm ?? 80) >= 80 || true;
+      await P.printerInit();
+      await P.setWidth(is80mm ? PAGE_WIDTH.WIDTH_80 : PAGE_WIDTH.WIDTH_58);
+
+      const divider = '------------------------------------------------';
+
+      for (let i = 0; i < copies; i++) {
+        await P.printerInit();
+        await P.printerAlign(ALIGN.CENTER);
+
+        // Header / Store Name
+        await P.printText(`${divider}\n\r`, {});
+        await P.printText(`${(label.storeName || "VASANTHI'S SIGNATURE").toUpperCase()}\n\r`, {
+          widthtimes: 1,
+          heigthtimes: 1,
+        });
+        await P.printText(`${divider}\n\r`, {});
+
+        // Product Details
+        await P.printText(`${label.productName}\n\r`, {});
+        if (label.variantTitle) {
+          await P.printText(`${label.variantTitle}\n\r`, {});
+        }
+        await P.printText(`SKU: ${label.sku}\n\r\n\r`, {});
+
+        if (P.printBarCode) {
+          try {
+            await P.printBarCode(label.barcode, 73, 3, 70, 0, 2);
+          } catch (err) {
+            console.warn('[BluetoothPrinter] printBarCode fallback:', err);
+            await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
+          }
+        } else {
+          await P.printText(`* ${label.barcode} *\n\r`, { widthtimes: 1, heigthtimes: 0 });
+        }
+
+        // Price Section
+        await P.printText('\n\r', {});
+        await P.printText(`PRICE: Rs.${label.price.toFixed(2)}\n\r`, {
+          widthtimes: 1,
+          heigthtimes: 1,
+        });
+        await P.printText(`${divider}\n\r`, {});
+
+        // Feed margin before cutting (4 lines)
+        await P.printText('\n\r\n\r\n\r\n\r', {});
+
+        // Clean single cut
+        if (P.cutPaper) {
+          try {
+            await P.cutPaper();
+          } catch (cutErr) {
+            console.warn('[BluetoothPrinter] cutPaper failed in printLabel:', cutErr);
+          }
+        }
       }
       return;
     }
