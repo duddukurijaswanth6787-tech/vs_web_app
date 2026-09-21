@@ -84,27 +84,46 @@ export class MeOrdersController {
     });
 
     const defaultTimeline = [
-      { status: 'Order Placed', time: order.createdAt ? new Date(order.createdAt).toISOString() : '' },
+      {
+        status: 'Order Placed',
+        time: order.createdAt ? new Date(order.createdAt).toISOString() : '',
+      },
     ];
-    if (['PROCESSING', 'CONFIRMED', 'SHIPPED', 'DELIVERED'].includes(order.status)) {
-      defaultTimeline.push({ status: 'Processing & Packed', time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '' });
+    if (
+      ['PROCESSING', 'CONFIRMED', 'SHIPPED', 'DELIVERED'].includes(order.status)
+    ) {
+      defaultTimeline.push({
+        status: 'Processing & Packed',
+        time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '',
+      });
     }
     if (['SHIPPED', 'DELIVERED'].includes(order.status)) {
-      defaultTimeline.push({ status: `Shipped via ${order.courierPartner || 'Delhivery'}`, time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '' });
+      defaultTimeline.push({
+        status: `Shipped via ${order.courierPartner || 'Delhivery'}`,
+        time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '',
+      });
     }
     if (order.status === 'DELIVERED') {
-      defaultTimeline.push({ status: 'Delivered', time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '' });
+      defaultTimeline.push({
+        status: 'Delivered',
+        time: order.updatedAt ? new Date(order.updatedAt).toISOString() : '',
+      });
     }
 
-    const timeline = (order.timeline && order.timeline.length > 0)
-      ? order.timeline.map((t: any) => ({
-          status: t.status,
-          time: t.createdAt ? new Date(t.createdAt).toISOString() : '',
-        }))
-      : defaultTimeline;
+    const timeline =
+      order.timeline && order.timeline.length > 0
+        ? order.timeline.map((t: any) => ({
+            status: t.status,
+            time: t.createdAt ? new Date(t.createdAt).toISOString() : '',
+          }))
+        : defaultTimeline;
 
     const trackingNumber = order.waybillNumber || null;
-    const trackingUrl = order.trackingUrl || (trackingNumber ? `https://www.delhivery.com/track/package/${trackingNumber}` : '');
+    const trackingUrl =
+      order.trackingUrl ||
+      (trackingNumber
+        ? `https://www.delhivery.com/track/package/${trackingNumber}`
+        : '');
 
     return ResponseBuilder.success({
       orderNumber: order.orderNumber,

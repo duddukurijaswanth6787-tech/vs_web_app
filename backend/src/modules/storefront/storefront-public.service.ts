@@ -64,7 +64,13 @@ export class StorefrontPublicService {
           }),
           this.prisma.appSetting.findFirst({
             where: {
-              key: { in: ['cod_enabled', 'payment_cod_enabled', 'payment.cod_enabled'] },
+              key: {
+                in: [
+                  'cod_enabled',
+                  'payment_cod_enabled',
+                  'payment.cod_enabled',
+                ],
+              },
             },
           }),
           this.prisma.appSetting.findFirst({
@@ -79,12 +85,19 @@ export class StorefrontPublicService {
           }),
           this.prisma.appSetting.findFirst({
             where: {
-              key: { in: ['shipping_free_threshold_enabled', 'free_shipping_threshold_enabled'] },
+              key: {
+                in: [
+                  'shipping_free_threshold_enabled',
+                  'free_shipping_threshold_enabled',
+                ],
+              },
             },
           }),
           this.prisma.appSetting.findFirst({
             where: {
-              key: { in: ['shipping_free_threshold', 'free_shipping_threshold'] },
+              key: {
+                in: ['shipping_free_threshold', 'free_shipping_threshold'],
+              },
             },
           }),
         ]);
@@ -152,7 +165,9 @@ export class StorefrontPublicService {
           shippingFreeThreshold,
           shipping_fee_enabled: shippingFeeEnabled ? 'true' : 'false',
           shipping_flat_fee: String(shippingFlatFee),
-          shipping_free_threshold_enabled: shippingFreeThresholdEnabled ? 'true' : 'false',
+          shipping_free_threshold_enabled: shippingFreeThresholdEnabled
+            ? 'true'
+            : 'false',
           shipping_free_threshold: String(shippingFreeThreshold),
         };
       },

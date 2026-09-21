@@ -555,7 +555,9 @@ export class ProductsService {
     }
     if (brandId) updateData.brand = { connect: { id: brandId } };
     if (dto.sizeChartTemplateId !== undefined) {
-      updateData.sizeChartTemplateId = dto.sizeChartTemplateId ? dto.sizeChartTemplateId : null;
+      updateData.sizeChartTemplateId = dto.sizeChartTemplateId
+        ? dto.sizeChartTemplateId
+        : null;
     }
     // Kept in sync with `channel` for any older code still reading this flag directly.
     if (dto.channel) updateData.isOnlineOnly = dto.channel === 'ONLINE';

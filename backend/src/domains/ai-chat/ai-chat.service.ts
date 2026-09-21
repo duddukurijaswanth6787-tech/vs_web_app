@@ -186,7 +186,7 @@ export class AiChatService {
         const messages: LlmMessage[] = [
           { role: 'system', content: systemPrompt },
           ...history.slice(-10).map((m) => ({
-            role: (m.role === 'ASSISTANT' ? 'assistant' : 'user') as 'assistant' | 'user',
+            role: (m.role === 'ASSISTANT' ? 'assistant' : 'user') as LlmMessage['role'],
             content: m.content,
           })),
           { role: 'user', content: userMessage },

@@ -114,13 +114,13 @@ export class CartService {
   }
 
   private async validateProduct(productId: string, variantId?: string) {
-    const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(productId);
+    const isUuid =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+        productId,
+      );
     const product = await this.prisma.product.findFirst({
       where: {
-        OR: [
-          ...(isUuid ? [{ id: productId }] : []),
-          { slug: productId },
-        ],
+        OR: [...(isUuid ? [{ id: productId }] : []), { slug: productId }],
         deletedAt: null,
       },
       include: {
@@ -132,7 +132,8 @@ export class CartService {
     if (product.status !== 'ACTIVE')
       throw new BusinessException('Product is not available', 'CART_004');
 
-    const cleanVariantId = variantId && variantId.trim() ? variantId.trim() : undefined;
+    const cleanVariantId =
+      variantId && variantId.trim() ? variantId.trim() : undefined;
     const resolvedVariantId = cleanVariantId ?? product.variants[0]?.id;
     if (resolvedVariantId) {
       const inventory = await this.prisma.inventory.findUnique({

@@ -208,7 +208,9 @@ export class AppSettingService {
       shippingFreeThreshold,
       shipping_fee_enabled: shippingFeeEnabled ? 'true' : 'false',
       shipping_flat_fee: String(shippingFlatFee),
-      shipping_free_threshold_enabled: shippingFreeThresholdEnabled ? 'true' : 'false',
+      shipping_free_threshold_enabled: shippingFreeThresholdEnabled
+        ? 'true'
+        : 'false',
       shipping_free_threshold: String(shippingFreeThreshold),
     };
   }

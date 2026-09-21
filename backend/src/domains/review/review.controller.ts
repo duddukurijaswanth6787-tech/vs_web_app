@@ -35,7 +35,9 @@ export class ReviewController {
   }
 
   @Get('product/:productId')
-  @ApiOperation({ summary: 'Get approved reviews for a product with rating summary' })
+  @ApiOperation({
+    summary: 'Get approved reviews for a product with rating summary',
+  })
   async findByProductId(
     @Param('productId') productId: string,
     @Query() query: ReviewQueryDto,

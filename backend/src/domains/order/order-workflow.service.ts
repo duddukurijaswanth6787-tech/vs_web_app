@@ -91,6 +91,28 @@ export class OrderWorkflowService {
         userId: order.customer?.userId,
       });
     }
+
+    // Notify Super Admin & Store Managers of the new confirmed order
+    const customerName =
+      order.addresses?.[0]?.fullName ||
+      (order.customer?.user
+        ? `${order.customer.user.firstName} ${order.customer.user.lastName || ''}`.trim()
+        : 'Customer');
+
+    await this.notificationService
+      .notifyAdmins(
+        'ORDER_CREATED',
+        `New Order: #${order.orderNumber}`,
+        `New order #${order.orderNumber} for ₹${Number(order.grandTotal).toLocaleString('en-IN')} placed by ${customerName}.`,
+        {
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          grandTotal: Number(order.grandTotal),
+          channel: order.channel,
+          status: order.status,
+        },
+      )
+      .catch(() => {});
   }
 
   validateTransition(currentStatus: string, nextStatus: string): void {

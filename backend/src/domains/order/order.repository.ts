@@ -36,11 +36,27 @@ export class OrderRepository {
       where.OR = [
         { orderNumber: { contains: search, mode: 'insensitive' } },
         { notes: { contains: search, mode: 'insensitive' } },
-        { addresses: { some: { fullName: { contains: search, mode: 'insensitive' } } } },
-        { addresses: { some: { phone: { contains: search, mode: 'insensitive' } } } },
+        {
+          addresses: {
+            some: { fullName: { contains: search, mode: 'insensitive' } },
+          },
+        },
+        {
+          addresses: {
+            some: { phone: { contains: search, mode: 'insensitive' } },
+          },
+        },
         { customer: { phone: { contains: search, mode: 'insensitive' } } },
-        { customer: { user: { firstName: { contains: search, mode: 'insensitive' } } } },
-        { customer: { user: { lastName: { contains: search, mode: 'insensitive' } } } },
+        {
+          customer: {
+            user: { firstName: { contains: search, mode: 'insensitive' } },
+          },
+        },
+        {
+          customer: {
+            user: { lastName: { contains: search, mode: 'insensitive' } },
+          },
+        },
       ];
     }
     if (channel) {

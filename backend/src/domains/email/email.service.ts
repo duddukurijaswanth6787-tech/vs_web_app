@@ -11,7 +11,8 @@ import {
 } from './email.types';
 
 const STORE_NAME = "Vasanthi's Signature";
-const STORE_ADDRESS = 'Road No. 12, Banjara Hills, Hyderabad - 500034, Telangana, India';
+const STORE_ADDRESS =
+  'Road No. 12, Banjara Hills, Hyderabad - 500034, Telangana, India';
 const STORE_PHONE = '+91 98765 43210';
 const DEFAULT_FROM = 'orders@vasanthissignature.in';
 
@@ -26,16 +27,25 @@ export class EmailService {
     private readonly auditService: AuditService,
   ) {}
 
-  private async getSetting(key: string, defaultVal: string = ''): Promise<string> {
+  private async getSetting(
+    key: string,
+    defaultVal: string = '',
+  ): Promise<string> {
     try {
-      const setting = await this.prisma.appSetting.findUnique({ where: { key } });
+      const setting = await this.prisma.appSetting.findUnique({
+        where: { key },
+      });
       return setting?.value ?? defaultVal;
     } catch {
       return defaultVal;
     }
   }
 
-  private async setSetting(key: string, value: string, description?: string): Promise<void> {
+  private async setSetting(
+    key: string,
+    value: string,
+    description?: string,
+  ): Promise<void> {
     await this.prisma.appSetting.upsert({
       where: { key },
       update: { value, description: description || undefined },
@@ -60,11 +70,19 @@ export class EmailService {
     const dbUser = await this.getSetting('email_smtp_user');
     const dbPass = await this.getSetting('email_smtp_password');
 
-    const host = dbHost || this.configService.get<string>('app.email.smtpHost', '');
-    const port = dbPort ? parseInt(dbPort, 10) : this.configService.get<number>('app.email.smtpPort', 587);
-    const secure = dbSecure !== '' ? dbSecure === 'true' : this.configService.get<boolean>('app.email.smtpSecure', false);
-    const user = dbUser || this.configService.get<string>('app.email.smtpUser', '');
-    const pass = dbPass || this.configService.get<string>('app.email.smtpPassword', '');
+    const host =
+      dbHost || this.configService.get<string>('app.email.smtpHost', '');
+    const port = dbPort
+      ? parseInt(dbPort, 10)
+      : this.configService.get<number>('app.email.smtpPort', 587);
+    const secure =
+      dbSecure !== ''
+        ? dbSecure === 'true'
+        : this.configService.get<boolean>('app.email.smtpSecure', false);
+    const user =
+      dbUser || this.configService.get<string>('app.email.smtpUser', '');
+    const pass =
+      dbPass || this.configService.get<string>('app.email.smtpPassword', '');
 
     this.transporter = nodemailer.createTransport({
       host,
@@ -79,8 +97,12 @@ export class EmailService {
     const dbName = await this.getSetting('email_from_name');
     const dbAddress = await this.getSetting('email_from_address');
 
-    const name = dbName || this.configService.get<string>('app.email.fromName', STORE_NAME);
-    const address = dbAddress || this.configService.get<string>('app.email.fromAddress', DEFAULT_FROM);
+    const name =
+      dbName ||
+      this.configService.get<string>('app.email.fromName', STORE_NAME);
+    const address =
+      dbAddress ||
+      this.configService.get<string>('app.email.fromAddress', DEFAULT_FROM);
     return `"${name}" <${address}>`;
   }
 
@@ -112,17 +134,39 @@ export class EmailService {
       this.getSetting('email_invoice_pdf_enabled'),
     ]);
 
-    const enabled = dbEnabled !== '' ? dbEnabled === 'true' : this.configService.get<boolean>('app.features.email', false);
+    const enabled =
+      dbEnabled !== ''
+        ? dbEnabled === 'true'
+        : this.configService.get<boolean>('app.features.email', false);
     const provider = dbProvider || 'AMAZON_SES';
-    const smtpHost = dbHost || this.configService.get<string>('app.email.smtpHost', 'email-smtp.ap-south-1.amazonaws.com');
-    const smtpPort = dbPort ? parseInt(dbPort, 10) : this.configService.get<number>('app.email.smtpPort', 587);
-    const smtpSecure = dbSecure !== '' ? dbSecure === 'true' : this.configService.get<boolean>('app.email.smtpSecure', false);
-    const smtpUser = dbUser || this.configService.get<string>('app.email.smtpUser', '');
-    const hasPassword = Boolean(dbPass || this.configService.get<string>('app.email.smtpPassword', ''));
-    const fromAddress = dbFromAddress || this.configService.get<string>('app.email.fromAddress', DEFAULT_FROM);
-    const fromName = dbFromName || this.configService.get<string>('app.email.fromName', STORE_NAME);
-    const enableOrderConfirmation = dbOrderConf !== '' ? dbOrderConf === 'true' : true;
-    const enableInvoicePdf = dbInvoicePdf !== '' ? dbInvoicePdf === 'true' : true;
+    const smtpHost =
+      dbHost ||
+      this.configService.get<string>(
+        'app.email.smtpHost',
+        'email-smtp.ap-south-1.amazonaws.com',
+      );
+    const smtpPort = dbPort
+      ? parseInt(dbPort, 10)
+      : this.configService.get<number>('app.email.smtpPort', 587);
+    const smtpSecure =
+      dbSecure !== ''
+        ? dbSecure === 'true'
+        : this.configService.get<boolean>('app.email.smtpSecure', false);
+    const smtpUser =
+      dbUser || this.configService.get<string>('app.email.smtpUser', '');
+    const hasPassword = Boolean(
+      dbPass || this.configService.get<string>('app.email.smtpPassword', ''),
+    );
+    const fromAddress =
+      dbFromAddress ||
+      this.configService.get<string>('app.email.fromAddress', DEFAULT_FROM);
+    const fromName =
+      dbFromName ||
+      this.configService.get<string>('app.email.fromName', STORE_NAME);
+    const enableOrderConfirmation =
+      dbOrderConf !== '' ? dbOrderConf === 'true' : true;
+    const enableInvoicePdf =
+      dbInvoicePdf !== '' ? dbInvoicePdf === 'true' : true;
 
     return {
       enabled,
@@ -140,39 +184,82 @@ export class EmailService {
   }
 
   /** Update email settings from Super Admin */
-  async updateConfig(dto: UpdateEmailConfigDto, actorId?: string): Promise<EmailConfigResponse> {
+  async updateConfig(
+    dto: UpdateEmailConfigDto,
+    actorId?: string,
+  ): Promise<EmailConfigResponse> {
     if (dto.enabled !== undefined) {
-      await this.setSetting('email_enabled', String(dto.enabled), 'Transactional Email Master Toggle');
+      await this.setSetting(
+        'email_enabled',
+        String(dto.enabled),
+        'Transactional Email Master Toggle',
+      );
     }
     if (dto.provider !== undefined) {
-      await this.setSetting('email_provider', dto.provider, 'Email Provider (Amazon SES / SendGrid / Custom)');
+      await this.setSetting(
+        'email_provider',
+        dto.provider,
+        'Email Provider (Amazon SES / SendGrid / Custom)',
+      );
     }
     if (dto.smtpHost !== undefined) {
       await this.setSetting('email_smtp_host', dto.smtpHost, 'SMTP Host');
     }
     if (dto.smtpPort !== undefined) {
-      await this.setSetting('email_smtp_port', String(dto.smtpPort), 'SMTP Port');
+      await this.setSetting(
+        'email_smtp_port',
+        String(dto.smtpPort),
+        'SMTP Port',
+      );
     }
     if (dto.smtpSecure !== undefined) {
-      await this.setSetting('email_smtp_secure', String(dto.smtpSecure), 'SMTP Secure TLS');
+      await this.setSetting(
+        'email_smtp_secure',
+        String(dto.smtpSecure),
+        'SMTP Secure TLS',
+      );
     }
     if (dto.smtpUser !== undefined) {
-      await this.setSetting('email_smtp_user', dto.smtpUser, 'SMTP Username / Access Key ID');
+      await this.setSetting(
+        'email_smtp_user',
+        dto.smtpUser,
+        'SMTP Username / Access Key ID',
+      );
     }
     if (dto.smtpPassword !== undefined && dto.smtpPassword.trim() !== '') {
-      await this.setSetting('email_smtp_password', dto.smtpPassword, 'SMTP Password / Secret Key');
+      await this.setSetting(
+        'email_smtp_password',
+        dto.smtpPassword,
+        'SMTP Password / Secret Key',
+      );
     }
     if (dto.fromAddress !== undefined) {
-      await this.setSetting('email_from_address', dto.fromAddress, 'Default Sender Email Address');
+      await this.setSetting(
+        'email_from_address',
+        dto.fromAddress,
+        'Default Sender Email Address',
+      );
     }
     if (dto.fromName !== undefined) {
-      await this.setSetting('email_from_name', dto.fromName, 'Default Sender Name');
+      await this.setSetting(
+        'email_from_name',
+        dto.fromName,
+        'Default Sender Name',
+      );
     }
     if (dto.enableOrderConfirmation !== undefined) {
-      await this.setSetting('email_order_confirmation_enabled', String(dto.enableOrderConfirmation), 'Send automated order confirmation emails');
+      await this.setSetting(
+        'email_order_confirmation_enabled',
+        String(dto.enableOrderConfirmation),
+        'Send automated order confirmation emails',
+      );
     }
     if (dto.enableInvoicePdf !== undefined) {
-      await this.setSetting('email_invoice_pdf_enabled', String(dto.enableInvoicePdf), 'Generate & attach PDF invoice in emails');
+      await this.setSetting(
+        'email_invoice_pdf_enabled',
+        String(dto.enableInvoicePdf),
+        'Generate & attach PDF invoice in emails',
+      );
     }
 
     // Reset cached transporter so next send uses updated credentials immediately
@@ -261,7 +348,10 @@ export class EmailService {
 
       return updated;
     } catch (err: any) {
-      this.logger.error(`Email send failed: ${dto.to} / ${dto.template}`, err?.stack);
+      this.logger.error(
+        `Email send failed: ${dto.to} / ${dto.template}`,
+        err?.stack,
+      );
       return this.prisma.emailLog.update({
         where: { id: log.id },
         data: { status: 'FAILED', error: err?.message ?? 'Email send failed' },
@@ -270,7 +360,10 @@ export class EmailService {
   }
 
   private layout(bodyHtml: string): string {
-    const frontendUrl = this.configService.get<string>('app.frontendUrl', 'https://vasanthissignature.in');
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'https://vasanthissignature.in',
+    );
     const logoUrl = `${frontendUrl}/brand/logo-full.png`;
     return `
 <!DOCTYPE html>
@@ -359,8 +452,15 @@ export class EmailService {
     });
   }
 
-  async sendWelcomeEmail(to: string, firstName: string | undefined, userId?: string) {
-    const frontendUrl = this.configService.get<string>('app.frontendUrl', 'https://vasanthissignature.in');
+  async sendWelcomeEmail(
+    to: string,
+    firstName: string | undefined,
+    userId?: string,
+  ) {
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'https://vasanthissignature.in',
+    );
     const html = this.layout(`
       <h2 style="margin:0 0 12px;color:#0f172a;font-size:18px;">Welcome to ${STORE_NAME}${firstName ? `, ${firstName}` : ''}!</h2>
       <p>Thank you for creating an account with ${STORE_NAME}. We are delighted to bring you exclusive designer sarees, bespoke lehengas, and handcrafted couture.</p>
@@ -396,7 +496,10 @@ export class EmailService {
     shippingAddress?: string;
     deliverySlot?: string;
   }) {
-    const frontendUrl = this.configService.get<string>('app.frontendUrl', 'https://vasanthissignature.in');
+    const frontendUrl = this.configService.get<string>(
+      'app.frontendUrl',
+      'https://vasanthissignature.in',
+    );
     const trackUrl = `${frontendUrl}/orders/track/${encodeURIComponent(params.orderNumber)}`;
     const invoiceUrl = `${frontendUrl}/orders/details/${encodeURIComponent(params.orderNumber)}`;
 

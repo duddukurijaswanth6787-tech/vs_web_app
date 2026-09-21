@@ -65,7 +65,10 @@ export class DelhiveryService {
       '0bfb0bcc34ee8ff06f6e06d36b40c96830d20f44';
   }
 
-  private static readonly PIN_CACHE = new Map<string, DelhiveryPincodeResponse>();
+  private static readonly PIN_CACHE = new Map<
+    string,
+    DelhiveryPincodeResponse
+  >();
 
   private resolveQuickRegion(pin: string): { city: string; state: string } {
     const p3 = pin.slice(0, 3);
@@ -73,7 +76,8 @@ export class DelhiveryService {
 
     // Telangana
     if (p3 === '500') return { city: 'Hyderabad', state: 'TS' };
-    if (p3 === '501' || p3 === '502') return { city: 'Rangareddy / Sangareddy', state: 'TS' };
+    if (p3 === '501' || p3 === '502')
+      return { city: 'Rangareddy / Sangareddy', state: 'TS' };
     if (p3 === '503') return { city: 'Nizamabad', state: 'TS' };
     if (p3 === '504') return { city: 'Adilabad', state: 'TS' };
     if (p3 === '505') return { city: 'Karimnagar', state: 'TS' };
@@ -100,21 +104,24 @@ export class DelhiveryService {
     if (p3 === '518') return { city: 'Kurnool', state: 'AP' };
 
     // Karnataka
-    if (p3 === '560' || p3 === '561' || p3 === '562') return { city: 'Bengaluru', state: 'KA' };
+    if (p3 === '560' || p3 === '561' || p3 === '562')
+      return { city: 'Bengaluru', state: 'KA' };
     if (p3 === '570' || p3 === '571') return { city: 'Mysuru', state: 'KA' };
     if (p3 === '575') return { city: 'Mangalore', state: 'KA' };
     if (p3 === '580') return { city: 'Hubballi-Dharwad', state: 'KA' };
     if (p3 === '590') return { city: 'Belagavi', state: 'KA' };
 
     // Tamil Nadu
-    if (p3 === '600' || p3 === '601' || p3 === '602' || p3 === '603') return { city: 'Chennai', state: 'TN' };
+    if (p3 === '600' || p3 === '601' || p3 === '602' || p3 === '603')
+      return { city: 'Chennai', state: 'TN' };
     if (p3 === '641') return { city: 'Coimbatore', state: 'TN' };
     if (p3 === '625') return { city: 'Madurai', state: 'TN' };
     if (p3 === '620') return { city: 'Tiruchirappalli', state: 'TN' };
     if (p3 === '636') return { city: 'Salem', state: 'TN' };
 
     // Kerala
-    if (p3 === '682' || p3 === '683') return { city: 'Kochi / Ernakulam', state: 'KL' };
+    if (p3 === '682' || p3 === '683')
+      return { city: 'Kochi / Ernakulam', state: 'KL' };
     if (p3 === '695') return { city: 'Thiruvananthapuram', state: 'KL' };
     if (p3 === '673') return { city: 'Kozhikode', state: 'KL' };
     if (p3 === '680') return { city: 'Thrissur', state: 'KL' };
@@ -486,7 +493,8 @@ export class DelhiveryService {
           data: {
             orderId: order.id,
             status: order.status,
-            message: `Delhivery Scan (${location}): ${rawStatus} - ${instructions}`.trim(),
+            message:
+              `Delhivery Scan (${location}): ${rawStatus} - ${instructions}`.trim(),
             createdBy: 'DELHIVERY_WEBHOOK',
           },
         });

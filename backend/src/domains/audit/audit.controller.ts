@@ -52,9 +52,13 @@ export class AuditController {
   }
 
   @Post('prune')
-  @ApiOperation({ summary: 'Prune audit logs older than N days (default 3 days)' })
+  @ApiOperation({
+    summary: 'Prune audit logs older than N days (default 3 days)',
+  })
   async pruneLogs(@Query('days') days?: string) {
     const parsedDays = days ? Math.max(1, parseInt(days, 10)) : 3;
-    return ResponseBuilder.success(await this.auditService.purgeOlderThan(parsedDays));
+    return ResponseBuilder.success(
+      await this.auditService.purgeOlderThan(parsedDays),
+    );
   }
 }

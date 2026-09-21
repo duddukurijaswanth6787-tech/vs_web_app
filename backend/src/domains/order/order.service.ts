@@ -189,6 +189,13 @@ export class OrderService {
         );
         throw err;
       }
+    } else if (status === 'CANCELLED') {
+      if (order.status === 'PENDING') {
+        await this.workflow.releaseInventory(id, userId);
+      } else {
+        // For CONFIRMED, PROCESSING, PACKING, etc. where stock was deducted, restock back to inventory
+        await this.workflow.restoreInventory(id, userId);
+      }
     }
 
     return this.findById(id);

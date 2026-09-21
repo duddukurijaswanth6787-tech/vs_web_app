@@ -1,5 +1,15 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEmail, IsString, IsOptional, IsUUID, IsBoolean, IsInt, Min, Max, IsArray } from 'class-validator';
+import {
+  IsEmail,
+  IsString,
+  IsOptional,
+  IsUUID,
+  IsBoolean,
+  IsInt,
+  Min,
+  Max,
+  IsArray,
+} from 'class-validator';
 
 export class EmailAttachmentDto {
   @ApiProperty()
@@ -127,4 +137,3 @@ export interface EmailConfigResponse {
   enableOrderConfirmation: boolean;
   enableInvoicePdf: boolean;
 }
-

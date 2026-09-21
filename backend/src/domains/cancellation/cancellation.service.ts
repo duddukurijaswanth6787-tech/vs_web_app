@@ -60,13 +60,19 @@ export class CancellationService {
       createdBy: userId,
     });
 
+    const previousStatus = order.status;
     await this.workflow.transition(
       dto.orderId,
       'CANCELLED',
       userId,
       `Cancelled: ${dto.reason}`,
     );
-    await this.workflow.releaseInventory(dto.orderId, userId);
+
+    if (previousStatus === 'PENDING') {
+      await this.workflow.releaseInventory(dto.orderId, userId);
+    } else {
+      await this.workflow.restoreInventory(dto.orderId, userId);
+    }
 
     await this.auditService.log({
       action: 'ORDER_CANCELLED',

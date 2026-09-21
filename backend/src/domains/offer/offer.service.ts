@@ -131,14 +131,18 @@ export class OfferService {
         continue;
 
       let discount = 0;
-      if (
-        offer.type === 'PRODUCT' ||
-        offer.type === 'FESTIVAL' ||
-        offer.type === 'FLASH_SALE'
-      ) {
-        discount = applicableTotal * (Number(offer.value) / 100);
+      const val = Number(offer.value);
+      const isFixed =
+        offer.type === 'FIXED' ||
+        offer.type === 'FLAT' ||
+        offer.type === 'AMOUNT' ||
+        val > 100;
+
+      if (isFixed) {
+        discount = Math.min(val, applicableTotal);
       } else {
-        discount = applicableTotal * (Number(offer.value) / 100);
+        const pct = Math.min(Math.max(val, 0), 100);
+        discount = (applicableTotal * pct) / 100;
       }
       if (offer.maxDiscountAmount) {
         discount = Math.min(discount, Number(offer.maxDiscountAmount));
@@ -149,8 +153,8 @@ export class OfferService {
       }
     }
 
-    if (!bestOffer || bestDiscount === 0) return null;
-    return { offerId: bestOffer.id, discount: bestDiscount };
+    if (!bestOffer || bestDiscount <= 0) return null;
+    return { offerId: bestOffer.id, discount: Math.round(bestDiscount * 100) / 100 };
   }
 
   private isItemApplicable(

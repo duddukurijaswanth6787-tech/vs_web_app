@@ -119,21 +119,34 @@ export class CheckoutService {
   ): Promise<number> {
     if (freeShipping) return 0;
 
-    const [shippingFeeEnabledSetting, shippingFlatFeeSetting, freeThresholdEnabledSetting, freeThresholdSetting] =
-      await Promise.all([
-        this.prisma.appSetting.findFirst({
-          where: { key: { in: ['shipping_fee_enabled', 'shipping_enabled'] } },
-        }),
-        this.prisma.appSetting.findFirst({
-          where: { key: { in: ['shipping_flat_fee', 'shipping_fee'] } },
-        }),
-        this.prisma.appSetting.findFirst({
-          where: { key: { in: ['shipping_free_threshold_enabled', 'free_shipping_threshold_enabled'] } },
-        }),
-        this.prisma.appSetting.findFirst({
-          where: { key: { in: ['shipping_free_threshold', 'free_shipping_threshold'] } },
-        }),
-      ]);
+    const [
+      shippingFeeEnabledSetting,
+      shippingFlatFeeSetting,
+      freeThresholdEnabledSetting,
+      freeThresholdSetting,
+    ] = await Promise.all([
+      this.prisma.appSetting.findFirst({
+        where: { key: { in: ['shipping_fee_enabled', 'shipping_enabled'] } },
+      }),
+      this.prisma.appSetting.findFirst({
+        where: { key: { in: ['shipping_flat_fee', 'shipping_fee'] } },
+      }),
+      this.prisma.appSetting.findFirst({
+        where: {
+          key: {
+            in: [
+              'shipping_free_threshold_enabled',
+              'free_shipping_threshold_enabled',
+            ],
+          },
+        },
+      }),
+      this.prisma.appSetting.findFirst({
+        where: {
+          key: { in: ['shipping_free_threshold', 'free_shipping_threshold'] },
+        },
+      }),
+    ]);
 
     const isShippingFeeEnabled = shippingFeeEnabledSetting
       ? shippingFeeEnabledSetting.value === 'true'
@@ -152,7 +165,11 @@ export class CheckoutService {
       : 0;
 
     // If threshold enabled and subtotal qualifies
-    if (freeThresholdEnabled && freeThreshold > 0 && subtotal >= freeThreshold) {
+    if (
+      freeThresholdEnabled &&
+      freeThreshold > 0 &&
+      subtotal >= freeThreshold
+    ) {
       return 0;
     }
 
@@ -238,7 +255,11 @@ export class CheckoutService {
         productId: item.productId,
         productName: product.name,
         variantId: item.variantId ?? undefined,
-        variantName: item.variant?.title ?? item.variantTitle ?? item.variantName ?? undefined,
+        variantName:
+          item.variant?.title ??
+          item.variantTitle ??
+          item.variantName ??
+          undefined,
         productImage: primaryImage,
         quantity: item.quantity,
         unitPrice,
@@ -259,7 +280,8 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const { items, brandByProduct, productMap } = await this.buildItems(activeItems);
+    const { items, brandByProduct, productMap } =
+      await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
@@ -307,7 +329,8 @@ export class CheckoutService {
       subtotal,
       freeShipping,
     );
-    const grandTotal = Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
+    const grandTotal =
+      Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     return {
       items,
@@ -332,7 +355,8 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const { items, brandByProduct, productMap } = await this.buildItems(activeItems);
+    const { items, brandByProduct, productMap } =
+      await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
@@ -381,7 +405,8 @@ export class CheckoutService {
       subtotal,
       freeShipping,
     );
-    const grandTotal = Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
+    const grandTotal =
+      Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     const orderNumber = await this.workflow.generateOrderNumber();
 
