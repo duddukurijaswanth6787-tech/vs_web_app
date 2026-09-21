@@ -7,9 +7,14 @@ import {
   useCreateShippingMethod,
   useCreateShippingZone,
 } from '@/features/shipping/shipping.hooks';
+import {
+  useSettings,
+  useCreateSetting,
+  useUpdateSetting,
+} from '@/features/settings/settings.hooks';
 import { RateType, ShippingCalculationResponse } from '@/features/shipping/shipping.types';
 import { SectionLoader, PageError, ButtonLoader } from '@/components/feedback/FeedbackStates';
-import { Plus, Calculator, HelpCircle } from 'lucide-react';
+import { Plus, Calculator, HelpCircle, Truck, CheckCircle2, ShieldCheck, DollarSign, Sparkles, Loader2 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -18,6 +23,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { categorizeApiError } from '@/lib/api-error-handler';
 import { apiClient } from '@/lib/api/client';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { useToast } from '@/components/toast/ToastProvider';
 
 // Schemas for forms
 const methodSchema = z.object({
@@ -44,7 +50,73 @@ type ZoneFormOutput = z.output<typeof zoneSchema>;
 
 export default function ShippingPage() {
   const { user } = useAuth();
-  const [activeTab, setActiveTab] = useState<'METHODS' | 'ZONES' | 'CALCULATOR'>('METHODS');
+  const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<'DELIVERY_SETTINGS' | 'METHODS' | 'ZONES' | 'CALCULATOR'>('DELIVERY_SETTINGS');
+
+  // App Settings for Delivery & Shipping Fee
+  const { data: allSettingsData, isLoading: isLoadingSettings, refetch: refetchSettings } = useSettings({ limit: 500 });
+  const createSettingMut = useCreateSetting();
+  const updateSettingMut = useUpdateSetting();
+
+  const settingsList = allSettingsData?.data || [];
+  const shippingFeeEnabledSetting = settingsList.find(s => s.key === 'shipping_fee_enabled' || s.key === 'shipping_enabled');
+  const shippingFlatFeeSetting = settingsList.find(s => s.key === 'shipping_flat_fee' || s.key === 'shipping_fee');
+  const shippingFreeThresholdEnabledSetting = settingsList.find(s => s.key === 'shipping_free_threshold_enabled' || s.key === 'free_shipping_threshold_enabled');
+  const shippingFreeThresholdSetting = settingsList.find(s => s.key === 'shipping_free_threshold' || s.key === 'free_shipping_threshold');
+
+  // Local state for delivery charge rules
+  const [shippingFeeEnabled, setShippingFeeEnabled] = useState<boolean>(false);
+  const [shippingFlatFee, setShippingFlatFee] = useState<number>(0);
+  const [freeThresholdEnabled, setFreeThresholdEnabled] = useState<boolean>(false);
+  const [freeThreshold, setFreeThreshold] = useState<number>(999);
+  const [isSavingDeliverySettings, setIsSavingDeliverySettings] = useState<boolean>(false);
+  const [deliverySaveSuccess, setDeliverySaveSuccess] = useState<string | null>(null);
+
+  // Sync settings when fetched
+  const [prevSettingsData, setPrevSettingsData] = useState(allSettingsData);
+  if (allSettingsData !== prevSettingsData) {
+    setPrevSettingsData(allSettingsData);
+    if (shippingFeeEnabledSetting) {
+      setShippingFeeEnabled(shippingFeeEnabledSetting.value === 'true');
+    }
+    if (shippingFlatFeeSetting) {
+      setShippingFlatFee(parseFloat(shippingFlatFeeSetting.value) || 0);
+    }
+    if (shippingFreeThresholdEnabledSetting) {
+      setFreeThresholdEnabled(shippingFreeThresholdEnabledSetting.value === 'true');
+    }
+    if (shippingFreeThresholdSetting) {
+      setFreeThreshold(parseFloat(shippingFreeThresholdSetting.value) || 999);
+    }
+  }
+
+  const saveSingleSetting = async (key: string, value: string, existingSetting?: { id: string }) => {
+    if (existingSetting) {
+      await updateSettingMut.mutateAsync({ id: existingSetting.id, dto: { value } });
+    } else {
+      await createSettingMut.mutateAsync({ key, value, group: 'shipping' });
+    }
+  };
+
+  const handleSaveDeliveryRules = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSavingDeliverySettings(true);
+    setDeliverySaveSuccess(null);
+    try {
+      await saveSingleSetting('shipping_fee_enabled', String(shippingFeeEnabled), shippingFeeEnabledSetting);
+      await saveSingleSetting('shipping_flat_fee', String(shippingFlatFee), shippingFlatFeeSetting);
+      await saveSingleSetting('shipping_free_threshold_enabled', String(freeThresholdEnabled), shippingFreeThresholdEnabledSetting);
+      await saveSingleSetting('shipping_free_threshold', String(freeThreshold), shippingFreeThresholdSetting);
+
+      await refetchSettings();
+      setDeliverySaveSuccess('Store Delivery & Shipping Rules updated and live on Cart & Checkout!');
+      toast('success', 'Shipping Updated', 'Delivery charges and rules saved successfully.');
+    } catch (err: unknown) {
+      toast('error', 'Update Failed', getApiErrorMessage(err, 'Failed to save delivery settings.'));
+    } finally {
+      setIsSavingDeliverySettings(false);
+    }
+  };
 
   // Queries
   const { data: methods, isLoading: isLoadingMethods, isError: isErrorMethods, refetch: refetchMethods } = useShippingMethods();
@@ -140,36 +212,226 @@ export default function ShippingPage() {
       <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div>
           <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Shipping Operations & Rates</h1>
-          <p className="text-xs text-neutral-400 mt-1">Configure shipping carrier methods, build shipping pricing zones, and test calculation logic.</p>
-        </div>
-      </div>
-
-      {/* Carrier disclaimer alert */}
-      <div className="bg-amber-50 border border-amber-100 p-4 rounded-2xl flex items-start gap-3 text-xs text-amber-800 leading-normal">
-        <HelpCircle className="w-5 h-5 shrink-0 mt-0.5" />
-        <div>
-          <span className="font-bold">Carrier Integration Notice:</span>
-          <p className="mt-0.5">Vasanthi Designers backend does not support external API integrations (e.g. DTDC Booking). All carriers listed below represent custom billing rate zones managed manually. DTDC CARRIER INTEGRATION NOT IMPLEMENTED IN BACKEND.</p>
+          <p className="text-xs text-neutral-400 mt-1">Configure live delivery charges, free delivery thresholds, carrier methods, and rate zones.</p>
         </div>
       </div>
 
       {/* Tabs */}
-      <div className="flex border-b border-neutral-200">
-        {(['METHODS', 'ZONES', 'CALCULATOR'] as const).map((tab) => (
+      <div className="flex border-b border-neutral-200 gap-1 overflow-x-auto">
+        {(
+          [
+            { id: 'DELIVERY_SETTINGS', label: 'Store Delivery Charges & Rules' },
+            { id: 'METHODS', label: 'Carrier Methods' },
+            { id: 'ZONES', label: 'Pricing Zones' },
+            { id: 'CALCULATOR', label: 'Rate Calculator' },
+          ] as const
+        ).map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition -mb-px
-              ${activeTab === tab
-                ? 'border-neutral-900 text-neutral-900'
-                : 'border-transparent text-neutral-400 hover:text-neutral-600'
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 text-xs font-bold border-b-2 transition whitespace-nowrap -mb-px
+              ${activeTab === tab.id
+                ? 'border-sky-600 text-sky-600 font-extrabold'
+                : 'border-transparent text-neutral-500 hover:text-neutral-800'
               }
             `}
           >
-            {tab}
+            {tab.label}
           </button>
         ))}
       </div>
+
+      {/* Tab content */}
+      {/* 1. DELIVERY SETTINGS TAB (Live Storefront Shipping & Threshold Rules) */}
+      {activeTab === 'DELIVERY_SETTINGS' && (
+        <div className="space-y-6">
+          <div className="bg-white p-6 sm:p-8 rounded-2xl border border-neutral-200 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-neutral-100 pb-5">
+              <div>
+                <h2 className="text-base sm:text-lg font-bold text-neutral-900 flex items-center gap-2">
+                  <Truck className="w-5 h-5 text-sky-600" />
+                  Store Delivery Charges & Free Shipping Policy
+                </h2>
+                <p className="text-xs text-neutral-500 mt-1">
+                  Manage whether customer orders incur delivery charges, configure flat delivery rates, and define free delivery threshold amounts.
+                </p>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold ${
+                  shippingFeeEnabled
+                    ? 'bg-sky-50 text-sky-700 border border-sky-200'
+                    : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                }`}>
+                  <span className={`w-2 h-2 rounded-full ${shippingFeeEnabled ? 'bg-sky-600' : 'bg-emerald-500'}`} />
+                  {shippingFeeEnabled ? 'Delivery Charges Active' : '100% Free Delivery Everywhere'}
+                </span>
+              </div>
+            </div>
+
+            {deliverySaveSuccess && (
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{deliverySaveSuccess}</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveDeliveryRules} className="space-y-6">
+              {/* Option 1: Enable / Disable Delivery Fee */}
+              <div className="p-4 sm:p-5 rounded-xl border border-neutral-200 bg-neutral-50/50 hover:bg-neutral-50 transition space-y-3">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <label htmlFor="shippingFeeEnabledToggle" className="text-sm font-bold text-neutral-900 cursor-pointer">
+                      Enable Delivery / Shipping Charges
+                    </label>
+                    <p className="text-xs text-neutral-500 mt-0.5">
+                      Toggle whether delivery fees should be charged to customers at checkout. If disabled, all orders automatically receive <strong>Free Shipping (₹0)</strong>.
+                    </p>
+                  </div>
+                  <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                    <input
+                      id="shippingFeeEnabledToggle"
+                      type="checkbox"
+                      checked={shippingFeeEnabled}
+                      onChange={(e) => setShippingFeeEnabled(e.target.checked)}
+                      className="sr-only peer"
+                    />
+                    <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600" />
+                  </label>
+                </div>
+              </div>
+
+              {/* Option 2: Flat Rate & Option 3: Threshold rules (only if enabled) */}
+              {shippingFeeEnabled && (
+                <div className="space-y-4 pt-1">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    {/* Fixed Standard Delivery Charge */}
+                    <div className="p-4 sm:p-5 rounded-xl border border-neutral-200 bg-white space-y-3">
+                      <div className="flex items-center gap-2">
+                        <DollarSign className="w-4 h-4 text-sky-600" />
+                        <label className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                          Standard Delivery Charge (₹)
+                        </label>
+                      </div>
+                      <p className="text-xs text-neutral-500">
+                        The flat delivery fee applied to orders (e.g., ₹50, ₹70, ₹100).
+                      </p>
+                      <div className="relative">
+                        <span className="absolute left-3 top-2.5 text-neutral-400 font-bold text-xs">₹</span>
+                        <input
+                          type="number"
+                          min="0"
+                          step="1"
+                          value={shippingFlatFee}
+                          onChange={(e) => setShippingFlatFee(Math.max(0, parseFloat(e.target.value) || 0))}
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-sky-600"
+                          placeholder="50"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Conditional Free Shipping Threshold */}
+                    <div className="p-4 sm:p-5 rounded-xl border border-neutral-200 bg-white space-y-3">
+                      <div className="flex items-start justify-between gap-4">
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="w-4 h-4 text-amber-500" />
+                            <label htmlFor="freeThresholdEnabledToggle" className="text-xs font-bold text-neutral-900 uppercase tracking-wider cursor-pointer">
+                              Free Delivery Above Minimum Amount
+                            </label>
+                          </div>
+                          <p className="text-xs text-neutral-500 mt-1">
+                            Automatically waive delivery charges when the cart subtotal reaches this minimum.
+                          </p>
+                        </div>
+                        <label className="relative inline-flex items-center cursor-pointer shrink-0 mt-0.5">
+                          <input
+                            id="freeThresholdEnabledToggle"
+                            type="checkbox"
+                            checked={freeThresholdEnabled}
+                            onChange={(e) => setFreeThresholdEnabled(e.target.checked)}
+                            className="sr-only peer"
+                          />
+                          <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-sky-600" />
+                        </label>
+                      </div>
+
+                      {freeThresholdEnabled && (
+                        <div className="pt-2">
+                          <label className="block text-[11px] font-semibold text-neutral-600 mb-1">
+                            Minimum Order Subtotal for Free Delivery (₹)
+                          </label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-2.5 text-neutral-400 font-bold text-xs">₹</span>
+                            <input
+                              type="number"
+                              min="1"
+                              step="1"
+                              value={freeThreshold}
+                              onChange={(e) => setFreeThreshold(Math.max(1, parseFloat(e.target.value) || 0))}
+                              className="w-full bg-neutral-50 border border-neutral-200 rounded-xl pl-7 pr-3 py-2 text-xs font-bold text-neutral-800 focus:outline-none focus:border-sky-600"
+                              placeholder="999"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Summary Simulation Card */}
+                  <div className="p-4 bg-sky-50/70 border border-sky-100 rounded-xl text-xs space-y-1 text-sky-900">
+                    <p className="font-bold flex items-center gap-1.5">
+                      <ShieldCheck className="w-4 h-4 text-sky-700" />
+                      Live Store Policy Simulation:
+                    </p>
+                    {freeThresholdEnabled ? (
+                      <p className="text-sky-800">
+                        • Orders with subtotal <strong>under ₹{freeThreshold}</strong> will have a delivery charge of <strong>₹{shippingFlatFee}</strong>.
+                        <br />
+                        • Orders with subtotal <strong>₹{freeThreshold} or more</strong> receive <strong>100% Free Delivery</strong>.
+                      </p>
+                    ) : (
+                      <p className="text-sky-800">
+                        • A fixed flat delivery charge of <strong>₹{shippingFlatFee}</strong> will be added to all orders regardless of cart amount.
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {!shippingFeeEnabled && (
+                <div className="p-4 bg-emerald-50/70 border border-emerald-100 rounded-xl text-xs space-y-1 text-emerald-900">
+                  <p className="font-bold flex items-center gap-1.5">
+                    <ShieldCheck className="w-4 h-4 text-emerald-700" />
+                    Live Store Policy Simulation:
+                  </p>
+                  <p className="text-emerald-800">
+                    • Delivery charges are currently <strong>DISABLED</strong>. All customers enjoy <strong>100% Free Shipping</strong> on every item.
+                  </p>
+                </div>
+              )}
+
+              {isEditor && (
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    disabled={isSavingDeliverySettings}
+                    className="bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs transition-all flex items-center gap-2 disabled:opacity-60 cursor-pointer"
+                  >
+                    {isSavingDeliverySettings ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Saving Policy…</span>
+                      </>
+                    ) : (
+                      <span>Save Delivery Policy</span>
+                    )}
+                  </button>
+                </div>
+              )}
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Tab content */}
       {activeTab === 'METHODS' && (

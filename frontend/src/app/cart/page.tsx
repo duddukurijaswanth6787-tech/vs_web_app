@@ -28,6 +28,7 @@ import {
   useCartMutations,
   useWishlistMutations,
   useFeatureEnabled,
+  usePublicSettings,
 } from '@/features/customer/hooks';
 import { formatInr, PLACEHOLDER_IMAGE } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
@@ -41,6 +42,7 @@ export default function CartPage() {
   const returnsEnabled = useFeatureEnabled('returns');
   const router = useRouter();
   const { data: cart, isLoading, error, refetch } = useCustomerCart();
+  const { data: publicSettings } = usePublicSettings();
   const { updateQuantity, removeItem } = useCartMutations();
   const { add: addToWishlist } = useWishlistMutations();
 
@@ -60,10 +62,33 @@ export default function CartPage() {
 
   const subtotal = cart?.subtotal ?? items.reduce((s, i) => s + Number(i.totalPrice || 0), 0);
   const savings = Number(cart?.totalSavings) || 0;
-  const freeShippingThreshold = 999;
-  const isFreeShipping = subtotal >= freeShippingThreshold;
-  const amountToFreeShipping = Math.max(0, freeShippingThreshold - subtotal);
-  const freeShippingPercent = Math.min(100, Math.round((subtotal / freeShippingThreshold) * 100));
+
+  // Dynamic Shipping & Delivery Calculations from Super Admin Settings
+  const isShippingFeeEnabled = Boolean(
+    publicSettings?.shippingFeeEnabled === true ||
+    publicSettings?.shipping_fee_enabled === 'true'
+  );
+  const isThresholdEnabled = Boolean(
+    publicSettings?.shippingFreeThresholdEnabled === true ||
+    publicSettings?.shipping_free_threshold_enabled === 'true'
+  );
+  const freeShippingThreshold = Number(
+    publicSettings?.shippingFreeThreshold ||
+    publicSettings?.shipping_free_threshold ||
+    0
+  );
+  const flatShippingFee = Number(
+    publicSettings?.shippingFlatFee ||
+    publicSettings?.shipping_flat_fee ||
+    0
+  );
+
+  const isFreeShipping =
+    !isShippingFeeEnabled ||
+    (isThresholdEnabled && freeShippingThreshold > 0 && subtotal >= freeShippingThreshold);
+  const shippingCharge = isFreeShipping ? 0 : flatShippingFee;
+  const couponDiscount = couponApplied?.discountAmount || 0;
+  const estimatedTotal = Math.max(0, subtotal - couponDiscount + shippingCharge);
 
   const couponItems = useMemo(
     () => items.map((i) => ({ productId: i.productId, price: Number(i.unitPrice), quantity: i.quantity })),
@@ -417,36 +442,6 @@ export default function CartPage() {
                     <p className="text-[11px] font-semibold text-red-600">{couponError}</p>
                   )}
                 </div>
-
-                <div className="bg-white border border-neutral-200/80 rounded-2xl p-4 sm:p-5 shadow-2xs space-y-3">
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center shrink-0">
-                      <Truck className="w-4 h-4" />
-                    </div>
-                    <span className="text-xs sm:text-sm font-bold text-neutral-900">
-                      {isFreeShipping ? (
-                        <span className="text-emerald-700">🎉 You unlocked FREE Shipping!</span>
-                      ) : (
-                        <>
-                          You are <strong className="text-[var(--brand-primary)]">{formatInr(amountToFreeShipping)}</strong> away from FREE Shipping!
-                        </>
-                      )}
-                    </span>
-                  </div>
-
-                  <div className="space-y-1 pl-12">
-                    <div className="w-full h-2 bg-neutral-100 rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-gradient-to-r from-[var(--brand-primary)] to-sky-600 rounded-full transition-all duration-500"
-                        style={{ width: `${freeShippingPercent}%` }}
-                      />
-                    </div>
-                    <div className="flex justify-between text-[10px] font-bold text-neutral-400">
-                      <span>₹0</span>
-                      <span>₹999</span>
-                    </div>
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -464,9 +459,13 @@ export default function CartPage() {
                   </div>
 
                   <div className="flex justify-between text-neutral-600">
-                    <span>Shipping</span>
+                    <span>Delivery Charges</span>
                     <span className="font-bold text-neutral-900">
-                      {isFreeShipping ? <span className="text-emerald-700 font-extrabold">FREE</span> : formatInr(700)}
+                      {shippingCharge === 0 ? (
+                        <span className="text-emerald-700 font-extrabold">FREE</span>
+                      ) : (
+                        formatInr(shippingCharge)
+                      )}
                     </span>
                   </div>
 
@@ -491,7 +490,7 @@ export default function CartPage() {
                     <span className="text-[10px] text-neutral-500 font-medium">(Inclusive of all taxes)</span>
                   </div>
                   <span className="text-xl sm:text-2xl font-bold font-serif text-[var(--brand-primary)]">
-                    {formatInr(Math.max(0, subtotal - (couponApplied?.discountAmount || 0)))}
+                    {formatInr(estimatedTotal)}
                   </span>
                 </div>
 

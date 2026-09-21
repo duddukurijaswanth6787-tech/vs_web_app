@@ -112,14 +112,59 @@ export class CheckoutService {
     return { profile, address };
   }
 
-  private calculateShipping(
+  private async calculateShipping(
     method: string,
     subtotal: number,
     freeShipping = false,
-  ): number {
+  ): Promise<number> {
     if (freeShipping) return 0;
-    if (method === 'STANDARD' && subtotal >= 500) return 0;
-    return SHIPPING_RATES[method] ?? SHIPPING_RATES.STANDARD;
+
+    const [shippingFeeEnabledSetting, shippingFlatFeeSetting, freeThresholdEnabledSetting, freeThresholdSetting] =
+      await Promise.all([
+        this.prisma.appSetting.findFirst({
+          where: { key: { in: ['shipping_fee_enabled', 'shipping_enabled'] } },
+        }),
+        this.prisma.appSetting.findFirst({
+          where: { key: { in: ['shipping_flat_fee', 'shipping_fee'] } },
+        }),
+        this.prisma.appSetting.findFirst({
+          where: { key: { in: ['shipping_free_threshold_enabled', 'free_shipping_threshold_enabled'] } },
+        }),
+        this.prisma.appSetting.findFirst({
+          where: { key: { in: ['shipping_free_threshold', 'free_shipping_threshold'] } },
+        }),
+      ]);
+
+    const isShippingFeeEnabled = shippingFeeEnabledSetting
+      ? shippingFeeEnabledSetting.value === 'true'
+      : false;
+
+    // If shipping fees are disabled globally by admin, delivery is 100% free (₹0)
+    if (!isShippingFeeEnabled) {
+      return 0;
+    }
+
+    const freeThresholdEnabled = freeThresholdEnabledSetting
+      ? freeThresholdEnabledSetting.value === 'true'
+      : false;
+    const freeThreshold = freeThresholdSetting
+      ? parseFloat(freeThresholdSetting.value) || 0
+      : 0;
+
+    // If threshold enabled and subtotal qualifies
+    if (freeThresholdEnabled && freeThreshold > 0 && subtotal >= freeThreshold) {
+      return 0;
+    }
+
+    const flatFee = shippingFlatFeeSetting
+      ? parseFloat(shippingFlatFeeSetting.value) || 0
+      : 0;
+
+    if (method && method !== 'STANDARD' && SHIPPING_RATES[method]) {
+      return SHIPPING_RATES[method];
+    }
+
+    return flatFee;
   }
 
   private async buildItems(cartItems: any[]): Promise<{
@@ -206,7 +251,7 @@ export class CheckoutService {
       discountItems,
     );
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
-    const shippingCharge = this.calculateShipping(
+    const shippingCharge = await this.calculateShipping(
       method,
       subtotal,
       freeShipping,
@@ -254,7 +299,7 @@ export class CheckoutService {
         discountItems,
       );
     const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
-    const shippingCharge = this.calculateShipping(
+    const shippingCharge = await this.calculateShipping(
       method,
       subtotal,
       freeShipping,

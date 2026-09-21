@@ -10,6 +10,14 @@ export interface PublicSettingsDto {
   supportPhone?: string;
   currency?: string;
   codEnabled?: boolean;
+  shippingFeeEnabled?: boolean;
+  shippingFlatFee?: number;
+  shippingFreeThresholdEnabled?: boolean;
+  shippingFreeThreshold?: number;
+  shipping_fee_enabled?: string;
+  shipping_flat_fee?: string;
+  shipping_free_threshold_enabled?: string;
+  shipping_free_threshold?: string;
   [key: string]: unknown;
 }
 

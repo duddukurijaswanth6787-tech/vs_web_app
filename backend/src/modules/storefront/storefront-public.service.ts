@@ -30,6 +30,10 @@ export class StorefrontPublicService {
           announcementBgColorSetting,
           announcementTextColorSetting,
           codSetting,
+          shippingFeeEnabledSetting,
+          shippingFlatFeeSetting,
+          shippingFreeThresholdEnabledSetting,
+          shippingFreeThresholdSetting,
         ] = await Promise.all([
           this.prisma.appSetting.findUnique({
             where: { key: 'banner_autoplay_interval' },
@@ -63,6 +67,26 @@ export class StorefrontPublicService {
               key: { in: ['cod_enabled', 'payment_cod_enabled', 'payment.cod_enabled'] },
             },
           }),
+          this.prisma.appSetting.findFirst({
+            where: {
+              key: { in: ['shipping_fee_enabled', 'shipping_enabled'] },
+            },
+          }),
+          this.prisma.appSetting.findFirst({
+            where: {
+              key: { in: ['shipping_flat_fee', 'shipping_fee'] },
+            },
+          }),
+          this.prisma.appSetting.findFirst({
+            where: {
+              key: { in: ['shipping_free_threshold_enabled', 'free_shipping_threshold_enabled'] },
+            },
+          }),
+          this.prisma.appSetting.findFirst({
+            where: {
+              key: { in: ['shipping_free_threshold', 'free_shipping_threshold'] },
+            },
+          }),
         ]);
         const codEnabled = codSetting ? codSetting.value === 'true' : false;
         const announcementText =
@@ -88,6 +112,19 @@ export class StorefrontPublicService {
         const announcementTextColor =
           announcementTextColorSetting?.value || '#FFFFFF';
 
+        const shippingFeeEnabled = shippingFeeEnabledSetting
+          ? shippingFeeEnabledSetting.value === 'true'
+          : false;
+        const shippingFlatFee = shippingFlatFeeSetting
+          ? parseFloat(shippingFlatFeeSetting.value) || 0
+          : 0;
+        const shippingFreeThresholdEnabled = shippingFreeThresholdEnabledSetting
+          ? shippingFreeThresholdEnabledSetting.value === 'true'
+          : false;
+        const shippingFreeThreshold = shippingFreeThresholdSetting
+          ? parseFloat(shippingFreeThresholdSetting.value) || 0
+          : 0;
+
         return {
           ...settings,
           codEnabled,
@@ -109,6 +146,14 @@ export class StorefrontPublicService {
           announcement_bar_text_color: announcementTextColor,
           banner_autoplay_interval: autoplayInterval,
           banner_autoplay_enabled: autoplayEnabled,
+          shippingFeeEnabled,
+          shippingFlatFee,
+          shippingFreeThresholdEnabled,
+          shippingFreeThreshold,
+          shipping_fee_enabled: shippingFeeEnabled ? 'true' : 'false',
+          shipping_flat_fee: String(shippingFlatFee),
+          shipping_free_threshold_enabled: shippingFreeThresholdEnabled ? 'true' : 'false',
+          shipping_free_threshold: String(shippingFreeThreshold),
         };
       },
       300,

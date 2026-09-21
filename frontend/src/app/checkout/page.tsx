@@ -214,8 +214,29 @@ function CheckoutPageContent() {
       0,
     );
   }, [cartItems]);
-  const isFreeShipping = fallbackSubtotal >= 999;
-  const fallbackShipping = fallbackSubtotal === 0 || isFreeShipping ? 0 : 99;
+  const isShippingFeeEnabled = Boolean(
+    publicSettings?.shippingFeeEnabled === true ||
+    publicSettings?.shipping_fee_enabled === 'true'
+  );
+  const isThresholdEnabled = Boolean(
+    publicSettings?.shippingFreeThresholdEnabled === true ||
+    publicSettings?.shipping_free_threshold_enabled === 'true'
+  );
+  const freeShippingThreshold = Number(
+    publicSettings?.shippingFreeThreshold ||
+    publicSettings?.shipping_free_threshold ||
+    0
+  );
+  const flatShippingFee = Number(
+    publicSettings?.shippingFlatFee ||
+    publicSettings?.shipping_flat_fee ||
+    0
+  );
+
+  const isFreeShipping =
+    !isShippingFeeEnabled ||
+    (isThresholdEnabled && freeShippingThreshold > 0 && fallbackSubtotal >= freeShippingThreshold);
+  const fallbackShipping = fallbackSubtotal === 0 || isFreeShipping ? 0 : flatShippingFee;
   const fallbackGrandTotal = Math.max(0, fallbackSubtotal + fallbackShipping);
 
   const displaySubtotal = preview.data ? Number(preview.data.subtotal) : fallbackSubtotal;

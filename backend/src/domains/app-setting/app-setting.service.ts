@@ -123,6 +123,10 @@ export class AppSettingService {
       announcementLinkTextSetting,
       announcementBgColorSetting,
       announcementTextColorSetting,
+      shippingFeeEnabledSetting,
+      shippingFlatFeeSetting,
+      shippingFreeThresholdEnabledSetting,
+      shippingFreeThresholdSetting,
     ] = await Promise.all([
       this.settingRepository.findByKey('banner_autoplay_interval'),
       this.settingRepository.findByKey('banner_autoplay_enabled'),
@@ -133,6 +137,10 @@ export class AppSettingService {
       this.settingRepository.findByKey('announcement_bar_link_text'),
       this.settingRepository.findByKey('announcement_bar_bg_color'),
       this.settingRepository.findByKey('announcement_bar_text_color'),
+      this.settingRepository.findByKey('shipping_fee_enabled'),
+      this.settingRepository.findByKey('shipping_flat_fee'),
+      this.settingRepository.findByKey('shipping_free_threshold_enabled'),
+      this.settingRepository.findByKey('shipping_free_threshold'),
     ]);
     const announcementText = announcementTextSetting
       ? announcementTextSetting.value
@@ -162,6 +170,19 @@ export class AppSettingService {
       ? announcementTextColorSetting.value
       : '#FFFFFF';
 
+    const shippingFeeEnabled = shippingFeeEnabledSetting
+      ? shippingFeeEnabledSetting.value === 'true'
+      : false;
+    const shippingFlatFee = shippingFlatFeeSetting
+      ? parseFloat(shippingFlatFeeSetting.value) || 0
+      : 0;
+    const shippingFreeThresholdEnabled = shippingFreeThresholdEnabledSetting
+      ? shippingFreeThresholdEnabledSetting.value === 'true'
+      : false;
+    const shippingFreeThreshold = shippingFreeThresholdSetting
+      ? parseFloat(shippingFreeThresholdSetting.value) || 0
+      : 0;
+
     return {
       bannerAutoplayInterval: autoplayInterval,
       bannerAutoplayEnabled: autoplayEnabled,
@@ -181,6 +202,14 @@ export class AppSettingService {
       announcement_bar_text_color: announcementTextColor,
       banner_autoplay_interval: autoplayInterval,
       banner_autoplay_enabled: autoplayEnabled,
+      shippingFeeEnabled,
+      shippingFlatFee,
+      shippingFreeThresholdEnabled,
+      shippingFreeThreshold,
+      shipping_fee_enabled: shippingFeeEnabled ? 'true' : 'false',
+      shipping_flat_fee: String(shippingFlatFee),
+      shipping_free_threshold_enabled: shippingFreeThresholdEnabled ? 'true' : 'false',
+      shipping_free_threshold: String(shippingFreeThreshold),
     };
   }
 }
