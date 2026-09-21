@@ -74,6 +74,20 @@ export class OrderTimelineResponse {
   @ApiProperty() createdAt!: Date;
 }
 
+export class CustomerBriefUserResponse {
+  @ApiPropertyOptional() firstName?: string;
+  @ApiPropertyOptional() lastName?: string;
+  @ApiPropertyOptional() email?: string;
+  @ApiPropertyOptional() phone?: string;
+}
+
+export class CustomerBriefResponse {
+  @ApiProperty() id!: string;
+  @ApiPropertyOptional() phone?: string;
+  @ApiPropertyOptional({ type: CustomerBriefUserResponse })
+  user?: CustomerBriefUserResponse;
+}
+
 export class OrderResponse {
   @ApiProperty() id!: string;
   @ApiProperty() orderNumber!: string;
@@ -104,12 +118,16 @@ export class OrderResponse {
   @ApiPropertyOptional() courierPartner?: string;
   @ApiPropertyOptional() waybillNumber?: string;
   @ApiPropertyOptional() trackingUrl?: string;
+  @ApiPropertyOptional() createdBy?: string;
+  @ApiPropertyOptional({ type: CustomerBriefResponse })
+  customer?: CustomerBriefResponse;
   @ApiPropertyOptional({ type: [OrderItemResponse] })
   items?: OrderItemResponse[];
   @ApiPropertyOptional({ type: [OrderAddressResponse] })
   addresses?: OrderAddressResponse[];
   @ApiPropertyOptional({ type: [OrderTimelineResponse] })
   timeline?: OrderTimelineResponse[];
+  @ApiPropertyOptional() payments?: any[];
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

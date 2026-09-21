@@ -992,8 +992,12 @@ export default function PaymentsPage() {
                     const method = (ord.paymentMethod || ord.payments?.[0]?.method || 'CASH').toUpperCase();
                     const custFirst = ord.customer?.user?.firstName || ord.customer?.firstName || '';
                     const custLast = ord.customer?.user?.lastName || ord.customer?.lastName || '';
-                    const customerName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : 'Walk-in Customer';
-                    const customerPhone = ord.customer?.phone || ord.customer?.user?.phone || '—';
+                    const userFullName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : '';
+                    const shippingAddr = ord.addresses?.find((a) => a.addressType === 'SHIPPING');
+                    const billingAddr = ord.addresses?.find((a) => a.addressType === 'BILLING');
+                    const addressFullName = shippingAddr?.fullName || billingAddr?.fullName || ord.addresses?.[0]?.fullName;
+                    const customerName = userFullName || addressFullName || (isPos ? 'Walk-in Customer' : 'Online Customer');
+                    const customerPhone = shippingAddr?.phone || billingAddr?.phone || ord.customer?.phone || ord.customer?.user?.phone || '—';
                     const hasDiscount = Number(ord.discountTotal) > 0;
 
                     return (

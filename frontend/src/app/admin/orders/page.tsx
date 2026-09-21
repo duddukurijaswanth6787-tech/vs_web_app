@@ -227,18 +227,36 @@ export default function OrdersPage() {
       render: (o) => {
         const custFirst = o.customer?.user?.firstName || o.customer?.firstName || '';
         const custLast = o.customer?.user?.lastName || o.customer?.lastName || '';
-        const name = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : 'Walk-in Customer';
-        const phone = o.customer?.phone || o.customer?.user?.phone;
+        const userFullName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : '';
+
+        const shippingAddr = o.addresses?.find((a) => a.addressType === 'SHIPPING');
+        const billingAddr = o.addresses?.find((a) => a.addressType === 'BILLING');
+        const addressFullName = shippingAddr?.fullName || billingAddr?.fullName || o.addresses?.[0]?.fullName;
+
+        const defaultLabel = o.channel === 'ONLINE_STORE' || o.channel === 'ONLINE' ? 'Online Customer' : 'Walk-in Customer';
+        const name = userFullName || addressFullName || defaultLabel;
+        const phone = shippingAddr?.phone || billingAddr?.phone || o.customer?.phone || o.customer?.user?.phone;
+        const email = o.customer?.user?.email || o.customer?.email;
+
         return (
-          <div>
-            <span className="font-semibold text-neutral-800 text-xs block">{name}</span>
+          <div className="max-w-[200px]">
+            <span className="font-semibold text-neutral-800 text-xs block truncate" title={name}>{name}</span>
             {phone && <span className="text-[10px] text-neutral-400 font-mono block">{phone}</span>}
+            {!phone && email && <span className="text-[10px] text-neutral-400 truncate block">{email}</span>}
           </div>
         );
       },
     },
-    { key: 'createdAt', label: 'Date', render: (o) => <span className="text-neutral-600">{formatDate(o.createdAt)}</span> },
-    { key: 'items', label: 'Items', render: (o) => <span className="font-semibold text-center block">{o.items?.length || 0}</span> },
+    { key: 'createdAt', label: 'Date', render: (o) => <span className="text-neutral-600 text-xs">{formatDate(o.createdAt)}</span> },
+    {
+      key: 'items',
+      label: 'Items',
+      render: (o) => {
+        const totalUnits = o.items?.reduce((sum, item) => sum + (item.quantity || 1), 0);
+        const count = totalUnits !== undefined && totalUnits > 0 ? totalUnits : (o.items?.length || 0);
+        return <span className="font-semibold text-center block text-neutral-800">{count}</span>;
+      },
+    },
     { key: 'subtotal', label: 'Subtotal', render: (o) => <span className="font-mono font-semibold block text-right">{formatMoney(o.subtotal, o.currency)}</span> },
     { key: 'discountTotal', label: 'Discount', render: (o) => <span className="font-mono text-red-500 block text-right">{Number(o.discountTotal) > 0 ? `-${formatMoney(o.discountTotal, o.currency)}` : '—'}</span> },
     { key: 'grandTotal', label: 'Total', render: (o) => <span className="font-mono font-bold text-neutral-950 block text-right">{formatMoney(o.grandTotal, o.currency)}</span> },

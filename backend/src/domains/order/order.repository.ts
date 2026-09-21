@@ -36,6 +36,11 @@ export class OrderRepository {
       where.OR = [
         { orderNumber: { contains: search, mode: 'insensitive' } },
         { notes: { contains: search, mode: 'insensitive' } },
+        { addresses: { some: { fullName: { contains: search, mode: 'insensitive' } } } },
+        { addresses: { some: { phone: { contains: search, mode: 'insensitive' } } } },
+        { customer: { phone: { contains: search, mode: 'insensitive' } } },
+        { customer: { user: { firstName: { contains: search, mode: 'insensitive' } } } },
+        { customer: { user: { lastName: { contains: search, mode: 'insensitive' } } } },
       ];
     }
     if (channel) {
@@ -77,6 +82,7 @@ export class OrderRepository {
             },
           },
           items: true,
+          addresses: true,
           payments: {
             orderBy: { createdAt: 'desc' },
           },
@@ -101,8 +107,23 @@ export class OrderRepository {
     return this.prisma.order.findUnique({
       where: { id },
       include: {
+        customer: {
+          select: {
+            id: true,
+            phone: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
         items: true,
         addresses: true,
+        payments: { orderBy: { createdAt: 'desc' } },
         timeline: { orderBy: { createdAt: 'desc' } },
       },
     });
@@ -112,8 +133,23 @@ export class OrderRepository {
     return this.prisma.order.findUnique({
       where: { orderNumber },
       include: {
+        customer: {
+          select: {
+            id: true,
+            phone: true,
+            user: {
+              select: {
+                firstName: true,
+                lastName: true,
+                email: true,
+                phone: true,
+              },
+            },
+          },
+        },
         items: true,
         addresses: true,
+        payments: { orderBy: { createdAt: 'desc' } },
         timeline: { orderBy: { createdAt: 'desc' } },
       },
     });

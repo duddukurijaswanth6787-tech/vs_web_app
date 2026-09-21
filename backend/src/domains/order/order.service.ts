@@ -31,6 +31,7 @@ export class OrderService {
       courierPartner: o.courierPartner ?? undefined,
       waybillNumber: o.waybillNumber ?? undefined,
       trackingUrl: o.trackingUrl ?? undefined,
+      createdBy: o.createdBy ?? undefined,
       ...(includeAdminFields
         ? {
             channel: o.channel,
@@ -38,38 +39,50 @@ export class OrderService {
             terminalId: o.terminalId ?? undefined,
           }
         : {}),
-      items:
-        includeRelations && o.items
-          ? o.items.map((i: any) => ({
-              id: i.id,
-              productId: i.productId,
-              productName: i.productName,
-              variantId: i.variantId ?? undefined,
-              variantTitle: i.variantTitle ?? undefined,
-              sku: i.sku,
-              quantity: i.quantity,
-              unitPrice: Number(i.unitPrice),
-              totalPrice: Number(i.totalPrice),
-              taxAmount: Number(i.taxAmount),
-              discountAmount: Number(i.discountAmount),
-            }))
-          : undefined,
-      addresses:
-        includeRelations && o.addresses
-          ? o.addresses.map((a: any) => ({
-              id: a.id,
-              addressType: a.addressType,
-              fullName: a.fullName,
-              phone: a.phone,
-              addressLine1: a.addressLine1,
-              addressLine2: a.addressLine2 ?? undefined,
-              city: a.city,
-              state: a.state,
-              country: a.country,
-              postalCode: a.postalCode,
-              landmark: a.landmark ?? undefined,
-            }))
-          : undefined,
+      customer: o.customer
+        ? {
+            id: o.customer.id,
+            phone: o.customer.phone ?? undefined,
+            user: o.customer.user
+              ? {
+                  firstName: o.customer.user.firstName ?? undefined,
+                  lastName: o.customer.user.lastName ?? undefined,
+                  email: o.customer.user.email ?? undefined,
+                  phone: o.customer.user.phone ?? undefined,
+                }
+              : undefined,
+          }
+        : undefined,
+      items: o.items
+        ? o.items.map((i: any) => ({
+            id: i.id,
+            productId: i.productId,
+            productName: i.productName,
+            variantId: i.variantId ?? undefined,
+            variantTitle: i.variantTitle ?? undefined,
+            sku: i.sku,
+            quantity: i.quantity,
+            unitPrice: Number(i.unitPrice),
+            totalPrice: Number(i.totalPrice),
+            taxAmount: Number(i.taxAmount),
+            discountAmount: Number(i.discountAmount),
+          }))
+        : undefined,
+      addresses: o.addresses
+        ? o.addresses.map((a: any) => ({
+            id: a.id,
+            addressType: a.addressType,
+            fullName: a.fullName,
+            phone: a.phone,
+            addressLine1: a.addressLine1,
+            addressLine2: a.addressLine2 ?? undefined,
+            city: a.city,
+            state: a.state,
+            country: a.country,
+            postalCode: a.postalCode,
+            landmark: a.landmark ?? undefined,
+          }))
+        : undefined,
       timeline:
         includeRelations && o.timeline
           ? o.timeline.map((t: any) => ({
@@ -80,6 +93,19 @@ export class OrderService {
               createdAt: t.createdAt,
             }))
           : undefined,
+      payments: o.payments
+        ? o.payments.map((p: any) => ({
+            id: p.id,
+            paymentNumber: p.paymentNumber,
+            provider: p.provider,
+            method: p.method,
+            amount: Number(p.amount),
+            currency: p.currency,
+            status: p.status,
+            transactionId: p.transactionId ?? undefined,
+            createdAt: p.createdAt,
+          }))
+        : undefined,
       createdAt: o.createdAt,
       updatedAt: o.updatedAt,
     };
