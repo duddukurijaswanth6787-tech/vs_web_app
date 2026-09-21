@@ -198,11 +198,6 @@ export function PdpPincodeChecker({ className = '' }: PdpPincodeCheckerProps) {
           )}
 
           <div className="pt-1 flex flex-wrap gap-2">
-            {deliveryInfo.codAvailable && (
-              <span className="inline-flex items-center gap-1 rounded bg-stone-100 px-2 py-0.5 text-[11px] font-medium text-stone-700">
-                💵 COD Available
-              </span>
-            )}
             {deliveryInfo.prepaidAvailable && (
               <span className="inline-flex items-center gap-1 rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
                 ⚡ Instant UPI / Cards

@@ -836,66 +836,29 @@ function CheckoutPageContent() {
 
               <div className="space-y-3">
                 {/* Razorpay Online Payment */}
-                <label
-                  className={`flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                    paymentMethod === 'RAZORPAY'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/40 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="checkoutPaymentMethod"
-                    checked={paymentMethod === 'RAZORPAY'}
-                    onChange={() => setPaymentMethod('RAZORPAY')}
-                    className="mt-1 accent-[var(--brand-primary)] shrink-0"
-                  />
+                <div className="flex items-start gap-3 sm:gap-3.5 p-4 rounded-2xl border-2 border-[var(--brand-primary)] bg-sky-50/40 shadow-xs">
+                  <div className="w-5 h-5 rounded-full bg-[var(--brand-primary)] flex items-center justify-center shrink-0 mt-0.5">
+                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
+                  </div>
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs flex items-center gap-2">
-                        Online Payment (UPI, Cards, NetBanking, Wallets)
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-2">
+                        100% Secure Online Payment
                       </span>
                       <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md shrink-0">
-                        Recommended
+                        Instant Verification
                       </span>
                     </div>
-                    <p className="text-neutral-500 text-[11px] leading-relaxed">
-                      Instant pay via PhonePe, Google Pay, Paytm, Visa, Mastercard, RuPay or NetBanking with zero gateway fees.
+                    <p className="text-neutral-600 text-[11px] leading-relaxed">
+                      Instant pay via PhonePe, Google Pay, Paytm, UPI, Visa, Mastercard, RuPay Cards or NetBanking.
                     </p>
-                  </div>
-                </label>
-
-                {/* Cash on Delivery - ONLY rendered if Super Admin has enabled COD */}
-                {codEnabled && (
-                  <label
-                    className={`flex items-start gap-3 sm:gap-3.5 p-3.5 sm:p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                      paymentMethod === 'COD'
-                        ? 'border-[var(--brand-primary)] bg-sky-50/40 shadow-xs'
-                        : 'border-neutral-200 hover:bg-neutral-50'
-                    }`}
-                  >
-                    <input
-                      type="radio"
-                      name="checkoutPaymentMethod"
-                      checked={paymentMethod === 'COD'}
-                      onChange={() => setPaymentMethod('COD')}
-                      className="mt-1 accent-[var(--brand-primary)] shrink-0"
-                    />
-                    <div className="flex-1 min-w-0 space-y-1">
-                      <div className="flex flex-wrap items-center justify-between gap-1.5">
-                        <span className="font-bold text-neutral-900 text-xs flex items-center gap-1.5">
-                          <Banknote className="w-4 h-4 text-neutral-600 shrink-0" /> Cash on Delivery (COD)
-                        </span>
-                        <span className="text-[10px] font-semibold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded-md shrink-0">
-                          Pay at Doorstep
-                        </span>
-                      </div>
-                      <p className="text-neutral-500 text-[11px] leading-relaxed">
-                        Pay via Cash or UPI QR scan directly to the delivery courier when your package arrives.
-                      </p>
+                    <div className="flex items-center gap-2 pt-1">
+                      <span className="text-[10px] font-semibold text-neutral-500 flex items-center gap-1">
+                        <Lock className="w-3 h-3 text-emerald-600" /> 256-bit SSL Encrypted & Razorpay Secured
+                      </span>
                     </div>
-                  </label>
-                )}
+                  </div>
+                </div>
               </div>
             </section>
           </div>

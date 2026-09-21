@@ -17,6 +17,7 @@ import {
   CheckCircle,
   Sparkles,
   RefreshCw,
+  Package,
   ChevronDown,
   ChevronRight,
   Maximize2,
@@ -1614,15 +1615,9 @@ export function ProductDetailClient() {
                           <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />
                           <span>Delivery Available at {pinCode}!</span>
                         </div>
-                        {deliveryData.codAvailable ? (
-                          <span className="text-[10px] font-extrabold text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                            ✓ COD Available
-                          </span>
-                        ) : (
-                          <span className="text-[10px] font-bold text-neutral-600 bg-neutral-100 px-2 py-0.5 rounded-full">
-                            Prepaid Only
-                          </span>
-                        )}
+                        <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full">
+                          ✓ Express Prepaid
+                        </span>
                       </div>
 
                       {deliveryData.estimatedDateText && (
@@ -1637,9 +1632,9 @@ export function ProductDetailClient() {
                       )}
 
                       <ul className="grid grid-cols-2 gap-x-4 gap-y-1 pl-1 text-[10px] text-neutral-600 font-medium">
-                        <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> Free Shipping above ₹999</li>
+                        <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> Free Shipping Available</li>
                         <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> 100% Quality Inspected</li>
-                        {returnsEnabled && <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> 7-Day Easy Returns</li>}
+                        <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> Tamper-Proof Packaging</li>
                         <li className="flex items-center gap-1"><BadgeCheck className="w-3.5 h-3.5 text-emerald-600" /> Live Tracking SMS/WhatsApp</li>
                       </ul>
                     </div>
@@ -1652,19 +1647,17 @@ export function ProductDetailClient() {
                 </div>
 
                 {/* Service Icons Grid */}
-                <div className={`grid ${returnsEnabled ? 'grid-cols-4' : 'grid-cols-3'} gap-2.5 border-t border-neutral-100 pt-5 text-center`}>
+                <div className="grid grid-cols-4 gap-2.5 border-t border-neutral-100 pt-5 text-center">
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Truck className="w-4 h-4" /></div>
                     <p className="text-[9px] font-bold text-neutral-800 leading-tight">Fast Delivery</p>
                     <p className="text-[7px] font-medium text-neutral-400 leading-none">2-5 working days</p>
                   </div>
-                  {returnsEnabled && (
                   <div className="space-y-1">
-                    <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><RefreshCw className="w-4 h-4" /></div>
-                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">Easy Returns</p>
-                    <p className="text-[7px] font-medium text-neutral-400 leading-none">7 days return policy</p>
+                    <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Package className="w-4 h-4" /></div>
+                    <p className="text-[9px] font-bold text-neutral-800 leading-tight">Safe Packaging</p>
+                    <p className="text-[7px] font-medium text-neutral-400 leading-none">Tamper-proof box</p>
                   </div>
-                  )}
                   <div className="space-y-1">
                     <div className="w-8 h-8 rounded-full bg-neutral-100 flex items-center justify-center mx-auto text-neutral-600"><Award className="w-4 h-4" /></div>
                     <p className="text-[9px] font-bold text-neutral-800 leading-tight">100% Authentic</p>
