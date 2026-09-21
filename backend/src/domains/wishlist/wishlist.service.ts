@@ -119,11 +119,9 @@ export class WishlistService {
       wishlist.id,
       dto.productId,
     );
-    if (existing)
-      throw new BusinessException(
-        'Product already in wishlist',
-        'WISHLIST_001',
-      );
+    if (existing) {
+      return this.toItemResponse(existing);
+    }
 
     const item = await this.wishlistRepository.addItem({
       wishlistId: wishlist.id,

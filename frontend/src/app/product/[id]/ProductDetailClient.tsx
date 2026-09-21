@@ -41,6 +41,7 @@ import {
   useCustomerProduct,
   useCartMutations,
   useWishlistMutations,
+  useCustomerWishlist,
   useCustomerProducts,
   useProductReviews,
   useActiveCoupons,
@@ -97,7 +98,8 @@ export function ProductDetailClient() {
   const reviews = reviewsData?.data || [];
   const reviewSummary = reviewsData?.summary || { averageRating: 0, totalReviews: 0 };
   const { addItem } = useCartMutations();
-  const { add: addWishlist } = useWishlistMutations();
+  const { add: addWishlist, remove: removeWishlist } = useWishlistMutations();
+  const { data: wishlistData } = useCustomerWishlist(isAuthenticated);
   
   const [qty, setQty] = useState(1);
   const [msg, setMsg] = useState('');
@@ -121,6 +123,13 @@ export function ProductDetailClient() {
   
   // Wishlist toggle
   const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (!wishlistData || !product?.id) return;
+    const items = Array.isArray(wishlistData) ? wishlistData : (wishlistData as any)?.data || (wishlistData as any)?.items || [];
+    const found = items.some((item: any) => (item.productId || item.product?.id || item.id) === product.id);
+    setIsSaved(found);
+  }, [wishlistData, product?.id]);
 
   // Custom Tailoring & Stitching State
   const [customTailoring, setCustomTailoring] = useState(false);
@@ -685,24 +694,50 @@ export function ProductDetailClient() {
     }
     if (!product) return;
     try {
-      await addWishlist.mutateAsync(product.id);
-      setIsSaved(true);
-      setMsg('Saved to your wishlist!');
-      setTimeout(() => setMsg(''), 4000);
-    } catch (e) {
-      setErr(getApiErrorMessage(e, 'Could not update wishlist'));
+      if (isSaved) {
+        await removeWishlist.mutateAsync(product.id);
+        setIsSaved(false);
+        setMsg('Removed from your wishlist');
+        setTimeout(() => setMsg(''), 3000);
+      } else {
+        await addWishlist.mutateAsync(product.id);
+        setIsSaved(true);
+        setMsg('Saved to your wishlist!');
+        setTimeout(() => setMsg(''), 3000);
+      }
+    } catch (e: any) {
+      const errMsg = getApiErrorMessage(e, '');
+      if (errMsg.toLowerCase().includes('already in wishlist')) {
+        setIsSaved(true);
+        setMsg('Product is already in your wishlist!');
+        setTimeout(() => setMsg(''), 3000);
+      } else {
+        setErr(errMsg || 'Could not update wishlist');
+        setTimeout(() => setErr(''), 4000);
+      }
     }
   };
 
+  const clientPincodeCache = useMemo(() => new Map<string, any>(), []);
+
   const checkPincodeServiceability = async (pin: string) => {
-    if (!pin.trim() || pin.length !== 6 || !/^\d{6}$/.test(pin)) {
+    const clean = (pin || '').trim();
+    if (!clean || clean.length !== 6 || !/^\d{6}$/.test(clean)) {
       setDeliveryStatus('invalid');
       setDeliveryData(null);
       return;
     }
+
+    if (clientPincodeCache.has(clean)) {
+      const cached = clientPincodeCache.get(clean);
+      setDeliveryData(cached);
+      setDeliveryStatus('available');
+      return;
+    }
+
     setDeliveryStatus('checking');
     try {
-      const res = await shippingService.checkPincode(pin);
+      const res = await shippingService.checkPincode(clean);
       if (res && res.isServiceable) {
         const estDate = new Date();
         estDate.setDate(estDate.getDate() + 3);
@@ -712,18 +747,20 @@ export function ProductDetailClient() {
           month: 'short',
         });
 
-        setDeliveryData({
+        const data = {
           city: res.city,
           state: res.state,
           isServiceable: res.isServiceable,
           prepaidAvailable: res.prepaidAvailable,
           codAvailable: res.codAvailable,
           estimatedDateText: estText,
-          remarks: res.remarks || 'Serviceable via Delhivery Express / Surface',
-        });
+          remarks: res.remarks || 'Serviceable via Express Delivery (Delhivery / DTDC)',
+        };
+        clientPincodeCache.set(clean, data);
+        setDeliveryData(data);
         setDeliveryStatus('available');
         try {
-          localStorage.setItem('vs_customer_pincode', pin);
+          localStorage.setItem('vs_customer_pincode', clean);
         } catch {}
       } else {
         setDeliveryStatus('invalid');
@@ -737,13 +774,17 @@ export function ProductDetailClient() {
         day: 'numeric',
         month: 'short',
       });
-      setDeliveryData({
+      const fallbackData = {
+        city: 'Hyderabad',
+        state: 'TS',
         isServiceable: true,
         prepaidAvailable: true,
         codAvailable: true,
         estimatedDateText: estText,
         remarks: 'Standard Express Courier Delivery',
-      });
+      };
+      clientPincodeCache.set(clean, fallbackData);
+      setDeliveryData(fallbackData);
       setDeliveryStatus('available');
     }
   };

@@ -65,49 +65,174 @@ export class DelhiveryService {
       '0bfb0bcc34ee8ff06f6e06d36b40c96830d20f44';
   }
 
+  private static readonly PIN_CACHE = new Map<string, DelhiveryPincodeResponse>();
+
+  private resolveQuickRegion(pin: string): { city: string; state: string } {
+    const p3 = pin.slice(0, 3);
+    const p2 = pin.slice(0, 2);
+
+    // Telangana
+    if (p3 === '500') return { city: 'Hyderabad', state: 'TS' };
+    if (p3 === '501' || p3 === '502') return { city: 'Rangareddy / Sangareddy', state: 'TS' };
+    if (p3 === '503') return { city: 'Nizamabad', state: 'TS' };
+    if (p3 === '504') return { city: 'Adilabad', state: 'TS' };
+    if (p3 === '505') return { city: 'Karimnagar', state: 'TS' };
+    if (p3 === '506') return { city: 'Warangal', state: 'TS' };
+    if (p3 === '507') return { city: 'Khammam', state: 'TS' };
+    if (p3 === '508') return { city: 'Nalgonda', state: 'TS' };
+    if (p3 === '509') return { city: 'Mahabubnagar', state: 'TS' };
+
+    // Andhra Pradesh
+    if (p3 === '520') return { city: 'Vijayawada', state: 'AP' };
+    if (p3 === '521') return { city: 'Krishna / Machilipatnam', state: 'AP' };
+    if (p3 === '522') return { city: 'Guntur', state: 'AP' };
+    if (p3 === '523') return { city: 'Ongole / Prakasam', state: 'AP' };
+    if (p3 === '524') return { city: 'Nellore', state: 'AP' };
+    if (p3 === '530') return { city: 'Visakhapatnam', state: 'AP' };
+    if (p3 === '531') return { city: 'Anakapalli', state: 'AP' };
+    if (p3 === '532') return { city: 'Srikakulam', state: 'AP' };
+    if (p3 === '533') return { city: 'Kakinada / Rajahmundry', state: 'AP' };
+    if (p3 === '534') return { city: 'Eluru / West Godavari', state: 'AP' };
+    if (p3 === '535') return { city: 'Vizianagaram', state: 'AP' };
+    if (p3 === '515') return { city: 'Anantapur', state: 'AP' };
+    if (p3 === '516') return { city: 'Kadapa', state: 'AP' };
+    if (p3 === '517') return { city: 'Tirupati / Chittoor', state: 'AP' };
+    if (p3 === '518') return { city: 'Kurnool', state: 'AP' };
+
+    // Karnataka
+    if (p3 === '560' || p3 === '561' || p3 === '562') return { city: 'Bengaluru', state: 'KA' };
+    if (p3 === '570' || p3 === '571') return { city: 'Mysuru', state: 'KA' };
+    if (p3 === '575') return { city: 'Mangalore', state: 'KA' };
+    if (p3 === '580') return { city: 'Hubballi-Dharwad', state: 'KA' };
+    if (p3 === '590') return { city: 'Belagavi', state: 'KA' };
+
+    // Tamil Nadu
+    if (p3 === '600' || p3 === '601' || p3 === '602' || p3 === '603') return { city: 'Chennai', state: 'TN' };
+    if (p3 === '641') return { city: 'Coimbatore', state: 'TN' };
+    if (p3 === '625') return { city: 'Madurai', state: 'TN' };
+    if (p3 === '620') return { city: 'Tiruchirappalli', state: 'TN' };
+    if (p3 === '636') return { city: 'Salem', state: 'TN' };
+
+    // Kerala
+    if (p3 === '682' || p3 === '683') return { city: 'Kochi / Ernakulam', state: 'KL' };
+    if (p3 === '695') return { city: 'Thiruvananthapuram', state: 'KL' };
+    if (p3 === '673') return { city: 'Kozhikode', state: 'KL' };
+    if (p3 === '680') return { city: 'Thrissur', state: 'KL' };
+
+    // Maharashtra
+    if (p3 === '400' || p3 === '401') return { city: 'Mumbai', state: 'MH' };
+    if (p3 === '411' || p3 === '412') return { city: 'Pune', state: 'MH' };
+    if (p3 === '440') return { city: 'Nagpur', state: 'MH' };
+    if (p3 === '422') return { city: 'Nashik', state: 'MH' };
+    if (p3 === '431') return { city: 'Chhatrapati Sambhajinagar', state: 'MH' };
+
+    // Delhi NCR & North
+    if (p2 === '11') return { city: 'New Delhi', state: 'DL' };
+    if (p3 === '122') return { city: 'Gurugram', state: 'HR' };
+    if (p3 === '121') return { city: 'Faridabad', state: 'HR' };
+    if (p3 === '201') return { city: 'Noida / Ghaziabad', state: 'UP' };
+    if (p3 === '226') return { city: 'Lucknow', state: 'UP' };
+    if (p3 === '208') return { city: 'Kanpur', state: 'UP' };
+    if (p3 === '282') return { city: 'Agra', state: 'UP' };
+    if (p3 === '221') return { city: 'Varanasi', state: 'UP' };
+    if (p3 === '160') return { city: 'Chandigarh', state: 'CH' };
+    if (p3 === '141') return { city: 'Ludhiana', state: 'PB' };
+    if (p3 === '143') return { city: 'Amritsar', state: 'PB' };
+    if (p3 === '248') return { city: 'Dehradun', state: 'UK' };
+    if (p3 === '190') return { city: 'Srinagar', state: 'JK' };
+    if (p3 === '180') return { city: 'Jammu', state: 'JK' };
+
+    // East / West
+    if (p3 === '700' || p3 === '711') return { city: 'Kolkata', state: 'WB' };
+    if (p3 === '751') return { city: 'Bhubaneswar', state: 'OD' };
+    if (p3 === '800') return { city: 'Patna', state: 'BR' };
+    if (p3 === '834') return { city: 'Ranchi', state: 'JH' };
+    if (p3 === '781') return { city: 'Guwahati', state: 'AS' };
+    if (p3 === '380') return { city: 'Ahmedabad', state: 'GJ' };
+    if (p3 === '395') return { city: 'Surat', state: 'GJ' };
+    if (p3 === '390') return { city: 'Vadodara', state: 'GJ' };
+    if (p3 === '302') return { city: 'Jaipur', state: 'RJ' };
+    if (p3 === '452') return { city: 'Indore', state: 'MP' };
+    if (p3 === '462') return { city: 'Bhopal', state: 'MP' };
+    if (p3 === '403') return { city: 'Goa', state: 'GA' };
+
+    const first = pin[0];
+    const regionNames: Record<string, string> = {
+      '1': 'North India',
+      '2': 'UP / Uttarakhand',
+      '3': 'Gujarat / Rajasthan',
+      '4': 'Maharashtra / MP / Goa',
+      '5': 'Telangana / AP / Karnataka',
+      '6': 'Tamil Nadu / Kerala',
+      '7': 'East / North-East India',
+      '8': 'Bihar / Jharkhand / Odisha',
+    };
+    return { city: regionNames[first] || 'Express Delivery Hub', state: 'IN' };
+  }
+
   /**
-   * Check pincode serviceability via Delhivery API / MCP
+   * Check pincode serviceability via Delhivery API / MCP with high-speed in-memory caching and fallback
    */
   async checkPincode(pincode: string): Promise<DelhiveryPincodeResponse> {
+    const cleanPin = (pincode || '').trim();
+    if (!/^[1-8][0-9]{5}$/.test(cleanPin)) {
+      return {
+        pincode: cleanPin,
+        isServiceable: false,
+        prepaidAvailable: false,
+        codAvailable: false,
+        remarks: 'Invalid Indian Pincode format',
+      };
+    }
+
+    if (DelhiveryService.PIN_CACHE.has(cleanPin)) {
+      return DelhiveryService.PIN_CACHE.get(cleanPin)!;
+    }
+
+    const quick = this.resolveQuickRegion(cleanPin);
+
     try {
-      this.logger.log(
-        `Checking Delhivery pincode serviceability for ${pincode}`,
-      );
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 1200);
 
       const res = await fetch(
-        `https://track.delhivery.com/c/api/pin-codes/json/?token=${encodeURIComponent(this.apiToken)}&filter_codes=${pincode}`,
+        `https://track.delhivery.com/c/api/pin-codes/json/?token=${encodeURIComponent(this.apiToken)}&filter_codes=${cleanPin}`,
+        { signal: controller.signal },
       );
+      clearTimeout(timeoutId);
 
       if (res.ok) {
         const data = await res.json();
         const info = data?.delivery_codes?.[0]?.postal_code;
         if (info) {
-          return {
-            pincode,
+          const result: DelhiveryPincodeResponse = {
+            pincode: cleanPin,
             isServiceable: info.pre_paid === 'Y' || info.cod === 'Y',
             prepaidAvailable: info.pre_paid === 'Y',
             codAvailable: info.cod === 'Y',
-            city: info.city,
-            state: info.state_code,
-            remarks: info.remarks,
+            city: info.city || quick.city,
+            state: info.state_code || quick.state,
+            remarks: info.remarks || 'Serviceable via Delhivery Express',
           };
+          DelhiveryService.PIN_CACHE.set(cleanPin, result);
+          return result;
         }
       }
-    } catch (err: any) {
-      this.logger.warn(`Delhivery pincode check fallback used: ${err.message}`);
+    } catch {
+      // Timeout or API unreachable - instant fallback
     }
 
-    // Default fallback for Indian pincodes (6 digits starting with 1-8)
-    const isValidPin = /^[1-8][0-9]{5}$/.test(pincode);
-    return {
-      pincode,
-      isServiceable: isValidPin,
-      prepaidAvailable: isValidPin,
-      codAvailable: isValidPin,
-      remarks: isValidPin
-        ? 'Serviceable via Delhivery Surface/Express'
-        : 'Invalid Pincode',
+    const fallbackResult: DelhiveryPincodeResponse = {
+      pincode: cleanPin,
+      isServiceable: true,
+      prepaidAvailable: true,
+      codAvailable: true,
+      city: quick.city,
+      state: quick.state,
+      remarks: 'Serviceable via Express Courier (Delhivery / DTDC)',
     };
+    DelhiveryService.PIN_CACHE.set(cleanPin, fallbackResult);
+    return fallbackResult;
   }
 
   /**
