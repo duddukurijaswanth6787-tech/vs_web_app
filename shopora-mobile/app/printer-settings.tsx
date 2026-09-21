@@ -98,12 +98,23 @@ export default function PrinterSettingsScreen() {
     setConnectedName(null);
   };
 
-  const testPrint = async () => {
+  const testPrint = async (type: 'auto' | 'label3x2' | 'shipping4x6' | 'receipt' = 'auto') => {
     setTestPrinting(true);
     setError('');
     try {
-      await bluetoothPrinterService.testPrint();
-      Alert.alert('Test Print Sent', 'Check the printer for output.');
+      if (type === 'label3x2') {
+        await bluetoothPrinterService.testPrintLabel(75, 50);
+        Alert.alert('3×2" Label Sent', 'Printed 3×2" Barcode Price Tag to label printer.');
+      } else if (type === 'shipping4x6') {
+        await bluetoothPrinterService.testPrintShippingLabel();
+        Alert.alert('4×6" Shipping Label Sent', 'Printed 4×6" Courier Waybill to label printer.');
+      } else if (type === 'receipt') {
+        await bluetoothPrinterService.testPrintReceipt();
+        Alert.alert('Receipt Sent', 'Printed POS Thermal Receipt.');
+      } else {
+        await bluetoothPrinterService.testPrint();
+        Alert.alert('Test Print Sent', 'Check your thermal printer for output.');
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Test print failed.');
     } finally {
@@ -127,9 +138,7 @@ export default function PrinterSettingsScreen() {
         <View style={styles.banner}>
           <Printer size={18} color="#0284c7" />
           <Text style={styles.bannerText}>
-            Classic Bluetooth (SPP) printers only -- the kind almost all budget 58mm/80mm receipt +
-            label printers use. Pair the printer in your phone's Bluetooth settings first if it
-            doesn't appear below.
+            Classic Bluetooth (SPP) printers only -- supports 4×6" shipping labels, 3×2" barcode stickers, and 58mm/80mm POS receipts.
           </Text>
         </View>
 
@@ -153,16 +162,39 @@ export default function PrinterSettingsScreen() {
 
         {connectedAddress ? (
           <View style={styles.connectedBox}>
-            <PrinterCheck size={28} color="#16a34a" style={{ marginBottom: 10 }} />
+            <PrinterCheck size={28} color="#16a34a" style={{ marginBottom: 6 }} />
             <Text style={styles.connectedText}>Connected to {connectedName || 'printer'}</Text>
+            <Text style={{ fontSize: 11, color: '#15803d', fontWeight: '600', marginBottom: 12 }}>
+              Ready for 4×6" & 3×2" Label / Receipt Printing
+            </Text>
 
-            <TouchableOpacity style={styles.testBtn} onPress={testPrint} disabled={testPrinting}>
-              {testPrinting ? (
-                <ActivityIndicator color="#ffffff" size="small" />
-              ) : (
-                <Text style={styles.testBtnText}>Send Test Print</Text>
-              )}
-            </TouchableOpacity>
+            <View style={{ width: '100%', gap: 8, marginBottom: 12 }}>
+              <TouchableOpacity style={styles.testBtn} onPress={() => testPrint('label3x2')} disabled={testPrinting}>
+                {testPrinting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.testBtnText}>🏷️ Print 3×2" Barcode Label Test</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.testBtn, { backgroundColor: '#4338ca' }]} onPress={() => testPrint('shipping4x6')} disabled={testPrinting}>
+                {testPrinting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.testBtnText}>📦 Print 4×6" Shipping Label Test</Text>
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity style={[styles.testBtn, { backgroundColor: '#047857' }]} onPress={() => testPrint('receipt')} disabled={testPrinting}>
+                {testPrinting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.testBtnText}>🧾 Print POS Receipt Test</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+
+            {error !== '' && <Text style={[styles.errorText, { marginBottom: 12 }]}>{error}</Text>}
 
             <TouchableOpacity style={styles.disconnectBtn} onPress={disconnect}>
               <Text style={styles.disconnectText}>Disconnect</Text>

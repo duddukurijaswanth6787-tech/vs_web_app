@@ -195,6 +195,32 @@ function money(n: number): string {
   return `Rs.${n.toFixed(2)}`;
 }
 
+export function isLabelPrinterName(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.toUpperCase();
+  return (
+    n.includes('ITPP') ||
+    n.includes('130') ||
+    n.includes('BY482') ||
+    n.includes('MUNBYN') ||
+    n.includes('LABEL') ||
+    n.includes('TSC') ||
+    n.includes('XP-') ||
+    n.includes('4B') ||
+    n.includes('420') ||
+    n.includes('460') ||
+    n.includes('470') ||
+    n.includes('480') ||
+    n.includes('490') ||
+    n.includes('POSTEK') ||
+    n.includes('ZEBRA') ||
+    n.includes('HPRT') ||
+    n.includes('BARCODE') ||
+    n.includes('STICKER') ||
+    n.includes('SHIPPING')
+  );
+}
+
 class BluetoothPrinterService {
   private connectedAddress: string | null = null;
   private connectedName: string | null = null;
@@ -223,13 +249,17 @@ class BluetoothPrinterService {
     return BluetoothManager.isBluetoothEnabled();
   }
 
-  /** Scans for classic-Bluetooth devices, returning already-paired and newly-found ones separately (paired devices are usually the printer once it's been paired once in phone Settings). */
   async scanDevices(): Promise<{ paired: DiscoveredPrinter[]; found: DiscoveredPrinter[] }> {
     if (!BluetoothManager) {
-      return { paired: [], found: [] };
+      throw new Error('Bluetooth manager native module is not available.');
     }
     const raw = await BluetoothManager.scanDevices();
-    const parsed = JSON.parse(raw) as { paired?: unknown[]; found?: unknown[] };
+    let parsed: { paired?: unknown; found?: unknown } = {};
+    try {
+      parsed = typeof raw === 'string' ? JSON.parse(raw) : raw || {};
+    } catch {
+      parsed = {};
+    }
     return {
       paired: parseDeviceList(parsed.paired),
       found: parseDeviceList(parsed.found),
@@ -238,21 +268,13 @@ class BluetoothPrinterService {
 
   async connect(device: DiscoveredPrinter): Promise<void> {
     if (!BluetoothManager) {
-      throw new Error('Bluetooth printer native module is not available in this environment.');
+      throw new Error('Bluetooth manager native module is not available.');
     }
     await BluetoothManager.connect(device.address);
     this.connectedAddress = device.address;
     this.connectedName = device.name;
   }
 
-  /**
-   * The native module has no "disconnect but stay paired" method -- only
-   * `unpair(address)`, which removes the OS-level Bluetooth pairing
-   * entirely (requiring the user to re-pair from phone Settings next
-   * time). That's too destructive for a routine "Disconnect" button, so
-   * this only forgets the connection on the app's side; connecting again
-   * (to this or another printer) replaces it at the native layer.
-   */
   async disconnect(): Promise<void> {
     this.connectedAddress = null;
     this.connectedName = null;
@@ -266,8 +288,33 @@ class BluetoothPrinterService {
     return this.connectedName;
   }
 
-  /** Sends a short line to confirm the connection actually reaches the printer and cuts the paper. */
+  /**
+   * Universal Test Print:
+   * Checks whether the connected device is a TSC Label printer (like ITPP130B) or ESC/POS receipt printer
+   * and sends the appropriate test command.
+   */
   async testPrint(): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    const isLabel = isLabelPrinterName(this.connectedName);
+    if (isLabel && BluetoothTscPrinter) {
+      await this.testPrintLabel();
+      return;
+    }
+
+    try {
+      await this.testPrintReceipt();
+    } catch (escErr) {
+      if (BluetoothTscPrinter) {
+        await this.testPrintLabel();
+      } else {
+        throw escErr;
+      }
+    }
+  }
+
+  async testPrintReceipt(): Promise<void> {
     if (!this.isConnected()) {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
@@ -280,16 +327,56 @@ class BluetoothPrinterService {
     await P.printerAlign(ALIGN.CENTER);
     await P.printText('================================================\n\r', {});
     await P.printText("VASANTHI'S SIGNATURE\n\r", { widthtimes: 1, heigthtimes: 1 });
-    await P.printText('3-Inch POS Thermal Printer Test\n\r', {});
+    await P.printText('POS Thermal Receipt Test\n\r', {});
     await P.printText('Bluetooth Connection: OK\n\r', {});
     await P.printText('================================================\n\r\n\r\n\r\n\r', {});
     if (P.cutPaper) {
       try {
         await P.cutPaper();
       } catch (err) {
-        console.warn('[BluetoothPrinter] cutPaper error in testPrint:', err);
+        console.warn('[BluetoothPrinter] cutPaper error in testPrintReceipt:', err);
       }
     }
+  }
+
+  async testPrintLabel(widthMm = 75, heightMm = 50): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    await this.printLabel({
+      productName: 'Silk Anarkali Suit',
+      variantTitle: 'Size: L | Wine Red',
+      sku: 'VS-TEST-001',
+      barcode: '890123456789',
+      price: 4999,
+      storeName: "VASANTHI'S",
+      widthMm,
+      heightMm,
+      quantity: 1,
+    });
+  }
+
+  async testPrintShippingLabel(): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    await this.printShippingLabel({
+      waybill: '1284759201948',
+      orderNumber: 'ORD-TEST-001',
+      courier: 'DELHIVERY EXPRESS',
+      consigneeName: 'Priya Sharma',
+      consigneePhone: '9848090907',
+      consigneeAddress: 'Flat 402, Signature Towers, Road 36',
+      city: 'Hyderabad',
+      state: 'Telangana',
+      pincode: '500033',
+      paymentType: 'PREPAID',
+      sellerName: "Vasanthi's Signature",
+      sellerAddress: 'Jubilee Hills, Hyderabad, TS - 500033',
+      sellerGst: '36AABCU9603R1ZM',
+      itemsSummary: 'Designer Saree (1 pcs)',
+      weightGrams: 500,
+    });
   }
 
   /** Prints a POS sale receipt using the printer's built-in ESC/POS text commands with exact 48-char alignment and auto-cut. */
