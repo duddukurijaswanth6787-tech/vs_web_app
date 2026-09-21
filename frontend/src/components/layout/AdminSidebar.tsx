@@ -26,16 +26,13 @@ export default function AdminSidebar() {
     setMobileSidebarOpen,
   } = useUIStore();
 
-  // Fetch pending order count for live notification badge
+  // Fetch pending order count for live notification badge (0 if none)
   const { data: pendingOrdersData } = useOrderList({ limit: 1, status: 'PENDING' });
-  const pendingOrdersCount = pendingOrdersData?.meta?.total ?? 3;
+  const pendingOrdersCount = pendingOrdersData?.meta?.total ?? 0;
 
-  // Notification Badges for specific actionable sections
+  // Notification Badges for specific actionable sections — ONLY rendered when real count > 0
   const notificationHits: Record<string, { count: number; label?: string }> = {
-    orders: { count: pendingOrdersCount > 0 ? pendingOrdersCount : 3 },
-    returns: { count: 1 },
-    shipments: { count: 2, label: 'Live' },
-    inventory: { count: 5 },
+    ...(pendingOrdersCount > 0 ? { orders: { count: pendingOrdersCount } } : {}),
   };
 
   const handleLinkClick = () => {
