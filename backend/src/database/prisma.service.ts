@@ -5,7 +5,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { PrismaClient } from '@prisma/client';
+import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { DATABASE_CONSTANTS } from './database.constants';
 
@@ -16,10 +16,24 @@ export class PrismaService
 {
   private connected = false;
   private readonly logger = new Logger(PrismaService.name);
+  private pool: Pool | null = null;
 
   constructor(private readonly configService: ConfigService) {
-    const url = configService.get<string>('app.database.url') || '';
-    const adapter = new PrismaPg({ connectionString: url });
+    const url =
+      configService.get<string>('app.database.url') ||
+      process.env.DATABASE_URL ||
+      '';
+    const isRemote =
+      url.includes('rlwy.net') ||
+      url.includes('railway') ||
+      url.includes('amazonaws.com') ||
+      (!url.includes('localhost') && !url.includes('127.0.0.1'));
+
+    const pool = new Pool({
+      connectionString: url,
+      ssl: isRemote ? { rejectUnauthorized: false } : undefined,
+    });
+    const adapter = new PrismaPg(pool);
     const env = configService.get<string>('app.env', 'development');
     super({
       adapter,
