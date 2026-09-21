@@ -219,7 +219,7 @@ export class DelhiveryService {
             codAvailable: info.cod === 'Y',
             city: info.city || quick.city,
             state: info.state_code || quick.state,
-            remarks: info.remarks || 'Serviceable via Delhivery Express',
+            remarks: info.remarks || 'Delivery in 3–5 business days',
           };
           DelhiveryService.PIN_CACHE.set(cleanPin, result);
           return result;
@@ -236,7 +236,7 @@ export class DelhiveryService {
       codAvailable: true,
       city: quick.city,
       state: quick.state,
-      remarks: 'Serviceable via Express Courier (Delhivery / DTDC)',
+      remarks: 'Delivery in 3–5 business days',
     };
     DelhiveryService.PIN_CACHE.set(cleanPin, fallbackResult);
     return fallbackResult;

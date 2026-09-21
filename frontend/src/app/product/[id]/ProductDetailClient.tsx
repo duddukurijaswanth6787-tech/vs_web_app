@@ -755,7 +755,7 @@ export function ProductDetailClient() {
           prepaidAvailable: res.prepaidAvailable,
           codAvailable: res.codAvailable,
           estimatedDateText: estText,
-          remarks: res.remarks || 'Serviceable via Express Delivery (Delhivery / DTDC)',
+          remarks: res.remarks || 'Delivery in 3–5 business days',
         };
         clientPincodeCacheRef.current.set(clean, data);
         setDeliveryData(data);

@@ -619,7 +619,7 @@ function CheckoutPageContent() {
                     <div className="flex items-center gap-2 p-2.5 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-800 text-xs animate-fadeIn">
                       <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span className="leading-snug">
-                        <strong>Pincode Serviceable:</strong> Express delivery supported to <strong>{newAddrForm.city}, {newAddrForm.state}</strong> via <strong>Delhivery &amp; DTDC Express</strong> (3-5 Days).
+                        <strong>Delivery in 3–5 days:</strong> Express delivery available to <strong>{newAddrForm.city ? `${newAddrForm.city}, ${newAddrForm.state}` : 'your location'}</strong>.
                       </span>
                     </div>
                   )}
