@@ -42,7 +42,14 @@ export class CartService {
       totalPrice: Number(item.totalPrice),
       savedForLater: item.savedForLater,
       createdAt: item.createdAt,
-      imageUrl: primaryMedia?.url ?? item.product?.primaryImageUrl ?? undefined,
+      imageUrl:
+        primaryMedia?.url ??
+        item.product?.primaryImageUrl ??
+        (Array.isArray(item.product?.images) && item.product.images.length > 0
+          ? typeof item.product.images[0] === 'string'
+            ? item.product.images[0]
+            : item.product.images[0]?.url
+          : undefined),
       availableQuantity: item.variant?.inventory?.availableQuantity ?? 99,
     };
   }

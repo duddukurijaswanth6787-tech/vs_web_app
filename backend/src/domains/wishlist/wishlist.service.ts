@@ -72,9 +72,10 @@ export class WishlistService {
               item.product.salePrice != null
                 ? Number(item.product.salePrice)
                 : null,
-            images: (item.product.media || []).map((m: any) => ({
-              url: m.url,
-            })),
+            images:
+              item.product.media && item.product.media.length > 0
+                ? item.product.media.map((m: any) => ({ url: m.url }))
+                : [],
           }
         : undefined,
     };

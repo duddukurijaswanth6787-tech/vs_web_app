@@ -11,6 +11,7 @@ import { useFeaturedCategories } from '@/features/customer/hooks';
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { useQuery } from '@tanstack/react-query';
 import { withVariant, resolveMediaUrl } from '@/lib/media-url';
+import { getCategoryFallbackImage } from '@/lib/category-images';
 import type { CategoryResponse } from '@/features/catalog/categories/category.types';
 
 export default function CategoriesPage() {
@@ -29,12 +30,10 @@ export default function CategoriesPage() {
     return list
       .filter((c: CategoryResponse) => c.status !== 'ARCHIVED')
       .map((c: CategoryResponse) => {
-        // No stock-photo fallback: showing a random Unsplash model for a
-        // category the admin never gave an image to made the catalog look
-        // populated when it was not. Null here renders an explicit Empty tile.
         const rawImg = c.icon || c.image || c.imageUrl || c.primaryImageUrl || (c as any).bannerImage || (c as any).bannerUrl;
-        const hasImage = !!rawImg && !rawImg.includes('data:image/svg');
-        return { ...c, imageUrl: hasImage ? resolveMediaUrl(rawImg) : null };
+        const hasImage = !!rawImg && !rawImg.includes('data:image/svg') && rawImg !== 'undefined';
+        const finalUrl = hasImage ? resolveMediaUrl(rawImg) : getCategoryFallbackImage(c.slug, c.name);
+        return { ...c, imageUrl: finalUrl };
       });
   }, [all.data, featured.data]);
 
@@ -61,19 +60,13 @@ export default function CategoriesPage() {
                 className="bg-white border border-neutral-200 rounded-2xl overflow-hidden shadow-xs hover:shadow-md transition-all group"
               >
                 <div className="aspect-square bg-neutral-100 relative overflow-hidden">
-                  {cat.imageUrl ? (
-                    <Image
-                      src={withVariant(cat.imageUrl, 'medium')}
-                      alt={cat.name}
-                      fill
-                      sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-neutral-50 border-b border-neutral-100">
-                      <span className="text-xs font-bold uppercase tracking-wider text-neutral-400">Empty</span>
-                    </div>
-                  )}
+                  <Image
+                    src={withVariant(cat.imageUrl || getCategoryFallbackImage(cat.slug, cat.name), 'medium')}
+                    alt={cat.name}
+                    fill
+                    sizes="(max-width: 640px) 50vw, (max-width: 768px) 33vw, 25vw"
+                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                  />
                 </div>
                 <div className="p-3">
                   <h2 className="text-sm font-bold text-neutral-900 line-clamp-1">{cat.name}</h2>

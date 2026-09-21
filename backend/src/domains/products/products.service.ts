@@ -123,18 +123,39 @@ export class ProductsService {
         )?.url ??
         p.media?.[0]?.url ??
         p.primaryImageUrl ??
-        undefined,
-      images: p.media?.map((m: any) => ({
-        id: m.id,
-        url: m.url,
-        title: m.title ?? undefined,
-        thumbnailUrl: m.thumbnailUrl ?? undefined,
-        altText: m.altText ?? undefined,
-        isPrimary: m.isPrimary,
-        mediaType: m.mediaType,
-        color: m.color ?? undefined,
-        colorGroupId: m.colorGroupId ?? undefined,
-      })),
+        (Array.isArray(p.images) && p.images.length > 0
+          ? (typeof p.images[0] === 'string' ? p.images[0] : p.images[0]?.url)
+          : undefined),
+      images:
+        p.media && p.media.length > 0
+          ? p.media.map((m: any) => ({
+              id: m.id,
+              url: m.url,
+              title: m.title ?? undefined,
+              thumbnailUrl: m.thumbnailUrl ?? undefined,
+              altText: m.altText ?? undefined,
+              isPrimary: m.isPrimary,
+              mediaType: m.mediaType,
+              color: m.color ?? undefined,
+              colorGroupId: m.colorGroupId ?? undefined,
+            }))
+          : Array.isArray(p.images) && p.images.length > 0
+            ? p.images.map((img: any, idx: number) => ({
+                id: `img-${idx}`,
+                url: typeof img === 'string' ? img : img.url || img,
+                isPrimary: idx === 0,
+                mediaType: 'IMAGE',
+              }))
+            : p.primaryImageUrl
+              ? [
+                  {
+                    id: 'primary',
+                    url: p.primaryImageUrl,
+                    isPrimary: true,
+                    mediaType: 'IMAGE',
+                  },
+                ]
+              : [],
       colorGroups: p.colorGroups?.map((cg: any) => ({
         id: cg.id,
         productId: cg.productId,

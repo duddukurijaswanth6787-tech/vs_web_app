@@ -783,7 +783,7 @@ export function ProductDetailClient() {
         estimatedDateText: estText,
         remarks: 'Standard Express Courier Delivery',
       };
-      clientPincodeCache.set(clean, fallbackData);
+      clientPincodeCacheRef.current.set(clean, fallbackData);
       setDeliveryData(fallbackData);
       setDeliveryStatus('available');
     }
