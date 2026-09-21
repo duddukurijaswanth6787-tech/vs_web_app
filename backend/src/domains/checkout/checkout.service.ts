@@ -170,6 +170,7 @@ export class CheckoutService {
   private async buildItems(cartItems: any[]): Promise<{
     items: CheckoutItemResponse[];
     brandByProduct: Map<string, string | undefined>;
+    productMap: Map<string, any>;
   }> {
     const productIds = cartItems.map((i) => i.productId);
     const products = await this.prisma.product.findMany({
@@ -209,7 +210,8 @@ export class CheckoutService {
 
       const unitPrice = Number(item.unitPrice);
       const totalPrice = unitPrice * item.quantity;
-      const taxAmount = totalPrice * (Number(product.taxPercentage ?? 0) / 100);
+      const taxPercentage = Number(product.taxPercentage ?? 5) || 5;
+      const taxAmount = (totalPrice * taxPercentage) / (100 + taxPercentage);
 
       items.push({
         productId: item.productId,
@@ -221,7 +223,7 @@ export class CheckoutService {
         taxAmount: Math.round(taxAmount * 100) / 100,
       });
     }
-    return { items, brandByProduct };
+    return { items, brandByProduct, productMap };
   }
 
   async preview(
@@ -234,7 +236,7 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const { items, brandByProduct } = await this.buildItems(activeItems);
+    const { items, brandByProduct, productMap } = await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
@@ -250,22 +252,39 @@ export class CheckoutService {
       subtotal,
       discountItems,
     );
-    const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
+
+    const effectiveDiscount = Math.min(discountTotal, subtotal);
+    const payableItemsTotal = Math.max(0, subtotal - effectiveDiscount);
+
+    // Compute line-level tax amounts on the discounted payable line items (GST is tax-inclusive)
+    let taxTotal = 0;
+    for (const item of items) {
+      const lineFraction = subtotal > 0 ? item.totalPrice / subtotal : 0;
+      const lineDiscount = effectiveDiscount * lineFraction;
+      const linePayable = Math.max(0, item.totalPrice - lineDiscount);
+      const product = productMap.get(item.productId);
+      const taxPercentage = Number(product?.taxPercentage ?? 5) || 5;
+      const lineTax = (linePayable * taxPercentage) / (100 + taxPercentage);
+      item.taxAmount = Math.round(lineTax * 100) / 100;
+      taxTotal += item.taxAmount;
+    }
+    taxTotal = Math.round(taxTotal * 100) / 100;
+
     const shippingCharge = await this.calculateShipping(
       method,
       subtotal,
       freeShipping,
     );
-    const grandTotal = subtotal - discountTotal + taxTotal + shippingCharge;
+    const grandTotal = Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     return {
       items,
       itemCount: items.reduce((sum, i) => sum + i.quantity, 0),
       subtotal: Math.round(subtotal * 100) / 100,
-      discountTotal,
-      taxTotal: Math.round(taxTotal * 100) / 100,
+      discountTotal: Math.round(effectiveDiscount * 100) / 100,
+      taxTotal,
       shippingCharge,
-      grandTotal: Math.round(grandTotal * 100) / 100,
+      grandTotal,
       estimatedDelivery:
         SHIPPING_ESTIMATES[method] ?? SHIPPING_ESTIMATES.STANDARD,
     };
@@ -281,7 +300,7 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
-    const { items, brandByProduct } = await this.buildItems(activeItems);
+    const { items, brandByProduct, productMap } = await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
 
     const subtotal = items.reduce((sum, i) => sum + i.totalPrice, 0);
@@ -298,13 +317,30 @@ export class CheckoutService {
         subtotal,
         discountItems,
       );
-    const taxTotal = items.reduce((sum, i) => sum + i.taxAmount, 0);
+
+    const effectiveDiscount = Math.min(discountTotal, subtotal);
+    const payableItemsTotal = Math.max(0, subtotal - effectiveDiscount);
+
+    // Compute line-level tax amounts on the discounted payable line items (GST is tax-inclusive)
+    let taxTotal = 0;
+    for (const item of items) {
+      const lineFraction = subtotal > 0 ? item.totalPrice / subtotal : 0;
+      const lineDiscount = effectiveDiscount * lineFraction;
+      const linePayable = Math.max(0, item.totalPrice - lineDiscount);
+      const product = productMap.get(item.productId);
+      const taxPercentage = Number(product?.taxPercentage ?? 5) || 5;
+      const lineTax = (linePayable * taxPercentage) / (100 + taxPercentage);
+      item.taxAmount = Math.round(lineTax * 100) / 100;
+      taxTotal += item.taxAmount;
+    }
+    taxTotal = Math.round(taxTotal * 100) / 100;
+
     const shippingCharge = await this.calculateShipping(
       method,
       subtotal,
       freeShipping,
     );
-    const grandTotal = subtotal - discountTotal + taxTotal + shippingCharge;
+    const grandTotal = Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     const orderNumber = await this.workflow.generateOrderNumber();
 

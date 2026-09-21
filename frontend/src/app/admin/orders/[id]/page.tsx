@@ -358,25 +358,31 @@ export default function OrderDetailPage() {
 
           {/* Pricing Totals Breakdown */}
           <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3 text-xs">
-            <div className="flex justify-between text-neutral-500">
+            <div className="flex justify-between text-neutral-600">
               <span>Subtotal:</span>
               <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
             </div>
-            <div className="flex justify-between text-red-500">
-              <span>Discount Amount:</span>
-              <span className="font-mono font-semibold">-{formatMoney(order.discountTotal, order.currency)}</span>
+            {Number(order.discountTotal) > 0 && (
+              <div className="flex justify-between text-red-600 font-medium">
+                <span>Discount Applied:</span>
+                <span className="font-mono font-semibold">-{formatMoney(order.discountTotal, order.currency)}</span>
+              </div>
+            )}
+            <div className="flex justify-between text-neutral-600">
+              <span>Delivery / Shipping:</span>
+              <span className="font-mono font-semibold">
+                {Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : (
+                  <span className="text-emerald-700 font-bold">Free Shipping</span>
+                )}
+              </span>
             </div>
-            <div className="flex justify-between text-neutral-500">
-              <span>Tax Amount:</span>
-              <span className="font-mono font-semibold">{formatMoney(order.taxTotal, order.currency)}</span>
+            <div className="flex justify-between text-neutral-400 text-[11px] pt-1">
+              <span>Included GST (Taxes):</span>
+              <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
             </div>
-            <div className="flex justify-between text-neutral-500">
-              <span>Shipping Charge:</span>
-              <span className="font-mono font-semibold">{formatMoney(order.shippingCharge, order.currency)}</span>
-            </div>
-            <div className="flex justify-between pt-3 border-t border-neutral-150 font-bold text-sm text-neutral-950">
+            <div className="flex justify-between pt-3 border-t border-neutral-200 font-bold text-sm text-neutral-950">
               <span>Grand Total:</span>
-              <span className="font-mono">{formatMoney(order.grandTotal, order.currency)}</span>
+              <span className="font-mono text-base text-sky-900">{formatMoney(order.grandTotal, order.currency)}</span>
             </div>
           </div>
 
@@ -528,10 +534,14 @@ export default function OrderDetailPage() {
                 )}
                 <div className="flex justify-between text-neutral-600">
                   <span>Delivery / Shipping Fee:</span>
-                  <span className="font-mono">{Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : 'Free Shipping'}</span>
+                  <span className="font-mono">
+                    {Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : (
+                      <span className="text-emerald-700 font-bold">Free Shipping</span>
+                    )}
+                  </span>
                 </div>
-                <div className="flex justify-between text-neutral-600">
-                  <span>Taxes (GST):</span>
+                <div className="flex justify-between text-neutral-400 text-[10px]">
+                  <span>GST (Included in Price):</span>
                   <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
                 </div>
                 <div className="pt-2 border-t border-neutral-200 flex justify-between items-center text-xs font-bold text-neutral-950">
