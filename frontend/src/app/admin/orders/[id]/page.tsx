@@ -269,6 +269,16 @@ export default function OrderDetailPage() {
               </h1>
               <OrderStatusBadge status={order.status} />
               <ChannelBadge channel={order.channel} />
+              {isOnlineOrder && (
+                <span className="text-2xs font-bold bg-blue-50 text-blue-800 border border-blue-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  🌐 Live Customer Storefront Order
+                </span>
+              )}
+              {Number(order.discountTotal) >= Number(order.subtotal) && Number(order.subtotal) > 0 && (
+                <span className="text-2xs font-bold bg-purple-50 text-purple-800 border border-purple-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  🎁 100% Promo Coupon Applied
+                </span>
+              )}
             </div>
             <p className="text-2xs sm:text-xs text-neutral-400 mt-1">
               Placed on: {formatDateTime(order.createdAt)}
@@ -820,87 +830,49 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {/* Order Summary & Products Quick View (For Online Orders) */}
-          {isOnlineOrder && (
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
-              <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-neutral-800" />
-                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
-                    Order Summary ({order.items?.length || 0} Items)
-                  </h3>
-                </div>
-                <span className="text-2xs font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded">
-                  {order.items?.reduce((s, i) => s + i.quantity, 0)} Total Qty
+          {/* Order Channel & Verification Details */}
+          <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-sky-600" />
+                <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                  Order Source & Verification
+                </h3>
+              </div>
+              <span className="text-2xs font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-full">
+                {order.channel === 'ONLINE_STORE' ? 'Web Storefront' : order.channel}
+              </span>
+            </div>
+
+            <div className="space-y-2 text-2xs text-neutral-600">
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Order Classification:</span>
+                <span className="font-semibold text-neutral-900">
+                  {order.channel === 'ONLINE_STORE' ? '🌐 Live Customer Order' : '🏬 In-Store Walk-in'}
                 </span>
               </div>
-
-              {/* Ordered Items Preview List */}
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {order.items?.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150/80 flex justify-between items-start text-xs hover:bg-neutral-50 transition"
-                  >
-                    <div className="space-y-0.5 pr-2 min-w-0 flex-1">
-                      <span className="font-bold text-neutral-900 truncate block">{item.productName}</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {item.variantTitle && (
-                          <span className="text-[10px] bg-neutral-200/70 text-neutral-700 px-1.5 py-0.2 rounded font-medium">
-                            {item.variantTitle}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono text-neutral-500">SKU: {item.sku}</span>
-                      </div>
-                      <span className="text-2xs text-neutral-500 block">
-                        Qty: <strong>{item.quantity}</strong> × {formatMoney(item.unitPrice, order.currency)}
-                      </span>
-                    </div>
-                    <div className="font-bold text-neutral-900 shrink-0 text-right">
-                      {formatMoney(item.totalPrice, order.currency)}
-                    </div>
-                  </div>
-                ))}
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Discount Status:</span>
+                <span className="font-semibold text-neutral-900">
+                  {Number(order.discountTotal) > 0 ? (
+                    <span className="text-red-600 font-bold">Promo Applied (-{formatMoney(order.discountTotal, order.currency)})</span>
+                  ) : (
+                    'Standard Price'
+                  )}
+                </span>
               </div>
-
-              {/* Price Breakdown Strip */}
-              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-150 space-y-1.5 text-2xs">
-                <div className="flex justify-between text-neutral-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
-                </div>
-                {Number(order.discountTotal) > 0 && (
-                  <div className="flex justify-between text-red-600 font-medium">
-                    <span>Discount Applied:</span>
-                    <span className="font-mono">-{formatMoney(order.discountTotal, order.currency)}</span>
-                  </div>
-                )}
-                <div className="flex justify-between text-neutral-600">
-                  <span>Delivery / Shipping Fee:</span>
-                  <span className="font-mono">
-                    {Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : (
-                      <span className="text-emerald-700 font-bold">Free Shipping</span>
-                    )}
-                  </span>
-                </div>
-                <div className="flex justify-between text-neutral-400 text-[10px]">
-                  <span>GST (Included in Price):</span>
-                  <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
-                </div>
-                <div className="pt-2 border-t border-neutral-200 flex justify-between items-center text-xs font-bold text-neutral-950">
-                  <span>Total Payable:</span>
-                  <span className="font-mono text-sm text-sky-900">{formatMoney(order.grandTotal, order.currency)}</span>
-                </div>
-                {(order.paymentMethod?.toUpperCase().includes('COD') ||
-                  order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
-                  payments?.some((p) => p.method?.toUpperCase().includes('COD'))) && (
-                  <div className="p-1.5 bg-amber-100/70 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-900 text-center">
-                    💵 Cash to be collected upon courier delivery: {formatMoney(order.grandTotal, order.currency)}
-                  </div>
-                )}
+              <div className="flex justify-between">
+                <span className="text-neutral-500">Payment Verification:</span>
+                <span className="font-semibold text-neutral-900">
+                  {order.paymentMethod?.toUpperCase().includes('COD') ? 'Cash on Delivery' : 'Prepaid Online / Verified'}
+                </span>
+              </div>
+              <div className="flex justify-between border-t border-neutral-100 pt-1.5 text-[10px] text-neutral-400">
+                <span>Total Items:</span>
+                <span className="font-bold text-neutral-700">{order.items?.reduce((s, i) => s + i.quantity, 0)} Units</span>
               </div>
             </div>
-          )}
+          </div>
 
           {/* Cancellation Info Panel (Only if Cancelled) */}
           {order.status === 'CANCELLED' && cancellation && (
