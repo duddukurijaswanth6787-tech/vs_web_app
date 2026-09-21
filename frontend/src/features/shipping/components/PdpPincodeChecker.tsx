@@ -23,17 +23,6 @@ export function PdpPincodeChecker({ className = '' }: PdpPincodeCheckerProps) {
     expressDeliveryDate: string;
   } | null>(null);
 
-  // Load cached pincode on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const savedPin = localStorage.getItem('vs_customer_pincode');
-      if (savedPin && savedPin.length === 6) {
-        setPincode(savedPin);
-        handleCheck(savedPin, false);
-      }
-    }
-  }, []);
-
   const calculateDeliveryDates = () => {
     const today = new Date();
     
@@ -110,6 +99,17 @@ export function PdpPincodeChecker({ className = '' }: PdpPincodeCheckerProps) {
       setLoading(false);
     }
   };
+
+  // Load cached pincode on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const savedPin = localStorage.getItem('vs_customer_pincode');
+      if (savedPin && savedPin.length === 6) {
+        setPincode(savedPin);
+        handleCheck(savedPin, false);
+      }
+    }
+  }, []);
 
   return (
     <div className={`rounded-xl border border-stone-200 bg-stone-50/80 p-4 transition-all ${className}`}>

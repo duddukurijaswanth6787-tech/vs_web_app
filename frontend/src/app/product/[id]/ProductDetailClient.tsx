@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -718,7 +718,7 @@ export function ProductDetailClient() {
     }
   };
 
-  const clientPincodeCache = useMemo(() => new Map<string, any>(), []);
+  const clientPincodeCacheRef = useRef<Map<string, any>>(new Map());
 
   const checkPincodeServiceability = async (pin: string) => {
     const clean = (pin || '').trim();
@@ -728,8 +728,8 @@ export function ProductDetailClient() {
       return;
     }
 
-    if (clientPincodeCache.has(clean)) {
-      const cached = clientPincodeCache.get(clean);
+    if (clientPincodeCacheRef.current.has(clean)) {
+      const cached = clientPincodeCacheRef.current.get(clean);
       setDeliveryData(cached);
       setDeliveryStatus('available');
       return;
@@ -756,7 +756,7 @@ export function ProductDetailClient() {
           estimatedDateText: estText,
           remarks: res.remarks || 'Serviceable via Express Delivery (Delhivery / DTDC)',
         };
-        clientPincodeCache.set(clean, data);
+        clientPincodeCacheRef.current.set(clean, data);
         setDeliveryData(data);
         setDeliveryStatus('available');
         try {
