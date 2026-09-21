@@ -165,10 +165,14 @@ export interface PrinterLabelData {
 
 export interface PrinterShippingLabelData {
   courier: string;
+  subCourierText?: string;
   waybill: string;
   orderNumber: string;
+  invoiceNumber?: string;
+  orderDate?: string;
   paymentType: 'PREPAID' | 'COD';
   codAmount?: number;
+  serviceType?: string;
   consigneeName: string;
   consigneePhone: string;
   consigneeAddress: string;
@@ -177,10 +181,15 @@ export interface PrinterShippingLabelData {
   pincode: string;
   routingHub?: string;
   weightGrams?: number;
+  dimensions?: string;
+  pieces?: string;
   sellerName?: string;
   sellerAddress?: string;
+  sellerPhone?: string;
   sellerGst?: string;
   itemsSummary?: string;
+  sku?: string;
+  hsn?: string;
 }
 
 function parseDeviceList(raw: unknown): DiscoveredPrinter[] {
@@ -361,21 +370,30 @@ class BluetoothPrinterService {
       throw new Error('No printer connected. Open Printer Settings and connect one first.');
     }
     await this.printShippingLabel({
-      waybill: '1284759201948',
-      orderNumber: 'ORD-TEST-001',
-      courier: 'DELHIVERY EXPRESS',
-      consigneeName: 'Priya Sharma',
-      consigneePhone: '9848090907',
-      consigneeAddress: 'Flat 402, Signature Towers, Road 36',
-      city: 'Hyderabad',
-      state: 'Telangana',
-      pincode: '500033',
+      courier: 'DELHIVERY',
+      subCourierText: 'SMALL WORLD',
       paymentType: 'PREPAID',
+      serviceType: 'SURFACE',
       sellerName: "Vasanthi's Signature",
-      sellerAddress: 'Jubilee Hills, Hyderabad, TS - 500033',
-      sellerGst: '36AABCU9603R1ZM',
-      itemsSummary: 'Designer Saree (1 pcs)',
+      sellerAddress: 'Plot No. 123, Phase 2',
+      sellerPhone: '+91 98765 43210',
+      consigneeName: 'Priya Sharma',
+      consigneeAddress: 'Flat No. 402, Sai Residency',
+      city: 'Bengaluru',
+      state: 'Karnataka',
+      pincode: '560038',
+      consigneePhone: '91234 56789',
+      orderNumber: 'VS1234567890',
+      invoiceNumber: 'INV-20260920-001',
+      orderDate: '20 Sep 2026',
+      dimensions: '30 x 20 x 10',
       weightGrams: 500,
+      pieces: '1/1',
+      waybill: 'DLVH28917654321',
+      routingHub: 'BLR/INR',
+      itemsSummary: "Women's Ethnic Dress (Red)",
+      sku: 'VS-DRS-001-RED-M',
+      hsn: '6204',
     });
   }
 
@@ -791,7 +809,8 @@ class BluetoothPrinterService {
 
   /**
    * Prints a 4x6 inch (100x150mm = 800x1200 dots) Courier Shipping Label
-   * using full-canvas high-resolution TSC/TSPL commands.
+   * matching the standard Delhivery courier format with QR code, Barcode,
+   * Ship To / Ship From columns, routing codes, and handling icons.
    */
   async printShippingLabel(shipping: PrinterShippingLabelData): Promise<void> {
     if (!this.isConnected()) {
@@ -805,40 +824,91 @@ class BluetoothPrinterService {
     const gapMm = 3;
 
     const divLine = '========================================================================';
+    const isCod = shipping.paymentType === 'COD';
+    const paymentTitle = isCod ? 'COLLECT COD' : 'PREPAID';
+    const surfaceText = shipping.serviceType || 'SURFACE';
+    const subPaymentText = isCod
+      ? `COLLECT: Rs.${shipping.codAmount || 0}`
+      : 'DO NOT COLLECT CASH';
 
     const textFields = [
-      // 1. Courier Header & Payment Mode (Top Box)
+      // 1. Top Header: DELHIVERY & Payment Header
       {
-        text: (shipping.courier || 'DELHIVERY EXPRESS').toUpperCase(),
-        x: 30,
-        y: 30,
+        text: (shipping.courier || 'DELHIVERY').toUpperCase(),
+        x: 35,
+        y: 25,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
         yscal: 2,
+        bold: true,
       },
       {
-        text: `[ ${shipping.paymentType || 'PREPAID'} ]`,
+        text: shipping.subCourierText || 'SMALL WORLD',
+        x: 35,
+        y: 80,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: '|',
+        x: 485,
+        y: 25,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: '|',
+        x: 485,
+        y: 55,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: '|',
+        x: 485,
+        y: 85,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: paymentTitle,
         x: 520,
-        y: 30,
+        y: 25,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
         yscal: 2,
+        bold: true,
       },
-      ...(shipping.paymentType === 'COD' && shipping.codAmount
-        ? [
-            {
-              text: `COD AMOUNT: Rs.${shipping.codAmount}`,
-              x: 480,
-              y: 75,
-              fonttype: FONTTYPE.FONT_2,
-              rotation: TSC_ROTATION.ROTATION_0,
-              xscal: 1,
-              yscal: 1,
-            },
-          ]
-        : []),
+      {
+        text: surfaceText,
+        x: 550,
+        y: 60,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: subPaymentText,
+        x: 495,
+        y: 85,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
       {
         text: divLine,
         x: 20,
@@ -849,142 +919,416 @@ class BluetoothPrinterService {
         yscal: 1,
       },
 
-      // 2. AWB Title
+      // 2. Ship From / Ship To (2 Columns)
       {
-        text: `AWB No: ${shipping.waybill}`,
-        x: 30,
-        y: 135,
+        text: 'Ship From:',
+        x: 35,
+        y: 125,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: (shipping.sellerName || "Vasanthi's Signature").slice(0, 24),
+        x: 35,
+        y: 155,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: (shipping.sellerAddress || 'Plot No. 123, Phase 2').slice(0, 26),
+        x: 35,
+        y: 185,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: 'Kondapur, Hyderabad',
+        x: 35,
+        y: 210,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: 'Telangana - 500084',
+        x: 35,
+        y: 235,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Ph: ${shipping.sellerPhone || '+91 98765 43210'}`,
+        x: 35,
+        y: 265,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+
+      // Vertical separator between Ship From and Ship To
+      ...[125, 160, 195, 230, 265].map((yVal) => ({
+        text: '|',
+        x: 375,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
+
+      // Ship To (Right Column)
+      {
+        text: 'Ship To:',
+        x: 395,
+        y: 125,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: shipping.consigneeName.slice(0, 24),
+        x: 395,
+        y: 155,
+        fonttype: FONTTYPE.FONT_3,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: shipping.consigneeAddress.slice(0, 26),
+        x: 395,
+        y: 185,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: (shipping.consigneeAddress.length > 26 ? shipping.consigneeAddress.slice(26, 52) : '12th Cross, Indiranagar').slice(0, 26),
+        x: 395,
+        y: 210,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `${shipping.city} - ${shipping.pincode}`,
+        x: 395,
+        y: 235,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: shipping.state,
+        x: 395,
+        y: 260,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Ph: +91 ${shipping.consigneePhone}`,
+        x: 395,
+        y: 285,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
       },
       {
         text: divLine,
         x: 20,
-        y: 345,
+        y: 315,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 3. Order Meta & Routing
+      // 3. Order ID & Metadata
       {
-        text: `ORDER ID: ${shipping.orderNumber}`,
-        x: 30,
-        y: 365,
+        text: `Order ID:      ${shipping.orderNumber}`,
+        x: 35,
+        y: 330,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
       {
-        text: `WEIGHT: ${shipping.weightGrams || 500}g  |  PIECES: 1  |  MODE: SURFACE/EXPRESS`,
-        x: 30,
-        y: 400,
+        text: `Invoice No:   ${shipping.invoiceNumber || 'INV-20260920-001'}`,
+        x: 35,
+        y: 355,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
       {
-        text: `ROUTING HUB: ${shipping.routingHub || 'HYD/JUB/500033'}`,
-        x: 30,
-        y: 435,
-        fonttype: FONTTYPE.FONT_3,
+        text: `Order Date:   ${shipping.orderDate || '20 Sep 2026'}`,
+        x: 35,
+        y: 380,
+        fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
+        xscal: 1,
+        yscal: 1,
+      },
+
+      ...[330, 355, 380].map((yVal) => ({
+        text: '|',
+        x: 430,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
+
+      {
+        text: `Dimensions (cm): ${shipping.dimensions || '30 x 20 x 10'}`,
+        x: 445,
+        y: 330,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Weight: ${shipping.weightGrams ? (shipping.weightGrams / 1000).toFixed(2) : '0.50'} kg`,
+        x: 445,
+        y: 355,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: `Pieces: ${shipping.pieces || '1/1'}`,
+        x: 445,
+        y: 380,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
       },
       {
         text: divLine,
         x: 20,
-        y: 490,
+        y: 410,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 4. SHIP TO / CONSIGNEE (Large & Bold)
+      // 4. Barcode Waybill Text + Scan for Tracking
       {
-        text: 'DELIVER TO / CONSIGNEE:',
-        x: 30,
-        y: 510,
-        fonttype: FONTTYPE.FONT_2,
+        text: shipping.waybill,
+        x: 130,
+        y: 535,
+        fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
+        xscal: 2,
+        yscal: 2,
+        bold: true,
       },
       {
-        text: shipping.consigneeName.toUpperCase(),
-        x: 30,
+        text: 'Scan for Tracking',
+        x: 550,
         y: 545,
-        fonttype: FONTTYPE.FONT_3,
+        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
       },
       {
-        text: `MOBILE: +91 ${shipping.consigneePhone}`,
-        x: 30,
-        y: 605,
-        fonttype: FONTTYPE.FONT_3,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
-      },
-      {
-        text: shipping.consigneeAddress.slice(0, 48),
-        x: 30,
-        y: 660,
-        fonttype: FONTTYPE.FONT_2,
+        text: divLine,
+        x: 20,
+        y: 585,
+        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
+
+      // 5. Routing Code, Destination Pin Code, STD Badge
       {
-        text: `${shipping.city.toUpperCase()}, ${shipping.state.toUpperCase()}`,
-        x: 30,
+        text: 'Routing Code:',
+        x: 35,
+        y: 600,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: shipping.routingHub || 'BLR/INR',
+        x: 35,
+        y: 625,
+        fonttype: FONTTYPE.FONT_3,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 2,
+        yscal: 2,
+        bold: true,
+      },
+
+      ...[600, 630, 660].map((yVal) => ({
+        text: '|',
+        x: 310,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
+
+      {
+        text: 'Destination Pin Code:',
+        x: 330,
+        y: 600,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: shipping.pincode || '560038',
+        x: 330,
+        y: 625,
+        fonttype: FONTTYPE.FONT_3,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 2,
+        yscal: 2,
+        bold: true,
+      },
+
+      ...[600, 630, 660].map((yVal) => ({
+        text: '|',
+        x: 580,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
+
+      {
+        text: 'STD',
+        x: 630,
+        y: 625,
+        fonttype: FONTTYPE.FONT_3,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 2,
+        yscal: 2,
+        bold: true,
+      },
+      {
+        text: divLine,
+        x: 20,
+        y: 685,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+
+      // 6. Product Details
+      {
+        text: 'Product Details:',
+        x: 35,
         y: 700,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
+        bold: true,
       },
       {
-        text: `PIN CODE: ${shipping.pincode}`,
-        x: 30,
-        y: 735,
+        text: (shipping.itemsSummary || "Women's Ethnic Dress (Red)").slice(0, 40),
+        x: 35,
+        y: 730,
         fonttype: FONTTYPE.FONT_3,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
-      },
-      {
-        text: divLine,
-        x: 20,
-        y: 800,
-        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
+        bold: true,
       },
-
-      // 5. Item Summary
       {
-        text: `ITEMS: ${(shipping.itemsSummary || 'Designer Apparel & Couture').slice(0, 50)}`,
-        x: 30,
-        y: 825,
+        text: `SKU: ${shipping.sku || 'VS-DRS-001-RED-M'}`,
+        x: 35,
+        y: 760,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
       {
-        text: 'DECLARED VALUE: Rs. 4,999.00  |  TAX: GST PAID',
-        x: 30,
+        text: `HSN: ${shipping.hsn || '6204'}`,
+        x: 450,
+        y: 760,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: divLine,
+        x: 20,
+        y: 795,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+
+      // 7. If Undelivered Return To & Handling Icons
+      {
+        text: 'If undelivered, return to:',
+        x: 35,
+        y: 810,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: (shipping.sellerName || "Vasanthi's Signature").slice(0, 24),
+        x: 35,
+        y: 835,
+        fonttype: FONTTYPE.FONT_3,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: 'Plot No. 123, Phase 2, Kondapur',
+        x: 35,
         y: 865,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
@@ -992,60 +1336,114 @@ class BluetoothPrinterService {
         yscal: 1,
       },
       {
+        text: 'Hyderabad - 500084, Telangana',
+        x: 35,
+        y: 890,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: `Ph: ${shipping.sellerPhone || '+91 98765 43210'}`,
+        x: 35,
+        y: 915,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+
+      ...[810, 845, 880, 915].map((yVal) => ({
+        text: '|',
+        x: 375,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
+
+      // Handling Boxes
+      {
+        text: '+-------+  +-------+  +-------+',
+        x: 395,
+        y: 815,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: '|  [Y]  |  |  (^)  |  |  /|\\  |',
+        x: 395,
+        y: 835,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: '+-------+  +-------+  +-------+',
+        x: 395,
+        y: 855,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      },
+      {
+        text: 'FRAGILE',
+        x: 405,
+        y: 880,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: 'KEEP DRY',
+        x: 495,
+        y: 880,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
+        text: 'THIS SIDE UP',
+        x: 580,
+        y: 880,
+        fonttype: FONTTYPE.FONT_1,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+        bold: true,
+      },
+      {
         text: divLine,
         x: 20,
-        y: 915,
+        y: 950,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 6. Return / Shipper Address
+      // 8. Footer
       {
-        text: 'RETURN IF UNDELIVERED TO (SHIPPER):',
-        x: 30,
-        y: 935,
+        text: 'Thank you for shopping with us!  <3',
+        x: 175,
+        y: 975,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
-      },
-      {
-        text: (shipping.sellerName || "VASANTHI'S SIGNATURE").toUpperCase(),
-        x: 30,
-        y: 970,
-        fonttype: FONTTYPE.FONT_3,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 2,
-        yscal: 2,
-      },
-      {
-        text: (shipping.sellerAddress || 'Plot 42, Jubilee Hills Rd No 36, Hyd, TS - 500033').slice(0, 50),
-        x: 30,
-        y: 1025,
-        fonttype: FONTTYPE.FONT_2,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
-      },
-      {
-        text: `HELPLINE: +91 98765 43210  |  GSTIN: ${shipping.sellerGst || '36AABCU9603R1ZM'}`,
-        x: 30,
-        y: 1065,
-        fonttype: FONTTYPE.FONT_2,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
-      },
-      {
-        text: '* Track shipment online at www.delhivery.com *',
-        x: 120,
-        y: 1120,
-        fonttype: FONTTYPE.FONT_1,
-        rotation: TSC_ROTATION.ROTATION_0,
-        xscal: 1,
-        yscal: 1,
+        bold: true,
       },
     ];
 
@@ -1061,14 +1459,32 @@ class BluetoothPrinterService {
       barcode: [
         {
           x: 40,
-          y: 180,
+          y: 425,
           type: TSC_BARCODETYPE.CODE128,
-          height: 120,
-          readable: READABLE.ENABLE,
+          height: 95,
+          readable: READABLE.DISABLE,
           rotation: TSC_ROTATION.ROTATION_0,
           code: shipping.waybill,
-          wide: 4,
+          wide: 3,
           narrow: 2,
+        },
+      ],
+      qrcode: [
+        {
+          x: 565,
+          y: 420,
+          level: 'M',
+          width: 5,
+          rotation: TSC_ROTATION.ROTATION_0,
+          code: `https://www.delhivery.com/track/package/${shipping.waybill}`,
+        },
+      ],
+      reverse: [
+        {
+          x: 605,
+          y: 610,
+          width: 120,
+          height: 55,
         },
       ],
     });
