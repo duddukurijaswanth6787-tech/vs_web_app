@@ -1,4 +1,5 @@
 import { PermissionsAndroid, Platform } from 'react-native';
+import { VASANTHI_THERMAL_LOGO_BASE64 } from './brand-logo';
 
 /**
  * `tp-react-native-bluetooth-printer` ships a types/index.d.ts that doesn't
@@ -358,11 +359,63 @@ class BluetoothPrinterService {
       sku: 'VS-TEST-001',
       barcode: '890123456789',
       price: 4999,
-      storeName: "VASANTHI'S",
+      storeName: "VASANTHI'S SIGNATURE",
       widthMm,
       heightMm,
       quantity: 1,
     });
+  }
+
+  /**
+   * Prints the official brand logo (Vasanthi's Signature) on a 3x2" (75x50mm) label sticker.
+   */
+  async testPrintLogo(widthMm = 75, heightMm = 50): Promise<void> {
+    if (!this.isConnected()) {
+      throw new Error('No printer connected. Open Printer Settings and connect one first.');
+    }
+    if (BluetoothTscPrinter) {
+      await BluetoothTscPrinter.printLabel({
+        width: widthMm,
+        height: heightMm,
+        gap: 2,
+        direction: DIRECTION.FORWARD,
+        reference: [0, 0],
+        tear: TEAR.ON,
+        sound: 0,
+        text: [
+          {
+            text: 'LUXURY COUTURE - HYDERABAD',
+            x: 120,
+            y: 275,
+            fonttype: FONTTYPE.FONT_2,
+            rotation: TSC_ROTATION.ROTATION_0,
+            xscal: 1,
+            yscal: 1,
+            bold: true,
+          },
+          {
+            text: 'www.vasanthissignature.in',
+            x: 155,
+            y: 315,
+            fonttype: FONTTYPE.FONT_1,
+            rotation: TSC_ROTATION.ROTATION_0,
+            xscal: 1,
+            yscal: 1,
+          },
+        ],
+        image: [
+          {
+            x: 90,
+            y: 35,
+            width: 420,
+            mode: 0,
+            image: VASANTHI_THERMAL_LOGO_BASE64,
+          },
+        ],
+      });
+      return;
+    }
+    throw new Error('Bluetooth TSC printer native module is not available.');
   }
 
   async testPrintShippingLabel(): Promise<void> {

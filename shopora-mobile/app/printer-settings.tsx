@@ -98,13 +98,16 @@ export default function PrinterSettingsScreen() {
     setConnectedName(null);
   };
 
-  const testPrint = async (type: 'auto' | 'label3x2' | 'shipping4x6' | 'receipt' = 'auto') => {
+  const testPrint = async (type: 'auto' | 'logo3x2' | 'label3x2' | 'shipping4x6' | 'receipt' = 'auto') => {
     setTestPrinting(true);
     setError('');
     try {
-      if (type === 'label3x2') {
+      if (type === 'logo3x2') {
+        await bluetoothPrinterService.testPrintLogo(75, 50);
+        Alert.alert('3×2" Brand Logo Sent', "Printed Vasanthi's Signature logo sticker.");
+      } else if (type === 'label3x2') {
         await bluetoothPrinterService.testPrintLabel(75, 50);
-        Alert.alert('3×2" Label Sent', 'Printed 3×2" Barcode Price Tag to label printer.');
+        Alert.alert('3×2" Tag Sent', 'Printed 3×2" Barcode Price Tag to label printer.');
       } else if (type === 'shipping4x6') {
         await bluetoothPrinterService.testPrintShippingLabel();
         Alert.alert('4×6" Shipping Label Sent', 'Printed 4×6" Courier Waybill to label printer.');
@@ -138,7 +141,7 @@ export default function PrinterSettingsScreen() {
         <View style={styles.banner}>
           <Printer size={18} color="#0284c7" />
           <Text style={styles.bannerText}>
-            Classic Bluetooth (SPP) printers only -- supports 4×6" shipping labels, 3×2" barcode stickers, and 58mm/80mm POS receipts.
+            Classic Bluetooth (SPP) printers only -- supports 4×6" shipping labels, 3×2" brand logos, and 58mm/80mm POS receipts.
           </Text>
         </View>
 
@@ -169,11 +172,19 @@ export default function PrinterSettingsScreen() {
             </Text>
 
             <View style={{ width: '100%', gap: 8, marginBottom: 12 }}>
+              <TouchableOpacity style={[styles.testBtn, { backgroundColor: '#c026d3' }]} onPress={() => testPrint('logo3x2')} disabled={testPrinting}>
+                {testPrinting ? (
+                  <ActivityIndicator color="#ffffff" size="small" />
+                ) : (
+                  <Text style={styles.testBtnText}>✨ Print 3×2" Brand Logo Test</Text>
+                )}
+              </TouchableOpacity>
+
               <TouchableOpacity style={styles.testBtn} onPress={() => testPrint('label3x2')} disabled={testPrinting}>
                 {testPrinting ? (
                   <ActivityIndicator color="#ffffff" size="small" />
                 ) : (
-                  <Text style={styles.testBtnText}>🏷️ Print 3×2" Barcode Label Test</Text>
+                  <Text style={styles.testBtnText}>🏷️ Print 3×2" Barcode Tag Test</Text>
                 )}
               </TouchableOpacity>
 
