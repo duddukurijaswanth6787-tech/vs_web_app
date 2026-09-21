@@ -17,6 +17,8 @@ export class CheckoutItemResponse {
   @ApiProperty() productId!: string;
   @ApiProperty() productName!: string;
   @ApiPropertyOptional() variantId?: string;
+  @ApiPropertyOptional() variantName?: string;
+  @ApiPropertyOptional() productImage?: string;
   @ApiProperty() quantity!: number;
   @ApiProperty() unitPrice!: number;
   @ApiProperty() totalPrice!: number;

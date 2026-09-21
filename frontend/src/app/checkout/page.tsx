@@ -42,6 +42,7 @@ import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { paymentService } from '@/features/payments/payment.service';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
+import { withVariant, isLocalOrPlaceholder } from '@/lib/media-url';
 import type { OrderPlacePaymentDto } from '@/features/customer/checkout.service';
 
 const DELIVERY_SLOTS = [
@@ -241,7 +242,7 @@ function CheckoutPageContent() {
 
   const displaySubtotal = preview.data ? Number(preview.data.subtotal) : fallbackSubtotal;
   const displayDiscount = preview.data ? Number(preview.data.discountTotal) : 0;
-  const displayTax = preview.data ? Number(preview.data.taxTotal) : Math.round(displaySubtotal * 0.05);
+  const displayTax = preview.data ? Number(preview.data.taxTotal || 0) : 0;
   const displayShipping = preview.data ? Number(preview.data.shippingCharge) : fallbackShipping;
   const displayGrandTotal = preview.data ? Number(preview.data.grandTotal) : fallbackGrandTotal;
 
@@ -918,35 +919,49 @@ function CheckoutPageContent() {
               {/* MINI CART ITEMS PREVIEW */}
               {cartItems.length > 0 && (
                 <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
-                  {cartItems.map((item: any, idx: number) => (
-                    <div key={item.id || idx} className="flex items-center gap-3 py-1 border-b border-neutral-100 last:border-0">
-                      <div className="w-12 h-14 rounded-xl bg-neutral-100 overflow-hidden relative shrink-0 border border-neutral-200/60">
-                        {item.productImage || item.image || item.product?.images?.[0]?.url ? (
-                          <img
-                            src={item.productImage || item.image || item.product?.images?.[0]?.url}
-                            alt={item.productName || item.title || 'Product'}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-neutral-400 text-[10px]">
-                            Dress
-                          </div>
-                        )}
+                  {cartItems.map((item: any, idx: number) => {
+                    const rawImg =
+                      item.productImage ||
+                      item.imageUrl ||
+                      item.image ||
+                      item.product?.primaryImageUrl ||
+                      item.product?.images?.[0]?.url ||
+                      item.product?.media?.[0]?.url;
+                    const finalImg = rawImg ? withVariant(rawImg, 'medium') : '';
+
+                    return (
+                      <div key={item.id || idx} className="flex items-center gap-3 py-1.5 border-b border-neutral-100 last:border-0">
+                        <div className="w-14 h-16 rounded-xl bg-neutral-100 overflow-hidden relative shrink-0 border border-neutral-200/70 flex items-center justify-center shadow-2xs">
+                          {finalImg ? (
+                            <img
+                              src={finalImg}
+                              alt={item.productName || item.product?.name || item.title || 'Product'}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.currentTarget as HTMLElement).style.display = 'none';
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full flex flex-col items-center justify-center text-neutral-400 text-[10px] bg-sky-50/50">
+                              <ShoppingBag className="w-4 h-4 text-neutral-300" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-bold text-neutral-900 truncate">
+                            {item.productName || item.product?.name || 'Designer Dress'}
+                          </p>
+                          <p className="text-[11px] text-neutral-500 mt-0.5">
+                            Qty: <span className="font-semibold text-neutral-800">{item.quantity}</span>
+                            {item.variantName || item.variantTitle ? ` • Size: ${item.variantName || item.variantTitle}` : ''}
+                          </p>
+                          <p className="text-xs font-bold text-[var(--brand-primary)] mt-0.5">
+                            {formatInr(Number(item.totalPrice || item.price || item.unitPrice || 0) * (item.quantity || 1))}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-xs font-bold text-neutral-900 truncate">
-                          {item.productName || item.product?.name || 'Designer Dress'}
-                        </p>
-                        <p className="text-[11px] text-neutral-500 mt-0.5">
-                          Qty: <span className="font-semibold text-neutral-800">{item.quantity}</span>
-                          {item.variantName ? ` • Size: ${item.variantName}` : ''}
-                        </p>
-                        <p className="text-xs font-bold text-[var(--brand-primary)] mt-0.5">
-                          {formatInr(Number(item.totalPrice || item.price || item.unitPrice || 0) * (item.quantity || 1))}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -1003,9 +1018,19 @@ function CheckoutPageContent() {
                     </div>
                   )}
 
-                  <div className="flex justify-between">
-                    <span>Estimated GST (5% / 12%)</span>
-                    <span>{formatInr(displayTax)}</span>
+                  <div className="flex justify-between items-center">
+                    <span>GST & Taxes</span>
+                    <span>
+                      {displayTax > 0 ? (
+                        <span className="font-semibold text-neutral-800">
+                          {formatInr(displayTax)} <span className="text-[10px] text-neutral-400 font-normal">(Included in MRP)</span>
+                        </span>
+                      ) : (
+                        <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
+                          ₹0 (Included)
+                        </span>
+                      )}
+                    </span>
                   </div>
 
                   <div className="flex justify-between items-center">

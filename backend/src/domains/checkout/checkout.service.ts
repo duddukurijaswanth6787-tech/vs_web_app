@@ -180,7 +180,12 @@ export class CheckoutService {
         name: true,
         status: true,
         taxPercentage: true,
+        taxInclusive: true,
         brandId: true,
+        media: {
+          select: { url: true, isPrimary: true },
+          where: { deletedAt: null },
+        },
       },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -210,13 +215,31 @@ export class CheckoutService {
 
       const unitPrice = Number(item.unitPrice);
       const totalPrice = unitPrice * item.quantity;
-      const taxPercentage = Number(product.taxPercentage ?? 5) || 5;
-      const taxAmount = (totalPrice * taxPercentage) / (100 + taxPercentage);
+      const taxPercentage =
+        product.taxPercentage !== null && product.taxPercentage !== undefined
+          ? Number(product.taxPercentage)
+          : 0;
+      const isTaxInclusive = product.taxInclusive !== false;
+      const taxAmount =
+        taxPercentage > 0
+          ? isTaxInclusive
+            ? (totalPrice * taxPercentage) / (100 + taxPercentage)
+            : (totalPrice * taxPercentage) / 100
+          : 0;
+
+      const primaryImage =
+        product.media?.find((m: any) => m.isPrimary)?.url ||
+        product.media?.[0]?.url ||
+        item.imageUrl ||
+        item.productImage ||
+        undefined;
 
       items.push({
         productId: item.productId,
         productName: product.name,
         variantId: item.variantId ?? undefined,
+        variantName: item.variant?.title ?? item.variantTitle ?? item.variantName ?? undefined,
+        productImage: primaryImage,
         quantity: item.quantity,
         unitPrice,
         totalPrice,
@@ -263,8 +286,17 @@ export class CheckoutService {
       const lineDiscount = effectiveDiscount * lineFraction;
       const linePayable = Math.max(0, item.totalPrice - lineDiscount);
       const product = productMap.get(item.productId);
-      const taxPercentage = Number(product?.taxPercentage ?? 5) || 5;
-      const lineTax = (linePayable * taxPercentage) / (100 + taxPercentage);
+      const taxPercentage =
+        product?.taxPercentage !== null && product?.taxPercentage !== undefined
+          ? Number(product.taxPercentage)
+          : 0;
+      const isTaxInclusive = product?.taxInclusive !== false;
+      const lineTax =
+        taxPercentage > 0
+          ? isTaxInclusive
+            ? (linePayable * taxPercentage) / (100 + taxPercentage)
+            : (linePayable * taxPercentage) / 100
+          : 0;
       item.taxAmount = Math.round(lineTax * 100) / 100;
       taxTotal += item.taxAmount;
     }
@@ -328,8 +360,17 @@ export class CheckoutService {
       const lineDiscount = effectiveDiscount * lineFraction;
       const linePayable = Math.max(0, item.totalPrice - lineDiscount);
       const product = productMap.get(item.productId);
-      const taxPercentage = Number(product?.taxPercentage ?? 5) || 5;
-      const lineTax = (linePayable * taxPercentage) / (100 + taxPercentage);
+      const taxPercentage =
+        product?.taxPercentage !== null && product?.taxPercentage !== undefined
+          ? Number(product.taxPercentage)
+          : 0;
+      const isTaxInclusive = product?.taxInclusive !== false;
+      const lineTax =
+        taxPercentage > 0
+          ? isTaxInclusive
+            ? (linePayable * taxPercentage) / (100 + taxPercentage)
+            : (linePayable * taxPercentage) / 100
+          : 0;
       item.taxAmount = Math.round(lineTax * 100) / 100;
       taxTotal += item.taxAmount;
     }
