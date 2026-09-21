@@ -468,98 +468,81 @@ export default function OrderDetailPage() {
           </div>
         </div>
 
-        {/* Right Side: Customer Info, Addresses, Timeline */}
+        {/* Right Side: Customer Info, Addresses, Dispatch, Summary, Timeline */}
         <div className="space-y-4 sm:space-y-6">
           
-          {/* Order Summary & Products Quick View (For Online Orders) */}
-          {isOnlineOrder && (
-            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
-              <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <ShoppingBag className="w-4 h-4 text-neutral-800" />
-                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
-                    Order Summary ({order.items?.length || 0} Items)
-                  </h3>
+          {/* Customer / Address Panel (UPPER SIDE) */}
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-7 h-7 rounded-full bg-sky-100 text-sky-800 font-bold flex items-center justify-center text-xs">
+                  {shippingAddr?.fullName?.charAt(0)?.toUpperCase() || <User className="w-4 h-4 text-sky-700" />}
                 </div>
-                {order.paymentMethod?.toUpperCase().includes('COD') ||
-                order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
-                payments?.some((p) => p.method?.toUpperCase().includes('COD')) ? (
-                  <span className="text-2xs font-bold bg-amber-50 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                    <CreditCard className="w-3 h-3 text-amber-700" /> COD: Collect at Doorstep
-                  </span>
-                ) : (
-                  <span className="text-2xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
-                    <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Prepaid Online
-                  </span>
-                )}
+                <div>
+                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Customer Details</h3>
+                  <span className="text-[10px] text-neutral-400 block font-mono">ID: {order.customerId?.slice(0, 12)}...</span>
+                </div>
               </div>
-
-              {/* Ordered Items Preview List */}
-              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
-                {order.items?.map((item) => (
-                  <div
-                    key={item.id}
-                    className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150/80 flex justify-between items-start text-xs hover:bg-neutral-50 transition"
-                  >
-                    <div className="space-y-0.5 pr-2 min-w-0 flex-1">
-                      <span className="font-bold text-neutral-900 truncate block">{item.productName}</span>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {item.variantTitle && (
-                          <span className="text-[10px] bg-neutral-200/70 text-neutral-700 px-1.5 py-0.2 rounded font-medium">
-                            {item.variantTitle}
-                          </span>
-                        )}
-                        <span className="text-[10px] font-mono text-neutral-500">SKU: {item.sku}</span>
-                      </div>
-                      <span className="text-2xs text-neutral-500 block">
-                        Qty: <strong>{item.quantity}</strong> × {formatMoney(item.unitPrice, order.currency)}
+              {order.paymentMethod?.toUpperCase().includes('COD') ||
+              order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
+              payments?.some((p) => p.method?.toUpperCase().includes('COD')) ? (
+                <span className="text-2xs font-bold bg-amber-50 text-amber-900 border border-amber-300 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  <CreditCard className="w-3 h-3 text-amber-700" /> COD Order
+                </span>
+              ) : (
+                <span className="text-2xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-2xs">
+                  <CheckCircle2 className="w-3 h-3 text-emerald-600" /> Prepaid Online
+                </span>
+              )}
+            </div>
+            
+            <div className="text-xs space-y-3">
+              {/* Shipping Address */}
+              <div>
+                <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Delivery Destination</span>
+                {shippingAddr ? (
+                  <div className="mt-1.5 p-3 bg-neutral-50 rounded-xl border border-neutral-150 space-y-1">
+                    <div className="flex justify-between items-start">
+                      <span className="font-bold text-neutral-900 text-sm block">{shippingAddr.fullName}</span>
+                      <span className="text-[10px] font-mono font-bold bg-sky-100 text-sky-800 border border-sky-200 px-1.5 py-0.5 rounded">
+                        PIN: {shippingAddr.postalCode}
                       </span>
                     </div>
-                    <div className="font-bold text-neutral-900 shrink-0 text-right">
-                      {formatMoney(item.totalPrice, order.currency)}
-                    </div>
+                    <span className="text-neutral-600 block text-2xs leading-relaxed">{shippingAddr.addressLine1}</span>
+                    {shippingAddr.addressLine2 && <span className="text-neutral-600 block text-2xs">{shippingAddr.addressLine2}</span>}
+                    <span className="text-neutral-700 font-medium block text-2xs">
+                      {shippingAddr.city}, {shippingAddr.state} - {shippingAddr.postalCode}
+                    </span>
+                    {shippingAddr.phone && (
+                      <div className="pt-1 mt-1 border-t border-neutral-200/60 flex items-center justify-between text-2xs">
+                        <span className="text-neutral-500 font-medium">Contact Phone:</span>
+                        <a
+                          href={`tel:${shippingAddr.phone}`}
+                          className="font-bold text-sky-700 hover:text-sky-900 hover:underline flex items-center gap-1"
+                        >
+                          📞 {shippingAddr.phone}
+                        </a>
+                      </div>
+                    )}
                   </div>
-                ))}
+                ) : (
+                  <span className="text-neutral-400 block mt-1 text-2xs">No shipping address provided</span>
+                )}
               </div>
 
-              {/* Price Breakdown Strip */}
-              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-150 space-y-1.5 text-2xs">
-                <div className="flex justify-between text-neutral-600">
-                  <span>Subtotal:</span>
-                  <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
-                </div>
-                {Number(order.discountTotal) > 0 && (
-                  <div className="flex justify-between text-red-600 font-medium">
-                    <span>Discount Applied:</span>
-                    <span className="font-mono">-{formatMoney(order.discountTotal, order.currency)}</span>
+              {/* Billing Address if different */}
+              {billingAddr && billingAddr !== shippingAddr && (
+                <div className="border-t border-neutral-100 pt-2.5">
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Billing Address</span>
+                  <div className="mt-1 space-y-0.5 text-2xs text-neutral-600">
+                    <span className="font-semibold text-neutral-800 block">{billingAddr.fullName}</span>
+                    <span>{billingAddr.addressLine1}, {billingAddr.city}, {billingAddr.state} {billingAddr.postalCode}</span>
+                    {billingAddr.phone && <span className="block text-neutral-400">Phone: {billingAddr.phone}</span>}
                   </div>
-                )}
-                <div className="flex justify-between text-neutral-600">
-                  <span>Delivery / Shipping Fee:</span>
-                  <span className="font-mono">
-                    {Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : (
-                      <span className="text-emerald-700 font-bold">Free Shipping</span>
-                    )}
-                  </span>
                 </div>
-                <div className="flex justify-between text-neutral-400 text-[10px]">
-                  <span>GST (Included in Price):</span>
-                  <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
-                </div>
-                <div className="pt-2 border-t border-neutral-200 flex justify-between items-center text-xs font-bold text-neutral-950">
-                  <span>Total Payable:</span>
-                  <span className="font-mono text-sm text-sky-900">{formatMoney(order.grandTotal, order.currency)}</span>
-                </div>
-                {(order.paymentMethod?.toUpperCase().includes('COD') ||
-                  order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
-                  payments?.some((p) => p.method?.toUpperCase().includes('COD'))) && (
-                  <div className="p-1.5 bg-amber-100/70 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-900 text-center">
-                    💵 Cash to be collected upon courier delivery: {formatMoney(order.grandTotal, order.currency)}
-                  </div>
-                )}
-              </div>
+              )}
             </div>
-          )}
+          </div>
 
           {/* Delivery Partner / Fulfillment Section */}
           {isOnlineOrder ? (
@@ -720,7 +703,6 @@ export default function OrderDetailPage() {
                       <option value="Professional Courier">🏎️ Professional Courier</option>
                       <option value="FedEx">✈️ FedEx Express</option>
                       <option value="Speed Post">📮 Speed Post (India Post)</option>
-                      <option value="BlueDart">🚀 BlueDart</option>
                     </select>
                   </div>
 
@@ -734,7 +716,8 @@ export default function OrderDetailPage() {
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
                       <option value="Air Express (1-2 Days)">✈️ Air Express (1-2 Days)</option>
-                      <option value="Surface Cargo (3-5 Days)">🚚 Surface Cargo (3-5 Days)</option>
+                      <option value="Surface Cargo (3-5 Days)">🚛 Surface Standard (3-5 Days)</option>
+                      <option value="Same Day City Dispatch">⚡ Same Day City Dispatch</option>
                     </select>
                   </div>
                 </div>
@@ -837,50 +820,87 @@ export default function OrderDetailPage() {
             </div>
           )}
 
-          {/* Customer / Address Panel */}
-          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
-            <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
-              <User className="w-4 h-4 text-neutral-400" />
-              <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Customer Details</h3>
-            </div>
-            
-            <div className="text-xs space-y-3">
-              <div>
-                <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Account identifier</span>
-                <span className="font-mono text-neutral-850 block mt-0.5 break-all">{order.customerId}</span>
-              </div>
-              
-              <div className="border-t border-neutral-100 pt-3">
-                <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Shipping Address</span>
-                {shippingAddr ? (
-                  <div className="mt-1 space-y-0.5">
-                    <span className="font-bold text-neutral-800 block">{shippingAddr.fullName}</span>
-                    <span className="text-neutral-600 block">{shippingAddr.addressLine1}</span>
-                    {shippingAddr.addressLine2 && <span className="text-neutral-600 block">{shippingAddr.addressLine2}</span>}
-                    <span className="text-neutral-600 block">{shippingAddr.city}, {shippingAddr.state} {shippingAddr.postalCode}</span>
-                    <span className="text-neutral-500 block">{shippingAddr.country}</span>
-                    <span className="text-neutral-400 block mt-1">Phone: {shippingAddr.phone}</span>
-                  </div>
-                ) : (
-                  <span className="text-neutral-400 block mt-1">No shipping address provided</span>
-                )}
+          {/* Order Summary & Products Quick View (For Online Orders) */}
+          {isOnlineOrder && (
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
+                <div className="flex items-center gap-2">
+                  <ShoppingBag className="w-4 h-4 text-neutral-800" />
+                  <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">
+                    Order Summary ({order.items?.length || 0} Items)
+                  </h3>
+                </div>
+                <span className="text-2xs font-bold bg-neutral-100 text-neutral-700 px-2 py-0.5 rounded">
+                  {order.items?.reduce((s, i) => s + i.quantity, 0)} Total Qty
+                </span>
               </div>
 
-              <div className="border-t border-neutral-100 pt-3">
-                <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Billing Address</span>
-                {billingAddr ? (
-                  <div className="mt-1 space-y-0.5">
-                    <span className="font-bold text-neutral-800 block">{billingAddr.fullName}</span>
-                    <span className="text-neutral-600 block">{billingAddr.addressLine1}</span>
-                    <span className="text-neutral-600 block">{billingAddr.city}, {billingAddr.state} {billingAddr.postalCode}</span>
-                    <span className="text-neutral-400 block mt-1">Phone: {billingAddr.phone}</span>
+              {/* Ordered Items Preview List */}
+              <div className="space-y-2 max-h-60 overflow-y-auto pr-1">
+                {order.items?.map((item) => (
+                  <div
+                    key={item.id}
+                    className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150/80 flex justify-between items-start text-xs hover:bg-neutral-50 transition"
+                  >
+                    <div className="space-y-0.5 pr-2 min-w-0 flex-1">
+                      <span className="font-bold text-neutral-900 truncate block">{item.productName}</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        {item.variantTitle && (
+                          <span className="text-[10px] bg-neutral-200/70 text-neutral-700 px-1.5 py-0.2 rounded font-medium">
+                            {item.variantTitle}
+                          </span>
+                        )}
+                        <span className="text-[10px] font-mono text-neutral-500">SKU: {item.sku}</span>
+                      </div>
+                      <span className="text-2xs text-neutral-500 block">
+                        Qty: <strong>{item.quantity}</strong> × {formatMoney(item.unitPrice, order.currency)}
+                      </span>
+                    </div>
+                    <div className="font-bold text-neutral-900 shrink-0 text-right">
+                      {formatMoney(item.totalPrice, order.currency)}
+                    </div>
                   </div>
-                ) : (
-                  <span className="text-neutral-400 block mt-1">Same as shipping address</span>
+                ))}
+              </div>
+
+              {/* Price Breakdown Strip */}
+              <div className="p-3 bg-neutral-50 rounded-xl border border-neutral-150 space-y-1.5 text-2xs">
+                <div className="flex justify-between text-neutral-600">
+                  <span>Subtotal:</span>
+                  <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
+                </div>
+                {Number(order.discountTotal) > 0 && (
+                  <div className="flex justify-between text-red-600 font-medium">
+                    <span>Discount Applied:</span>
+                    <span className="font-mono">-{formatMoney(order.discountTotal, order.currency)}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-neutral-600">
+                  <span>Delivery / Shipping Fee:</span>
+                  <span className="font-mono">
+                    {Number(order.shippingCharge) > 0 ? formatMoney(order.shippingCharge, order.currency) : (
+                      <span className="text-emerald-700 font-bold">Free Shipping</span>
+                    )}
+                  </span>
+                </div>
+                <div className="flex justify-between text-neutral-400 text-[10px]">
+                  <span>GST (Included in Price):</span>
+                  <span className="font-mono">{formatMoney(order.taxTotal, order.currency)}</span>
+                </div>
+                <div className="pt-2 border-t border-neutral-200 flex justify-between items-center text-xs font-bold text-neutral-950">
+                  <span>Total Payable:</span>
+                  <span className="font-mono text-sm text-sky-900">{formatMoney(order.grandTotal, order.currency)}</span>
+                </div>
+                {(order.paymentMethod?.toUpperCase().includes('COD') ||
+                  order.paymentMethod?.toUpperCase().includes('CASH_ON_DELIVERY') ||
+                  payments?.some((p) => p.method?.toUpperCase().includes('COD'))) && (
+                  <div className="p-1.5 bg-amber-100/70 border border-amber-200 rounded-lg text-[10px] font-bold text-amber-900 text-center">
+                    💵 Cash to be collected upon courier delivery: {formatMoney(order.grandTotal, order.currency)}
+                  </div>
                 )}
               </div>
             </div>
-          </div>
+          )}
 
           {/* Cancellation Info Panel (Only if Cancelled) */}
           {order.status === 'CANCELLED' && cancellation && (
