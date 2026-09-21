@@ -4,24 +4,27 @@ import {
   Text,
   TouchableOpacity,
   StyleSheet,
-  FlatList,
+  ScrollView,
   ActivityIndicator,
   Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter, useFocusEffect } from 'expo-router';
-import { ArrowLeft, Printer, PrinterCheck } from 'lucide-react-native';
-import { bluetoothPrinterService, DiscoveredPrinter } from '../services/bluetooth-printer';
+import { ArrowLeft, Printer, PrinterCheck, RefreshCw, Check } from 'lucide-react-native';
+import {
+  bluetoothPrinterService,
+  DiscoveredPrinter,
+  isLabelPrinterName,
+  isPosReceiptPrinterName,
+} from '../services/bluetooth-printer';
 import { isAuthenticated } from '../services/api';
 
 /**
  * Pair/connect a Bluetooth thermal printer for the POS app to print receipts
- * (sale-success.tsx) and barcode labels (label-preview.tsx) directly,
- * instead of only sharing the print data out to another app.
+ * (sale-success.tsx) and barcode labels (label-preview.tsx) directly.
  *
- * Classic Bluetooth (SPP) printers only -- see services/bluetooth-printer.ts's
- * header for why. A printer usually needs to be paired once in the phone's
- * own Bluetooth settings before it shows up as "already paired" below.
+ * Classic Bluetooth (SPP) printers only -- supports 4x6" shipping labels,
+ * 3x2" brand logos/barcodes, and 58mm/80mm POS receipts.
  */
 export default function PrinterSettingsScreen() {
   const router = useRouter();
@@ -35,20 +38,51 @@ export default function PrinterSettingsScreen() {
   const [error, setError] = useState('');
   const [testPrinting, setTestPrinting] = useState(false);
 
+  const syncConnectionState = useCallback(() => {
+    if (bluetoothPrinterService.isConnected()) {
+      setConnectedAddress(bluetoothPrinterService.connectedDeviceAddress() || 'connected');
+      setConnectedName(bluetoothPrinterService.connectedDeviceName());
+    } else {
+      setConnectedAddress('');
+      setConnectedName(null);
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       if (!isAuthenticated()) {
         router.replace('/login?redirect=/printer-settings');
+        return;
       }
-    }, [router]),
+      syncConnectionState();
+      loadDevicesAndAutoConnect();
+    }, [router, syncConnectionState]),
   );
 
-  useEffect(() => {
-    if (bluetoothPrinterService.isConnected()) {
-      setConnectedAddress('connected');
-      setConnectedName(bluetoothPrinterService.connectedDeviceName());
+  const loadDevicesAndAutoConnect = async () => {
+    try {
+      const granted = await bluetoothPrinterService.requestPermissions();
+      if (!granted) return;
+      const enabled = await bluetoothPrinterService.isBluetoothEnabled().catch(() => false);
+      if (!enabled) return;
+
+      // Auto-connect if not connected
+      if (!bluetoothPrinterService.isConnected()) {
+        const auto = await bluetoothPrinterService.autoConnect();
+        if (auto) {
+          syncConnectionState();
+        }
+      }
+
+      // Fetch paired and discovered devices
+      const { paired, found } = await bluetoothPrinterService.scanDevices();
+      setPairedDevices(paired);
+      setFoundDevices(found);
+      syncConnectionState();
+    } catch (e) {
+      console.warn('[PrinterSettings] auto-load devices:', e);
     }
-  }, []);
+  };
 
   const startScan = async () => {
     setError('');
@@ -62,13 +96,12 @@ export default function PrinterSettingsScreen() {
       setError('Bluetooth is turned off. Enable it in your phone settings and try again.');
       return;
     }
-    setPairedDevices([]);
-    setFoundDevices([]);
     setScanning(true);
     try {
       const { paired, found } = await bluetoothPrinterService.scanDevices();
       setPairedDevices(paired);
       setFoundDevices(found);
+      syncConnectionState();
     } catch (e) {
       setError('Could not scan for Bluetooth devices.');
     } finally {
@@ -125,7 +158,21 @@ export default function PrinterSettingsScreen() {
     }
   };
 
-  const allDevices = [...pairedDevices, ...foundDevices.filter((f) => !pairedDevices.some((p) => p.address === f.address))];
+  const isCurrentConnected = (addr: string) => {
+    if (!connectedAddress) return false;
+    return connectedAddress.toLowerCase() === addr.toLowerCase();
+  };
+
+  const getPrinterBadge = (name?: string | null) => {
+    if (!name) return null;
+    if (isPosReceiptPrinterName(name)) {
+      return { text: '🧾 POS BILLING PRINTER (80mm/58mm)', color: '#047857', bg: '#ecfdf5' };
+    }
+    if (isLabelPrinterName(name)) {
+      return { text: '🏷️ LABEL & BARCODE PRINTER (4×6 & 3×2)', color: '#6d28d9', bg: '#f5f3ff' };
+    }
+    return null;
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top', 'left', 'right']}>
@@ -134,14 +181,20 @@ export default function PrinterSettingsScreen() {
           <ArrowLeft size={24} color="#ffffff" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Printer Settings</Text>
-        <View style={{ width: 24 }} />
+        <TouchableOpacity style={styles.backBtn} onPress={startScan} disabled={scanning}>
+          {scanning ? (
+            <ActivityIndicator color="#ffffff" size="small" />
+          ) : (
+            <RefreshCw size={20} color="#ffffff" />
+          )}
+        </TouchableOpacity>
       </View>
 
-      <View style={styles.body}>
+      <ScrollView style={styles.body} contentContainerStyle={{ paddingBottom: 40 }}>
         <View style={styles.banner}>
           <Printer size={18} color="#0284c7" />
           <Text style={styles.bannerText}>
-            Classic Bluetooth (SPP) printers only -- supports 4×6" shipping labels, 3×2" brand logos, and 58mm/80mm POS receipts.
+            Classic Bluetooth (SPP) printers only — supports 4×6" shipping labels, 3×2" brand logos, and 58mm/80mm POS receipts.
           </Text>
         </View>
 
@@ -163,12 +216,27 @@ export default function PrinterSettingsScreen() {
           </Text>
         </TouchableOpacity>
 
+        {/* 1. CURRENTLY CONNECTED PRINTER BOX */}
         {connectedAddress ? (
           <View style={styles.connectedBox}>
-            <PrinterCheck size={28} color="#16a34a" style={{ marginBottom: 6 }} />
-            <Text style={styles.connectedText}>Connected to {connectedName || 'printer'}</Text>
-            <Text style={{ fontSize: 11, color: '#15803d', fontWeight: '600', marginBottom: 12 }}>
-              Ready for 4×6" & 3×2" Label / Receipt Printing
+            <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 6 }}>
+              <PrinterCheck size={26} color="#16a34a" style={{ marginRight: 8 }} />
+              <View>
+                <Text style={styles.connectedText}>Connected: {connectedName || 'Thermal Printer'}</Text>
+                <Text style={styles.connectedSub}>{connectedAddress}</Text>
+              </View>
+            </View>
+
+            {getPrinterBadge(connectedName) && (
+              <View style={[styles.badgeTag, { backgroundColor: getPrinterBadge(connectedName)!.bg }]}>
+                <Text style={[styles.badgeTagText, { color: getPrinterBadge(connectedName)!.color }]}>
+                  {getPrinterBadge(connectedName)!.text}
+                </Text>
+              </View>
+            )}
+
+            <Text style={{ fontSize: 11, color: '#15803d', fontWeight: '600', marginVertical: 10 }}>
+              Ready for 4×6" & 3×2" Label / POS Receipt Printing
             </Text>
 
             <View style={{ width: '100%', gap: 8, marginBottom: 12 }}>
@@ -212,47 +280,108 @@ export default function PrinterSettingsScreen() {
             </TouchableOpacity>
           </View>
         ) : (
-          <>
-            <TouchableOpacity style={styles.scanBtn} onPress={startScan} disabled={scanning}>
-              {scanning ? (
-                <ActivityIndicator color="#ffffff" />
-              ) : (
-                <Text style={styles.scanBtnText}>Scan for Printers</Text>
-              )}
+          <TouchableOpacity style={styles.scanBtn} onPress={startScan} disabled={scanning}>
+            {scanning ? (
+              <ActivityIndicator color="#ffffff" />
+            ) : (
+              <Text style={styles.scanBtnText}>Scan for Bluetooth Printers</Text>
+            )}
+          </TouchableOpacity>
+        )}
+
+        {error !== '' && !connectedAddress && <Text style={styles.errorText}>{error}</Text>}
+
+        {/* 2. PAIRED PRINTERS / DEVICES SECTION */}
+        <View style={{ marginTop: 24, marginBottom: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
+            <Text style={styles.sectionHeaderTitle}>Paired Bluetooth Printers ({pairedDevices.length})</Text>
+            <TouchableOpacity onPress={startScan} disabled={scanning}>
+              <Text style={{ fontSize: 12, color: '#0284c7', fontWeight: 'bold' }}>
+                {scanning ? 'Scanning...' : 'Refresh'}
+              </Text>
             </TouchableOpacity>
+          </View>
 
-            {error !== '' && <Text style={styles.errorText}>{error}</Text>}
+          {pairedDevices.length === 0 && !scanning && (
+            <Text style={styles.emptyText}>
+              No paired Bluetooth devices found. Pair your printer in Android Settings first.
+            </Text>
+          )}
 
-            <FlatList
-              data={allDevices}
-              keyExtractor={(d) => d.address}
-              style={{ marginTop: 16 }}
-              ListEmptyComponent={
-                !scanning ? (
-                  <Text style={styles.emptyText}>No devices found yet. Tap "Scan for Printers".</Text>
-                ) : null
-              }
-              renderItem={({ item }) => (
+          {pairedDevices.map((item) => {
+            const isConn = isCurrentConnected(item.address);
+            const badge = getPrinterBadge(item.name);
+            const isConnecting = connectingAddress === item.address;
+
+            return (
+              <TouchableOpacity
+                key={item.address}
+                style={[styles.deviceRow, isConn && styles.deviceRowConnected]}
+                onPress={() => (isConn ? null : connect(item))}
+                disabled={isConnecting || isConn}
+              >
+                <View style={{ flex: 1, paddingRight: 8 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                    <Text style={[styles.deviceName, isConn && { color: '#16a34a' }]}>
+                      {item.name || 'Unnamed printer'}
+                    </Text>
+                    {isConn && (
+                      <View style={styles.activePill}>
+                        <Check size={12} color="#16a34a" />
+                        <Text style={styles.activePillText}>Active</Text>
+                      </View>
+                    )}
+                  </View>
+                  <Text style={styles.deviceId}>{item.address}</Text>
+                  {badge && (
+                    <View style={[styles.inlineBadge, { backgroundColor: badge.bg, alignSelf: 'flex-start' }]}>
+                      <Text style={[styles.inlineBadgeText, { color: badge.color }]}>{badge.text}</Text>
+                    </View>
+                  )}
+                </View>
+
+                {isConn ? (
+                  <Text style={styles.connectedLabel}>Connected</Text>
+                ) : isConnecting ? (
+                  <ActivityIndicator color="#0284c7" />
+                ) : (
+                  <View style={styles.connectBtnAction}>
+                    <Text style={styles.connectLabel}>Connect</Text>
+                  </View>
+                )}
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+
+        {/* 3. OTHER DISCOVERED DEVICES */}
+        {foundDevices.length > 0 && (
+          <View style={{ marginTop: 16 }}>
+            <Text style={styles.sectionHeaderTitle}>Other Discovered Devices ({foundDevices.length})</Text>
+            {foundDevices.map((item) => {
+              const isConnecting = connectingAddress === item.address;
+              return (
                 <TouchableOpacity
+                  key={item.address}
                   style={styles.deviceRow}
                   onPress={() => connect(item)}
-                  disabled={connectingAddress === item.address}
+                  disabled={isConnecting}
                 >
                   <View style={{ flex: 1 }}>
                     <Text style={styles.deviceName}>{item.name || 'Unnamed device'}</Text>
                     <Text style={styles.deviceId}>{item.address}</Text>
                   </View>
-                  {connectingAddress === item.address ? (
+                  {isConnecting ? (
                     <ActivityIndicator color="#0284c7" />
                   ) : (
                     <Text style={styles.connectLabel}>Connect</Text>
                   )}
                 </TouchableOpacity>
-              )}
-            />
-          </>
+              );
+            })}
+          </View>
         )}
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -288,7 +417,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   scanBtnText: { color: '#ffffff', fontWeight: 'bold', fontSize: 14 },
-  emptyText: { fontSize: 13, color: '#94a3b8', textAlign: 'center', marginTop: 24, lineHeight: 20 },
+  emptyText: { fontSize: 12, color: '#94a3b8', textAlign: 'center', marginVertical: 16, lineHeight: 18 },
+  sectionHeaderTitle: { fontSize: 13, fontWeight: 'bold', color: '#334155' },
   deviceRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -296,25 +426,63 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 14,
     marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  deviceRowConnected: {
+    borderColor: '#86efac',
+    backgroundColor: '#f0fdf4',
   },
   deviceName: { fontSize: 13, fontWeight: 'bold', color: '#0f172a' },
   deviceId: { fontSize: 10, color: '#94a3b8', marginTop: 2 },
+  connectedLabel: { fontSize: 12, fontWeight: 'bold', color: '#16a34a' },
+  connectBtnAction: {
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
   connectLabel: { fontSize: 12, fontWeight: 'bold', color: '#0284c7' },
+  activePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#dcfce7',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginLeft: 8,
+    gap: 2,
+  },
+  activePillText: { fontSize: 10, fontWeight: 'bold', color: '#16a34a' },
+  inlineBadge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4,
+  },
+  inlineBadgeText: { fontSize: 9, fontWeight: '700' },
+  badgeTag: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    marginTop: 4,
+  },
+  badgeTagText: { fontSize: 10, fontWeight: '700' },
   connectedBox: {
     backgroundColor: '#f0fdf4',
-    borderWidth: 1,
-    borderColor: '#bbf7d0',
+    borderWidth: 1.5,
+    borderColor: '#86efac',
     borderRadius: 14,
-    padding: 20,
+    padding: 16,
     alignItems: 'center',
   },
-  connectedText: { fontSize: 14, fontWeight: 'bold', color: '#16a34a', marginBottom: 14 },
+  connectedText: { fontSize: 14, fontWeight: 'bold', color: '#16a34a' },
+  connectedSub: { fontSize: 10, color: '#64748b' },
   testBtn: {
     backgroundColor: '#0284c7',
     borderRadius: 10,
     paddingHorizontal: 20,
     paddingVertical: 12,
-    marginBottom: 10,
     minWidth: 160,
     alignItems: 'center',
   },
@@ -325,7 +493,8 @@ const styles = StyleSheet.create({
     borderColor: '#fecaca',
     borderRadius: 10,
     paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingVertical: 8,
+    marginTop: 4,
   },
   disconnectText: { color: '#b91c1c', fontWeight: 'bold', fontSize: 12 },
 });

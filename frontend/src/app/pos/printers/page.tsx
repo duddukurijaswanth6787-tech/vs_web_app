@@ -1,7 +1,20 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Printer, CheckCircle2, QrCode, Usb, Bluetooth, AlertTriangle, X } from 'lucide-react';
+import {
+  Printer,
+  CheckCircle2,
+  QrCode,
+  Usb,
+  Bluetooth,
+  AlertTriangle,
+  X,
+  Package,
+  Receipt,
+  Tag,
+  Sparkles,
+  ExternalLink,
+} from 'lucide-react';
 import { usePreviewReceipt, useBatchStickers } from '@/features/pos/pos.hooks';
 import { LabelSize, LABEL_SIZE_OPTIONS } from '@/features/pos/pos.types';
 import { webUsbPrinterService } from '@/features/pos/webusb-printer';
@@ -10,6 +23,8 @@ import { getApiErrorMessage } from '@/utils/api-error';
 
 export default function PrintersConfigPage() {
   const [printMode, setPrintMode] = useState<'BROWSER' | 'ESCPOS' | 'BLUETOOTH'>('BROWSER');
+  const [activeTestTab, setActiveTestTab] = useState<'RECEIPT' | 'SHIPPING' | 'BARCODE_3X2' | 'LOGO_3X2'>('RECEIPT');
+  const [receiptWidth, setReceiptWidth] = useState<80 | 58>(80);
   const [testLabelSize, setTestLabelSize] = useState<LabelSize>('SMALL');
   const [testSuccessMessage, setTestSuccessMessage] = useState('');
 
@@ -77,7 +92,7 @@ export default function PrintersConfigPage() {
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       if (msg.includes('Access denied') || msg.includes('SecurityError') || msg.includes('open')) {
-        setUsbError('Windows has registered this printer with the system driver (usbprint.sys), which locks direct WebUSB. Simply click Mode 1 (Universal Browser Print) on the left to print to your KPC307 directly!');
+        setUsbError('Windows has registered this printer with the system driver (usbprint.sys), which locks direct WebUSB. Click Mode 1 (Universal Browser Print) to print to your printer directly!');
       } else {
         setUsbError(getApiErrorMessage(err, 'Could not connect to a USB printer.'));
       }
@@ -93,8 +108,8 @@ export default function PrintersConfigPage() {
     setPrintMode('BROWSER');
   };
 
-  const triggerBrowserPrint = (htmlContent: string) => {
-    const printWindow = window.open('', '_blank', 'width=450,height=700');
+  const triggerBrowserPrint = (htmlContent: string, title = 'Thermal Print Document') => {
+    const printWindow = window.open('', '_blank', 'width=550,height=750');
     if (printWindow) {
       printWindow.document.write(htmlContent);
       printWindow.document.close();
@@ -102,10 +117,9 @@ export default function PrintersConfigPage() {
       setTimeout(() => {
         printWindow.print();
         printWindow.close();
-      }, 300);
-      setTestSuccessMessage('Test thermal receipt opened in browser print engine!');
+      }, 350);
+      setTestSuccessMessage(`${title} opened in system print dialog!`);
     } else {
-      // Fallback if popups are blocked: use invisible iframe
       const iframe = document.createElement('iframe');
       iframe.style.position = 'fixed';
       iframe.style.right = '0';
@@ -123,55 +137,56 @@ export default function PrintersConfigPage() {
           iframe.contentWindow?.print();
           document.body.removeChild(iframe);
         }, 500);
-        setTestSuccessMessage('Test thermal receipt sent to browser print dialog!');
+        setTestSuccessMessage(`${title} sent to browser print dialog!`);
       }
     }
   };
 
-  const getFallbackReceiptHtml = () => `
+  // 1. 80mm & 58mm POS Thermal Receipt HTML
+  const getReceiptHtml = (is80mm: boolean) => {
+    const rollWidth = is80mm ? '80mm' : '58mm';
+    const contentWidth = is80mm ? '72mm' : '48mm';
+    return `
     <!DOCTYPE html>
     <html>
       <head>
         <meta charset="utf-8" />
-        <title>Test Thermal Receipt - Vasanthi Designers</title>
+        <title>POS Thermal Receipt - Vasanthi's Signature</title>
         <style>
-          @page { size: 80mm auto; margin: 0; }
+          @page { size: ${rollWidth} auto; margin: 0; }
           body {
             font-family: 'Courier New', Courier, monospace;
-            width: 72mm;
+            width: ${contentWidth};
             margin: 0 auto;
             padding: 8px 4px;
-            font-size: 12px;
+            font-size: ${is80mm ? '12px' : '10px'};
             color: #000;
           }
           .text-center { text-align: center; }
           .text-right { text-align: right; }
           .font-bold { font-weight: bold; }
-          .brand-logo-container { text-align: center; margin: 0 auto 4px; }
-          .brand-logo { max-width: 44mm; max-height: 14mm; object-fit: contain; margin: 0 auto; display: block; filter: grayscale(100%) contrast(140%); }
           .border-top { border-top: 1px dashed #000; margin: 6px 0; }
           .border-bottom { border-bottom: 1px dashed #000; margin: 6px 0; }
           .flex-between { display: flex; justify-content: space-between; }
-          table { width: 100%; border-collapse: collapse; margin: 4px 0; font-size: 11px; }
+          table { width: 100%; border-collapse: collapse; margin: 4px 0; font-size: ${is80mm ? '11px' : '9.5px'}; }
           th, td { padding: 2px 0; }
         </style>
       </head>
       <body>
-        <div class="brand-logo-container">
-          <img src="/brand/logo-full.png" alt="VASANTHI'S SIGNATURE" class="brand-logo" onerror="this.style.display='none'" />
-        </div>
-        <div class="text-center font-bold" style="font-size: 15px;">VASANTHI&apos;S SIGNATURE</div>
-        <div class="text-center" style="font-size: 10px;">Premium Ethnic Wear &amp; Boutique</div>
-        <div class="text-center" style="font-size: 10px;">Road No. 12, Banjara Hills, Hyderabad</div>
-        <div class="text-center" style="font-size: 10px;">Ph: +91 98765 43210</div>
+        <div class="text-center font-bold" style="font-size: ${is80mm ? '16px' : '13px'};">VASANTHI'S SIGNATURE</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">Women's Ethnic Wear & Designer Couture</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">Plot 42, Jubilee Hills Rd No 36, Hyderabad - 500033</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">GSTIN: 36AABCU9603R1ZM | Ph: +91 98765 43210</div>
         <div class="border-top"></div>
-        <div class="flex-between" style="font-size: 10px;">
-          <span>INV: TEST-ORD-001</span>
-          <span>${new Date().toLocaleDateString('en-IN')}</span>
+        <div class="flex-between" style="font-size: ${is80mm ? '10px' : '8.5px'};">
+          <span>Invoice: ORD-POS-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001</span>
         </div>
-        <div class="flex-between" style="font-size: 10px;">
-          <span>Cashier: POS Terminal</span>
-          <span>${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+        <div class="flex-between" style="font-size: ${is80mm ? '10px' : '8.5px'};">
+          <span>Date: ${new Date().toLocaleDateString('en-IN')} ${new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span>
+          <span>Counter: 01</span>
+        </div>
+        <div class="flex-between" style="font-size: ${is80mm ? '10px' : '8.5px'};">
+          <span>Customer: Sravani Varma (9848012345)</span>
         </div>
         <div class="border-top"></div>
         <table>
@@ -179,128 +194,234 @@ export default function PrintersConfigPage() {
             <tr style="border-bottom: 1px dashed #000;">
               <th style="text-align:left;">Item</th>
               <th style="text-align:center;">Qty</th>
-              <th style="text-align:right;">Price</th>
-              <th style="text-align:right;">Amt</th>
+              <th style="text-align:right;">Rate</th>
+              <th style="text-align:right;">Total</th>
             </tr>
           </thead>
           <tbody>
             <tr>
-              <td>Designer Kurti<br/><span style="font-size:9px;color:#555;">Blue / L</span></td>
-              <td style="text-align:center;">2</td>
-              <td style="text-align:right;">699.00</td>
-              <td style="text-align:right;">1398.00</td>
+              <td>Banarasi Silk Saree</td>
+              <td style="text-align:center;">1</td>
+              <td style="text-align:right;">5,499</td>
+              <td style="text-align:right;">5,499.00</td>
             </tr>
             <tr>
-              <td>Floral Dress<br/><span style="font-size:9px;color:#555;">Red / Free</span></td>
+              <td>Designer Anarkali Set (M)</td>
               <td style="text-align:center;">1</td>
-              <td style="text-align:right;">1499.00</td>
-              <td style="text-align:right;">1499.00</td>
+              <td style="text-align:right;">3,299</td>
+              <td style="text-align:right;">3,299.00</td>
+            </tr>
+            <tr>
+              <td>Silk Dupatta - Gold</td>
+              <td style="text-align:center;">1</td>
+              <td style="text-align:right;">999</td>
+              <td style="text-align:right;">999.00</td>
             </tr>
           </tbody>
         </table>
         <div class="border-top"></div>
-        <div class="flex-between font-bold"><span>Subtotal:</span><span>₹2897.00</span></div>
-        <div class="flex-between" style="font-size:10px;"><span>Discount:</span><span>-₹100.00</span></div>
-        <div class="flex-between" style="font-size:10px;"><span>GST (5%):</span><span>₹140.00</span></div>
+        <div class="flex-between"><span>Subtotal:</span><span>Rs.9,797.00</span></div>
+        <div class="flex-between"><span>Discount:</span><span>-Rs.500.00</span></div>
+        <div class="flex-between"><span>GST (5% CGST+SGST):</span><span>Rs.442.71</span></div>
         <div class="border-bottom"></div>
-        <div class="flex-between font-bold" style="font-size: 14px;"><span>GRAND TOTAL:</span><span>₹2937.00</span></div>
+        <div class="flex-between font-bold" style="font-size: ${is80mm ? '14px' : '12px'};"><span>GRAND TOTAL:</span><span>Rs.9,739.71</span></div>
+        <div class="flex-between" style="font-size: ${is80mm ? '10px' : '8.5px'};"><span>Payment Mode:</span><span>UPI / PhonePe</span></div>
         <div class="border-top"></div>
-        <div class="text-center font-bold" style="margin-top: 6px;">*** TEST RECEIPT SUCCESSFUL ***</div>
-        <div class="text-center" style="font-size: 10px; margin-top: 4px;">Thank you for shopping with us!</div>
+        <div class="text-center font-bold" style="margin-top: 6px;">*** THANK YOU FOR SHOPPING WITH US! ***</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'}; margin-top: 2px;">Visit again : vasanthissignature.in</div>
+      </body>
+    </html>
+    `;
+  };
+
+  // 2. 4×6" (100×150mm) Courier Shipping Label HTML
+  const getShippingLabelHtml = () => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>4x6 Shipping Label - Delhivery</title>
+        <style>
+          @page { size: 100mm 150mm; margin: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            width: 96mm;
+            height: 144mm;
+            margin: 0 auto;
+            padding: 4mm 2mm;
+            box-sizing: border-box;
+            color: #000;
+            font-size: 11px;
+          }
+          .box { border: 2px solid #000; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; }
+          .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #000; padding: 6px 8px; }
+          .courier-title { font-size: 16px; font-weight: 900; }
+          .badge-prepaid { background: #000; color: #fff; font-weight: bold; font-size: 12px; padding: 3px 8px; border-radius: 4px; }
+          .barcode-section { text-align: center; border-bottom: 2px solid #000; padding: 8px 4px; }
+          .barcode-img { height: 44px; width: 80%; object-fit: contain; }
+          .waybill-txt { font-family: monospace; font-size: 14px; font-weight: bold; letter-spacing: 2px; margin-top: 2px; }
+          .routing-row { display: flex; border-bottom: 2px solid #000; font-size: 10px; }
+          .routing-cell { flex: 1; padding: 4px 6px; border-right: 1px solid #000; }
+          .routing-cell:last-child { border-right: none; }
+          .address-section { padding: 6px 8px; border-bottom: 1.5px solid #000; flex: 1; }
+          .addr-title { font-size: 10px; font-weight: bold; text-transform: uppercase; color: #444; }
+          .addr-name { font-size: 13px; font-weight: bold; margin: 2px 0; }
+          .seller-section { padding: 6px 8px; font-size: 9.5px; border-bottom: 1.5px solid #000; background: #fafafa; }
+          .footer-section { padding: 4px 8px; font-size: 9px; display: flex; justify-content: space-between; align-items: center; }
+        </style>
+      </head>
+      <body>
+        <div class="box">
+          <div class="header">
+            <div>
+              <div class="courier-title">DELHIVERY SURFACE</div>
+              <div style="font-size: 9px; font-weight: bold;">STANDARD EXPRESS</div>
+            </div>
+            <div class="badge-prepaid">PREPAID</div>
+          </div>
+          <div class="barcode-section">
+            <svg id="barcode" style="width: 85%; height: 42px;"></svg>
+            <div class="waybill-txt">DEL749281034</div>
+          </div>
+          <div class="routing-row">
+            <div class="routing-cell"><b>HUB:</b> BLR/IND/560038</div>
+            <div class="routing-cell"><b>WT:</b> 650g</div>
+            <div class="routing-cell"><b>PCS:</b> 1/1</div>
+          </div>
+          <div class="address-section">
+            <div class="addr-title">Deliver To (Consignee):</div>
+            <div class="addr-name">Priya Sharma</div>
+            <div style="font-size: 11px; line-height: 1.3;">
+              Flat 402, Green Palms, 12th Main Road,<br/>
+              Indiranagar, Bengaluru, Karnataka<br/>
+              <b>PIN: 560038</b> | Ph: +91 98451 23098
+            </div>
+          </div>
+          <div class="seller-section">
+            <div class="addr-title">Shipped By (Seller / Return):</div>
+            <div style="font-weight: bold; font-size: 11px;">Vasanthi's Signature</div>
+            <div>Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033</div>
+            <div>GSTIN: 36AABCU9603R1ZM | Ref: ORD-ONL-2026-0012</div>
+          </div>
+          <div class="footer-section">
+            <div>Item: Emerald Silk Lehenga Set (M)</div>
+            <div>Ordered on: ${new Date().toLocaleDateString('en-IN')}</div>
+          </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        <script>
+          if (window.JsBarcode) {
+            JsBarcode("#barcode", "DEL749281034", { format: "CODE128", width: 2, height: 40, displayValue: false });
+          }
+        </script>
       </body>
     </html>
   `;
 
-  const handleTestPrintReceipt = () => {
-    setTestPrintError('');
-    previewReceiptMutation.mutate(
-      {
-        orderNumber: 'TEST-ORD-2026-001',
-        grandTotal: 2937,
-        items: [
-          { productId: '00000000-0000-0000-0000-000000000001', productName: "Women's Designer Kurti", variantTitle: 'Blue / L', quantity: 2, unitPrice: 699 },
-          { productId: '00000000-0000-0000-0000-000000000002', productName: 'Floral Dress', variantTitle: 'Red / Free Size', quantity: 1, unitPrice: 1499 },
-        ],
-        customer: { fullName: 'Walk-in Customer', phone: '9999999999' },
-        paymentMethod: 'UPI',
-        discountTotal: 100,
-        taxTotal: 140,
-      },
-      {
-        onSuccess: async (res) => {
-          if (printMode === 'BLUETOOTH' && btConnected) {
-            try {
-              await webBluetoothPrinterService.printBase64(res.escposBase64);
-              setTestSuccessMessage('Test receipt sent directly via Bluetooth to KPC printer!');
-            } catch (err) {
-              setBtError(getApiErrorMessage(err, 'Bluetooth print failed.'));
-            }
-            return;
+  // 3. 3×2" (75×50mm) Barcode Price Tag HTML
+  const getBarcodeTagHtml = () => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>3x2 Barcode Price Tag</title>
+        <style>
+          @page { size: 75mm 50mm; margin: 0; }
+          body {
+            font-family: Arial, sans-serif;
+            width: 72mm;
+            height: 46mm;
+            margin: 0 auto;
+            padding: 2mm;
+            box-sizing: border-box;
+            text-align: center;
+            color: #000;
           }
-          if (printMode === 'ESCPOS' && usbConnected) {
-            try {
-              await webUsbPrinterService.printBase64(res.escposBase64);
-              setTestSuccessMessage('Test receipt sent directly to the USB printer!');
-            } catch (err) {
-              setUsbError(getApiErrorMessage(err, 'USB print failed.'));
-            }
-            return;
+          .tag-box { border: 1.5px solid #000; border-radius: 4px; padding: 4px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: space-between; }
+          .brand { font-size: 12px; font-weight: 900; letter-spacing: 1px; }
+          .prod-name { font-size: 11px; font-weight: bold; margin: 1px 0; }
+          .variant { font-size: 9px; color: #333; }
+          .barcode-area { margin: 2px 0; }
+          .price-row { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid #000; padding-top: 2px; }
+          .mrp { font-size: 9.5px; text-decoration: line-through; color: #555; }
+          .offer { font-size: 13px; font-weight: 900; }
+        </style>
+      </head>
+      <body>
+        <div class="tag-box">
+          <div>
+            <div class="brand">VASANTHI'S SIGNATURE</div>
+            <div class="prod-name">Banarasi Silk Saree</div>
+            <div class="variant">Royal Pink &amp; Gold | Free Size | HSN: 5208</div>
+          </div>
+          <div class="barcode-area">
+            <svg id="barcode" style="width: 80%; height: 30px;"></svg>
+            <div style="font-family: monospace; font-size: 9px; font-weight: bold; letter-spacing: 1px;">890123456789</div>
+          </div>
+          <div class="price-row">
+            <div class="mrp">MRP: Rs.7,999</div>
+            <div class="offer">OFFER: Rs.5,499</div>
+          </div>
+        </div>
+        <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+        <script>
+          if (window.JsBarcode) {
+            JsBarcode("#barcode", "890123456789", { format: "CODE128", width: 1.8, height: 28, displayValue: false });
           }
-          triggerBrowserPrint(res.html || getFallbackReceiptHtml());
-        },
-        onError: () => {
-          // Guaranteed instant fallback to client-side receipt print
-          triggerBrowserPrint(getFallbackReceiptHtml());
-        },
-      },
-    );
-  };
+        </script>
+      </body>
+    </html>
+  `;
 
-  const handleTestPrintLabel = () => {
-    setTestPrintError('');
-    batchStickersMutation.mutate(
-      {
-        productName: "Women's Designer Kurti",
-        variantTitle: 'Blue / L / Cotton',
-        sku: 'KUR-BLU-L-005',
-        barcode: '890100000005',
-        price: 699,
-        mrp: 999,
-        hsnCode: '6204',
-        quantity: 2,
-        storeName: 'VASANTHI DESIGNERS',
-        labelSize: testLabelSize,
-      },
-      {
-        onSuccess: async (res) => {
-          if (printMode === 'BLUETOOTH' && btConnected) {
-            try {
-              await webBluetoothPrinterService.printText(res.tspl);
-              setTestSuccessMessage('Test barcode sticker labels sent directly via Bluetooth to KPC printer!');
-            } catch (err) {
-              setBtError(getApiErrorMessage(err, 'Bluetooth print failed.'));
-            }
-            return;
+  // 4. 3×2" (75×50mm) Brand Logo Sticker HTML
+  const getBrandLogoHtml = () => `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <meta charset="utf-8" />
+        <title>3x2 Brand Logo Sticker</title>
+        <style>
+          @page { size: 75mm 50mm; margin: 0; }
+          body {
+            font-family: 'Times New Roman', serif;
+            width: 72mm;
+            height: 46mm;
+            margin: 0 auto;
+            padding: 3mm;
+            box-sizing: border-box;
+            text-align: center;
+            color: #000;
           }
-          if (printMode === 'ESCPOS' && usbConnected) {
-            try {
-              await webUsbPrinterService.printText(res.tspl);
-              setTestSuccessMessage('Test barcode sticker labels sent directly to the USB printer!');
-            } catch (err) {
-              setUsbError(getApiErrorMessage(err, 'USB print failed.'));
-            }
-            return;
-          }
-          triggerBrowserPrint(res.html);
-          setTestSuccessMessage(
-            `Test ${LABEL_SIZE_OPTIONS.find((o) => o.value === testLabelSize)?.title.toLowerCase()} barcode sticker labels (2 copies) sent to printer!`,
-          );
-        },
-        onError: (err) => {
-          setTestPrintError(getApiErrorMessage(err, 'Could not generate the test labels.'));
-        },
-      },
-    );
+          .sticker-box { border: 2px solid #000; border-radius: 6px; padding: 6px 4px; height: 100%; box-sizing: border-box; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+          .logo-symbol { font-size: 24px; font-weight: bold; margin-bottom: 2px; }
+          .brand-main { font-size: 15px; font-weight: 900; letter-spacing: 1.5px; }
+          .tagline { font-family: Arial, sans-serif; font-size: 8.5px; text-transform: uppercase; letter-spacing: 1.5px; margin-top: 3px; font-weight: 600; color: #222; }
+          .footer-url { font-family: Arial, sans-serif; font-size: 7.5px; margin-top: 6px; border-top: 1px solid #000; padding-top: 3px; width: 85%; }
+        </style>
+      </head>
+      <body>
+        <div class="sticker-box">
+          <div class="logo-symbol">❖</div>
+          <div class="brand-main">VASANTHI'S SIGNATURE</div>
+          <div class="tagline">Women's Ethnic Wear &amp; Designer Boutique</div>
+          <div class="footer-url">Hyderabad • vasanthissignature.in</div>
+        </div>
+      </body>
+    </html>
+  `;
+
+  const handlePrint = (type: 'RECEIPT_80' | 'RECEIPT_58' | 'SHIPPING_4X6' | 'TAG_3X2' | 'LOGO_3X2') => {
+    if (type === 'RECEIPT_80') {
+      triggerBrowserPrint(getReceiptHtml(true), '80mm Thermal POS Receipt');
+    } else if (type === 'RECEIPT_58') {
+      triggerBrowserPrint(getReceiptHtml(false), '58mm Compact POS Receipt');
+    } else if (type === 'SHIPPING_4X6') {
+      triggerBrowserPrint(getShippingLabelHtml(), '4x6" Delhivery Shipping Label');
+    } else if (type === 'TAG_3X2') {
+      triggerBrowserPrint(getBarcodeTagHtml(), '3x2" Barcode Price Tag');
+    } else if (type === 'LOGO_3X2') {
+      triggerBrowserPrint(getBrandLogoHtml(), '3x2" Brand Logo Sticker');
+    }
   };
 
   return (
@@ -315,7 +436,7 @@ export default function PrintersConfigPage() {
               Thermal Printers & Barcode Label Setup
             </h1>
             <p className="text-xs text-neutral-500 font-medium mt-1">
-              Bluetooth Wireless, USB Direct-Connect & Universal Browser Print Integration
+              Supports 80mm/58mm POS Receipts, 4×6" Shipping Labels, and 3×2" Barcode & Brand Stickers
             </p>
           </div>
         </div>
@@ -350,14 +471,14 @@ export default function PrintersConfigPage() {
                 <span className="text-xs font-bold uppercase tracking-wider text-neutral-500">Mode 1 (Standard)</span>
                 {printMode === 'BROWSER' && <CheckCircle2 className="w-5 h-5 text-[var(--brand-primary)]" />}
               </div>
-              <h3 className="text-sm font-bold text-neutral-900 mb-1">Universal Browser Print</h3>
+              <h3 className="text-sm font-bold text-neutral-900 mb-1">Universal System Print</h3>
               <p className="text-xs text-neutral-600 leading-relaxed">
-                Uses system browser dialogs (`window.print()`). Compatible with all USB cables, Windows system drivers, Bluetooth, and Wi-Fi printers.
+                Uses Windows/macOS print dialog. Compatible with all connected USB cables, Windows system drivers, Bluetooth, and Wi-Fi printers.
               </p>
             </div>
             <div className="mt-4 pt-3 border-t border-neutral-100">
               <span className="inline-flex items-center gap-1.5 text-[11px] font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md">
-                ✓ Ready for USB & Windows Printers
+                ✓ Active for USB & Windows Printers
               </span>
             </div>
           </div>
@@ -383,7 +504,7 @@ export default function PrintersConfigPage() {
                 <span>Bluetooth Direct-Connect</span>
               </h3>
               <p className="text-xs text-neutral-600 leading-relaxed mb-3">
-                Connects wirelessly over Bluetooth without any print dialogs — works directly with KPC, Xprinter, and POS thermal printers.
+                Connects wirelessly over Web Bluetooth without print dialogs — works directly with KPC, Xprinter, and POS thermal printers.
               </p>
             </div>
 
@@ -497,58 +618,259 @@ export default function PrintersConfigPage() {
           </div>
         </div>
 
-        {/* Test Print Buttons */}
-        <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-2xs space-y-4">
-          <h2 className="text-xs font-bold uppercase tracking-wider text-neutral-500">
-            Hardware Diagnostics & Test Print
-          </h2>
-
-          <button
-            onClick={handleTestPrintReceipt}
-            disabled={previewReceiptMutation.isPending}
-            className="w-full bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
-          >
-            <Printer className="w-4 h-4" />
-            <span>Test Print Thermal Invoice Receipt</span>
-          </button>
-
-          <div className="border-t border-neutral-100 pt-4 space-y-3">
-            <span className="text-[11px] font-bold text-neutral-500 uppercase tracking-wider">Barcode Label Size</span>
-            <div className="grid grid-cols-3 gap-2">
-              {LABEL_SIZE_OPTIONS.map((opt) => (
-                <button
-                  key={opt.value}
-                  type="button"
-                  onClick={() => setTestLabelSize(opt.value)}
-                  className={`text-left p-2.5 rounded-lg border transition-all ${
-                    testLabelSize === opt.value
-                      ? 'bg-amber-600 border-amber-600 text-white'
-                      : 'bg-neutral-50 border-neutral-200 text-neutral-700 hover:bg-neutral-100'
-                  }`}
-                >
-                  <div className="text-[11px] font-bold">{opt.title}</div>
-                  <div className={`text-[10px] ${testLabelSize === opt.value ? 'text-amber-100' : 'text-neutral-500'}`}>
-                    {opt.dimensions}
-                  </div>
-                </button>
-              ))}
+        {/* Multi-Format Hardware Diagnostics & Test Lab */}
+        <div className="bg-white rounded-2xl border border-neutral-200 shadow-2xs overflow-hidden">
+          <div className="p-5 border-b border-neutral-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <h2 className="text-base font-bold text-neutral-900 flex items-center gap-2">
+                <span>🔬 Physical Printer Diagnostic & Test Lab</span>
+              </h2>
+              <p className="text-xs text-neutral-500 mt-0.5">
+                Select your printer format below and test one-click physical printing from your laptop/system.
+              </p>
             </div>
+          </div>
+
+          {/* Test Tabs */}
+          <div className="flex border-b border-neutral-200 bg-neutral-50 px-4 overflow-x-auto">
             <button
-              onClick={handleTestPrintLabel}
-              disabled={batchStickersMutation.isPending}
-              className="w-full bg-amber-600 hover:bg-amber-700 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs disabled:opacity-50"
+              onClick={() => setActiveTestTab('RECEIPT')}
+              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                activeTestTab === 'RECEIPT'
+                  ? 'border-[var(--brand-primary)] text-[var(--brand-primary)] bg-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
+              }`}
             >
-              <QrCode className="w-4 h-4" />
-              <span>
-                Test Print {LABEL_SIZE_OPTIONS.find((o) => o.value === testLabelSize)?.dimensions} Barcode Stickers
-              </span>
+              <Receipt className="w-4 h-4" />
+              <span>1. POS Thermal Receipt (80mm / 58mm)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTestTab('SHIPPING')}
+              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                activeTestTab === 'SHIPPING'
+                  ? 'border-indigo-600 text-indigo-700 bg-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <Package className="w-4 h-4" />
+              <span>2. 4×6" Shipping Label (Delhivery)</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTestTab('BARCODE_3X2')}
+              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                activeTestTab === 'BARCODE_3X2'
+                  ? 'border-sky-600 text-sky-700 bg-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <Tag className="w-4 h-4" />
+              <span>3. 3×2" Barcode Price Tag</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTestTab('LOGO_3X2')}
+              className={`py-3 px-4 text-xs font-bold flex items-center gap-2 border-b-2 transition-all whitespace-nowrap ${
+                activeTestTab === 'LOGO_3X2'
+                  ? 'border-purple-600 text-purple-700 bg-white'
+                  : 'border-transparent text-neutral-500 hover:text-neutral-800'
+              }`}
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>4. 3×2" Brand Logo Sticker</span>
             </button>
           </div>
 
-          {testPrintError && (
-            <div className="flex items-center gap-2 text-xs font-bold text-sky-700 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2">
-              <AlertTriangle className="w-3.5 h-3.5 shrink-0" />
-              <span>{testPrintError}</span>
+          {/* Tab 1: POS Thermal Receipt */}
+          {activeTestTab === 'RECEIPT' && (
+            <div className="p-6 space-y-6">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-emerald-50 p-4 rounded-xl border border-emerald-200">
+                <div>
+                  <h3 className="text-sm font-bold text-emerald-950">In-Store Thermal Billing Receipt</h3>
+                  <p className="text-xs text-emerald-800 mt-0.5">
+                    Formatted for POS thermal roll machines (e.g. KPC307, Epson, Rongta, NGX).
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setReceiptWidth(80)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                      receiptWidth === 80
+                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                        : 'bg-white text-emerald-900 border-emerald-300'
+                    }`}
+                  >
+                    80mm (Standard 3")
+                  </button>
+                  <button
+                    onClick={() => setReceiptWidth(58)}
+                    className={`px-3 py-1.5 text-xs font-bold rounded-lg border transition-all ${
+                      receiptWidth === 58
+                        ? 'bg-emerald-700 text-white border-emerald-700 shadow-2xs'
+                        : 'bg-white text-emerald-900 border-emerald-300'
+                    }`}
+                  >
+                    58mm (Handheld 2")
+                  </button>
+                </div>
+              </div>
+
+              {/* Receipt Preview Card */}
+              <div className="max-w-md mx-auto bg-neutral-50 p-6 rounded-2xl border border-neutral-300 shadow-inner font-mono text-xs">
+                <div className="text-center font-bold text-sm">VASANTHI'S SIGNATURE</div>
+                <div className="text-center text-[10px] text-neutral-600">Women's Ethnic Wear & Designer Couture</div>
+                <div className="text-center text-[10px] text-neutral-600">Plot 42, Jubilee Hills Rd No 36, Hyderabad</div>
+                <div className="border-t border-dashed border-neutral-400 my-2"></div>
+                <div className="flex justify-between text-[10px]">
+                  <span>Invoice: ORD-POS-2026-0001</span>
+                  <span>{new Date().toLocaleDateString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between text-[10px]">
+                  <span>Cashier: POS Counter 01</span>
+                  <span>Payment: UPI</span>
+                </div>
+                <div className="border-t border-dashed border-neutral-400 my-2"></div>
+                <div className="space-y-1">
+                  <div className="flex justify-between">
+                    <span>1x Banarasi Silk Saree</span>
+                    <span className="font-bold">Rs.5,499.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>1x Designer Anarkali Set (M)</span>
+                    <span className="font-bold">Rs.3,299.00</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>1x Silk Dupatta - Gold</span>
+                    <span className="font-bold">Rs.999.00</span>
+                  </div>
+                </div>
+                <div className="border-t border-dashed border-neutral-400 my-2"></div>
+                <div className="flex justify-between font-bold text-sm">
+                  <span>GRAND TOTAL</span>
+                  <span>Rs.9,739.71</span>
+                </div>
+                <div className="border-t border-dashed border-neutral-400 my-2"></div>
+                <div className="text-center font-bold text-[10px] mt-2">*** THANK YOU FOR SHOPPING! ***</div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => handlePrint(receiptWidth === 80 ? 'RECEIPT_80' : 'RECEIPT_58')}
+                  className="flex-1 bg-emerald-700 hover:bg-emerald-800 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print {receiptWidth}mm POS Receipt Test</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Tab 2: 4x6 Shipping Label */}
+          {activeTestTab === 'SHIPPING' && (
+            <div className="p-6 space-y-6">
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-200">
+                <h3 className="text-sm font-bold text-indigo-950">4×6" Courier Shipping Label (100×150 mm)</h3>
+                <p className="text-xs text-indigo-800 mt-0.5">
+                  Formatted for 4×6" desktop & Bluetooth thermal label printers (e.g. ITPP130B, Zebra, Munbyn, TSC).
+                </p>
+              </div>
+
+              {/* 4x6 Label Preview */}
+              <div className="max-w-sm mx-auto bg-white p-4 rounded-xl border-2 border-neutral-900 shadow-sm font-sans text-xs space-y-3">
+                <div className="flex justify-between items-center border-b-2 border-neutral-900 pb-2">
+                  <div className="font-black text-sm">DELHIVERY SURFACE</div>
+                  <div className="bg-black text-white px-2 py-0.5 font-bold text-[10px] rounded">PREPAID</div>
+                </div>
+                <div className="text-center py-2 border-b-2 border-neutral-900">
+                  <div className="font-mono text-sm tracking-widest font-black">||||| | |||| |||| ||| |||||</div>
+                  <div className="font-mono font-bold text-xs mt-1">DEL749281034</div>
+                </div>
+                <div className="border-b border-neutral-900 pb-2 text-[11px]">
+                  <div className="text-[10px] text-neutral-500 font-bold uppercase">Deliver To:</div>
+                  <div className="font-bold text-xs">Priya Sharma</div>
+                  <div>Flat 402, Green Palms, Indiranagar, Bengaluru</div>
+                  <div className="font-black">PIN: 560038 | Ph: +91 98451 23098</div>
+                </div>
+                <div className="text-[10px] text-neutral-600">
+                  <span className="font-bold">Shipped By:</span> Vasanthi's Signature, Jubilee Hills, Hyderabad
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePrint('SHIPPING_4X6')}
+                className="w-full bg-indigo-700 hover:bg-indigo-800 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print 4×6" Delhivery Shipping Label Test</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tab 3: 3x2 Barcode Price Tag */}
+          {activeTestTab === 'BARCODE_3X2' && (
+            <div className="p-6 space-y-6">
+              <div className="bg-sky-50 p-4 rounded-xl border border-sky-200">
+                <h3 className="text-sm font-bold text-sky-950">3×2" Barcode Price Tag (75×50 mm)</h3>
+                <p className="text-xs text-sky-800 mt-0.5">
+                  Standard garment price tag with Code128 barcode, variant details, MRP and Offer Price.
+                </p>
+              </div>
+
+              {/* 3x2 Barcode Tag Preview */}
+              <div className="max-w-xs mx-auto bg-white p-4 rounded-xl border-2 border-neutral-900 shadow-sm font-sans text-xs text-center space-y-2">
+                <div className="font-black text-xs tracking-wider">VASANTHI'S SIGNATURE</div>
+                <div className="font-bold text-[11px]">Banarasi Silk Saree</div>
+                <div className="text-[9.5px] text-neutral-600">Royal Pink &amp; Gold | Free Size</div>
+                <div className="py-1">
+                  <div className="font-mono text-xs font-bold tracking-widest">|||| | |||| || |||||</div>
+                  <div className="font-mono text-[9px] font-bold">890123456789</div>
+                </div>
+                <div className="flex justify-between items-center border-t border-neutral-900 pt-1 text-xs">
+                  <span className="line-through text-neutral-500 text-[10px]">MRP: Rs.7,999</span>
+                  <span className="font-black text-xs text-emerald-800">OFFER: Rs.5,499</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePrint('TAG_3X2')}
+                className="w-full bg-sky-700 hover:bg-sky-800 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print 3×2" Barcode Price Tag Test</span>
+              </button>
+            </div>
+          )}
+
+          {/* Tab 4: 3x2 Brand Logo Sticker */}
+          {activeTestTab === 'LOGO_3X2' && (
+            <div className="p-6 space-y-6">
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-200">
+                <h3 className="text-sm font-bold text-purple-950">3×2" Brand Logo Sticker (75×50 mm)</h3>
+                <p className="text-xs text-purple-800 mt-0.5">
+                  High-contrast brand sticker for packaging, boutique boxes, and garment tags.
+                </p>
+              </div>
+
+              {/* 3x2 Brand Logo Preview */}
+              <div className="max-w-xs mx-auto bg-white p-6 rounded-xl border-2 border-neutral-900 shadow-sm font-serif text-center space-y-1">
+                <div className="text-2xl font-bold">❖</div>
+                <div className="font-black text-sm tracking-wider">VASANTHI'S SIGNATURE</div>
+                <div className="font-sans text-[8.5px] tracking-widest uppercase font-semibold text-neutral-600">
+                  Women's Ethnic Wear &amp; Designer Boutique
+                </div>
+                <div className="border-t border-neutral-900 mt-3 pt-1 font-sans text-[8px] text-neutral-500">
+                  Hyderabad • vasanthissignature.in
+                </div>
+              </div>
+
+              <button
+                onClick={() => handlePrint('LOGO_3X2')}
+                className="w-full bg-purple-700 hover:bg-purple-800 text-white py-3.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 shadow-2xs"
+              >
+                <Printer className="w-4 h-4" />
+                <span>Print 3×2" Brand Logo Sticker Test</span>
+              </button>
             </div>
           )}
         </div>
@@ -556,3 +878,4 @@ export default function PrintersConfigPage() {
     </div>
   );
 }
+

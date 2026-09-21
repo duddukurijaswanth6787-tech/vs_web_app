@@ -231,6 +231,28 @@ export function isLabelPrinterName(name?: string | null): boolean {
   );
 }
 
+import * as SecureStore from 'expo-secure-store';
+
+const LAST_PRINTER_STORAGE_KEY = 'shopora_last_bluetooth_printer';
+
+export function isPosReceiptPrinterName(name?: string | null): boolean {
+  if (!name) return false;
+  const n = name.toUpperCase();
+  return (
+    n.includes('KPC') ||
+    n.includes('POS') ||
+    n.includes('RECEIPT') ||
+    n.includes('BILLING') ||
+    n.includes('58MM') ||
+    n.includes('80MM') ||
+    n.includes('RP') ||
+    n.includes('EPSON') ||
+    n.includes('THERMAL') ||
+    n.includes('UEWB') ||
+    n.includes('265C')
+  );
+}
+
 class BluetoothPrinterService {
   private connectedAddress: string | null = null;
   private connectedName: string | null = null;
@@ -283,11 +305,19 @@ class BluetoothPrinterService {
     await BluetoothManager.connect(device.address);
     this.connectedAddress = device.address;
     this.connectedName = device.name;
+    try {
+      await SecureStore.setItemAsync(LAST_PRINTER_STORAGE_KEY, JSON.stringify(device));
+    } catch (e) {
+      console.warn('[BluetoothPrinter] Could not save last printer:', e);
+    }
   }
 
   async disconnect(): Promise<void> {
     this.connectedAddress = null;
     this.connectedName = null;
+    try {
+      await SecureStore.deleteItemAsync(LAST_PRINTER_STORAGE_KEY);
+    } catch {}
   }
 
   isConnected(): boolean {
@@ -296,6 +326,71 @@ class BluetoothPrinterService {
 
   connectedDeviceName(): string | null {
     return this.connectedName;
+  }
+
+  connectedDeviceAddress(): string | null {
+    return this.connectedAddress;
+  }
+
+  async getLastConnectedPrinter(): Promise<DiscoveredPrinter | null> {
+    try {
+      const raw = await SecureStore.getItemAsync(LAST_PRINTER_STORAGE_KEY);
+      if (raw) {
+        return JSON.parse(raw);
+      }
+    } catch {}
+    return null;
+  }
+
+  /**
+   * Automatically discovers and connects to a known thermal/POS printer
+   * or the last connected printer without requiring manual user input.
+   */
+  async autoConnect(): Promise<DiscoveredPrinter | null> {
+    if (this.isConnected()) {
+      return { address: this.connectedAddress!, name: this.connectedName };
+    }
+    try {
+      const granted = await this.requestPermissions();
+      if (!granted) return null;
+      const enabled = await this.isBluetoothEnabled().catch(() => false);
+      if (!enabled) return null;
+
+      const { paired } = await this.scanDevices();
+      if (!paired || paired.length === 0) return null;
+
+      // 1. Try last connected printer
+      const last = await this.getLastConnectedPrinter();
+      if (last) {
+        const match = paired.find((p) => p.address === last.address);
+        if (match) {
+          try {
+            await this.connect(match);
+            return match;
+          } catch (e) {
+            console.warn('[BluetoothPrinter] autoConnect last device failed, falling back to discovery:', e);
+          }
+        }
+      }
+
+      // 2. Try known POS or label printers
+      const knownPrinter = paired.find((p) => {
+        const n = (p.name || '').toUpperCase();
+        return isPosReceiptPrinterName(n) || isLabelPrinterName(n);
+      });
+
+      if (knownPrinter) {
+        try {
+          await this.connect(knownPrinter);
+          return knownPrinter;
+        } catch (e) {
+          console.warn('[BluetoothPrinter] autoConnect known printer failed:', e);
+        }
+      }
+    } catch (e) {
+      console.warn('[BluetoothPrinter] autoConnect error:', e);
+    }
+    return null;
   }
 
   /**
@@ -335,11 +430,11 @@ class BluetoothPrinterService {
     await P.printerInit();
     await P.setWidth(PAGE_WIDTH.WIDTH_80);
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText('================================================\n\r', {});
-    await P.printText("VASANTHI'S SIGNATURE\n\r", { widthtimes: 1, heigthtimes: 1 });
-    await P.printText('POS Thermal Receipt Test\n\r', {});
-    await P.printText('Bluetooth Connection: OK\n\r', {});
-    await P.printText('================================================\n\r\n\r\n\r\n\r', {});
+    await P.printText('================================================\n\r', { codepage: 1 });
+    await P.printText("VASANTHI'S SIGNATURE\n\r", { widthtimes: 1, heigthtimes: 1, codepage: 1 });
+    await P.printText('POS Thermal Receipt Test\n\r', { codepage: 1 });
+    await P.printText('Bluetooth Connection: OK\n\r', { codepage: 1 });
+    await P.printText('================================================\n\r\n\r\n\r', { codepage: 1 });
     if (P.cutPaper) {
       try {
         await P.cutPaper();
@@ -468,34 +563,35 @@ class BluetoothPrinterService {
     const lineChars = is80mm ? 48 : 32;
     const divider = '-'.repeat(lineChars);
     const doubleDivider = '='.repeat(lineChars);
+    const opt = { codepage: 1 };
 
     await P.printerInit();
 
     // 1. Header (Centered)
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText(`${receipt.storeName.toUpperCase()}\n\r`, { widthtimes: 1, heigthtimes: 1 });
-    if (receipt.storeTagline) await P.printText(`${receipt.storeTagline}\n\r`, {});
-    if (receipt.address) await P.printText(`${receipt.address}\n\r`, {});
-    if (receipt.phone) await P.printText(`Ph: ${receipt.phone}\n\r`, {});
-    await P.printText(`${divider}\n\r`, {});
+    await P.printText(`${receipt.storeName.toUpperCase()}\n\r`, { widthtimes: 1, heigthtimes: 1, codepage: 1 });
+    if (receipt.storeTagline) await P.printText(`${receipt.storeTagline}\n\r`, opt);
+    if (receipt.address) await P.printText(`${receipt.address}\n\r`, opt);
+    if (receipt.phone) await P.printText(`Ph: ${receipt.phone}\n\r`, opt);
+    await P.printText(`${divider}\n\r`, opt);
 
     // 2. Metadata (Left aligned)
     await P.printerAlign(ALIGN.LEFT);
-    await P.printText(`Invoice : ${receipt.orderNumber}\n\r`, {});
-    await P.printText(`Date    : ${receipt.dateStr}\n\r`, {});
-    if (receipt.cashierName) await P.printText(`Cashier : ${receipt.cashierName}\n\r`, {});
+    await P.printText(`Invoice : ${receipt.orderNumber}\n\r`, opt);
+    await P.printText(`Date    : ${receipt.dateStr}\n\r`, opt);
+    if (receipt.cashierName) await P.printText(`Cashier : ${receipt.cashierName}\n\r`, opt);
     if (receipt.customerName) {
       const suffix = receipt.customerPhone ? ` (${receipt.customerPhone})` : '';
-      await P.printText(`Customer: ${receipt.customerName}${suffix}\n\r`, {});
+      await P.printText(`Customer: ${receipt.customerName}${suffix}\n\r`, opt);
     }
-    await P.printText(`${divider}\n\r`, {});
+    await P.printText(`${divider}\n\r`, opt);
 
     // 3. Item List (Strict 48-char / 32-char fixed alignment)
     if (is80mm) {
       // Columns: Item(24) Qty(4) Rate(8) Total(12) = 48 chars
       const header = 'ITEM'.padEnd(24) + 'QTY'.padStart(4) + 'RATE'.padStart(8) + 'TOTAL'.padStart(12);
-      await P.printText(`${header}\n\r`, {});
-      await P.printText(`${divider}\n\r`, {});
+      await P.printText(`${header}\n\r`, opt);
+      await P.printText(`${divider}\n\r`, opt);
 
       for (const item of receipt.items) {
         const itemTotal = (item.unitPrice * item.quantity).toFixed(2);
@@ -504,83 +600,83 @@ class BluetoothPrinterService {
 
         if (item.title.length <= 24) {
           const row = item.title.padEnd(24) + qtyStr.padStart(4) + rateStr.padStart(8) + itemTotal.padStart(12);
-          await P.printText(`${row}\n\r`, {});
+          await P.printText(`${row}\n\r`, opt);
         } else {
           const row1 = item.title.slice(0, 23).padEnd(24) + qtyStr.padStart(4) + rateStr.padStart(8) + itemTotal.padStart(12);
-          await P.printText(`${row1}\n\r`, {});
+          await P.printText(`${row1}\n\r`, opt);
           const rest = item.title.slice(23).trim();
           if (rest) {
-            await P.printText(`  ${rest.slice(0, 44)}\n\r`, {});
+            await P.printText(`  ${rest.slice(0, 44)}\n\r`, opt);
           }
         }
       }
     } else {
       // 58mm (32 chars)
       const header = 'ITEM'.padEnd(16) + 'QTY'.padStart(4) + 'TOTAL'.padStart(12);
-      await P.printText(`${header}\n\r`, {});
-      await P.printText(`${divider}\n\r`, {});
+      await P.printText(`${header}\n\r`, opt);
+      await P.printText(`${divider}\n\r`, opt);
 
       for (const item of receipt.items) {
         const itemTotal = (item.unitPrice * item.quantity).toFixed(2);
-        await P.printText(`${item.title}\n\r`, {});
+        await P.printText(`${item.title}\n\r`, opt);
         const row = ''.padEnd(14) + `x${item.quantity}`.padStart(4) + itemTotal.padStart(14);
-        await P.printText(`${row}\n\r`, {});
+        await P.printText(`${row}\n\r`, opt);
       }
     }
-    await P.printText(`${divider}\n\r`, {});
+    await P.printText(`${divider}\n\r`, opt);
 
     // 4. Totals (Strict 48-char / 32-char fixed alignment)
     if (is80mm) {
       const subtotalRow = 'Subtotal'.padEnd(32) + money(receipt.subtotal).padStart(16);
-      await P.printText(`${subtotalRow}\n\r`, {});
+      await P.printText(`${subtotalRow}\n\r`, opt);
 
       if (receipt.discountTotal && receipt.discountTotal > 0) {
         const discRow = 'Discount'.padEnd(32) + (`-${money(receipt.discountTotal)}`).padStart(16);
-        await P.printText(`${discRow}\n\r`, {});
+        await P.printText(`${discRow}\n\r`, opt);
       }
 
       if (receipt.taxTotal && receipt.taxTotal > 0) {
         const gstRow = 'GST (5% CGST+SGST)'.padEnd(32) + money(receipt.taxTotal).padStart(16);
-        await P.printText(`${gstRow}\n\r`, {});
+        await P.printText(`${gstRow}\n\r`, opt);
       }
 
-      await P.printText(`${divider}\n\r`, {});
+      await P.printText(`${divider}\n\r`, opt);
 
       const totalRow = 'GRAND TOTAL'.padEnd(28) + money(receipt.grandTotal).padStart(20);
-      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1 });
+      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1, codepage: 1 });
     } else {
       const subtotalRow = 'Subtotal'.padEnd(16) + money(receipt.subtotal).padStart(16);
-      await P.printText(`${subtotalRow}\n\r`, {});
+      await P.printText(`${subtotalRow}\n\r`, opt);
 
       if (receipt.discountTotal && receipt.discountTotal > 0) {
         const discRow = 'Discount'.padEnd(16) + (`-${money(receipt.discountTotal)}`).padStart(16);
-        await P.printText(`${discRow}\n\r`, {});
+        await P.printText(`${discRow}\n\r`, opt);
       }
 
       if (receipt.taxTotal && receipt.taxTotal > 0) {
         const gstRow = 'GST'.padEnd(16) + money(receipt.taxTotal).padStart(16);
-        await P.printText(`${gstRow}\n\r`, {});
+        await P.printText(`${gstRow}\n\r`, opt);
       }
 
-      await P.printText(`${divider}\n\r`, {});
+      await P.printText(`${divider}\n\r`, opt);
 
       const totalRow = 'TOTAL'.padEnd(16) + money(receipt.grandTotal).padStart(16);
-      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1 });
+      await P.printText(`${totalRow}\n\r`, { widthtimes: 0, heigthtimes: 1, codepage: 1 });
     }
 
     if (receipt.paymentMethod) {
-      await P.printText(`Payment Mode: ${receipt.paymentMethod}\n\r`, {});
+      await P.printText(`Payment Mode: ${receipt.paymentMethod}\n\r`, opt);
     }
 
-    await P.printText(`${doubleDivider}\n\r`, {});
+    await P.printText(`${doubleDivider}\n\r`, opt);
 
     // 5. Footer (Centered)
     await P.printerAlign(ALIGN.CENTER);
-    await P.printText('❖ THANK YOU FOR SHOPPING WITH US! ❖\n\r', {});
-    await P.printText('Visit again • vasanthissignature.in\n\r', {});
+    await P.printText('*** THANK YOU FOR SHOPPING WITH US! ***\n\r', opt);
+    await P.printText('Visit again : vasanthissignature.in\n\r', opt);
 
     // Feed lines before cutting
-    await P.printText('\n\r\n\r\n\r\n\r', {});
+    await P.printText('\n\r\n\r\n\r', opt);
 
     // 6. Cut Paper
     if (P.cutPaper) {

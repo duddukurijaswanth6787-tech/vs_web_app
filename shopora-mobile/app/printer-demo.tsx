@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import {
   View,
   Text,
@@ -10,7 +10,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
 import {
   ArrowLeft,
   Printer,
@@ -31,6 +31,8 @@ import {
   PrinterShippingLabelData,
   PrinterReceiptData,
   PrinterLabelData,
+  isPosReceiptPrinterName,
+  isLabelPrinterName,
 } from '../services/bluetooth-printer';
 
 type DemoCategory = 'SHIPPING' | 'BARCODE' | 'POS_RECEIPT' | 'GST_INVOICE';
@@ -238,9 +240,33 @@ export default function PrinterDemoScreen() {
 
   const [isPrinting, setIsPrinting] = useState(false);
   const [statusMsg, setStatusMsg] = useState('');
+  const [connectedName, setConnectedName] = useState<string | null>(null);
+  const [connectedAddr, setConnectedAddr] = useState<string | null>(null);
 
-  const isBtConnected = bluetoothPrinterService.isConnected();
-  const connectedPrinterName = bluetoothPrinterService.connectedDeviceName();
+  const refreshPrinter = useCallback(async () => {
+    if (bluetoothPrinterService.isConnected()) {
+      setConnectedName(bluetoothPrinterService.connectedDeviceName());
+      setConnectedAddr(bluetoothPrinterService.connectedDeviceAddress());
+    } else {
+      const auto = await bluetoothPrinterService.autoConnect();
+      if (auto) {
+        setConnectedName(auto.name);
+        setConnectedAddr(auto.address);
+      } else {
+        setConnectedName(null);
+        setConnectedAddr(null);
+      }
+    }
+  }, []);
+
+  useFocusEffect(
+    useCallback(() => {
+      refreshPrinter();
+    }, [refreshPrinter]),
+  );
+
+  const isBtConnected = Boolean(connectedAddr || bluetoothPrinterService.isConnected());
+  const connectedPrinterName = connectedName || bluetoothPrinterService.connectedDeviceName();
 
   const shippingDemos = getShippingDemos();
   const receiptDemos = getReceiptDemos();

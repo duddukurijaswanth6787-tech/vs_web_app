@@ -6,8 +6,10 @@ import shutil
 
 def main():
     base_dir = os.path.dirname(os.path.abspath(__file__))
-    source_apk = os.path.join(base_dir, "shopora-mobile-updated.apk")
-    bundle_path = os.path.join(base_dir, "android", "app", "build", "generated", "assets", "react", "release", "index.android.bundle")
+    source_apk = os.path.join(base_dir, "shopora-pos.apk") if os.path.exists(os.path.join(base_dir, "shopora-pos.apk")) else os.path.join(base_dir, "shopora-mobile-updated.apk")
+    bundle_path = os.path.join(base_dir, "android", "app", "src", "main", "assets", "index.android.bundle")
+    if not os.path.exists(bundle_path):
+        bundle_path = os.path.join(base_dir, "android", "app", "build", "generated", "assets", "react", "release", "index.android.bundle")
     unaligned_apk = os.path.join(base_dir, "shopora-unaligned.apk")
     aligned_apk = os.path.join(base_dir, "shopora-aligned.apk")
     
