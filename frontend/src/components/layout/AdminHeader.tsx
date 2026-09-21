@@ -42,6 +42,26 @@ export default function AdminHeader() {
 
   const healthIndicator = getHealthIndicator();
 
+  const getHeaderTitle = () => {
+    if (!pathname) return 'Dashboard';
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length === 0) return 'Dashboard';
+    const last = segments[segments.length - 1];
+    const secondLast = segments.length > 1 ? segments[segments.length - 2] : '';
+    
+    // If the last segment is a UUID or alphanumeric ID
+    if (/^[0-9a-fA-F-]{16,}$/.test(last) || /^\d+$/.test(last)) {
+      if (secondLast === 'orders') return 'Order Details';
+      if (secondLast === 'products') return 'Product Details';
+      if (secondLast === 'customers') return 'Customer Profile';
+      if (secondLast === 'invoices') return 'Invoice Details';
+      if (secondLast === 'returns') return 'Return Details';
+      if (secondLast === 'warehouses') return 'Warehouse Details';
+      return `${secondLast ? secondLast.replace(/-/g, ' ') : 'Item'} Details`;
+    }
+    return last.replace(/-/g, ' ');
+  };
+
   return (
     <header className="sticky top-0 z-30 flex h-14 sm:h-16 w-full items-center justify-between border-b border-neutral-200 bg-white px-2.5 sm:px-4">
       {/* Left section: mobile trigger and page title */}
@@ -53,8 +73,8 @@ export default function AdminHeader() {
         >
           <Menu className="h-5 w-5" />
         </button>
-        <h1 className="text-xs sm:text-base font-bold text-neutral-900 capitalize truncate max-w-[120px] xs:max-w-[180px] sm:max-w-none">
-          {pathname?.split('/').filter(Boolean).pop()?.replace(/-/g, ' ') || 'Dashboard'}
+        <h1 className="text-xs sm:text-base font-bold text-neutral-900 capitalize truncate max-w-[150px] xs:max-w-[220px] sm:max-w-none">
+          {getHeaderTitle()}
         </h1>
       </div>
 

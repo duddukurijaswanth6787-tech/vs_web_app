@@ -255,20 +255,22 @@ export default function OrderDetailPage() {
   const billingAddr = order.addresses?.find(a => a.addressType === 'BILLING') || shippingAddr;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Top Header Panel */}
-      <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm">
-        <div className="flex items-center gap-3">
-          <Link href="/admin/orders" className="p-2 hover:bg-neutral-100 rounded-xl transition">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
+        <div className="flex items-start sm:items-center gap-3 min-w-0">
+          <Link href="/admin/orders" className="p-2 hover:bg-neutral-100 rounded-xl transition shrink-0 mt-0.5 sm:mt-0">
             <ArrowLeft className="w-4 h-4 text-neutral-600" />
           </Link>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl font-bold text-neutral-900 tracking-tight font-sans">Order Ref: {order.orderNumber}</h1>
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-base sm:text-xl font-bold text-neutral-900 tracking-tight font-sans">
+                Order Ref: <span className="font-mono">{order.orderNumber}</span>
+              </h1>
               <OrderStatusBadge status={order.status} />
               <ChannelBadge channel={order.channel} />
             </div>
-            <p className="text-xs text-neutral-400 mt-1">
+            <p className="text-2xs sm:text-xs text-neutral-400 mt-1">
               Placed on: {formatDateTime(order.createdAt)}
               {order.channel === 'POS_SHOPORA' && (
                 <>
@@ -282,13 +284,13 @@ export default function OrderDetailPage() {
         </div>
         
         {/* Dynamic Action Buttons */}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap sm:flex-nowrap gap-2 w-full sm:w-auto">
           {nextActions.map((action) => (
             <button
               key={action.status}
               disabled={updateStatusMut.isPending}
               onClick={() => handleStatusTransition(action.status)}
-              className={`${action.color} text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex items-center`}
+              className={`${action.color} text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex-1 sm:flex-initial flex items-center justify-center cursor-pointer`}
             >
               {updateStatusMut.isPending && <ButtonLoader />} {action.label}
             </button>
@@ -297,7 +299,7 @@ export default function OrderDetailPage() {
           {showCancelButton && (
             <button
               onClick={() => setIsCancelOpen(true)}
-              className="bg-red-50 hover:bg-red-100 text-red-700 font-bold py-2 px-3.5 rounded-xl text-xs border border-red-200 transition"
+              className="bg-red-50 hover:bg-red-100 text-red-700 font-bold py-2.5 px-3.5 rounded-xl text-xs border border-red-200 transition flex-1 sm:flex-initial text-center cursor-pointer"
             >
               Cancel Order
             </button>
@@ -306,7 +308,7 @@ export default function OrderDetailPage() {
           {showReturnButton && (
             <button
               onClick={() => setIsReturnOpen(true)}
-              className="bg-neutral-900 hover:bg-neutral-850 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm"
+              className="bg-neutral-900 hover:bg-neutral-850 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex-1 sm:flex-initial text-center cursor-pointer"
             >
               Process Return
             </button>
@@ -316,38 +318,38 @@ export default function OrderDetailPage() {
 
       {/* Transition Message Input (If next actions are present) */}
       {nextActions.length > 0 && (
-        <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm flex gap-3 items-center">
-          <label className="text-xs font-bold text-neutral-500 uppercase shrink-0">Status Update Note (Optional):</label>
+        <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm flex flex-col sm:flex-row gap-2 sm:gap-3 sm:items-center">
+          <label className="text-2xs sm:text-xs font-bold text-neutral-500 uppercase tracking-wider shrink-0">Status Update Note (Optional):</label>
           <input
             type="text"
             value={transitionMsg}
             onChange={(e) => setTransitionMsg(e.target.value)}
             placeholder="Provide tracking code or fulfillment remark..."
-            className="flex-1 bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-1.5 text-xs text-neutral-800 focus:outline-none"
+            className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:ring-2 focus:ring-sky-500"
           />
         </div>
       )}
 
       {/* Main Layout Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Left Side: Summary and Items */}
-        <div className="lg:col-span-2 space-y-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           
           {/* Order Items */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider pb-2 border-b border-neutral-100">
               Ordered Items
             </h3>
             <div className="divide-y divide-neutral-100">
               {order.items?.map((item) => (
-                <div key={item.id} className="py-3 flex justify-between items-center text-xs">
-                  <div>
-                    <span className="font-bold text-neutral-800 block">{item.productName}</span>
+                <div key={item.id} className="py-3 flex justify-between items-start sm:items-center gap-2 text-xs">
+                  <div className="min-w-0 flex-1">
+                    <span className="font-bold text-neutral-800 block truncate sm:whitespace-normal">{item.productName}</span>
                     {item.variantTitle && <span className="text-[10px] text-neutral-400 block mt-0.5">{item.variantTitle}</span>}
                     <span className="text-[10px] text-neutral-500 block font-mono mt-0.5">SKU: {item.sku}</span>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <div className="font-medium text-neutral-500">{item.quantity} x {formatMoney(item.unitPrice, order.currency)}</div>
                     <div className="font-bold text-neutral-900 mt-0.5">{formatMoney(item.totalPrice, order.currency)}</div>
                   </div>
@@ -357,7 +359,7 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Pricing Totals Breakdown */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3 text-xs">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3 text-xs">
             <div className="flex justify-between text-neutral-600">
               <span>Subtotal:</span>
               <span className="font-mono font-semibold">{formatMoney(order.subtotal, order.currency)}</span>
@@ -387,12 +389,12 @@ export default function OrderDetailPage() {
           </div>
 
           {/* Payments & Refunds & Invoices */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider pb-2 border-b border-neutral-100">
               Financial Documents
             </h3>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Payments log */}
               <div className="space-y-2">
                 <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Payments Ledger</span>
@@ -439,12 +441,12 @@ export default function OrderDetailPage() {
             </div>
 
             {/* Invoice generation block */}
-            <div className="border-t border-neutral-100 pt-4 flex justify-between items-center">
+            <div className="border-t border-neutral-100 pt-4 flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
               <div>
                 <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Order Invoice</span>
                 {invoices && invoices.length > 0 ? (
-                  <div className="flex items-center gap-2 mt-1.5">
-                    <FileText className="w-4 h-4 text-neutral-400" />
+                  <div className="flex flex-wrap items-center gap-2 mt-1.5">
+                    <FileText className="w-4 h-4 text-neutral-400 shrink-0" />
                     <span className="text-xs font-bold text-neutral-700">{invoices[0].invoiceNumber}</span>
                     <span className="text-neutral-300">|</span>
                     <span className="text-2xs text-neutral-500">Total: {formatMoney(invoices[0].grandTotal, invoices[0].currency)}</span>
@@ -457,7 +459,7 @@ export default function OrderDetailPage() {
                 <button
                   disabled={createInvoiceMut.isPending}
                   onClick={handleGenerateInvoice}
-                  className="bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-1.5 px-3 rounded-lg text-2xs flex items-center gap-1 transition disabled:opacity-50"
+                  className="w-full sm:w-auto bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 sm:py-1.5 px-3.5 rounded-lg text-xs sm:text-2xs flex items-center justify-center gap-1.5 transition disabled:opacity-50 cursor-pointer"
                 >
                   {createInvoiceMut.isPending ? <ButtonLoader /> : <Plus className="w-3.5 h-3.5" />} Generate Invoice
                 </button>
@@ -467,11 +469,11 @@ export default function OrderDetailPage() {
         </div>
 
         {/* Right Side: Customer Info, Addresses, Timeline */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           
           {/* Order Summary & Products Quick View (For Online Orders) */}
           {isOnlineOrder && (
-            <div className="bg-white p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
+            <div className="bg-white p-4 sm:p-5 rounded-2xl border border-neutral-200 shadow-sm space-y-3.5">
               <div className="flex items-center justify-between border-b border-neutral-100 pb-2.5">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="w-4 h-4 text-neutral-800" />
@@ -499,8 +501,8 @@ export default function OrderDetailPage() {
                     key={item.id}
                     className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150/80 flex justify-between items-start text-xs hover:bg-neutral-50 transition"
                   >
-                    <div className="space-y-0.5 pr-2">
-                      <span className="font-bold text-neutral-900 line-clamp-1">{item.productName}</span>
+                    <div className="space-y-0.5 pr-2 min-w-0 flex-1">
+                      <span className="font-bold text-neutral-900 truncate block">{item.productName}</span>
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {item.variantTitle && (
                           <span className="text-[10px] bg-neutral-200/70 text-neutral-700 px-1.5 py-0.2 rounded font-medium">
@@ -561,7 +563,7 @@ export default function OrderDetailPage() {
 
           {/* Delivery Partner / Fulfillment Section */}
           {isOnlineOrder ? (
-            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
               <div className="flex items-center justify-between border-b border-neutral-100 pb-2">
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4 text-sky-600" />
@@ -800,7 +802,7 @@ export default function OrderDetailPage() {
             </div>
           ) : (
             /* In-Store POS Walk-in Handover Summary */
-            <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
+            <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
               <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">In-Store Counter Fulfillment</h3>
@@ -836,7 +838,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Customer / Address Panel */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
               <User className="w-4 h-4 text-neutral-400" />
               <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Customer Details</h3>
@@ -845,7 +847,7 @@ export default function OrderDetailPage() {
             <div className="text-xs space-y-3">
               <div>
                 <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Account identifier</span>
-                <span className="font-mono text-neutral-850 block mt-0.5">{order.customerId}</span>
+                <span className="font-mono text-neutral-850 block mt-0.5 break-all">{order.customerId}</span>
               </div>
               
               <div className="border-t border-neutral-100 pt-3">
@@ -882,7 +884,7 @@ export default function OrderDetailPage() {
 
           {/* Cancellation Info Panel (Only if Cancelled) */}
           {order.status === 'CANCELLED' && cancellation && (
-            <div className="bg-red-50 p-5 rounded-2xl border border-red-200 text-xs space-y-2">
+            <div className="bg-red-50 p-4 sm:p-5 rounded-2xl border border-red-200 text-xs space-y-2">
               <div className="flex items-center gap-1.5 text-red-800 font-bold">
                 <Ban className="w-4 h-4" />
                 <span>Cancellation Information</span>
@@ -899,7 +901,7 @@ export default function OrderDetailPage() {
           )}
 
           {/* Chronological Timeline */}
-          <div className="bg-white p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
+          <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <div className="flex items-center gap-2 border-b border-neutral-100 pb-2">
               <Clock className="w-4 h-4 text-neutral-400" />
               <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">Fulfillment Timeline</h3>
@@ -915,10 +917,10 @@ export default function OrderDetailPage() {
                     `}>
                       {isLatest ? <CheckCircle2 className="w-4 h-4" /> : <ChevronRight className="w-3.5 h-3.5" />}
                     </div>
-                    <div className="pt-0.5">
+                    <div className="pt-0.5 min-w-0 flex-1">
                       <span className={`font-bold block ${isLatest ? 'text-neutral-900' : 'text-neutral-600'}`}>{evt.status}</span>
-                      {evt.message && <p className="text-neutral-500 mt-0.5 text-2xs">{evt.message}</p>}
-                      <div className="text-[9px] text-neutral-400 mt-1 flex gap-2">
+                      {evt.message && <p className="text-neutral-500 mt-0.5 text-2xs break-words">{evt.message}</p>}
+                      <div className="text-[9px] text-neutral-400 mt-1 flex flex-wrap gap-2">
                         <span>{formatDateTime(evt.createdAt)}</span>
                         {evt.createdBy && <span>• Op: {evt.createdBy.substring(0, 8)}</span>}
                       </div>
