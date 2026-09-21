@@ -299,9 +299,9 @@ export default function PrintersConfigPage() {
           </div>
           <div class="seller-section">
             <div class="addr-title">Shipped By (Seller / Return):</div>
-            <div style="font-weight: bold; font-size: 11px;">Vasanthi's Signature</div>
-            <div>Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033</div>
-            <div>GSTIN: 36AABCU9603R1ZM | Ref: ORD-ONL-2026-0012</div>
+            <div style="font-weight: bold; font-size: 11px;">VASANTHI CREATIONS PVT LTD</div>
+            <div>2-1-156/3 Ashoknagar main road, Manuguru, TS - 507117</div>
+            <div>Ph: +91 7659034198 | GSTIN: 36AABCU9603R1ZM | Ref: ORD-ONL-2026-0012</div>
           </div>
           <div class="footer-section">
             <div>Item: Emerald Silk Lehenga Set (M)</div>

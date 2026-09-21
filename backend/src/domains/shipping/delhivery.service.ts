@@ -362,23 +362,33 @@ export class DelhiveryService {
     const manifestDate = date || new Date().toISOString().split('T')[0];
     const manifestId = `MNF-DEL-${manifestDate.replace(/-/g, '')}-001`;
 
+    const defaultWarehouse = await this.prisma.warehouse.findFirst({
+      where: { isDefault: true, deletedAt: null },
+    });
+
+    const warehouseName = defaultWarehouse?.name || "Vasanthi's Signature Main Warehouse";
+    const warehouseAddress = defaultWarehouse?.address
+      ? `${defaultWarehouse.address}, ${defaultWarehouse.city || 'Manuguru'}, ${defaultWarehouse.state || 'Telangana'} - ${defaultWarehouse.postalCode || '507117'}`
+      : 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Manuguru, Telangana - 507117';
+    const warehouseContact = defaultWarehouse?.phone || '+91 7659034198';
+
     return {
       manifestId,
       manifestDate,
       courierPartner: 'Delhivery Surface & Express B2C',
       pickupLocation: {
-        name: "Vasanthi's Signature Main Warehouse",
-        address:
-          'Plot 42, Jubilee Hills Road No 36, Hyderabad, Telangana - 500033',
-        contact: '+91 98765 43210',
+        code: defaultWarehouse?.code || 'MNG-01',
+        name: warehouseName,
+        address: warehouseAddress,
+        contact: warehouseContact,
       },
       packages: [
         {
           orderNumber: 'ORD-20260901-000002',
           waybillNumber: 'DEL539384719',
           customerName: 'Duddukuri Jaswanth',
-          city: 'Hyderabad',
-          pincode: '500081',
+          city: 'Manuguru',
+          pincode: '507117',
           paymentMode: 'Prepaid',
           weightGrams: 500,
         },
