@@ -823,7 +823,7 @@ class BluetoothPrinterService {
     const heightMm = 150;
     const gapMm = 3;
 
-    const divLine = '========================================================================';
+    const divLine = '--------------------------------------------------------------------------------';
     const isCod = shipping.paymentType === 'COD';
     const paymentTitle = isCod ? 'COLLECT COD' : 'PREPAID';
     const surfaceText = shipping.serviceType || 'SURFACE';
@@ -832,11 +832,11 @@ class BluetoothPrinterService {
       : 'DO NOT COLLECT CASH';
 
     const textFields = [
-      // 1. Top Header: DELHIVERY & Payment Header
+      // 1. Top Header: DELHIVERY & Payment Header (y: 30 to 135)
       {
         text: (shipping.courier || 'DELHIVERY').toUpperCase(),
         x: 35,
-        y: 25,
+        y: 30,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
@@ -846,7 +846,7 @@ class BluetoothPrinterService {
       {
         text: shipping.subCourierText || 'SMALL WORLD',
         x: 35,
-        y: 80,
+        y: 90,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -855,8 +855,8 @@ class BluetoothPrinterService {
       },
       {
         text: '|',
-        x: 485,
-        y: 25,
+        x: 480,
+        y: 30,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -864,8 +864,8 @@ class BluetoothPrinterService {
       },
       {
         text: '|',
-        x: 485,
-        y: 55,
+        x: 480,
+        y: 65,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -873,8 +873,8 @@ class BluetoothPrinterService {
       },
       {
         text: '|',
-        x: 485,
-        y: 85,
+        x: 480,
+        y: 95,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -883,7 +883,7 @@ class BluetoothPrinterService {
       {
         text: paymentTitle,
         x: 520,
-        y: 25,
+        y: 30,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
@@ -892,8 +892,8 @@ class BluetoothPrinterService {
       },
       {
         text: surfaceText,
-        x: 550,
-        y: 60,
+        x: 545,
+        y: 75,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -903,7 +903,7 @@ class BluetoothPrinterService {
       {
         text: subPaymentText,
         x: 495,
-        y: 85,
+        y: 105,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -911,19 +911,19 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 110,
+        x: 30,
+        y: 135,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 2. Ship From / Ship To (2 Columns)
+      // 2. Ship From / Ship To (y: 155 to 375)
       {
         text: 'Ship From:',
         x: 35,
-        y: 125,
+        y: 155,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -933,7 +933,7 @@ class BluetoothPrinterService {
       {
         text: (shipping.sellerName || "Vasanthi's Signature").slice(0, 24),
         x: 35,
-        y: 155,
+        y: 185,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -943,7 +943,7 @@ class BluetoothPrinterService {
       {
         text: (shipping.sellerAddress || 'Plot No. 123, Phase 2').slice(0, 26),
         x: 35,
-        y: 185,
+        y: 220,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -952,7 +952,7 @@ class BluetoothPrinterService {
       {
         text: 'Kondapur, Hyderabad',
         x: 35,
-        y: 210,
+        y: 250,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -961,7 +961,7 @@ class BluetoothPrinterService {
       {
         text: 'Telangana - 500084',
         x: 35,
-        y: 235,
+        y: 280,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -970,7 +970,7 @@ class BluetoothPrinterService {
       {
         text: `Ph: ${shipping.sellerPhone || '+91 98765 43210'}`,
         x: 35,
-        y: 265,
+        y: 315,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -978,10 +978,10 @@ class BluetoothPrinterService {
         bold: true,
       },
 
-      // Vertical separator between Ship From and Ship To
-      ...[125, 160, 195, 230, 265].map((yVal) => ({
+      // Center Vertical Divider
+      ...[155, 190, 225, 260, 295, 330].map((yVal) => ({
         text: '|',
-        x: 375,
+        x: 390,
         y: yVal,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
@@ -992,8 +992,8 @@ class BluetoothPrinterService {
       // Ship To (Right Column)
       {
         text: 'Ship To:',
-        x: 395,
-        y: 125,
+        x: 410,
+        y: 155,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1002,8 +1002,8 @@ class BluetoothPrinterService {
       },
       {
         text: shipping.consigneeName.slice(0, 24),
-        x: 395,
-        y: 155,
+        x: 410,
+        y: 185,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1012,8 +1012,8 @@ class BluetoothPrinterService {
       },
       {
         text: shipping.consigneeAddress.slice(0, 26),
-        x: 395,
-        y: 185,
+        x: 410,
+        y: 220,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1021,8 +1021,8 @@ class BluetoothPrinterService {
       },
       {
         text: (shipping.consigneeAddress.length > 26 ? shipping.consigneeAddress.slice(26, 52) : '12th Cross, Indiranagar').slice(0, 26),
-        x: 395,
-        y: 210,
+        x: 410,
+        y: 250,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1030,17 +1030,18 @@ class BluetoothPrinterService {
       },
       {
         text: `${shipping.city} - ${shipping.pincode}`,
-        x: 395,
-        y: 235,
+        x: 410,
+        y: 280,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
+        bold: true,
       },
       {
         text: shipping.state,
-        x: 395,
-        y: 260,
+        x: 410,
+        y: 310,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1048,8 +1049,8 @@ class BluetoothPrinterService {
       },
       {
         text: `Ph: +91 ${shipping.consigneePhone}`,
-        x: 395,
-        y: 285,
+        x: 410,
+        y: 340,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1058,28 +1059,29 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 315,
+        x: 30,
+        y: 380,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 3. Order ID & Metadata
+      // 3. Order ID & Metadata (y: 395 to 495)
       {
         text: `Order ID:      ${shipping.orderNumber}`,
         x: 35,
-        y: 330,
+        y: 395,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
+        bold: true,
       },
       {
         text: `Invoice No:   ${shipping.invoiceNumber || 'INV-20260920-001'}`,
         x: 35,
-        y: 355,
+        y: 430,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1088,16 +1090,16 @@ class BluetoothPrinterService {
       {
         text: `Order Date:   ${shipping.orderDate || '20 Sep 2026'}`,
         x: 35,
-        y: 380,
+        y: 465,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      ...[330, 355, 380].map((yVal) => ({
+      ...[395, 430, 465].map((yVal) => ({
         text: '|',
-        x: 430,
+        x: 410,
         y: yVal,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
@@ -1107,8 +1109,8 @@ class BluetoothPrinterService {
 
       {
         text: `Dimensions (cm): ${shipping.dimensions || '30 x 20 x 10'}`,
-        x: 445,
-        y: 330,
+        x: 430,
+        y: 395,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1116,8 +1118,8 @@ class BluetoothPrinterService {
       },
       {
         text: `Weight: ${shipping.weightGrams ? (shipping.weightGrams / 1000).toFixed(2) : '0.50'} kg`,
-        x: 445,
-        y: 355,
+        x: 430,
+        y: 430,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1126,8 +1128,8 @@ class BluetoothPrinterService {
       },
       {
         text: `Pieces: ${shipping.pieces || '1/1'}`,
-        x: 445,
-        y: 380,
+        x: 430,
+        y: 465,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1135,29 +1137,38 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 410,
+        x: 30,
+        y: 505,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 4. Barcode Waybill Text + Scan for Tracking
+      // 4. Barcode Waybill Text + Scan for Tracking (y: 525 to 705)
       {
         text: shipping.waybill,
-        x: 130,
-        y: 535,
+        x: 100,
+        y: 650,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
         yscal: 2,
         bold: true,
       },
+      ...[525, 570, 615, 660].map((yVal) => ({
+        text: '|',
+        x: 520,
+        y: yVal,
+        fonttype: FONTTYPE.FONT_2,
+        rotation: TSC_ROTATION.ROTATION_0,
+        xscal: 1,
+        yscal: 1,
+      })),
       {
         text: 'Scan for Tracking',
-        x: 550,
-        y: 545,
+        x: 540,
+        y: 660,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1166,19 +1177,19 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 585,
+        x: 30,
+        y: 715,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 5. Routing Code, Destination Pin Code, STD Badge
+      // 5. Routing Code, Destination Pin Code, STD Badge (y: 730 to 850)
       {
         text: 'Routing Code:',
         x: 35,
-        y: 600,
+        y: 730,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1188,7 +1199,7 @@ class BluetoothPrinterService {
       {
         text: shipping.routingHub || 'BLR/INR',
         x: 35,
-        y: 625,
+        y: 765,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
@@ -1196,9 +1207,9 @@ class BluetoothPrinterService {
         bold: true,
       },
 
-      ...[600, 630, 660].map((yVal) => ({
+      ...[730, 765, 800].map((yVal) => ({
         text: '|',
-        x: 310,
+        x: 290,
         y: yVal,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
@@ -1208,8 +1219,8 @@ class BluetoothPrinterService {
 
       {
         text: 'Destination Pin Code:',
-        x: 330,
-        y: 600,
+        x: 310,
+        y: 730,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1218,8 +1229,8 @@ class BluetoothPrinterService {
       },
       {
         text: shipping.pincode || '560038',
-        x: 330,
-        y: 625,
+        x: 310,
+        y: 765,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
@@ -1227,7 +1238,7 @@ class BluetoothPrinterService {
         bold: true,
       },
 
-      ...[600, 630, 660].map((yVal) => ({
+      ...[730, 765, 800].map((yVal) => ({
         text: '|',
         x: 580,
         y: yVal,
@@ -1239,8 +1250,8 @@ class BluetoothPrinterService {
 
       {
         text: 'STD',
-        x: 630,
-        y: 625,
+        x: 635,
+        y: 760,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 2,
@@ -1249,19 +1260,19 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 685,
+        x: 30,
+        y: 860,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 6. Product Details
+      // 6. Product Details (y: 875 to 975)
       {
         text: 'Product Details:',
         x: 35,
-        y: 700,
+        y: 875,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1271,7 +1282,7 @@ class BluetoothPrinterService {
       {
         text: (shipping.itemsSummary || "Women's Ethnic Dress (Red)").slice(0, 40),
         x: 35,
-        y: 730,
+        y: 910,
         fonttype: FONTTYPE.FONT_3,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1281,7 +1292,7 @@ class BluetoothPrinterService {
       {
         text: `SKU: ${shipping.sku || 'VS-DRS-001-RED-M'}`,
         x: 35,
-        y: 760,
+        y: 945,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1289,8 +1300,8 @@ class BluetoothPrinterService {
       },
       {
         text: `HSN: ${shipping.hsn || '6204'}`,
-        x: 450,
-        y: 760,
+        x: 480,
+        y: 945,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1298,29 +1309,30 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 795,
+        x: 30,
+        y: 985,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 7. If Undelivered Return To & Handling Icons
+      // 7. If Undelivered Return To & Handling Icons (y: 1000 to 1130)
       {
         text: 'If undelivered, return to:',
         x: 35,
-        y: 810,
-        fonttype: FONTTYPE.FONT_2,
+        y: 1000,
+        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
+        bold: true,
       },
       {
         text: (shipping.sellerName || "Vasanthi's Signature").slice(0, 24),
         x: 35,
-        y: 835,
-        fonttype: FONTTYPE.FONT_3,
+        y: 1025,
+        fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
@@ -1329,8 +1341,8 @@ class BluetoothPrinterService {
       {
         text: 'Plot No. 123, Phase 2, Kondapur',
         x: 35,
-        y: 865,
-        fonttype: FONTTYPE.FONT_2,
+        y: 1055,
+        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
@@ -1338,8 +1350,8 @@ class BluetoothPrinterService {
       {
         text: 'Hyderabad - 500084, Telangana',
         x: 35,
-        y: 890,
-        fonttype: FONTTYPE.FONT_2,
+        y: 1075,
+        fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
@@ -1347,7 +1359,7 @@ class BluetoothPrinterService {
       {
         text: `Ph: ${shipping.sellerPhone || '+91 98765 43210'}`,
         x: 35,
-        y: 915,
+        y: 1100,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1355,9 +1367,9 @@ class BluetoothPrinterService {
         bold: true,
       },
 
-      ...[810, 845, 880, 915].map((yVal) => ({
+      ...[1000, 1035, 1070, 1105].map((yVal) => ({
         text: '|',
-        x: 375,
+        x: 380,
         y: yVal,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
@@ -1368,8 +1380,8 @@ class BluetoothPrinterService {
       // Handling Boxes
       {
         text: '+-------+  +-------+  +-------+',
-        x: 395,
-        y: 815,
+        x: 400,
+        y: 1005,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1377,8 +1389,8 @@ class BluetoothPrinterService {
       },
       {
         text: '|  [Y]  |  |  (^)  |  |  /|\\  |',
-        x: 395,
-        y: 835,
+        x: 400,
+        y: 1025,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1387,8 +1399,8 @@ class BluetoothPrinterService {
       },
       {
         text: '+-------+  +-------+  +-------+',
-        x: 395,
-        y: 855,
+        x: 400,
+        y: 1045,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1396,8 +1408,8 @@ class BluetoothPrinterService {
       },
       {
         text: 'FRAGILE',
-        x: 405,
-        y: 880,
+        x: 408,
+        y: 1075,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1406,8 +1418,8 @@ class BluetoothPrinterService {
       },
       {
         text: 'KEEP DRY',
-        x: 495,
-        y: 880,
+        x: 500,
+        y: 1075,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1416,8 +1428,8 @@ class BluetoothPrinterService {
       },
       {
         text: 'THIS SIDE UP',
-        x: 580,
-        y: 880,
+        x: 585,
+        y: 1075,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1426,19 +1438,19 @@ class BluetoothPrinterService {
       },
       {
         text: divLine,
-        x: 20,
-        y: 950,
+        x: 30,
+        y: 1135,
         fonttype: FONTTYPE.FONT_1,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
         yscal: 1,
       },
 
-      // 8. Footer
+      // 8. Footer (y: 1150 to 1180)
       {
         text: 'Thank you for shopping with us!  <3',
-        x: 175,
-        y: 975,
+        x: 180,
+        y: 1150,
         fonttype: FONTTYPE.FONT_2,
         rotation: TSC_ROTATION.ROTATION_0,
         xscal: 1,
@@ -1458,10 +1470,10 @@ class BluetoothPrinterService {
       text: textFields,
       barcode: [
         {
-          x: 40,
-          y: 425,
+          x: 35,
+          y: 525,
           type: TSC_BARCODETYPE.CODE128,
-          height: 95,
+          height: 110,
           readable: READABLE.DISABLE,
           rotation: TSC_ROTATION.ROTATION_0,
           code: shipping.waybill,
@@ -1471,10 +1483,10 @@ class BluetoothPrinterService {
       ],
       qrcode: [
         {
-          x: 565,
-          y: 420,
+          x: 550,
+          y: 520,
           level: 'M',
-          width: 5,
+          width: 6,
           rotation: TSC_ROTATION.ROTATION_0,
           code: `https://www.delhivery.com/track/package/${shipping.waybill}`,
         },
@@ -1482,9 +1494,9 @@ class BluetoothPrinterService {
       reverse: [
         {
           x: 605,
-          y: 610,
-          width: 120,
-          height: 55,
+          y: 745,
+          width: 140,
+          height: 75,
         },
       ],
     });
