@@ -172,8 +172,8 @@ export default function CartPage() {
           </div>
         </div>
 
-        {/* Mobile Top Trust Banner (2–3 Pillars Pill Row) */}
-        <div className={`grid ${returnsEnabled ? 'grid-cols-3' : 'grid-cols-2'} gap-2 bg-sky-50/60 border border-sky-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs`}>
+        {/* Mobile Top Trust Banner (Pill Row) */}
+        <div className="grid grid-cols-2 gap-2 bg-sky-50/60 border border-sky-100/80 rounded-2xl p-2.5 text-center text-[10px] font-semibold text-neutral-700 shadow-2xs">
           <div className="flex flex-col items-center justify-center gap-1">
             <ShieldCheck className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
@@ -181,16 +181,7 @@ export default function CartPage() {
               <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">100% Safe & Secure</p>
             </div>
           </div>
-          {returnsEnabled && (
-          <div className="flex flex-col items-center justify-center gap-1 border-x border-sky-200/50 px-1">
-            <RotateCcw className="w-4 h-4 text-[var(--brand-primary)]" />
-            <div>
-              <p className="font-bold text-[var(--brand-primary)]">Easy Returns</p>
-              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">7 Days Return</p>
-            </div>
-          </div>
-          )}
-          <div className="flex flex-col items-center justify-center gap-1">
+          <div className="flex flex-col items-center justify-center gap-1 border-l border-sky-200/50 pl-1">
             <Gift className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
               <p className="font-bold text-[var(--brand-primary)]">Gift Wrapping</p>
@@ -503,26 +494,18 @@ export default function CartPage() {
                   <span>Proceed to Checkout</span>
                 </button>
 
-                <div className="pt-2 border-t border-neutral-100 grid grid-cols-4 gap-1 text-center text-[9px] sm:text-[10px] font-medium text-neutral-600">
+                <div className="pt-2 border-t border-neutral-100 grid grid-cols-3 gap-1 text-center text-[9px] sm:text-[10px] font-medium text-neutral-600">
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <Lock className="w-3.5 h-3.5" />
                     </div>
                     <span>Secure Payment</span>
                   </div>
-                  {returnsEnabled && (
-                  <div className="space-y-1">
-                    <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
-                      <RotateCcw className="w-3.5 h-3.5" />
-                    </div>
-                    <span>Easy Returns</span>
-                  </div>
-                  )}
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
                       <ShieldCheck className="w-3.5 h-3.5" />
                     </div>
-                    <span>7-Day Return</span>
+                    <span>100% Authentic</span>
                   </div>
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">

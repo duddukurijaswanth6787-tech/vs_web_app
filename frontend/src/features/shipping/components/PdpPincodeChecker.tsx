@@ -221,7 +221,7 @@ export function PdpPincodeChecker({ className = '' }: PdpPincodeCheckerProps) {
           <ShieldCheck className="h-3.5 w-3.5 text-stone-600" /> 100% Genuine
         </span>
         <span className="inline-flex items-center gap-1">
-          <RefreshCw className="h-3.5 w-3.5 text-stone-600" /> 7-Day Easy Exchange
+          <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Quality Inspected
         </span>
       </div>
     </div>
