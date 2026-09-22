@@ -267,10 +267,13 @@ function CheckoutPageContent() {
   }, [preview.data?.items, cartData?.items]);
 
   const fallbackSubtotal = useMemo(() => {
-    return cartItems.reduce(
-      (acc: number, item: any) => acc + Number(item.totalPrice || Number(item.unitPrice || 0) * (item.quantity || 1) || 0),
-      0,
-    );
+    return cartItems.reduce((acc: number, item: any) => {
+      const lineTotal =
+        item.totalPrice != null
+          ? Number(item.totalPrice)
+          : Number(item.unitPrice || item.price || 0) * (item.quantity || 1);
+      return acc + (isNaN(lineTotal) ? 0 : lineTotal);
+    }, 0);
   }, [cartItems]);
   const isShippingFeeEnabled = Boolean(
     publicSettings?.shippingFeeEnabled === true ||
@@ -1168,6 +1171,17 @@ function CheckoutPageContent() {
                       item.product?.media?.[0]?.url;
                     const finalImg = rawImg ? withVariant(rawImg, 'medium') : '';
 
+                    const unitPrice = Number(
+                      item.unitPrice ||
+                      item.price ||
+                      (item.totalPrice && item.quantity ? item.totalPrice / item.quantity : 0) ||
+                      0
+                    );
+                    const lineTotal =
+                      item.totalPrice != null
+                        ? Number(item.totalPrice)
+                        : unitPrice * (item.quantity || 1);
+
                     return (
                       <div key={item.id || idx} className="flex items-center gap-3 py-1.5 border-b border-neutral-100 last:border-0">
                         <div className="w-14 h-16 rounded-xl bg-neutral-100 overflow-hidden relative shrink-0 border border-neutral-200/70 flex items-center justify-center shadow-2xs">
@@ -1193,9 +1207,10 @@ function CheckoutPageContent() {
                           <p className="text-[11px] text-neutral-500 mt-0.5">
                             Qty: <span className="font-semibold text-neutral-800">{item.quantity}</span>
                             {item.variantName || item.variantTitle ? ` • Size: ${item.variantName || item.variantTitle}` : ''}
+                            <span className="text-neutral-400"> ({formatInr(unitPrice)} each)</span>
                           </p>
                           <p className="text-xs font-bold text-[var(--brand-primary)] mt-0.5">
-                            {formatInr(Number(item.totalPrice || item.price || item.unitPrice || 0) * (item.quantity || 1))}
+                            {formatInr(lineTotal)}
                           </p>
                         </div>
                       </div>

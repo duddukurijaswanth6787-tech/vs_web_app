@@ -139,6 +139,9 @@ export class OfferService {
         val > 100;
 
       if (isFixed) {
+        if (applicableTotal < val && !offer.minOrderAmount) {
+          continue;
+        }
         discount = Math.min(val, applicableTotal);
       } else {
         const pct = Math.min(Math.max(val, 0), 100);
