@@ -151,17 +151,39 @@ export default function DelhiveryShippingAdminPage() {
     toast('success', 'Copied to Clipboard', text);
   };
 
-  // 1. Fetch Scheduled Pickups from API
+  // 1. Fetch Scheduled Pickups from API + Persistent Storage
   const loadPickupRequests = async () => {
     setIsLoadingPickups(true);
     try {
       const res = await apiClient.get('/shipping/delhivery/pickup-requests');
       const data = res.data?.data || res.data;
-      if (Array.isArray(data)) {
+      if (Array.isArray(data) && data.length > 0) {
         setScheduledPickups(data);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('vs_scheduled_pickups', JSON.stringify(data));
+        }
+      } else if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('vs_scheduled_pickups');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              setScheduledPickups(parsed);
+            }
+          } catch {}
+        }
       }
     } catch (err) {
       console.warn('Failed to load scheduled pickups', err);
+      if (typeof window !== 'undefined') {
+        const cached = localStorage.getItem('vs_scheduled_pickups');
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached);
+            if (Array.isArray(parsed)) setScheduledPickups(parsed);
+          } catch {}
+        }
+      }
     } finally {
       setIsLoadingPickups(false);
     }
@@ -500,6 +522,28 @@ export default function DelhiveryShippingAdminPage() {
         time: pickupTimeSlot === '11:00:00' ? 'Morning (10:00 AM - 01:00 PM)' : pickupTimeSlot === '15:00:00' ? 'Afternoon (01:00 PM - 04:00 PM)' : 'Evening (04:00 PM - 07:00 PM)',
         location: locDisplayName,
       });
+      const newPickupItem: ScheduledPickupItem = {
+        pickupId: token,
+        pickupLocation: locDisplayName,
+        pickupDate,
+        pickupTime: pickupTimeSlot,
+        timeSlot: pickupTimeSlot === '11:00:00' ? 'Morning (10:00 AM - 01:00 PM)' : pickupTimeSlot === '15:00:00' ? 'Afternoon (01:00 PM - 04:00 PM)' : 'Evening (04:00 PM - 07:00 PM)',
+        expectedPackageCount: expectedPackages,
+        orderNumbers: pickupTargetOrderNumbers,
+        status: 'SCHEDULED',
+        driverName: 'Delhivery Hub Assigned Driver',
+        driverPhone: '+91 1800 103 6354',
+        vehicleNumber: 'Delhivery Logistics Van',
+        notes: pickupNotes,
+        createdAt: new Date().toISOString(),
+      };
+
+      const updatedList = [newPickupItem, ...scheduledPickups.filter((p) => p.pickupId !== token)];
+      setScheduledPickups(updatedList);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vs_scheduled_pickups', JSON.stringify(updatedList));
+      }
+
       setShowPickupModal(false);
       await loadPickupRequests();
       toast('success', 'Driver Pickup Scheduled!', `Pickup Token: ${token} for ${pickupTargetOrderNumbers.length} orders`);
@@ -515,6 +559,11 @@ export default function DelhiveryShippingAdminPage() {
     if (!confirm(`Are you sure you want to cancel pickup request ${pickupId}?`)) return;
     try {
       await apiClient.post(`/shipping/delhivery/pickup-request/${encodeURIComponent(pickupId)}/cancel`);
+      const filtered = scheduledPickups.filter((p) => p.pickupId !== pickupId);
+      setScheduledPickups(filtered);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vs_scheduled_pickups', JSON.stringify(filtered));
+      }
       toast('success', 'Pickup Request Cancelled', `Token ${pickupId} status updated.`);
       await loadPickupRequests();
     } catch (err) {
