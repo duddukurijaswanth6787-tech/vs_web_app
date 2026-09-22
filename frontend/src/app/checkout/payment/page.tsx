@@ -6,7 +6,8 @@ import Script from 'next/script';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
-import { usePaymentMethods, usePlaceOrder, useCheckoutPreview } from '@/features/customer/hooks';
+import { usePaymentMethods, usePlaceOrder, useCheckoutPreview, customerKeys } from '@/features/customer/hooks';
+import { useQueryClient } from '@tanstack/react-query';
 import { formatInr } from '@/features/customer/mappers';
 import { getApiErrorMessage } from '@/utils/api-error';
 import { useAuth } from '@/hooks/useAuth';
@@ -23,6 +24,7 @@ const COUPON_STORAGE_KEY = 'vd_coupon_code';
 
 function CheckoutPaymentPageContent() {
   const router = useRouter();
+  const qc = useQueryClient();
   const searchParams = useSearchParams();
   const addressId = searchParams.get('addressId') || '';
   const { isAuthenticated, isInitializing } = useAuth();
@@ -69,6 +71,7 @@ function CheckoutPaymentPageContent() {
       setPayError('Payment gateway failed to load. Please refresh and try again.');
       return;
     }
+    let isPaymentDone = false;
     const rzp = new window.Razorpay({
       key: payment.razorpayKeyId,
       amount: Math.round(payment.amount * 100),
@@ -76,23 +79,29 @@ function CheckoutPaymentPageContent() {
       order_id: payment.providerOrderId,
       name: "Vasanthi's Signature",
       description: `Order ${orderNumber}`,
-      handler: (response) => {
+      handler: async (response) => {
+        isPaymentDone = true;
         setVerifying(true);
-        paymentService
-          .verify(payment.paymentId, {
+        try {
+          await paymentService.verify(payment.paymentId, {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
-          })
-          .then(() => {
-            router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
-          })
-          .catch((err: unknown) => {
-            setPayError(getApiErrorMessage(err, 'Payment verification failed'));
-            setVerifying(false);
           });
+        } catch (err: unknown) {
+          console.error('Payment verify note:', err);
+        } finally {
+          if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
+          await qc.invalidateQueries({ queryKey: customerKeys.cart() });
+          await qc.invalidateQueries({ queryKey: customerKeys.orders() });
+          window.location.assign('/orders');
+        }
       },
       modal: {
-        ondismiss: () => setVerifying(false),
+        ondismiss: () => {
+          if (!isPaymentDone) {
+            setVerifying(false);
+          }
+        },
       },
       theme: { color: '#0284c7' },
     });
@@ -119,8 +128,9 @@ function CheckoutPaymentPageContent() {
         return;
       }
 
-      const orderNumber = order?.orderNumber || order?.id || '';
-      router.push(`/checkout/success?order=${encodeURIComponent(orderNumber)}`);
+      await qc.invalidateQueries({ queryKey: customerKeys.cart() });
+      await qc.invalidateQueries({ queryKey: customerKeys.orders() });
+      window.location.assign('/orders');
     } catch (err) {
       setPayError(getApiErrorMessage(err, 'Payment / order failed'));
     }

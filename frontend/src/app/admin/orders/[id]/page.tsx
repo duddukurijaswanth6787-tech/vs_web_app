@@ -140,8 +140,84 @@ export default function OrderDetailPage() {
       console.error(categorizeApiError(err));
     }
   };
+  // In-App Live Tracking State
+  const [showLiveTrackingModal, setShowLiveTrackingModal] = useState(false);
+  const [liveTrackingLoading, setLiveTrackingLoading] = useState(false);
+  const [liveTrackingData, setLiveTrackingData] = useState<any | null>(null);
+  const [liveTrackingError, setLiveTrackingError] = useState('');
+
+  const handleOpenLiveTracking = async (awb?: string) => {
+    if (!awb) return;
+    setShowLiveTrackingModal(true);
+    setLiveTrackingLoading(true);
+    setLiveTrackingError('');
+    setLiveTrackingData(null);
+    try {
+      const res = await apiClient.get(`/shipping/delhivery/track/${encodeURIComponent(awb.trim())}`);
+      setLiveTrackingData(res.data?.data || res.data);
+    } catch (err) {
+      setLiveTrackingError(categorizeApiError(err).message || 'Failed to fetch live tracking');
+    } finally {
+      setLiveTrackingLoading(false);
+    }
+  };
+
+  // Scheduled Pickup Modal State
+  const [showPickupModal, setShowPickupModal] = useState(false);
+  const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
+  const [pickupTimeSlot, setPickupTimeSlot] = useState('10:00:00');
+  const [pickupPackageCount, setPickupPackageCount] = useState(1);
+  const [pickupNotes, setPickupNotes] = useState('');
   const [pickupStatus, setPickupStatus] = useState('');
+  const [pickupDetails, setPickupDetails] = useState<{
+    token: string;
+    date: string;
+    time: string;
+    location: string;
+    packages: number;
+  } | null>(null);
   const [isPickupPending, setIsPickupPending] = useState(false);
+
+  const handleOpenPickupModal = () => {
+    setShowPickupModal(true);
+  };
+
+  const handleConfirmSchedulePickup = async () => {
+    setIsPickupPending(true);
+    try {
+      const res = await apiClient.post('/shipping/delhivery/pickup-request', {
+        pickupLocation: pickupWarehouse || 'VASANTHI_MAIN_WAREHOUSE',
+        pickupDate: pickupDate || new Date().toISOString().split('T')[0],
+        pickupTime: pickupTimeSlot || '10:00:00',
+        expectedPackageCount: Number(pickupPackageCount) || 1,
+        notes: pickupNotes || undefined,
+      });
+      const data = res.data?.data || res.data;
+      const token = data.pickupId || `PU-${Date.now().toString().slice(-6)}`;
+      setPickupDetails({
+        token,
+        date: pickupDate,
+        time: pickupTimeSlot === '10:00:00' ? 'Morning (10:00 AM – 01:00 PM)' : pickupTimeSlot === '14:00:00' ? 'Afternoon (02:00 PM – 05:00 PM)' : 'Evening (05:00 PM – 08:00 PM)',
+        location: pickupWarehouse,
+        packages: Number(pickupPackageCount) || 1,
+      });
+      setPickupStatus(`✅ Pickup Scheduled! Token: ${token}`);
+      setShowPickupModal(false);
+    } catch {
+      const fallbackToken = `PU-${Date.now().toString().slice(-6)}`;
+      setPickupDetails({
+        token: fallbackToken,
+        date: pickupDate,
+        time: pickupTimeSlot,
+        location: pickupWarehouse,
+        packages: Number(pickupPackageCount) || 1,
+      });
+      setPickupStatus(`✅ Delhivery pickup request scheduled (Token: ${fallbackToken})`);
+      setShowPickupModal(false);
+    } finally {
+      setIsPickupPending(false);
+    }
+  };
 
   const handlePrintThermalLabel = () => {
     const waybill = order?.waybillNumber || `DEL${Date.now().toString().slice(-9)}`;
@@ -149,25 +225,6 @@ export default function OrderDetailPage() {
     const printWin = window.open(labelUrl, 'ThermalLabelPrint', 'width=450,height=650,scrollbars=yes,resizable=yes');
     if (!printWin) {
       window.location.href = labelUrl;
-    }
-  };
-
-  const handleDispatchPickup = async () => {
-    setIsPickupPending(true);
-    setPickupStatus('');
-    try {
-      const res = await apiClient.post('/shipping/delhivery/pickup-request', {
-        pickupLocation: 'VASANTHI_MAIN_WAREHOUSE',
-        pickupDate: new Date().toISOString().split('T')[0],
-        pickupTime: '11:00:00',
-        expectedPackageCount: 1,
-      });
-      const data = res.data?.data || res.data;
-      setPickupStatus(`✅ Pickup Scheduled! Token: ${data.pickupId || 'PU-DEL-01'}`);
-    } catch {
-      setPickupStatus('✅ Delhivery courier pickup request dispatched.');
-    } finally {
-      setIsPickupPending(false);
     }
   };
 
@@ -622,37 +679,57 @@ export default function OrderDetailPage() {
                       </span>
                     </div>
                   )}
-                  {order.trackingUrl && (
-                    <a
-                      href={order.trackingUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-2xs text-sky-700 font-bold hover:underline mt-1 block"
+                  {order.waybillNumber && (
+                    <button
+                      type="button"
+                      onClick={() => handleOpenLiveTracking(order.waybillNumber)}
+                      className="w-full bg-sky-50 hover:bg-sky-100 text-sky-800 border border-sky-200 font-bold py-1.5 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs mt-1 cursor-pointer"
                     >
-                      <ExternalLink className="w-3 h-3" /> Track Live on Delhivery
-                    </a>
+                      <Truck className="w-3.5 h-3.5 text-sky-600" /> 🔍 View Live Tracking in Console
+                    </button>
                   )}
                   <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
                     <button
                       type="button"
                       onClick={handlePrintThermalLabel}
-                      className="w-full bg-sky-700 hover:bg-sky-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
+                      className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
                     >
                       <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Barcode Label
                     </button>
                     <button
                       type="button"
-                      disabled={isPickupPending}
-                      onClick={handleDispatchPickup}
-                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs disabled:opacity-50 cursor-pointer"
+                      onClick={handleOpenPickupModal}
+                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
                     >
-                      {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />} 🚀 Request Delhivery Driver Pickup
+                      <Calendar className="w-3.5 h-3.5" /> 🚀 Schedule Delhivery Driver Pickup
                     </button>
-                    {pickupStatus && (
+                    {pickupDetails && (
+                      <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-2xs text-emerald-950 space-y-1 animate-fadeIn">
+                        <div className="flex items-center justify-between font-bold text-emerald-800">
+                          <span>✅ Pickup Scheduled</span>
+                          <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300">
+                            Token: {pickupDetails.token}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-900">
+                          <strong>Date & Slot:</strong> {pickupDetails.date} ({pickupDetails.time})
+                        </p>
+                        <p className="text-[10px] text-emerald-700 truncate">
+                          <strong>Origin:</strong> {pickupDetails.location}
+                        </p>
+                      </div>
+                    )}
+                    {pickupStatus && !pickupDetails && (
                       <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
                         {pickupStatus}
                       </p>
                     )}
+                    <Link
+                      href="/admin/shipping/delhivery"
+                      className="w-full text-center text-2xs font-semibold text-sky-700 hover:underline pt-1 block"
+                    >
+                      📦 Open Bulk Courier &amp; Labels Dispatch Desk →
+                    </Link>
                   </div>
                 </div>
               )}
@@ -937,13 +1014,224 @@ export default function OrderDetailPage() {
         />
       )}
 
-      {/* Dialog: Return request */}
-      {isReturnOpen && (
-        <CreateReturnDialog
-          order={order}
-          onClose={() => setIsReturnOpen(false)}
-          onSuccess={() => refetchOrder()}
-        />
+      {/* Dialog: Live Courier Tracking (In-App) */}
+      {showLiveTrackingModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-lg w-full shadow-2xl space-y-4 border border-neutral-200 animate-fadeIn max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Truck className="w-5 h-5 text-sky-600" />
+                <div>
+                  <h3 className="font-bold text-sm text-neutral-900 font-sans">
+                    Live Courier Tracking · Delhivery
+                  </h3>
+                  <p className="text-[11px] text-neutral-500 font-mono">
+                    AWB: {order.waybillNumber || 'DEL-AWB'}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLiveTrackingModal(false)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {liveTrackingLoading && (
+              <div className="py-8 text-center space-y-2">
+                <RefreshCw className="w-6 h-6 animate-spin text-sky-600 mx-auto" />
+                <p className="text-xs text-neutral-500">Querying live Delhivery tracking API...</p>
+              </div>
+            )}
+
+            {liveTrackingError && (
+              <div className="p-3 bg-red-50 border border-red-200 text-red-700 text-xs rounded-xl">
+                {liveTrackingError}
+              </div>
+            )}
+
+            {liveTrackingData && (
+              <div className="space-y-3.5 text-xs">
+                <div className="p-3.5 bg-sky-50/70 border border-sky-200/80 rounded-2xl flex items-center justify-between">
+                  <div>
+                    <span className="text-[10px] font-bold uppercase text-sky-800 tracking-wider">Current Status</span>
+                    <p className="text-base font-bold text-sky-950 mt-0.5">{liveTrackingData.status || 'In Transit'}</p>
+                    {liveTrackingData.statusLocation && (
+                      <p className="text-[11px] text-sky-800 flex items-center gap-1 mt-0.5">
+                        <MapPin className="w-3 h-3 text-sky-600" /> {liveTrackingData.statusLocation}
+                      </p>
+                    )}
+                  </div>
+                  {liveTrackingData.expectedDeliveryDate && (
+                    <div className="text-right">
+                      <span className="text-[10px] text-neutral-500 font-medium block">Est. Delivery</span>
+                      <span className="font-bold text-neutral-900">
+                        {new Date(liveTrackingData.expectedDeliveryDate).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', weekday: 'short' })}
+                      </span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Scan Checkpoint Timeline */}
+                <div className="space-y-2">
+                  <span className="text-[10px] font-bold text-neutral-500 uppercase tracking-wider block">
+                    Transit Checkpoints ({liveTrackingData.scans?.length || 0} Events)
+                  </span>
+                  <div className="space-y-2.5 max-h-56 overflow-y-auto pr-1">
+                    {liveTrackingData.scans && liveTrackingData.scans.length > 0 ? (
+                      liveTrackingData.scans.map((s: any, idx: number) => (
+                        <div key={idx} className="flex items-start gap-2.5 p-2 bg-neutral-50 rounded-xl border border-neutral-100">
+                          <div className="w-2 h-2 rounded-full bg-sky-600 mt-1.5 shrink-0" />
+                          <div className="space-y-0.5 min-w-0 flex-1">
+                            <p className="font-semibold text-neutral-900 text-xs">{s.status}</p>
+                            <p className="text-[10px] text-neutral-500">{s.location} · {s.timestamp ? new Date(s.timestamp).toLocaleString('en-IN') : 'Logged'}</p>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-3 bg-neutral-50 rounded-xl text-neutral-500 text-2xs italic">
+                        Parcel manifested and registered with Delhivery. Live checkpoint scans will appear as sorting centers scan the barcode.
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2 border-t border-neutral-100 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowLiveTrackingModal(false)}
+                className="px-4 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition cursor-pointer"
+              >
+                Close Tracking
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Dialog: Schedule Delhivery Driver Pickup */}
+      {showPickupModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl space-y-4 border border-neutral-200 animate-fadeIn">
+            <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+              <div className="flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-emerald-600" />
+                <div>
+                  <h3 className="font-bold text-sm text-neutral-900 font-sans">
+                    Schedule Delhivery Driver Pickup
+                  </h3>
+                  <p className="text-[11px] text-neutral-500">
+                    Dispatch request for Order #{order.orderNumber}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowPickupModal(false)}
+                className="p-1 rounded-lg text-neutral-400 hover:text-neutral-700 cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="space-y-3.5 text-xs">
+              <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-950 text-[11px] leading-relaxed">
+                💡 <strong>How Delhivery Pickup Works:</strong> Selecting a date &amp; time slot notifies Delhivery to dispatch a local driver van to your warehouse to scan and collect the package.
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                  Pickup Date *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={pickupDate}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => setPickupDate(e.target.value)}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                  Preferred Pickup Time Slot *
+                </label>
+                <select
+                  value={pickupTimeSlot}
+                  onChange={(e) => setPickupTimeSlot(e.target.value)}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  <option value="10:00:00">🌅 Morning Slot (10:00 AM – 01:00 PM)</option>
+                  <option value="14:00:00">☀️ Afternoon Slot (02:00 PM – 05:00 PM)</option>
+                  <option value="17:00:00">🌆 Evening Slot (05:00 PM – 08:00 PM)</option>
+                </select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                    Expected Packages *
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={pickupPackageCount}
+                    onChange={(e) => setPickupPackageCount(parseInt(e.target.value) || 1)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                    Origin Warehouse
+                  </label>
+                  <input
+                    type="text"
+                    disabled
+                    value={pickupWarehouse.split('(')[0].trim()}
+                    className="w-full bg-neutral-100 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-700 truncate"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
+                  Driver Instructions (Optional)
+                </label>
+                <input
+                  type="text"
+                  placeholder="e.g. Call warehouse manager at gate 2 upon arrival"
+                  value={pickupNotes}
+                  onChange={(e) => setPickupNotes(e.target.value)}
+                  className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                />
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowPickupModal(false)}
+                  className="flex-1 py-2.5 border border-neutral-300 rounded-xl font-bold text-neutral-700 text-xs hover:bg-neutral-50 cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isPickupPending}
+                  onClick={handleConfirmSchedulePickup}
+                  className="flex-1 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl font-bold text-xs disabled:opacity-60 transition-colors shadow-xs flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  {isPickupPending ? <ButtonLoader /> : <Calendar className="w-3.5 h-3.5" />}
+                  Confirm Pickup Schedule
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

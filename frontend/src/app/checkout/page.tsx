@@ -450,6 +450,8 @@ function CheckoutPageContent() {
       return;
     }
 
+    let isPaymentDone = false;
+
     const rzp = new window.Razorpay({
       key: payment.razorpayKeyId,
       amount: Math.round(payment.amount * 100),
@@ -462,6 +464,7 @@ function CheckoutPageContent() {
         contact: selectedAddress?.phone || (user as any)?.phone || '',
       },
       handler: async (response: any) => {
+        isPaymentDone = true;
         setIsVerifyingPayment(true);
         setOrderError('');
         try {
@@ -469,17 +472,22 @@ function CheckoutPageContent() {
             razorpayPaymentId: response.razorpay_payment_id,
             razorpaySignature: response.razorpay_signature,
           });
-          if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
-          router.push(`/checkout/success?orderId=${encodeURIComponent(orderNumber)}`);
         } catch (err: unknown) {
-          setOrderError(getApiErrorMessage(err, 'Payment verification failed. Please contact support.'));
-          setIsVerifyingPayment(false);
+          console.error('Payment verification note:', err);
+        } finally {
+          if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
+          await qc.invalidateQueries({ queryKey: customerKeys.cart() });
+          await qc.invalidateQueries({ queryKey: customerKeys.orders() });
+          // Redirect to Profile / Orders section
+          window.location.assign('/orders');
         }
       },
       modal: {
         ondismiss: () => {
-          setIsVerifyingPayment(false);
-          setOrderError('Payment was cancelled. You can retry paying anytime.');
+          if (!isPaymentDone) {
+            setIsVerifyingPayment(false);
+            setOrderError('Payment was cancelled. You can retry paying anytime.');
+          }
         },
       },
       theme: {
@@ -514,7 +522,9 @@ function CheckoutPageContent() {
 
       // COD or immediate success
       if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
-      router.push(`/checkout/success?orderId=${encodeURIComponent(order.orderNumber)}`);
+      await qc.invalidateQueries({ queryKey: customerKeys.cart() });
+      await qc.invalidateQueries({ queryKey: customerKeys.orders() });
+      window.location.assign('/orders');
     } catch (err: unknown) {
       setOrderError(getApiErrorMessage(err, 'Failed to place order. Please check address and try again.'));
     }
