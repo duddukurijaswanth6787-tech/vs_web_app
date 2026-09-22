@@ -205,12 +205,82 @@ export default function DelhiveryShippingAdminPage() {
     );
   };
 
+  // Helper: Get available Delhivery time slots with same-day cutoff validation
+  const getTimeSlotsForDate = (dateStr: string) => {
+    const todayStr = new Date().toISOString().split('T')[0];
+    const now = new Date();
+    const currentTotalMinutes = now.getHours() * 60 + now.getMinutes();
+
+    const slots = [
+      {
+        value: '11:00:00',
+        label: '🌅 Morning (10:00 AM - 01:00 PM)',
+        cutoffMinutes: 10 * 60 + 30, // 10:30 AM cutoff for same-day morning driver dispatch
+        shortName: 'Morning (10:00 AM - 01:00 PM)',
+      },
+      {
+        value: '15:00:00',
+        label: '☀️ Afternoon (01:00 PM - 04:00 PM)',
+        cutoffMinutes: 13 * 60 + 30, // 1:30 PM cutoff for same-day afternoon driver dispatch
+        shortName: 'Afternoon (01:00 PM - 04:00 PM)',
+      },
+      {
+        value: '18:00:00',
+        label: '🌆 Evening (04:00 PM - 07:00 PM)',
+        cutoffMinutes: 16 * 60 + 30, // 4:30 PM cutoff for same-day evening driver dispatch
+        shortName: 'Evening (04:00 PM - 07:00 PM)',
+      },
+    ];
+
+    if (dateStr === todayStr) {
+      return slots.map((s) => {
+        const isPast = currentTotalMinutes >= s.cutoffMinutes;
+        return {
+          ...s,
+          disabled: isPast,
+          statusLabel: isPast ? '— ❌ Cutoff Passed' : '— ✅ Available Today',
+        };
+      });
+    }
+
+    return slots.map((s) => ({
+      ...s,
+      disabled: false,
+      statusLabel: '',
+    }));
+  };
+
   // Open pickup modal pre-populated for specific orders
   const openPickupModalForOrders = (orders?: OrderResponse[]) => {
-    const list = orders && orders.length > 0 ? orders : todayOrders;
+    const list =
+      orders && orders.length > 0
+        ? orders
+        : selectedOrderIds.length > 0
+        ? todayOrders.filter((o) => selectedOrderIds.includes(o.id))
+        : todayOrders;
+
     const targetOrderNumbers = list.map((o) => o.orderNumber);
+
+    // Calculate total package count from item quantities (1 box per item/parcel)
+    let totalBoxes = 0;
+    list.forEach((o) => {
+      if (o.items && o.items.length > 0) {
+        totalBoxes += o.items.reduce((sum: number, it: any) => sum + (it.quantity || 1), 0);
+      } else {
+        totalBoxes += 1;
+      }
+    });
+
     setPickupTargetOrderNumbers(targetOrderNumbers);
-    setExpectedPackages(Math.max(1, targetOrderNumbers.length));
+    setExpectedPackages(Math.max(1, totalBoxes));
+
+    // Choose default valid time slot for today
+    const todayStr = new Date().toISOString().split('T')[0];
+    const slots = getTimeSlotsForDate(todayStr);
+    const firstAvailable = slots.find((s) => !s.disabled) || slots[0];
+    setPickupDate(todayStr);
+    setPickupTimeSlot(firstAvailable.value);
+
     setShowPickupModal(true);
   };
 
@@ -1501,7 +1571,17 @@ export default function DelhiveryShippingAdminPage() {
                     type="date"
                     required
                     value={pickupDate}
-                    onChange={(e) => setPickupDate(e.target.value)}
+                    min={new Date().toISOString().split('T')[0]}
+                    onChange={(e) => {
+                      const newDate = e.target.value;
+                      setPickupDate(newDate);
+                      const slots = getTimeSlotsForDate(newDate);
+                      const currentObj = slots.find((s) => s.value === pickupTimeSlot);
+                      if (!currentObj || currentObj.disabled) {
+                        const firstValid = slots.find((s) => !s.disabled) || slots[0];
+                        setPickupTimeSlot(firstValid.value);
+                      }
+                    }}
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                   />
                 </div>
@@ -1510,22 +1590,42 @@ export default function DelhiveryShippingAdminPage() {
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
                     Time Window Slot *
                   </label>
-                  <select
-                    value={pickupTimeSlot}
-                    onChange={(e) => setPickupTimeSlot(e.target.value)}
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
-                  >
-                    <option value="11:00:00">🌅 Morning (10:00 AM - 01:00 PM)</option>
-                    <option value="15:00:00">☀️ Afternoon (01:00 PM - 04:00 PM)</option>
-                    <option value="18:00:00">🌆 Evening (04:00 PM - 07:00 PM)</option>
-                  </select>
+                  {(() => {
+                    const availableSlots = getTimeSlotsForDate(pickupDate);
+                    const allDisabled = availableSlots.every((s) => s.disabled);
+                    return (
+                      <>
+                        <select
+                          value={pickupTimeSlot}
+                          onChange={(e) => setPickupTimeSlot(e.target.value)}
+                          className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                        >
+                          {availableSlots.map((s) => (
+                            <option key={s.value} value={s.value} disabled={s.disabled} className={s.disabled ? 'text-neutral-400 bg-neutral-100' : ''}>
+                              {s.label} {s.statusLabel}
+                            </option>
+                          ))}
+                        </select>
+                        {allDisabled && (
+                          <p className="text-[10px] text-amber-800 bg-amber-50 border border-amber-200 p-1.5 rounded-lg mt-1 font-medium">
+                            ⚠️ Today&apos;s same-day driver cutoffs have passed. Please select tomorrow for morning collection.
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
 
               <div>
-                <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
-                  Expected Package Count *
-                </label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider">
+                    Expected Package Count *
+                  </label>
+                  <span className="text-[10px] text-emerald-700 font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                    ⚡ Auto-calculated from order items
+                  </span>
+                </div>
                 <input
                   type="number"
                   min={1}
@@ -1535,7 +1635,7 @@ export default function DelhiveryShippingAdminPage() {
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <p className="text-2xs text-neutral-400 mt-1">
-                  Total parcel boxes ready for courier vehicle handover.
+                  Total parcel boxes ready for courier vehicle handover. Each item/quantity in the selected orders is counted as 1 ready box.
                 </p>
               </div>
 
