@@ -31,6 +31,8 @@ export class CheckoutSummaryResponse {
   @ApiProperty() subtotal!: number;
   @ApiProperty() discountTotal!: number;
   @ApiProperty() taxTotal!: number;
+  @ApiPropertyOptional() exclusiveTaxTotal?: number;
+  @ApiPropertyOptional() isTaxInclusive?: boolean;
   @ApiProperty() shippingCharge!: number;
   @ApiProperty() grandTotal!: number;
   @ApiProperty() estimatedDelivery!: string;

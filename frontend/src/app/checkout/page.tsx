@@ -1402,12 +1402,21 @@ function CheckoutPageContent() {
                   )}
 
                   <div className="flex justify-between items-center">
-                    <span>GST & Taxes</span>
+                    <span>
+                      {preview.data?.isTaxInclusive === false ? 'GST & Taxes (Exclusive)' : 'GST & Taxes'}
+                    </span>
                     <span>
                       {displayTax > 0 ? (
-                        <span className="font-semibold text-neutral-800">
-                          {formatInr(displayTax)} <span className="text-[10px] text-neutral-400 font-normal">(Included in MRP)</span>
-                        </span>
+                        preview.data?.isTaxInclusive === false ? (
+                          <span className="font-semibold text-neutral-900 text-xs">
+                            +{formatInr(displayTax)}
+                          </span>
+                        ) : (
+                          <span className="font-semibold text-neutral-800">
+                            {formatInr(displayTax)}{' '}
+                            <span className="text-[10px] text-neutral-400 font-normal">(Included in MRP)</span>
+                          </span>
+                        )
                       ) : (
                         <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
                           ₹0 (Included)
