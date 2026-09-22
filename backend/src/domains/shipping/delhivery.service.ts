@@ -242,22 +242,89 @@ export class DelhiveryService {
     return fallbackResult;
   }
 
-  /**
-   * Create shipment & generate waybill with Delhivery Partner
-   */
   async createShipment(
     dto: DelhiveryCreateShipmentDto,
   ): Promise<DelhiveryShipmentResult> {
     this.logger.log(`Creating Delhivery shipment for Order #${dto.orderId}`);
 
-    const mockWaybill = dto.waybill || `DEL${Date.now().toString().slice(-9)}`;
+    let waybill = dto.waybill || `DEL${Date.now().toString().slice(-9)}`;
+    let status = 'Manifested';
+
+    try {
+      const shipmentData = {
+        shipments: [
+          {
+            name: dto.name,
+            add: dto.address,
+            pin: dto.pin,
+            city: dto.city || 'Hyderabad',
+            state: dto.state || 'Telangana',
+            country: 'India',
+            phone: dto.phone,
+            order: dto.orderId,
+            payment_mode: dto.paymentMode === 'COD' ? 'COD' : 'Prepaid',
+            return_pin: '507117',
+            return_city: 'Manuguru',
+            return_phone: '7095004188',
+            return_add:
+              'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Beside MORE super market',
+            return_state: 'Telangana',
+            return_country: 'India',
+            products_desc: 'Apparel / Garment',
+            hsn_code: '6204',
+            cod_amount: dto.codAmount ? String(dto.codAmount) : '0',
+            order_date: new Date().toISOString().replace('T', ' ').slice(0, 19),
+            total_amount: String(dto.totalAmount || '25.00'),
+            seller_add: 'VASANTHI CREATIONS PVT LTD',
+            seller_name: 'Vasanthis Signature',
+            quantity: '1',
+            waybill: '',
+            weight: String(dto.weightGrams || 500),
+            shipping_mode: 'Surface',
+            address_type: 'home',
+          },
+        ],
+        pickup_location: {
+          name: 'Manuguru Main Warehouse',
+          add: 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Beside MORE super market',
+          city: 'Manuguru',
+          pin_code: '507117',
+          country: 'India',
+          phone: '7095004188',
+        },
+      };
+
+      const postData = `format=json&data=${encodeURIComponent(
+        JSON.stringify(shipmentData),
+      )}`;
+
+      const res = await fetch('https://track.delhivery.com/api/cmu/create.json', {
+        method: 'POST',
+        headers: {
+          Authorization: `Token ${this.apiToken}`,
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: postData,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const pkg = data.packages?.[0];
+        if (pkg?.waybill) {
+          waybill = pkg.waybill;
+          status = pkg.status || 'Ready For Pickup';
+        }
+      }
+    } catch (err: any) {
+      this.logger.warn(`Delhivery CMU shipment creation fallback: ${err.message}`);
+    }
 
     return {
       success: true,
-      waybill: mockWaybill,
+      waybill,
       orderId: dto.orderId,
-      status: 'Manifested',
-      labelUrl: `https://track.delhivery.com/api/v1/packages/label?waybill=${mockWaybill}`,
+      status,
+      labelUrl: `https://track.delhivery.com/api/v1/packages/label?waybill=${waybill}`,
     };
   }
 
@@ -346,26 +413,24 @@ export class DelhiveryService {
     let status: 'SCHEDULED' | 'DRIVER_ASSIGNED' = 'SCHEDULED';
 
     try {
-      const res = await fetch(
-        'https://track.delhivery.com/fm/request/create/',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Token ${this.apiToken}`,
-          },
-          body: JSON.stringify({
-            pickup_location: dto.pickupLocation,
-            pickup_date: dto.pickupDate,
-            pickup_time: dto.pickupTime || '10:00:00',
-            expected_package_count: dto.expectedPackageCount,
-          }),
+      const res = await fetch('https://track.delhivery.com/fm/request/new/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Token ${this.apiToken}`,
         },
-      );
+        body: JSON.stringify({
+          pickup_location: 'Manuguru Main Warehouse',
+          pickup_date: dto.pickupDate,
+          pickup_time: dto.pickupTime || '16:00:00',
+          expected_package_count: dto.expectedPackageCount,
+        }),
+      });
 
       if (res.ok) {
         const data = await res.json();
-        if (data.pickup_id) pickupId = data.pickup_id;
+        if (data.pickup_id || data.pr_id) pickupId = data.pickup_id || data.pr_id;
+        if (data.status) status = data.status;
       }
     } catch (err: any) {
       this.logger.warn(`Delhivery pickup request fallback: ${err.message}`);
