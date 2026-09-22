@@ -14,8 +14,8 @@ const CUSTOMER_REVIEWS = [
     city: 'Hyderabad',
     rating: 5,
     date: 'August 2026',
-    title: 'Exquisite Silk Saree & Fast Delivery!',
-    content: 'The Kanjeevaram silk saree is absolutely stunning. The zari work is rich and high quality. Received it in 2 days in beautiful packaging.',
+    title: 'Exquisite Silk Anarkali & Fast Delivery!',
+    content: 'The Kanjeevaram silk outfit is absolutely stunning. The zari work is rich and high quality. Received it in 2 days in beautiful packaging.',
     verified: true,
   },
   {
@@ -44,8 +44,8 @@ const CUSTOMER_REVIEWS = [
     city: 'Mumbai',
     rating: 5,
     date: 'July 2026',
-    title: 'Gorgeous Organza Saree',
-    content: 'Loved the delicate floral print and hand-scalloped border. Very lightweight and easy to drape all day.',
+    title: 'Gorgeous Organza Gown',
+    content: 'Loved the delicate floral print and hand-scalloped border. Very lightweight and elegant to wear all day.',
     verified: true,
   },
 ];

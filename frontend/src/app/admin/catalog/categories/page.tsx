@@ -322,7 +322,7 @@ export default function CategoriesPage() {
                   required
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Sarees"
+                  placeholder="e.g. Anarkalis"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2 text-xs text-neutral-900 focus:outline-none"
                 />
               </div>
@@ -333,7 +333,7 @@ export default function CategoriesPage() {
                   type="text"
                   value={slug}
                   onChange={(e) => setSlug(e.target.value)}
-                  placeholder="sarees-ethnic"
+                  placeholder="anarkalis-ethnic"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3.5 py-2 text-xs text-neutral-900 focus:outline-none"
                 />
               </div>

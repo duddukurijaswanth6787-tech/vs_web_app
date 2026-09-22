@@ -204,9 +204,9 @@ export class AuthRepository {
         displayOrder: 1,
       },
       {
-        name: 'Sarees',
-        slug: 'sarees',
-        path: 'ethnic-wear/sarees',
+        name: 'Anarkalis',
+        slug: 'anarkalis',
+        path: 'ethnic-wear/anarkalis',
         displayOrder: 2,
       },
       {

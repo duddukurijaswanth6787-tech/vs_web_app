@@ -161,7 +161,7 @@ export default function QuickEditProductDialog({
               type="text"
               {...register('title')}
               className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:border-neutral-900 transition"
-              placeholder="e.g. Kanjeevaram Pure Silk Saree"
+              placeholder="e.g. Kanjeevaram Pure Silk Suit"
             />
             {errors.title && (
               <p className="mt-1 text-2xs text-red-600 font-medium">{errors.title.message}</p>

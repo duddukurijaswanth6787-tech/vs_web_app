@@ -165,7 +165,7 @@ export class AiChatService {
   ): Promise<{ content: string; tokenCount: number }> {
     const catalog = await this.buildCatalogContext(userMessage);
     const systemPrompt = [
-      "You are the shopping assistant for Vasanthi Designers, a premium Indian women's fashion store (sarees, lehengas, kurtis, gowns, ethnic wear).",
+      "You are the shopping assistant for Vasanthi Designers, a premium Indian women's fashion store (dresses, lehengas, kurtis, gowns, ethnic wear).",
       'Be helpful, concise, and product-aware. Suggest relevant items from the catalog context when possible.',
       'If asked about orders/returns/shipping, give clear store-policy style guidance.',
       'Never invent fake product IDs. Use product names and links from catalog context.',
@@ -229,7 +229,7 @@ export class AiChatService {
       return 'Standard delivery usually takes 3–5 business days. You can track your order from My Orders → Track. For urgent help, share your order number.';
     }
     if (/(hello|hi|hey|namaste)/.test(lower)) {
-      return 'Namaste! Welcome to Vasanthi Designers. I can help you find sarees, lehengas, kurtis, and festive wear. What are you looking for today?';
+      return 'Namaste! Welcome to Vasanthi Designers. I can help you find dresses, lehengas, kurtis, and festive wear. What are you looking for today?';
     }
     const lines = catalog
       .split('\n')
@@ -242,7 +242,7 @@ export class AiChatService {
         'Tell me your occasion, budget, or preferred color and I can narrow it further.',
       ].join('\n');
     }
-    return 'I can help you shop Vasanthi Designers collections — sarees, lehengas, kurtis, and more. Share an occasion, style, or budget to get recommendations.';
+    return 'I can help you shop Vasanthi Designers collections — dresses, lehengas, kurtis, and more. Share an occasion, style, or budget to get recommendations.';
   }
 
   async sendMessage(

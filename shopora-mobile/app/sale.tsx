@@ -39,7 +39,7 @@ const SAMPLE_BARCODES = [
   { label: 'Anarkali M (890365090266)', code: '890365090266' },
   { label: 'Anarkali L (890589337088)', code: '890589337088' },
   { label: 'Anarkali S (890039458248)', code: '890039458248' },
-  { label: 'Saree (890100000005)', code: '890100000005' },
+  { label: 'Anarkali (890100000005)', code: '890100000005' },
   { label: 'Kurti (890100000001)', code: '890100000001' },
 ];
 

@@ -59,8 +59,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Vasanthi's Signature | Luxury Ethnic Wear & Sarees",
-    description: "Official Online Store for Vasanthi's Signature - Premium Sarees & Designer Wear",
+    title: "Vasanthi's Signature | Luxury Ethnic Wear & Designer Outfits",
+    description: "Official Online Store for Vasanthi's Signature - Premium Ethnic & Designer Wear",
     images: ["/brand/logo-full.png"],
   },
   robots: {

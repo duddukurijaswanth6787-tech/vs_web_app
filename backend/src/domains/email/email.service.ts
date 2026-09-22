@@ -463,7 +463,7 @@ export class EmailService {
     );
     const html = this.layout(`
       <h2 style="margin:0 0 12px;color:#0f172a;font-size:18px;">Welcome to ${STORE_NAME}${firstName ? `, ${firstName}` : ''}!</h2>
-      <p>Thank you for creating an account with ${STORE_NAME}. We are delighted to bring you exclusive designer sarees, bespoke lehengas, and handcrafted couture.</p>
+      <p>Thank you for creating an account with ${STORE_NAME}. We are delighted to bring you exclusive designer gowns, bespoke lehengas, and handcrafted couture.</p>
       <p style="text-align:center;margin:28px 0;">
         <a href="${frontendUrl}" style="background:#0284c7;color:#ffffff;padding:12px 32px;border-radius:12px;text-decoration:none;font-weight:bold;font-size:13px;display:inline-block;">Explore Collection</a>
       </p>

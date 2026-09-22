@@ -75,7 +75,7 @@ export const DEFAULT_MEASUREMENTS = [
 export const GARMENT_TYPES = [
   'Kurta Set',
   'Anarkali',
-  'Saree Blouse',
+  'Blouse / Crop Top',
   'Lehenga',
   'Dress',
   'Salwar Suit',

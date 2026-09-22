@@ -22,7 +22,7 @@ export default function AboutPage() {
         {/* Hero Section */}
         <div className="bg-gradient-to-br from-[#0A2138] via-[#051426] to-[#01060F] text-white rounded-3xl p-6 sm:p-10 space-y-4 shadow-md text-center sm:text-left relative overflow-hidden">
           <div className="absolute top-0 right-0 opacity-10 font-serif text-9xl select-none pointer-events-none">❖</div>
-          <span className="text-xs uppercase tracking-widest font-bold text-amber-300">HAUTE COUTURE SAREES & LUXURY FASHION</span>
+          <span className="text-xs uppercase tracking-widest font-bold text-amber-300">HAUTE COUTURE & LUXURY FASHION</span>
           <h2 className="text-2xl sm:text-4xl font-bold font-serif text-white tracking-tight leading-tight">
             Vasanthi&apos;s Signature
           </h2>

@@ -200,8 +200,8 @@ export function StorefrontHeader() {
               <input
                 id="desktop-search-input"
                 type="text"
-                aria-label="Search for sarees, kurtis, lehengas"
-                placeholder="Search for sarees, kurtis, lehengas..."
+                aria-label="Search for kurtis, lehengas, anarkalis"
+                placeholder="Search for kurtis, lehengas, anarkalis..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}
@@ -235,7 +235,7 @@ export function StorefrontHeader() {
             id="mobile-search-input"
             type="text"
             aria-label="Search products on mobile"
-            placeholder="Search for sarees, kurtis, lehengas..."
+            placeholder="Search for kurtis, lehengas, anarkalis..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter') submitSearch(); }}

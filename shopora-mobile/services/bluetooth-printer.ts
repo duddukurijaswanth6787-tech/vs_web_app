@@ -749,7 +749,7 @@ class BluetoothPrinterService {
               yscal: 1,
             },
             {
-              text: (label.productName || 'Designer Saree').slice(0, 30),
+              text: (label.productName || 'Designer Suit').slice(0, 30),
               x: 30,
               y: 125,
               fonttype: FONTTYPE.FONT_3,

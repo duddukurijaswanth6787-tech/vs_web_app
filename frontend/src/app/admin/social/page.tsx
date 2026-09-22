@@ -855,7 +855,7 @@ function CreatePostModal({ onClose, onSuccess }: { onClose: () => void; onSucces
 
               {/* Popular Hashtags Pill Chips */}
               <div className="flex flex-wrap gap-1 mt-1">
-                {['#vasanthissignature', '#saree', '#lehenga', '#anarkali', '#festive', '#wedding'].map((tag) => (
+                {['#vasanthissignature', '#dresses', '#lehenga', '#anarkali', '#festive', '#wedding'].map((tag) => (
                   <button
                     key={tag}
                     type="button"

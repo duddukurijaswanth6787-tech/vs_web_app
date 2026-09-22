@@ -74,7 +74,7 @@ describe('Phase 5.15 — RAG Agent Control Center Tests', () => {
       {
         id: 'cite-1',
         messageId: 'msg-1',
-        sourceTitle: 'Saree Materials Guide',
+        sourceTitle: 'Ethnic Dress Materials Guide',
         excerpt: 'Banarasi silk is handwoven in Varanasi.',
         relevanceScore: 0.95,
       },

@@ -10,8 +10,8 @@ const CATEGORY_IMAGE_FALLBACKS: Record<string, string> = {
   'western-wear': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/d3adfb63-a449-4021-bde9-5515ea9b73d3.webp',
   '2-3-years': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/91e0120b-7e2d-44a5-8c04-212f8bf064ee.webp',
 
-  // Sarees & Ethnic
-  'sarees': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/57f5d8c0-0f9e-43d6-b96d-178edf961e2b.webp',
+  // Ethnic & Designer
+  'anarkalis': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/57f5d8c0-0f9e-43d6-b96d-178edf961e2b.webp',
   'ethnic-wear': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/187482eb-b144-4c00-9568-ce50339a98a4.webp',
   'lehengas': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/1029672c-a6fa-43da-bcca-25bee15ebee7.webp',
   'kurtis-suits': 'https://vasanthi-signature-images.s3.ap-south-2.amazonaws.com/products/91e0120b-7e2d-44a5-8c04-212f8bf064ee.webp',

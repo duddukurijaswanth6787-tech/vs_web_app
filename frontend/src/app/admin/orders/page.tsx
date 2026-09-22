@@ -5,7 +5,27 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useOrderList } from '@/features/orders/order.hooks';
 import type { OrderResponse } from '@/features/orders/order.types';
 import { OrderStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
-import { Search, Eye, FileText, Calendar, Store, Globe, Users, ArrowRight, Printer, Tag, CheckSquare, Loader2 } from 'lucide-react';
+import {
+  Search,
+  Eye,
+  FileText,
+  Calendar,
+  Store,
+  Globe,
+  Users,
+  ArrowRight,
+  Printer,
+  Tag,
+  CheckSquare,
+  Loader2,
+  Download,
+  FileSpreadsheet,
+  X,
+  Check,
+  Filter,
+  Sparkles,
+  RefreshCw,
+} from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDate } from '@/utils/format';
 import DataTable from '@/components/tables/DataTable';
@@ -32,6 +52,16 @@ export default function OrdersPage() {
   const [isPrintingLabels, setIsPrintingLabels] = useState(false);
   const [printError, setPrintError] = useState('');
 
+  // Excel & CSV Export Modal state
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [exportStartDate, setExportStartDate] = useState('');
+  const [exportEndDate, setExportEndDate] = useState('');
+  const [exportChannel, setExportChannel] = useState('');
+  const [exportStatus, setExportStatus] = useState('');
+  const [exportFormat, setExportFormat] = useState<'xlsx' | 'csv'>('xlsx');
+  const [isExporting, setIsExporting] = useState(false);
+  const [exportSuccessMsg, setExportSuccessMsg] = useState('');
+  const [exportErrorMsg, setExportErrorMsg] = useState('');
 
   const { data: listData, isLoading, isError, refetch } = useOrderList({
     page,
@@ -171,6 +201,346 @@ export default function OrdersPage() {
   };
 
 
+  const setModalDatePreset = (preset: 'TODAY' | 'YESTERDAY' | 'WEEK' | 'MONTH' | 'LAST_MONTH' | 'FY' | 'ALL') => {
+    const now = new Date();
+    if (preset === 'TODAY') {
+      const todayStr = now.toISOString().split('T')[0];
+      setExportStartDate(todayStr);
+      setExportEndDate(todayStr);
+    } else if (preset === 'YESTERDAY') {
+      const yest = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+      const yestStr = yest.toISOString().split('T')[0];
+      setExportStartDate(yestStr);
+      setExportEndDate(yestStr);
+    } else if (preset === 'WEEK') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      setExportStartDate(weekAgo.toISOString().split('T')[0]);
+      setExportEndDate(now.toISOString().split('T')[0]);
+    } else if (preset === 'MONTH') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      setExportStartDate(startOfMonth.toISOString().split('T')[0]);
+      setExportEndDate(now.toISOString().split('T')[0]);
+    } else if (preset === 'LAST_MONTH') {
+      const startOfLastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const endOfLastMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+      setExportStartDate(startOfLastMonth.toISOString().split('T')[0]);
+      setExportEndDate(endOfLastMonth.toISOString().split('T')[0]);
+    } else if (preset === 'FY') {
+      const year = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+      const startOfFy = new Date(year, 3, 1);
+      setExportStartDate(startOfFy.toISOString().split('T')[0]);
+      setExportEndDate(now.toISOString().split('T')[0]);
+    } else {
+      setExportStartDate('');
+      setExportEndDate('');
+    }
+  };
+
+  const handleExecuteExcelExport = async () => {
+    setIsExporting(true);
+    setExportErrorMsg('');
+    setExportSuccessMsg('');
+
+    try {
+      const params: Record<string, string | number> = {
+        limit: 5000,
+        sortBy: 'createdAt',
+        sortOrder: 'desc',
+      };
+      if (exportStartDate) {
+        params.startDate = new Date(exportStartDate + 'T00:00:00.000Z').toISOString();
+      }
+      if (exportEndDate) {
+        params.endDate = new Date(exportEndDate + 'T23:59:59.999Z').toISOString();
+      }
+      if (exportChannel) {
+        params.channel = exportChannel;
+      }
+      if (exportStatus) {
+        params.status = exportStatus;
+      }
+
+      const res = await apiClient.get('/orders', { params });
+      const orders: any[] = res.data?.data?.data || res.data?.data || [];
+
+      if (!orders.length) {
+        throw new Error('No orders found matching the selected date range and filters.');
+      }
+
+      const formattedRows = orders.map((o) => {
+        const custFirst = o.customer?.user?.firstName || o.customer?.firstName || '';
+        const custLast = o.customer?.user?.lastName || o.customer?.lastName || '';
+        const userFullName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : '';
+
+        const shippingAddr = o.addresses?.find((a: any) => a.addressType === 'SHIPPING');
+        const billingAddr = o.addresses?.find((a: any) => a.addressType === 'BILLING');
+        const name = userFullName || shippingAddr?.fullName || billingAddr?.fullName || o.customerName || (o.channel === 'POS_SHOPORA' ? 'Walk-in Customer' : 'Online Customer');
+        const phone = shippingAddr?.phone || billingAddr?.phone || o.customer?.phone || o.customer?.user?.phone || o.customerPhone || '';
+        const email = o.customer?.user?.email || o.customer?.email || o.customerEmail || '';
+        const addrLine = [shippingAddr?.addressLine1, shippingAddr?.addressLine2].filter(Boolean).join(', ') || '';
+        const city = shippingAddr?.city || '';
+        const state = shippingAddr?.state || '';
+        const pincode = shippingAddr?.pincode || '';
+
+        const itemsSummary = (o.items || []).map((it: any) => `${it.quantity || 1}x ${it.productName || 'Garment'} (${it.variantName || it.sku || ''})`).join(' | ');
+        const totalUnits = (o.items || []).reduce((sum: number, item: any) => sum + (item.quantity || 1), 0);
+
+        return {
+          orderNumber: o.orderNumber || o.id,
+          createdAt: new Date(o.createdAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+          channel: o.channel === 'POS_SHOPORA' ? 'In-Store POS (Shopora)' : 'Online Web Store',
+          customerName: name,
+          phone,
+          email,
+          shippingAddress: addrLine,
+          city,
+          state,
+          pincode,
+          itemsCount: totalUnits,
+          itemsSummary,
+          subtotal: Number(o.subtotal || 0).toFixed(2),
+          discountTotal: Number(o.discountTotal || 0).toFixed(2),
+          taxTotal: Number(o.taxTotal || 0).toFixed(2),
+          shippingTotal: Number(o.shippingTotal || 0).toFixed(2),
+          grandTotal: Number(o.grandTotal || 0).toFixed(2),
+          currency: o.currency || 'INR',
+          paymentStatus: o.paymentStatus || 'COMPLETED',
+          paymentMethod: o.paymentMethod || (o.channel === 'POS_SHOPORA' ? 'Store Counter / UPI' : 'Razorpay Gateway'),
+          orderStatus: o.status,
+          waybillNumber: o.waybillNumber || o.shippingProviderOrderId || '—',
+          courierPartner: o.courierPartner || 'Delhivery',
+          billedBy: o.createdBy || 'System',
+          notes: o.notes || '',
+        };
+      });
+
+      const todayStamp = new Date().toISOString().split('T')[0];
+      const filename = `Vasanthi_Signatures_Orders_${todayStamp}.${exportFormat === 'csv' ? 'csv' : 'xls'}`;
+
+      if (exportFormat === 'csv') {
+        const headers = [
+          'Order Number',
+          'Date (IST)',
+          'Channel',
+          'Customer Name',
+          'Phone',
+          'Email',
+          'Shipping Address',
+          'City',
+          'State',
+          'Pincode',
+          'Total Units',
+          'Items Summary',
+          'Subtotal (INR)',
+          'Discount (INR)',
+          'Tax / GST (INR)',
+          'Shipping (INR)',
+          'Grand Total (INR)',
+          'Currency',
+          'Payment Status',
+          'Payment Method',
+          'Order Status',
+          'Delhivery AWB / Waybill',
+          'Courier Partner',
+          'Billed By',
+          'Notes',
+        ];
+
+        const escapeCsv = (str: any) => `"${String(str ?? '').replace(/"/g, '""')}"`;
+        const csvContent = '\uFEFF' + [
+          headers.map(escapeCsv).join(','),
+          ...formattedRows.map((r) => [
+            escapeCsv(r.orderNumber),
+            escapeCsv(r.createdAt),
+            escapeCsv(r.channel),
+            escapeCsv(r.customerName),
+            escapeCsv(r.phone),
+            escapeCsv(r.email),
+            escapeCsv(r.shippingAddress),
+            escapeCsv(r.city),
+            escapeCsv(r.state),
+            escapeCsv(r.pincode),
+            escapeCsv(r.itemsCount),
+            escapeCsv(r.itemsSummary),
+            escapeCsv(r.subtotal),
+            escapeCsv(r.discountTotal),
+            escapeCsv(r.taxTotal),
+            escapeCsv(r.shippingTotal),
+            escapeCsv(r.grandTotal),
+            escapeCsv(r.currency),
+            escapeCsv(r.paymentStatus),
+            escapeCsv(r.paymentMethod),
+            escapeCsv(r.orderStatus),
+            escapeCsv(r.waybillNumber),
+            escapeCsv(r.courierPartner),
+            escapeCsv(r.billedBy),
+            escapeCsv(r.notes),
+          ].join(',')),
+        ].join('\r\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } else {
+        // Excel XML Spreadsheet 2003
+        const escapeXml = (unsafe: any) => {
+          return String(unsafe ?? '')
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&apos;');
+        };
+
+        const excelXml = `<?xml version="1.0" encoding="UTF-8"?>
+<?mso-application progid="Excel.Sheet"?>
+<Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:o="urn:schemas-microsoft-com:office:office"
+ xmlns:x="urn:schemas-microsoft-com:office:excel"
+ xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"
+ xmlns:html="http://www.w3.org/TR/REC-html40">
+ <DocumentProperties xmlns="urn:schemas-microsoft-com:office:office">
+  <Title>Vasanthi's Signature Orders Report</Title>
+  <Author>Vasanthi Signatures</Author>
+  <Created>${new Date().toISOString()}</Created>
+ </DocumentProperties>
+ <Styles>
+  <Style ss:ID="Default" ss:Name="Normal">
+   <Alignment ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Color="#000000"/>
+  </Style>
+  <Style ss:ID="Header">
+   <Alignment ss:Horizontal="Center" ss:Vertical="Center"/>
+   <Borders>
+    <Border ss:Position="Bottom" ss:LineStyle="Continuous" ss:Weight="2" ss:Color="#000000"/>
+   </Borders>
+   <Font ss:FontName="Calibri" ss:Size="11" ss:Bold="1" ss:Color="#FFFFFF"/>
+   <Interior ss:Color="#0F172A" ss:Pattern="Solid"/>
+  </Style>
+  <Style ss:ID="Currency">
+   <Alignment ss:Horizontal="Right" ss:Vertical="Center"/>
+   <NumberFormat ss:Format="#,##0.00"/>
+  </Style>
+  <Style ss:ID="BoldCell">
+   <Alignment ss:Horizontal="Left" ss:Vertical="Center"/>
+   <Font ss:FontName="Calibri" ss:Bold="1" ss:Size="11"/>
+  </Style>
+ </Styles>
+ <Worksheet ss:Name="Orders_Report">
+  <Table ss:DefaultColumnWidth="120" ss:DefaultRowHeight="20">
+   <Column ss:Width="130"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="160"/>
+   <Column ss:Width="110"/>
+   <Column ss:Width="180"/>
+   <Column ss:Width="200"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="70"/>
+   <Column ss:Width="300"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="90"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="60"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="130"/>
+   <Column ss:Width="120"/>
+   <Column ss:Width="140"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="100"/>
+   <Column ss:Width="150"/>
+   <Row ss:Height="24" ss:StyleID="Header">
+    <Cell><Data ss:Type="String">Order Number</Data></Cell>
+    <Cell><Data ss:Type="String">Date (IST)</Data></Cell>
+    <Cell><Data ss:Type="String">Sales Channel</Data></Cell>
+    <Cell><Data ss:Type="String">Customer Name</Data></Cell>
+    <Cell><Data ss:Type="String">Customer Phone</Data></Cell>
+    <Cell><Data ss:Type="String">Customer Email</Data></Cell>
+    <Cell><Data ss:Type="String">Shipping Address</Data></Cell>
+    <Cell><Data ss:Type="String">City</Data></Cell>
+    <Cell><Data ss:Type="String">State</Data></Cell>
+    <Cell><Data ss:Type="String">Pincode</Data></Cell>
+    <Cell><Data ss:Type="Number">Units</Data></Cell>
+    <Cell><Data ss:Type="String">Items Summary</Data></Cell>
+    <Cell><Data ss:Type="String">Subtotal (INR)</Data></Cell>
+    <Cell><Data ss:Type="String">Discount (INR)</Data></Cell>
+    <Cell><Data ss:Type="String">Tax/GST (INR)</Data></Cell>
+    <Cell><Data ss:Type="String">Shipping (INR)</Data></Cell>
+    <Cell><Data ss:Type="String">Grand Total (INR)</Data></Cell>
+    <Cell><Data ss:Type="String">Currency</Data></Cell>
+    <Cell><Data ss:Type="String">Payment Status</Data></Cell>
+    <Cell><Data ss:Type="String">Payment Method</Data></Cell>
+    <Cell><Data ss:Type="String">Order Status</Data></Cell>
+    <Cell><Data ss:Type="String">Delhivery AWB</Data></Cell>
+    <Cell><Data ss:Type="String">Courier</Data></Cell>
+    <Cell><Data ss:Type="String">Billed By</Data></Cell>
+    <Cell><Data ss:Type="String">Order Notes</Data></Cell>
+   </Row>
+   ${formattedRows.map((r) => `
+   <Row ss:Height="20">
+    <Cell ss:StyleID="BoldCell"><Data ss:Type="String">${escapeXml(r.orderNumber)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.createdAt)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.channel)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.customerName)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.phone)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.email)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.shippingAddress)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.city)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.state)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.pincode)}</Data></Cell>
+    <Cell><Data ss:Type="Number">${r.itemsCount}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.itemsSummary)}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${r.subtotal}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${r.discountTotal}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${r.taxTotal}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${r.shippingTotal}</Data></Cell>
+    <Cell ss:StyleID="Currency"><Data ss:Type="Number">${r.grandTotal}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.currency)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.paymentStatus)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.paymentMethod)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.orderStatus)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.waybillNumber)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.courierPartner)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.billedBy)}</Data></Cell>
+    <Cell><Data ss:Type="String">${escapeXml(r.notes)}</Data></Cell>
+   </Row>`).join('')}
+  </Table>
+ </Worksheet>
+</Workbook>`;
+
+        const blob = new Blob([excelXml], { type: 'application/vnd.ms-excel;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', filename);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+
+      setExportSuccessMsg(`Successfully exported ${orders.length} order(s) to ${filename}`);
+      setTimeout(() => {
+        setExportSuccessMsg('');
+        setIsExportModalOpen(false);
+      }, 2000);
+    } catch (err: any) {
+      setExportErrorMsg(err.response?.data?.message || err.message || 'Failed to export orders.');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const updateQuery = (key: string, value: string) => {
     const params = new URLSearchParams(searchParams.toString());
     if (value) { params.set(key, value); } else { params.delete(key); }
@@ -282,12 +652,26 @@ export default function OrdersPage() {
           <p className="text-xs text-neutral-400 mt-1">Review orders, manage fulfillment status transitions, and inspect financial metrics.</p>
         </div>
 
-        <Link
-          href="/admin/payments"
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition shadow-sm"
-        >
-          View Payments & Analytics Hub <ArrowRight className="w-3.5 h-3.5" />
-        </Link>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => {
+              setIsExportModalOpen(true);
+              setModalDatePreset('MONTH');
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold transition shadow-xs cursor-pointer hover:scale-[1.02] active:scale-[0.98]"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-200" />
+            <span>📥 Download Excel / CSV Report</span>
+          </button>
+
+          <Link
+            href="/admin/payments"
+            className="inline-flex items-center gap-1.5 px-3.5 py-2.5 bg-neutral-900 hover:bg-neutral-800 text-white rounded-xl text-xs font-bold transition shadow-xs"
+          >
+            View Payments & Analytics Hub <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
       </div>
 
       {/* Date & Channel Preset Toolbar */}
@@ -329,9 +713,9 @@ export default function OrdersPage() {
               <button
                 type="button"
                 onClick={handleExportManifest}
-                className="w-full sm:w-auto px-3.5 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-xl text-xs font-bold shrink-0 min-h-[38px] flex items-center justify-center gap-1.5 shadow-2xs transition"
+                className="w-full sm:w-auto px-3.5 py-2 bg-neutral-800 hover:bg-neutral-900 text-white rounded-xl text-xs font-bold shrink-0 min-h-[38px] flex items-center justify-center gap-1.5 shadow-2xs transition"
               >
-                <FileText className="w-3.5 h-3.5" /> 📄 Export End-of-Day Manifest
+                <FileText className="w-3.5 h-3.5" /> 📄 Export Manifest
               </button>
               {manifestError && <p className="text-[10px] text-red-600 font-medium">{manifestError}</p>}
             </div>
@@ -401,6 +785,215 @@ export default function OrdersPage() {
         }
         emptyMessage="No orders found matching the filter selection."
       />
+
+      {/* EXCEL & CSV ORDERS EXPORT MODAL */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-neutral-950/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white rounded-3xl shadow-2xl border border-neutral-200 max-w-lg w-full overflow-hidden animate-scale-in">
+            {/* Modal Header */}
+            <div className="bg-gradient-to-r from-emerald-800 via-emerald-700 to-teal-800 text-white p-6 relative">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                className="absolute right-4 top-4 p-1.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                aria-label="Close modal"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-white/15 flex items-center justify-center backdrop-blur-xs">
+                  <FileSpreadsheet className="w-5 h-5 text-emerald-200" />
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-white tracking-tight">Download Orders Spreadsheet</h2>
+                  <p className="text-xs text-emerald-100/90 mt-0.5">Select a date range and filters to generate your Excel / CSV report.</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
+              {/* Quick Date Presets */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-neutral-700 block">Quick Date Ranges</label>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { label: 'Today', preset: 'TODAY' },
+                    { label: 'Yesterday', preset: 'YESTERDAY' },
+                    { label: 'Last 7 Days', preset: 'WEEK' },
+                    { label: 'This Month', preset: 'MONTH' },
+                    { label: 'Last Month', preset: 'LAST_MONTH' },
+                    { label: 'FY 25–26', preset: 'FY' },
+                    { label: 'All Orders', preset: 'ALL' },
+                  ].map((p) => (
+                    <button
+                      key={p.preset}
+                      type="button"
+                      onClick={() => setModalDatePreset(p.preset as any)}
+                      className="px-2.5 py-1 text-xs font-bold rounded-lg border border-neutral-200 bg-neutral-50 hover:bg-emerald-50 hover:border-emerald-300 hover:text-emerald-800 transition-colors"
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Custom Date Inputs */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1.5">
+                    From Date (Start)
+                  </label>
+                  <input
+                    type="date"
+                    value={exportStartDate}
+                    onChange={(e) => setExportStartDate(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1.5">
+                    To Date (End)
+                  </label>
+                  <input
+                    type="date"
+                    value={exportEndDate}
+                    onChange={(e) => setExportEndDate(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                  />
+                </div>
+              </div>
+
+              {/* Channel & Status Filters */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1.5">
+                    Channel Filter
+                  </label>
+                  <select
+                    value={exportChannel}
+                    onChange={(e) => setExportChannel(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                  >
+                    <option value="">All Channels</option>
+                    <option value="ONLINE_STORE">🌐 Online Store</option>
+                    <option value="POS_SHOPORA">📱 In-Store POS (Shopora)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-neutral-700 block mb-1.5">
+                    Order Status
+                  </label>
+                  <select
+                    value={exportStatus}
+                    onChange={(e) => setExportStatus(e.target.value)}
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-medium text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-600 focus:bg-white"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="DELIVERED">DELIVERED</option>
+                    <option value="SHIPPED">SHIPPED</option>
+                    <option value="READY_TO_SHIP">READY TO SHIP</option>
+                    <option value="PROCESSING">PROCESSING</option>
+                    <option value="CONFIRMED">CONFIRMED</option>
+                    <option value="PENDING">PENDING</option>
+                    <option value="CANCELLED">CANCELLED</option>
+                    <option value="RETURN_COMPLETED">RETURN COMPLETED</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Export Format Selection */}
+              <div className="space-y-2">
+                <label className="text-xs font-bold text-neutral-700 block">Spreadsheet Format</label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('xlsx')}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                      exportFormat === 'xlsx'
+                        ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950'
+                        : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileSpreadsheet className={`w-5 h-5 ${exportFormat === 'xlsx' ? 'text-emerald-700' : 'text-neutral-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold">Microsoft Excel</div>
+                        <div className="text-[10px] text-neutral-500">.xlsx / .xls formatted</div>
+                      </div>
+                    </div>
+                    {exportFormat === 'xlsx' && <Check className="w-4 h-4 text-emerald-600" />}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setExportFormat('csv')}
+                    className={`p-3 rounded-2xl border-2 text-left transition-all flex items-center justify-between ${
+                      exportFormat === 'csv'
+                        ? 'border-emerald-600 bg-emerald-50/70 text-emerald-950'
+                        : 'border-neutral-200 hover:border-neutral-300 text-neutral-700'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <FileText className={`w-5 h-5 ${exportFormat === 'csv' ? 'text-emerald-700' : 'text-neutral-400'}`} />
+                      <div>
+                        <div className="text-xs font-bold">CSV Spreadsheet</div>
+                        <div className="text-[10px] text-neutral-500">.csv (UTF-8 with BOM)</div>
+                      </div>
+                    </div>
+                    {exportFormat === 'csv' && <Check className="w-4 h-4 text-emerald-600" />}
+                  </button>
+                </div>
+              </div>
+
+              {/* Columns Included Notice */}
+              <div className="bg-neutral-50 p-3 rounded-xl border border-neutral-200 text-[11px] text-neutral-600 space-y-1">
+                <div className="font-bold text-neutral-800 flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>25 Detailed Columns Included in Export:</span>
+                </div>
+                <p className="text-[10px] text-neutral-500 leading-relaxed">
+                  Order #, Date & Time (IST), Sales Channel, Customer Name, Phone, Email, Delivery Address, City, State, Pincode, Total Units, Items Breakdown with SKUs, Subtotal, Discounts, GST/Tax, Shipping, Grand Total, Payment Status & Method, Order Status, Delhivery AWB, Courier Partner, Billed By, and Notes.
+                </p>
+              </div>
+
+              {/* Feedback messages */}
+              {exportErrorMsg && (
+                <div className="bg-red-50 border border-red-200 text-red-700 px-3.5 py-2.5 rounded-xl text-xs font-semibold flex items-center gap-2">
+                  <span>{exportErrorMsg}</span>
+                </div>
+              )}
+              {exportSuccessMsg && (
+                <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2.5 rounded-xl text-xs font-bold flex items-center gap-2">
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span>{exportSuccessMsg}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="p-4 bg-neutral-50 border-t border-neutral-100 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setIsExportModalOpen(false)}
+                disabled={isExporting}
+                className="px-4 py-2.5 rounded-xl border border-neutral-200 bg-white hover:bg-neutral-100 text-xs font-bold text-neutral-700 transition-colors cursor-pointer"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleExecuteExcelExport}
+                disabled={isExporting}
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-700 hover:bg-emerald-800 disabled:opacity-50 text-white text-xs font-bold transition shadow-md hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+              >
+                {isExporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Download className="w-4 h-4" />}
+                <span>{isExporting ? 'Generating Report...' : `Download ${exportFormat.toUpperCase()} Sheet`}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

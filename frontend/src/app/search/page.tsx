@@ -64,7 +64,7 @@ function SearchPageContent() {
           <input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Search sarees, lehengas, kurtis…"
+            placeholder="Search lehengas, kurtis, gowns…"
             className="flex-1 text-sm outline-none"
           />
         </div>

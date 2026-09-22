@@ -9,7 +9,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 export default function PushNotificationsAdminPage() {
   const { toast } = useToast();
   const [title, setTitle] = useState('Festive Flash Sale');
-  const [body, setBody] = useState('Flat 25% OFF on pure Kanjivaram silk sarees today only!');
+  const [body, setBody] = useState('Flat 25% OFF on pure Kanjivaram silk suits today only!');
   const [targetUserId, setTargetUserId] = useState('');
   const [loading, setLoading] = useState(false);
   const [logs, setLogs] = useState<Array<Record<string, unknown>>>([]);

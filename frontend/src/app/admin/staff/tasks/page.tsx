@@ -455,7 +455,7 @@ export default function StaffTasksPage() {
                   type="text"
                   value={taskTitle}
                   onChange={(e) => setTaskTitle(e.target.value)}
-                  placeholder="e.g. Audit festive silk sarees stock & print labels"
+                  placeholder="e.g. Audit festive silk dresses stock & print labels"
                   required
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-neutral-900"
                 />

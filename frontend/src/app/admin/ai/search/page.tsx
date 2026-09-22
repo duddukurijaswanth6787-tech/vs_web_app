@@ -135,7 +135,7 @@ export default function AdminAiSearchPage() {
             required
             value={testQuery}
             onChange={(e) => setTestQuery(e.target.value)}
-            placeholder="e.g. 'Red saree for evening wedding reception under 5000'"
+            placeholder="e.g. 'Red dress for evening wedding reception under 5000'"
             className="flex-1 border border-neutral-300 rounded-xl px-4 py-2.5 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
 

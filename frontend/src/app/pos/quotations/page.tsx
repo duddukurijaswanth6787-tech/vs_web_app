@@ -208,7 +208,7 @@ function CreateQuotationModal({ onClose, onSuccess }: { onClose: () => void; onS
 
   // Sample items state for quick quotation draft
   const [items, setItems] = useState<Array<{ productName: string; sku: string; quantity: number; unitPrice: number }>>([
-    { productName: 'Custom Designer Saree', sku: 'VSS-SAR-001', quantity: 1, unitPrice: 4500 },
+    { productName: 'Custom Designer Suit', sku: 'VSS-DRS-001', quantity: 1, unitPrice: 4500 },
   ]);
 
   const createMut = useCreateQuotation();

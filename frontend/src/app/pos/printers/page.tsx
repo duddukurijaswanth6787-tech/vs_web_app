@@ -200,7 +200,7 @@ export default function PrintersConfigPage() {
           </thead>
           <tbody>
             <tr>
-              <td>Banarasi Silk Saree</td>
+              <td>Banarasi Silk Suit</td>
               <td style="text-align:center;">1</td>
               <td style="text-align:right;">5,499</td>
               <td style="text-align:right;">5,499.00</td>
@@ -351,7 +351,7 @@ export default function PrintersConfigPage() {
         <div class="tag-box">
           <div>
             <div class="brand">VASANTHI'S SIGNATURE</div>
-            <div class="prod-name">Banarasi Silk Saree</div>
+            <div class="prod-name">Banarasi Silk Suit</div>
             <div class="variant">Royal Pink &amp; Gold | Free Size | HSN: 5208</div>
           </div>
           <div class="barcode-area">
@@ -733,7 +733,7 @@ export default function PrintersConfigPage() {
                 <div className="border-t border-dashed border-neutral-400 my-2"></div>
                 <div className="space-y-1">
                   <div className="flex justify-between">
-                    <span>1x Banarasi Silk Saree</span>
+                    <span>1x Banarasi Silk Suit</span>
                     <span className="font-bold">Rs.5,499.00</span>
                   </div>
                   <div className="flex justify-between">
@@ -820,7 +820,7 @@ export default function PrintersConfigPage() {
               {/* 3x2 Barcode Tag Preview */}
               <div className="max-w-xs mx-auto bg-white p-4 rounded-xl border-2 border-neutral-900 shadow-sm font-sans text-xs text-center space-y-2">
                 <div className="font-black text-xs tracking-wider">VASANTHI'S SIGNATURE</div>
-                <div className="font-bold text-[11px]">Banarasi Silk Saree</div>
+                <div className="font-bold text-[11px]">Banarasi Silk Suit</div>
                 <div className="text-[9.5px] text-neutral-600">Royal Pink &amp; Gold | Free Size</div>
                 <div className="py-1">
                   <div className="font-mono text-xs font-bold tracking-widest">|||| | |||| || |||||</div>

@@ -295,7 +295,7 @@ export default function TestimonialsAdminPage() {
                   rows={3}
                   value={formData.comment}
                   onChange={(e) => setFormData({ ...formData, comment: e.target.value })}
-                  placeholder="e.g. The quality of the silk saree is amazing! Beautiful zari embroidery work."
+                  placeholder="e.g. The quality of the silk outfit is amazing! Beautiful zari embroidery work."
                   className="w-full px-3 py-2 border border-neutral-200 rounded-xl focus:outline-none focus:border-[#0284c7]"
                 />
               </div>

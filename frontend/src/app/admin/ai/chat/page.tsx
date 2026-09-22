@@ -139,7 +139,7 @@ export default function AdminAiChatPage() {
             required
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask AI assistant (e.g. 'Show revenue breakdown for Banarasi sarees this week')..."
+            placeholder="Ask AI assistant (e.g. 'Show revenue breakdown for Banarasi suits this week')..."
             className="flex-1 border border-neutral-300 rounded-2xl px-4 py-3 text-xs text-neutral-900 focus:outline-hidden focus:border-[#0284c7]"
           />
 

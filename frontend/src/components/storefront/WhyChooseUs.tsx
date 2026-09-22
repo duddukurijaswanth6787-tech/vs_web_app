@@ -19,7 +19,7 @@ export function WhyChooseUs() {
     {
       icon: Layers,
       question: 'Wide & Exclusive Collection',
-      answer: 'Something for every celebration. From grand bridal lehengas and festive Anarkalis to daily wear suits, designer sarees, and modern Indo-Western ensembles.',
+      answer: 'Something for every celebration. From grand bridal lehengas and festive Anarkalis to daily wear suits, designer dresses, and modern Indo-Western ensembles.',
     },
     {
       icon: Users,

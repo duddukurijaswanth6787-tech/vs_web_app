@@ -94,36 +94,42 @@ export function ReviewModal({ productId, isOpen, onClose, onSuccess }: ReviewMod
           </div>
         </div>
 
-        <div className="space-y-1.5">
+        <div>
           <label className="text-xs font-bold text-neutral-700 block">Review Headline / Title</label>
           <input
             type="text"
             value={title}
             onChange={(e) => setTitle(e.target.value)}
-            placeholder="e.g. Gorgeous Kanjeevaram Saree & Excellent Fit!"
-            className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[var(--brand-primary)] transition-colors"
+            placeholder="e.g. Gorgeous Kanjeevaram Outfit & Excellent Fit!"
+            className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent outline-none"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-neutral-700 block">Your Review Comments *</label>
+        {/* Review Body */}
+        <div>
+          <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+            Your Review <span className="text-red-500">*</span>
+          </label>
           <textarea
             required
             rows={4}
             value={comment}
             onChange={(e) => setComment(e.target.value)}
-            placeholder="Share your experience with this garment's fabric quality, fit, color vibrancy, and style..."
-            className="w-full text-xs border border-neutral-200 rounded-xl p-3 outline-none focus:border-[var(--brand-primary)] transition-colors resize-none"
+            placeholder="Describe the fabric quality, stitching, fit, and your overall experience..."
+            className="w-full px-3.5 py-2.5 rounded-xl border border-neutral-200 text-xs font-medium focus:ring-2 focus:ring-[var(--brand-primary)] focus:border-transparent outline-none resize-none"
           />
         </div>
 
-        <div className="space-y-1.5">
-          <label className="text-xs font-bold text-neutral-700 block">Review Photo URL (Optional)</label>
+        {/* Optional Image URL */}
+        <div>
+          <label className="block text-xs font-bold text-neutral-700 mb-1.5">
+            Photo URL <span className="text-neutral-400 font-normal">(Optional)</span>
+          </label>
           <input
             type="url"
             value={imageUrl}
             onChange={(e) => setImageUrl(e.target.value)}
-            placeholder="https://example.com/saree-review-photo.jpg"
+            placeholder="https://example.com/review-photo.jpg"
             className="w-full text-xs border border-neutral-200 rounded-xl px-3 py-2 outline-none focus:border-[var(--brand-primary)] transition-colors"
           />
         </div>

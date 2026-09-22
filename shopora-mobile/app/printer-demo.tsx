@@ -138,7 +138,7 @@ function getShippingDemos(): ShippingDemoItem[] {
         sellerName: "Vasanthi's Signature",
         sellerAddress: 'Plot 42, Jubilee Hills Rd No 36, Hyderabad, TS - 500033',
         sellerGst: '36AABCU9603R1ZM',
-        itemsSummary: 'Banarasi Handloom Silk Saree (Red-Gold)',
+        itemsSummary: 'Banarasi Handloom Silk Suit (Red-Gold)',
       },
     },
   ];
@@ -147,9 +147,9 @@ function getShippingDemos(): ShippingDemoItem[] {
 const BARCODE_DEMOS: BarcodeDemoItem[] = [
   {
     id: 'bc-1',
-    productName: 'Banarasi Kanjeevaram Saree',
+    productName: 'Banarasi Silk Suit',
     variant: 'Size: Free | Color: Crimson Red',
-    sku: 'SAREE-BAN-CR',
+    sku: 'SUIT-BAN-CR',
     barcode: '890276721684',
     price: 5499,
     mrp: 7999,
@@ -191,7 +191,7 @@ function getReceiptDemos(): ReceiptDemoItem[] {
         customerName: 'Sravani Varma',
         customerPhone: '9848012345',
         items: [
-          { title: 'Banarasi Silk Saree', quantity: 1, unitPrice: 5499 },
+          { title: 'Banarasi Silk Suit', quantity: 1, unitPrice: 5499 },
           { title: 'Designer Anarkali Set (M)', quantity: 1, unitPrice: 3299 },
           { title: 'Silk Dupatta - Gold', quantity: 1, unitPrice: 999 },
         ],

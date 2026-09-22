@@ -5,8 +5,8 @@ import CollectionsPageClient from './CollectionsPageClient';
 const path = '/collections';
 
 export const metadata: Metadata = {
-  title: 'Collections',
-  description: "Browse curated collections of sarees, lehengas and designer ethnic wear from Vasanthi's Signature.",
+  title: 'Curated Collections',
+  description: "Browse curated collections of lehengas, gowns and designer ethnic wear from Vasanthi's Signature.",
   alternates: { canonical: path },
   openGraph: { ...siteOpenGraph, url: path },
 };

@@ -82,7 +82,7 @@ export default function ShopScreen() {
         <Search size={16} color="#9ca3af" style={{ marginRight: 8 }} />
         <TextInput
           style={styles.searchInput}
-          placeholder="Search sarees, lehengas, kurtis..."
+          placeholder="Search dresses, lehengas, kurtis..."
           placeholderTextColor="#9ca3af"
           value={search}
           onChangeText={setSearch}

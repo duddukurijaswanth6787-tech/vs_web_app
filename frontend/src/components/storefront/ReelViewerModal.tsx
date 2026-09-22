@@ -555,7 +555,7 @@ export function ReelViewerModal({
           {/* Bottom Desktop Actions */}
           <div className="pt-4 border-t border-neutral-100 flex items-center gap-3">
             <Link
-              href="/categories/sarees"
+              href="/categories/ethnic-wear"
               className="w-full border-2 border-[var(--brand-primary)] hover:bg-[#F3F8FF] text-[var(--brand-primary)] font-extrabold text-xs py-3 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-2xs"
             >
               <span>EXPLORE ALL REEL PRODUCTS</span>

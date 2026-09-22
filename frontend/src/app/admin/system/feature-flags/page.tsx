@@ -24,7 +24,7 @@ const DEFAULT_TOGGLES: FeatureToggle[] = [
   { id: '7', key: 'gift_wrapping', name: 'Luxury Gift Packaging', description: 'Allows customers to request gift wrapping and custom card messages during checkout.', enabled: true, category: 'CHECKOUT' },
   { id: '8', key: 'b2b_invoicing', name: 'B2B Wholesale GSTIN Invoicing', description: 'Enables entering company tax details (GSTIN) and wholesale B2B pricing.', enabled: true, category: 'CHECKOUT' },
   { id: '9', key: 'instagram_reels', name: 'Instagram Reels & Video Feed', description: 'Renders the live Instagram Reels carousel on the homepage and video feed.', enabled: true, category: 'STOREFRONT' },
-  { id: '10', key: 'ai_chatbot', name: 'AI Stylist Chat Assistant', description: 'Renders the AI assistant for saree styling and size recommendations.', enabled: true, category: 'AI' },
+  { id: '10', key: 'ai_chatbot', name: 'AI Stylist Chat Assistant', description: 'Renders the AI assistant for outfit styling and size recommendations.', enabled: true, category: 'AI' },
   { id: '11', key: 'cod', name: 'Cash on Delivery (COD)', description: 'Controls whether Cash on Delivery (COD) payment option is available to customers at checkout. When switched OFF, COD is completely hidden from checkout.', enabled: false, category: 'PAYMENTS' },
 ];
 

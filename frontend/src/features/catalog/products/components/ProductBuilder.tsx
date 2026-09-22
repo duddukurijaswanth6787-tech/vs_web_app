@@ -2869,14 +2869,14 @@ export default function ProductBuilder({
                     <input
                       type="text"
                       {...methods.register('hsnCode')}
-                      placeholder="e.g. 6204 (Suits/Dresses), 5007 (Sarees)"
+                      placeholder="e.g. 6204 (Suits/Dresses), 5007 (Silk Garments)"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                     />
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
                       <span className="text-[10px] text-neutral-500 font-medium">Quick Select:</span>
                       {[
                         { code: '6204', label: '6204 (Dresses/Suits/Lehengas)' },
-                        { code: '5007', label: '5007 (Silk Sarees)' },
+                        { code: '5007', label: '5007 (Silk Outfits)' },
                         { code: '6211', label: '6211 (Ethnic Wear)' },
                         { code: '6214', label: '6214 (Dupattas/Shawls)' },
                         { code: '6109', label: '6109 (Tops/Kurtis)' },

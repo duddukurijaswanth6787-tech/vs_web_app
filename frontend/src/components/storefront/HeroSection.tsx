@@ -35,9 +35,9 @@ const DEFAULT_SLIDES = [
     id: 's2',
     badge: 'FESTIVE SPECIAL 2026',
     title: 'LUXURY ETHNIC ELEGANCE',
-    subtitle: 'Celebrate every moment in haute couture sarees & designer Anarkali suits.',
+    subtitle: 'Celebrate every moment in haute couture dresses & designer Anarkali suits.',
     imageUrl: PLACEHOLDER_IMAGE,
-    linkUrl: '/categories/sarees',
+    linkUrl: '/categories/ethnic-wear',
     buttonText: 'EXPLORE COLLECTION',
   },
 ];
@@ -153,7 +153,7 @@ export function HeroSection() {
             </h1>
 
             <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-snug line-clamp-2 max-w-[90%] sm:max-w-md">
-              {main.subtitle || 'Discover handloomed sarees, designer lehengas, and Anarkali suits crafted for timeless sophistication.'}
+              {main.subtitle || 'Discover designer lehengas, kurtis, and Anarkali suits crafted for timeless sophistication.'}
             </p>
 
             {/* Primary CTA Button (Small sleek on mobile, bottom left) */}
@@ -239,7 +239,7 @@ export function HeroSection() {
                 Wedding Collection
               </h3>
               <p className="text-[11px] text-neutral-600 font-medium line-clamp-2 leading-relaxed">
-                Elegant sarees, lehengas & designer outfits for unforgettable moments.
+                Elegant lehengas, gowns & designer outfits for unforgettable moments.
               </p>
               <Link
                 href="/categories/wedding"

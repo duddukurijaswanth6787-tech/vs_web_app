@@ -29,7 +29,7 @@ import { CachedScanResult, ScanBarcodeResult } from '../services/offline/offline
 
 const SAMPLE_BARCODES = [
   { label: '⚡ Test ₹2 (890000000002)', code: '890000000002' },
-  { label: 'Saree (890100000005)', code: '890100000005' },
+  { label: 'Anarkali (890100000005)', code: '890100000005' },
   { label: 'Kurti (890100000001)', code: '890100000001' },
   { label: 'SKU KUR-BLU-L-005', code: 'KUR-BLU-L-005' },
   { label: 'Lehenga (890100000002)', code: '890100000002' },
