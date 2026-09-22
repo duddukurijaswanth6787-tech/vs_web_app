@@ -222,10 +222,9 @@ function CheckoutPageContent() {
   const [orderError, setOrderError] = useState('');
   const [isVerifyingPayment, setIsVerifyingPayment] = useState(false);
 
-  const addresses = useMemo(() => {
-    if (!addressesData) return [];
-    return Array.isArray(addressesData) ? addressesData : (addressesData as any).data || [];
-  }, [addressesData]);
+  const addresses = addressesData
+    ? (Array.isArray(addressesData) ? addressesData : (addressesData as any).data || [])
+    : [];
 
   // Pre-fill user details into address form (avoid generic 'customer' or 'user')
   useEffect(() => {
