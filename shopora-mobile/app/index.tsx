@@ -22,6 +22,7 @@ import {
   LockKeyhole,
   Printer,
   Sparkles,
+  Sliders,
 } from 'lucide-react-native';
 import {
   dashboardService,
@@ -82,7 +83,7 @@ export default function ShoporaHomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={handleRefresh} tintColor="#0284c7" />
       }
     >
-      {/* Top Banner / Store Header Card */}
+      {/* 1. TOP STORE HEADER & DAILY STATS CARD */}
       <View style={styles.headerCard}>
         <View style={styles.headerRow}>
           <View style={styles.logoBadge}>
@@ -113,6 +114,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.signInHint}>Sign in to see today's sales & stock stats.</Text>
         )}
 
+        {/* Live Daily Stats Row */}
         <View style={styles.statsRow}>
           <View style={styles.statBox}>
             <Text style={styles.statLabel}>Today's Sales</Text>
@@ -126,34 +128,11 @@ export default function ShoporaHomeScreen() {
         </View>
       </View>
 
-      {/* PROMINENT TOP 3-INCH PRINTER TEST LAB BANNER */}
-      <TouchableOpacity
-        style={styles.topPrinterBanner}
-        onPress={() => router.push('/printer-demo')}
-        activeOpacity={0.85}
-      >
-        <View style={styles.topPrinterIconBox}>
-          <Printer size={26} color="#ffffff" />
-        </View>
-        <View style={{ flex: 1, marginLeft: 12 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Text style={styles.topPrinterTitle}>🖨️ 3-INCH PRINTER DEMO</Text>
-            <View style={styles.readyBadge}>
-              <Text style={styles.readyBadgeText}>80MM OK</Text>
-            </View>
-          </View>
-          <Text style={styles.topPrinterSub}>
-            Test POS Receipts & Auto Paper-Cutter
-          </Text>
-        </View>
-        <ChevronRight size={20} color="#ffffff" />
-      </TouchableOpacity>
-
-      {/* Main Action Cards Grid */}
+      {/* 2. PRIMARY QUICK ACTIONS (Directly Under Stats) */}
       <Text style={styles.sectionTitle}>Quick Actions</Text>
 
       <View style={styles.grid}>
-        {/* 1. SALE PRODUCT (Mobile POS) */}
+        {/* 1. SALE PRODUCT (Primary Billing Action) */}
         <TouchableOpacity
           style={[styles.actionCard, { backgroundColor: '#0284c7', borderColor: '#0284c7' }]}
           onPress={() => router.push('/sale')}
@@ -166,20 +145,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubLight}>Scan barcode & checkout</Text>
         </TouchableOpacity>
 
-        {/* 2. PRINTER DEMO & TEST LAB (Prominent Top Row) */}
-        <TouchableOpacity
-          style={[styles.actionCard, { backgroundColor: '#0f172a', borderColor: '#0f172a' }]}
-          onPress={() => router.push('/printer-demo')}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconCircleLight, { backgroundColor: '#334155' }]}>
-            <Printer size={24} color="#38bdf8" />
-          </View>
-          <Text style={styles.actionCardTitleLight}>🖨️ Printer Demo</Text>
-          <Text style={styles.actionCardSubLight}>Test 3-inch slips & labels</Text>
-        </TouchableOpacity>
-
-        {/* 3. + ADD PRODUCT (Wizard) */}
+        {/* 2. + ADD PRODUCT (Catalog Wizard) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-product')}
@@ -192,7 +158,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Single or multi-variant</Text>
         </TouchableOpacity>
 
-        {/* 4. + ADD STOCK (Replenishment & Labels) */}
+        {/* 3. + ADD STOCK (Replenishment & Inbound Labels) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-stock')}
@@ -205,7 +171,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Receive & print labels</Text>
         </TouchableOpacity>
 
-        {/* 5. RETURNS */}
+        {/* 4. RETURNS & REFUNDS */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/returns')}
@@ -218,7 +184,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Refund & restock</Text>
         </TouchableOpacity>
 
-        {/* 6. SCAN / INSPECT PRODUCT */}
+        {/* 5. SCAN / INSPECT PRODUCT */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/view-product')}
@@ -231,7 +197,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
         </TouchableOpacity>
 
-        {/* 7. CLOSE SHIFT */}
+        {/* 6. CLOSE SHIFT / DRAWER RECONCILIATION */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/close-shift')}
@@ -243,22 +209,9 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardTitleDark}>Close Shift</Text>
           <Text style={styles.actionCardSubDark}>Count drawer & reconcile</Text>
         </TouchableOpacity>
-
-        {/* 8. PRINTER SETTINGS / PAIRING */}
-        <TouchableOpacity
-          style={styles.actionCardWhite}
-          onPress={() => router.push('/printer-settings')}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconCircleDark, { backgroundColor: '#f0fdf4' }]}>
-            <Sparkles size={24} color="#16a34a" />
-          </View>
-          <Text style={styles.actionCardTitleDark}>Printer Pairing</Text>
-          <Text style={styles.actionCardSubDark}>Bluetooth & hardware</Text>
-        </TouchableOpacity>
       </View>
 
-      {/* Stock Alerts Widget */}
+      {/* 3. STOCK ALERTS WIDGET */}
       <Text style={styles.sectionTitle}>Stock Alerts</Text>
 
       <TouchableOpacity
@@ -277,6 +230,48 @@ export default function ShoporaHomeScreen() {
         </View>
         <ChevronRight size={18} color="#94a3b8" />
       </TouchableOpacity>
+
+      {/* 4. HARDWARE & UTILITIES (Moved to Bottom as Requested) */}
+      <Text style={styles.sectionTitle}>Hardware &amp; Utilities</Text>
+
+      {/* 3-INCH PRINTER DEMO BANNER */}
+      <TouchableOpacity
+        style={styles.bottomPrinterBanner}
+        onPress={() => router.push('/printer-demo')}
+        activeOpacity={0.85}
+      >
+        <View style={styles.printerIconBox}>
+          <Printer size={24} color="#ffffff" />
+        </View>
+        <View style={{ flex: 1, marginLeft: 12 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={styles.bottomPrinterTitle}>🖨️ 3-INCH PRINTER DEMO</Text>
+            <View style={styles.readyBadge}>
+              <Text style={styles.readyBadgeText}>80MM OK</Text>
+            </View>
+          </View>
+          <Text style={styles.bottomPrinterSub}>
+            Test POS Receipts & Auto Paper-Cutter
+          </Text>
+        </View>
+        <ChevronRight size={18} color="#94a3b8" />
+      </TouchableOpacity>
+
+      {/* PRINTER SETTINGS / PAIRING CARD */}
+      <TouchableOpacity
+        style={styles.utilityCard}
+        onPress={() => router.push('/printer-settings')}
+        activeOpacity={0.85}
+      >
+        <View style={[styles.alertIconCircle, { backgroundColor: '#f0fdf4' }]}>
+          <Sliders size={20} color="#16a34a" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.utilityTitle}>Thermal Printer Pairing</Text>
+          <Text style={styles.utilitySub}>Configure Bluetooth & 2"/3" hardware settings</Text>
+        </View>
+        <ChevronRight size={18} color="#94a3b8" />
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -288,7 +283,7 @@ const styles = StyleSheet.create({
   },
   content: {
     padding: 16,
-    paddingBottom: 32,
+    paddingBottom: 40,
   },
   headerCard: {
     backgroundColor: '#ffffff',
@@ -296,7 +291,7 @@ const styles = StyleSheet.create({
     padding: 18,
     borderWidth: 1,
     borderColor: '#e0f2fe',
-    marginBottom: 20,
+    marginBottom: 16,
     shadowColor: '#0284c7',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.06,
@@ -393,36 +388,141 @@ const styles = StyleSheet.create({
     color: '#0284c7',
     marginTop: 2,
   },
-  topPrinterBanner: {
-    backgroundColor: '#0f172a',
+  sectionTitle: {
+    fontSize: 12,
+    fontWeight: 'bold',
+    color: '#0369a1',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 10,
+    marginTop: 6,
+  },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+    marginBottom: 16,
+  },
+  actionCard: {
+    width: '48%',
     borderRadius: 18,
     padding: 16,
+    borderWidth: 1,
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  actionCardWhite: {
+    width: '48%',
+    backgroundColor: '#ffffff',
+    borderRadius: 18,
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.05,
+    shadowRadius: 5,
+    elevation: 2,
+  },
+  iconCircleLight: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    backgroundColor: '#ffffff',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  iconCircleDark: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginBottom: 12,
+  },
+  actionCardTitleLight: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#ffffff',
+    marginBottom: 2,
+  },
+  actionCardSubLight: {
+    fontSize: 11,
+    color: '#bae6fd',
+  },
+  actionCardTitleDark: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    color: '#0f172a',
+    marginBottom: 2,
+  },
+  actionCardSubDark: {
+    fontSize: 11,
+    color: '#64748b',
+  },
+  alertCard: {
+    backgroundColor: '#ffffff',
+    borderRadius: 16,
+    padding: 14,
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: '#38bdf8',
-    shadowColor: '#0284c7',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.15,
-    shadowRadius: 8,
-    elevation: 4,
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
+    marginBottom: 16,
   },
-  topPrinterIconBox: {
-    width: 46,
-    height: 46,
-    borderRadius: 14,
+  alertIconCircle: {
+    width: 38,
+    height: 38,
+    borderRadius: 10,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginRight: 12,
+  },
+  alertTitle: {
+    fontSize: 13,
+    fontWeight: 'bold',
+    color: '#0f172a',
+  },
+  alertSub: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+  },
+  bottomPrinterBanner: {
+    backgroundColor: '#0f172a',
+    borderRadius: 18,
+    padding: 14,
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#1e293b',
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  printerIconBox: {
+    width: 42,
+    height: 42,
+    borderRadius: 12,
     backgroundColor: '#0284c7',
     alignItems: 'center',
     justifyContent: 'center',
   },
-  topPrinterTitle: {
+  bottomPrinterTitle: {
     color: '#ffffff',
-    fontSize: 14,
+    fontSize: 13,
     fontWeight: 'bold',
     letterSpacing: 0.3,
   },
-  topPrinterSub: {
+  bottomPrinterSub: {
     color: '#94a3b8',
     fontSize: 11,
     marginTop: 2,
@@ -439,109 +539,23 @@ const styles = StyleSheet.create({
     fontSize: 9,
     fontWeight: 'bold',
   },
-  sectionTitle: {
-    fontSize: 12,
-    fontWeight: 'bold',
-    color: '#0369a1',
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    marginBottom: 10,
-    marginTop: 4,
-  },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-  },
-  actionCard: {
-    width: '48%',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    justifyContent: 'space-between',
-    minHeight: 124,
-    elevation: 2,
-  },
-  actionCardWhite: {
-    width: '48%',
-    backgroundColor: '#ffffff',
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    justifyContent: 'space-between',
-    minHeight: 124,
-    borderWidth: 1,
-    borderColor: '#e0f2fe',
-    shadowColor: '#0284c7',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  iconCircleLight: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    backgroundColor: '#ffffff',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  iconCircleDark: {
-    width: 42,
-    height: 42,
-    borderRadius: 12,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 10,
-  },
-  actionCardTitleLight: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#ffffff',
-  },
-  actionCardSubLight: {
-    fontSize: 10,
-    color: '#e0f2fe',
-    marginTop: 2,
-  },
-  actionCardTitleDark: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#0f172a',
-  },
-  actionCardSubDark: {
-    fontSize: 10,
-    color: '#64748b',
-    marginTop: 2,
-  },
-  alertCard: {
+  utilityCard: {
     backgroundColor: '#ffffff',
     borderRadius: 16,
     padding: 14,
-    borderWidth: 1,
-    borderColor: '#bae6fd',
     flexDirection: 'row',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#e0f2fe',
   },
-  alertIconCircle: {
-    width: 38,
-    height: 38,
-    borderRadius: 12,
-    backgroundColor: '#e0f2fe',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginRight: 12,
-  },
-  alertTitle: {
+  utilityTitle: {
     fontSize: 13,
     fontWeight: 'bold',
-    color: '#0369a1',
+    color: '#0f172a',
   },
-  alertSub: {
+  utilitySub: {
     fontSize: 11,
     color: '#64748b',
-    marginTop: 1,
+    marginTop: 2,
   },
 });
