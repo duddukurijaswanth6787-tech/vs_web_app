@@ -157,8 +157,19 @@ function CheckoutPaymentPageContent() {
               </div>
             )}
             <div className="flex justify-between text-neutral-600">
-              <span>Tax</span>
-              <span>{formatInr(Number(preview.taxTotal))}</span>
+              <span>GST & Taxes</span>
+              <span>
+                {Number(preview.taxTotal || 0) > 0 ? (
+                  <>
+                    {formatInr(Number(preview.taxTotal))}{' '}
+                    <span className="text-[10px] text-neutral-400 font-normal">(Included in MRP)</span>
+                  </>
+                ) : (
+                  <span className="text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded-md text-[11px]">
+                    ₹0 (Included)
+                  </span>
+                )}
+              </span>
             </div>
             <div className="flex justify-between text-neutral-600">
               <span>Shipping</span>

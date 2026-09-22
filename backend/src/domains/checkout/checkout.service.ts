@@ -236,12 +236,10 @@ export class CheckoutService {
         product.taxPercentage !== null && product.taxPercentage !== undefined
           ? Number(product.taxPercentage)
           : 0;
-      const isTaxInclusive = product.taxInclusive !== false;
+      const isTaxInclusive = product.taxInclusive === true;
       const taxAmount =
-        taxPercentage > 0
-          ? isTaxInclusive
-            ? (totalPrice * taxPercentage) / (100 + taxPercentage)
-            : (totalPrice * taxPercentage) / 100
+        isTaxInclusive && taxPercentage > 0
+          ? (totalPrice * taxPercentage) / (100 + taxPercentage)
           : 0;
 
       const primaryImage =
@@ -301,10 +299,8 @@ export class CheckoutService {
     const effectiveDiscount = Math.min(discountTotal, subtotal);
     const payableItemsTotal = Math.max(0, subtotal - effectiveDiscount);
 
-    // Compute line-level tax amounts on the discounted payable line items
+    // Compute line-level tax amounts only if product has Price includes GST enabled
     let taxTotal = 0;
-    let exclusiveTaxTotal = 0;
-    let hasExclusiveTax = false;
     for (const item of items) {
       const lineFraction = subtotal > 0 ? item.totalPrice / subtotal : 0;
       const lineDiscount = effectiveDiscount * lineFraction;
@@ -314,24 +310,15 @@ export class CheckoutService {
         product?.taxPercentage !== null && product?.taxPercentage !== undefined
           ? Number(product.taxPercentage)
           : 0;
-      const isTaxInclusive = product?.taxInclusive !== false;
-      if (!isTaxInclusive && taxPercentage > 0) {
-        hasExclusiveTax = true;
-      }
+      const isTaxInclusive = product?.taxInclusive === true;
       const lineTax =
-        taxPercentage > 0
-          ? isTaxInclusive
-            ? (linePayable * taxPercentage) / (100 + taxPercentage)
-            : (linePayable * taxPercentage) / 100
+        isTaxInclusive && taxPercentage > 0
+          ? (linePayable * taxPercentage) / (100 + taxPercentage)
           : 0;
       item.taxAmount = Math.round(lineTax * 100) / 100;
       taxTotal += item.taxAmount;
-      if (!isTaxInclusive) {
-        exclusiveTaxTotal += item.taxAmount;
-      }
     }
     taxTotal = Math.round(taxTotal * 100) / 100;
-    exclusiveTaxTotal = Math.round(exclusiveTaxTotal * 100) / 100;
 
     const shippingCharge = await this.calculateShipping(
       method,
@@ -339,7 +326,7 @@ export class CheckoutService {
       freeShipping,
     );
     const grandTotal =
-      Math.round((payableItemsTotal + exclusiveTaxTotal + shippingCharge) * 100) / 100;
+      Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     return {
       items,
@@ -347,8 +334,6 @@ export class CheckoutService {
       subtotal: Math.round(subtotal * 100) / 100,
       discountTotal: Math.round(effectiveDiscount * 100) / 100,
       taxTotal,
-      exclusiveTaxTotal,
-      isTaxInclusive: !hasExclusiveTax,
       shippingCharge,
       grandTotal,
       estimatedDelivery:
@@ -388,9 +373,8 @@ export class CheckoutService {
     const effectiveDiscount = Math.min(discountTotal, subtotal);
     const payableItemsTotal = Math.max(0, subtotal - effectiveDiscount);
 
-    // Compute line-level tax amounts on the discounted payable line items
+    // Compute line-level tax amounts only if product has Price includes GST enabled
     let taxTotal = 0;
-    let exclusiveTaxTotal = 0;
     for (const item of items) {
       const lineFraction = subtotal > 0 ? item.totalPrice / subtotal : 0;
       const lineDiscount = effectiveDiscount * lineFraction;
@@ -400,21 +384,15 @@ export class CheckoutService {
         product?.taxPercentage !== null && product?.taxPercentage !== undefined
           ? Number(product.taxPercentage)
           : 0;
-      const isTaxInclusive = product?.taxInclusive !== false;
+      const isTaxInclusive = product?.taxInclusive === true;
       const lineTax =
-        taxPercentage > 0
-          ? isTaxInclusive
-            ? (linePayable * taxPercentage) / (100 + taxPercentage)
-            : (linePayable * taxPercentage) / 100
+        isTaxInclusive && taxPercentage > 0
+          ? (linePayable * taxPercentage) / (100 + taxPercentage)
           : 0;
       item.taxAmount = Math.round(lineTax * 100) / 100;
       taxTotal += item.taxAmount;
-      if (!isTaxInclusive) {
-        exclusiveTaxTotal += item.taxAmount;
-      }
     }
     taxTotal = Math.round(taxTotal * 100) / 100;
-    exclusiveTaxTotal = Math.round(exclusiveTaxTotal * 100) / 100;
 
     const shippingCharge = await this.calculateShipping(
       method,
@@ -422,7 +400,7 @@ export class CheckoutService {
       freeShipping,
     );
     const grandTotal =
-      Math.round((payableItemsTotal + exclusiveTaxTotal + shippingCharge) * 100) / 100;
+      Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
     const orderNumber = await this.workflow.generateOrderNumber();
 
