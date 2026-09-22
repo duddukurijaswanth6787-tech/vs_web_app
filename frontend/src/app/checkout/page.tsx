@@ -24,6 +24,10 @@ import {
   Phone,
   Sparkles,
   Pencil,
+  Smartphone,
+  Building2,
+  Wallet,
+  QrCode,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -87,13 +91,16 @@ function CheckoutPageContent() {
 
   // Selected payment method: 'RAZORPAY' | 'COD'
   const [paymentMethod, setPaymentMethod] = useState<'RAZORPAY' | 'COD'>('RAZORPAY');
+  // Specific online instrument selection: 'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD'
+  const [selectedPaymentInstrument, setSelectedPaymentInstrument] = useState<'UPI' | 'CARD' | 'NETBANKING' | 'WALLET' | 'COD'>('UPI');
 
   // Auto-reset payment method to RAZORPAY if COD is disabled by admin
   useEffect(() => {
-    if (!codEnabled && paymentMethod === 'COD') {
+    if (!codEnabled && (paymentMethod === 'COD' || selectedPaymentInstrument === 'COD')) {
       setPaymentMethod('RAZORPAY');
+      setSelectedPaymentInstrument('UPI');
     }
-  }, [codEnabled, paymentMethod]);
+  }, [codEnabled, paymentMethod, selectedPaymentInstrument]);
 
   // Selected address state
   const [selectedAddressId, setSelectedAddressId] = useState<string>(addressIdParam);
@@ -400,6 +407,10 @@ function CheckoutPageContent() {
       order_id: payment.providerOrderId,
       name: "Vasanthi's Signature",
       description: `Order #${orderNumber}`,
+      prefill: {
+        name: selectedAddress?.fullName || user?.email || '',
+        contact: selectedAddress?.phone || (user as any)?.phone || '',
+      },
       handler: async (response: any) => {
         setIsVerifyingPayment(true);
         setOrderError('');
@@ -900,44 +911,228 @@ function CheckoutPageContent() {
               </div>
             </section>
 
-            {/* STEP 3: PAYMENT METHOD SELECTION */}
+            {/* STEP 3: PAYMENT METHOD SELECTION (AMAZON / ZEPTO STYLE) */}
             <section className="bg-white rounded-3xl p-4 sm:p-6 border border-neutral-200/90 shadow-2xs space-y-4">
-              <div className="flex items-center gap-2.5 border-b border-neutral-100 pb-3">
-                <div className="w-7 h-7 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs shrink-0">
-                  3
+              <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-7 h-7 rounded-xl bg-sky-50 text-[var(--brand-primary)] flex items-center justify-center font-bold text-xs shrink-0">
+                    3
+                  </div>
+                  <div className="min-w-0">
+                    <h2 className="font-bold text-neutral-900 text-sm font-serif flex items-center gap-1.5">
+                      <CreditCard className="w-4 h-4 text-[var(--brand-primary)] shrink-0" />
+                      Payment Options
+                    </h2>
+                    <p className="text-[11px] text-neutral-500 truncate">Choose your preferred payment method • 100% Secure</p>
+                  </div>
                 </div>
-                <div className="min-w-0">
-                  <h2 className="font-bold text-neutral-900 text-sm font-serif flex items-center gap-1.5">
-                    <CreditCard className="w-4 h-4 text-[var(--brand-primary)] shrink-0" />
-                    Payment Options
-                  </h2>
-                  <p className="text-[11px] text-neutral-500 truncate">All transactions are encrypted with 256-bit security</p>
-                </div>
+                <span className="hidden sm:flex items-center gap-1 text-[11px] font-semibold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">
+                  <Lock className="w-3 h-3 text-emerald-600" /> 256-bit SSL Encrypted
+                </span>
               </div>
 
-              <div className="space-y-3">
-                {/* Razorpay Online Payment */}
-                <div className="flex items-start gap-3 sm:gap-3.5 p-4 rounded-2xl border-2 border-[var(--brand-primary)] bg-sky-50/40 shadow-xs">
-                  <div className="w-5 h-5 rounded-full bg-[var(--brand-primary)] flex items-center justify-center shrink-0 mt-0.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-white" />
-                  </div>
+              <div className="space-y-2.5">
+                {/* OPTION 1: UPI / QR Code (Recommended) */}
+                <label
+                  onClick={() => {
+                    setSelectedPaymentInstrument('UPI');
+                    setPaymentMethod('RAZORPAY');
+                  }}
+                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    selectedPaymentInstrument === 'UPI'
+                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
+                      : 'border-neutral-200 hover:bg-neutral-50/80'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentInstrument"
+                    checked={selectedPaymentInstrument === 'UPI'}
+                    onChange={() => {
+                      setSelectedPaymentInstrument('UPI');
+                      setPaymentMethod('RAZORPAY');
+                    }}
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
+                  />
                   <div className="flex-1 min-w-0 space-y-1">
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-2">
-                        100% Secure Online Payment
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <Smartphone className="w-4 h-4 text-[var(--brand-primary)]" />
+                        UPI / QR (Google Pay, PhonePe, Paytm, BHIM)
                       </span>
                       <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md shrink-0">
-                        Instant Verification
+                        ⚡ Fastest &amp; Recommended
                       </span>
                     </div>
                     <p className="text-neutral-600 text-[11px] leading-relaxed">
-                      Instant pay via PhonePe, Google Pay, Paytm, UPI, Visa, Mastercard, RuPay Cards or NetBanking.
+                      Pay instantly via Google Pay, PhonePe, Paytm, BHIM or scan QR code using any UPI app.
                     </p>
-                    <div className="flex items-center gap-2 pt-1">
-                      <span className="text-[10px] font-semibold text-neutral-500 flex items-center gap-1">
-                        <Lock className="w-3 h-3 text-emerald-600" /> 256-bit SSL Encrypted & Razorpay Secured
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-medium text-neutral-500">
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Google Pay</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">PhonePe</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Paytm</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">BHIM / Any UPI</span>
+                    </div>
+                  </div>
+                </label>
+
+                {/* OPTION 2: Credit / Debit Cards */}
+                <label
+                  onClick={() => {
+                    setSelectedPaymentInstrument('CARD');
+                    setPaymentMethod('RAZORPAY');
+                  }}
+                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    selectedPaymentInstrument === 'CARD'
+                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
+                      : 'border-neutral-200 hover:bg-neutral-50/80'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentInstrument"
+                    checked={selectedPaymentInstrument === 'CARD'}
+                    onChange={() => {
+                      setSelectedPaymentInstrument('CARD');
+                      setPaymentMethod('RAZORPAY');
+                    }}
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <CreditCard className="w-4 h-4 text-[var(--brand-primary)]" />
+                        Credit / Debit Cards
+                      </span>
+                      <span className="text-[10px] font-semibold text-neutral-500">All Banks Supported</span>
+                    </div>
+                    <p className="text-neutral-600 text-[11px] leading-relaxed">
+                      Visa, MasterCard, RuPay, Maestro, Diners Club, American Express with 3D Secure OTP.
+                    </p>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-medium text-neutral-500">
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-sky-700">VISA</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-red-600">Mastercard</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-emerald-700">RuPay</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Maestro</span>
+                    </div>
+                  </div>
+                </label>
+
+                {/* OPTION 3: Net Banking */}
+                <label
+                  onClick={() => {
+                    setSelectedPaymentInstrument('NETBANKING');
+                    setPaymentMethod('RAZORPAY');
+                  }}
+                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    selectedPaymentInstrument === 'NETBANKING'
+                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
+                      : 'border-neutral-200 hover:bg-neutral-50/80'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentInstrument"
+                    checked={selectedPaymentInstrument === 'NETBANKING'}
+                    onChange={() => {
+                      setSelectedPaymentInstrument('NETBANKING');
+                      setPaymentMethod('RAZORPAY');
+                    }}
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <Building2 className="w-4 h-4 text-[var(--brand-primary)]" />
+                        Net Banking
+                      </span>
+                      <span className="text-[10px] font-semibold text-neutral-500">50+ Indian Banks</span>
+                    </div>
+                    <p className="text-neutral-600 text-[11px] leading-relaxed">
+                      SBI, HDFC Bank, ICICI Bank, Axis Bank, Kotak, Punjab National Bank and all other major banks.
+                    </p>
+                  </div>
+                </label>
+
+                {/* OPTION 4: Wallets */}
+                <label
+                  onClick={() => {
+                    setSelectedPaymentInstrument('WALLET');
+                    setPaymentMethod('RAZORPAY');
+                  }}
+                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
+                    selectedPaymentInstrument === 'WALLET'
+                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
+                      : 'border-neutral-200 hover:bg-neutral-50/80'
+                  }`}
+                >
+                  <input
+                    type="radio"
+                    name="paymentInstrument"
+                    checked={selectedPaymentInstrument === 'WALLET'}
+                    onChange={() => {
+                      setSelectedPaymentInstrument('WALLET');
+                      setPaymentMethod('RAZORPAY');
+                    }}
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <Wallet className="w-4 h-4 text-[var(--brand-primary)]" />
+                        Wallets &amp; Others
                       </span>
                     </div>
+                    <p className="text-neutral-600 text-[11px] leading-relaxed">
+                      Amazon Pay, Mobikwik, Airtel Money, Freecharge &amp; more.
+                    </p>
+                  </div>
+                </label>
+
+                {/* OPTION 5: Cash on Delivery (COD) - Disabled / Unavailable like Amazon */}
+                <div
+                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border transition-all ${
+                    codEnabled
+                      ? selectedPaymentInstrument === 'COD'
+                        ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs cursor-pointer'
+                        : 'border-neutral-200 hover:bg-neutral-50/80 cursor-pointer'
+                      : 'border-neutral-200/60 bg-neutral-50/60 opacity-70 cursor-not-allowed'
+                  }`}
+                  onClick={() => {
+                    if (codEnabled) {
+                      setSelectedPaymentInstrument('COD');
+                      setPaymentMethod('COD');
+                    }
+                  }}
+                >
+                  <input
+                    type="radio"
+                    name="paymentInstrument"
+                    disabled={!codEnabled}
+                    checked={selectedPaymentInstrument === 'COD'}
+                    onChange={() => {
+                      if (codEnabled) {
+                        setSelectedPaymentInstrument('COD');
+                        setPaymentMethod('COD');
+                      }
+                    }}
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4 disabled:cursor-not-allowed"
+                  />
+                  <div className="flex-1 min-w-0 space-y-1">
+                    <div className="flex flex-wrap items-center justify-between gap-1.5">
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                        <Banknote className="w-4 h-4 text-neutral-500" />
+                        Cash on Delivery (COD)
+                      </span>
+                      <span className="text-[10px] font-bold bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md">
+                        {codEnabled ? 'Available' : 'Unavailable (Prepaid Only)'}
+                      </span>
+                    </div>
+                    <p className="text-neutral-500 text-[11px] leading-relaxed">
+                      {codEnabled
+                        ? 'Pay in cash upon physical delivery at your doorstep.'
+                        : 'Cash on Delivery is not available for designer ethnic wear. Please choose any secure online payment option above.'}
+                    </p>
                   </div>
                 </div>
               </div>
@@ -1148,7 +1343,7 @@ function CheckoutPageContent() {
                 </div>
                 <div className="flex items-center gap-2">
                   <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
-                  <span>Insured Express Dispatch via Delhivery & DTDC</span>
+                  <span>Insured Express Doorstep Delivery</span>
                 </div>
               </div>
             </div>
