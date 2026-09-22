@@ -10,6 +10,7 @@ import { useUpdateVariant } from '@/features/catalog/variants/variant.hooks';
 import { ProductChannel } from '@/features/catalog/products/product.types';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, preventNegativeScroll } from '@/utils/validators';
 
 const schema = z.object({
   title: z.string().min(2, 'Product title must be at least 2 characters'),
@@ -177,6 +178,9 @@ export default function QuickEditProductDialog({
               <input
                 type="number"
                 step="any"
+                min="0"
+                onKeyDown={preventNegativeKeys}
+                onWheel={preventNegativeScroll}
                 {...register('price', { valueAsNumber: true })}
                 className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs font-mono font-bold text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900 transition"
                 placeholder="0"
@@ -193,6 +197,9 @@ export default function QuickEditProductDialog({
               <input
                 type="number"
                 step="any"
+                min="0"
+                onKeyDown={preventNegativeKeys}
+                onWheel={preventNegativeScroll}
                 {...register('compareAtPrice', { valueAsNumber: true })}
                 className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-xs font-mono text-neutral-600 focus:bg-white focus:outline-none focus:border-neutral-900 transition"
                 placeholder="0"

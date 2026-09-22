@@ -6,6 +6,7 @@ import { useIncreaseStock } from '../inventory.hooks';
 import type { InventoryResponse } from '../inventory.types';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, preventNegativeScroll, clampPositive } from '@/utils/validators';
 
 export interface GroupedProductInventory {
   productId: string;
@@ -331,7 +332,9 @@ export default function ProductStockModal({
                     type="number"
                     min="1"
                     value={quantity}
-                    onChange={(e) => setQuantity(parseInt(e.target.value, 10) || 0)}
+                    onKeyDown={preventNegativeKeys}
+                    onWheel={preventNegativeScroll}
+                    onChange={(e) => setQuantity(clampPositive(e.target.value, 1))}
                     className="w-full rounded-xl border border-neutral-200 bg-neutral-50 px-3.5 py-2.5 text-sm font-mono font-bold text-neutral-900 focus:bg-white focus:outline-none focus:border-neutral-900 transition"
                     placeholder="Quantity"
                   />

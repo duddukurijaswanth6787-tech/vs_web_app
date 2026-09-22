@@ -7,6 +7,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import { isLocalOrPlaceholder } from '@/lib/media-url';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, preventNegativeScroll } from '@/utils/validators';
 import { productSchema, ProductFormValues, ProductResponse, AttributeType, CreateProductDto, UpdateProductDto } from '../product.types';
 import { productService } from '../product.service';
 import { variantService } from '@/features/catalog/variants/variant.service';
@@ -2737,6 +2738,9 @@ export default function ProductBuilder({
                 </label>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('basePrice')}
                   placeholder="2499"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2748,6 +2752,9 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Offer / Sale Price (₹)</label>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('salePrice')}
                   placeholder="1799"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2759,6 +2766,9 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Cost Price (Internal ₹)</label>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('costPrice')}
                   placeholder="800"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2770,6 +2780,9 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">B2B Wholesale Price (₹)</label>
                 <input
                   type="number"
+                  min="0"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('wholesalePrice' as any)}
                   placeholder="e.g. 1200"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2781,6 +2794,9 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Min Order Qty</label>
                 <input
                   type="number"
+                  min="1"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('minimumOrderQuantity' as any)}
                   placeholder="1"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2791,6 +2807,9 @@ export default function ProductBuilder({
                 <label className="text-xs font-bold text-neutral-800">Max Order Qty</label>
                 <input
                   type="number"
+                  min="1"
+                  onKeyDown={preventNegativeKeys}
+                  onWheel={preventNegativeScroll}
                   {...methods.register('maximumOrderQuantity' as any)}
                   placeholder="10"
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-sm text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
@@ -2806,6 +2825,9 @@ export default function ProductBuilder({
                     <input
                       type="number"
                       step="0.1"
+                      min="0"
+                      onKeyDown={preventNegativeKeys}
+                      onWheel={preventNegativeScroll}
                       {...methods.register('weight' as any)}
                       placeholder="0.8"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
@@ -2815,6 +2837,9 @@ export default function ProductBuilder({
                     <label className="text-[11px] font-bold text-neutral-700 block mb-1">Length (cm)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={preventNegativeKeys}
+                      onWheel={preventNegativeScroll}
                       {...methods.register('length' as any)}
                       placeholder="35"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
@@ -2824,6 +2849,9 @@ export default function ProductBuilder({
                     <label className="text-[11px] font-bold text-neutral-700 block mb-1">Width (cm)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={preventNegativeKeys}
+                      onWheel={preventNegativeScroll}
                       {...methods.register('width' as any)}
                       placeholder="25"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
@@ -2833,6 +2861,9 @@ export default function ProductBuilder({
                     <label className="text-[11px] font-bold text-neutral-700 block mb-1">Height (cm)</label>
                     <input
                       type="number"
+                      min="0"
+                      onKeyDown={preventNegativeKeys}
+                      onWheel={preventNegativeScroll}
                       {...methods.register('height' as any)}
                       placeholder="8"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl p-2.5 text-xs font-bold outline-none"
@@ -3762,10 +3793,13 @@ export default function ProductBuilder({
                             </label>
                             <input
                               type="number"
+                              min="0"
+                              onKeyDown={preventNegativeKeys}
+                              onWheel={preventNegativeScroll}
                               value={sz.price !== undefined && sz.price !== null ? sz.price : ''}
                               placeholder={`Default (₹${watchedValues?.basePrice || 0})`}
                               onChange={(e) => {
-                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                const val = e.target.value === '' ? undefined : Math.max(0, Number(e.target.value) || 0);
                                 updateSizeField(group.id, sz.size, 'price', val);
                               }}
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7]"
@@ -3780,10 +3814,13 @@ export default function ProductBuilder({
                             </label>
                             <input
                               type="number"
+                              min="0"
+                              onKeyDown={preventNegativeKeys}
+                              onWheel={preventNegativeScroll}
                               value={sz.salePrice !== undefined && sz.salePrice !== null ? sz.salePrice : ''}
                               placeholder={`Default (₹${watchedValues?.salePrice || watchedValues?.basePrice || 0})`}
                               onChange={(e) => {
-                                const val = e.target.value === '' ? undefined : Number(e.target.value);
+                                const val = e.target.value === '' ? undefined : Math.max(0, Number(e.target.value) || 0);
                                 updateSizeField(group.id, sz.size, 'salePrice', val);
                               }}
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7]"
@@ -3795,8 +3832,11 @@ export default function ProductBuilder({
                             <label className="text-[11px] font-bold text-neutral-700 block">Stock Qty</label>
                             <input
                               type="number"
+                              min="0"
+                              onKeyDown={preventNegativeKeys}
+                              onWheel={preventNegativeScroll}
                               value={sz.stock}
-                              onChange={(e) => updateSizeStock(group.id, sz.size, Number(e.target.value))}
+                              onChange={(e) => updateSizeStock(group.id, sz.size, Math.max(0, Math.floor(Number(e.target.value) || 0)))}
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />
                           </div>
@@ -3806,10 +3846,13 @@ export default function ProductBuilder({
                             <label className="text-[11px] font-bold text-neutral-700 block">Min Alert</label>
                             <input
                               type="number"
+                              min="0"
+                              onKeyDown={preventNegativeKeys}
+                              onWheel={preventNegativeScroll}
                               value={sz.minStock ?? ''}
                               placeholder="5"
                               onChange={(e) =>
-                                updateSizeField(group.id, sz.size, 'minStock', e.target.value === '' ? undefined : Number(e.target.value))
+                                updateSizeField(group.id, sz.size, 'minStock', e.target.value === '' ? undefined : Math.max(0, Math.floor(Number(e.target.value) || 0)))
                               }
                               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-2.5 py-1.5 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:border-[#0284c7] text-center"
                             />

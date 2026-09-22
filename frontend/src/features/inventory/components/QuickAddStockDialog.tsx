@@ -9,6 +9,7 @@ import { useIncreaseStock, useInventoryList } from '../inventory.hooks';
 import type { InventoryResponse } from '../inventory.types';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, preventNegativeScroll } from '@/utils/validators';
 
 const schema = z.object({
   inventoryId: z.string().min(1, 'Please select an item to restock'),
@@ -174,6 +175,8 @@ export default function QuickAddStockDialog({
             <input
               type="number"
               min={1}
+              onKeyDown={preventNegativeKeys}
+              onWheel={preventNegativeScroll}
               {...register('quantity', { valueAsNumber: true })}
               placeholder="e.g. 25"
               className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-neutral-900"

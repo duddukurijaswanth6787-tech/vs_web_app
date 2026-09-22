@@ -17,6 +17,7 @@ import {
 import { InventoryResponse, StockMovementDto, AdjustStockDto } from '../inventory.types';
 import { ButtonLoader } from '@/components/feedback/FeedbackStates';
 import { getApiErrorMessage } from '@/utils/api-error';
+import { preventNegativeKeys, preventNegativeScroll } from '@/utils/validators';
 
 const schema = z
   .object({
@@ -183,6 +184,8 @@ export default function StockActionDialog({ inventory, onClose }: StockActionDia
             <input
               type="number"
               min={selectedAction === 'ADJUST' ? 0 : 1}
+              onKeyDown={preventNegativeKeys}
+              onWheel={preventNegativeScroll}
               {...register('quantity', { valueAsNumber: true })}
               placeholder={selectedAction === 'ADJUST' ? 'e.g. 47 (from a physical stock count)' : 'Quantity to adjust'}
               className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs text-neutral-800 focus:outline-none focus:border-[#0284c7]"
