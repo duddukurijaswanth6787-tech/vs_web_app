@@ -76,10 +76,16 @@ def main():
     subprocess.run(["adb", "shell", "monkey", "-p", "com.vasanthi.shopora", "-c", "android.intent.category.LAUNCHER", "1"])
     
     # Clean up
-    if os.path.exists(unaligned_apk):
-        os.remove(unaligned_apk)
-    if os.path.exists(aligned_apk):
-        os.remove(aligned_apk)
+    try:
+        if os.path.exists(unaligned_apk):
+            os.remove(unaligned_apk)
+    except Exception:
+        pass
+    try:
+        if os.path.exists(aligned_apk):
+            os.remove(aligned_apk)
+    except Exception:
+        pass
         
     print("SUCCESS: App updated, signed, installed, and launched on Android phone!")
 

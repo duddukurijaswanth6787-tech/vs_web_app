@@ -57,6 +57,26 @@ export function isAuthenticated() {
   return Boolean(accessToken);
 }
 
+type AuthListener = () => void;
+const authListeners = new Set<AuthListener>();
+
+export function subscribeAuth(listener: AuthListener): () => void {
+  authListeners.add(listener);
+  return () => {
+    authListeners.delete(listener);
+  };
+}
+
+export function notifyAuth() {
+  authListeners.forEach((fn) => {
+    try {
+      fn();
+    } catch (e) {
+      console.error('Error in auth listener:', e);
+    }
+  });
+}
+
 async function persistSession() {
   try {
     if (accessToken) {
@@ -65,6 +85,7 @@ async function persistSession() {
     if (currentUser) {
       await SecureStore.setItemAsync(USER_STORAGE_KEY, JSON.stringify(currentUser));
     }
+    notifyAuth();
   } catch (e) {
     // Best-effort -- worst case the next app launch just asks to sign in again.
     console.error('Failed to persist session:', e);
@@ -81,6 +102,7 @@ export async function restoreSession(): Promise<boolean> {
     if (!token) return false;
     accessToken = token;
     currentUser = userJson ? (JSON.parse(userJson) as AuthUser) : null;
+    notifyAuth();
     return true;
   } catch (e) {
     console.error('Failed to restore session:', e);
@@ -93,6 +115,7 @@ export function clearSession() {
   currentUser = null;
   SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY).catch(() => {});
   SecureStore.deleteItemAsync(USER_STORAGE_KEY).catch(() => {});
+  notifyAuth();
 }
 
 posApiClient.interceptors.request.use((config) => {
@@ -548,20 +571,19 @@ export const posMobileService = {
   },
 };
 
-// ─── Dashboard: home screen stats ─────────────────────────────────────────────
-
-export interface DashboardSummary {
-  todayRevenue: number;
-  todayOrders: number;
-  todayItemsSold: number;
-  lowStockCount: number;
-}
+let cachedSummary: DashboardSummary | null = null;
 
 export const dashboardService = {
+  getCachedSummary(): DashboardSummary | null {
+    return cachedSummary;
+  },
+
   /** GET /dashboard/summary — today's sales, items sold, low-stock count. */
   async getSummary(): Promise<DashboardSummary> {
     const res = await posApiClient.get('/dashboard/summary');
-    return unwrap<DashboardSummary>(res);
+    const data = unwrap<DashboardSummary>(res);
+    cachedSummary = data;
+    return data;
   },
 };
 

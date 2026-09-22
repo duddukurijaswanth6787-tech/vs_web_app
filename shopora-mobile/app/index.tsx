@@ -30,14 +30,15 @@ import {
   isAuthenticated,
   getCurrentUser,
   authService,
+  subscribeAuth,
 } from '../services/api';
 
 export default function ShoporaHomeScreen() {
   const router = useRouter();
 
-  const [summary, setSummary] = useState<DashboardSummary | null>(null);
+  const [summary, setSummary] = useState<DashboardSummary | null>(() => dashboardService.getCachedSummary());
   const [refreshing, setRefreshing] = useState(false);
-  const [authed, setAuthed] = useState(false);
+  const [authed, setAuthed] = useState(() => isAuthenticated());
 
   const loadSummary = useCallback(async () => {
     const signedIn = isAuthenticated();
@@ -56,6 +57,10 @@ export default function ShoporaHomeScreen() {
 
   useEffect(() => {
     loadSummary();
+    const unsubscribe = subscribeAuth(() => {
+      loadSummary();
+    });
+    return unsubscribe;
   }, [loadSummary]);
 
   const handleRefresh = useCallback(async () => {

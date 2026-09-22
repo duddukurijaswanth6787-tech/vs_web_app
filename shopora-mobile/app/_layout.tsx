@@ -7,22 +7,9 @@ import { restoreSession } from '../services/api';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
-  // Restore a previously saved sign-in (SecureStore) before any screen mounts
-  // and checks isAuthenticated() -- otherwise every screen would see "signed
-  // out" for a moment after a cold start even when a valid session exists.
-  const [restoring, setRestoring] = useState(true);
-
   useEffect(() => {
-    restoreSession().finally(() => setRestoring(false));
+    restoreSession();
   }, []);
-
-  if (restoring) {
-    return (
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', backgroundColor: '#f0f9ff' }}>
-        <ActivityIndicator size="large" color="#0284c7" />
-      </View>
-    );
-  }
 
   return (
     <SafeAreaProvider>
