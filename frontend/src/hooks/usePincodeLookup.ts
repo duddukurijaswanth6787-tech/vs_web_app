@@ -2,14 +2,18 @@
 
 import { useRef, useState } from 'react';
 
-interface PincodeResult {
+export interface PincodeResult {
   city: string;
   state: string;
+  district?: string;
+  areas?: string[];
 }
 
 interface PostOffice {
+  Name?: string;
   District: string;
   State: string;
+  Division?: string;
 }
 
 interface PincodeApiResponse {
@@ -18,11 +22,8 @@ interface PincodeApiResponse {
 }
 
 /**
- * Looks up City/State from a 6-digit Indian PIN code via India Post's public
- * API, so a customer only has to type the PIN once instead of also typing
- * City and State by hand. Never blocks the form -- on any failure (offline,
- * unknown PIN, API down) it just leaves whatever the customer already typed
- * alone, so manual entry is always the fallback.
+ * Looks up City/State and localities from a 6-digit Indian PIN code via India Post's public
+ * API, so a customer gets auto-detected City, State and area suggestions.
  */
 export function usePincodeLookup() {
   const [isLoading, setIsLoading] = useState(false);
@@ -38,13 +39,18 @@ export function usePincodeLookup() {
     try {
       const res = await fetch(`https://api.postalpincode.in/pincode/${pincode}`);
       const data: PincodeApiResponse[] = await res.json();
-      // A field the customer kept typing in after this request started --
-      // its result is stale, ignore it so it can't clobber a newer lookup.
       if (thisRequest !== requestId.current) return null;
 
-      const postOffice = data?.[0]?.PostOffice?.[0];
-      if (data?.[0]?.Status === 'Success' && postOffice) {
-        return { city: postOffice.District, state: postOffice.State };
+      const postOffices = data?.[0]?.PostOffice;
+      if (data?.[0]?.Status === 'Success' && postOffices && postOffices.length > 0) {
+        const areas = Array.from(new Set(postOffices.map((po) => po.Name).filter(Boolean))) as string[];
+        const primary = postOffices[0];
+        return {
+          city: primary.District || primary.Division || primary.Name || '',
+          state: primary.State || '',
+          district: primary.District,
+          areas,
+        };
       }
       setNotFound(true);
       return null;

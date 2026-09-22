@@ -161,11 +161,13 @@ function CheckoutPageContent() {
   const [newAddrLoading, setNewAddrLoading] = useState(false);
   const [newAddrError, setNewAddrError] = useState('');
   const [pincodeFilled, setPincodeFilled] = useState(false);
+  const [detectedAreas, setDetectedAreas] = useState<string[]>([]);
   const { lookup: lookupPincode, isLoading: pincodeLoading, notFound: pincodeNotFound } = usePincodeLookup();
 
   const handleOpenEditAddress = (addr: any) => {
     if (!addr) return;
     setEditingAddressId(addr.id);
+    setDetectedAreas([]);
     setNewAddrForm({
       fullName: addr.fullName || '',
       phone: addr.phone || '',
@@ -359,8 +361,15 @@ function CheckoutPageContent() {
         if (result) {
           setNewAddrForm((f) => ({ ...f, city: result.city, state: result.state }));
           setPincodeFilled(true);
+          if (result.areas && result.areas.length > 0) {
+            setDetectedAreas(result.areas);
+          } else {
+            setDetectedAreas([]);
+          }
         }
       });
+    } else {
+      setDetectedAreas([]);
     }
   };
 
@@ -793,10 +802,10 @@ function CheckoutPageContent() {
                     </label>
 
                     <label className="block space-y-1">
-                      <span className="text-[11px] font-semibold text-neutral-700">City *</span>
+                      <span className="text-[11px] font-semibold text-neutral-700">City / District *</span>
                       <input
                         required
-                        placeholder="City"
+                        placeholder="e.g. Hyderabad"
                         value={newAddrForm.city}
                         onChange={(e) => setNewAddrForm({ ...newAddrForm, city: e.target.value })}
                         className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-[var(--brand-primary)]"
@@ -836,15 +845,39 @@ function CheckoutPageContent() {
                     />
                   </label>
 
-                  <label className="block space-y-1">
-                    <span className="text-[11px] font-semibold text-neutral-700">Area / Landmark (Optional)</span>
-                    <input
-                      placeholder="e.g. Near City Center Mall, Banjara Hills"
-                      value={newAddrForm.addressLine2}
-                      onChange={(e) => setNewAddrForm({ ...newAddrForm, addressLine2: e.target.value })}
-                      className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-[var(--brand-primary)]"
-                    />
-                  </label>
+                  <div className="space-y-1.5">
+                    <label className="block space-y-1">
+                      <span className="text-[11px] font-semibold text-neutral-700">Area / Locality / Sub-City (e.g. Madhapur)</span>
+                      <input
+                        placeholder="e.g. Madhapur, Sarojini Naidu Nagar, Near Metro"
+                        value={newAddrForm.addressLine2}
+                        onChange={(e) => setNewAddrForm({ ...newAddrForm, addressLine2: e.target.value })}
+                        className="w-full bg-white border border-neutral-200 rounded-xl px-3 py-2 text-xs outline-none focus:border-[var(--brand-primary)]"
+                      />
+                    </label>
+                    {detectedAreas.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                        <span className="text-[10px] font-medium text-neutral-400">Detected Localities:</span>
+                        {detectedAreas.map((area) => (
+                          <button
+                            key={area}
+                            type="button"
+                            onClick={() => {
+                              setNewAddrForm((f) => {
+                                const current = f.addressLine2.trim();
+                                if (!current) return { ...f, addressLine2: area };
+                                if (current.toLowerCase().includes(area.toLowerCase())) return f;
+                                return { ...f, addressLine2: `${area}, ${current}` };
+                              });
+                            }}
+                            className="text-[10px] bg-sky-50 text-[var(--brand-primary)] border border-sky-100 hover:bg-sky-100 px-2 py-0.5 rounded-md font-semibold transition-colors cursor-pointer"
+                          >
+                            + {area}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
 
                   <button
                     type="submit"

@@ -182,10 +182,10 @@ export default function CartPage() {
             </div>
           </div>
           <div className="flex flex-col items-center justify-center gap-1 border-l border-sky-200/50 pl-1">
-            <Gift className="w-4 h-4 text-[var(--brand-primary)]" />
+            <Truck className="w-4 h-4 text-[var(--brand-primary)]" />
             <div>
-              <p className="font-bold text-[var(--brand-primary)]">Gift Wrapping</p>
-              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">Premium Pack</p>
+              <p className="font-bold text-[var(--brand-primary)]">Express Delivery</p>
+              <p className="text-[9px] text-neutral-400 font-medium hidden sm:block">Insured Doorstep</p>
             </div>
           </div>
         </div>
@@ -509,9 +509,9 @@ export default function CartPage() {
                   </div>
                   <div className="space-y-1">
                     <div className="w-7 h-7 rounded-full bg-neutral-50 border border-neutral-100 flex items-center justify-center mx-auto text-neutral-700">
-                      <Gift className="w-3.5 h-3.5" />
+                      <Truck className="w-3.5 h-3.5" />
                     </div>
-                    <span>Gift Wrap</span>
+                    <span>Express Delivery</span>
                   </div>
                 </div>
               </div>
