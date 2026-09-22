@@ -22,17 +22,21 @@ def main():
     bundle_to_inject = bundle_path
     if os.path.exists(hermesc_bin):
         hbc_path = os.path.join(base_dir, "android", "app", "src", "main", "assets", "index.android.bundle.hbc")
-        print("   Compiling JS bundle to Hermes Bytecode (-O)...")
-        subprocess.check_call([hermesc_bin, "-emit-binary", "-O", "-out", hbc_path, bundle_path])
+        print("   Compiling JS bundle to Hermes Bytecode (-O -fstrip-function-names -freorder-registers)...")
+        subprocess.check_call([hermesc_bin, "-emit-binary", "-O", "-fstrip-function-names", "-freorder-registers", "-out", hbc_path, bundle_path])
         bundle_to_inject = hbc_path
 
-    print("1. Reading source APK and packaging with uncompressed resources.arsc and .so files...")
+    print("1. Reading source APK and optimizing for mobile ARM hardware (stripping emulator ABIs)...")
     written_entries = set()
     with zipfile.ZipFile(source_apk, 'r') as src_zip:
         with zipfile.ZipFile(unaligned_apk, 'w') as dst_zip:
             for item in src_zip.infolist():
                 if item.filename.startswith("META-INF/"):
                     continue # skip old signatures
+                
+                # Strip unused PC emulator binaries (x86, x86_64) to cut APK size dramatically and speed up install/load
+                if item.filename.startswith("lib/x86/") or item.filename.startswith("lib/x86_64/"):
+                    continue
                 
                 if item.filename in written_entries:
                     continue # avoid duplicates
