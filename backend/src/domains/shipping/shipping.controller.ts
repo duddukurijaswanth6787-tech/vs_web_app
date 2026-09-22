@@ -152,6 +152,8 @@ export class ShippingController {
         pickupDate: body.pickupDate || new Date().toISOString().split('T')[0],
         pickupTime: body.pickupTime || '11:00:00',
         expectedPackageCount: body.expectedPackageCount || 1,
+        orderNumbers: body.orderNumbers,
+        orderIds: body.orderIds,
         notes: body.notes,
       }),
       'Pickup request dispatched successfully',

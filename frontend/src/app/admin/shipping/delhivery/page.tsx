@@ -29,7 +29,9 @@ import {
   PhoneCall,
   Navigation,
   Radio,
-  Trash2
+  Trash2,
+  Box,
+  Link as LinkIcon
 } from 'lucide-react';
 import { apiClient } from '@/lib/api/client';
 import { orderService } from '@/features/orders/order.service';
@@ -60,6 +62,8 @@ interface ScheduledPickupItem {
   pickupTime: string;
   timeSlot: string;
   expectedPackageCount: number;
+  orderNumbers?: string[];
+  orderIds?: string[];
   status: 'SCHEDULED' | 'DRIVER_ASSIGNED' | 'OUT_FOR_PICKUP' | 'COMPLETED' | 'CANCELLED';
   driverName?: string;
   driverPhone?: string;
@@ -108,6 +112,7 @@ export default function DelhiveryShippingAdminPage() {
   const [pickupTimeSlot, setPickupTimeSlot] = useState('11:00:00');
   const [pickupLocationSelection, setPickupLocationSelection] = useState('VASANTHI_MAIN_WAREHOUSE');
   const [expectedPackages, setExpectedPackages] = useState(1);
+  const [pickupTargetOrderNumbers, setPickupTargetOrderNumbers] = useState<string[]>([]);
   const [pickupNotes, setPickupNotes] = useState('');
   const [isSchedulingPickup, setIsSchedulingPickup] = useState(false);
   const [pickupResult, setPickupResult] = useState<{ token: string; message: string; date: string; time: string; location: string } | null>(null);
@@ -156,10 +161,10 @@ export default function DelhiveryShippingAdminPage() {
       });
       const orders = res.data || [];
       setTodayOrders(orders);
-      const pendingCount = orders.filter((o) => o.status === 'CONFIRMED' || o.status === 'SHIPPED').length;
-      if (pendingCount > 0) {
-        setExpectedPackages(pendingCount);
-      }
+      
+      const targetOrders = orders.filter((o) => o.status === 'CONFIRMED' || o.status === 'SHIPPED');
+      setExpectedPackages(Math.max(1, targetOrders.length || 1));
+      setPickupTargetOrderNumbers(targetOrders.map((o) => o.orderNumber));
     } catch (err) {
       toast('error', 'Failed to load dispatch queue', getApiErrorMessage(err));
     } finally {
@@ -171,6 +176,26 @@ export default function DelhiveryShippingAdminPage() {
     loadTodayOrders();
     loadPickupRequests();
   }, []);
+
+  // Find if an order has a linked scheduled pickup
+  const getOrderPickup = (order: OrderResponse): ScheduledPickupItem | undefined => {
+    return scheduledPickups.find(
+      (p) =>
+        p.status !== 'CANCELLED' &&
+        (p.orderNumbers?.includes(order.orderNumber) ||
+          p.orderIds?.includes(order.id) ||
+          (scheduledPickups.length === 1 && todayOrders.length === 1))
+    );
+  };
+
+  // Open pickup modal pre-populated for specific orders
+  const openPickupModalForOrders = (orders?: OrderResponse[]) => {
+    const list = orders && orders.length > 0 ? orders : todayOrders;
+    const targetOrderNumbers = list.map((o) => o.orderNumber);
+    setPickupTargetOrderNumbers(targetOrderNumbers);
+    setExpectedPackages(Math.max(1, targetOrderNumbers.length));
+    setShowPickupModal(true);
+  };
 
   // Toggle selection
   const toggleSelectOrder = (id: string) => {
@@ -372,6 +397,7 @@ export default function DelhiveryShippingAdminPage() {
         pickupDate,
         pickupTime: pickupTimeSlot,
         expectedPackageCount: expectedPackages,
+        orderNumbers: pickupTargetOrderNumbers,
         notes: pickupNotes,
       });
       const data = res.data?.data || res.data;
@@ -386,7 +412,7 @@ export default function DelhiveryShippingAdminPage() {
       });
       setShowPickupModal(false);
       await loadPickupRequests();
-      toast('success', 'Driver Pickup Scheduled!', `Pickup Token: ${token}`);
+      toast('success', 'Driver Pickup Scheduled!', `Pickup Token: ${token} for ${pickupTargetOrderNumbers.length} orders`);
     } catch (err) {
       toast('error', 'Pickup Scheduling Failed', getApiErrorMessage(err));
     } finally {
@@ -431,9 +457,9 @@ export default function DelhiveryShippingAdminPage() {
               <Truck className="w-5 h-5" />
             </div>
             <div>
-              <h1 className="text-xl font-bold text-neutral-900">Delhivery Logistics & Courier Dispatch Desk</h1>
+              <h1 className="text-xl font-bold text-neutral-900">Delhivery Logistics &amp; Courier Dispatch Desk</h1>
               <p className="text-xs text-neutral-500 mt-0.5">
-                Batch print 4x6 thermal barcode labels, track driver pickups &amp; arrival slots in real time.
+                Batch print 4x6 thermal barcode labels, schedule driver pickups linked to today&apos;s orders, and track transit in real time.
               </p>
             </div>
           </div>
@@ -480,7 +506,7 @@ export default function DelhiveryShippingAdminPage() {
             Delhivery B2C Express &amp; Surface Gateway Active
           </span>
           <span className="text-2xs bg-sky-200/70 text-sky-900 font-bold px-2 py-0.5 rounded-full">
-            4x6 Thermal Labels · Driver Roster Live
+            4x6 Thermal Labels · Driver Roster Linked
           </span>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -506,7 +532,7 @@ export default function DelhiveryShippingAdminPage() {
           {/* Schedule Driver Pickup Modal Trigger */}
           <button
             type="button"
-            onClick={() => setShowPickupModal(true)}
+            onClick={() => openPickupModalForOrders()}
             className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -571,7 +597,7 @@ export default function DelhiveryShippingAdminPage() {
               <div>
                 <h2 className="text-sm font-bold text-neutral-900">Scheduled Driver Pickups &amp; Arrival Tracker</h2>
                 <p className="text-2xs text-neutral-500">
-                  Track when Delhivery drivers will arrive at your warehouse, driver phone, vehicle numbers &amp; token IDs.
+                  Track when Delhivery drivers will arrive at your warehouse, driver phone, vehicle numbers &amp; linked order IDs.
                 </p>
               </div>
             </div>
@@ -589,10 +615,10 @@ export default function DelhiveryShippingAdminPage() {
             </button>
             <button
               type="button"
-              onClick={() => setShowPickupModal(true)}
+              onClick={() => openPickupModalForOrders()}
               className="text-2xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-xs cursor-pointer"
             >
-              <Calendar className="w-3.5 h-3.5" /> + New Pickup Slot
+              <Calendar className="w-3.5 h-3.5" /> + Schedule Driver Pickup
             </button>
           </div>
         </div>
@@ -604,50 +630,56 @@ export default function DelhiveryShippingAdminPage() {
               <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-600" />
               Loading live pickup schedule...
             </div>
-          ) : scheduledPickups.length === 0 ? (
-            <div className="text-center py-8 text-neutral-400 text-xs">
-              No pickup requests scheduled yet. Click &quot;Schedule Driver Pickup&quot; to request courier van arrival.
+          ) : scheduledPickups.filter((p) => p.status !== 'CANCELLED').length === 0 ? (
+            <div className="p-6 rounded-2xl bg-neutral-50 border border-dashed border-neutral-200 text-center space-y-2">
+              <Package className="w-8 h-8 text-neutral-400 mx-auto" />
+              <div className="space-y-0.5">
+                <h3 className="text-xs font-bold text-neutral-800">No Driver Pickups Scheduled Yet</h3>
+                <p className="text-2xs text-neutral-500 max-w-md mx-auto">
+                  When you have orders ready for courier handover, click &quot;Schedule Driver Pickup&quot; to book a Delhivery van arrival window.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => openPickupModalForOrders()}
+                className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-xl text-xs transition inline-flex items-center gap-1.5 shadow-xs cursor-pointer mt-2"
+              >
+                <Calendar className="w-3.5 h-3.5" /> Schedule Pickup for Today&apos;s Orders ({todayOrders.length})
+              </button>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {scheduledPickups.map((pickup) => (
-                <div
-                  key={pickup.pickupId}
-                  className={`p-4 rounded-2xl border transition-all space-y-3 ${
-                    pickup.status === 'CANCELLED'
-                      ? 'bg-neutral-50/70 border-neutral-200 opacity-60'
-                      : pickup.status === 'DRIVER_ASSIGNED'
-                      ? 'bg-gradient-to-br from-emerald-50/70 via-white to-sky-50/40 border-emerald-200 shadow-xs'
-                      : 'bg-white border-neutral-200 shadow-xs'
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-2 border-b border-neutral-100 pb-2.5">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono font-bold text-xs text-sky-950 bg-sky-100/90 px-2 py-0.5 rounded border border-sky-200">
-                          {pickup.pickupId}
-                        </span>
-                        <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
-                            pickup.status === 'DRIVER_ASSIGNED'
-                              ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
-                              : pickup.status === 'OUT_FOR_PICKUP'
-                              ? 'bg-blue-100 text-blue-800 border-blue-200'
-                              : pickup.status === 'CANCELLED'
-                              ? 'bg-neutral-100 text-neutral-600 border-neutral-200'
-                              : 'bg-amber-100 text-amber-800 border-amber-200'
-                          }`}
-                        >
-                          {pickup.status.replace(/_/g, ' ')}
-                        </span>
+              {scheduledPickups
+                .filter((p) => p.status !== 'CANCELLED')
+                .map((pickup) => (
+                  <div
+                    key={pickup.pickupId}
+                    className="p-4 rounded-2xl border transition-all space-y-3 bg-gradient-to-br from-emerald-50/70 via-white to-sky-50/40 border-emerald-200 shadow-xs"
+                  >
+                    <div className="flex items-start justify-between gap-2 border-b border-neutral-100 pb-2.5">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-xs text-sky-950 bg-sky-100/90 px-2 py-0.5 rounded border border-sky-200">
+                            {pickup.pickupId}
+                          </span>
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                              pickup.status === 'DRIVER_ASSIGNED'
+                                ? 'bg-emerald-100 text-emerald-800 border-emerald-200'
+                                : pickup.status === 'OUT_FOR_PICKUP'
+                                ? 'bg-blue-100 text-blue-800 border-blue-200'
+                                : 'bg-amber-100 text-amber-800 border-amber-200'
+                            }`}
+                          >
+                            {pickup.status.replace(/_/g, ' ')}
+                          </span>
+                        </div>
+                        <div className="text-2xs text-neutral-500 mt-1 flex items-center gap-1">
+                          <Calendar className="w-3 h-3 text-neutral-400" />
+                          <span>Pickup Date: <strong>{pickup.pickupDate}</strong></span>
+                        </div>
                       </div>
-                      <div className="text-2xs text-neutral-500 mt-1 flex items-center gap-1">
-                        <Calendar className="w-3 h-3 text-neutral-400" />
-                        <span>Pickup Date: <strong>{pickup.pickupDate}</strong></span>
-                      </div>
-                    </div>
 
-                    {pickup.status !== 'CANCELLED' && (
                       <button
                         type="button"
                         onClick={() => handleCancelPickup(pickup.pickupId)}
@@ -656,67 +688,80 @@ export default function DelhiveryShippingAdminPage() {
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
-                    )}
-                  </div>
-
-                  {/* Slot & Warehouse Details */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
-                    <div className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150 space-y-0.5">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400 block">
-                        Arrival Window Slot
-                      </span>
-                      <span className="font-bold text-neutral-900 text-2xs flex items-center gap-1 text-emerald-800">
-                        <Clock className="w-3 h-3 text-emerald-600" /> {pickup.timeSlot}
-                      </span>
-                      <span className="text-[10px] text-neutral-500 block">
-                        Packages Ready: <strong>{pickup.expectedPackageCount} Boxes</strong>
-                      </span>
                     </div>
 
-                    <div className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150 space-y-0.5">
-                      <span className="text-[10px] uppercase font-bold text-neutral-400 block">
-                        Pickup Warehouse Hub
-                      </span>
-                      <span className="font-semibold text-neutral-900 text-2xs block truncate">
-                        {pickup.pickupLocation}
-                      </span>
-                      {pickup.notes && (
-                        <span className="text-[10px] text-neutral-500 block italic truncate">
-                          Note: {pickup.notes}
+                    {/* Slot & Warehouse Details */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                      <div className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150 space-y-0.5">
+                        <span className="text-[10px] uppercase font-bold text-neutral-400 block">
+                          Arrival Window Slot
                         </span>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Driver Contact Box */}
-                  {pickup.driverName && pickup.status !== 'CANCELLED' && (
-                    <div className="p-2.5 bg-sky-50/70 border border-sky-200/80 rounded-xl flex items-center justify-between gap-3 text-xs">
-                      <div className="flex items-center gap-2.5 min-w-0">
-                        <div className="w-7 h-7 rounded-full bg-sky-600 text-white flex items-center justify-center font-bold text-2xs shrink-0">
-                          <User className="w-3.5 h-3.5" />
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-neutral-900 text-2xs truncate">
-                            Driver: {pickup.driverName}
-                          </div>
-                          <div className="text-[10px] text-neutral-500 truncate flex items-center gap-1">
-                            <Truck className="w-3 h-3 text-sky-600" /> {pickup.vehicleNumber || 'Van'}
-                          </div>
-                        </div>
+                        <span className="font-bold text-neutral-900 text-2xs flex items-center gap-1 text-emerald-800">
+                          <Clock className="w-3 h-3 text-emerald-600" /> {pickup.timeSlot}
+                        </span>
+                        <span className="text-[10px] text-neutral-500 block">
+                          Packages Ready: <strong>{pickup.expectedPackageCount} Box(es)</strong>
+                        </span>
                       </div>
 
-                      {pickup.driverPhone && (
-                        <a
-                          href={`tel:${pickup.driverPhone}`}
-                          className="bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded-lg text-2xs flex items-center gap-1 transition shrink-0"
-                        >
-                          <PhoneCall className="w-3 h-3" /> Call Driver
-                        </a>
-                      )}
+                      <div className="p-2.5 bg-neutral-50/80 rounded-xl border border-neutral-150 space-y-0.5">
+                        <span className="text-[10px] uppercase font-bold text-neutral-400 block">
+                          Pickup Warehouse Hub
+                        </span>
+                        <span className="font-semibold text-neutral-900 text-2xs block truncate">
+                          {pickup.pickupLocation}
+                        </span>
+                        {pickup.notes && (
+                          <span className="text-[10px] text-neutral-500 block italic truncate">
+                            Note: {pickup.notes}
+                          </span>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-              ))}
+
+                    {/* Linked Orders Strip */}
+                    {pickup.orderNumbers && pickup.orderNumbers.length > 0 && (
+                      <div className="p-2 bg-white rounded-xl border border-neutral-200 text-2xs flex items-center gap-1.5 flex-wrap">
+                        <span className="text-neutral-500 font-bold uppercase text-[9px] flex items-center gap-1">
+                          <LinkIcon className="w-3 h-3 text-sky-600" /> Linked Orders:
+                        </span>
+                        {pickup.orderNumbers.map((num, idx) => (
+                          <span key={idx} className="font-mono font-bold text-sky-900 bg-sky-50 px-1.5 py-0.5 rounded border border-sky-200">
+                            {num}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Driver Contact Box */}
+                    {pickup.driverName && (
+                      <div className="p-2.5 bg-sky-50/70 border border-sky-200/80 rounded-xl flex items-center justify-between gap-3 text-xs">
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <div className="w-7 h-7 rounded-full bg-sky-600 text-white flex items-center justify-center font-bold text-2xs shrink-0">
+                            <User className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="min-w-0">
+                            <div className="font-bold text-neutral-900 text-2xs truncate">
+                              Driver: {pickup.driverName}
+                            </div>
+                            <div className="text-[10px] text-neutral-500 truncate flex items-center gap-1">
+                              <Truck className="w-3 h-3 text-sky-600" /> {pickup.vehicleNumber || 'Van'}
+                            </div>
+                          </div>
+                        </div>
+
+                        {pickup.driverPhone && (
+                          <a
+                            href={`tel:${pickup.driverPhone}`}
+                            className="bg-sky-600 hover:bg-sky-700 text-white font-bold px-2.5 py-1 rounded-lg text-2xs flex items-center gap-1 transition shrink-0"
+                          >
+                            <PhoneCall className="w-3 h-3" /> Call Driver
+                          </a>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))}
             </div>
           )}
         </div>
@@ -734,7 +779,7 @@ export default function DelhiveryShippingAdminPage() {
               </span>
             </div>
             <p className="text-2xs text-neutral-500 mt-0.5">
-              Select orders to print 4x6 thermal barcode labels in batch, generate waybills, or track courier transit.
+              Select orders to print 4x6 thermal barcode labels in batch, generate waybills, or schedule driver pickup.
             </p>
           </div>
 
@@ -784,20 +829,21 @@ export default function DelhiveryShippingAdminPage() {
                 <th className="py-3 px-3">Amount &amp; Mode</th>
                 <th className="py-3 px-3">Shipment Status</th>
                 <th className="py-3 px-3">Courier &amp; Waybill</th>
+                <th className="py-3 px-3">Driver Pickup</th>
                 <th className="py-3 px-4 text-right">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-neutral-100">
               {isLoadingOrders ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-neutral-400">
+                  <td colSpan={8} className="py-8 text-center text-neutral-400">
                     <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-sky-600" />
                     Loading orders dispatch queue...
                   </td>
                 </tr>
               ) : todayOrders.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-8 text-center text-neutral-400">
+                  <td colSpan={8} className="py-8 text-center text-neutral-400">
                     No orders in queue.
                   </td>
                 </tr>
@@ -812,6 +858,7 @@ export default function DelhiveryShippingAdminPage() {
                   const pincode = shippingAddr?.postalCode || '500081';
                   const isSelected = selectedOrderIds.includes(order.id);
                   const hasAwb = !!order.waybillNumber;
+                  const linkedPickup = getOrderPickup(order);
 
                   return (
                     <tr
@@ -917,6 +964,30 @@ export default function DelhiveryShippingAdminPage() {
                           <span className="text-2xs text-amber-700 font-semibold bg-amber-50 px-2 py-0.5 rounded border border-amber-200">
                             AWB Not Assigned
                           </span>
+                        )}
+                      </td>
+
+                      {/* Driver Pickup Column */}
+                      <td className="py-3 px-3">
+                        {linkedPickup ? (
+                          <div className="space-y-0.5">
+                            <div className="flex items-center gap-1">
+                              <span className="font-mono font-bold text-emerald-900 bg-emerald-100 px-1.5 py-0.5 rounded text-2xs border border-emerald-200">
+                                {linkedPickup.pickupId}
+                              </span>
+                            </div>
+                            <div className="text-[10px] text-emerald-800 font-medium truncate">
+                              {linkedPickup.timeSlot.split(' ')[0]} ({linkedPickup.status.replace(/_/g, ' ')})
+                            </div>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => openPickupModalForOrders([order])}
+                            className="text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-lg transition"
+                          >
+                            + Schedule Pickup
+                          </button>
                         )}
                       </td>
 
@@ -1129,7 +1200,7 @@ export default function DelhiveryShippingAdminPage() {
                     onClick={() => handleTrackShipment(generatedShipment.waybillNumber)}
                     className="inline-flex items-center gap-1 text-2xs text-sky-700 font-bold hover:underline mt-1"
                   >
-                    <Search className="w-3 h-3" /> Track Live Inside App
+                    <Search className="w-3.5 h-3.5" /> Track Live Inside App
                   </button>
                 </div>
               </div>
@@ -1327,7 +1398,7 @@ export default function DelhiveryShippingAdminPage() {
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-neutral-900">Schedule Delhivery Driver Pickup</h3>
-                  <p className="text-xs text-neutral-500">Request Delhivery van/driver for bulk warehouse pickup.</p>
+                  <p className="text-xs text-neutral-500">Request Delhivery van/driver for warehouse package handover.</p>
                 </div>
               </div>
               <button
@@ -1340,6 +1411,22 @@ export default function DelhiveryShippingAdminPage() {
             </div>
 
             <form onSubmit={handleSchedulePickupSubmit} className="space-y-4 text-xs">
+              {/* Target Orders Notification */}
+              {pickupTargetOrderNumbers.length > 0 && (
+                <div className="p-3 bg-sky-50 border border-sky-200 rounded-xl text-2xs text-sky-950 space-y-1">
+                  <span className="font-bold block text-sky-900">
+                    📦 Orders Included in this Pickup Request ({pickupTargetOrderNumbers.length}):
+                  </span>
+                  <div className="flex flex-wrap gap-1 font-mono">
+                    {pickupTargetOrderNumbers.map((num, idx) => (
+                      <span key={idx} className="bg-white px-1.5 py-0.5 rounded border border-sky-200 font-bold">
+                        {num}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               <div>
                 <label className="block text-[10px] font-bold text-neutral-500 uppercase tracking-wider mb-1">
                   Pickup Origin Warehouse *
@@ -1401,7 +1488,7 @@ export default function DelhiveryShippingAdminPage() {
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2 text-xs font-mono font-bold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
                 <p className="text-2xs text-neutral-400 mt-1">
-                  Total parcel boxes ready for courier vehicle handover today.
+                  Total parcel boxes ready for courier vehicle handover.
                 </p>
               </div>
 

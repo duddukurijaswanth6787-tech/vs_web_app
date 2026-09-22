@@ -310,42 +310,15 @@ export class DelhiveryService {
     pickupTime: string;
     timeSlot: string;
     expectedPackageCount: number;
+    orderNumbers?: string[];
+    orderIds?: string[];
     status: 'SCHEDULED' | 'DRIVER_ASSIGNED' | 'OUT_FOR_PICKUP' | 'COMPLETED' | 'CANCELLED';
     driverName?: string;
     driverPhone?: string;
     vehicleNumber?: string;
     notes?: string;
     createdAt: string;
-  }> = [
-    {
-      pickupId: 'PU-702567',
-      pickupLocation: "Vasanthi's Signature Main Warehouse (Hyderabad - 500033)",
-      pickupDate: new Date().toISOString().split('T')[0],
-      pickupTime: '11:00:00',
-      timeSlot: 'Morning (10:00 AM - 01:00 PM)',
-      expectedPackageCount: 8,
-      status: 'DRIVER_ASSIGNED',
-      driverName: 'Ramesh Kumar',
-      driverPhone: '+91 98480 12345',
-      vehicleNumber: 'TS 09 UB 4821 (Delhivery Van)',
-      notes: 'Gate 2 Loading Bay, Call security on arrival',
-      createdAt: new Date(Date.now() - 3600000).toISOString(),
-    },
-    {
-      pickupId: 'PU-591042',
-      pickupLocation: 'Manuguru Store Dispatch Hub (Manuguru - 507117)',
-      pickupDate: new Date().toISOString().split('T')[0],
-      pickupTime: '15:00:00',
-      timeSlot: 'Afternoon (01:00 PM - 04:00 PM)',
-      expectedPackageCount: 4,
-      status: 'SCHEDULED',
-      driverName: 'Srinivas Rao (Hub Dispatch)',
-      driverPhone: '+91 76590 34198',
-      vehicleNumber: 'TS 04 EA 9920',
-      notes: 'Store counter packages ready',
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-    },
-  ];
+  }> = [];
 
   /**
    * List all scheduled Delhivery driver pickups
@@ -362,10 +335,12 @@ export class DelhiveryService {
     pickupDate: string;
     pickupTime?: string;
     expectedPackageCount: number;
+    orderNumbers?: string[];
+    orderIds?: string[];
     notes?: string;
   }) {
     this.logger.log(
-      `Requesting Delhivery courier pickup at ${dto.pickupLocation}`,
+      `Requesting Delhivery courier pickup at ${dto.pickupLocation} for ${dto.expectedPackageCount} packages`,
     );
     let pickupId = `PU-${Math.floor(100000 + Math.random() * 900000)}`;
     let status: 'SCHEDULED' | 'DRIVER_ASSIGNED' = 'SCHEDULED';
@@ -415,6 +390,8 @@ export class DelhiveryService {
       pickupTime: dto.pickupTime || '11:00:00',
       timeSlot,
       expectedPackageCount: dto.expectedPackageCount || 1,
+      orderNumbers: dto.orderNumbers || [],
+      orderIds: dto.orderIds || [],
       status,
       driverName: 'Delhivery Hub Assigned Driver',
       driverPhone: '+91 1800 103 6354',
@@ -428,6 +405,15 @@ export class DelhiveryService {
     return {
       success: true,
       pickupId,
+      status,
+      pickupDate: dto.pickupDate,
+      pickupTime: dto.pickupTime,
+      timeSlot,
+      location: locName,
+      orderNumbers: dto.orderNumbers,
+      message: 'Delhivery driver pickup request scheduled successfully.',
+    };
+  }
       status,
       pickupDate: dto.pickupDate,
       pickupTime: dto.pickupTime,
