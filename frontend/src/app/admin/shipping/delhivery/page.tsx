@@ -1594,8 +1594,8 @@ export default function DelhiveryShippingAdminPage() {
                   const displayAddress = selectedWh?.address
                     ? `${selectedWh.address}, ${selectedWh.city || 'Manuguru'}, ${selectedWh.state || 'Telangana'} - ${selectedWh.postalCode || '507117'}`
                     : 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Samithi singaram grama panchayati, Beside MORE super market, Manuguru, Telangana 507117';
-                  const displayPhone = selectedWh?.phone || '+91 7095004188';
-                  const displayContact = selectedWh?.contactPerson || 'Jagadeep / Jaswanth';
+                  const displayPhone = selectedWh?.phone || '+91 7660922416';
+                  const displayContact = selectedWh?.contactPerson || 'Duddukuri Jaswanth';
                   return (
                     <div className="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-2xs text-emerald-950 space-y-1">
                       <div className="flex items-start gap-1.5 font-semibold text-emerald-900">

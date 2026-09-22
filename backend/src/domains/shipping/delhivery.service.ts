@@ -265,7 +265,7 @@ export class DelhiveryService {
             payment_mode: dto.paymentMode === 'COD' ? 'COD' : 'Prepaid',
             return_pin: '507117',
             return_city: 'Manuguru',
-            return_phone: '7095004188',
+            return_phone: '7660922416',
             return_add:
               'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Beside MORE super market',
             return_state: 'Telangana',
@@ -290,7 +290,7 @@ export class DelhiveryService {
           city: 'Manuguru',
           pin_code: '507117',
           country: 'India',
-          phone: '7095004188',
+          phone: '7660922416',
         },
       };
 
