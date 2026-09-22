@@ -378,10 +378,24 @@ export class DelhiveryService {
         ? 'Afternoon (01:00 PM - 04:00 PM)'
         : 'Evening (04:00 PM - 07:00 PM)';
 
-    const locName =
-      dto.pickupLocation.includes('MANUGURU')
-        ? 'Manuguru Store Dispatch Hub (Manuguru - 507117)'
-        : "Vasanthi's Signature Main Warehouse (Hyderabad - 500033)";
+    let locName = 'Manuguru Main Warehouse (Manuguru - 507117)';
+    try {
+      const wh = await this.prisma.warehouse.findFirst({
+        where: {
+          OR: [
+            { id: dto.pickupLocation },
+            { code: dto.pickupLocation },
+            { isDefault: true },
+          ],
+          deletedAt: null,
+        },
+      });
+      if (wh) {
+        locName = `${wh.name} (${wh.city || 'Manuguru'} - ${wh.postalCode || '507117'})`;
+      }
+    } catch {
+      // fallback
+    }
 
     const newPickup = {
       pickupId,
@@ -411,14 +425,6 @@ export class DelhiveryService {
       timeSlot,
       location: locName,
       orderNumbers: dto.orderNumbers,
-      message: 'Delhivery driver pickup request scheduled successfully.',
-    };
-  }
-      status,
-      pickupDate: dto.pickupDate,
-      pickupTime: dto.pickupTime,
-      timeSlot,
-      location: locName,
       message: 'Delhivery driver pickup request scheduled successfully.',
     };
   }

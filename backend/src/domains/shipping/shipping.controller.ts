@@ -148,7 +148,7 @@ export class ShippingController {
   async requestPickup(@Body() body: any) {
     return ResponseBuilder.success(
       await this.delhiveryService.requestPickup({
-        pickupLocation: body.pickupLocation || 'VASANTHI_MAIN_WAREHOUSE',
+        pickupLocation: body.pickupLocation || 'MNG-01',
         pickupDate: body.pickupDate || new Date().toISOString().split('T')[0],
         pickupTime: body.pickupTime || '11:00:00',
         expectedPackageCount: body.expectedPackageCount || 1,

@@ -186,7 +186,7 @@ export default function OrderDetailPage() {
     setIsPickupPending(true);
     try {
       const res = await apiClient.post('/shipping/delhivery/pickup-request', {
-        pickupLocation: pickupWarehouse || 'VASANTHI_MAIN_WAREHOUSE',
+        pickupLocation: pickupWarehouse || 'MNG-01',
         pickupDate: pickupDate || new Date().toISOString().split('T')[0],
         pickupTime: pickupTimeSlot || '10:00:00',
         expectedPackageCount: Number(pickupPackageCount) || 1,

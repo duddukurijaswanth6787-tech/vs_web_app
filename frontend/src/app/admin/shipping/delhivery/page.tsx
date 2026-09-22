@@ -36,6 +36,7 @@ import {
 import { apiClient } from '@/lib/api/client';
 import { orderService } from '@/features/orders/order.service';
 import { OrderResponse } from '@/features/orders/order.types';
+import { useWarehouseList } from '@/features/warehouse/warehouse.hooks';
 import { useToast } from '@/components/toast/ToastProvider';
 import { getApiErrorMessage } from '@/utils/api-error';
 
@@ -75,6 +76,10 @@ interface ScheduledPickupItem {
 export default function DelhiveryShippingAdminPage() {
   const { toast } = useToast();
 
+  // Active Warehouses from DB
+  const { data: warehouseListData } = useWarehouseList({ status: 'ACTIVE' });
+  const warehouses = warehouseListData?.data || [];
+
   // Active Courier Partner
   const [activePartner, setActivePartner] = useState<'DELHIVERY' | 'DTDC'>('DELHIVERY');
 
@@ -83,7 +88,7 @@ export default function DelhiveryShippingAdminPage() {
   const [courierPartner, setCourierPartner] = useState('Delhivery');
   const [serviceType, setServiceType] = useState('EXPRESS');
   const [weightKg, setWeightKg] = useState('1.5');
-  const [pickupLocation, setPickupLocation] = useState("Vasanthi's Signature Main Warehouse (Hyderabad)");
+  const [pickupLocation, setPickupLocation] = useState('Manuguru Main Warehouse (Manuguru - 507117)');
   const [isGenerating, setIsGenerating] = useState(false);
 
   // Generated Shipment Result State
@@ -110,12 +115,24 @@ export default function DelhiveryShippingAdminPage() {
   const [showPickupModal, setShowPickupModal] = useState(false);
   const [pickupDate, setPickupDate] = useState(() => new Date().toISOString().split('T')[0]);
   const [pickupTimeSlot, setPickupTimeSlot] = useState('11:00:00');
-  const [pickupLocationSelection, setPickupLocationSelection] = useState('VASANTHI_MAIN_WAREHOUSE');
+  const [pickupLocationSelection, setPickupLocationSelection] = useState('MNG-01');
   const [expectedPackages, setExpectedPackages] = useState(1);
   const [pickupTargetOrderNumbers, setPickupTargetOrderNumbers] = useState<string[]>([]);
   const [pickupNotes, setPickupNotes] = useState('');
   const [isSchedulingPickup, setIsSchedulingPickup] = useState(false);
   const [pickupResult, setPickupResult] = useState<{ token: string; message: string; date: string; time: string; location: string } | null>(null);
+
+  // Auto-sync default warehouse
+  useEffect(() => {
+    if (warehouses.length > 0) {
+      const def = warehouses.find((w: any) => w.isDefault) || warehouses[0];
+      const codeOrId = def.code || def.id;
+      if (!warehouses.some((w: any) => w.code === pickupLocationSelection || w.id === pickupLocationSelection)) {
+        setPickupLocationSelection(codeOrId);
+      }
+      setPickupLocation(`${def.name} (${def.city || 'Manuguru'} - ${def.postalCode || '507117'})`);
+    }
+  }, [warehouses]);
 
   // End of Day Manifest State
   const [isGeneratingManifest, setIsGeneratingManifest] = useState(false);
@@ -392,6 +409,9 @@ export default function DelhiveryShippingAdminPage() {
     e.preventDefault();
     setIsSchedulingPickup(true);
     try {
+      const selectedWh = warehouses.find((w: any) => w.code === pickupLocationSelection || w.id === pickupLocationSelection) || warehouses[0];
+      const locDisplayName = selectedWh ? `${selectedWh.name} (${selectedWh.city || 'Manuguru'} - ${selectedWh.postalCode || '507117'})` : 'Manuguru Main Warehouse (Manuguru - 507117)';
+
       const res = await apiClient.post('/shipping/delhivery/pickup-request', {
         pickupLocation: pickupLocationSelection,
         pickupDate,
@@ -408,7 +428,7 @@ export default function DelhiveryShippingAdminPage() {
         message: 'Delhivery driver pickup has been registered with sorting hub.',
         date: pickupDate,
         time: pickupTimeSlot === '11:00:00' ? 'Morning (10:00 AM - 01:00 PM)' : pickupTimeSlot === '15:00:00' ? 'Afternoon (01:00 PM - 04:00 PM)' : 'Evening (04:00 PM - 07:00 PM)',
-        location: pickupLocationSelection === 'VASANTHI_MAIN_WAREHOUSE' ? "Vasanthi's Main Warehouse (Hyderabad - 500033)" : 'Manuguru Store Hub',
+        location: locDisplayName,
       });
       setShowPickupModal(false);
       await loadPickupRequests();
@@ -1436,13 +1456,40 @@ export default function DelhiveryShippingAdminPage() {
                   onChange={(e) => setPickupLocationSelection(e.target.value)}
                   className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 >
-                  <option value="VASANTHI_MAIN_WAREHOUSE">
-                    🏢 Vasanthi&apos;s Main Warehouse (Jubilee Hills, Hyderabad - 500033)
-                  </option>
-                  <option value="MANUGURU_STORE_WAREHOUSE">
-                    🏬 Manuguru Store Dispatch Hub (Manuguru - 507117)
-                  </option>
+                  {warehouses.length > 0 ? (
+                    warehouses.map((wh: any) => (
+                      <option key={wh.id} value={wh.code || wh.id}>
+                        🏢 {wh.name} ({wh.city || 'Manuguru'} - {wh.postalCode || '507117'}) {wh.isDefault ? '· (Default Hub)' : ''}
+                      </option>
+                    ))
+                  ) : (
+                    <option value="MNG-01">
+                      🏬 Manuguru Main Warehouse (Manuguru - 507117) · (Default Hub)
+                    </option>
+                  )}
                 </select>
+
+                {/* Selected Warehouse Physical Address & Contact Card */}
+                {(() => {
+                  const selectedWh = warehouses.find((w: any) => w.code === pickupLocationSelection || w.id === pickupLocationSelection) || warehouses[0];
+                  const displayAddress = selectedWh?.address
+                    ? `${selectedWh.address}, ${selectedWh.city || 'Manuguru'}, ${selectedWh.state || 'Telangana'} - ${selectedWh.postalCode || '507117'}`
+                    : 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Samithi singaram grama panchayati, Beside MORE super market, Manuguru, Telangana 507117';
+                  const displayPhone = selectedWh?.phone || '+91 7095004188';
+                  const displayContact = selectedWh?.contactPerson || 'Jagadeep / Jaswanth';
+                  return (
+                    <div className="mt-2.5 p-3 bg-emerald-50/70 border border-emerald-200/80 rounded-xl text-2xs text-emerald-950 space-y-1">
+                      <div className="flex items-start gap-1.5 font-semibold text-emerald-900">
+                        <MapPin className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                        <span>{displayAddress}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-emerald-800 pt-1 border-t border-emerald-200/60">
+                        <span>👤 Contact: <strong>{displayContact}</strong></span>
+                        <span>📞 Phone: <strong>{displayPhone}</strong></span>
+                      </div>
+                    </div>
+                  );
+                })()}
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
