@@ -8,14 +8,14 @@
     "userInterfaceStyle": "light",
     "newArchEnabled": false,
     "splash": {
-      "backgroundColor": "#0284c7"
+      "backgroundColor": "#f0f9ff"
     },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.vasanthi.shopora"
     },
     "android": {
-      "backgroundColor": "#0284c7",
+      "backgroundColor": "#f0f9ff",
       "package": "com.vasanthi.shopora",
       "permissions": [
         "android.permission.BLUETOOTH",

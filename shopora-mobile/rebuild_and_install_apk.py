@@ -18,6 +18,14 @@ def main():
     apksigner_bin = os.path.join(build_tools, "apksigner.bat")
     keystore_path = os.path.join(base_dir, "android", "app", "debug.keystore")
     
+    hermesc_bin = os.path.join(base_dir, "node_modules", "hermes-compiler", "hermesc", "win64-bin", "hermesc.exe")
+    bundle_to_inject = bundle_path
+    if os.path.exists(hermesc_bin):
+        hbc_path = os.path.join(base_dir, "android", "app", "src", "main", "assets", "index.android.bundle.hbc")
+        print("   Compiling JS bundle to Hermes Bytecode (-O)...")
+        subprocess.check_call([hermesc_bin, "-emit-binary", "-O", "-out", hbc_path, bundle_path])
+        bundle_to_inject = hbc_path
+
     print("1. Reading source APK and packaging with uncompressed resources.arsc and .so files...")
     written_entries = set()
     with zipfile.ZipFile(source_apk, 'r') as src_zip:
@@ -32,8 +40,8 @@ def main():
                 written_entries.add(item.filename)
                 
                 if item.filename == "assets/index.android.bundle":
-                    print("   Injecting new React Native bundle:", bundle_path)
-                    with open(bundle_path, 'rb') as bf:
+                    print("   Injecting Hermes Bytecode bundle:", bundle_to_inject)
+                    with open(bundle_to_inject, 'rb') as bf:
                         bundle_data = bf.read()
                     zinfo = zipfile.ZipInfo(filename=item.filename, date_time=item.date_time)
                     zinfo.compress_type = zipfile.ZIP_DEFLATED
