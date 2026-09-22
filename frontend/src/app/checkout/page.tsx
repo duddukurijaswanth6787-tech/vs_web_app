@@ -28,6 +28,10 @@ import {
   Building2,
   Wallet,
   QrCode,
+  User,
+  ChevronDown,
+  LogOut,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -69,7 +73,7 @@ function CheckoutPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const addressIdParam = searchParams.get('addressId') || '';
-  const { isAuthenticated, isInitializing, user } = useAuth();
+  const { isAuthenticated, isInitializing, user, logout } = useAuth();
   const qc = useQueryClient();
 
   const { data: cartData } = useCustomerCart();
@@ -78,6 +82,40 @@ function CheckoutPageContent() {
   const isCodFeatureOn = useFeatureEnabled('cod');
   const codEnabled = Boolean(publicSettings?.codEnabled ?? isCodFeatureOn);
   const placeOrder = usePlaceOrder();
+
+  // Profile / Account Dropdown State
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+
+  // Extract clean display name and identifier
+  const displayName = useMemo(() => {
+    if (!user) return 'My Account';
+    const u = user as unknown as { firstName?: string; lastName?: string; name?: string; phone?: string; email?: string };
+    const raw = (u.firstName ? `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}` : u.name || '').trim();
+    if (raw && !['customer', 'user', 'guest', 'admin', 'pos_operator'].includes(raw.toLowerCase())) {
+      return raw;
+    }
+    return u.phone || u.email || 'My Account';
+  }, [user]);
+
+  const userIdentifier = useMemo(() => {
+    if (!user) return '';
+    const u = user as unknown as { phone?: string; email?: string };
+    return u.phone || u.email || '';
+  }, [user]);
+
+  const handleSwitchAccount = async () => {
+    try {
+      await logout();
+    } catch {}
+    router.push('/login?redirect=/checkout');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } catch {}
+    router.push('/');
+  };
 
   // Stored coupon
   const [couponCode, setCouponCode] = useState<string>(() => {
@@ -527,11 +565,102 @@ function CheckoutPageContent() {
             </div>
           </div>
 
-          {/* 256-Bit SSL Security Badge */}
-          <div className="flex items-center gap-1.5 text-xs text-emerald-800 font-semibold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
-            <Lock className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden sm:inline">100% Secure Checkout</span>
-            <span className="sm:hidden">SSL Secure</span>
+          {/* USER ACCOUNT & SECURITY BADGE */}
+          <div className="flex items-center gap-3">
+            {/* Account / Profile Switcher Dropdown */}
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setShowProfileMenu((v) => !v)}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-full border border-neutral-200 bg-neutral-50 hover:bg-neutral-100 transition-all text-xs font-semibold text-neutral-800 shadow-2xs cursor-pointer"
+                title="Account & Profile Options"
+              >
+                <div className="w-6 h-6 rounded-full bg-[var(--brand-primary)] text-white flex items-center justify-center font-bold text-[10px] shrink-0">
+                  {displayName.charAt(0).toUpperCase()}
+                </div>
+                <span className="hidden sm:inline max-w-[120px] truncate">{displayName}</span>
+                <ChevronDown className="w-3.5 h-3.5 text-neutral-500" />
+              </button>
+
+              {showProfileMenu && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setShowProfileMenu(false)}
+                  />
+                  <div className="absolute right-0 mt-2 w-64 bg-white rounded-2xl border border-neutral-200 shadow-xl py-2 z-50 animate-fadeIn">
+                    <div className="px-4 py-2.5 border-b border-neutral-100">
+                      <p className="text-[10px] uppercase tracking-wider font-bold text-neutral-400">Logged in as</p>
+                      <p className="text-xs font-bold text-neutral-900 truncate mt-0.5">{displayName}</p>
+                      {userIdentifier && (
+                        <p className="text-[11px] text-neutral-500 font-mono">{userIdentifier}</p>
+                      )}
+                    </div>
+
+                    <div className="py-1">
+                      <Link
+                        href="/profile"
+                        target="_blank"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
+                      >
+                        <User className="w-4 h-4 text-neutral-400" />
+                        <span>View Profile</span>
+                      </Link>
+                      <Link
+                        href="/profile/addresses"
+                        target="_blank"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
+                      >
+                        <MapPin className="w-4 h-4 text-neutral-400" />
+                        <span>Manage Saved Addresses</span>
+                      </Link>
+                      <Link
+                        href="/orders"
+                        target="_blank"
+                        onClick={() => setShowProfileMenu(false)}
+                        className="flex items-center gap-2.5 px-4 py-2 text-xs text-neutral-700 hover:bg-neutral-50 font-medium transition-colors"
+                      >
+                        <ShoppingBag className="w-4 h-4 text-neutral-400" />
+                        <span>My Orders</span>
+                      </Link>
+                    </div>
+
+                    <div className="border-t border-neutral-100 pt-1">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          handleSwitchAccount();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-[var(--brand-primary)] hover:bg-sky-50 font-bold transition-colors cursor-pointer text-left"
+                      >
+                        <ArrowRightLeft className="w-4 h-4 text-[var(--brand-primary)]" />
+                        <span>Switch Account / Change User</span>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowProfileMenu(false);
+                          handleLogout();
+                        }}
+                        className="w-full flex items-center gap-2.5 px-4 py-2 text-xs text-red-600 hover:bg-red-50 font-medium transition-colors cursor-pointer text-left"
+                      >
+                        <LogOut className="w-4 h-4 text-red-500" />
+                        <span>Logout</span>
+                      </button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* 256-Bit SSL Security Badge */}
+            <div className="hidden md:flex items-center gap-1.5 text-xs text-emerald-800 font-semibold bg-emerald-50 px-3 py-1.5 rounded-full border border-emerald-200">
+              <Lock className="w-3.5 h-3.5 text-emerald-600" />
+              <span>100% Secure Checkout</span>
+            </div>
           </div>
         </div>
       </header>
