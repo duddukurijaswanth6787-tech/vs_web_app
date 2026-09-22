@@ -230,7 +230,7 @@ export class AuthService {
 
     await this.refreshTokenService.revoke(refreshToken);
 
-    const roles = user.userRoles.map((ur) => ur.role.name);
+    const roles: string[] = (user.userRoles || []).map((ur: any) => ur.role.name);
     const payload: JwtPayload = {
       sub: user.id,
       email: user.email,
@@ -259,11 +259,11 @@ export class AuthService {
     const user = await this.authRepository.findById(userId);
     if (!user) throw new AuthenticationException('User not found', 'AUTH_001');
 
-    const roles = user.userRoles.map((ur) => ur.role.name);
-    const permissions = [
+    const roles: string[] = (user.userRoles || []).map((ur: any) => ur.role.name);
+    const permissions: string[] = [
       ...new Set(
-        user.userRoles.flatMap((ur) =>
-          ur.role.rolePermissions.map((rp) => rp.permission.code),
+        (user.userRoles || []).flatMap((ur: any) =>
+          (ur.role?.rolePermissions || []).map((rp: any) => rp.permission.code),
         ),
       ),
     ];

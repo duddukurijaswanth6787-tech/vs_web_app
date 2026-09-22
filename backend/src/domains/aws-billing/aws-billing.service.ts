@@ -143,7 +143,9 @@ export class AwsBillingService {
         },
       });
 
-      const map = new Map(settings.map((s) => [s.key, s.value]));
+      const map = new Map<string, string>(
+        settings.map((s: any) => [s.key, String(s.value ?? '')]),
+      );
 
       return {
         totalGrantUSD: parseFloat(

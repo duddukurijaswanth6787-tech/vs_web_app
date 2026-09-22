@@ -7,6 +7,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Pool } from 'pg';
 import { PrismaPg } from '@prisma/adapter-pg';
+import { PrismaClient } from '@prisma/client';
 import { DATABASE_CONSTANTS } from './database.constants';
 
 @Injectable()
@@ -47,6 +48,7 @@ export class PrismaService
         { emit: 'event', level: 'warn' },
       ],
     });
+    this.pool = pool;
   }
 
   async onModuleInit() {
@@ -69,7 +71,7 @@ export class PrismaService
             'Failed to connect to PostgreSQL database after retries',
             error instanceof Error ? error.message : String(error),
           );
-          process.exit(1);
+          throw error;
         }
       }
     }
@@ -114,6 +116,9 @@ export class PrismaService
 
   async onModuleDestroy() {
     await this.$disconnect();
+    if (this.pool) {
+      await this.pool.end().catch(() => {});
+    }
     this.connected = false;
   }
 
