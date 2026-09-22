@@ -477,8 +477,8 @@ function CheckoutPageContent() {
           if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
           await qc.invalidateQueries({ queryKey: customerKeys.cart() });
           await qc.invalidateQueries({ queryKey: customerKeys.orders() });
-          // Redirect to Profile / Orders section
-          window.location.assign('/orders');
+          // Redirect to dedicated Order Confirmed success page
+          window.location.assign(`/orders/confirmed/${orderNumber}`);
         }
       },
       modal: {
@@ -523,7 +523,7 @@ function CheckoutPageContent() {
       if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
       await qc.invalidateQueries({ queryKey: customerKeys.cart() });
       await qc.invalidateQueries({ queryKey: customerKeys.orders() });
-      window.location.assign('/orders');
+      window.location.assign(`/orders/confirmed/${order.orderNumber}`);
     } catch (err: unknown) {
       setOrderError(getApiErrorMessage(err, 'Failed to place order. Please check address and try again.'));
     }
