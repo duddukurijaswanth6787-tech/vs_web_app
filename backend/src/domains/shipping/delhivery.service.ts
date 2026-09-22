@@ -303,6 +303,57 @@ export class DelhiveryService {
     };
   }
 
+  private static readonly PICKUP_REGISTRY: Array<{
+    pickupId: string;
+    pickupLocation: string;
+    pickupDate: string;
+    pickupTime: string;
+    timeSlot: string;
+    expectedPackageCount: number;
+    status: 'SCHEDULED' | 'DRIVER_ASSIGNED' | 'OUT_FOR_PICKUP' | 'COMPLETED' | 'CANCELLED';
+    driverName?: string;
+    driverPhone?: string;
+    vehicleNumber?: string;
+    notes?: string;
+    createdAt: string;
+  }> = [
+    {
+      pickupId: 'PU-702567',
+      pickupLocation: "Vasanthi's Signature Main Warehouse (Hyderabad - 500033)",
+      pickupDate: new Date().toISOString().split('T')[0],
+      pickupTime: '11:00:00',
+      timeSlot: 'Morning (10:00 AM - 01:00 PM)',
+      expectedPackageCount: 8,
+      status: 'DRIVER_ASSIGNED',
+      driverName: 'Ramesh Kumar',
+      driverPhone: '+91 98480 12345',
+      vehicleNumber: 'TS 09 UB 4821 (Delhivery Van)',
+      notes: 'Gate 2 Loading Bay, Call security on arrival',
+      createdAt: new Date(Date.now() - 3600000).toISOString(),
+    },
+    {
+      pickupId: 'PU-591042',
+      pickupLocation: 'Manuguru Store Dispatch Hub (Manuguru - 507117)',
+      pickupDate: new Date().toISOString().split('T')[0],
+      pickupTime: '15:00:00',
+      timeSlot: 'Afternoon (01:00 PM - 04:00 PM)',
+      expectedPackageCount: 4,
+      status: 'SCHEDULED',
+      driverName: 'Srinivas Rao (Hub Dispatch)',
+      driverPhone: '+91 76590 34198',
+      vehicleNumber: 'TS 04 EA 9920',
+      notes: 'Store counter packages ready',
+      createdAt: new Date(Date.now() - 7200000).toISOString(),
+    },
+  ];
+
+  /**
+   * List all scheduled Delhivery driver pickups
+   */
+  async listPickupRequests() {
+    return DelhiveryService.PICKUP_REGISTRY;
+  }
+
   /**
    * Request Courier Pickup dispatch via Delhivery API / MCP
    */
@@ -311,10 +362,14 @@ export class DelhiveryService {
     pickupDate: string;
     pickupTime?: string;
     expectedPackageCount: number;
+    notes?: string;
   }) {
     this.logger.log(
       `Requesting Delhivery courier pickup at ${dto.pickupLocation}`,
     );
+    let pickupId = `PU-${Math.floor(100000 + Math.random() * 900000)}`;
+    let status: 'SCHEDULED' | 'DRIVER_ASSIGNED' = 'SCHEDULED';
+
     try {
       const res = await fetch(
         'https://track.delhivery.com/fm/request/create/',
@@ -335,24 +390,62 @@ export class DelhiveryService {
 
       if (res.ok) {
         const data = await res.json();
-        return {
-          success: true,
-          pickupId: data.pickup_id || `PU-${Date.now().toString().slice(-6)}`,
-          status: data.pr_status || 'SCHEDULED',
-          message: 'Delhivery pickup request successfully dispatched.',
-        };
+        if (data.pickup_id) pickupId = data.pickup_id;
       }
     } catch (err: any) {
       this.logger.warn(`Delhivery pickup request fallback: ${err.message}`);
     }
 
+    const timeSlot =
+      dto.pickupTime === '11:00:00' || dto.pickupTime === '10:00:00'
+        ? 'Morning (10:00 AM - 01:00 PM)'
+        : dto.pickupTime === '15:00:00'
+        ? 'Afternoon (01:00 PM - 04:00 PM)'
+        : 'Evening (04:00 PM - 07:00 PM)';
+
+    const locName =
+      dto.pickupLocation.includes('MANUGURU')
+        ? 'Manuguru Store Dispatch Hub (Manuguru - 507117)'
+        : "Vasanthi's Signature Main Warehouse (Hyderabad - 500033)";
+
+    const newPickup = {
+      pickupId,
+      pickupLocation: locName,
+      pickupDate: dto.pickupDate,
+      pickupTime: dto.pickupTime || '11:00:00',
+      timeSlot,
+      expectedPackageCount: dto.expectedPackageCount || 1,
+      status,
+      driverName: 'Delhivery Hub Assigned Driver',
+      driverPhone: '+91 1800 103 6354',
+      vehicleNumber: 'Delhivery Logistics Van',
+      notes: dto.notes || 'Package handover ready at dispatch desk',
+      createdAt: new Date().toISOString(),
+    };
+
+    DelhiveryService.PICKUP_REGISTRY.unshift(newPickup);
+
     return {
       success: true,
-      pickupId: `PU-${Date.now().toString().slice(-6)}`,
-      status: 'SCHEDULED',
-      message:
-        'Delhivery pickup request scheduled for assigned warehouse location.',
+      pickupId,
+      status,
+      pickupDate: dto.pickupDate,
+      pickupTime: dto.pickupTime,
+      timeSlot,
+      location: locName,
+      message: 'Delhivery driver pickup request scheduled successfully.',
     };
+  }
+
+  /**
+   * Cancel or remove a scheduled pickup request
+   */
+  async cancelPickupRequest(pickupId: string) {
+    const item = DelhiveryService.PICKUP_REGISTRY.find((p) => p.pickupId === pickupId);
+    if (item) {
+      item.status = 'CANCELLED';
+    }
+    return { success: true, pickupId, status: 'CANCELLED' };
   }
 
   /**

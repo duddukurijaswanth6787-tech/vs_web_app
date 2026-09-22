@@ -129,6 +129,17 @@ export class ShippingController {
     );
   }
 
+  @Get('delhivery/pickup-requests')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'List all scheduled Delhivery driver pickups' })
+  async getPickupRequests() {
+    return ResponseBuilder.success(
+      await this.delhiveryService.listPickupRequests(),
+    );
+  }
+
   @Post('delhivery/pickup-request')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
@@ -139,9 +150,23 @@ export class ShippingController {
       await this.delhiveryService.requestPickup({
         pickupLocation: body.pickupLocation || 'VASANTHI_MAIN_WAREHOUSE',
         pickupDate: body.pickupDate || new Date().toISOString().split('T')[0],
+        pickupTime: body.pickupTime || '11:00:00',
         expectedPackageCount: body.expectedPackageCount || 1,
+        notes: body.notes,
       }),
       'Pickup request dispatched successfully',
+    );
+  }
+
+  @Post('delhivery/pickup-request/:id/cancel')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Cancel a scheduled Delhivery courier pickup' })
+  async cancelPickup(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.cancelPickupRequest(id),
+      'Pickup request cancelled',
     );
   }
 
