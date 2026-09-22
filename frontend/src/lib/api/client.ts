@@ -167,11 +167,8 @@ apiClient.interceptors.request.use(
       await bootstrapAccessToken();
     }
 
-    if (!process.env.NEXT_PUBLIC_API_BASE_URL && typeof window !== 'undefined') {
-      const hostname = window.location.hostname;
-      if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-        config.baseURL = `http://${hostname}:4000/api/v1`;
-      }
+    if (!config.baseURL) {
+      config.baseURL = getApiBaseUrl();
     }
 
     const token = getStoredAccessToken();
