@@ -424,6 +424,14 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
           <h3 className="text-xs font-bold text-neutral-800 uppercase tracking-wide">Account Settings</h3>
         </div>
         <div className="divide-y divide-neutral-100">
+          <Link href="/orders" className="flex items-center justify-between px-4 py-3.5 hover:bg-sky-50/30 transition-colors">
+            <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
+              <Package className="w-4 h-4 text-[var(--brand-primary)]" />
+              <span>My Orders &amp; Returns</span>
+            </span>
+            <ChevronRight className="w-4 h-4 text-neutral-400" />
+          </Link>
+
           <Link href="/profile/edit" className="flex items-center justify-between px-4 py-3.5 hover:bg-sky-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
               <User className="w-4 h-4 text-[var(--brand-primary)]" />
