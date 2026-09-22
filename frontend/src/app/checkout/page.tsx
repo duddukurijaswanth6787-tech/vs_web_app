@@ -23,6 +23,7 @@ import {
   CheckCircle2,
   Phone,
   Sparkles,
+  Pencil,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import {
@@ -98,8 +99,9 @@ function CheckoutPageContent() {
   const [selectedAddressId, setSelectedAddressId] = useState<string>(addressIdParam);
   const [showAddressPicker, setShowAddressPicker] = useState(false);
   const [showNewAddressForm, setShowNewAddressForm] = useState(false);
+  const [editingAddressId, setEditingAddressId] = useState<string | null>(null);
 
-  // New Address Form State
+  // Address Form State (Used for both Create & Edit)
   const [newAddrForm, setNewAddrForm] = useState({
     fullName: '',
     phone: '',
@@ -115,6 +117,54 @@ function CheckoutPageContent() {
   const [newAddrError, setNewAddrError] = useState('');
   const [pincodeFilled, setPincodeFilled] = useState(false);
   const { lookup: lookupPincode, isLoading: pincodeLoading, notFound: pincodeNotFound } = usePincodeLookup();
+
+  const handleOpenEditAddress = (addr: any) => {
+    if (!addr) return;
+    setEditingAddressId(addr.id);
+    setNewAddrForm({
+      fullName: addr.fullName || '',
+      phone: addr.phone || '',
+      addressLine1: addr.addressLine1 || '',
+      addressLine2: addr.addressLine2 || '',
+      postalCode: addr.postalCode || '',
+      city: addr.city || '',
+      state: addr.state || '',
+      country: addr.country || 'India',
+      isDefaultShipping: Boolean(addr.isDefault || addr.isDefaultShipping),
+    });
+    setPincodeFilled(Boolean(addr.postalCode && addr.postalCode.length === 6));
+    setNewAddrError('');
+    setShowNewAddressForm(true);
+    setShowAddressPicker(false);
+  };
+
+  const handleOpenNewAddress = () => {
+    setEditingAddressId(null);
+    let defaultName = '';
+    let defaultPhone = '';
+    if (user) {
+      const u = user as unknown as { firstName?: string; lastName?: string; name?: string; phone?: string };
+      const rawName = (u.firstName ? `${u.firstName}${u.lastName ? ' ' + u.lastName : ''}` : u.name || '').trim();
+      const isGeneric = !rawName || ['customer', 'user', 'guest', 'admin', 'pos_operator'].includes(rawName.toLowerCase());
+      defaultName = isGeneric ? '' : rawName;
+      defaultPhone = u.phone || '';
+    }
+    setNewAddrForm({
+      fullName: defaultName,
+      phone: defaultPhone,
+      addressLine1: '',
+      addressLine2: '',
+      postalCode: '',
+      city: '',
+      state: '',
+      country: 'India',
+      isDefaultShipping: addresses.length === 0,
+    });
+    setPincodeFilled(false);
+    setNewAddrError('');
+    setShowNewAddressForm(true);
+    setShowAddressPicker(false);
+  };
 
   // Form states
   const [deliveryInstructions, setDeliveryInstructions] = useState('');
@@ -275,16 +325,22 @@ function CheckoutPageContent() {
     }
     setNewAddrLoading(true);
     try {
-      const created = await customerMeService.createAddress(newAddrForm);
-      qc.invalidateQueries({ queryKey: customerKeys.addresses });
-      qc.invalidateQueries({ queryKey: customerKeys.address() });
-      if (created?.id) {
-        setSelectedAddressId(created.id);
-        setShowNewAddressForm(false);
-        setShowAddressPicker(false);
+      if (editingAddressId) {
+        await customerMeService.updateAddress(editingAddressId, newAddrForm);
+        setSelectedAddressId(editingAddressId);
+      } else {
+        const created = await customerMeService.createAddress(newAddrForm);
+        if (created?.id) {
+          setSelectedAddressId(created.id);
+        }
       }
+      await qc.invalidateQueries({ queryKey: customerKeys.addresses });
+      await qc.invalidateQueries({ queryKey: customerKeys.address() });
+      setShowNewAddressForm(false);
+      setEditingAddressId(null);
+      setShowAddressPicker(false);
     } catch (err) {
-      setNewAddrError(getApiErrorMessage(err, 'Failed to save address'));
+      setNewAddrError(getApiErrorMessage(err, editingAddressId ? 'Failed to update address' : 'Failed to save address'));
     } finally {
       setNewAddrLoading(false);
     }
@@ -499,7 +555,6 @@ function CheckoutPageContent() {
                     <p className="text-[11px] text-neutral-500">Select where you want your order delivered</p>
                   </div>
                 </div>
-
                 <div className="flex items-center gap-2">
                   {addresses.length > 1 && !showNewAddressForm && (
                     <button
@@ -513,10 +568,7 @@ function CheckoutPageContent() {
                   {!showNewAddressForm && (
                     <button
                       type="button"
-                      onClick={() => {
-                        setShowNewAddressForm(true);
-                        setShowAddressPicker(false);
-                      }}
+                      onClick={handleOpenNewAddress}
                       className="text-xs font-bold bg-sky-50 text-[var(--brand-primary)] border border-sky-100 px-3 py-1.5 rounded-xl hover:bg-sky-100 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" /> Add New Address
@@ -525,14 +577,20 @@ function CheckoutPageContent() {
                 </div>
               </div>
 
-              {/* INLINE NEW ADDRESS FORM */}
+              {/* INLINE ADDRESS FORM (ADD / EDIT) */}
               {showNewAddressForm ? (
                 <form onSubmit={handleSaveNewAddress} className="bg-neutral-50/80 border border-neutral-200 rounded-2xl p-4 sm:p-5 space-y-3.5 animate-fadeIn">
                   <div className="flex items-center justify-between border-b border-neutral-200/60 pb-2">
-                    <span className="text-xs font-bold text-neutral-900 font-serif">Add New Delivery Address</span>
+                    <span className="text-xs font-bold text-neutral-900 font-serif flex items-center gap-1.5">
+                      <Pencil className="w-3.5 h-3.5 text-[var(--brand-primary)]" />
+                      {editingAddressId ? 'Edit Delivery Address' : 'Add New Delivery Address'}
+                    </span>
                     <button
                       type="button"
-                      onClick={() => setShowNewAddressForm(false)}
+                      onClick={() => {
+                        setShowNewAddressForm(false);
+                        setEditingAddressId(null);
+                      }}
                       className="text-xs text-neutral-500 hover:text-neutral-900 cursor-pointer"
                     >
                       Cancel
@@ -650,7 +708,9 @@ function CheckoutPageContent() {
                     disabled={newAddrLoading}
                     className="w-full py-2.5 bg-[var(--brand-primary)] text-white rounded-xl text-xs font-bold hover:bg-[var(--brand-primary-dark)] disabled:opacity-60 transition-all shadow-xs cursor-pointer"
                   >
-                    {newAddrLoading ? 'Saving Address…' : 'Save & Deliver to this Address'}
+                    {newAddrLoading
+                      ? (editingAddressId ? 'Updating Address…' : 'Saving Address…')
+                      : (editingAddressId ? 'Save Changes' : 'Save & Deliver to this Address')}
                   </button>
                 </form>
               ) : addressesLoading ? (
@@ -669,9 +729,18 @@ function CheckoutPageContent() {
                           {selectedAddress.label || selectedAddress.addressType || 'Home'}
                         </span>
                       </div>
-                      <span className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)]">
-                        <CheckCircle2 className="w-4 h-4 text-[var(--brand-primary)]" /> Selected
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenEditAddress(selectedAddress)}
+                          className="inline-flex items-center gap-1 text-xs font-bold text-[var(--brand-primary)] bg-white border border-sky-200 px-2.5 py-1 rounded-lg hover:bg-sky-50 transition-colors shadow-2xs cursor-pointer"
+                        >
+                          <Pencil className="w-3 h-3" /> Edit
+                        </button>
+                        <span className="flex items-center gap-1 text-[11px] font-bold text-[var(--brand-primary)]">
+                          <CheckCircle2 className="w-4 h-4 text-[var(--brand-primary)]" /> Selected
+                        </span>
+                      </div>
                     </div>
 
                     <p className="text-neutral-700 text-xs leading-relaxed">
@@ -688,7 +757,7 @@ function CheckoutPageContent() {
                     <div className="pt-2 border-t border-sky-100 flex items-center gap-2 text-emerald-800 text-xs font-medium">
                       <Truck className="w-4 h-4 text-emerald-600 shrink-0" />
                       <span>
-                        Serviceable to PIN <strong>{selectedAddress.postalCode}</strong> • Delivery verified via <strong>Delhivery &amp; DTDC Express</strong> (3-5 Days)
+                        Serviceable to PIN <strong>{selectedAddress.postalCode}</strong> • Estimated delivery in <strong>3–5 business days</strong>
                       </span>
                     </div>
                   </div>
@@ -699,32 +768,44 @@ function CheckoutPageContent() {
                       <p className="text-[11px] font-bold text-neutral-700">Choose from your other addresses:</p>
                       <div className="grid gap-2">
                         {addresses.map((addr: any) => (
-                          <label
+                          <div
                             key={addr.id}
-                            className={`flex items-start gap-3 p-3.5 rounded-2xl border cursor-pointer transition-all ${
+                            className={`flex items-start justify-between gap-3 p-3.5 rounded-2xl border transition-all ${
                               activeAddressId === addr.id
                                 ? 'border-[var(--brand-primary)] bg-sky-50/60 font-semibold'
                                 : 'border-neutral-200 hover:bg-neutral-50'
                             }`}
                           >
-                            <input
-                              type="radio"
-                              name="checkoutAddressSelect"
-                              checked={activeAddressId === addr.id}
-                              onChange={() => {
-                                setSelectedAddressId(addr.id);
-                                setShowAddressPicker(false);
+                            <label className="flex items-start gap-3 cursor-pointer flex-1">
+                              <input
+                                type="radio"
+                                name="checkoutAddressSelect"
+                                checked={activeAddressId === addr.id}
+                                onChange={() => {
+                                  setSelectedAddressId(addr.id);
+                                  setShowAddressPicker(false);
+                                }}
+                                className="mt-0.5 accent-[var(--brand-primary)]"
+                              />
+                              <div className="space-y-0.5 text-xs flex-1">
+                                <span className="font-bold text-neutral-900">{addr.fullName}</span>
+                                <p className="text-neutral-600 text-[11px]">
+                                  {addr.addressLine1}{addr.addressLine2 ? `, ${addr.addressLine2}` : ''}, {addr.city}, {addr.state} - {addr.postalCode}
+                                </p>
+                                <p className="text-neutral-400 text-[10px]">Phone: {addr.phone}</p>
+                              </div>
+                            </label>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleOpenEditAddress(addr);
                               }}
-                              className="mt-0.5 accent-[var(--brand-primary)]"
-                            />
-                            <div className="space-y-0.5 text-xs flex-1">
-                              <span className="font-bold text-neutral-900">{addr.fullName}</span>
-                              <p className="text-neutral-600 text-[11px]">
-                                {addr.addressLine1}, {addr.city}, {addr.state} - {addr.postalCode}
-                              </p>
-                              <p className="text-neutral-400 text-[10px]">Phone: {addr.phone}</p>
-                            </div>
-                          </label>
+                              className="text-[11px] font-bold text-[var(--brand-primary)] hover:underline px-2.5 py-1 bg-white border border-neutral-200 rounded-lg shrink-0 cursor-pointer flex items-center gap-1 shadow-2xs hover:bg-neutral-50"
+                            >
+                              <Pencil className="w-3 h-3" /> Edit
+                            </button>
+                          </div>
                         ))}
                       </div>
                     </div>
