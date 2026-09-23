@@ -334,12 +334,14 @@ export default function StaffPage() {
             <div className="border-b border-neutral-100 bg-neutral-50 px-6 py-4">
               <h3 className="font-bold text-neutral-900">Add new staff operator</h3>
             </div>
-            <form onSubmit={handleCreateSubmit} className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
+            <form onSubmit={handleCreateSubmit} autoComplete="off" className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">First Name</label>
                   <input
                     type="text"
+                    name="new_staff_first_name"
+                    autoComplete="off"
                     required
                     value={formData.firstName}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
@@ -350,6 +352,8 @@ export default function StaffPage() {
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Last Name</label>
                   <input
                     type="text"
+                    name="new_staff_last_name"
+                    autoComplete="off"
                     required
                     value={formData.lastName}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
@@ -363,6 +367,9 @@ export default function StaffPage() {
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Email Address</label>
                   <input
                     type="email"
+                    name="new_staff_email_unique"
+                    id="new_staff_email_unique"
+                    autoComplete="off"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -373,6 +380,9 @@ export default function StaffPage() {
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Password</label>
                   <input
                     type="password"
+                    name="new_staff_password_unique"
+                    id="new_staff_password_unique"
+                    autoComplete="new-password"
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
