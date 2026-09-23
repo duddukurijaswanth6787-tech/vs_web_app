@@ -38,10 +38,27 @@ export default function CustomerDetailPage() {
   const { data: customer, isLoading: customerLoading, error: customerError, refetch: refetchCustomer } = useCustomer(id);
   const { data: profile, isLoading: profileLoading } = useCustomerProfile(id);
 
+  const customerProfileId = profile?.id;
+  const targetCustomerId = customerProfileId || id;
+
   // Orders, Addresses, Wishlist, Cart, Wallet
   const { data: customerOrders, isLoading: ordersLoading } = useOrderList(
-    profile?.id ? { customerId: profile.id } : {}
+    targetCustomerId ? { customerId: targetCustomerId } : undefined,
+    Boolean(targetCustomerId && !customerLoading && !profileLoading)
   );
+
+  const filteredOrders = React.useMemo(() => {
+    if (!customerOrders?.data) return [];
+    if (!customer && !profile) return [];
+    return customerOrders.data.filter((order) => {
+      if (profile?.id && order.customerId === profile.id) return true;
+      if (order.customerId === id) return true;
+      if (customer?.email && order.customer?.user?.email === customer.email) return true;
+      if (customer?.phone && order.customer?.phone === customer.phone) return true;
+      if (customer?.phone && order.customer?.user?.phone === customer.phone) return true;
+      return false;
+    });
+  }, [customerOrders?.data, profile, customer, id]);
   const { data: addresses } = useCustomerAddresses(profile?.id || '');
   const { data: wishlist } = useCustomerWishlist(profile?.id || '');
   const { data: cart } = useCustomerCart(profile?.id || '');
@@ -235,7 +252,7 @@ export default function CustomerDetailPage() {
         <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
           <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
             <h3 className="font-bold text-neutral-900 flex items-center gap-2">
-              <Package className="h-4 w-4 text-neutral-600" /> Customer Orders ({customerOrders?.data?.length || 0})
+              <Package className="h-4 w-4 text-neutral-600" /> Customer Orders ({filteredOrders.length})
             </h3>
             <Link href="/admin/orders" className="text-xs text-neutral-500 hover:text-neutral-900 font-semibold inline-flex items-center gap-1">
               Global Orders Workspace <ExternalLink className="h-3 w-3" />
@@ -244,13 +261,13 @@ export default function CustomerDetailPage() {
 
           {ordersLoading ? (
             <div className="text-center py-6 text-xs text-neutral-400">Loading customer orders...</div>
-          ) : !customerOrders?.data || customerOrders.data.length === 0 ? (
+          ) : filteredOrders.length === 0 ? (
             <div className="text-center py-8 text-xs text-neutral-400">
               No orders placed by this customer yet.
             </div>
           ) : (
             <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
-              {customerOrders.data.map((order) => (
+              {filteredOrders.map((order) => (
                 <div key={order.id} className="p-4 bg-white hover:bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">

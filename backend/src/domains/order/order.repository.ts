@@ -31,50 +31,71 @@ export class OrderRepository {
       sortOrder,
     } = params;
     const skip = (page - 1) * limit;
-    const where: Prisma.OrderWhereInput = {};
+    const conditions: Prisma.OrderWhereInput[] = [
+      { deletedAt: null },
+    ];
+
     if (search) {
-      where.OR = [
-        { orderNumber: { contains: search, mode: 'insensitive' } },
-        { notes: { contains: search, mode: 'insensitive' } },
-        {
-          addresses: {
-            some: { fullName: { contains: search, mode: 'insensitive' } },
+      conditions.push({
+        OR: [
+          { orderNumber: { contains: search, mode: 'insensitive' } },
+          { notes: { contains: search, mode: 'insensitive' } },
+          {
+            addresses: {
+              some: { fullName: { contains: search, mode: 'insensitive' } },
+            },
           },
-        },
-        {
-          addresses: {
-            some: { phone: { contains: search, mode: 'insensitive' } },
+          {
+            addresses: {
+              some: { phone: { contains: search, mode: 'insensitive' } },
+            },
           },
-        },
-        { customer: { phone: { contains: search, mode: 'insensitive' } } },
-        {
-          customer: {
-            user: { firstName: { contains: search, mode: 'insensitive' } },
+          { customer: { phone: { contains: search, mode: 'insensitive' } } },
+          {
+            customer: {
+              user: { firstName: { contains: search, mode: 'insensitive' } },
+            },
           },
-        },
-        {
-          customer: {
-            user: { lastName: { contains: search, mode: 'insensitive' } },
+          {
+            customer: {
+              user: { lastName: { contains: search, mode: 'insensitive' } },
+            },
           },
-        },
-      ];
+        ],
+      });
     }
+
     if (channel) {
       if (channel === 'ONLINE' || channel === 'ONLINE_STORE') {
-        where.channel = 'ONLINE_STORE';
+        conditions.push({ channel: 'ONLINE_STORE' });
       } else if (channel === 'POS' || channel === 'POS_SHOPORA') {
-        where.channel = 'POS_SHOPORA';
+        conditions.push({ channel: 'POS_SHOPORA' });
       } else {
-        where.channel = channel as any;
+        conditions.push({ channel: channel as any });
       }
     }
-    if (status) where.status = status;
-    if (customerId) where.customerId = customerId;
-    if (startDate || endDate) {
-      where.createdAt = {};
-      if (startDate) where.createdAt.gte = new Date(startDate);
-      if (endDate) where.createdAt.lte = new Date(endDate);
+
+    if (status) {
+      conditions.push({ status });
     }
+
+    if (customerId) {
+      conditions.push({
+        OR: [
+          { customerId },
+          { customer: { userId: customerId } },
+        ],
+      });
+    }
+
+    if (startDate || endDate) {
+      const dateCond: Prisma.DateTimeFilter = {};
+      if (startDate) dateCond.gte = new Date(startDate);
+      if (endDate) dateCond.lte = new Date(endDate);
+      conditions.push({ createdAt: dateCond });
+    }
+
+    const where: Prisma.OrderWhereInput = { AND: conditions };
 
     const [data, total] = await Promise.all([
       this.prisma.order.findMany({

@@ -12,10 +12,11 @@ export const orderKeys = {
   detailByNumber: (orderNumber: string) => [...orderKeys.details(), 'number', orderNumber] as const,
 };
 
-export function useOrderList(query: OrderQueryDto = {}) {
+export function useOrderList(query: OrderQueryDto = {}, enabled = true) {
   return useQuery({
     queryKey: orderKeys.list(query),
     queryFn: () => orderService.findAll(query),
+    enabled,
   });
 }
 
