@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useParams } from 'next/navigation';
 import { useOrderDetail, useUpdateOrderStatus, useAssignCourier } from '@/features/orders/order.hooks';
-import { useOrderPayments } from '@/features/payments/payment.hooks';
+import { useOrderPayments, useSyncGatewayPayment } from '@/features/payments/payment.hooks';
 import { useOrderRefunds } from '@/features/refunds/refund.hooks';
 import { useOrderInvoices, useCreateInvoice } from '@/features/invoices/invoice.hooks';
 import { useCancellationDetail } from '@/features/cancellations/cancellation.hooks';
@@ -64,6 +64,31 @@ export default function OrderDetailPage() {
   const updateStatusMut = useUpdateOrderStatus();
   const createInvoiceMut = useCreateInvoice();
   const assignCourierMut = useAssignCourier();
+  const syncGatewayMut = useSyncGatewayPayment();
+  const [syncingPaymentId, setSyncingPaymentId] = useState<string | null>(null);
+  const [syncResultMsg, setSyncResultMsg] = useState<{ id: string; msg: string; type: 'success' | 'info' | 'error' } | null>(null);
+
+  const handleSyncPaymentGateway = async (paymentId: string) => {
+    setSyncingPaymentId(paymentId);
+    setSyncResultMsg(null);
+    try {
+      const res = await syncGatewayMut.mutateAsync(paymentId);
+      refetchOrder();
+      setSyncResultMsg({
+        id: paymentId,
+        msg: res?.message || 'Payment successfully synced with Razorpay gateway!',
+        type: 'success',
+      });
+    } catch (err: any) {
+      setSyncResultMsg({
+        id: paymentId,
+        msg: err?.message || 'Failed to sync with Razorpay gateway',
+        type: 'error',
+      });
+    } finally {
+      setSyncingPaymentId(null);
+    }
+  };
 
   // Courier Assignment State
   const [courierPartner, setCourierPartner] = useState('Delhivery');
@@ -464,21 +489,107 @@ export default function OrderDetailPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
               {/* Payments log */}
               <div className="space-y-2">
-                <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Payments Ledger</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block">Payments Ledger</span>
+                  <span className="text-2xs text-neutral-400">Gateway: Razorpay</span>
+                </div>
                 {isPaymentsLoading ? (
                   <span className="text-2xs text-neutral-400">Loading payments...</span>
                 ) : payments && payments.length > 0 ? (
-                  <div className="space-y-2">
-                    {payments.map(p => (
-                      <div key={p.id} className="border border-neutral-100 p-2.5 rounded-lg bg-neutral-50 text-2xs space-y-1">
-                        <div className="flex justify-between">
-                          <span className="font-semibold text-neutral-900">{p.paymentNumber}</span>
-                          <PaymentStatusBadge status={p.status} />
+                  <div className="space-y-2.5">
+                    {payments.map(p => {
+                      const meta = (p as any).metadata || {};
+                      const isPending = p.status === 'PENDING';
+                      const isCaptured = p.status === 'CAPTURED';
+                      return (
+                        <div key={p.id} className={`border rounded-xl p-3 text-2xs space-y-2 ${isCaptured ? 'bg-emerald-50/40 border-emerald-200' : 'bg-neutral-50 border-neutral-200'}`}>
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center gap-1.5">
+                              <span className="font-bold text-neutral-900 font-mono text-xs">{p.paymentNumber}</span>
+                              {p.provider === 'razorpay' && (
+                                <span className="px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-sky-100 text-sky-800 border border-sky-200">
+                                  Razorpay Live
+                                </span>
+                              )}
+                            </div>
+                            <PaymentStatusBadge status={p.status} />
+                          </div>
+
+                          <div className="space-y-1 text-neutral-600 bg-white/80 p-2 rounded-lg border border-neutral-100 font-mono text-[11px]">
+                            <div className="flex justify-between">
+                              <span className="text-neutral-400">Method:</span>
+                              <span className="font-semibold text-neutral-800 uppercase">{p.method} ({p.provider || 'Gateway'})</span>
+                            </div>
+                            {p.providerOrderId && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-400">Gateway Order ID:</span>
+                                <span className="font-bold text-sky-800 select-all">{p.providerOrderId}</span>
+                              </div>
+                            )}
+                            {(p.transactionId || (p as any).providerPaymentId || meta.razorpayPaymentId) && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-400">Payment ID:</span>
+                                <span className="font-bold text-emerald-800 select-all">
+                                  {p.transactionId || (p as any).providerPaymentId || meta.razorpayPaymentId}
+                                </span>
+                              </div>
+                            )}
+                            {(meta.vpa || meta.contact) && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-400">UPI / Contact:</span>
+                                <span className="text-neutral-700">{meta.vpa || meta.contact}</span>
+                              </div>
+                            )}
+                            {meta.rrn && (
+                              <div className="flex justify-between">
+                                <span className="text-neutral-400">Bank RRN:</span>
+                                <span className="text-neutral-700">{meta.rrn}</span>
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="flex items-center justify-between pt-1">
+                            <div>
+                              <span className="text-[10px] text-neutral-400 block">Amount</span>
+                              <span className="font-bold text-sm text-neutral-900 font-mono">{formatMoney(p.amount, p.currency)}</span>
+                            </div>
+
+                            {p.provider === 'razorpay' && p.providerOrderId && (
+                              <button
+                                type="button"
+                                disabled={syncingPaymentId === p.id}
+                                onClick={() => handleSyncPaymentGateway(p.id)}
+                                className={`px-3 py-1.5 rounded-lg text-2xs font-bold flex items-center gap-1.5 transition shadow-2xs cursor-pointer ${
+                                  isCaptured
+                                    ? 'bg-neutral-100 hover:bg-neutral-200 text-neutral-700 border border-neutral-300'
+                                    : 'bg-sky-600 hover:bg-sky-700 text-white'
+                                }`}
+                              >
+                                {syncingPaymentId === p.id ? (
+                                  <>
+                                    <RefreshCw className="w-3 h-3 animate-spin" />
+                                    <span>Checking Gateway...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Sparkles className="w-3 h-3 text-amber-300" />
+                                    <span>Sync Razorpay Status</span>
+                                  </>
+                                )}
+                              </button>
+                            )}
+                          </div>
+
+                          {syncResultMsg && syncResultMsg.id === p.id && (
+                            <div className={`p-2 rounded-lg text-[11px] font-medium mt-1 ${
+                              syncResultMsg.type === 'success' ? 'bg-emerald-100 text-emerald-900 border border-emerald-300' : 'bg-rose-100 text-rose-900 border border-rose-300'
+                            }`}>
+                              {syncResultMsg.msg}
+                            </div>
+                          )}
                         </div>
-                        <div className="text-neutral-500">Method: {p.method} | Gateway: {p.provider}</div>
-                        <div className="font-bold text-neutral-800">{formatMoney(p.amount, p.currency)}</div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
                 ) : (
                   <span className="text-2xs text-neutral-400">No payment transaction records.</span>

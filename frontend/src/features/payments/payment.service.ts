@@ -38,4 +38,9 @@ export const paymentService = {
     const response = await apiClient.post<StandardResponse<PaymentResponse>>(`/payments/${id}/verify`, dto);
     return response.data.data!;
   },
+
+  syncGateway: async (id: string): Promise<any> => {
+    const response = await apiClient.post<StandardResponse<any>>(`/payments/${id}/sync-gateway`);
+    return response.data.data!;
+  },
 };

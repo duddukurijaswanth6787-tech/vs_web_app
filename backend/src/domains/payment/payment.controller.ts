@@ -169,6 +169,21 @@ export class PaymentController {
     );
   }
 
+  @Post(':id/sync-gateway')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('payments:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Sync live payment status from Razorpay gateway' })
+  async syncGateway(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ResponseBuilder.success(
+      await this.paymentService.syncGatewayStatus(id, user.sub),
+      'Payment synced with Razorpay gateway',
+    );
+  }
+
   @Post('webhook')
   @ApiOperation({ summary: 'Razorpay webhook callback handler' })
   async handleWebhook(

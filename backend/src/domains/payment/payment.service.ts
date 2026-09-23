@@ -770,4 +770,111 @@ export class PaymentService {
       );
     }
   }
+
+  /**
+   * Directly queries Razorpay API to check live payment/order status and syncs DB.
+   */
+  async syncGatewayStatus(id: string, userId: string) {
+    const payment = await this.paymentRepository.findById(id);
+    if (!payment) {
+      throw new BusinessException('Payment not found', 'PAYMENT_001');
+    }
+
+    if (!payment.providerOrderId) {
+      return {
+        payment: this.toResponse(payment, true),
+        synced: false,
+        message: 'No Razorpay Order ID on payment record',
+      };
+    }
+
+    if (payment.status === 'CAPTURED') {
+      return {
+        payment: this.toResponse(payment, true),
+        synced: true,
+        message: 'Payment is already captured and confirmed',
+      };
+    }
+
+    const razorpay = await this.getRazorpayClient();
+    try {
+      const rzpOrder: any = await razorpay.orders.fetch(payment.providerOrderId);
+      const rzpPayments: any = await razorpay.orders.fetchPayments(
+        payment.providerOrderId,
+      );
+
+      const capturedItem = (rzpPayments.items || []).find(
+        (it: any) => it.status === 'captured',
+      );
+
+      if (capturedItem || rzpOrder.status === 'paid') {
+        const paymentId = capturedItem?.id || `pay_${payment.paymentNumber}`;
+        const metadata = capturedItem
+          ? {
+              method: capturedItem.method,
+              vpa: capturedItem.vpa,
+              contact: capturedItem.contact,
+              email: capturedItem.email,
+              rrn: capturedItem.acquirer_data?.rrn,
+              razorpayOrderId: payment.providerOrderId,
+              razorpayPaymentId: capturedItem.id,
+            }
+          : undefined;
+
+        await this.paymentRepository.markCapturedIfNotAlready(id, {
+          status: 'CAPTURED',
+          providerPaymentId: paymentId,
+          metadata,
+        });
+
+        await this.paymentRepository.createTransaction({
+          payment: { connect: { id } },
+          type: 'CAPTURED',
+          status: 'SUCCESS',
+          amount: payment.amount,
+          providerRefId: paymentId,
+        });
+
+        await this.orderWorkflowService.transition(
+          payment.orderId,
+          'CONFIRMED',
+          userId,
+          'Payment captured via live Razorpay gateway sync',
+        );
+
+        try {
+          await this.orderWorkflowService.deductInventory(
+            payment.orderId,
+            userId,
+          );
+        } catch {
+          // ignore duplicate deduction
+        }
+
+        const updated = await this.paymentRepository.findById(id);
+        return {
+          payment: this.toResponse(updated, true),
+          synced: true,
+          status: 'CAPTURED',
+          message: 'Payment successfully verified & captured with Razorpay!',
+        };
+      }
+
+      return {
+        payment: this.toResponse(payment, true),
+        synced: true,
+        status: payment.status,
+        razorpayOrderStatus: rzpOrder.status,
+        message: `Razorpay reports order status as "${rzpOrder.status}". No captured payment yet.`,
+      };
+    } catch (err: unknown) {
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      this.logger.error(
+        `Failed to sync live Razorpay gateway for payment ${id}: ${errorMessage}`,
+      );
+      throw new BadRequestException(
+        `Razorpay Gateway Sync failed: ${errorMessage}`,
+      );
+    }
+  }
 }

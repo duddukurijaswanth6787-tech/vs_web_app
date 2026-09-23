@@ -76,3 +76,18 @@ export function useVerifyPayment() {
     },
   });
 }
+
+export function useSyncGatewayPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => paymentService.syncGateway(id),
+    onSuccess: (data, id) => {
+      queryClient.invalidateQueries({ queryKey: paymentKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: paymentKeys.detail(id) });
+      if (data?.payment?.orderId) {
+        queryClient.invalidateQueries({ queryKey: paymentKeys.order(data.payment.orderId) });
+        queryClient.invalidateQueries({ queryKey: orderKeys.detail(data.payment.orderId) });
+      }
+    },
+  });
+}

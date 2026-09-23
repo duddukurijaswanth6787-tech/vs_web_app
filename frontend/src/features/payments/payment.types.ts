@@ -17,6 +17,9 @@ export interface PaymentResponse {
   amount: number;
   currency: string;
   transactionId?: string;
+  providerOrderId?: string;
+  providerPaymentId?: string;
+  metadata?: any;
   transactions?: PaymentTransactionResponse[];
   createdAt: string;
 }
