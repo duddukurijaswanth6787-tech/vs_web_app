@@ -113,6 +113,7 @@ export async function restoreSession(): Promise<boolean> {
 export function clearSession() {
   accessToken = null;
   currentUser = null;
+  cachedSummary = null;
   SecureStore.deleteItemAsync(TOKEN_STORAGE_KEY).catch(() => {});
   SecureStore.deleteItemAsync(USER_STORAGE_KEY).catch(() => {});
   notifyAuth();

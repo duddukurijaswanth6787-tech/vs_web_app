@@ -1,7 +1,8 @@
 import { Controller, Get, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { DashboardService } from './dashboard.service';
-import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
+import { JwtAuthGuard, CurrentUser } from '@domains/auth/guards/jwt-auth.guard';
+import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import {
   PermissionsGuard,
   Permissions,
@@ -18,45 +19,50 @@ export class DashboardController {
 
   @Get('summary')
   @ApiOperation({ summary: 'Get dashboard summary' })
-  async getSummary() {
-    return ResponseBuilder.success(await this.dashboardService.getSummary());
+  async getSummary(@CurrentUser() user: JwtPayload) {
+    return ResponseBuilder.success(await this.dashboardService.getSummary(user));
   }
 
   @Get('sales-chart')
   @ApiOperation({ summary: 'Get sales chart data' })
-  async getSalesChart(@Query('period') period?: string) {
+  async getSalesChart(
+    @CurrentUser() user: JwtPayload,
+    @Query('period') period?: string,
+  ) {
     return ResponseBuilder.success(
-      await this.dashboardService.getSalesChart(period),
+      await this.dashboardService.getSalesChart(period, user),
     );
   }
 
   @Get('order-analytics')
   @ApiOperation({ summary: 'Order status breakdown' })
   async getOrderAnalytics(
+    @CurrentUser() user: JwtPayload,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
     return ResponseBuilder.success(
-      await this.dashboardService.getOrderAnalytics(dateFrom, dateTo),
+      await this.dashboardService.getOrderAnalytics(dateFrom, dateTo, user),
     );
   }
 
   @Get('payment-analytics')
   @ApiOperation({ summary: 'Payment method breakdown' })
   async getPaymentAnalytics(
+    @CurrentUser() user: JwtPayload,
     @Query('dateFrom') dateFrom?: string,
     @Query('dateTo') dateTo?: string,
   ) {
     return ResponseBuilder.success(
-      await this.dashboardService.getPaymentAnalytics(dateFrom, dateTo),
+      await this.dashboardService.getPaymentAnalytics(dateFrom, dateTo, user),
     );
   }
 
   @Get('recent-activity')
   @ApiOperation({ summary: 'Recent orders, products, customers, reviews' })
-  async getRecentActivity() {
+  async getRecentActivity(@CurrentUser() user: JwtPayload) {
     return ResponseBuilder.success(
-      await this.dashboardService.getRecentActivity(),
+      await this.dashboardService.getRecentActivity(user),
     );
   }
 }

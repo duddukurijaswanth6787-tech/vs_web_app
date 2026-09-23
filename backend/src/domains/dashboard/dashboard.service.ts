@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
+import type { JwtPayload } from '@domains/auth/services/jwt.service';
 import {
   DashboardSummaryResponse,
   SalesChartResponse,
@@ -12,7 +13,7 @@ import {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummary(): Promise<DashboardSummaryResponse> {
+  async getSummary(user?: JwtPayload): Promise<DashboardSummaryResponse> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfToday = new Date(
@@ -22,14 +23,23 @@ export class DashboardService {
     );
     const endOfToday = new Date(startOfToday.getTime() + 86400000);
 
+    const isSuperAdminOrAdmin =
+      !user ||
+      user.roles?.some((r) => r === 'super_admin' || r === 'admin');
+
+    const isOperator = !isSuperAdminOrAdmin && !!user;
+    const operatorCondition = isOperator ? { createdBy: user.sub } : {};
+
     const orderFilter = (gte?: Date, lte?: Date) => ({
       deletedAt: null,
+      ...operatorCondition,
       ...(gte && { createdAt: { gte } }),
       ...(lte && { createdAt: { lte } }),
     });
 
     const todayFilter = {
       deletedAt: null,
+      ...operatorCondition,
       createdAt: { gte: startOfToday, lt: endOfToday },
     };
 
@@ -57,7 +67,7 @@ export class DashboardService {
       this.prisma.customerProfile.count(),
       this.prisma.product.count({ where: { deletedAt: null } }),
       this.prisma.order.count({
-        where: { status: 'PENDING', deletedAt: null },
+        where: { status: 'PENDING', deletedAt: null, ...operatorCondition },
       }),
       this.prisma.order.aggregate({
         _sum: { grandTotal: true },
@@ -65,7 +75,7 @@ export class DashboardService {
       }),
       this.prisma.inventory.count({ where: { stockStatus: 'LOW_STOCK' } }),
       this.prisma.order.findMany({
-        where: { deletedAt: null },
+        where: { deletedAt: null, ...operatorCondition },
         orderBy: { createdAt: 'desc' },
         take: 10,
         select: {
@@ -79,6 +89,7 @@ export class DashboardService {
       this.prisma.orderItem.groupBy({
         by: ['productId'],
         _sum: { quantity: true, totalPrice: true },
+        where: isOperator ? { order: operatorCondition } : undefined,
         orderBy: { _sum: { totalPrice: 'desc' } },
         take: 10,
       }),
@@ -101,15 +112,12 @@ export class DashboardService {
       this.prisma.review.count({ where: { status: 'PENDING' } }),
       this.prisma.returnRequest.count(),
       this.prisma.order.count({
-        where: { status: 'CANCELLED', deletedAt: null },
+        where: { status: 'CANCELLED', deletedAt: null, ...operatorCondition },
       }),
       this.prisma.orderItem.aggregate({
         _sum: { quantity: true },
         where: {
-          order: {
-            deletedAt: null,
-            createdAt: { gte: startOfToday, lt: endOfToday },
-          },
+          order: todayFilter,
         },
       }),
     ]);
@@ -153,8 +161,14 @@ export class DashboardService {
   async getOrderAnalytics(
     dateFrom?: string,
     dateTo?: string,
+    user?: JwtPayload,
   ): Promise<OrderAnalyticsResponse> {
-    const where: any = { deletedAt: null };
+    const isSuperAdminOrAdmin =
+      !user ||
+      user.roles?.some((r) => r === 'super_admin' || r === 'admin');
+    const operatorCondition = !isSuperAdminOrAdmin && user ? { createdBy: user.sub } : {};
+
+    const where: any = { deletedAt: null, ...operatorCondition };
     if (dateFrom) where.createdAt = { gte: new Date(dateFrom) };
     if (dateTo) where.createdAt = { ...where.createdAt, lte: new Date(dateTo) };
 
@@ -186,6 +200,7 @@ export class DashboardService {
   async getPaymentAnalytics(
     dateFrom?: string,
     dateTo?: string,
+    _user?: JwtPayload,
   ): Promise<PaymentAnalyticsResponse> {
     const paymentWhere: any = {};
     if (dateFrom) paymentWhere.createdAt = { gte: new Date(dateFrom) };
@@ -222,10 +237,15 @@ export class DashboardService {
     };
   }
 
-  async getRecentActivity(): Promise<RecentActivityResponse> {
+  async getRecentActivity(user?: JwtPayload): Promise<RecentActivityResponse> {
+    const isSuperAdminOrAdmin =
+      !user ||
+      user.roles?.some((r) => r === 'super_admin' || r === 'admin');
+    const operatorCondition = !isSuperAdminOrAdmin && user ? { createdBy: user.sub } : {};
+
     const [orders, products, customers, reviews] = await Promise.all([
       this.prisma.order.findMany({
-        where: { deletedAt: null },
+        where: { deletedAt: null, ...operatorCondition },
         orderBy: { createdAt: 'desc' },
         take: 5,
         select: {
@@ -263,10 +283,15 @@ export class DashboardService {
     return { orders, products, customers, reviews };
   }
 
-  async getSalesChart(period: string = 'monthly'): Promise<SalesChartResponse> {
+  async getSalesChart(period: string = 'monthly', user?: JwtPayload): Promise<SalesChartResponse> {
     const now = new Date();
     let startDate: Date;
     let groupBy: 'day' | 'month';
+
+    const isSuperAdminOrAdmin =
+      !user ||
+      user.roles?.some((r) => r === 'super_admin' || r === 'admin');
+    const operatorCondition = !isSuperAdminOrAdmin && user ? { createdBy: user.sub } : {};
 
     if (period === 'weekly') {
       startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
@@ -280,7 +305,7 @@ export class DashboardService {
     }
 
     const orders = await this.prisma.order.findMany({
-      where: { deletedAt: null, createdAt: { gte: startDate } },
+      where: { deletedAt: null, ...operatorCondition, createdAt: { gte: startDate } },
       select: { grandTotal: true, createdAt: true },
       orderBy: { createdAt: 'asc' },
     });
