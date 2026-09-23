@@ -597,14 +597,15 @@ export default function OrdersPage() {
       render: (o) => {
         const custFirst = o.customer?.user?.firstName || o.customer?.firstName || '';
         const custLast = o.customer?.user?.lastName || o.customer?.lastName || '';
-        const userFullName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : '';
+        const rawUserFullName = (custFirst || custLast) ? `${custFirst} ${custLast}`.trim() : '';
+        const userFullName = (rawUserFullName && !['customer', 'user', 'guest', 'admin', 'pos_operator'].includes(rawUserFullName.toLowerCase())) ? rawUserFullName : '';
 
         const shippingAddr = o.addresses?.find((a) => a.addressType === 'SHIPPING');
         const billingAddr = o.addresses?.find((a) => a.addressType === 'BILLING');
         const addressFullName = shippingAddr?.fullName || billingAddr?.fullName || o.addresses?.[0]?.fullName;
 
         const defaultLabel = o.channel === 'ONLINE_STORE' || o.channel === 'ONLINE' ? 'Online Customer' : 'Walk-in Customer';
-        const name = userFullName || addressFullName || defaultLabel;
+        const name = addressFullName || userFullName || defaultLabel;
         const phone = shippingAddr?.phone || billingAddr?.phone || o.customer?.phone || o.customer?.user?.phone;
         const email = o.customer?.user?.email || o.customer?.email;
 
@@ -612,7 +613,7 @@ export default function OrdersPage() {
           <div className="max-w-[200px]">
             <span className="font-semibold text-neutral-800 text-xs block truncate" title={name}>{name}</span>
             {phone && <span className="text-[10px] text-neutral-400 font-mono block">{phone}</span>}
-            {!phone && email && <span className="text-[10px] text-neutral-400 truncate block">{email}</span>}
+            {!phone && email && !email.includes('@vasanthi.local') && <span className="text-[10px] text-neutral-400 truncate block">{email}</span>}
           </div>
         );
       },
