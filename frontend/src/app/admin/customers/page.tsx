@@ -44,23 +44,19 @@ export default function CustomersPage() {
   };
 
   const columns: Column<UserProfileResponse>[] = [
-    { key: 'name', label: 'Customer', render: (c) => {
-      const isOtpPlaceholder = c.email?.startsWith('otp_') && c.email.includes('@vasanthi.local');
+    { key: 'name', label: 'Customer Name', render: (c) => {
       const fullName = `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Customer';
+      const hasRealEmail = c.email && !c.email.includes('@vasanthi.local');
       return (
         <div className="flex items-center gap-3">
-          <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-2.5 text-neutral-600 font-bold text-xs flex items-center justify-center w-9 h-9 shrink-0">
+          <div className="rounded-xl border border-neutral-200 bg-neutral-100 p-2.5 text-neutral-800 font-bold text-xs flex items-center justify-center w-9 h-9 shrink-0 shadow-2xs">
             {fullName.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
           </div>
           <div>
             <Link href={`/admin/customers/${c.id}`} className="font-bold text-neutral-900 hover:text-neutral-700 hover:underline flex items-center gap-1.5 text-xs">
               {fullName}
             </Link>
-            {isOtpPlaceholder ? (
-              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-400 mt-0.5">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> OTP Verified Account
-              </span>
-            ) : (
+            {hasRealEmail && (
               <p className="text-[11px] text-neutral-400 mt-0.5">{c.email}</p>
             )}
           </div>
@@ -69,11 +65,11 @@ export default function CustomersPage() {
     }},
     { key: 'phone', label: 'Phone Number', render: (c) => (
       c.phone ? (
-        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-700 bg-neutral-50 px-2 py-1 rounded-lg border border-neutral-100">
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-800 bg-neutral-50 px-2.5 py-1 rounded-lg border border-neutral-200">
           {c.phone}
         </span>
       ) : (
-        <span className="text-xs text-neutral-300 italic">No phone attached</span>
+        <span className="text-xs text-neutral-400 italic">N/A</span>
       )
     )},
     { key: 'accountStatus', label: 'Status', render: (c) => {
