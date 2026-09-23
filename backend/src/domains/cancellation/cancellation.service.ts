@@ -61,6 +61,11 @@ export class CancellationService {
     });
 
     const previousStatus = order.status;
+    await this.prisma.order.update({
+      where: { id: dto.orderId },
+      data: { cancelReason: dto.reason },
+    });
+
     await this.workflow.transition(
       dto.orderId,
       'CANCELLED',

@@ -428,6 +428,24 @@ export default function OrderDetailPage() {
         {/* Left Side: Summary and Items */}
         <div className="lg:col-span-2 space-y-4 sm:space-y-6">
           
+          {/* Cancellation Info Banner */}
+          {order.status === 'CANCELLED' && (
+            <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 text-rose-950 space-y-2 shadow-xs">
+              <div className="flex items-center gap-2 font-bold text-sm text-rose-900">
+                <Ban className="w-5 h-5 text-rose-600" />
+                <span>Order Cancelled</span>
+              </div>
+              {(order.cancelReason || cancellation?.reason) && (
+                <div className="bg-white/90 border border-rose-200 rounded-xl p-3 text-xs space-y-1">
+                  <span className="text-[10px] uppercase font-bold text-rose-900 block">Cancellation Reason:</span>
+                  <p className="text-neutral-800 leading-relaxed font-sans whitespace-pre-line">
+                    {order.cancelReason || cancellation?.reason}
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Order Items */}
           <div className="bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm space-y-4">
             <h3 className="text-xs font-bold text-neutral-900 uppercase tracking-wider pb-2 border-b border-neutral-100">

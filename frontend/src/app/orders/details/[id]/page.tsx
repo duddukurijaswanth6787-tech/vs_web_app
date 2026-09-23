@@ -124,13 +124,27 @@ export default function OrderDetailsPage() {
       <main className="max-w-2xl mx-auto w-full px-4 py-5 flex-1 space-y-4 text-xs">
         {/* Cancellation Notice Banner */}
         {isCancelled && (
-          <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-start gap-3 text-red-800">
-            <XCircle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-            <div className="space-y-0.5">
-              <p className="font-bold text-xs">Order Cancelled</p>
-              <p className="text-[11px] text-red-700 leading-relaxed">
-                This order was cancelled. Any pre-paid amount has been processed for refund to your source payment method.
-              </p>
+          <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 text-rose-900 shadow-xs">
+            <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+            <div className="space-y-2 flex-1">
+              <div>
+                <p className="font-bold text-sm text-rose-950">Order Cancelled</p>
+                <p className="text-[11px] text-rose-800 leading-relaxed mt-0.5">
+                  This order has been cancelled by the boutique.
+                </p>
+              </div>
+
+              {Boolean((order as any)?.cancelReason) && (
+                <div className="bg-white/90 border border-rose-200 rounded-xl p-3 text-2xs space-y-1">
+                  <span className="font-bold text-rose-950 uppercase tracking-wider text-[10px] block">Cancellation Reason &amp; Refund Note:</span>
+                  <p className="text-neutral-800 leading-relaxed whitespace-pre-line">{String((order as any).cancelReason)}</p>
+                </div>
+              )}
+
+              <div className="text-2xs text-rose-900 bg-rose-100/70 border border-rose-200/80 rounded-xl p-2.5 flex items-center gap-2">
+                <span>💳</span>
+                <span><strong>Refund Guarantee:</strong> Any pre-paid amount has been initiated for refund to your source payment method and will reflect within 1 business day.</span>
+              </div>
             </div>
           </div>
         )}

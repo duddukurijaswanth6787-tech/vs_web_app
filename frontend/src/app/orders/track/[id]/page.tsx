@@ -25,7 +25,8 @@ import {
   AlertCircle,
   Sparkles,
   ChevronRight,
-  Info
+  Info,
+  XCircle
 } from 'lucide-react';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
@@ -283,6 +284,35 @@ export default function OrderTrackPage() {
                 </div>
               </div>
 
+              {/* CANCELLATION NOTICE CARD */}
+              {isCancelled && (
+                <div className="bg-rose-50 border border-rose-200 rounded-2xl p-4 sm:p-5 flex flex-col gap-3 text-rose-900">
+                  <div className="flex items-start gap-3">
+                    <XCircle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
+                    <div>
+                      <h4 className="text-sm font-bold text-rose-950">Shipment Cancelled</h4>
+                      <p className="text-xs text-rose-800 leading-relaxed mt-0.5">
+                        This order has been cancelled by the boutique.
+                      </p>
+                    </div>
+                  </div>
+
+                  {Boolean((order as any)?.cancelReason) && (
+                    <div className="bg-white/90 border border-rose-200 rounded-xl p-3.5 text-2xs space-y-1">
+                      <span className="font-bold text-rose-950 uppercase tracking-wider text-[10px] block">
+                        Reason &amp; Refund Details:
+                      </span>
+                      <p className="text-neutral-800 leading-relaxed whitespace-pre-line">{String((order as any).cancelReason)}</p>
+                    </div>
+                  )}
+
+                  <div className="text-2xs text-rose-900 bg-rose-100/70 border border-rose-200/80 rounded-xl p-2.5 flex items-center gap-2">
+                    <span>💳</span>
+                    <span><strong>Refund Notice:</strong> 100% of your paid amount will be refunded directly to your original payment account within 1 business day.</span>
+                  </div>
+                </div>
+              )}
+
               {/* ESTIMATED ARRIVAL HERO BANNER (AMAZON STYLE) */}
               {!isCancelled && (
                 <div className="bg-gradient-to-r from-sky-50 via-indigo-50/40 to-amber-50/30 border border-sky-200/90 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -320,14 +350,15 @@ export default function OrderTrackPage() {
               )}
 
               {/* 5-STEP INTERACTIVE PROGRESS STEPPER */}
-              <div className="pt-3 pb-2">
-                <div className="grid grid-cols-5 gap-2 text-center relative">
-                  {/* Background Track Line */}
-                  <div className="absolute top-4 left-[10%] right-[10%] h-1.5 bg-neutral-200 z-0 rounded-full" />
-                  <div
-                    className="absolute top-4 left-[10%] h-1.5 bg-gradient-to-r from-sky-600 to-[var(--brand-primary)] z-0 transition-all duration-700 rounded-full"
-                    style={{ width: `${Math.min(100, Math.max(0, (activeStep - 1) * 25))}%` }}
-                  />
+              {!isCancelled && (
+                <div className="pt-3 pb-2">
+                  <div className="grid grid-cols-5 gap-2 text-center relative">
+                    {/* Background Track Line */}
+                    <div className="absolute top-4 left-[10%] right-[10%] h-1.5 bg-neutral-200 z-0 rounded-full" />
+                    <div
+                      className="absolute top-4 left-[10%] h-1.5 bg-gradient-to-r from-sky-600 to-[var(--brand-primary)] z-0 transition-all duration-700 rounded-full"
+                      style={{ width: `${Math.min(100, Math.max(0, (activeStep - 1) * 25))}%` }}
+                    />
 
                   {/* Step 1: Ordered */}
                   <div className="relative z-10 flex flex-col items-center gap-2">
@@ -427,6 +458,7 @@ export default function OrderTrackPage() {
                   </div>
                 </div>
               </div>
+            )}
 
               {/* WAYBILL BARCODE & TRACKING DETAILS STRIP */}
               {waybill ? (

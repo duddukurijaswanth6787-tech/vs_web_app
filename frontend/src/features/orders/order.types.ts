@@ -50,6 +50,7 @@ export interface OrderResponse {
   channel?: string;
   paymentMethod?: string;
   terminalId?: string;
+  cancelReason?: string;
   courierPartner?: string;
   waybillNumber?: string;
   trackingUrl?: string;

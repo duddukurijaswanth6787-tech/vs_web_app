@@ -115,6 +115,7 @@ export class OrderResponse {
       'Admin-only: POS terminal ID. Omitted from customer-facing responses.',
   })
   terminalId?: string;
+  @ApiPropertyOptional() cancelReason?: string;
   @ApiPropertyOptional() courierPartner?: string;
   @ApiPropertyOptional() waybillNumber?: string;
   @ApiPropertyOptional() trackingUrl?: string;

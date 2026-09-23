@@ -28,6 +28,7 @@ export class OrderService {
       grandTotal: Number(o.grandTotal),
       currency: o.currency,
       notes: o.notes ?? undefined,
+      cancelReason: o.cancelReason ?? undefined,
       courierPartner: o.courierPartner ?? undefined,
       waybillNumber: o.waybillNumber ?? undefined,
       trackingUrl: o.trackingUrl ?? undefined,
