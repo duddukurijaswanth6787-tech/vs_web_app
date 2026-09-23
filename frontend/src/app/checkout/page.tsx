@@ -458,9 +458,31 @@ function CheckoutPageContent() {
       order_id: payment.providerOrderId,
       name: "Vasanthi's Signature",
       description: `Order #${orderNumber}`,
+      image: '/brand/logo-full.png',
       prefill: {
         name: selectedAddress?.fullName || user?.email || '',
         contact: selectedAddress?.phone || (user as any)?.phone || '',
+        email: user?.email || '',
+      },
+      notes: {
+        order_number: orderNumber,
+        address: `${selectedAddress?.addressLine1 || ''}, ${selectedAddress?.city || ''} - ${selectedAddress?.postalCode || ''}`,
+      },
+      theme: {
+        color: '#0284c7',
+      },
+      retry: {
+        enabled: true,
+        max_count: 3,
+      } as any,
+      send_sms_hash: true,
+      modal: {
+        ondismiss: () => {
+          if (!isPaymentDone) {
+            setIsVerifyingPayment(false);
+            setOrderError('Payment was not completed. You can try again or select another payment option.');
+          }
+        },
       },
       handler: async (response: any) => {
         isPaymentDone = true;
@@ -480,17 +502,6 @@ function CheckoutPageContent() {
           // Redirect to dedicated Order Confirmed success page
           window.location.assign(`/orders/confirmed/${orderNumber}`);
         }
-      },
-      modal: {
-        ondismiss: () => {
-          if (!isPaymentDone) {
-            setIsVerifyingPayment(false);
-            setOrderError('Payment was cancelled. You can retry paying anytime.');
-          }
-        },
-      },
-      theme: {
-        color: '#0284c7',
       },
     });
 

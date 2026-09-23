@@ -809,7 +809,7 @@ export function ProductDetailClient() {
   const [showFullSize, setShowFullSize] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans antialiased text-neutral-900 pb-20 md:pb-0">
+    <div className="min-h-screen bg-[#FAFAFA] flex flex-col font-sans antialiased text-neutral-900 pb-28 md:pb-0">
       
       {/* Main Storefront Header */}
       <StorefrontHeader />
@@ -1987,20 +1987,22 @@ export function ProductDetailClient() {
             />
 
             {/* Sticky Cart mobile navigation bar at the bottom */}
-            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-neutral-100 shadow-[0_-8px_20px_rgba(0,0,0,0.03)] px-4 py-3 flex items-center justify-between md:hidden">
-              <div className="flex flex-col">
+            <div className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-neutral-200 shadow-[0_-8px_20px_rgba(0,0,0,0.08)] px-4 py-2.5 flex items-center justify-between md:hidden pb-[calc(0.6rem+env(safe-area-inset-bottom))]">
+              <div className="flex flex-col pr-2">
                 <span className="text-[9px] font-bold text-neutral-400 uppercase tracking-wide">Price</span>
-                <span className="text-lg font-black text-[var(--brand-primary)] leading-none">{formatInr(price)}</span>
+                <span className="text-base sm:text-lg font-black text-[var(--brand-primary)] leading-tight">{formatInr(price)}</span>
               </div>
-              <div className="flex gap-2 items-center">
-                <select 
-                  value={selectedSize}
-                  onChange={(e) => setSelectedSize(e.target.value)}
-                  className="bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-2 text-xs font-bold text-neutral-700 focus:outline-none"
-                >
-                  <option value="">Size</option>
-                  {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
-                </select>
+              <div className="flex gap-2 items-center flex-1 justify-end">
+                {availableSizes.length > 0 && (
+                  <select 
+                    value={selectedSize}
+                    onChange={(e) => setSelectedSize(e.target.value)}
+                    className="bg-neutral-50 border border-neutral-200 rounded-xl px-2 py-2 text-xs font-bold text-neutral-700 focus:outline-none max-w-[85px] truncate"
+                  >
+                    <option value="">Size</option>
+                    {availableSizes.map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                )}
 
                 {maxAllowedQty === 0 ? (
                   <button
@@ -2017,16 +2019,16 @@ export function ProductDetailClient() {
                       type="button"
                       disabled={addItem.isPending}
                       onClick={handleAddToCart}
-                      className="bg-[var(--brand-primary)] text-white font-bold text-[11px] px-3 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] flex items-center gap-1 shadow-2xs"
+                      className="bg-[var(--brand-primary)] text-white font-bold text-xs px-3 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] flex items-center gap-1 shadow-2xs active:scale-98 transition-all"
                     >
                       <ShoppingBag className="w-3.5 h-3.5" />
-                      Bag
+                      Add to Bag
                     </button>
                     <button
                       type="button"
                       disabled={addItem.isPending}
                       onClick={handleBuyNow}
-                      className="bg-amber-500 text-neutral-950 font-bold text-[11px] px-3.5 py-2.5 rounded-xl hover:bg-amber-600 flex items-center gap-1 shadow-2xs"
+                      className="bg-amber-500 text-neutral-950 font-bold text-xs px-3.5 py-2.5 rounded-xl hover:bg-amber-600 flex items-center gap-1 shadow-2xs active:scale-98 transition-all"
                     >
                       <Zap className="w-3.5 h-3.5 fill-neutral-950" />
                       Buy Now
@@ -2041,7 +2043,6 @@ export function ProductDetailClient() {
       </main>
 
       <StorefrontFooter />
-      <MobileBottomNav />
     </div>
   );
 }

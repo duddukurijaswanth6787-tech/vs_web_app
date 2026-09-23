@@ -20,8 +20,19 @@ export function MobileBottomNav() {
   const isWishlist = pathname === '/wishlist';
   const isAccount = pathname?.startsWith('/profile') || pathname === '/account';
 
+  // Do not render bottom tab nav on product detail, checkout, order confirmation or internal portals
+  if (
+    pathname?.startsWith('/checkout') ||
+    pathname?.startsWith('/product/') ||
+    pathname?.startsWith('/orders/confirmed') ||
+    pathname?.startsWith('/admin') ||
+    pathname?.startsWith('/pos')
+  ) {
+    return null;
+  }
+
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-neutral-200 px-3 py-2 flex items-center justify-around shadow-lg">
+    <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-t border-neutral-200 px-3 py-2 flex items-center justify-around shadow-lg pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
       
       {/* 1. Home */}
       <Link
