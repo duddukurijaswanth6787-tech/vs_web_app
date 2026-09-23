@@ -52,7 +52,8 @@ export default function AccessMatrixPage() {
     return <SectionLoader message="Loading security configuration matrix..." />;
   }
 
-  const roleList = roles || [];
+  // Filter out customer role so only staff, admin, and POS operational roles are shown in the matrix
+  const roleList = (roles || []).filter((r) => r.name.toLowerCase() !== 'customer');
   const permissionList = permissions || [];
 
   return (
