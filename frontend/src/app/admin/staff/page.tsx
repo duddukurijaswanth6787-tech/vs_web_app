@@ -148,7 +148,20 @@ export default function StaffPage() {
           <p className="text-sm text-neutral-500 mt-1">Configure system operators and administrative permissions.</p>
         </div>
         <button
-          onClick={() => setIsCreateOpen(true)}
+          onClick={() => {
+            setFormData({
+              email: '',
+              password: '',
+              firstName: '',
+              lastName: '',
+              phone: '',
+              department: 'SALES' as StaffDepartment,
+              designation: 'ASSOCIATE' as StaffDesignation,
+              roleId: '',
+              jobTitle: '',
+            });
+            setIsCreateOpen(true);
+          }}
           className="inline-flex items-center gap-2 rounded-lg bg-neutral-900 px-4 py-2 text-xs font-semibold text-white hover:bg-neutral-800"
         >
           <Plus className="h-4 w-4" /> Add Staff Member
@@ -335,6 +348,24 @@ export default function StaffPage() {
               <h3 className="font-bold text-neutral-900">Add new staff operator</h3>
             </div>
             <form onSubmit={handleCreateSubmit} autoComplete="off" className="p-6 space-y-4 max-h-[500px] overflow-y-auto">
+              {/* Invisible trap inputs to absorb browser password-manager autofills */}
+              <div
+                style={{
+                  position: 'absolute',
+                  opacity: 0,
+                  height: 0,
+                  width: 0,
+                  zIndex: -1,
+                  overflow: 'hidden',
+                  pointerEvents: 'none',
+                }}
+                tabIndex={-1}
+                aria-hidden="true"
+              >
+                <input type="text" name="chrome_autofill_trap_user" tabIndex={-1} autoComplete="username" />
+                <input type="password" name="chrome_autofill_trap_pwd" tabIndex={-1} autoComplete="current-password" />
+              </div>
+
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">First Name</label>
@@ -367,9 +398,11 @@ export default function StaffPage() {
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Email Address</label>
                   <input
                     type="email"
-                    name="new_staff_email_unique"
-                    id="new_staff_email_unique"
-                    autoComplete="off"
+                    name="new_staff_email_operator"
+                    id="new_staff_email_operator"
+                    autoComplete="new-password"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
@@ -380,9 +413,11 @@ export default function StaffPage() {
                   <label className="text-[10px] font-bold text-neutral-500 uppercase">Password</label>
                   <input
                     type="password"
-                    name="new_staff_password_unique"
-                    id="new_staff_password_unique"
+                    name="new_staff_password_operator"
+                    id="new_staff_password_operator"
                     autoComplete="new-password"
+                    readOnly
+                    onFocus={(e) => e.target.removeAttribute('readonly')}
                     required
                     value={formData.password}
                     onChange={(e) => setFormData({ ...formData, password: e.target.value })}
