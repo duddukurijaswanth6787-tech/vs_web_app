@@ -9,42 +9,57 @@ import { useCmsPage } from '@/features/customer/hooks';
 
 export default function AboutPage() {
   const { data, isLoading } = useCmsPage('about');
+
   return (
     <div className="min-h-screen bg-[var(--page-bg)] flex flex-col font-sans antialiased text-neutral-900 pb-20">
-      <header className="sticky top-0 z-50 bg-white border-b border-neutral-100 px-4 py-3 flex items-center gap-3 shadow-xs">
-        <Link href="/" className="p-1 rounded-lg hover:bg-neutral-100 text-neutral-700">
-          <ArrowLeft className="w-5 h-5" />
+      {/* Header */}
+      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-100 px-4 sm:px-8 py-4 flex items-center justify-between shadow-xs">
+        <div className="flex items-center gap-4">
+          <Link href="/" className="p-2 rounded-xl hover:bg-neutral-100 text-neutral-700 transition">
+            <ArrowLeft className="w-5 h-5" />
+          </Link>
+          <div>
+            <span className="text-[10px] font-bold uppercase tracking-widest text-amber-700">Heritage &amp; Passion</span>
+            <h1 className="text-xl font-bold font-serif text-[var(--brand-primary)]">
+              {data?.title || 'Our Story'}
+            </h1>
+          </div>
+        </div>
+        <Link
+          href="/collections"
+          className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-xs"
+        >
+          View Collection
         </Link>
-        <h1 className="text-lg font-bold font-serif text-[var(--brand-primary)]">Our Story</h1>
       </header>
 
-      <main className="max-w-4xl mx-auto w-full px-4 py-8 flex-1 space-y-10">
-        {/* Hero Section */}
-        <div className="bg-gradient-to-br from-[#0A2138] via-[#051426] to-[#01060F] text-white rounded-3xl p-6 sm:p-10 space-y-4 shadow-md text-center sm:text-left relative overflow-hidden">
-          <div className="absolute top-0 right-0 opacity-10 font-serif text-9xl select-none pointer-events-none">❖</div>
-          <span className="text-xs uppercase tracking-widest font-bold text-amber-300">HAUTE COUTURE & LUXURY FASHION</span>
-          <h2 className="text-2xl sm:text-4xl font-bold font-serif text-white tracking-tight leading-tight">
-            Vasanthi&apos;s Signature
-          </h2>
-          <p className="text-xs sm:text-sm text-sky-100/90 leading-relaxed max-w-2xl">
-            Established in 2018, Vasanthi&apos;s Signature represents the pinnacle of South Indian heritage weaving, regal zardosi embroidery, and timeless bridal couture.
-          </p>
-        </div>
-
-        {/* Policy Content (editable by admin from Storefront > Content > Pages) */}
-        <div className="bg-white border border-neutral-200 rounded-3xl p-6 sm:p-10 shadow-xs">
-          {isLoading ? (
-            <p className="text-sm text-neutral-400">Loading…</p>
-          ) : (
-            <div dangerouslySetInnerHTML={{ __html: data?.content || '' }} />
-          )}
-        </div>
-
-        <div className="flex flex-wrap gap-4">
-          <Link href="/collections" className="bg-[var(--brand-primary)] text-white text-xs font-bold px-5 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)]">
-            Explore the Collection
-          </Link>
-        </div>
+      {/* Main Content Area */}
+      <main className="max-w-5xl mx-auto w-full px-4 sm:px-8 py-10 flex-1 space-y-8">
+        {isLoading ? (
+          <div className="bg-white border border-neutral-200/80 rounded-3xl p-12 text-center shadow-xs">
+            <div className="w-8 h-8 border-3 border-neutral-200 border-t-[var(--brand-primary)] rounded-full animate-spin mx-auto mb-3" />
+            <p className="text-xs text-neutral-400 font-medium">Loading Our Story…</p>
+          </div>
+        ) : (
+          <div className="bg-white border border-neutral-200/80 rounded-3xl p-6 sm:p-12 shadow-sm overflow-hidden">
+            {data?.content ? (
+              <div
+                className="prose prose-neutral max-w-none text-neutral-700 leading-relaxed text-sm sm:text-base space-y-4 font-serif"
+                dangerouslySetInnerHTML={{ __html: data.content }}
+              />
+            ) : (
+              <div className="text-center py-12 px-4 space-y-4">
+                <div className="w-16 h-16 rounded-2xl bg-amber-50 text-amber-600 flex items-center justify-center mx-auto text-2xl font-serif">
+                  ❖
+                </div>
+                <h2 className="text-2xl font-bold font-serif text-neutral-900">Our Story</h2>
+                <p className="text-sm text-neutral-500 max-w-md mx-auto">
+                  The story content and image will appear here. You can customize this anytime from the Super Admin panel under <span className="font-semibold text-neutral-800">CMS &gt; Pages &gt; Our Story</span>.
+                </p>
+              </div>
+            )}
+          </div>
+        )}
       </main>
 
       <StorefrontFooter />
