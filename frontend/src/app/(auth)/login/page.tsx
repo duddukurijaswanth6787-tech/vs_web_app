@@ -272,7 +272,7 @@ function CustomerLoginForm() {
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
                     className="flex-1 text-sm outline-none"
-                    placeholder="Username (test123) or Email"
+                    placeholder="Enter your email or username"
                     required
                   />
                 </div>
