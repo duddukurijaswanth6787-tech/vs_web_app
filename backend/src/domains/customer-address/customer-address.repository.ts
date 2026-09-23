@@ -88,4 +88,30 @@ export class CustomerAddressRepository {
   async findCustomerByUserId(userId: string) {
     return this.prisma.customerProfile.findUnique({ where: { userId } });
   }
+
+  async syncUserIdentity(userId: string, fullName?: string, phone?: string) {
+    if (!userId) return;
+    const updateData: any = {};
+    if (fullName && fullName.trim()) {
+      const parts = fullName.trim().split(/\s+/);
+      updateData.firstName = parts[0];
+      if (parts.length > 1) {
+        updateData.lastName = parts.slice(1).join(' ');
+      }
+    }
+    if (phone && phone.trim()) {
+      updateData.phone = phone.trim();
+    }
+    if (Object.keys(updateData).length > 0) {
+      await this.prisma.user
+        .updateMany({
+          where: {
+            id: userId,
+            OR: [{ firstName: 'Customer' }, { firstName: '' }, { phone: null }],
+          },
+          data: updateData,
+        })
+        .catch(() => {});
+    }
+  }
 }

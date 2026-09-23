@@ -466,6 +466,26 @@ export class CheckoutService {
       return createdOrder;
     });
 
+    if (address?.fullName && userId) {
+      const parts = address.fullName.trim().split(/\s+/);
+      const firstName = parts[0];
+      const lastName = parts.slice(1).join(' ') || undefined;
+      const updateData: any = {};
+      if (firstName) updateData.firstName = firstName;
+      if (lastName) updateData.lastName = lastName;
+      if (address.phone) updateData.phone = address.phone;
+
+      await this.prisma.user
+        .updateMany({
+          where: {
+            id: userId,
+            OR: [{ firstName: 'Customer' }, { firstName: '' }, { phone: null }],
+          },
+          data: updateData,
+        })
+        .catch(() => {});
+    }
+
     // reserveInventory is atomic and all-or-nothing: it throws if any item
     // is short (e.g. a concurrent order for the same variant claimed the
     // last unit first). The order row above already committed as PENDING,

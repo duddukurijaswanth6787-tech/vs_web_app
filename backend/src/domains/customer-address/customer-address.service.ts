@@ -101,6 +101,8 @@ export class CustomerAddressService {
       isDefaultShipping: dto.isDefaultShipping ?? false,
     });
 
+    await this.addressRepository.syncUserIdentity(userId, dto.fullName, dto.phone);
+
     await this.auditService.log({
       action: 'ADDRESS_CREATED',
       module: 'customer-address',
@@ -134,6 +136,8 @@ export class CustomerAddressService {
       updateData.longitude = dto.longitude ? parseFloat(dto.longitude) : null;
 
     await this.addressRepository.update(id, updateData);
+    await this.addressRepository.syncUserIdentity(userId, dto.fullName, dto.phone);
+
     await this.auditService.log({
       action: 'ADDRESS_UPDATED',
       module: 'customer-address',

@@ -38,6 +38,7 @@ export class UsersRepository {
         select: {
           id: true,
           email: true,
+          phone: true,
           firstName: true,
           lastName: true,
           userType: true,
@@ -45,12 +46,80 @@ export class UsersRepository {
           isEmailVerified: true,
           lastLoginAt: true,
           createdAt: true,
+          customerProfile: {
+            select: {
+              id: true,
+              phone: true,
+              addresses: {
+                take: 1,
+                orderBy: { isDefaultShipping: 'desc' },
+                select: {
+                  fullName: true,
+                  phone: true,
+                },
+              },
+              orders: {
+                take: 1,
+                orderBy: { createdAt: 'desc' },
+                select: {
+                  addresses: {
+                    take: 1,
+                    select: {
+                      fullName: true,
+                      phone: true,
+                    },
+                  },
+                },
+              },
+            },
+          },
         },
       }),
       this.prisma.user.count({ where }),
     ]);
+
+    const mappedData = data.map((u) => {
+      let firstName = u.firstName;
+      let lastName = u.lastName;
+      let phone = u.phone;
+
+      // Extract real phone if missing or if email is OTP placeholder
+      if (!phone) {
+        if (u.customerProfile?.phone) {
+          phone = u.customerProfile.phone;
+        } else if (u.customerProfile?.addresses?.[0]?.phone) {
+          phone = u.customerProfile.addresses[0].phone;
+        } else if (u.customerProfile?.orders?.[0]?.addresses?.[0]?.phone) {
+          phone = u.customerProfile.orders[0].addresses[0].phone;
+        } else if (u.email?.startsWith('otp_')) {
+          const match = u.email.match(/^otp_(\d+)@/);
+          if (match) phone = match[1];
+        }
+      }
+
+      // Extract real name if name is generic 'Customer' or empty
+      if (!firstName || firstName.toLowerCase() === 'customer') {
+        const fallbackName =
+          u.customerProfile?.addresses?.[0]?.fullName ||
+          u.customerProfile?.orders?.[0]?.addresses?.[0]?.fullName;
+        if (fallbackName) {
+          const parts = fallbackName.trim().split(/\s+/);
+          firstName = parts[0];
+          lastName = parts.slice(1).join(' ') || lastName;
+        }
+      }
+
+      const { customerProfile, ...rest } = u;
+      return {
+        ...rest,
+        firstName,
+        lastName,
+        phone,
+      };
+    });
+
     return {
-      data,
+      data: mappedData,
       meta: {
         page,
         limit,

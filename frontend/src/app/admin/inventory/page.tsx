@@ -101,15 +101,15 @@ export default function InventoryPage() {
         const totalAvailable = matchingVariants.reduce((sum, v) => sum + v.availableQuantity, 0);
         const totalReserved = matchingVariants.reduce((sum, v) => sum + v.reservedQuantity, 0);
 
-        const hasOutOfStock = matchingVariants.length === 0 || matchingVariants.some((v) => v.availableQuantity <= 0);
+        const isCompletelyOutOfStock = totalAvailable <= 0 || matchingVariants.length === 0;
         const hasLowStock = matchingVariants.some(
-          (v) => v.availableQuantity > 0 && v.availableQuantity <= (v.minimumStock || 5)
+          (v) => v.availableQuantity > 0 && v.minimumStock && v.minimumStock > 0 && v.availableQuantity <= v.minimumStock
         );
 
         let overallStatus: 'IN_STOCK' | 'LOW_STOCK' | 'OUT_OF_STOCK' = 'IN_STOCK';
-        if (totalAvailable <= 0 || matchingVariants.length === 0) {
+        if (isCompletelyOutOfStock) {
           overallStatus = 'OUT_OF_STOCK';
-        } else if (hasOutOfStock || hasLowStock) {
+        } else if (hasLowStock) {
           overallStatus = 'LOW_STOCK';
         } else {
           overallStatus = 'IN_STOCK';
@@ -166,14 +166,14 @@ export default function InventoryPage() {
 
     const result: GroupedProductInventory[] = [];
     map.forEach((prod) => {
-      const hasOutOfStock = prod.variants.some((v) => v.availableQuantity <= 0);
+      const isCompletelyOutOfStock = prod.totalAvailable <= 0 || prod.variants.length === 0;
       const hasLowStock = prod.variants.some(
-        (v) => v.availableQuantity > 0 && v.availableQuantity <= (v.minimumStock || 5)
+        (v) => v.availableQuantity > 0 && v.minimumStock && v.minimumStock > 0 && v.availableQuantity <= v.minimumStock
       );
 
-      if (prod.totalAvailable <= 0) {
+      if (isCompletelyOutOfStock) {
         prod.overallStatus = 'OUT_OF_STOCK';
-      } else if (hasOutOfStock || hasLowStock) {
+      } else if (hasLowStock) {
         prod.overallStatus = 'LOW_STOCK';
       } else {
         prod.overallStatus = 'IN_STOCK';

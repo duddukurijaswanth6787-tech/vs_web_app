@@ -44,31 +44,53 @@ export default function CustomersPage() {
   };
 
   const columns: Column<UserProfileResponse>[] = [
-    { key: 'name', label: 'Customer', render: (c) => (
-      <div className="flex items-center gap-3">
-        <div className="rounded-lg border border-neutral-100 bg-neutral-50 p-2 text-neutral-500"><User className="h-4 w-4" /></div>
-        <div>
-          <Link href={`/admin/customers/${c.id}`} className="font-bold text-neutral-900 hover:underline">{c.firstName} {c.lastName || ''}</Link>
-          <p className="text-[11px] text-neutral-400 mt-0.5">{c.email}</p>
+    { key: 'name', label: 'Customer', render: (c) => {
+      const isOtpPlaceholder = c.email?.startsWith('otp_') && c.email.includes('@vasanthi.local');
+      const fullName = `${c.firstName || ''} ${c.lastName || ''}`.trim() || 'Customer';
+      return (
+        <div className="flex items-center gap-3">
+          <div className="rounded-xl border border-neutral-100 bg-neutral-50 p-2.5 text-neutral-600 font-bold text-xs flex items-center justify-center w-9 h-9 shrink-0">
+            {fullName.charAt(0).toUpperCase() || <User className="h-4 w-4" />}
+          </div>
+          <div>
+            <Link href={`/admin/customers/${c.id}`} className="font-bold text-neutral-900 hover:text-neutral-700 hover:underline flex items-center gap-1.5 text-xs">
+              {fullName}
+            </Link>
+            {isOtpPlaceholder ? (
+              <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-neutral-400 mt-0.5">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block" /> OTP Verified Account
+              </span>
+            ) : (
+              <p className="text-[11px] text-neutral-400 mt-0.5">{c.email}</p>
+            )}
+          </div>
         </div>
-      </div>
-    )},
-    { key: 'phone', label: 'Phone', render: (c) => <span className="font-semibold text-neutral-600">{c.phone || 'N/A'}</span> },
-    { key: 'accountStatus', label: 'Status', render: (c) => {
-      const colors: Record<string, string> = { ACTIVE: 'bg-green-50 text-green-700 border-green-100', INACTIVE: 'bg-neutral-100 text-neutral-600 border-neutral-200', SUSPENDED: 'bg-red-50 text-red-700 border-red-100', LOCKED: 'bg-yellow-50 text-yellow-700 border-yellow-100' };
-      return <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase border ${colors[c.accountStatus] || ''}`}>{c.accountStatus}</span>;
+      );
     }},
-    { key: 'createdAt', label: 'Registered', render: (c) => <span className="text-neutral-500">{new Date(c.createdAt).toLocaleDateString()}</span> },
+    { key: 'phone', label: 'Phone Number', render: (c) => (
+      c.phone ? (
+        <span className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-neutral-700 bg-neutral-50 px-2 py-1 rounded-lg border border-neutral-100">
+          {c.phone}
+        </span>
+      ) : (
+        <span className="text-xs text-neutral-300 italic">No phone attached</span>
+      )
+    )},
+    { key: 'accountStatus', label: 'Status', render: (c) => {
+      const colors: Record<string, string> = { ACTIVE: 'bg-green-50 text-green-700 border-green-200', INACTIVE: 'bg-neutral-100 text-neutral-600 border-neutral-200', SUSPENDED: 'bg-red-50 text-red-700 border-red-200', LOCKED: 'bg-yellow-50 text-yellow-700 border-yellow-200' };
+      return <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold uppercase border ${colors[c.accountStatus] || ''}`}>{c.accountStatus}</span>;
+    }},
+    { key: 'createdAt', label: 'Registered Date', render: (c) => <span className="text-xs text-neutral-500 font-medium">{new Date(c.createdAt).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}</span> },
     { key: 'actions', label: 'Actions', render: (c) => (
       <div className="inline-flex items-center gap-1.5">
-        <Link href={`/admin/customers/${c.id}`} className="rounded p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 border border-transparent hover:border-neutral-200"><Eye className="h-4 w-4" /></Link>
-        <button onClick={() => { if (confirm(c.accountStatus === 'ACTIVE' ? 'Deactivate?' : 'Activate?')) (c.accountStatus === 'ACTIVE' ? deactivateMutation.mutateAsync(c.id) : activateMutation.mutateAsync(c.id)).then(() => refetch()); }}
-          className={`rounded p-1.5 border border-transparent ${c.accountStatus === 'ACTIVE' ? 'text-green-600 hover:bg-green-50 hover:border-green-200' : 'text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200'}`}>
+        <Link href={`/admin/customers/${c.id}`} className="rounded-lg p-1.5 text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900 border border-neutral-200 shadow-2xs transition" title="View Customer Profile"><Eye className="h-4 w-4" /></Link>
+        <button onClick={() => { if (confirm(c.accountStatus === 'ACTIVE' ? 'Deactivate this customer?' : 'Activate this customer?')) (c.accountStatus === 'ACTIVE' ? deactivateMutation.mutateAsync(c.id) : activateMutation.mutateAsync(c.id)).then(() => refetch()); }}
+          className={`rounded-lg p-1.5 border shadow-2xs transition ${c.accountStatus === 'ACTIVE' ? 'text-green-600 border-green-200 hover:bg-green-50' : 'text-neutral-500 border-neutral-200 hover:bg-neutral-100'}`} title={c.accountStatus === 'ACTIVE' ? 'Deactivate' : 'Activate'}>
           {c.accountStatus === 'ACTIVE' ? <ToggleRight className="h-4 w-4" /> : <ToggleLeft className="h-4 w-4" />}
         </button>
         {c.accountStatus !== 'SUSPENDED' && (
-          <button onClick={() => { if (confirm('Suspend this account?')) suspendMutation.mutateAsync(c.id).then(() => refetch()); }}
-            className="rounded p-1.5 text-red-500 hover:bg-red-50 hover:border-red-200 border border-transparent"><ShieldAlert className="h-4 w-4" /></button>
+          <button onClick={() => { if (confirm('Suspend this customer account?')) suspendMutation.mutateAsync(c.id).then(() => refetch()); }}
+            className="rounded-lg p-1.5 text-red-500 hover:bg-red-50 border border-red-200 shadow-2xs transition" title="Suspend Account"><ShieldAlert className="h-4 w-4" /></button>
         )}
       </div>
     )},

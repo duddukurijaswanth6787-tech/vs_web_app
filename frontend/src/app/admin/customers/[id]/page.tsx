@@ -13,6 +13,7 @@ import {
   useCreditCustomerWallet,
   useDebitCustomerWallet,
 } from '@/features/customers/customers.hooks';
+import { useOrderList } from '@/features/orders/order.hooks';
 import { WalletTransactionResponse, CustomerWishlistItem } from '@/features/customers/customers.types';
 import {
   User,
@@ -21,6 +22,8 @@ import {
   ShoppingCart,
   Coins,
   MapPin,
+  Package,
+  ExternalLink,
 } from 'lucide-react';
 import Link from 'next/link';
 import { SectionLoader, PageError } from '@/components/feedback/FeedbackStates';
@@ -35,7 +38,10 @@ export default function CustomerDetailPage() {
   const { data: customer, isLoading: customerLoading, error: customerError, refetch: refetchCustomer } = useCustomer(id);
   const { data: profile, isLoading: profileLoading } = useCustomerProfile(id);
 
-  // Addresses, Wishlist, Cart, Wallet
+  // Orders, Addresses, Wishlist, Cart, Wallet
+  const { data: customerOrders, isLoading: ordersLoading } = useOrderList(
+    profile?.id ? { customerId: profile.id } : {}
+  );
   const { data: addresses } = useCustomerAddresses(profile?.id || '');
   const { data: wishlist } = useCustomerWishlist(profile?.id || '');
   const { data: cart } = useCustomerCart(profile?.id || '');
@@ -226,14 +232,58 @@ export default function CustomerDetailPage() {
 
       {/* Orders tab */}
       {activeTab === 'orders' && (
-        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm">
-          <h3 className="font-bold text-neutral-900 border-b border-neutral-50 pb-2 mb-4">Customer Orders</h3>
-          <div className="text-center py-6 text-xs text-neutral-400">
-            For ordering operations, please refer to the global{' '}
-            <Link href="/admin/orders" className="text-neutral-900 font-bold underline">
-              Orders Workspace
-            </Link>.
+        <div className="rounded-xl border border-neutral-200 bg-white p-6 shadow-sm space-y-4">
+          <div className="flex items-center justify-between border-b border-neutral-100 pb-3">
+            <h3 className="font-bold text-neutral-900 flex items-center gap-2">
+              <Package className="h-4 w-4 text-neutral-600" /> Customer Orders ({customerOrders?.data?.length || 0})
+            </h3>
+            <Link href="/admin/orders" className="text-xs text-neutral-500 hover:text-neutral-900 font-semibold inline-flex items-center gap-1">
+              Global Orders Workspace <ExternalLink className="h-3 w-3" />
+            </Link>
           </div>
+
+          {ordersLoading ? (
+            <div className="text-center py-6 text-xs text-neutral-400">Loading customer orders...</div>
+          ) : !customerOrders?.data || customerOrders.data.length === 0 ? (
+            <div className="text-center py-8 text-xs text-neutral-400">
+              No orders placed by this customer yet.
+            </div>
+          ) : (
+            <div className="divide-y divide-neutral-100 border border-neutral-200 rounded-xl overflow-hidden">
+              {customerOrders.data.map((order) => (
+                <div key={order.id} className="p-4 bg-white hover:bg-neutral-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs transition">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-neutral-900">{order.orderNumber}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase border bg-neutral-100 text-neutral-700">
+                        {order.status}
+                      </span>
+                      {order.channel && (
+                        <span className="px-1.5 py-0.5 text-[9px] rounded bg-neutral-50 text-neutral-500 border border-neutral-200">
+                          {order.channel}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-neutral-400 text-[11px]">
+                      {new Date(order.createdAt).toLocaleString('en-IN', { dateStyle: 'medium', timeStyle: 'short' })} • {order.items?.length || 0} item(s)
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-4">
+                    <span className="font-mono font-bold text-neutral-900 text-sm">
+                      ₹{Number(order.grandTotal).toLocaleString('en-IN', { minimumFractionDigits: 2 })}
+                    </span>
+                    <Link
+                      href={`/admin/orders/${order.id}`}
+                      className="px-3 py-1.5 rounded-lg border border-neutral-200 bg-white hover:bg-neutral-100 text-neutral-700 font-bold inline-flex items-center gap-1 text-[11px] shadow-2xs"
+                    >
+                      View Order <ExternalLink className="h-3 w-3 text-neutral-400" />
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
