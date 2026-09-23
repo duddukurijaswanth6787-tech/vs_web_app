@@ -42,7 +42,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   //
   // 'unknown' until that resolves, so the app shows its loading state instead
   // of briefly deciding the visitor is signed out.
-  const [session, setSession] = useState<'unknown' | 'none' | 'active'>('unknown');
+  // Read cached user synchronously if available for 0ms instantaneous load
+  const getCachedUser = (): UserProfile | null => {
+    if (typeof window === 'undefined') return null;
+    try {
+      const stored = localStorage.getItem('vd_cached_user') || sessionStorage.getItem('vd_cached_user');
+      return stored ? JSON.parse(stored) : null;
+    } catch {
+      return null;
+    }
+  };
+
+  const initialCachedUser = getCachedUser();
+
+  const [session, setSession] = useState<'unknown' | 'none' | 'active'>(() => {
+    if (typeof window !== 'undefined') {
+      const token = localStorage.getItem('vd_access_token') || sessionStorage.getItem('vd_access_token');
+      if (token) return 'active';
+    }
+    return 'unknown';
+  });
 
   useEffect(() => {
     let cancelled = false;
@@ -73,10 +92,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     refetch: refetchUser,
   } = useQuery({
     queryKey: queryKeys.auth.me(),
-    queryFn: authService.getMe,
+    queryFn: async () => {
+      const profile = await authService.getMe();
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.setItem('vd_cached_user', JSON.stringify(profile));
+          sessionStorage.setItem('vd_cached_user', JSON.stringify(profile));
+        } catch {}
+      }
+      return profile;
+    },
+    initialData: initialCachedUser || undefined,
     enabled: session === 'active',
     retry: false,
-    staleTime: 10 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 
   const loginMutation = useMutation({
@@ -98,6 +127,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     mutationFn: authService.logout,
     onSuccess: () => {
       setSession('none');
+      if (typeof window !== 'undefined') {
+        try {
+          localStorage.removeItem('vd_cached_user');
+          sessionStorage.removeItem('vd_cached_user');
+        } catch {}
+      }
       queryClient.setQueryData(queryKeys.auth.me(), null);
       queryClient.clear();
       if (typeof window !== 'undefined') {
@@ -106,7 +141,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     },
   });
 
-  const isInitializing = session === 'unknown' || (session === 'active' && isLoading);
+  // Non-blocking initialization: if user profile is already cached in memory, instant render!
+  const isInitializing = (session === 'unknown' && !user) || (session === 'active' && isLoading && !user);
   const isStaffUser = !!user && user.roles.some((r) => STAFF_ROLES.includes(r));
 
   const value: AuthContextType = {
