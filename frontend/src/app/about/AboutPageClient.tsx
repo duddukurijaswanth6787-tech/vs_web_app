@@ -26,12 +26,6 @@ export default function AboutPage() {
             </h1>
           </div>
         </div>
-        <Link
-          href="/collections"
-          className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold px-4 py-2 rounded-xl transition shadow-xs"
-        >
-          Explore Collection
-        </Link>
       </header>
 
       {/* Main Content Area */}
@@ -87,21 +81,6 @@ export default function AboutPage() {
                     </p>
                   </div>
                 )}
-
-                <div className="pt-4 border-t border-neutral-100 flex flex-wrap items-center gap-4">
-                  <Link
-                    href="/collections"
-                    className="bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white text-xs font-bold px-6 py-3 rounded-xl transition shadow-xs"
-                  >
-                    Explore Our Collections
-                  </Link>
-                  <Link
-                    href="/contact"
-                    className="bg-neutral-100 hover:bg-neutral-200 text-neutral-800 text-xs font-bold px-6 py-3 rounded-xl transition"
-                  >
-                    Contact Boutique
-                  </Link>
-                </div>
               </div>
             </div>
           </div>
