@@ -13,7 +13,11 @@ import {
 export class DashboardService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async getSummary(user?: JwtPayload): Promise<DashboardSummaryResponse> {
+  async getSummary(
+    user?: JwtPayload,
+    channel?: string,
+    scope?: string,
+  ): Promise<DashboardSummaryResponse> {
     const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const startOfToday = new Date(
@@ -23,6 +27,11 @@ export class DashboardService {
     );
     const endOfToday = new Date(startOfToday.getTime() + 86400000);
 
+    const isPosScoped =
+      scope === 'my_pos' ||
+      channel === 'POS_SHOPORA' ||
+      channel === 'POS';
+
     const isSuperAdminOrAdmin =
       !user ||
       user.roles?.some((r) => r === 'super_admin' || r === 'admin');
@@ -30,17 +39,34 @@ export class DashboardService {
     const isOperator = !isSuperAdminOrAdmin && !!user;
     const operatorCondition = isOperator ? { createdBy: user.sub } : {};
 
-    const orderFilter = (gte?: Date, lte?: Date) => ({
+    const orderFilter = (gte?: Date, lte?: Date): any => ({
       deletedAt: null,
-      ...operatorCondition,
+      ...(isPosScoped
+        ? {
+            channel: 'POS_SHOPORA',
+            status: { notIn: ['CANCELLED', 'RETURNED', 'REFUNDED'] },
+            ...(user?.sub ? { createdBy: user.sub } : {}),
+          }
+        : {
+            ...operatorCondition,
+          }),
       ...(gte && { createdAt: { gte } }),
       ...(lte && { createdAt: { lte } }),
     });
 
-    const todayFilter = {
+    const todayFilter: any = {
       deletedAt: null,
-      ...operatorCondition,
       createdAt: { gte: startOfToday, lt: endOfToday },
+      ...(isPosScoped
+        ? {
+            channel: 'POS_SHOPORA',
+            status: { notIn: ['CANCELLED', 'RETURNED', 'REFUNDED'] },
+            ...(user?.sub ? { createdBy: user.sub } : {}),
+          }
+        : {
+            status: { notIn: ['CANCELLED'] },
+            ...operatorCondition,
+          }),
     };
 
     const [
@@ -128,7 +154,7 @@ export class DashboardService {
       select: { id: true, name: true, slug: true },
     });
     const productMap = new Map(products.map((p) => [p.id, p]));
-    const totalRev = Number(revenueAgg._sum.grandTotal ?? 0);
+    const totalRev = Number(revenueAgg?._sum?.grandTotal ?? 0);
 
     return {
       totalOrders,
@@ -142,9 +168,9 @@ export class DashboardService {
         ...tp,
         product: productMap.get(tp.productId) ?? null,
       })),
-      todayRevenue: Number(todayRevenueAgg._sum.grandTotal ?? 0),
+      todayRevenue: Number(todayRevenueAgg?._sum?.grandTotal ?? 0),
       todayOrders,
-      todayItemsSold: Number(todayItemsSoldAgg._sum.quantity ?? 0),
+      todayItemsSold: Number(todayItemsSoldAgg?._sum?.quantity ?? 0),
       averageOrderValue:
         totalOrders > 0 ? Math.round(totalRev / totalOrders) : 0,
       categoriesCount,

@@ -19,8 +19,14 @@ export class DashboardController {
 
   @Get('summary')
   @ApiOperation({ summary: 'Get dashboard summary' })
-  async getSummary(@CurrentUser() user: JwtPayload) {
-    return ResponseBuilder.success(await this.dashboardService.getSummary(user));
+  async getSummary(
+    @CurrentUser() user: JwtPayload,
+    @Query('channel') channel?: string,
+    @Query('scope') scope?: string,
+  ) {
+    return ResponseBuilder.success(
+      await this.dashboardService.getSummary(user, channel, scope),
+    );
   }
 
   @Get('sales-chart')

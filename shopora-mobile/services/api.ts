@@ -579,9 +579,11 @@ export const dashboardService = {
     return cachedSummary;
   },
 
-  /** GET /dashboard/summary — today's sales, items sold, low-stock count. */
+  /** GET /dashboard/summary — today's individual operator POS sales, items sold, low-stock count. */
   async getSummary(): Promise<DashboardSummary> {
-    const res = await posApiClient.get('/dashboard/summary');
+    const res = await posApiClient.get('/dashboard/summary', {
+      params: { scope: 'my_pos', channel: 'POS_SHOPORA' },
+    });
     const data = unwrap<DashboardSummary>(res);
     cachedSummary = data;
     return data;
