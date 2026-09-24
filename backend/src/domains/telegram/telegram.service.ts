@@ -469,7 +469,7 @@ export class TelegramService implements OnModuleInit {
       const currentList = config.allowedChatIds || [];
       if (!currentList.includes(newId)) {
         const updatedList = [...currentList, newId];
-        await this.updateConfig({ allowedChatIds: updatedList });
+        await this.updateSettings({ allowedChatIds: updatedList });
         await this.sendMessage(
           senderId,
           `✅ *User Authorized Successfully!*\n━━━━━━━━━━━━━━━━━━━━\nTelegram User ID: \`${newId}\` has been granted access to Vasanthi Designers bot.\n\n_They can now use the bot and receive instant real-time alerts._`,
@@ -503,7 +503,7 @@ export class TelegramService implements OnModuleInit {
       const updatedList = (config.allowedChatIds || []).filter(
         (id) => id !== targetId,
       );
-      await this.updateConfig({ allowedChatIds: updatedList });
+      await this.updateSettings({ allowedChatIds: updatedList });
       await this.sendMessage(
         senderId,
         `🗑️ *User Access Revoked*\n\nTelegram User ID \`${targetId}\` has been removed from authorized users.`,
