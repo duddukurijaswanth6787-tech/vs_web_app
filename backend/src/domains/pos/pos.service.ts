@@ -21,6 +21,7 @@ import { JwtService } from '@domains/auth/services/jwt.service';
 import { RefreshTokenService } from '@domains/auth/services/refresh-token.service';
 import { PrismaService } from '@database/prisma.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { TelegramService } from '@domains/telegram/telegram.service';
 import { CheckoutSessionStatus } from '@prisma/client';
 import Razorpay from 'razorpay';
 import {
@@ -64,6 +65,7 @@ export class PosService {
     private readonly refreshTokenService: RefreshTokenService,
     private readonly prisma: PrismaService,
     private readonly notificationService: NotificationService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   /**
@@ -1090,6 +1092,25 @@ export class PosService {
         this.logger.warn(`Failed to notify admins of POS sale: ${err.message}`),
       );
 
+    // 9. Instant Telegram Alert
+    this.telegramService
+      .sendPosSaleAlert({
+        billNumber: order.orderNumber,
+        cashierName: customerInfo?.fullName || 'In-Store Cashier',
+        paymentMethod: dto.paymentMethod || 'CASH / UPI',
+        grandTotal: Number(order.grandTotal),
+        items: itemsToProcess.map((i) => ({
+          productName: i.productName,
+          sku: i.sku,
+          quantity: i.quantity,
+          unitPrice: i.unitPrice,
+        })),
+        createdAt: order.createdAt,
+      })
+      .catch((err) =>
+        this.logger.warn(`Telegram POS alert failed: ${err.message}`),
+      );
+
     return {
       success: true,
       message: 'POS Sale completed successfully',
@@ -1912,6 +1933,21 @@ export class PosService {
         variance,
       },
     });
+
+    this.telegramService
+      .sendShiftCloseAlert({
+        terminalId: shift.terminalId,
+        cashierName: 'Cashier',
+        totalSales: cashSales,
+        ordersCount: 0,
+        cashExpected: closingCashExpected,
+        cashActual: dto.closingCashCounted,
+        discrepancy: variance,
+        closedAt: new Date(),
+      })
+      .catch((err) =>
+        this.logger.warn(`Telegram Shift Close alert failed: ${err.message}`),
+      );
 
     return closed;
   }

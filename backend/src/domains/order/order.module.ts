@@ -5,6 +5,7 @@ import { InvoiceModule } from '@domains/invoice/invoice.module';
 import { CancellationModule } from '@domains/cancellation/cancellation.module';
 import { EmailModule } from '@domains/email/email.module';
 import { OtpGatewayModule } from '@domains/otp-gateway/otp-gateway.module';
+import { TelegramModule } from '@domains/telegram/telegram.module';
 import { OrderController } from './order.controller';
 import { MeOrdersController } from './me-orders.controller';
 import { OrderService } from './order.service';
@@ -19,6 +20,7 @@ import { OrderWorkflowService } from './order-workflow.service';
     forwardRef(() => CancellationModule),
     EmailModule,
     OtpGatewayModule,
+    TelegramModule,
   ],
   controllers: [OrderController, MeOrdersController],
   providers: [OrderService, OrderRepository, OrderWorkflowService],

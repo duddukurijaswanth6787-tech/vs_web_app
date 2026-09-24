@@ -4,6 +4,7 @@ import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
 import { EmailService } from '@domains/email/email.service';
 import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
+import { TelegramService } from '@domains/telegram/telegram.service';
 import { calculateStockStatus } from '@shared/inventory/stock-status.util';
 import { PrismaService } from '@database/prisma.service';
 import { Prisma } from '@prisma/client';
@@ -44,6 +45,7 @@ export class OrderWorkflowService {
     private readonly notificationService: NotificationService,
     private readonly emailService: EmailService,
     private readonly otpGatewayService: OtpGatewayService,
+    private readonly telegramService: TelegramService,
   ) {}
 
   /**
@@ -113,6 +115,30 @@ export class OrderWorkflowService {
         },
       )
       .catch(() => {});
+
+    // Instant Telegram Alert for Online Store Orders
+    if (order.channel !== 'POS_SHOPORA') {
+      const address = order.addresses?.[0];
+      this.telegramService
+        .sendOnlineOrderAlert({
+          orderNumber: order.orderNumber,
+          customerName,
+          customerPhone: phone || address?.phone || 'N/A',
+          shippingCity: address?.city || 'Direct',
+          shippingState: address?.state || 'India',
+          grandTotal: Number(order.grandTotal),
+          paymentMethod: order.paymentMethod || 'Online (Razorpay)',
+          paymentStatus: order.status,
+          items: (order.items || []).map((i: any) => ({
+            productName: i.productName,
+            variantName: i.variant?.title,
+            quantity: i.quantity,
+            price: i.unitPrice,
+          })),
+          createdAt: order.createdAt,
+        })
+        .catch(() => {});
+    }
   }
 
   validateTransition(currentStatus: string, nextStatus: string): void {

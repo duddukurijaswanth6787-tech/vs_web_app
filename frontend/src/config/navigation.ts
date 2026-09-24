@@ -662,6 +662,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'telegram-automation',
+        title: 'Telegram Alerts & Bot',
+        href: '/admin/communication/telegram',
+        icon: Bot,
+        roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
         id: 'communication',
         title: 'Communication & OTP Logs',
         href: '/admin/communication/otp',
