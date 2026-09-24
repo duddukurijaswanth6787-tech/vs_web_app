@@ -13,6 +13,16 @@ const SETTING_KEY_TELEGRAM_CONFIG = 'telegram_automation_config';
 const DEFAULT_BOT_TOKEN = '8825015214:AAFaPKBzkr7LXkJsWnLkaPKLcRHafdEQiVk';
 const DEFAULT_ALLOWED_CHAT_IDS = ['2091440465'];
 
+export const MAIN_KEYBOARD_MARKUP = {
+  keyboard: [
+    [{ text: "📊 Today's Summary" }, { text: '🧾 POS Sales' }],
+    [{ text: '🛍️ Online Orders' }, { text: '⚠️ Low Stock' }],
+    [{ text: '📦 Recent Orders' }, { text: '🔄 Refresh' }],
+  ],
+  resize_keyboard: true,
+  is_persistent: true,
+};
+
 @Injectable()
 export class TelegramService implements OnModuleInit {
   private readonly logger = new Logger(TelegramService.name);
@@ -28,6 +38,31 @@ export class TelegramService implements OnModuleInit {
     this.logger.log(
       `TelegramService initialized. Enabled: ${this.cachedConfig?.enabled}, Allowed Chat IDs: ${this.cachedConfig?.allowedChatIds?.join(', ')}`,
     );
+    // Register official Telegram command list in background
+    this.registerBotCommands().catch(() => {});
+  }
+
+  async registerBotCommands(): Promise<boolean> {
+    const config = this.cachedConfig || (await this.loadConfig());
+    if (!config.botToken) return false;
+
+    try {
+      const url = `https://api.telegram.org/bot${config.botToken}/setMyCommands`;
+      const commands = [
+        { command: 'today', description: "Today's sales, revenue & orders summary" },
+        { command: 'pos', description: "Today's in-store POS sales & bills" },
+        { command: 'online', description: "Today's online store orders" },
+        { command: 'stock', description: 'Low stock inventory alerts' },
+        { command: 'orders', description: 'Recent 5 customer orders' },
+        { command: 'help', description: 'Show all features & command menu' },
+      ];
+      const res = await axios.post(url, { commands }, { timeout: 8000 });
+      this.logger.log(`Telegram Bot commands menu registered successfully: ${res.data?.ok}`);
+      return res.data?.ok === true;
+    } catch (err: any) {
+      this.logger.warn(`Could not register Telegram bot commands: ${err.message}`);
+      return false;
+    }
   }
 
   private interpolate(
@@ -158,6 +193,7 @@ export class TelegramService implements OnModuleInit {
     chatId: string | number,
     text: string,
     parseMode: 'Markdown' | 'HTML' = 'Markdown',
+    replyMarkup: any = MAIN_KEYBOARD_MARKUP,
   ): Promise<boolean> {
     const config = this.cachedConfig || (await this.loadConfig());
     if (!config.enabled || !config.botToken) {
@@ -174,6 +210,7 @@ export class TelegramService implements OnModuleInit {
           text,
           parse_mode: parseMode,
           disable_web_page_preview: true,
+          reply_markup: replyMarkup || MAIN_KEYBOARD_MARKUP,
         },
         { timeout: 8000 },
       );
@@ -192,6 +229,7 @@ export class TelegramService implements OnModuleInit {
               chat_id: chatId,
               text: text.replace(/[*_`[\]()]/g, ''),
               disable_web_page_preview: true,
+              reply_markup: replyMarkup || MAIN_KEYBOARD_MARKUP,
             },
             { timeout: 8000 },
           );
@@ -393,42 +431,49 @@ export class TelegramService implements OnModuleInit {
       await this.sendMessage(
         senderId,
         `⛔ *Access Denied*\n\nYour Telegram User ID (\`${senderId}\`) is not authorized to access Vasanthi Designers store management.\n\n_Contact the Super Administrator to request access._`,
+        'Markdown',
+        { remove_keyboard: true },
       );
       return;
     }
 
-    // Process Allowed Commands
+    // Process Allowed Commands and Button clicks
     const lower = text.toLowerCase();
 
     if (lower === '/start' || lower === '/help') {
       await this.sendMessage(
         senderId,
-        `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Available Commands:*\n• \`/today\` or \`/sales\` — Today's full business summary & revenue\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/orders\` — Recent 5 customer orders\n• \`/stock\` or \`/lowstock\` — Low stock alerts\n• \`/test\` — Ping test live bot connection\n\n_Instant alerts for new online orders and POS sales are enabled._ ⚡`,
+        `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Tap any button below or send a command:*\n• \`/today\` — Today's full business summary & revenue\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/orders\` — Recent 5 customer orders\n• \`/stock\` — Low stock alerts\n• \`/test\` — Ping test live bot connection\n\n_Instant alerts for new online orders and POS sales are enabled._ ⚡`,
       );
       return;
     }
 
-    if (lower === '/today' || lower === '/sales') {
+    if (
+      lower === '/today' ||
+      lower === '/sales' ||
+      text.includes("Today's Summary") ||
+      text.includes('Refresh')
+    ) {
       await this.replyTodaySummary(senderId);
       return;
     }
 
-    if (lower === '/pos') {
+    if (lower === '/pos' || text.includes('POS Sales')) {
       await this.replyPosSummary(senderId);
       return;
     }
 
-    if (lower === '/online') {
+    if (lower === '/online' || text.includes('Online Orders')) {
       await this.replyOnlineSummary(senderId);
       return;
     }
 
-    if (lower === '/stock' || lower === '/lowstock') {
+    if (lower === '/stock' || lower === '/lowstock' || text.includes('Low Stock')) {
       await this.replyLowStock(senderId);
       return;
     }
 
-    if (lower === '/orders') {
+    if (lower === '/orders' || text.includes('Recent Orders')) {
       await this.replyRecentOrders(senderId);
       return;
     }
@@ -454,7 +499,7 @@ export class TelegramService implements OnModuleInit {
 
     await this.sendMessage(
       senderId,
-      `❓ Unknown command. Send \`/help\` or \`/today\` to see available reports.`,
+      `❓ Unknown command. Tap any quick menu button below or send \`/today\` to see reports.`,
     );
   }
 
@@ -731,6 +776,8 @@ export class TelegramService implements OnModuleInit {
     try {
       const res = await axios.get(apiUrl);
       this.logger.log(`Telegram webhook registered to: ${webhookUrl}`);
+      // Also register commands
+      await this.registerBotCommands();
       return res.data;
     } catch (err: any) {
       this.logger.error(
