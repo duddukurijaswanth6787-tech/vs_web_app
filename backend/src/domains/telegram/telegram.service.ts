@@ -440,10 +440,15 @@ export class TelegramService implements OnModuleInit {
     // Process Allowed Commands and Button clicks
     const lower = text.toLowerCase();
 
+    // 1. Check if user mentioned an Order Number (e.g. ORD-..., POS-..., VAS-..., or UUID)
+    const orderMatch = text.match(
+      /((?:ORD|POS|VAS)-[A-Z0-9-]+|[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})/i,
+    );
+
     if (lower === '/start' || lower === '/help') {
       await this.sendMessage(
         senderId,
-        `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Tap any button below or send a command:*\n• \`/today\` — Today's full business summary & revenue\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/orders\` — Recent 5 customer orders\n• \`/stock\` — Low stock alerts\n• \`/test\` — Ping test live bot connection\n\n_Instant alerts for new online orders and POS sales are enabled._ ⚡`,
+        `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Tap any button below or ask in plain English:*\n• \`/today\` — Today's full business summary & revenue\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/orders\` — Recent customer orders list\n• \`/stock\` — Low stock alerts\n• \`/payments\` — Today's payments & collections\n• \`/test\` — Ping test live bot connection\n\n💡 *Smart Features:*\n• Paste any Order Number (e.g. \`ORD-ONL-20260923-0001\`) to get full details\n• Type queries like _"give order full detail"_, _"today's sale"_, _"pos report"_\n• Instant real-time alerts for online orders and POS sales ⚡`,
       );
       return;
     }
@@ -478,6 +483,11 @@ export class TelegramService implements OnModuleInit {
       return;
     }
 
+    if (lower === '/payments' || lower === '/pay' || text.includes('Payments')) {
+      await this.replyPaymentsSummary(senderId);
+      return;
+    }
+
     if (lower === '/test') {
       await this.sendMessage(
         senderId,
@@ -486,12 +496,96 @@ export class TelegramService implements OnModuleInit {
       return;
     }
 
-    // Fallback: smart natural query handling
+    // 2. If explicit order number was found in message
+    if (orderMatch) {
+      await this.replyOrderDetails(senderId, orderMatch[1]);
+      return;
+    }
+
+    // 3. Natural language query: Order details / Full detail
+    if (
+      lower.includes('order detail') ||
+      lower.includes('order details') ||
+      lower.includes('full detail') ||
+      lower.includes('order info') ||
+      lower.includes('order status') ||
+      lower.includes('track order') ||
+      lower.includes('about the order') ||
+      (lower.includes('order') && lower.includes('detail')) ||
+      (lower.includes('give') && lower.includes('detail'))
+    ) {
+      await this.replyOrderDetails(senderId, null);
+      return;
+    }
+
+    // 4. Natural language query: Recent orders
+    if (
+      lower.includes('recent order') ||
+      lower.includes('last order') ||
+      lower.includes('show order') ||
+      lower.includes('all order') ||
+      lower.includes('orders')
+    ) {
+      await this.replyRecentOrders(senderId);
+      return;
+    }
+
+    // 5. Natural language query: Payments & Transactions
+    if (
+      lower.includes('payment') ||
+      lower.includes('transaction') ||
+      lower.includes('upi') ||
+      lower.includes('razorpay') ||
+      lower.includes('collection') ||
+      lower.includes('cash collection')
+    ) {
+      await this.replyPaymentsSummary(senderId);
+      return;
+    }
+
+    // 6. Natural language query: POS
+    if (
+      lower.includes('pos') ||
+      lower.includes('in-store') ||
+      lower.includes('instore') ||
+      lower.includes('counter') ||
+      lower.includes('bill')
+    ) {
+      await this.replyPosSummary(senderId);
+      return;
+    }
+
+    // 7. Natural language query: Online Store
+    if (
+      lower.includes('online') ||
+      lower.includes('web') ||
+      lower.includes('website') ||
+      lower.includes('ecommerce') ||
+      lower.includes('ecom')
+    ) {
+      await this.replyOnlineSummary(senderId);
+      return;
+    }
+
+    // 8. Natural language query: Low stock / Inventory
+    if (
+      lower.includes('stock') ||
+      lower.includes('inventory') ||
+      lower.includes('quantity') ||
+      lower.includes('left')
+    ) {
+      await this.replyLowStock(senderId);
+      return;
+    }
+
+    // 9. Natural language query: Today / Sales / Revenue
     if (
       lower.includes('today') ||
       lower.includes('sale') ||
-      lower.includes('booking') ||
-      lower.includes('revenue')
+      lower.includes('revenue') ||
+      lower.includes('earning') ||
+      lower.includes('income') ||
+      lower.includes('how much')
     ) {
       await this.replyTodaySummary(senderId);
       return;
@@ -499,7 +593,7 @@ export class TelegramService implements OnModuleInit {
 
     await this.sendMessage(
       senderId,
-      `❓ Unknown command. Tap any quick menu button below or send \`/today\` to see reports.`,
+      `❓ I didn't quite catch that. You can:\n• Tap any quick menu button below\n• Paste an Order Number (e.g. \`ORD-ONL-20260923-0001\`)\n• Ask questions like _"give order full detail"_, _"today's sale"_, _"pos report"_`,
     );
   }
 
@@ -722,12 +816,13 @@ export class TelegramService implements OnModuleInit {
       take: 5,
       include: {
         customer: { include: { user: true } },
+        items: { select: { productName: true, quantity: true } },
       },
     });
 
-    let text = `📦 *RECENT 5 ORDERS*\n━━━━━━━━━━━━━━━━━━━━\n`;
+    let text = `📦 *RECENT STORE ORDERS (${orders.length})*\n━━━━━━━━━━━━━━━━━━━━\n`;
     if (orders.length === 0) {
-      text += `_No orders found._`;
+      text += `_No orders found in the database yet._`;
     } else {
       orders.forEach((o) => {
         const type = o.channel === 'POS_SHOPORA' ? '🏪 POS' : '🌐 Online';
@@ -738,7 +833,172 @@ export class TelegramService implements OnModuleInit {
           hour: '2-digit',
           minute: '2-digit',
         });
-        text += `• *${o.orderNumber}* (${type})\n  ₹${Number(o.grandTotal).toLocaleString('en-IN')} | *${o.status}* | ${dateStr}\n`;
+        const custName = o.customer?.user
+          ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
+          : 'Customer';
+        const itemsSummary = o.items
+          .map((i) => `${i.productName} (x${i.quantity})`)
+          .join(', ');
+
+        text += `• *\`${o.orderNumber}\`* (${type})\n  👤 ${custName} | *₹${Number(o.grandTotal).toLocaleString('en-IN')}* | [${o.status}]\n  🛍️ _${itemsSummary || 'Items'}_ | ⏰ ${dateStr}\n\n`;
+      });
+      text += `_Send any Order Number (e.g. \`${orders[0].orderNumber}\`) to view full details._`;
+    }
+
+    await this.sendMessage(chatId, text);
+  }
+
+  private async replyOrderDetails(
+    chatId: string,
+    orderQuery?: string | null,
+  ): Promise<void> {
+    let order: any = null;
+
+    if (orderQuery && orderQuery.trim()) {
+      const q = orderQuery.trim();
+      order = await this.prisma.order.findFirst({
+        where: {
+          OR: [
+            { orderNumber: { equals: q, mode: 'insensitive' } },
+            { orderNumber: { contains: q, mode: 'insensitive' } },
+            { id: q },
+          ],
+        },
+        include: {
+          customer: { include: { user: true } },
+          items: true,
+          addresses: true,
+          payments: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+    } else {
+      // Find latest order in database
+      order = await this.prisma.order.findFirst({
+        orderBy: { createdAt: 'desc' },
+        include: {
+          customer: { include: { user: true } },
+          items: true,
+          addresses: true,
+          payments: { orderBy: { createdAt: 'desc' } },
+        },
+      });
+    }
+
+    if (!order) {
+      await this.sendMessage(
+        chatId,
+        `🔍 *Order Not Found*\n━━━━━━━━━━━━━━━━━━━━\nCould not find any order matching \`${orderQuery || ''}\`.\n\n_Tip: Send a valid Order Number like \`ORD-ONL-20260923-0001\` or tap *📦 Recent Orders*._`,
+      );
+      return;
+    }
+
+    const isPos = order.channel === 'POS_SHOPORA';
+    const channelName = isPos ? '🏪 In-Store Shopora POS' : '🌐 Online Web Store';
+    const dateStr = new Date(order.createdAt).toLocaleString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+
+    const custUser = order.customer?.user;
+    const shippingAddr =
+      (order.addresses || []).find((a: any) => a.addressType === 'SHIPPING') ||
+      order.addresses?.[0];
+
+    let custText = `👤 *Customer Details:*\n`;
+    if (custUser) {
+      custText += `• *Name:* ${custUser.firstName} ${custUser.lastName || ''}\n`;
+      if (custUser.phone) custText += `• *Phone:* \`${custUser.phone}\`\n`;
+      if (custUser.email) custText += `• *Email:* \`${custUser.email}\`\n`;
+    } else if (shippingAddr?.fullName) {
+      custText += `• *Name:* ${shippingAddr.fullName}\n`;
+      if (shippingAddr.phone) custText += `• *Phone:* \`${shippingAddr.phone}\`\n`;
+    } else {
+      custText += `• *Customer:* Walk-in / Guest\n`;
+    }
+
+    let addrText = '';
+    if (shippingAddr && !isPos) {
+      const parts = [
+        shippingAddr.addressLine1,
+        shippingAddr.addressLine2,
+        shippingAddr.city,
+        shippingAddr.state,
+        shippingAddr.postalCode,
+      ].filter(Boolean);
+      if (parts.length > 0) {
+        addrText = `📍 *Shipping Address:*\n${parts.join(', ')}\n\n`;
+      }
+    }
+
+    let itemsText = `🛍️ *Order Items (${order.items?.length || 0}):*\n`;
+    (order.items || []).forEach((item: any, idx: number) => {
+      const variant =
+        item.variantTitle && item.variantTitle !== 'Default'
+          ? ` [${item.variantTitle}]`
+          : '';
+      const unitP = Number(item.unitPrice || item.price || 0).toLocaleString('en-IN');
+      const totalP = Number(item.totalPrice || item.total || 0).toLocaleString('en-IN');
+      itemsText += `${idx + 1}. *${item.productName}*${variant}\n   Qty: *${item.quantity}* × ₹${unitP} = *₹${totalP}*\n`;
+    });
+
+    const payment = order.payments?.[0];
+    const payStatus = payment?.status || (isPos ? 'COMPLETED' : 'PENDING');
+    const payMethod = payment?.method || order.paymentMethod || 'N/A';
+    let payMeta = '';
+    if (payment?.metadata && typeof payment.metadata === 'object') {
+      const meta: any = payment.metadata;
+      if (meta.vpa) payMeta += `\n• *UPI ID:* \`${meta.vpa}\``;
+      if (meta.rrn) payMeta += `\n• *Bank RRN:* \`${meta.rrn}\``;
+      if (meta.razorpayPaymentId) payMeta += `\n• *Payment ID:* \`${meta.razorpayPaymentId}\``;
+    }
+
+    const text = `📦 *ORDER DETAILS: \`${order.orderNumber}\`*\n━━━━━━━━━━━━━━━━━━━━\n🛒 *Channel:* ${channelName}\n🏷️ *Status:* *${order.status}*\n⏰ *Date:* ${dateStr}\n\n${custText}\n${addrText}${itemsText}\n💰 *Financial Breakdown:*\n• Subtotal: ₹${Number(order.subtotal || order.grandTotal).toLocaleString('en-IN')}\n• Discount: -₹${Number(order.discountTotal || 0).toLocaleString('en-IN')}\n• Shipping: ₹${Number(order.shippingFee || 0).toLocaleString('en-IN')}\n• *Grand Total: ₹${Number(order.grandTotal).toLocaleString('en-IN')}*\n\n💳 *Payment Details:*\n• *Method:* ${payMethod} (*${payStatus}*)${payMeta}\n\n_Tip: To look up another order, just type or paste the Order Number._`;
+
+    await this.sendMessage(chatId, text);
+  }
+
+  private async replyPaymentsSummary(chatId: string): Promise<void> {
+    const now = new Date();
+    const startOfToday = new Date(
+      now.getFullYear(),
+      now.getMonth(),
+      now.getDate(),
+      0,
+      0,
+      0,
+      0,
+    );
+    const endOfToday = new Date(startOfToday.getTime() + 86400000);
+
+    const payments = await this.prisma.payment.findMany({
+      where: {
+        createdAt: { gte: startOfToday, lt: endOfToday },
+        status: { in: ['CAPTURED', 'COMPLETED', 'PAID', 'SUCCESS'] },
+      },
+    });
+
+    const totalCollected = payments.reduce(
+      (sum, p) => sum + Number(p.amount || 0),
+      0,
+    );
+
+    const byMethod: Record<string, { count: number; total: number }> = {};
+    payments.forEach((p) => {
+      const m = p.method || 'OTHER';
+      if (!byMethod[m]) byMethod[m] = { count: 0, total: 0 };
+      byMethod[m].count += 1;
+      byMethod[m].total += Number(p.amount || 0);
+    });
+
+    let text = `💳 *TODAY'S PAYMENTS & TRANSACTIONS*\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total Collected:* ₹${totalCollected.toLocaleString('en-IN')}\n🧾 *Transactions:* ${payments.length}\n\n`;
+
+    if (payments.length === 0) {
+      text += `_No payment transactions recorded today yet._`;
+    } else {
+      text += `*Method Breakdown:*\n`;
+      Object.entries(byMethod).forEach(([method, data]) => {
+        text += `• *${method}:* ₹${data.total.toLocaleString('en-IN')} (${data.count} txns)\n`;
       });
     }
 
