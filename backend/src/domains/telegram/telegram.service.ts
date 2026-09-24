@@ -15,9 +15,9 @@ const DEFAULT_ALLOWED_CHAT_IDS = ['2091440465'];
 
 export const MAIN_KEYBOARD_MARKUP = {
   keyboard: [
-    [{ text: "📊 Today's Summary" }, { text: '🧾 POS Sales' }],
-    [{ text: '🛍️ Online Orders' }, { text: '⚠️ Low Stock' }],
-    [{ text: '📦 Recent Orders' }, { text: '🔄 Refresh' }],
+    [{ text: "📊 Today's Summary" }, { text: '📦 Recent Orders' }],
+    [{ text: '🧾 POS Sales' }, { text: '🛍️ Online Orders' }],
+    [{ text: '💳 Recent Payments' }, { text: '⚠️ Low Stock' }],
   ],
   resize_keyboard: true,
   is_persistent: true,
@@ -50,10 +50,11 @@ export class TelegramService implements OnModuleInit {
       const url = `https://api.telegram.org/bot${config.botToken}/setMyCommands`;
       const commands = [
         { command: 'today', description: "Today's sales, revenue & orders summary" },
+        { command: 'payments', description: 'Recent 5 customer payments & sources' },
+        { command: 'orders', description: 'Recent 5 store customer orders' },
         { command: 'pos', description: "Today's in-store POS sales & bills" },
         { command: 'online', description: "Today's online store orders" },
         { command: 'stock', description: 'Low stock inventory alerts' },
-        { command: 'orders', description: 'Recent 5 customer orders' },
         { command: 'help', description: 'Show all features & command menu' },
       ];
       const res = await axios.post(url, { commands }, { timeout: 8000 });
@@ -483,8 +484,13 @@ export class TelegramService implements OnModuleInit {
       return;
     }
 
-    if (lower === '/payments' || lower === '/pay' || text.includes('Payments')) {
-      await this.replyPaymentsSummary(senderId);
+    if (
+      lower === '/payments' ||
+      lower === '/pay' ||
+      text.includes('Recent Payments') ||
+      text.includes('Payments')
+    ) {
+      await this.replyRecentPayments(senderId);
       return;
     }
 
@@ -539,7 +545,7 @@ export class TelegramService implements OnModuleInit {
       lower.includes('collection') ||
       lower.includes('cash collection')
     ) {
-      await this.replyPaymentsSummary(senderId);
+      await this.replyRecentPayments(senderId);
       return;
     }
 
@@ -958,48 +964,65 @@ export class TelegramService implements OnModuleInit {
     await this.sendMessage(chatId, text);
   }
 
-  private async replyPaymentsSummary(chatId: string): Promise<void> {
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0,
-    );
-    const endOfToday = new Date(startOfToday.getTime() + 86400000);
-
+  private async replyRecentPayments(chatId: string): Promise<void> {
     const payments = await this.prisma.payment.findMany({
-      where: {
-        createdAt: { gte: startOfToday, lt: endOfToday },
-        status: { in: ['CAPTURED', 'COMPLETED', 'PAID', 'SUCCESS'] },
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        order: {
+          include: {
+            customer: { include: { user: true } },
+            addresses: true,
+          },
+        },
       },
     });
 
-    const totalCollected = payments.reduce(
-      (sum, p) => sum + Number(p.amount || 0),
-      0,
-    );
-
-    const byMethod: Record<string, { count: number; total: number }> = {};
-    payments.forEach((p) => {
-      const m = p.method || 'OTHER';
-      if (!byMethod[m]) byMethod[m] = { count: 0, total: 0 };
-      byMethod[m].count += 1;
-      byMethod[m].total += Number(p.amount || 0);
-    });
-
-    let text = `💳 *TODAY'S PAYMENTS & TRANSACTIONS*\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total Collected:* ₹${totalCollected.toLocaleString('en-IN')}\n🧾 *Transactions:* ${payments.length}\n\n`;
-
+    let text = `💳 *RECENT 5 PAYMENTS & TRANSACTIONS*\n━━━━━━━━━━━━━━━━━━━━\n`;
     if (payments.length === 0) {
-      text += `_No payment transactions recorded today yet._`;
+      text += `_No payment transactions recorded yet._`;
     } else {
-      text += `*Method Breakdown:*\n`;
-      Object.entries(byMethod).forEach(([method, data]) => {
-        text += `• *${method}:* ₹${data.total.toLocaleString('en-IN')} (${data.count} txns)\n`;
+      payments.forEach((p: any, idx: number) => {
+        const isPos = p.order?.channel === 'POS_SHOPORA';
+        const sourceIcon = isPos ? '🏪 In-Store POS' : '🌐 Online Web Store';
+        const user = p.order?.customer?.user;
+        const shipping = (p.order?.addresses || []).find(
+          (a: any) => a.addressType === 'SHIPPING',
+        );
+        const custName = user
+          ? `${user.firstName} ${user.lastName || ''}`.trim()
+          : (shipping?.fullName || 'Walk-in Customer');
+        const phone = user?.phone || shipping?.phone;
+
+        let metaInfo = '';
+        if (p.metadata && typeof p.metadata === 'object') {
+          const m: any = p.metadata;
+          if (m.vpa) metaInfo += ` | UPI: \`${m.vpa}\``;
+          if (m.rrn) metaInfo += ` | RRN: \`${m.rrn}\``;
+          if (m.razorpayPaymentId) metaInfo += ` | ID: \`${m.razorpayPaymentId}\``;
+        }
+
+        const dateStr = new Date(p.createdAt).toLocaleDateString('en-IN', {
+          timeZone: 'Asia/Kolkata',
+          month: 'short',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+        });
+
+        const statusEmoji =
+          p.status === 'CAPTURED' || p.status === 'COMPLETED' || p.status === 'PAID'
+            ? '✅'
+            : '⏳';
+
+        text += `${idx + 1}. ${statusEmoji} *₹${Number(p.amount).toLocaleString('en-IN')}* via *${p.method}*\n`;
+        text += `   • *Source:* ${sourceIcon}\n`;
+        text += `   • *Customer:* ${custName}${phone ? ` (\`${phone}\`)` : ''}\n`;
+        text += `   • *Order:* \`${p.order?.orderNumber || 'N/A'}\` | [${p.status}]\n`;
+        if (metaInfo) text += `   • *Ref:* ${metaInfo.replace(/^ \| /, '')}\n`;
+        text += `   • *Time:* ${dateStr}\n\n`;
       });
+      text += `_Tap any Order Number to view its full details._`;
     }
 
     await this.sendMessage(chatId, text);
