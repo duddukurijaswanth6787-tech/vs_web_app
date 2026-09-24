@@ -943,8 +943,19 @@ export function ProductDetailClient() {
                       type="button"
                       onClick={handleWishlist}
                       className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-[#0284c7] flex items-center justify-center shadow-md transition-all z-10"
+                      title="Save to Wishlist"
                     >
                       <Heart className={`w-5 h-5 ${isSaved ? 'text-sky-500 fill-current' : ''}`} />
+                    </button>
+
+                    {/* Share Button on Image */}
+                    <button
+                      type="button"
+                      onClick={() => setShowShare(true)}
+                      className="absolute top-16 right-4 w-10 h-10 rounded-full bg-white/90 hover:bg-white text-neutral-700 hover:text-[#0284c7] flex items-center justify-center shadow-md transition-all z-10"
+                      title="Share Product"
+                    >
+                      <Share2 className="w-4.5 h-4.5" />
                     </button>
 
                     {/* View Full Size Overlay button */}
@@ -965,9 +976,20 @@ export function ProductDetailClient() {
                 
                 {/* Brand & Title */}
                 <div className="space-y-1">
-                  <span className="text-xs font-bold text-[#0284c7] uppercase tracking-widest block">
-                    {product.brandName || "VASANTHI'S SIGNATURE"}
-                  </span>
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="text-xs font-bold text-[#0284c7] uppercase tracking-widest block">
+                      {product.brandName || "VASANTHI'S SIGNATURE"}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => setShowShare(true)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1 bg-sky-50 hover:bg-sky-100 text-[#0284c7] rounded-full text-xs font-bold border border-sky-200/80 transition-all active:scale-95 shadow-2xs cursor-pointer"
+                      title="Share this product"
+                    >
+                      <Share2 className="w-3.5 h-3.5" />
+                      <span>Share</span>
+                    </button>
+                  </div>
                   <h1 className="text-2xl sm:text-3xl font-bold font-serif text-neutral-900 leading-tight">
                     {product.name}
                   </h1>
@@ -1952,6 +1974,9 @@ export function ProductDetailClient() {
               onClose={() => setShowShare(false)} 
               url={typeof window !== 'undefined' ? window.location.href : ''} 
               title={product.name} 
+              image={visibleImages[0] as string | undefined}
+              price={finalUnitPrice}
+              description={product.shortDescription || undefined}
             />
 
             {/* Dynamic Review Modal */}
@@ -1993,6 +2018,14 @@ export function ProductDetailClient() {
                 <span className="text-base sm:text-lg font-black text-[var(--brand-primary)] leading-tight">{formatInr(price)}</span>
               </div>
               <div className="flex gap-2 items-center flex-1 justify-end">
+                <button
+                  type="button"
+                  onClick={() => setShowShare(true)}
+                  className="p-2.5 bg-neutral-100 hover:bg-neutral-200 text-neutral-700 rounded-xl border border-neutral-200 shrink-0 flex items-center justify-center transition-all"
+                  title="Share"
+                >
+                  <Share2 className="w-4 h-4" />
+                </button>
                 {availableSizes.length > 0 && (
                   <select 
                     value={selectedSize}
