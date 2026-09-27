@@ -762,18 +762,27 @@ export class TelegramService implements OnModuleInit {
     );
   }
 
-  private async replyTodaySummary(chatId: string): Promise<void> {
+  private getIstDayRange(): { start: Date; end: Date; dateStr: string } {
     const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0,
-    );
-    const endOfToday = new Date(startOfToday.getTime() + 86400000);
+    const formatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Asia/Kolkata',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+    const istDatePart = formatter.format(now);
+    const start = new Date(`${istDatePart}T00:00:00.000+05:30`);
+    const end = new Date(start.getTime() + 86400000);
+
+    const dateStr = now.toLocaleDateString('en-IN', {
+      timeZone: 'Asia/Kolkata',
+      dateStyle: 'full',
+    });
+    return { start, end, dateStr };
+  }
+
+  private async replyTodaySummary(chatId: string): Promise<void> {
+    const { start: startOfToday, end: endOfToday, dateStr } = this.getIstDayRange();
 
     const [posOrders, onlineOrders, lowStockCount] = await Promise.all([
       this.prisma.order.findMany({
@@ -821,11 +830,6 @@ export class TelegramService implements OnModuleInit {
     const totalOrders = posOrders.length + onlineOrders.length;
     const totalItems = posItems + onlineItems;
 
-    const dateStr = now.toLocaleDateString('en-IN', {
-      timeZone: 'Asia/Kolkata',
-      dateStyle: 'full',
-    });
-
     const config = this.cachedConfig || (await this.loadConfig());
     const template =
       config.templates?.DAILY_SUMMARY ||
@@ -847,17 +851,7 @@ export class TelegramService implements OnModuleInit {
   }
 
   private async replyPosSummary(chatId: string): Promise<void> {
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0,
-    );
-    const endOfToday = new Date(startOfToday.getTime() + 86400000);
+    const { start: startOfToday, end: endOfToday } = this.getIstDayRange();
 
     const orders = await this.prisma.order.findMany({
       where: {
@@ -894,17 +888,7 @@ export class TelegramService implements OnModuleInit {
   }
 
   private async replyOnlineSummary(chatId: string): Promise<void> {
-    const now = new Date();
-    const startOfToday = new Date(
-      now.getFullYear(),
-      now.getMonth(),
-      now.getDate(),
-      0,
-      0,
-      0,
-      0,
-    );
-    const endOfToday = new Date(startOfToday.getTime() + 86400000);
+    const { start: startOfToday, end: endOfToday } = this.getIstDayRange();
 
     const orders = await this.prisma.order.findMany({
       where: {
@@ -1118,7 +1102,7 @@ export class TelegramService implements OnModuleInit {
       if (meta.razorpayPaymentId) payMeta += `\n• *Payment ID:* \`${meta.razorpayPaymentId}\``;
     }
 
-    const text = `📦 *ORDER DETAILS: \`${order.orderNumber}\`*\n━━━━━━━━━━━━━━━━━━━━\n🛒 *Channel:* ${channelName}\n🏷️ *Status:* *${order.status}*\n⏰ *Date:* ${dateStr}\n\n${custText}\n${addrText}${itemsText}\n💰 *Financial Breakdown:*\n• Subtotal: ₹${Number(order.subtotal || order.grandTotal).toLocaleString('en-IN')}\n• Discount: -₹${Number(order.discountTotal || 0).toLocaleString('en-IN')}\n• Shipping: ₹${Number(order.shippingFee || 0).toLocaleString('en-IN')}\n• *Grand Total: ₹${Number(order.grandTotal).toLocaleString('en-IN')}*\n\n💳 *Payment Details:*\n• *Method:* ${payMethod} (*${payStatus}*)${payMeta}\n\n_Tip: To look up another order, just type or paste the Order Number._`;
+    const text = `📦 *ORDER DETAILS: \`${order.orderNumber}\`*\n━━━━━━━━━━━━━━━━━━━━\n🛒 *Channel:* ${channelName}\n🏷️ *Status:* *${order.status}*\n⏰ *Date:* ${dateStr}\n\n${custText}\n${addrText}${itemsText}\n💰 *Financial Breakdown:*\n• Subtotal: ₹${Number(order.subtotal || order.grandTotal).toLocaleString('en-IN')}\n• Discount: -₹${Number(order.discountTotal || 0).toLocaleString('en-IN')}\n• Shipping: ₹${Number(order.shippingCharge || 0).toLocaleString('en-IN')}\n• *Grand Total: ₹${Number(order.grandTotal).toLocaleString('en-IN')}*\n\n💳 *Payment Details:*\n• *Method:* ${payMethod} (*${payStatus}*)${payMeta}\n\n_Tip: To look up another order, just type or paste the Order Number._`;
 
     await this.sendMessage(chatId, text);
   }
