@@ -31,11 +31,13 @@ import {
   ShoppingBag,
   CreditCard,
   Tag,
+  Eye,
 } from 'lucide-react';
 import Link from 'next/link';
 import { formatMoney, formatDateTime, formatDate } from '@/utils/format';
 import CreateCancellationDialog from '@/features/cancellations/components/CreateCancellationDialog';
 import CreateReturnDialog from '@/features/returns/components/CreateReturnDialog';
+import ProductDetailModal from '@/features/catalog/products/components/ProductDetailModal';
 import { useWarehouseList } from '@/features/warehouse/warehouse.hooks';
 import { categorizeApiError } from '@/lib/api-error-handler';
 import { apiClient } from '@/lib/api/client';
@@ -48,6 +50,11 @@ export default function OrderDetailPage() {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [transitionMsg, setTransitionMsg] = useState('');
+  const [selectedProductModal, setSelectedProductModal] = useState<{
+    productId: string;
+    productName: string;
+    variantId?: string;
+  } | null>(null);
 
   // Queries
   const { data: order, isLoading: isOrderLoading, isError, refetch: refetchOrder } = useOrderDetail(id);
@@ -455,7 +462,26 @@ export default function OrderDetailPage() {
               {order.items?.map((item) => (
                 <div key={item.id} className="py-3 flex justify-between items-start sm:items-center gap-2 text-xs">
                   <div className="min-w-0 flex-1">
-                    <span className="font-bold text-neutral-800 block truncate sm:whitespace-normal">{item.productName}</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setSelectedProductModal({
+                          productId: item.productId,
+                          productName: item.productName,
+                          variantId: item.variantId,
+                        })
+                      }
+                      title="Click to view full product details & stock"
+                      className="group/item text-left flex items-center gap-1.5 hover:text-blue-600 transition cursor-pointer max-w-full"
+                    >
+                      <span className="font-bold text-neutral-900 group-hover/item:text-blue-600 group-hover/item:underline block truncate sm:whitespace-normal">
+                        {item.productName}
+                      </span>
+                      <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-neutral-100 text-neutral-600 group-hover/item:bg-blue-100 group-hover/item:text-blue-700 transition shrink-0">
+                        <Eye className="w-3 h-3" />
+                        <span>View Details & Stock</span>
+                      </span>
+                    </button>
                     {item.variantTitle && <span className="text-[10px] text-neutral-400 block mt-0.5">{item.variantTitle}</span>}
                     <span className="text-[10px] text-neutral-500 block font-mono mt-0.5">SKU: {item.sku}</span>
                   </div>
@@ -1362,6 +1388,15 @@ export default function OrderDetailPage() {
           </div>
         </div>
       )}
+
+      {/* Product Quick View & Live Stock Modal */}
+      <ProductDetailModal
+        isOpen={Boolean(selectedProductModal)}
+        productId={selectedProductModal?.productId}
+        productName={selectedProductModal?.productName}
+        variantId={selectedProductModal?.variantId}
+        onClose={() => setSelectedProductModal(null)}
+      />
     </div>
   );
 }
