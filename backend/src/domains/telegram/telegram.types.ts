@@ -45,56 +45,100 @@ export interface TelegramWebhookUpdate {
 }
 
 export const DEFAULT_TELEGRAM_TEMPLATES: Record<string, string> = {
-  ONLINE_ORDER: `🛍️ *NEW ONLINE ORDER RECEIVED!*
+  ONLINE_ORDER: `🛍️ *NEW ONLINE STORE ORDER*
 ━━━━━━━━━━━━━━━━━━━━
-📦 *Order:* \`{{orderNumber}}\`
-👤 *Customer:* {{customerName}} ({{customerPhone}})
-📍 *Location:* {{shippingCity}}, {{shippingState}}
-💰 *Grand Total:* ₹{{grandTotal}}
-💳 *Payment:* {{paymentMethod}} ({{paymentStatus}})
+📦 *Order Ref:* \`{{orderNumber}}\`
+🛒 *Channel:* 🌐 Online Web Store
+⏰ *Date:* {{createdAt}}
 
-👗 *Items ({{itemsCount}}):*
+👤 *Customer Details:*
+• *Name:* {{customerName}}
+• *Phone:* \`{{customerPhone}}\`
+• *Delivery:* {{shippingCity}}, {{shippingState}}
+
+👗 *Ordered Items ({{itemsCount}}):*
 {{itemsList}}
 
-⏰ *Time:* {{createdAt}}`,
+💰 *Billing Summary:*
+• Subtotal: ₹{{subtotal}}
+• Discount: -₹{{discountTotal}}
+• Delivery: {{shippingCharge}}
+• *Grand Total: ₹{{grandTotal}}*
 
-  POS_SALE: `🧾 *NEW IN-STORE POS SALE!*
+💳 *Payment Details:*
+• *Method:* {{paymentMethod}}
+• *Status:* *{{paymentStatus}}*
+━━━━━━━━━━━━━━━━━━━━
+_Live store instant alert._ ✨`,
+
+  ORDER_STATUS_UPDATE: `📦 *ORDER STATUS UPDATE*
+━━━━━━━━━━━━━━━━━━━━
+🔖 *Order Ref:* \`{{orderNumber}}\`
+🏷️ *New Status:* *{{status}}*
+👤 *Customer:* {{customerName}}
+💰 *Order Amount:* ₹{{grandTotal}}
+{{courierInfo}}
+{{noteInfo}}
+━━━━━━━━━━━━━━━━━━━━
+_Live store workflow update._ ✨`,
+
+  POS_SALE: `🧾 *IN-STORE POS SALE*
 ━━━━━━━━━━━━━━━━━━━━
 🏷️ *Bill No:* \`{{billNumber}}\`
-👤 *Cashier:* {{cashierName}}
-💳 *Payment Mode:* {{paymentMethod}}
-💰 *Grand Total:* ₹{{grandTotal}}
+🏬 *Channel:* In-Store Counter POS
+👤 *Cashier / Staff:* {{cashierName}}
+⏰ *Date:* {{createdAt}}
 
-📦 *Items Sold ({{itemsCount}}):*
+👗 *Items Sold ({{itemsCount}}):*
 {{itemsList}}
 
-⏰ *Time:* {{createdAt}}`,
+💰 *Billing Summary:*
+• *Grand Total: ₹{{grandTotal}}*
+• *Payment Mode:* {{paymentMethod}}
+━━━━━━━━━━━━━━━━━━━━
+_Live counter sale._ ✨`,
 
   SHIFT_CLOSE: `🔒 *POS REGISTER SHIFT CLOSED*
 ━━━━━━━━━━━━━━━━━━━━
-🏷️ *Terminal:* {{terminalId}}
+🏷️ *Terminal:* \`{{terminalId}}\`
 👤 *Cashier:* {{cashierName}}
-💰 *Total Sales:* ₹{{totalSales}} ({{ordersCount}} bills)
-💵 *Cash Expected:* ₹{{cashExpected}} | *Actual:* ₹{{cashActual}}
-⚖️ *Discrepancy:* ₹{{discrepancy}}
-⏰ *Closed At:* {{closedAt}}`,
+⏰ *Closed At:* {{closedAt}}
 
-  LOW_STOCK: `⚠️ *LOW STOCK ALERT!*
+💰 *Revenue Summary:*
+• *Total Sales:* ₹{{totalSales}}
+• *Bills Completed:* {{ordersCount}}
+
+💵 *Cash Reconciliation:*
+• Expected in Drawer: ₹{{cashExpected}}
+• Actual Counted Cash: ₹{{cashActual}}
+• *Discrepancy:* {{discrepancy}}
+━━━━━━━━━━━━━━━━━━━━
+_Shift reconciliation report._ ✨`,
+
+  LOW_STOCK: `⚠️ *LOW STOCK INVENTORY ALERT*
 ━━━━━━━━━━━━━━━━━━━━
 👗 *Product:* {{productName}}
 🏷️ *SKU:* \`{{sku}}\`
-📊 *Remaining Stock:* *{{currentStock}} units*
-🔴 *Threshold:* {{threshold}} units`,
+📊 *Remaining Live Stock:* *{{currentStock}} units*
+🔴 *Reorder Level / Minimum:* {{threshold}} units
 
-  DAILY_SUMMARY: `📊 *BUSINESS SUMMARY ({{reportDate}})*
+💡 *Action Required:* Please restock sizes in admin catalog.
 ━━━━━━━━━━━━━━━━━━━━
-💰 *Total Revenue:* ₹{{totalRevenue}}
-📦 *Total Orders:* {{totalOrders}}
-👕 *Items Sold:* {{itemsSold}} Pcs
+_Live inventory monitoring._ ✨`,
 
-💵 *Channel Breakdown:*
-• *In-Store POS:* ₹{{posRevenue}} ({{posOrders}} bills)
-• *Online Store:* ₹{{onlineRevenue}} ({{onlineOrders}} orders)
+  DAILY_SUMMARY: `📊 *DAILY BUSINESS SUMMARY*
+📅 _{{reportDate}}_
+━━━━━━━━━━━━━━━━━━━━
+💰 *TOTAL REVENUE:* *₹{{totalRevenue}}*
+📦 *TOTAL ORDERS:* *{{totalOrders}}*
+👗 *ITEMS SOLD:* *{{itemsSold}} units*
 
-⚠️ *Low Stock Products:* {{lowStockCount}} items`
+🏢 *Sales Channels Breakdown:*
+• 🏬 *In-Store POS:* ₹{{posRevenue}} ({{posOrders}} bills)
+• 🌐 *Online Store:* ₹{{onlineRevenue}} ({{onlineOrders}} orders)
+
+⚠️ *Inventory Status:*
+• {{lowStockText}}
+━━━━━━━━━━━━━━━━━━━━
+_Automated executive sales report._ ✨`
 };

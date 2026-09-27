@@ -261,6 +261,9 @@ export class TelegramService implements OnModuleInit {
     customerPhone?: string;
     shippingCity?: string;
     shippingState?: string;
+    subtotal?: number | string;
+    discountTotal?: number | string;
+    shippingCharge?: number | string;
     grandTotal: number | string;
     paymentMethod?: string;
     paymentStatus?: string;
@@ -277,8 +280,8 @@ export class TelegramService implements OnModuleInit {
 
     const itemsList = (orderData.items || [])
       .map(
-        (i) =>
-          `• ${i.productName}${i.variantName ? ` (${i.variantName})` : ''} × ${i.quantity} — ₹${Number(i.price).toLocaleString('en-IN')}`,
+        (i, idx) =>
+          `${idx + 1}. *${i.productName}*${i.variantName ? ` (${i.variantName})` : ''}\n   Qty: *${i.quantity}* × ₹${Number(i.price).toLocaleString('en-IN')} = *₹${(Number(i.price) * Number(i.quantity)).toLocaleString('en-IN')}*`,
       )
       .join('\n');
 
@@ -298,11 +301,14 @@ export class TelegramService implements OnModuleInit {
       customerPhone: orderData.customerPhone || 'N/A',
       shippingCity: orderData.shippingCity || 'Direct',
       shippingState: orderData.shippingState || 'India',
+      subtotal: Number(orderData.subtotal ?? orderData.grandTotal).toLocaleString('en-IN'),
+      discountTotal: Number(orderData.discountTotal || 0).toLocaleString('en-IN'),
+      shippingCharge: Number(orderData.shippingCharge || 0) > 0 ? `₹${Number(orderData.shippingCharge).toLocaleString('en-IN')}` : 'Free Delivery',
       grandTotal: Number(orderData.grandTotal).toLocaleString('en-IN'),
       paymentMethod: orderData.paymentMethod || 'Online (Razorpay)',
-      paymentStatus: orderData.paymentStatus || 'PAID',
+      paymentStatus: orderData.paymentStatus || 'CONFIRMED',
       itemsCount: orderData.items?.length || 1,
-      itemsList: itemsList || '• Order Items',
+      itemsList: itemsList || '• Standard Item',
       createdAt: formattedDate,
     });
 
@@ -321,9 +327,27 @@ export class TelegramService implements OnModuleInit {
     const config = this.cachedConfig || (await this.loadConfig());
     if (!config.enabled) return;
 
-    const msg = `📦 *ORDER STATUS UPDATE: \`${orderData.orderNumber}\`*\n━━━━━━━━━━━━━━━━━━━━\n🏷️ *New Status:* *${orderData.status}*\n👤 *Customer:* ${orderData.customerName || 'Customer'}\n💰 *Amount:* ₹${Number(orderData.grandTotal).toLocaleString('en-IN')}${
-      orderData.waybillNumber ? `\n🚚 *Courier:* ${orderData.courierPartner || 'Delhivery'}\n🔖 *AWB / Waybill:* \`${orderData.waybillNumber}\`` : ''
-    }${orderData.message ? `\n📝 *Note:* ${orderData.message}` : ''}\n━━━━━━━━━━━━━━━━━━━━\n_Live store workflow update._ ✨`;
+    let courierInfo = '';
+    if (orderData.waybillNumber) {
+      courierInfo = `🚚 *Courier Partner:* ${orderData.courierPartner || 'Delhivery Express'}\n🔖 *AWB / Waybill Number:* \`${orderData.waybillNumber}\``;
+    }
+
+    let noteInfo = '';
+    if (orderData.message) {
+      noteInfo = `📝 *Fulfillment Note:* ${orderData.message}`;
+    }
+
+    const template =
+      config.templates?.ORDER_STATUS_UPDATE || DEFAULT_TELEGRAM_TEMPLATES.ORDER_STATUS_UPDATE;
+
+    const msg = this.interpolate(template, {
+      orderNumber: orderData.orderNumber,
+      status: orderData.status,
+      customerName: orderData.customerName || 'Customer',
+      grandTotal: Number(orderData.grandTotal).toLocaleString('en-IN'),
+      courierInfo: courierInfo ? `\n${courierInfo}` : '',
+      noteInfo: noteInfo ? `\n${noteInfo}` : '',
+    });
 
     await this.broadcastAlert(msg);
   }
@@ -359,6 +383,9 @@ export class TelegramService implements OnModuleInit {
       customerPhone,
       shippingCity: shipping?.city || 'Direct',
       shippingState: shipping?.state || 'India',
+      subtotal: Number(order.subtotal || order.grandTotal),
+      discountTotal: Number(order.discountTotal || 0),
+      shippingCharge: Number(order.shippingCharge || 0),
       grandTotal: Number(order.grandTotal),
       paymentMethod: order.paymentMethod || 'Online (Razorpay)',
       paymentStatus: order.status,
@@ -851,7 +878,7 @@ export class TelegramService implements OnModuleInit {
   }
 
   private async replyPosSummary(chatId: string): Promise<void> {
-    const { start: startOfToday, end: endOfToday } = this.getIstDayRange();
+    const { start: startOfToday, end: endOfToday, dateStr } = this.getIstDayRange();
 
     const orders = await this.prisma.order.findMany({
       where: {
@@ -873,22 +900,24 @@ export class TelegramService implements OnModuleInit {
       0,
     );
 
-    let text = `🧾 *TODAY'S IN-STORE POS SALES*\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total POS Revenue:* ₹${totalRev.toLocaleString('en-IN')}\n📦 *Total Bills:* ${activeOrders.length}\n\n`;
+    let text = `🧾 *TODAY'S IN-STORE POS SALES*\n📅 _${dateStr}_\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total POS Revenue:* *₹${totalRev.toLocaleString('en-IN')}*\n📦 *Total Bills Completed:* *${activeOrders.length}*\n\n`;
 
     if (orders.length === 0) {
-      text += `_No POS sales recorded today yet._`;
+      text += `_No POS sales recorded today yet._\n━━━━━━━━━━━━━━━━━━━━\n_Shopora POS Counter live summary._ ✨`;
     } else {
-      text += `*Recent Bills:*\n`;
-      orders.slice(0, 5).forEach((o) => {
-        text += `• \`${o.orderNumber}\` — ₹${Number(o.grandTotal).toLocaleString('en-IN')} (${o.paymentMethod || 'PAID'})\n`;
+      text += `📋 *Recent Bills:*\n`;
+      orders.slice(0, 5).forEach((o, idx) => {
+        const itemsSummary = o.items.map((i) => `${i.productName} (x${i.quantity})`).join(', ');
+        text += `${idx + 1}. \`${o.orderNumber}\` — *₹${Number(o.grandTotal).toLocaleString('en-IN')}*\n   • *Items:* _${itemsSummary || 'Standard Items'}_\n   • *Mode:* ${o.paymentMethod || 'CASH / UPI'}\n`;
       });
+      text += `\n━━━━━━━━━━━━━━━━━━━━\n_Shopora POS Counter live summary._ ✨`;
     }
 
     await this.sendMessage(chatId, text);
   }
 
   private async replyOnlineSummary(chatId: string): Promise<void> {
-    const { start: startOfToday, end: endOfToday } = this.getIstDayRange();
+    const { start: startOfToday, end: endOfToday, dateStr } = this.getIstDayRange();
 
     const orders = await this.prisma.order.findMany({
       where: {
@@ -910,18 +939,19 @@ export class TelegramService implements OnModuleInit {
       0,
     );
 
-    let text = `🛍️ *TODAY'S ONLINE STORE ORDERS*\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total Online Revenue:* ₹${totalRev.toLocaleString('en-IN')}\n📦 *Total Orders:* ${activeOrders.length}\n\n`;
+    let text = `🛍️ *TODAY'S ONLINE STORE ORDERS*\n📅 _${dateStr}_\n━━━━━━━━━━━━━━━━━━━━\n💰 *Total Online Revenue:* *₹${totalRev.toLocaleString('en-IN')}*\n📦 *Total Orders Received:* *${activeOrders.length}*\n\n`;
 
     if (orders.length === 0) {
-      text += `_No online orders received today yet._`;
+      text += `_No online orders received today yet._\n━━━━━━━━━━━━━━━━━━━━\n_Online Store live summary._ ✨`;
     } else {
-      text += `*Recent Orders:*\n`;
-      orders.slice(0, 5).forEach((o) => {
+      text += `📋 *Recent Orders:*\n`;
+      orders.slice(0, 5).forEach((o, idx) => {
         const custName = o.customer?.user
           ? `${o.customer.user.firstName} ${o.customer.user.lastName || ''}`.trim()
-          : 'Customer';
-        text += `• \`${o.orderNumber}\` (${custName}) — ₹${Number(o.grandTotal).toLocaleString('en-IN')} [${o.status}]\n`;
+          : 'Online Customer';
+        text += `${idx + 1}. \`${o.orderNumber}\` — *₹${Number(o.grandTotal).toLocaleString('en-IN')}*\n   • *Customer:* ${custName}\n   • *Status:* *${o.status}*\n`;
       });
+      text += `\n━━━━━━━━━━━━━━━━━━━━\n_Online Store live summary._ ✨`;
     }
 
     await this.sendMessage(chatId, text);
@@ -943,17 +973,19 @@ export class TelegramService implements OnModuleInit {
 
     let text = `⚠️ *LOW STOCK INVENTORY REPORT*\n━━━━━━━━━━━━━━━━━━━━\n`;
     if (invItems.length === 0) {
-      text += `✅ All products have healthy stock levels!`;
+      text += `✅ All products have healthy stock levels!\n━━━━━━━━━━━━━━━━━━━━\n_Live inventory monitoring._ ✨`;
     } else {
-      invItems.forEach((item) => {
+      invItems.forEach((item, idx) => {
         const prodName = item.variant?.product?.name || 'Product';
         const title =
           item.variant?.title && item.variant.title !== 'Default'
             ? ` (${item.variant.title})`
             : '';
         const sku = item.variant?.sku || 'SKU-N/A';
-        text += `• *${prodName}${title}*\n  SKU: \`${sku}\` | Left: *${item.availableQuantity} units*\n`;
+        const statusBadge = item.availableQuantity <= 0 ? '🔴 *Out of Stock*' : '⚠️ *Low Stock*';
+        text += `${idx + 1}. 👗 *${prodName}${title}*\n   • *SKU:* \`${sku}\`\n   • *Live Stock:* *${item.availableQuantity} units* [${statusBadge}]\n\n`;
       });
+      text += `━━━━━━━━━━━━━━━━━━━━\n💡 _To restock or manage variants, visit Admin Catalog._ ✨`;
     }
 
     await this.sendMessage(chatId, text);
@@ -971,10 +1003,10 @@ export class TelegramService implements OnModuleInit {
 
     let text = `📦 *RECENT STORE ORDERS (${orders.length})*\n━━━━━━━━━━━━━━━━━━━━\n`;
     if (orders.length === 0) {
-      text += `_No orders found in the database yet._`;
+      text += `_No orders found in the database yet._\n━━━━━━━━━━━━━━━━━━━━\n_Vasanthi Designers Orders._ ✨`;
     } else {
-      orders.forEach((o) => {
-        const type = o.channel === 'POS_SHOPORA' ? '🏪 POS' : '🌐 Online';
+      orders.forEach((o, idx) => {
+        const type = o.channel === 'POS_SHOPORA' ? '🏪 In-Store POS' : '🌐 Online Store';
         const dateStr = new Date(o.createdAt).toLocaleDateString('en-IN', {
           timeZone: 'Asia/Kolkata',
           month: 'short',
@@ -989,9 +1021,9 @@ export class TelegramService implements OnModuleInit {
           .map((i) => `${i.productName} (x${i.quantity})`)
           .join(', ');
 
-        text += `• *\`${o.orderNumber}\`* (${type})\n  👤 ${custName} | *₹${Number(o.grandTotal).toLocaleString('en-IN')}* | [${o.status}]\n  🛍️ _${itemsSummary || 'Items'}_ | ⏰ ${dateStr}\n\n`;
+        text += `${idx + 1}. 🔖 *\`${o.orderNumber}\`*\n   • *Channel:* ${type}\n   • *Customer:* ${custName}\n   • *Amount:* *₹${Number(o.grandTotal).toLocaleString('en-IN')}* [${o.status}]\n   • *Items:* _${itemsSummary || 'Items'}_\n   • *Time:* ${dateStr}\n\n`;
       });
-      text += `_Send any Order Number (e.g. \`${orders[0].orderNumber}\`) to view full details._`;
+      text += `━━━━━━━━━━━━━━━━━━━━\n💡 _Send any Order Number (e.g. \`${orders[0].orderNumber}\`) to inspect full invoice details._ ✨`;
     }
 
     await this.sendMessage(chatId, text);
