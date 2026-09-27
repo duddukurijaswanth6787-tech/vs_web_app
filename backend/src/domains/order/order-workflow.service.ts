@@ -217,6 +217,34 @@ export class OrderWorkflowService {
       });
     }
 
+    // Broadcast instant status update to Telegram
+    const fullOrder = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: { addresses: true, customer: { include: { user: true } } },
+    });
+    if (fullOrder) {
+      const shipping =
+        fullOrder.addresses?.find((a) => a.addressType === 'SHIPPING') ||
+        fullOrder.addresses?.[0];
+      const custName =
+        shipping?.fullName ||
+        (fullOrder.customer?.user
+          ? `${fullOrder.customer.user.firstName} ${fullOrder.customer.user.lastName || ''}`.trim()
+          : 'Customer');
+
+      this.telegramService
+        .sendOrderStatusAlert({
+          orderNumber: fullOrder.orderNumber,
+          status: nextStatus,
+          customerName: custName,
+          grandTotal: Number(fullOrder.grandTotal),
+          waybillNumber: fullOrder.waybillNumber || undefined,
+          courierPartner: fullOrder.courierPartner || undefined,
+          message,
+        })
+        .catch(() => {});
+    }
+
     return updated;
   }
 

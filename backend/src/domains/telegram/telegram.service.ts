@@ -309,6 +309,84 @@ export class TelegramService implements OnModuleInit {
     await this.broadcastAlert(message);
   }
 
+  async sendOrderStatusAlert(orderData: {
+    orderNumber: string;
+    status: string;
+    customerName?: string;
+    grandTotal: number | string;
+    waybillNumber?: string;
+    courierPartner?: string;
+    message?: string;
+  }): Promise<void> {
+    const config = this.cachedConfig || (await this.loadConfig());
+    if (!config.enabled) return;
+
+    const msg = `📦 *ORDER STATUS UPDATE: \`${orderData.orderNumber}\`*\n━━━━━━━━━━━━━━━━━━━━\n🏷️ *New Status:* *${orderData.status}*\n👤 *Customer:* ${orderData.customerName || 'Customer'}\n💰 *Amount:* ₹${Number(orderData.grandTotal).toLocaleString('en-IN')}${
+      orderData.waybillNumber ? `\n🚚 *Courier:* ${orderData.courierPartner || 'Delhivery'}\n🔖 *AWB / Waybill:* \`${orderData.waybillNumber}\`` : ''
+    }${orderData.message ? `\n📝 *Note:* ${orderData.message}` : ''}\n━━━━━━━━━━━━━━━━━━━━\n_Live store workflow update._ ✨`;
+
+    await this.broadcastAlert(msg);
+  }
+
+  async pushOrderAlertById(orderId: string): Promise<boolean> {
+    const order = await this.prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: true,
+        addresses: true,
+        customer: { include: { user: true } },
+      },
+    });
+    if (!order) return false;
+
+    const shipping =
+      order.addresses?.find((a) => a.addressType === 'SHIPPING') ||
+      order.addresses?.[0];
+    const customerName =
+      shipping?.fullName ||
+      (order.customer?.user
+        ? `${order.customer.user.firstName} ${order.customer.user.lastName || ''}`.trim()
+        : 'Customer');
+    const customerPhone =
+      shipping?.phone ||
+      order.customer?.phone ||
+      order.customer?.user?.phone ||
+      'N/A';
+
+    await this.sendOnlineOrderAlert({
+      orderNumber: order.orderNumber,
+      customerName,
+      customerPhone,
+      shippingCity: shipping?.city || 'Direct',
+      shippingState: shipping?.state || 'India',
+      grandTotal: Number(order.grandTotal),
+      paymentMethod: order.paymentMethod || 'Online (Razorpay)',
+      paymentStatus: order.status,
+      items: (order.items || []).map((i: any) => ({
+        productName: i.productName,
+        variantName: i.variantTitle,
+        quantity: i.quantity,
+        price: i.unitPrice,
+      })),
+      createdAt: order.createdAt,
+    });
+    return true;
+  }
+
+  async pushRecentOrdersAlerts(limit = 5): Promise<{ total: number; delivered: number }> {
+    const orders = await this.prisma.order.findMany({
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      select: { id: true },
+    });
+    let delivered = 0;
+    for (const o of orders) {
+      const ok = await this.pushOrderAlertById(o.id);
+      if (ok) delivered++;
+    }
+    return { total: orders.length, delivered };
+  }
+
   async sendPosSaleAlert(saleData: {
     billNumber: string;
     cashierName?: string;

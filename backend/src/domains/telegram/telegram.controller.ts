@@ -4,6 +4,7 @@ import {
   Put,
   Post,
   Body,
+  Param,
   UseGuards,
   HttpCode,
   HttpStatus,
@@ -88,5 +89,25 @@ export class TelegramController {
     const targetUrl = url || 'https://api.vasanthissignature.in';
     const result = await this.telegramService.setupWebhook(targetUrl);
     return ResponseBuilder.success(result, 'Telegram Webhook registered successfully');
+  }
+
+  @Post('push-order/:id')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Push a specific order alert to Telegram' })
+  async pushOrderAlert(@Param('id') id: string) {
+    const delivered = await this.telegramService.pushOrderAlertById(id);
+    return ResponseBuilder.success({ delivered }, 'Order alert push processed');
+  }
+
+  @Post('push-recent-orders')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('settings:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Push alerts for recent store orders to Telegram' })
+  async pushRecentOrders() {
+    const orders = await this.telegramService.pushRecentOrdersAlerts();
+    return ResponseBuilder.success(orders, 'Recent orders alerts pushed to Telegram');
   }
 }
