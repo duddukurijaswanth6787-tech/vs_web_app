@@ -318,11 +318,11 @@ export default function AddProductScreen() {
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ['images'],
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
       allowsMultipleSelection: true,
       quality: 0.8,
     });
-    if (result.canceled) return;
+    if (result.canceled || !result.assets?.length) return;
     const uris = result.assets.map((a) => a.uri);
     setColorGroups((prev) =>
       prev.map((g) => (g.id === groupId ? { ...g, images: [...g.images, ...uris] } : g)),
@@ -335,8 +335,11 @@ export default function AddProductScreen() {
       Alert.alert('Permission needed', 'Allow camera access to photograph the product.');
       return;
     }
-    const result = await ImagePicker.launchCameraAsync({ quality: 0.8 });
-    if (result.canceled) return;
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.length) return;
     setColorGroups((prev) =>
       prev.map((g) =>
         g.id === groupId ? { ...g, images: [...g.images, result.assets[0].uri] } : g,
@@ -356,8 +359,11 @@ export default function AddProductScreen() {
       Alert.alert('Permission needed', 'Allow photo access to attach a swatch photo.');
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ['images'], quality: 0.8 });
-    if (result.canceled) return;
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      quality: 0.8,
+    });
+    if (result.canceled || !result.assets?.length) return;
 
     setSwatchUploading(groupId);
     try {

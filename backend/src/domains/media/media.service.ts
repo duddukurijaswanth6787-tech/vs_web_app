@@ -109,7 +109,7 @@ export class MediaService {
       colorGroup: dto.colorGroupId
         ? { connect: { id: dto.colorGroupId } }
         : undefined,
-      mediaType: dto.mediaType,
+      mediaType: dto.mediaType || 'IMAGE',
       title: dto.title,
       altText: dto.altText,
       url: this.storageService.sanitizeUrl(dto.url),
@@ -126,17 +126,17 @@ export class MediaService {
       resource: 'media',
       resourceId: media.id,
       userId,
-      newValue: { productId: dto.productId, mediaType: dto.mediaType },
+      newValue: { productId: dto.productId, mediaType: dto.mediaType || 'IMAGE' },
     });
     await this.notificationService.create({
       userId,
       type: 'UPLOAD_COMPLETE',
       title: 'Media Uploaded',
-      message: `${dto.mediaType} uploaded for product ${dto.productId}`,
+      message: `${dto.mediaType || 'IMAGE'} uploaded for product ${dto.productId}`,
       data: {
         mediaId: media.id,
         productId: dto.productId,
-        mediaType: dto.mediaType,
+        mediaType: dto.mediaType || 'IMAGE',
       },
     });
     return this.toResponse(media);

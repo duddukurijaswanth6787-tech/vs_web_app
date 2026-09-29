@@ -651,8 +651,12 @@ export const catalogService = {
     color?: string;
     /** Shot type — Front, Back, Detail … */
     title?: string;
+    mediaType?: string;
   }) {
-    const res = await posApiClient.post('/media', dto);
+    const res = await posApiClient.post('/media', {
+      mediaType: 'IMAGE',
+      ...dto,
+    });
     return unwrap<any>(res);
   },
 

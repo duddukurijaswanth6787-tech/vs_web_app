@@ -32,9 +32,10 @@ export class CreateMediaDto {
   @ApiProperty() @IsUUID() productId!: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() variantId?: string;
   @ApiPropertyOptional() @IsOptional() @IsUUID() colorGroupId?: string;
-  @ApiProperty({ enum: PRODUCT_MEDIA_TYPES })
+  @ApiPropertyOptional({ enum: PRODUCT_MEDIA_TYPES, default: 'IMAGE' })
+  @IsOptional()
   @IsEnum(PRODUCT_MEDIA_TYPES)
-  mediaType!: string;
+  mediaType?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() title?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() altText?: string;
   @ApiProperty() @IsUrl({ require_tld: false }) url!: string;
