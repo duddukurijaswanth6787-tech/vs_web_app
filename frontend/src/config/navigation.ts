@@ -154,6 +154,13 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'store-expo-inventory',
+        title: 'Store & Expo Inventory',
+        href: '/admin/catalog/store-expo',
+        icon: Store,
+        implemented: true,
+      },
+      {
         id: 'attributes',
         title: 'Attributes',
         href: '/admin/catalog/attributes',

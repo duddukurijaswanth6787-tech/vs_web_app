@@ -150,20 +150,33 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubLight}>Scan barcode & checkout</Text>
         </TouchableOpacity>
 
-        {/* 2. + ADD PRODUCT (Catalog Wizard) */}
+        {/* 2. ⚡ QUICK STORE / EXPO ADD (Fast 1-Screen Creator) */}
+        <TouchableOpacity
+          style={[styles.actionCardWhite, { borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }]}
+          onPress={() => router.push('/quick-expo-add')}
+          activeOpacity={0.85}
+        >
+          <View style={[styles.iconCircleDark, { backgroundColor: '#e0f2fe' }]}>
+            <Sparkles size={24} color="#0284c7" />
+          </View>
+          <Text style={[styles.actionCardTitleDark, { color: '#0284c7' }]}>⚡ Quick Store Add</Text>
+          <Text style={styles.actionCardSubDark}>1-Screen fast add & print</Text>
+        </TouchableOpacity>
+
+        {/* 3. + ADD PRODUCT (Full 8-Step Catalog Wizard) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-product')}
           activeOpacity={0.85}
         >
-          <View style={[styles.iconCircleDark, { backgroundColor: '#e0f2fe' }]}>
-            <PlusCircle size={24} color="#0284c7" />
+          <View style={[styles.iconCircleDark, { backgroundColor: '#f1f5f9' }]}>
+            <PlusCircle size={24} color="#334155" />
           </View>
           <Text style={styles.actionCardTitleDark}>+ Add Product</Text>
-          <Text style={styles.actionCardSubDark}>Single or multi-variant</Text>
+          <Text style={styles.actionCardSubDark}>Multi-variant & specs</Text>
         </TouchableOpacity>
 
-        {/* 3. + ADD STOCK (Replenishment & Inbound Labels) */}
+        {/* 4. + ADD STOCK (Replenishment & Inbound Labels) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-stock')}
@@ -176,7 +189,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Receive & print labels</Text>
         </TouchableOpacity>
 
-        {/* 4. RETURNS & REFUNDS */}
+        {/* 5. RETURNS & REFUNDS */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/returns')}
@@ -189,7 +202,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>Refund & restock</Text>
         </TouchableOpacity>
 
-        {/* 5. SCAN / INSPECT PRODUCT */}
+        {/* 6. SCAN / INSPECT PRODUCT */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/view-product')}
@@ -202,7 +215,7 @@ export default function ShoporaHomeScreen() {
           <Text style={styles.actionCardSubDark}>View stock & barcodes</Text>
         </TouchableOpacity>
 
-        {/* 6. CLOSE SHIFT / DRAWER RECONCILIATION */}
+        {/* 7. CLOSE SHIFT / DRAWER RECONCILIATION */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/close-shift')}
@@ -236,7 +249,25 @@ export default function ShoporaHomeScreen() {
         <ChevronRight size={18} color="#94a3b8" />
       </TouchableOpacity>
 
-      {/* 4. HARDWARE & UTILITIES (Moved to Bottom as Requested) */}
+      {/* 4. RECENT PRODUCTS HISTORY SHORTCUT */}
+      <Text style={styles.sectionTitle}>Recently Added Products</Text>
+
+      <TouchableOpacity
+        style={styles.alertCard}
+        onPress={() => router.push('/quick-expo-add')}
+        activeOpacity={0.85}
+      >
+        <View style={[styles.alertIconCircle, { backgroundColor: '#f0fdf4' }]}>
+          <Store size={20} color="#16a34a" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <Text style={styles.alertTitle}>Store &amp; Expo Product History</Text>
+          <Text style={styles.alertSub}>View recently added items &amp; re-print barcode stickers</Text>
+        </View>
+        <ChevronRight size={18} color="#94a3b8" />
+      </TouchableOpacity>
+
+      {/* 5. HARDWARE & UTILITIES (Moved to Bottom as Requested) */}
       <Text style={styles.sectionTitle}>Hardware &amp; Utilities</Text>
 
       {/* 3-INCH PRINTER DEMO BANNER */}

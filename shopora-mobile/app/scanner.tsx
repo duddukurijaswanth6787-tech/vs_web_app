@@ -13,11 +13,11 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { CameraView, useCameraPermissions, scanFromURLAsync } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
 import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { ArrowLeft, Flashlight, Image as ImageIcon, Barcode, Bluetooth, Camera as CameraIcon } from 'lucide-react-native';
 import { bluetoothScannerService, ScannedDevice } from '../services/bluetooth-scanner';
 import { isAuthenticated } from '../services/api';
+import { pickImagesFromGallery } from '../services/image-picker';
 
 const QUICK_TEST_BARCODES = [
   { label: 'Anarkali XL (890351069409)', code: '890351069409' },
@@ -118,13 +118,9 @@ export default function DedicatedScannerScreen() {
 
   const pickImage = async () => {
     try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ['images'],
-        allowsEditing: true,
-        quality: 1,
-      });
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const barcodes = await scanFromURLAsync(result.assets[0].uri);
+      const uris = await pickImagesFromGallery(false);
+      if (uris && uris.length > 0) {
+        const barcodes = await scanFromURLAsync(uris[0]);
         if (barcodes && barcodes.length > 0) {
           handleBarcodeScanned(barcodes[0]);
         } else {

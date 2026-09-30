@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import * as ImagePicker from 'expo-image-picker';
+import { pickImagesFromGallery, capturePhotoFromCamera } from '../services/image-picker';
 import {
   Package,
   IndianRupee,
@@ -197,11 +198,17 @@ export default function AddProductScreen() {
   const [taxInclusive, setTaxInclusive] = useState(true);
   const [hsnCode, setHsnCode] = useState('');
 
+  // ── Dedicated Storefront Product Card View Image ─────────────────────────
+  const [productCardImageUrl, setProductCardImageUrl] = useState('');
+  const [cardImageUploading, setCardImageUploading] = useState(false);
+
   // ── Step 3/4: colours and their per-size stock ─────────────────────────────
   const [colorGroups, setColorGroups] = useState<ColorGroupDraft[]>([]);
   const [activeColorId, setActiveColorId] = useState('');
   const [newColorName, setNewColorName] = useState('');
   const [newColorHex, setNewColorHex] = useState('#0284c7');
+  const [newColorSwatch, setNewColorSwatch] = useState<string | undefined>(undefined);
+  const [newColorSwatchUploading, setNewColorSwatchUploading] = useState(false);
   /** Shot type per image, keyed by URI; sent as the media title on save. */
   const [imageLabels, setImageLabels] = useState<Record<string, string>>({});
   /** Colour group id currently uploading its swatch photo, or '' when idle. */
@@ -288,7 +295,51 @@ export default function AddProductScreen() {
 
   // ── Colour helpers ─────────────────────────────────────────────────────────
 
-  const addColorGroup = (presetName?: string, presetHex?: string) => {
+  // ── Card Image & Swatch Helpers ───────────────────────────────────────────
+  const pickProductCardImage = async (useCamera = false) => {
+    try {
+      setCardImageUploading(true);
+      const uri = useCamera ? await capturePhotoFromCamera() : (await pickImagesFromGallery(false))?.[0];
+      if (!uri) return;
+      // Upload directly so we have a hosted AWS S3 URL
+      const fileName = `product-card-cover-${Date.now()}.jpg`;
+      const url = await catalogService.uploadImage(uri, fileName);
+      if (url) {
+        setProductCardImageUrl(url);
+      } else {
+        setProductCardImageUrl(uri);
+      }
+    } catch (err: any) {
+      Alert.alert('Upload Error', getApiErrorMessage(err, 'Failed to upload card cover image'));
+    } finally {
+      setCardImageUploading(false);
+    }
+  };
+
+  const removeProductCardImage = () => {
+    setProductCardImageUrl('');
+  };
+
+  const pickNewColorSwatch = async (useCamera = false) => {
+    try {
+      setNewColorSwatchUploading(true);
+      const uri = useCamera ? await capturePhotoFromCamera() : (await pickImagesFromGallery(false))?.[0];
+      if (!uri) return;
+      const fileName = `${(newColorName || 'swatch').replace(/\s+/g, '-').toLowerCase()}-swatch-${Date.now()}.jpg`;
+      const url = await catalogService.uploadImage(uri, fileName, 'swatches');
+      setNewColorSwatch(url || uri);
+    } catch (err: any) {
+      Alert.alert('Swatch Error', getApiErrorMessage(err, 'Failed to upload swatch'));
+    } finally {
+      setNewColorSwatchUploading(false);
+    }
+  };
+
+  const removeNewColorSwatch = () => {
+    setNewColorSwatch(undefined);
+  };
+
+  const addColorGroup = (presetName?: string, presetHex?: string, swatchUrl?: string) => {
     const cName = (presetName || newColorName).trim() || `Colour ${colorGroups.length + 1}`;
     if (colorGroups.some((g) => g.name.toLowerCase() === cName.toLowerCase())) {
       Alert.alert('Duplicate colour', `"${cName}" has already been added.`);
@@ -298,12 +349,14 @@ export default function AddProductScreen() {
       id: `col-${Date.now()}`,
       name: cName,
       hex: presetHex || newColorHex,
+      swatchUrl: swatchUrl !== undefined ? swatchUrl : newColorSwatch,
       images: [],
-      sizes: STANDARD_SIZES.map((size) => ({ size, stock: 0, available: false })),
+      sizes: STANDARD_SIZES.map((size) => ({ size, stock: 10, available: true })),
     };
     setColorGroups((prev) => [...prev, group]);
     setActiveColorId(group.id);
     setNewColorName('');
+    setNewColorSwatch(undefined);
   };
 
   const removeColorGroup = (id: string) => {
@@ -312,39 +365,29 @@ export default function AddProductScreen() {
   };
 
   const pickImages = async (groupId: string) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to attach product images.');
-      return;
+    try {
+      const uris = await pickImagesFromGallery(true);
+      if (!uris || uris.length === 0) return;
+      setColorGroups((prev) =>
+        prev.map((g) => (g.id === groupId ? { ...g, images: [...g.images, ...uris] } : g)),
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Could not pick images');
     }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsMultipleSelection: true,
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.length) return;
-    const uris = result.assets.map((a) => a.uri);
-    setColorGroups((prev) =>
-      prev.map((g) => (g.id === groupId ? { ...g, images: [...g.images, ...uris] } : g)),
-    );
   };
 
   const takePhoto = async (groupId: string) => {
-    const permission = await ImagePicker.requestCameraPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow camera access to photograph the product.');
-      return;
+    try {
+      const uri = await capturePhotoFromCamera();
+      if (!uri) return;
+      setColorGroups((prev) =>
+        prev.map((g) =>
+          g.id === groupId ? { ...g, images: [...g.images, uri] } : g,
+        ),
+      );
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Could not take photo');
     }
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.length) return;
-    setColorGroups((prev) =>
-      prev.map((g) =>
-        g.id === groupId ? { ...g, images: [...g.images, result.assets[0].uri] } : g,
-      ),
-    );
   };
 
   /**
@@ -353,32 +396,30 @@ export default function AddProductScreen() {
    * are staged locally and only uploaded on submit) so the group can carry
    * a hosted URL straight away.
    */
-  const pickSwatchPhoto = async (groupId: string) => {
-    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert('Permission needed', 'Allow photo access to attach a swatch photo.');
-      return;
-    }
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      quality: 0.8,
-    });
-    if (result.canceled || !result.assets?.length) return;
-
-    setSwatchUploading(groupId);
+  const pickSwatchPhoto = async (groupId: string, useCamera = false) => {
     try {
-      const group = colorGroups.find((g) => g.id === groupId);
-      const fileName = `${(group?.name || 'swatch').replace(/\s+/g, '-').toLowerCase()}-swatch.jpg`;
-      const url = await catalogService.uploadImage(result.assets[0].uri, fileName);
-      if (url) {
-        setColorGroups((prev) =>
-          prev.map((g) => (g.id === groupId ? { ...g, swatchUrl: url } : g)),
-        );
+      const uri = useCamera ? await capturePhotoFromCamera() : (await pickImagesFromGallery(false))?.[0];
+      if (!uri) return;
+
+      setSwatchUploading(groupId);
+      try {
+        const group = colorGroups.find((g) => g.id === groupId);
+        const fileName = `${(group?.name || 'swatch').replace(/\s+/g, '-').toLowerCase()}-swatch.jpg`;
+        const url = await catalogService.uploadImage(uri, fileName, 'swatches');
+        if (url) {
+          setColorGroups((prev) =>
+            prev.map((g) => (g.id === groupId ? { ...g, swatchUrl: url } : g)),
+          );
+        } else {
+          Alert.alert('Upload failed', 'Did not receive image URL from server.');
+        }
+      } catch (err) {
+        Alert.alert('Upload failed', getApiErrorMessage(err, 'Could not upload the swatch photo'));
+      } finally {
+        setSwatchUploading('');
       }
-    } catch (err) {
-      Alert.alert('Upload failed', getApiErrorMessage(err, 'Could not upload the swatch photo'));
-    } finally {
-      setSwatchUploading('');
+    } catch (e: any) {
+      Alert.alert('Error', e?.message || 'Could not pick swatch');
     }
   };
 
@@ -657,32 +698,84 @@ export default function AddProductScreen() {
       }
 
       // 3. POST /storage/upload -> POST /media, flattened across colour groups.
-      // The swatch photo (already uploaded when picked) rides along as one
-      // more media item per colour, ahead of the staged gallery photos.
       let displayOrder = 0;
       let primarySet = false;
       const mediaIdsByGroup: Record<string, string[]> = {};
-      for (const group of colorGroups) {
-        mediaIdsByGroup[group.id] = [];
-        const groupImages = [group.swatchUrl, ...group.images].filter(Boolean) as string[];
-        for (const img of groupImages) {
-          setProgress(`Uploading image ${displayOrder + 1} of ${totalImages}…`);
-          let url = img;
-          if (img !== group.swatchUrl) {
-            const fileName = `${group.name.replace(/\s+/g, '-').toLowerCase()}-${displayOrder}.jpg`;
-            url = await catalogService.uploadImage(img, fileName);
-            if (!url) continue;
+      colorGroups.forEach((g) => {
+        mediaIdsByGroup[g.id] = [];
+      });
+
+      // If a dedicated storefront cover photo was picked, attach it first as primary
+      if (productCardImageUrl) {
+        let cardUrl = productCardImageUrl;
+        if (!cardUrl.startsWith('http')) {
+          const uploaded = await catalogService.uploadImage(cardUrl, `card-cover-${Date.now()}.jpg`);
+          if (uploaded) cardUrl = uploaded;
+        }
+        if (cardUrl && cardUrl.startsWith('http')) {
+          const media = await catalogService.addMedia({
+            productId,
+            url: cardUrl,
+            isPrimary: true,
+            displayOrder: displayOrder++,
+            title: 'Catalog Cover Photo',
+          });
+          primarySet = true;
+          if (media?.id && colorGroups[0]) {
+            mediaIdsByGroup[colorGroups[0].id].push(media.id);
           }
+        }
+      }
+
+      for (const group of colorGroups) {
+        // 1. Upload & attach regular gallery images for this color
+        const groupPhotos = group.images.filter((img) => img !== group.swatchUrl);
+        for (let i = 0; i < groupPhotos.length; i++) {
+          const img = groupPhotos[i];
+          setProgress(`Uploading image ${displayOrder + 1} of ${totalImages} for ${group.name}…`);
+          let url = img;
+          if (!img.startsWith('http')) {
+            const fileName = `${group.name.replace(/\s+/g, '-').toLowerCase()}-${displayOrder}.jpg`;
+            const uploaded = await catalogService.uploadImage(img, fileName);
+            if (uploaded) url = uploaded;
+            else continue;
+          }
+          const isPrimary = !primarySet && i === 0 && group === colorGroups[0];
+          if (isPrimary) primarySet = true;
+
+          const label = imageLabels[img] || (i === 0 ? 'Front' : undefined);
           const media = await catalogService.addMedia({
             productId,
             url,
-            isPrimary: !primarySet,
+            mediaType: 'IMAGE',
+            isPrimary,
             displayOrder: displayOrder++,
             color: group.name,
-            ...(imageLabels[img] ? { title: imageLabels[img] } : {}),
+            ...(label ? { title: label } : {}),
           });
           if (media?.id) mediaIdsByGroup[group.id].push(media.id);
-          primarySet = true;
+        }
+
+        // 2. Attach separate fabric swatch photo as FABRIC with title 'FABRIC_SWATCH' (never primary)
+        if (group.swatchUrl) {
+          let swatchUrl = group.swatchUrl;
+          if (!swatchUrl.startsWith('http')) {
+            const fileName = `${group.name.replace(/\s+/g, '-').toLowerCase()}-swatch-${displayOrder}.jpg`;
+            const uploaded = await catalogService.uploadImage(swatchUrl, fileName, 'swatches');
+            if (uploaded) swatchUrl = uploaded;
+          }
+          if (swatchUrl && swatchUrl.startsWith('http')) {
+            const media = await catalogService.addMedia({
+              productId,
+              url: swatchUrl,
+              mediaType: 'FABRIC',
+              isPrimary: false,
+              displayOrder: displayOrder++,
+              color: group.name,
+              title: 'FABRIC_SWATCH',
+            });
+            if (media?.id) mediaIdsByGroup[group.id].push(media.id);
+          }
         }
       }
 
@@ -1309,177 +1402,376 @@ export default function AddProductScreen() {
           </View>
         )}
 
-        {/* ── STEP 3: COLOURS ── */}
+        {/* ── STEP 4: COLOURS & MEDIA ── */}
         {step === 'colors' && (
-          <View>
-            <Text style={styles.sectionTitle}>Colours &amp; photos</Text>
+          <View style={{ gap: 16 }}>
+            {/* 1. DEDICATED STOREFRONT PRODUCT CARD VIEW IMAGE SELECTOR */}
+            <View style={styles.cardCoverSection}>
+              <View style={styles.cardCoverHeader}>
+                <View style={styles.cardCoverIconWrap}>
+                  <Store size={18} color="#0284c7" />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.cardCoverTitle}>
+                    Storefront Product Card View Image
+                  </Text>
+                  <Text style={styles.cardCoverSub}>
+                    Catalog cover photo for storefront cards, search, and homepage.
+                  </Text>
+                </View>
+                {productCardImageUrl ? (
+                  <View style={styles.activeCoverBadge}>
+                    <Text style={styles.activeCoverBadgeText}>✓ Active</Text>
+                  </View>
+                ) : null}
+              </View>
 
-            <View style={styles.presetWrap}>
-              {COLOR_PRESETS.map((p) => (
-                <TouchableOpacity
-                  key={p.name}
-                  style={styles.presetChip}
-                  onPress={() => addColorGroup(p.name, p.hex)}
-                >
-                  <View style={[styles.swatch, { backgroundColor: p.hex }]} />
-                  <Text style={styles.presetText}>{p.name}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
+              <View style={styles.cardCoverBody}>
+                {productCardImageUrl ? (
+                  <View style={styles.cardCoverThumbWrap}>
+                    <Image source={{ uri: productCardImageUrl }} style={styles.cardCoverThumb} />
+                  </View>
+                ) : (
+                  <View style={styles.cardCoverPlaceholder}>
+                    <Text style={styles.cardCoverPlaceholderText}>Auto{'\n'}Primary</Text>
+                  </View>
+                )}
 
-            <View style={styles.inlineRow}>
-              <TextInput
-                style={[styles.input, { flex: 1, marginTop: 0 }]}
-                value={newColorName}
-                onChangeText={setNewColorName}
-                placeholder="Custom colour name"
-                placeholderTextColor="#9ca3af"
-              />
-              <TouchableOpacity style={styles.addBtn} onPress={() => addColorGroup()}>
-                <Plus size={18} color="#ffffff" />
-              </TouchableOpacity>
-            </View>
-
-            {colorGroups.length === 0 && (
-              <Text style={styles.emptyHint}>
-                Add at least one colour. Each colour × size becomes a variant with its own barcode.
-              </Text>
-            )}
-
-            {colorGroups.length > 0 && (
-              <>
-                <View style={styles.colorTabRow}>
-                  {colorGroups.map((g) => (
+                <View style={{ flex: 1, gap: 8 }}>
+                  <View style={{ flexDirection: 'row', gap: 8 }}>
                     <TouchableOpacity
-                      key={g.id}
-                      style={[styles.colorTab, activeGroup?.id === g.id && styles.colorTabActive]}
-                      onPress={() => setActiveColorId(g.id)}
+                      style={styles.coverActionBtn}
+                      onPress={() => pickProductCardImage(true)}
+                      disabled={cardImageUploading}
                     >
-                      <View style={[styles.swatch, { backgroundColor: g.hex }]} />
-                      <Text style={styles.colorTabText}>{g.name}</Text>
-                      <TouchableOpacity onPress={() => removeColorGroup(g.id)} hitSlop={8}>
-                        <Trash2 size={13} color="#b91c1c" />
-                      </TouchableOpacity>
+                      {cardImageUploading ? (
+                        <ActivityIndicator size="small" color="#0284c7" />
+                      ) : (
+                        <ImageIcon size={14} color="#0284c7" />
+                      )}
+                      <Text style={styles.coverActionBtnText}>Camera</Text>
                     </TouchableOpacity>
+                    <TouchableOpacity
+                      style={styles.coverActionBtn}
+                      onPress={() => pickProductCardImage(false)}
+                      disabled={cardImageUploading}
+                    >
+                      {cardImageUploading ? (
+                        <ActivityIndicator size="small" color="#0284c7" />
+                      ) : (
+                        <Plus size={14} color="#0284c7" />
+                      )}
+                      <Text style={styles.coverActionBtnText}>Gallery</Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {productCardImageUrl ? (
+                    <TouchableOpacity
+                      style={styles.resetCoverBtn}
+                      onPress={removeProductCardImage}
+                    >
+                      <Text style={styles.resetCoverBtnText}>Reset to Default Primary</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+            </View>
+
+            {/* 2. QUICK PRESETS & STEP 1: CREATE COLOR VARIANT */}
+            <View style={styles.createColorSection}>
+              <Text style={styles.sectionSubtitle}>
+                Step 1: Create Color Variant & Fabric Swatch
+              </Text>
+              <Text style={styles.helpText}>
+                Tap a preset or type custom colour name to add photos per colour.
+              </Text>
+
+              {/* Quick Presets */}
+              <View style={styles.presetWrap}>
+                {COLOR_PRESETS.map((p) => (
+                  <TouchableOpacity
+                    key={p.name}
+                    style={styles.presetChip}
+                    onPress={() => addColorGroup(p.name, p.hex)}
+                  >
+                    <View style={[styles.swatch, { backgroundColor: p.hex }]} />
+                    <Text style={styles.presetText}>+ {p.name}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+
+              {/* Color Hex Dots & Custom Name Input */}
+              <View style={styles.customColorBox}>
+                <View style={styles.hexDotsRow}>
+                  {['#0284c7', '#0E6251', '#1B4F72', '#900C3F', '#D4AF37', '#1C2833', '#FADBD8', '#7D3C98'].map((h) => (
+                    <TouchableOpacity
+                      key={h}
+                      style={[styles.hexDot, newColorHex === h && styles.hexDotActive, { backgroundColor: h }]}
+                      onPress={() => setNewColorHex(h)}
+                    />
                   ))}
                 </View>
 
-                {activeGroup && (
-                  <View style={styles.card}>
-                    <Text style={styles.cardTitle}>{activeGroup.name} — photos</Text>
-                    <View style={styles.inlineRow}>
-                      <TouchableOpacity
-                        style={styles.secondaryBtn}
-                        onPress={() => takePhoto(activeGroup.id)}
-                      >
-                        <ImageIcon size={15} color="#0284c7" style={{ marginRight: 6 }} />
-                        <Text style={styles.secondaryBtnText}>Camera</Text>
+                <View style={styles.inlineRow}>
+                  <TextInput
+                    style={[styles.input, { flex: 1, marginTop: 0 }]}
+                    value={newColorName}
+                    onChangeText={setNewColorName}
+                    placeholder="Enter colour name (e.g. Royal Blue)"
+                    placeholderTextColor="#9ca3af"
+                  />
+                  <TouchableOpacity
+                    style={styles.addBtn}
+                    onPress={() => addColorGroup()}
+                  >
+                    <Plus size={18} color="#ffffff" />
+                  </TouchableOpacity>
+                </View>
+
+                {/* Fabric Swatch Upload for New Color */}
+                <View style={styles.newSwatchRow}>
+                  <TouchableOpacity
+                    style={styles.swatchPickerBtn}
+                    onPress={() => pickNewColorSwatch(false)}
+                    disabled={newColorSwatchUploading}
+                  >
+                    {newColorSwatchUploading ? (
+                      <ActivityIndicator size="small" color="#0284c7" />
+                    ) : (
+                      <Palette size={14} color="#0284c7" />
+                    )}
+                    <Text style={styles.swatchPickerBtnText}>
+                      {newColorSwatch ? '✓ Fabric Texture Uploaded' : 'Upload Fabric Texture Photo (Optional)'}
+                    </Text>
+                  </TouchableOpacity>
+
+                  {newColorSwatch && (
+                    <View style={styles.swatchThumbWrap}>
+                      <Image source={{ uri: newColorSwatch }} style={styles.swatchThumb} />
+                      <TouchableOpacity style={styles.swatchRemoveBtn} onPress={removeNewColorSwatch}>
+                        <X size={10} color="#ffffff" />
                       </TouchableOpacity>
+                    </View>
+                  )}
+                </View>
+              </View>
+            </View>
+
+            {/* 3. COLOR VARIANT TABS FOR MEDIA MANAGEMENT */}
+            {colorGroups.length === 0 ? (
+              <View style={styles.emptyColorBox}>
+                <Palette size={32} color="#9ca3af" />
+                <Text style={styles.emptyColorTitle}>No Colour Variant Added Yet</Text>
+                <Text style={styles.emptyColorSub}>
+                  Add at least one colour above. Each colour has its own photo gallery and size-wise inventory.
+                </Text>
+              </View>
+            ) : (
+              <>
+                <View>
+                  <Text style={styles.sectionSubtitle}>
+                    Step 2: Select Colour Group to Add Photos ({colorGroups.length})
+                  </Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.colorTabsScroll}>
+                    {colorGroups.map((g) => {
+                      const isSelected = (activeGroup?.id === g.id);
+                      return (
+                        <TouchableOpacity
+                          key={g.id}
+                          style={[styles.colorGroupTab, isSelected && styles.colorGroupTabActive]}
+                          onPress={() => setActiveColorId(g.id)}
+                        >
+                          {g.swatchUrl ? (
+                            <Image source={{ uri: g.swatchUrl }} style={styles.tabSwatchImg} />
+                          ) : (
+                            <View style={[styles.tabSwatchDot, { backgroundColor: g.hex }]} />
+                          )}
+                          <Text style={[styles.colorGroupTabText, isSelected && styles.colorGroupTabTextActive]}>
+                            {g.name}
+                          </Text>
+                          <View style={[styles.tabPhotoCount, isSelected && styles.tabPhotoCountActive]}>
+                            <Text style={[styles.tabPhotoCountText, isSelected && styles.tabPhotoCountTextActive]}>
+                              {g.images.length}
+                            </Text>
+                          </View>
+                        </TouchableOpacity>
+                      );
+                    })}
+                  </ScrollView>
+                </View>
+
+                {/* 4. ACTIVE COLOR GROUP MEDIA MANAGER */}
+                {activeGroup && (
+                  <View style={styles.activeColorCard}>
+                    {/* Active Group Header */}
+                    <View style={styles.activeGroupHeader}>
+                      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flex: 1 }}>
+                        {activeGroup.swatchUrl ? (
+                          <Image source={{ uri: activeGroup.swatchUrl }} style={styles.activeSwatchImg} />
+                        ) : (
+                          <View style={[styles.tabSwatchDot, { backgroundColor: activeGroup.hex, width: 18, height: 18, borderRadius: 9 }]} />
+                        )}
+                        <Text style={styles.activeGroupTitle}>
+                          Photos for "{activeGroup.name}"
+                        </Text>
+                        <View style={styles.badgeSmall}>
+                          <Text style={styles.badgeSmallText}>{activeGroup.images.length} photos</Text>
+                        </View>
+                      </View>
+
                       <TouchableOpacity
-                        style={styles.secondaryBtn}
-                        onPress={() => pickImages(activeGroup.id)}
+                        style={styles.deleteGroupBtn}
+                        onPress={() => removeColorGroup(activeGroup.id)}
                       >
-                        <Plus size={15} color="#0284c7" style={{ marginRight: 6 }} />
-                        <Text style={styles.secondaryBtnText}>Gallery</Text>
+                        <Trash2 size={13} color="#b91c1c" />
+                        <Text style={styles.deleteGroupText}>Delete</Text>
                       </TouchableOpacity>
                     </View>
 
-                    <Text style={styles.label}>Swatch photo</Text>
-                    <Text style={styles.helpText}>
-                      A close-up fabric swatch used as this colour&rsquo;s tab thumbnail — optional.
-                    </Text>
-                    <View style={styles.inlineRow}>
+                    {/* Fabric Swatch for Active Group */}
+                    <View style={styles.activeSwatchRow}>
+                      <View style={{ flex: 1 }}>
+                        <Text style={styles.swatchLabel}>Fabric Texture Thumbnail:</Text>
+                        {activeGroup.swatchUrl ? (
+                          <Text style={styles.swatchStatusActive}>✓ Active custom fabric texture</Text>
+                        ) : (
+                          <Text style={styles.swatchStatusDefault}>Solid Colour ({activeGroup.hex})</Text>
+                        )}
+                      </View>
+
+                      {activeGroup.swatchUrl && (
+                        <View style={styles.activeSwatchPreviewWrap}>
+                          <Image source={{ uri: activeGroup.swatchUrl }} style={styles.activeSwatchPreview} />
+                          <TouchableOpacity
+                            style={styles.swatchRemoveBadge}
+                            onPress={() => removeSwatchPhoto(activeGroup.id)}
+                          >
+                            <X size={10} color="#ffffff" />
+                          </TouchableOpacity>
+                        </View>
+                      )}
+
                       <TouchableOpacity
-                        style={styles.secondaryBtn}
+                        style={styles.uploadSwatchSmallBtn}
                         onPress={() => pickSwatchPhoto(activeGroup.id)}
                         disabled={swatchUploading === activeGroup.id}
                       >
                         {swatchUploading === activeGroup.id ? (
-                          <ActivityIndicator size="small" color="#0284c7" style={{ marginRight: 6 }} />
+                          <ActivityIndicator size="small" color="#0284c7" />
                         ) : (
-                          <ImageIcon size={15} color="#0284c7" style={{ marginRight: 6 }} />
+                          <ImageIcon size={13} color="#0284c7" />
                         )}
-                        <Text style={styles.secondaryBtnText}>
-                          {activeGroup.swatchUrl ? 'Change swatch' : 'Upload swatch'}
+                        <Text style={styles.uploadSwatchSmallText}>
+                          {activeGroup.swatchUrl ? 'Change' : 'Upload Swatch'}
                         </Text>
                       </TouchableOpacity>
-                      {activeGroup.swatchUrl && (
-                        <View style={styles.swatchPreviewWrap}>
-                          <Image source={{ uri: activeGroup.swatchUrl }} style={styles.swatchPreview} />
-                          <TouchableOpacity
-                            style={styles.thumbRemove}
-                            onPress={() => removeSwatchPhoto(activeGroup.id)}
-                          >
-                            <X size={12} color="#ffffff" />
-                          </TouchableOpacity>
-                        </View>
-                      )}
                     </View>
 
-                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 12 }}>
-                      {activeGroup.images.map((uri, index) => (
-                        <View key={uri} style={styles.thumbWrap}>
-                          <Image source={{ uri }} style={styles.thumb} />
-                          <TouchableOpacity
-                            style={styles.thumbRemove}
-                            onPress={() => removeImage(activeGroup.id, uri)}
-                          >
-                            <X size={12} color="#ffffff" />
-                          </TouchableOpacity>
+                    {/* Upload Action Buttons */}
+                    <View style={styles.uploadActionRow}>
+                      <TouchableOpacity
+                        style={styles.mediaActionBtn}
+                        onPress={() => takePhoto(activeGroup.id)}
+                      >
+                        <ImageIcon size={16} color="#0284c7" />
+                        <Text style={styles.mediaActionBtnText}>Camera Photo</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={styles.mediaActionBtn}
+                        onPress={() => pickImages(activeGroup.id)}
+                      >
+                        <Plus size={16} color="#0284c7" />
+                        <Text style={styles.mediaActionBtnText}>Browse Gallery</Text>
+                      </TouchableOpacity>
+                    </View>
 
-                          {index === 0 ? (
-                            <View style={styles.primaryTag}>
-                              <Text style={styles.primaryTagText}>PRIMARY</Text>
+                    {/* 2-Column Photo Grid for Active Color Group */}
+                    {activeGroup.images.length === 0 ? (
+                      <View style={styles.emptyGalleryBox}>
+                        <ImageIcon size={26} color="#9ca3af" />
+                        <Text style={styles.emptyGalleryText}>
+                          No product photos added for {activeGroup.name} yet.
+                        </Text>
+                        <Text style={styles.emptyGallerySub}>
+                          Tap Camera or Browse Gallery to upload product shots for this colour.
+                        </Text>
+                      </View>
+                    ) : (
+                      <View style={styles.photoGrid}>
+                        {activeGroup.images.map((uri, index) => {
+                          const isPrimary = (index === 0);
+                          const shotType = imageLabels[uri] || (index === 0 ? 'Front' : 'Angle');
+                          return (
+                            <View key={`${uri}-${index}`} style={styles.photoGridCard}>
+                              <Image source={{ uri }} style={styles.photoGridImg} />
+
+                              {/* Top Bar: Primary Badge & Delete */}
+                              <View style={styles.photoTopBar}>
+                                {isPrimary ? (
+                                  <View style={styles.photoPrimaryBadge}>
+                                    <Text style={styles.photoPrimaryText}>★ PRIMARY</Text>
+                                  </View>
+                                ) : (
+                                  <TouchableOpacity
+                                    style={styles.photoSetPrimaryBtn}
+                                    onPress={() => setPrimaryImage(activeGroup.id, index)}
+                                  >
+                                    <Text style={styles.photoSetPrimaryText}>SET PRIMARY</Text>
+                                  </TouchableOpacity>
+                                )}
+
+                                <TouchableOpacity
+                                  style={styles.photoDeleteBtn}
+                                  onPress={() => removeImage(activeGroup.id, uri)}
+                                >
+                                  <X size={12} color="#ffffff" />
+                                </TouchableOpacity>
+                              </View>
+
+                              {/* Bottom Controls: Shot Type & Reorder */}
+                              <View style={styles.photoBottomBar}>
+                                <TouchableOpacity
+                                  style={styles.shotTypeChip}
+                                  onPress={() => {
+                                    const current = imageLabels[uri] ?? (index === 0 ? 'Front' : 'Angle');
+                                    const nextIdx = (IMAGE_TYPES.indexOf(current) + 1) % IMAGE_TYPES.length;
+                                    const next = IMAGE_TYPES[nextIdx] || 'Front';
+                                    setImageLabels((prev) => ({ ...prev, [uri]: next }));
+                                  }}
+                                >
+                                  <Text style={styles.shotTypeChipText}>
+                                    {shotType} ▾
+                                  </Text>
+                                </TouchableOpacity>
+
+                                <View style={styles.reorderArrowsRow}>
+                                  <TouchableOpacity
+                                    style={[styles.arrowBtn, index === 0 && styles.arrowBtnDisabled]}
+                                    disabled={index === 0}
+                                    onPress={() => moveImage(activeGroup.id, index, -1)}
+                                  >
+                                    <ArrowLeft size={12} color={index === 0 ? '#9ca3af' : '#111827'} />
+                                  </TouchableOpacity>
+                                  <TouchableOpacity
+                                    style={[
+                                      styles.arrowBtn,
+                                      index === activeGroup.images.length - 1 && styles.arrowBtnDisabled,
+                                    ]}
+                                    disabled={index === activeGroup.images.length - 1}
+                                    onPress={() => moveImage(activeGroup.id, index, 1)}
+                                  >
+                                    <ArrowRight
+                                      size={12}
+                                      color={index === activeGroup.images.length - 1 ? '#9ca3af' : '#111827'}
+                                    />
+                                  </TouchableOpacity>
+                                </View>
+                              </View>
                             </View>
-                          ) : (
-                            <TouchableOpacity
-                              style={styles.setPrimaryBtn}
-                              onPress={() => setPrimaryImage(activeGroup.id, index)}
-                            >
-                              <Text style={styles.setPrimaryText}>SET PRIMARY</Text>
-                            </TouchableOpacity>
-                          )}
-
-                          <View style={styles.reorderRow}>
-                            <TouchableOpacity
-                              style={styles.reorderBtn}
-                              disabled={index === 0}
-                              onPress={() => moveImage(activeGroup.id, index, -1)}
-                            >
-                              <ArrowLeft size={11} color={index === 0 ? '#d1d5db' : '#374151'} />
-                            </TouchableOpacity>
-                            <TouchableOpacity
-                              style={styles.reorderBtn}
-                              disabled={index === activeGroup.images.length - 1}
-                              onPress={() => moveImage(activeGroup.id, index, 1)}
-                            >
-                              <ArrowRight
-                                size={11}
-                                color={
-                                  index === activeGroup.images.length - 1 ? '#d1d5db' : '#374151'
-                                }
-                              />
-                            </TouchableOpacity>
-                          </View>
-
-                          <TouchableOpacity
-                            style={styles.shotTypeBtn}
-                            onPress={() => {
-                              const current = imageLabels[uri] ?? '';
-                              const next =
-                                IMAGE_TYPES[(IMAGE_TYPES.indexOf(current) + 1) % (IMAGE_TYPES.length + 1)] ??
-                                '';
-                              setImageLabels((prev) => ({ ...prev, [uri]: next }));
-                            }}
-                          >
-                            <Text style={styles.shotTypeText}>{imageLabels[uri] || 'Type…'}</Text>
-                          </TouchableOpacity>
-                        </View>
-                      ))}
-                      {activeGroup.images.length === 0 && (
-                        <Text style={styles.emptyHint}>No photos yet for this colour.</Text>
-                      )}
-                    </ScrollView>
+                          );
+                        })}
+                      </View>
+                    )}
                   </View>
                 )}
               </>
@@ -2273,7 +2565,557 @@ const styles = StyleSheet.create({
   promoPreviewNote: { fontSize: 10, color: '#92400e', marginTop: 2, lineHeight: 14 },
   promoCaption: { fontSize: 10, color: '#64748b', marginTop: 10, lineHeight: 14 },
 
-  presetWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 12 },
+  // ── Cover Image Styles ──
+  cardCoverSection: {
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    borderRadius: 16,
+    padding: 14,
+    gap: 12,
+  },
+  cardCoverHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  cardCoverIconWrap: {
+    width: 36,
+    height: 36,
+    borderRadius: 10,
+    backgroundColor: '#e0f2fe',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardCoverTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0369a1',
+  },
+  cardCoverSub: {
+    fontSize: 11,
+    color: '#64748b',
+    marginTop: 2,
+    lineHeight: 15,
+  },
+  activeCoverBadge: {
+    backgroundColor: '#dcfce7',
+    borderWidth: 1,
+    borderColor: '#86efac',
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 12,
+  },
+  activeCoverBadgeText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: '#15803d',
+  },
+  cardCoverBody: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: '#ffffff',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+  },
+  cardCoverThumbWrap: {
+    width: 64,
+    height: 80,
+    borderRadius: 8,
+    overflow: 'hidden',
+    backgroundColor: '#f1f5f9',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  cardCoverThumb: {
+    width: '100%',
+    height: '100%',
+    resizeMode: 'cover',
+  },
+  cardCoverPlaceholder: {
+    width: 64,
+    height: 80,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderColor: '#93c5fd',
+    backgroundColor: '#f8fafc',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  cardCoverPlaceholderText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#0284c7',
+    textAlign: 'center',
+  },
+  coverActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    borderRadius: 10,
+    backgroundColor: '#e0f2fe',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  coverActionBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+  resetCoverBtn: {
+    paddingVertical: 6,
+    alignItems: 'center',
+  },
+  resetCoverBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#64748b',
+    textDecorationLine: 'underline',
+  },
+
+  // ── Create Color Section ──
+  createColorSection: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 16,
+    padding: 14,
+    gap: 10,
+  },
+  sectionSubtitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#1e293b',
+  },
+  customColorBox: {
+    marginTop: 6,
+    gap: 10,
+  },
+  hexDotsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 8,
+    alignItems: 'center',
+  },
+  hexDot: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    borderWidth: 2,
+    borderColor: '#ffffff',
+  },
+  hexDotActive: {
+    borderColor: '#0284c7',
+    transform: [{ scale: 1.15 }],
+  },
+  newSwatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  swatchPickerBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 9,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  swatchPickerBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  swatchThumbWrap: {
+    position: 'relative',
+    width: 32,
+    height: 32,
+  },
+  swatchThumb: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: '#94a3b8',
+  },
+  swatchRemoveBtn: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+
+  // ── Color Tabs Scroll ──
+  colorTabsScroll: {
+    flexDirection: 'row',
+    marginTop: 8,
+  },
+  colorGroupTab: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    backgroundColor: '#ffffff',
+    marginRight: 8,
+  },
+  colorGroupTabActive: {
+    borderColor: '#0284c7',
+    backgroundColor: '#e0f2fe',
+  },
+  tabSwatchImg: {
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  tabSwatchDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  colorGroupTabText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#334155',
+  },
+  colorGroupTabTextActive: {
+    color: '#0284c7',
+    fontWeight: '700',
+  },
+  tabPhotoCount: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    backgroundColor: '#f1f5f9',
+  },
+  tabPhotoCountActive: {
+    backgroundColor: '#bae6fd',
+  },
+  tabPhotoCountText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  tabPhotoCountTextActive: {
+    color: '#0369a1',
+  },
+
+  // ── Active Color Group Card ──
+  activeColorCard: {
+    backgroundColor: '#ffffff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    borderRadius: 16,
+    padding: 14,
+    gap: 14,
+  },
+  activeGroupHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingBottom: 10,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+  },
+  activeSwatchImg: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  activeGroupTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  badgeSmall: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  badgeSmallText: {
+    fontSize: 10,
+    fontWeight: '700',
+    color: '#64748b',
+  },
+  deleteGroupBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 8,
+    backgroundColor: '#fef2f2',
+  },
+  deleteGroupText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#b91c1c',
+  },
+
+  // Active Swatch Row
+  activeSwatchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    padding: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    gap: 8,
+  },
+  swatchLabel: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  swatchStatusActive: {
+    fontSize: 10,
+    color: '#15803d',
+    fontWeight: '600',
+    marginTop: 1,
+  },
+  swatchStatusDefault: {
+    fontSize: 10,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  activeSwatchPreviewWrap: {
+    position: 'relative',
+    width: 36,
+    height: 36,
+  },
+  activeSwatchPreview: {
+    width: 36,
+    height: 36,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+  },
+  swatchRemoveBadge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    width: 16,
+    height: 16,
+    borderRadius: 8,
+    backgroundColor: '#ef4444',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  uploadSwatchSmallBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 10,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#e0f2fe',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  uploadSwatchSmallText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+
+  // Upload Actions
+  uploadActionRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  mediaActionBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 6,
+    paddingVertical: 12,
+    borderRadius: 12,
+    backgroundColor: '#e0f2fe',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  mediaActionBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+
+  // Photo Grid (2-columns)
+  photoGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 10,
+  },
+  photoGridCard: {
+    width: '48%',
+    aspectRatio: 0.75,
+    borderRadius: 12,
+    overflow: 'hidden',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    backgroundColor: '#f8fafc',
+    position: 'relative',
+    justifyContent: 'space-between',
+  },
+  photoGridImg: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    resizeMode: 'cover',
+  },
+  photoTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 6,
+    zIndex: 2,
+  },
+  photoPrimaryBadge: {
+    backgroundColor: '#0284c7',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  photoPrimaryText: {
+    fontSize: 8,
+    fontWeight: '800',
+    color: '#ffffff',
+    letterSpacing: 0.5,
+  },
+  photoSetPrimaryBtn: {
+    backgroundColor: 'rgba(15,23,42,0.7)',
+    paddingHorizontal: 6,
+    paddingVertical: 3,
+    borderRadius: 6,
+  },
+  photoSetPrimaryText: {
+    fontSize: 8,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  photoDeleteBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(239,68,68,0.9)',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  photoBottomBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: 6,
+    backgroundColor: 'rgba(255,255,255,0.92)',
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(226,232,240,0.8)',
+    zIndex: 2,
+  },
+  shotTypeChip: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+    backgroundColor: '#f1f5f9',
+  },
+  shotTypeChipText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#334155',
+  },
+  reorderArrowsRow: {
+    flexDirection: 'row',
+    gap: 4,
+  },
+  arrowBtn: {
+    width: 20,
+    height: 20,
+    borderRadius: 4,
+    backgroundColor: '#f1f5f9',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  arrowBtnDisabled: {
+    opacity: 0.35,
+  },
+
+  emptyGalleryBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 24,
+    backgroundColor: '#f8fafc',
+    borderRadius: 12,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#cbd5e1',
+    gap: 4,
+  },
+  emptyGalleryText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+    textAlign: 'center',
+  },
+  emptyGallerySub: {
+    fontSize: 10,
+    color: '#94a3b8',
+    textAlign: 'center',
+    paddingHorizontal: 20,
+  },
+  emptyColorBox: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingVertical: 28,
+    backgroundColor: '#f8fafc',
+    borderRadius: 16,
+    borderWidth: 1,
+    borderStyle: 'dashed',
+    borderColor: '#cbd5e1',
+    gap: 6,
+  },
+  emptyColorTitle: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  emptyColorSub: {
+    fontSize: 11,
+    color: '#94a3b8',
+    textAlign: 'center',
+    paddingHorizontal: 24,
+    lineHeight: 16,
+  },
+
+  presetWrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 4 },
   presetChip: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -2288,7 +3130,7 @@ const styles = StyleSheet.create({
   presetText: { fontSize: 11, color: '#374151', fontWeight: '600' },
   swatch: { width: 14, height: 14, borderRadius: 7, borderWidth: 1, borderColor: '#e5e7eb' },
 
-  inlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 14 },
+  inlineRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 6 },
   addBtn: {
     width: 44,
     height: 44,

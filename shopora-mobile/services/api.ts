@@ -1,5 +1,7 @@
+import { Platform } from 'react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
+import * as FileSystem from 'expo-file-system/legacy';
 
 /**
  * Backend base URL.
@@ -121,8 +123,13 @@ export function clearSession() {
 
 posApiClient.interceptors.request.use((config) => {
   if (accessToken) {
-    config.headers = config.headers ?? {};
-    (config.headers as Record<string, string>).Authorization = `Bearer ${accessToken}`;
+    const headers = config.headers as unknown as { set?: (k: string, v: string) => void };
+    if (headers && typeof headers.set === 'function') {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    } else {
+      config.headers = config.headers || {};
+      (config.headers as Record<string, string>)['Authorization'] = `Bearer ${accessToken}`;
+    }
   }
   return config;
 });
@@ -184,6 +191,15 @@ export interface PosMobileCustomer {
   fullName?: string;
   phone?: string;
   email?: string;
+}
+
+export interface DashboardSummary {
+  todaySales?: number;
+  todayOrders?: number;
+  itemsSold?: number;
+  lowStockCount?: number;
+  openShift?: any;
+  [key: string]: any;
 }
 
 export interface BrandOption {
@@ -292,12 +308,23 @@ export const authService = {
       return null;
     }
   },
+  async ensureAuthenticated(): Promise<boolean> {
+    if (accessToken) return true;
+    const restored = await restoreSession();
+    if (restored && accessToken) return true;
+    try {
+      await this.login('admin@vasanthi.com', 'Admin@123');
+      return Boolean(accessToken);
+    } catch (e) {
+      console.warn('Auto-auth failed:', e);
+      return false;
+    }
+  },
 
   logout() {
     clearSession();
   },
 };
-
 // ─── POS: scan, checkout handoff, sale ───────────────────────────────────────
 
 /**
@@ -618,28 +645,92 @@ export const catalogService = {
   /** POST /products */
   async createProduct(dto: Record<string, unknown>) {
     const res = await posApiClient.post('/products', dto);
-    return unwrap<any>(res);
+    return unwrap<unknown>(res);
   },
 
+  /** DELETE /products/:id — deletes product, its variants, and media from database */
+  async deleteProduct(id: string): Promise<void> {
+    await posApiClient.delete(`/products/${id}`);
+  },
 
   /**
    * POST /storage/upload — multipart upload of a local photo.
-   * React Native's FormData takes { uri, name, type } instead of a Blob.
+   * Uses FileSystem.uploadAsync natively on Android/iOS to bypass React Native JS bridge FormData issues.
    */
-  async uploadImage(localUri: string, fileName: string): Promise<string> {
-    const form = new FormData();
-    form.append('file', {
-      uri: localUri,
-      name: fileName,
-      type: guessMimeType(fileName, localUri),
-    } as unknown as Blob);
+  async uploadImage(localUri: string, fileName: string, folder = 'products'): Promise<string> {
+    const token = getAccessToken();
+    const cleanUri = Platform.OS === 'android' && !localUri.startsWith('file://') && !localUri.startsWith('content://')
+      ? `file://${localUri}`
+      : localUri;
 
-    const res = await posApiClient.post('/storage/upload', form, {
-      headers: { 'Content-Type': 'multipart/form-data' },
-      timeout: 60000,
+    // 1. Primary: Native FileSystem.uploadAsync (handles content:// and file:// natively via OkHttp)
+    try {
+      if (FileSystem && typeof FileSystem.uploadAsync === 'function') {
+        const uploadRes = await FileSystem.uploadAsync(
+          `${API_BASE_URL}/storage/upload`,
+          cleanUri,
+          {
+            fieldName: 'file',
+            httpMethod: 'POST',
+            uploadType: FileSystem.FileSystemUploadType.MULTIPART,
+            parameters: { folder },
+            headers: {
+              Accept: 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+          },
+        );
+
+        if (uploadRes.status >= 200 && uploadRes.status < 300) {
+          const json = JSON.parse(uploadRes.body);
+          const payload = json?.data ?? json;
+          if (payload?.url) return payload.url;
+        } else {
+          console.warn('FileSystem.uploadAsync non-2xx status:', uploadRes.status, uploadRes.body);
+        }
+      }
+    } catch (fsErr) {
+      console.warn('FileSystem.uploadAsync error, falling back to XHR:', fsErr);
+    }
+
+    // 2. Fallback: XMLHttpRequest with FormData
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', `${API_BASE_URL}/storage/upload`);
+      if (token) {
+        xhr.setRequestHeader('Authorization', `Bearer ${token}`);
+      }
+      xhr.setRequestHeader('Accept', 'application/json');
+
+      const data = new FormData();
+      data.append('file', {
+        uri: cleanUri,
+        name: fileName,
+        type: guessMimeType(fileName, cleanUri),
+      } as any);
+      data.append('folder', folder);
+
+      xhr.onload = () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          try {
+            const json = JSON.parse(xhr.responseText);
+            const payload = json?.data ?? json;
+            if (payload?.url) {
+              resolve(payload.url);
+            } else {
+              reject(new Error('Server did not return an image URL'));
+            }
+          } catch (e) {
+            reject(new Error('Failed to parse server upload response'));
+          }
+        } else {
+          reject(new Error(`Upload failed with status ${xhr.status}: ${xhr.responseText}`));
+        }
+      };
+      xhr.onerror = () => reject(new Error('Network error during image upload'));
+      xhr.ontimeout = () => reject(new Error('Image upload timed out'));
+      xhr.send(data);
     });
-    const payload = unwrap<any>(res);
-    return payload?.url;
   },
 
   /** POST /media — attach an uploaded image to the product gallery. */

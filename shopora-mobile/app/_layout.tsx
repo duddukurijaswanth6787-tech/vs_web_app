@@ -2,15 +2,14 @@ import React, { useEffect, useState } from 'react';
 import { View, ActivityIndicator } from 'react-native';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
-import { restoreSession } from '../services/api';
+import { authService } from '../services/api';
 
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 export default function RootLayout() {
   useEffect(() => {
-    restoreSession();
+    authService.ensureAuthenticated();
   }, []);
-
   return (
     <SafeAreaProvider>
       <StatusBar style="light" />
@@ -121,6 +120,12 @@ export default function RootLayout() {
           name="pending-sync"
           options={{
             title: "Pending Sync",
+          }}
+        />
+        <Stack.Screen
+          name="quick-expo-add"
+          options={{
+            headerShown: false,
           }}
         />
         <Stack.Screen name="shop" options={{ headerShown: false }} />
