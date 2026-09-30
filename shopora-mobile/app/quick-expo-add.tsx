@@ -32,6 +32,7 @@ import {
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { pickImagesFromGallery, capturePhotoFromCamera } from '../services/image-picker';
+import { VASANTHI_THERMAL_LOGO_BASE64 } from '../services/brand-logo';
 import {
   authService,
   catalogService,
@@ -81,6 +82,9 @@ const PRESET_COLORS = [
 ];
 
 const PRESET_SIZES = ['Free Size', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
+
+// Official High-Contrast Brand Logo Image (Base64 Data URI)
+const BRAND_LOGO_SOURCE = { uri: `data:image/png;base64,${VASANTHI_THERMAL_LOGO_BASE64}` };
 
 export default function QuickExpoAddScreen() {
   const router = useRouter();
@@ -829,7 +833,7 @@ export default function QuickExpoAddScreen() {
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.content}
-        keyboardShouldPersistTaps="handled"
+        keyboardShouldPersistTaps="always"
       >
         {/* 1. PHOTO PICKER CARD */}
         <View style={styles.card}>
@@ -1089,46 +1093,47 @@ export default function QuickExpoAddScreen() {
             </View>
           ) : (
             displayedRecentProducts.map((item) => (
-              <TouchableOpacity
-                key={item.id}
-                style={styles.recentCard}
-                onPress={() => {
-                  setSelectedProduct(item);
-                  setPreviewVariantIndex(0);
-                  setPreviewCopies(1);
-                }}
-                activeOpacity={0.85}
-              >
-                {item.images && item.images.length > 0 ? (
-                  <Image source={{ uri: item.images[0] }} style={styles.recentThumb} />
-                ) : (
-                  <View style={[styles.recentThumb, styles.placeholderThumb]}>
-                    <Package size={20} color="#94a3b8" />
-                  </View>
-                )}
+              <View key={item.id} style={styles.recentCard}>
+                <TouchableOpacity
+                  style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}
+                  onPress={() => {
+                    setSelectedProduct(item);
+                    setPreviewVariantIndex(0);
+                    setPreviewCopies(1);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  {item.images && item.images.length > 0 ? (
+                    <Image source={{ uri: item.images[0] }} style={styles.recentThumb} />
+                  ) : (
+                    <View style={[styles.recentThumb, styles.placeholderThumb]}>
+                      <Package size={20} color="#94a3b8" />
+                    </View>
+                  )}
 
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.recentItemName} numberOfLines={1}>
-                    {item.name}
-                  </Text>
-                  <Text style={styles.recentItemMeta} numberOfLines={1}>
-                    {item.color} • Sizes: {item.sizes ? item.sizes.join(', ') : 'Free Size'}
-                  </Text>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
-                    <Text style={styles.recentItemStock}>
-                      Stock: {item.totalStock || item.variants?.reduce((s, v) => s + v.stock, 0) || 0} Pcs
+                  <View style={{ flex: 1, marginLeft: 12 }}>
+                    <Text style={styles.recentItemName} numberOfLines={1}>
+                      {item.name}
                     </Text>
-                    {item.addedBy && (
-                      <View style={styles.miniAuthorPill}>
-                        <User size={9} color="#0369a1" />
-                        <Text style={styles.miniAuthorText} numberOfLines={1}>
-                          {item.addedBy.includes('@') ? item.addedBy.split('@')[0] : item.addedBy}
-                        </Text>
-                      </View>
-                    )}
+                    <Text style={styles.recentItemMeta} numberOfLines={1}>
+                      {item.color} • Sizes: {item.sizes ? item.sizes.join(', ') : 'Free Size'}
+                    </Text>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                      <Text style={styles.recentItemStock}>
+                        Stock: {item.totalStock || item.variants?.reduce((s, v) => s + v.stock, 0) || 0} Pcs
+                      </Text>
+                      {item.addedBy && (
+                        <View style={styles.miniAuthorPill}>
+                          <User size={9} color="#0369a1" />
+                          <Text style={styles.miniAuthorText} numberOfLines={1}>
+                            {item.addedBy.includes('@') ? item.addedBy.split('@')[0] : item.addedBy}
+                          </Text>
+                        </View>
+                      )}
+                    </View>
+                    <Text style={styles.recentItemPrice}>₹{item.price.toLocaleString('en-IN')}</Text>
                   </View>
-                  <Text style={styles.recentItemPrice}>₹{item.price.toLocaleString('en-IN')}</Text>
-                </View>
+                </TouchableOpacity>
 
                 <TouchableOpacity
                   style={styles.reprintIconBtn}
@@ -1142,7 +1147,7 @@ export default function QuickExpoAddScreen() {
                   <Printer size={16} color="#0284c7" />
                   <Text style={styles.reprintIconText}>Print</Text>
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             ))
           )}
         </View>
@@ -1179,14 +1184,12 @@ export default function QuickExpoAddScreen() {
                   {/* 1. VISUAL THERMAL STICKER DEMO CONTAINER */}
                   <View style={styles.thermalStickerDemoCard}>
                     <View style={styles.stickerHeaderRow}>
-                      <View style={styles.stickerBrandLogoRow}>
-                        <View style={styles.stickerLogoBadge}>
-                          <Text style={styles.stickerLogoSymbol}>❖</Text>
-                        </View>
-                        <View>
-                          <Text style={styles.stickerStoreName}>VASANTHI&apos;S SIGNATURE</Text>
-                          <Text style={styles.stickerStoreTagline}>LUXURY COUTURE • HYDERABAD</Text>
-                        </View>
+                      <View style={{ flex: 1, alignItems: 'flex-start' }}>
+                        <Image
+                          source={BRAND_LOGO_SOURCE}
+                          style={styles.stickerBrandLogoImg}
+                          resizeMode="contain"
+                        />
                       </View>
                       <View style={styles.stickerDimensionBadge}>
                         <Text style={styles.stickerDimensionBadgeText}>
@@ -2111,39 +2114,12 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
-    paddingBottom: 8,
+    paddingBottom: 6,
     marginBottom: 8,
   },
-  stickerBrandLogoRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  stickerLogoBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 6,
-    backgroundColor: '#0284c7',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  stickerLogoSymbol: {
-    color: '#ffffff',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  stickerStoreName: {
-    fontSize: 11,
-    fontWeight: '900',
-    color: '#0f172a',
-    letterSpacing: 0.6,
-  },
-  stickerStoreTagline: {
-    fontSize: 7.5,
-    fontWeight: '700',
-    color: '#64748b',
-    letterSpacing: 0.3,
-    marginTop: -1,
+  stickerBrandLogoImg: {
+    width: 155,
+    height: 58,
   },
   stickerDimensionBadge: {
     backgroundColor: '#f1f5f9',
