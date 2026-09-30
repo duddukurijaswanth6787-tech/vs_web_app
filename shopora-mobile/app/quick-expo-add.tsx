@@ -146,7 +146,15 @@ export default function QuickExpoAddScreen() {
           }
 
           const typedProducts = liveProducts as unknown as LiveProductItem[];
-          apiItems = typedProducts.map((p) => {
+          const expoOnlyProducts = typedProducts.filter((p) => {
+            return (
+              p.channel === 'STORE' ||
+              p.channel === 'STORE_EXPO' ||
+              p.channel === 'POS_ONLY' ||
+              p.channel === 'POS_SHOPORA'
+            );
+          });
+          apiItems = expoOnlyProducts.map((p) => {
             const primaryImg =
               p.media?.find((m) => m.isPrimary)?.url ||
               p.media?.[0]?.url ||
