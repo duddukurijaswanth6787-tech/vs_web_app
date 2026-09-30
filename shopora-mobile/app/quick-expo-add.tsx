@@ -26,6 +26,9 @@ import {
   Minus,
   CheckCircle2,
   Trash2,
+  User,
+  Globe,
+  Tag,
 } from 'lucide-react-native';
 import * as SecureStore from 'expo-secure-store';
 import { pickImagesFromGallery, capturePhotoFromCamera } from '../services/image-picker';
@@ -105,6 +108,13 @@ export default function QuickExpoAddScreen() {
   const [createdProductSuccess, setCreatedProductSuccess] = useState<QuickProductRecord | null>(null);
   const [printingKey, setPrintingKey] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // Account Scope & Label Studio State
+  const [accountScope, setAccountScope] = useState<'ALL_ITEMS' | 'MY_ITEMS'>('ALL_ITEMS');
+  const [previewVariantIndex, setPreviewVariantIndex] = useState(0);
+  const [previewLabelSize, setPreviewLabelSize] = useState<'75x50' | '50x25'>('75x50');
+  const [previewCopies, setPreviewCopies] = useState(1);
+
   const loadRecentProducts = useCallback(async () => {
     try {
       let localItems: QuickProductRecord[] = [];
@@ -345,6 +355,38 @@ export default function QuickExpoAddScreen() {
       setPrintingKey(null);
     }
   };
+  // Print label with chosen copies and dimensions
+  const handlePrintStudioLabel = async (
+    productName: string,
+    variant: VariantDetail,
+    priceVal: number,
+    copies: number,
+    sizeMode: '75x50' | '50x25',
+  ) => {
+    const key = variant.id || variant.barcode;
+    setPrintingKey(key);
+    try {
+      await bluetoothPrinterService.printLabel({
+        productName,
+        variantTitle: `Size: ${variant.size} | ${variant.color}`,
+        barcode: variant.barcode,
+        sku: variant.sku,
+        price: priceVal,
+        storeName: "VASANTHI'S SIGNATURE",
+        widthMm: sizeMode === '50x25' ? 50 : 75,
+        heightMm: sizeMode === '50x25' ? 25 : 50,
+        quantity: copies,
+      });
+      Alert.alert('Printed', `Printed ${copies} sticker(s) for Size ${variant.size}!`);
+    } catch (e: any) {
+      Alert.alert(
+        'Printer not connected',
+        `Barcode: ${variant.barcode}\nSKU: ${variant.sku}\nPrice: ₹${priceVal}\n\nConnect Bluetooth printer in Printer settings.`,
+      );
+    } finally {
+      setPrintingKey(null);
+    }
+  };
 
   // Print all barcode labels for product
   const handlePrintAllVariants = async (item: QuickProductRecord) => {
@@ -358,8 +400,8 @@ export default function QuickExpoAddScreen() {
           sku: v.sku,
           price: item.price,
           storeName: "VASANTHI'S SIGNATURE",
-          widthMm: 75,
-          heightMm: 50,
+          widthMm: previewLabelSize === '50x25' ? 50 : 75,
+          heightMm: previewLabelSize === '50x25' ? 25 : 50,
           quantity: 1,
         });
       }
@@ -608,6 +650,20 @@ export default function QuickExpoAddScreen() {
       setProgress('');
     }
   };
+  const myProductsCount = recentProducts.filter((p) => {
+    const email = currentUser?.email?.toLowerCase().trim();
+    const addedBy = p.addedBy?.toLowerCase().trim();
+    return !addedBy || addedBy === email || addedBy.includes('admin') || addedBy === 'store staff';
+  }).length;
+
+  const displayedRecentProducts = recentProducts.filter((p) => {
+    if (accountScope === 'MY_ITEMS') {
+      const email = currentUser?.email?.toLowerCase().trim();
+      const addedBy = p.addedBy?.toLowerCase().trim();
+      return !addedBy || addedBy === email || addedBy.includes('admin') || addedBy === 'store staff';
+    }
+    return true;
+  });
 
   // If product was just created, display Page 2 (Confirmation & Action Hub)
   if (createdProductSuccess) {
@@ -984,31 +1040,63 @@ export default function QuickExpoAddScreen() {
             </View>
           )}
         </TouchableOpacity>
-
         {/* RECENTLY ADDED SECTION */}
         <View style={styles.recentSection}>
           <View style={styles.recentHeaderRow}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Clock size={18} color="#0f172a" />
               <Text style={styles.recentSectionTitle}>
-                Recently Added Products ({recentProducts.length})
+                Store &amp; Expo Products ({displayedRecentProducts.length})
               </Text>
             </View>
             <TouchableOpacity onPress={loadRecentProducts} activeOpacity={0.7} style={{ padding: 4 }}>
               <RefreshCw size={15} color="#0284c7" />
             </TouchableOpacity>
           </View>
-          {recentProducts.length === 0 ? (
+          {/* Account Filter Switcher Tabs */}
+          <View style={styles.scopeTabsContainer}>
+            <TouchableOpacity
+              style={[styles.scopeTabBtn, accountScope === 'ALL_ITEMS' && styles.scopeTabBtnActive]}
+              onPress={() => setAccountScope('ALL_ITEMS')}
+              activeOpacity={0.8}
+            >
+              <Globe size={13} color={accountScope === 'ALL_ITEMS' ? '#ffffff' : '#0284c7'} />
+              <Text style={[styles.scopeTabBtnText, accountScope === 'ALL_ITEMS' && styles.scopeTabBtnTextActive]}>
+                All Store &amp; Expo ({recentProducts.length})
+              </Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.scopeTabBtn, accountScope === 'MY_ITEMS' && styles.scopeTabBtnActive]}
+              onPress={() => setAccountScope('MY_ITEMS')}
+              activeOpacity={0.8}
+            >
+              <User size={13} color={accountScope === 'MY_ITEMS' ? '#ffffff' : '#0284c7'} />
+              <Text style={[styles.scopeTabBtnText, accountScope === 'MY_ITEMS' && styles.scopeTabBtnTextActive]}>
+                My Added ({myProductsCount})
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          {displayedRecentProducts.length === 0 ? (
             <View style={styles.emptyRecent}>
               <Package size={28} color="#94a3b8" />
-              <Text style={styles.emptyRecentText}>No products added yet from this phone.</Text>
+              <Text style={styles.emptyRecentText}>
+                {accountScope === 'MY_ITEMS'
+                  ? 'No products added yet by your account.'
+                  : 'No store or expo products added yet.'}
+              </Text>
             </View>
           ) : (
-            recentProducts.map((item) => (
+            displayedRecentProducts.map((item) => (
               <TouchableOpacity
                 key={item.id}
                 style={styles.recentCard}
-                onPress={() => setSelectedProduct(item)}
+                onPress={() => {
+                  setSelectedProduct(item);
+                  setPreviewVariantIndex(0);
+                  setPreviewCopies(1);
+                }}
                 activeOpacity={0.85}
               >
                 {item.images && item.images.length > 0 ? (
@@ -1026,26 +1114,33 @@ export default function QuickExpoAddScreen() {
                   <Text style={styles.recentItemMeta} numberOfLines={1}>
                     {item.color} • Sizes: {item.sizes ? item.sizes.join(', ') : 'Free Size'}
                   </Text>
-                  <Text style={styles.recentItemStock}>
-                    Total Stock: {item.totalStock || item.variants?.reduce((s, v) => s + v.stock, 0) || 0} Pcs
-                  </Text>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                    <Text style={styles.recentItemStock}>
+                      Stock: {item.totalStock || item.variants?.reduce((s, v) => s + v.stock, 0) || 0} Pcs
+                    </Text>
+                    {item.addedBy && (
+                      <View style={styles.miniAuthorPill}>
+                        <User size={9} color="#0369a1" />
+                        <Text style={styles.miniAuthorText} numberOfLines={1}>
+                          {item.addedBy.includes('@') ? item.addedBy.split('@')[0] : item.addedBy}
+                        </Text>
+                      </View>
+                    )}
+                  </View>
                   <Text style={styles.recentItemPrice}>₹{item.price.toLocaleString('en-IN')}</Text>
                 </View>
 
                 <TouchableOpacity
                   style={styles.reprintIconBtn}
-                  onPress={() => handlePrintAllVariants(item)}
-                  disabled={printingKey === 'ALL'}
+                  onPress={() => {
+                    setSelectedProduct(item);
+                    setPreviewVariantIndex(0);
+                    setPreviewCopies(1);
+                  }}
                   activeOpacity={0.8}
                 >
-                  {printingKey === 'ALL' ? (
-                    <ActivityIndicator size="small" color="#0284c7" />
-                  ) : (
-                    <>
-                      <Printer size={16} color="#0284c7" />
-                      <Text style={styles.reprintIconText}>Print</Text>
-                    </>
-                  )}
+                  <Printer size={16} color="#0284c7" />
+                  <Text style={styles.reprintIconText}>Print</Text>
                 </TouchableOpacity>
               </TouchableOpacity>
             ))
@@ -1053,119 +1148,240 @@ export default function QuickExpoAddScreen() {
         </View>
       </ScrollView>
 
-      {/* DETAIL PREVIEW MODAL */}
+      {/* DEDICATED THERMAL LABEL PRINTING STUDIO & BARCODE DEMO MODAL */}
       <Modal visible={Boolean(selectedProduct)} transparent animationType="slide">
         <View style={styles.modalBackdrop}>
-          <View style={styles.modalBox}>
+          <View style={[styles.modalBox, { maxHeight: '92%' }]}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Product & Barcode Details</Text>
-              <TouchableOpacity onPress={() => setSelectedProduct(null)} activeOpacity={0.7}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.modalTitle}>🖨️ Thermal Label Studio</Text>
+                <Text style={styles.modalSub}>Live Barcode &amp; Sticker Preview Demo</Text>
+              </View>
+              <TouchableOpacity onPress={() => setSelectedProduct(null)} activeOpacity={0.7} style={{ padding: 4 }}>
                 <X size={22} color="#0f172a" />
               </TouchableOpacity>
             </View>
 
-            {selectedProduct && (
-              <ScrollView style={{ maxHeight: 450 }}>
-                {selectedProduct.images && selectedProduct.images.length > 0 && (
-                  <Image
-                    source={{ uri: selectedProduct.images[0] }}
-                    style={styles.modalProductImg}
-                    resizeMode="cover"
-                  />
-                )}
-                <Text style={styles.modalProductName}>{selectedProduct.name}</Text>
-                <Text style={styles.modalProductPrice}>₹{selectedProduct.price.toLocaleString('en-IN')}</Text>
+            {selectedProduct && (() => {
+              const activeVariant =
+                selectedProduct.variants?.[previewVariantIndex] ||
+                selectedProduct.variants?.[0] || {
+                  id: selectedProduct.id,
+                  size: 'Free Size',
+                  color: selectedProduct.color,
+                  stock: selectedProduct.totalStock || 1,
+                  barcode: selectedProduct.barcode || `BC-${Date.now()}`,
+                  sku: selectedProduct.sku || `SKU-${Date.now()}`,
+                };
 
-                <View style={styles.modalInfoRow}>
-                  <Text style={styles.modalInfoLabel}>Colour:</Text>
-                  <Text style={styles.modalInfoVal}>{selectedProduct.color}</Text>
-                </View>
-                <View style={styles.modalInfoRow}>
-                  <Text style={styles.modalInfoLabel}>Created At:</Text>
-                  <Text style={styles.modalInfoVal}>
-                    {new Date(selectedProduct.createdAt).toLocaleString('en-IN')}
-                  </Text>
-                </View>
-                {selectedProduct.addedBy && (
-                  <View style={styles.modalInfoRow}>
-                    <Text style={styles.modalInfoLabel}>Added By:</Text>
-                    <Text style={styles.modalInfoVal}>{selectedProduct.addedBy}</Text>
-                  </View>
-                )}
-
-                {/* Per-Variant List with individual barcodes & print buttons */}
-                <Text style={styles.modalVariantsHeading}>Size Variants & Barcodes</Text>
-                {selectedProduct.variants && selectedProduct.variants.length > 0 ? (
-                  selectedProduct.variants.map((v, i) => (
-                    <View key={i} style={styles.modalVariantCard}>
-                      <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-                          <View style={styles.miniSizeBadge}>
-                            <Text style={styles.miniSizeBadgeText}>{v.size}</Text>
-                          </View>
-                          <Text style={styles.modalVariantStock}>{v.stock} Pcs in Stock</Text>
-                        </View>
-                        <Text style={styles.modalVariantBarcode}>BC: {v.barcode}</Text>
-                        <Text style={styles.modalVariantSku}>SKU: {v.sku}</Text>
+              return (
+                <ScrollView style={{ flexGrow: 0 }} showsVerticalScrollIndicator={false}>
+                  {/* 1. VISUAL THERMAL STICKER DEMO CONTAINER */}
+                  <View style={styles.thermalStickerDemoCard}>
+                    <View style={styles.stickerHeaderRow}>
+                      <Text style={styles.stickerStoreName}>❖ VASANTHI&apos;S SIGNATURE</Text>
+                      <View style={styles.stickerDimensionBadge}>
+                        <Text style={styles.stickerDimensionBadgeText}>
+                          {previewLabelSize === '50x25' ? '50×25mm' : '75×50mm'}
+                        </Text>
                       </View>
+                    </View>
 
-                      <TouchableOpacity
-                        style={styles.modalPrintVariantBtn}
-                        onPress={() => handlePrintSingleVariant(selectedProduct.name, v, selectedProduct.price)}
-                        disabled={printingKey === (v.id || v.barcode)}
-                        activeOpacity={0.8}
+                    <Text style={styles.stickerProductName} numberOfLines={2}>
+                      {selectedProduct.name}
+                    </Text>
+
+                    <View style={styles.stickerMetaRow}>
+                      <Text style={styles.stickerColorText}>{activeVariant.color || selectedProduct.color}</Text>
+                      <Text style={styles.stickerDot}>•</Text>
+                      <Text style={styles.stickerSizeText}>Size: {activeVariant.size}</Text>
+                    </View>
+
+                    {/* Simulated High-Resolution Code128 Thermal Barcode Sequence */}
+                    <View style={styles.barcodeDemoContainer}>
+                      <View style={styles.barcodeLinesRow}>
+                        {[
+                          2, 1, 3, 1, 4, 2, 1, 3, 2, 1, 4, 1, 2, 3, 1, 2, 4, 1, 3, 2,
+                          1, 4, 2, 1, 3, 1, 2, 4, 1, 3, 2, 1, 4, 1, 3, 2, 1, 4, 2, 1,
+                          3, 1, 4, 2, 1, 3, 2, 1, 4, 1, 2, 3, 1, 2, 4, 1, 3, 2, 1, 4,
+                        ].map((w, idx) => (
+                          <View
+                            key={idx}
+                            style={[
+                              styles.barcodeBar,
+                              {
+                                width: w * 1.5,
+                                backgroundColor: idx % 2 === 0 ? '#000000' : 'transparent',
+                              },
+                            ]}
+                          />
+                        ))}
+                      </View>
+                      <Text style={styles.barcodeNumberText}>{activeVariant.barcode || activeVariant.sku}</Text>
+                    </View>
+
+                    {/* Price Tag Row */}
+                    <View style={styles.stickerPriceRow}>
+                      <Text style={styles.stickerPriceLabel}>M.R.P. Incl. of all taxes</Text>
+                      <Text style={styles.stickerPriceValue}>₹{selectedProduct.price.toLocaleString('en-IN')}</Text>
+                    </View>
+                  </View>
+
+                  {/* 2. LABEL SIZE TOGGLE BUTTONS */}
+                  <Text style={styles.studioSectionTitle}>Label Dimensions</Text>
+                  <View style={styles.studioSizeRow}>
+                    <TouchableOpacity
+                      style={[styles.studioSizeBtn, previewLabelSize === '75x50' && styles.studioSizeBtnActive]}
+                      onPress={() => setPreviewLabelSize('75x50')}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.studioSizeBtnText,
+                          previewLabelSize === '75x50' && styles.studioSizeBtnTextActive,
+                        ]}
                       >
-                        {printingKey === (v.id || v.barcode) ? (
+                        75 × 50 mm (Standard Label)
+                      </Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={[styles.studioSizeBtn, previewLabelSize === '50x25' && styles.studioSizeBtnActive]}
+                      onPress={() => setPreviewLabelSize('50x25')}
+                      activeOpacity={0.8}
+                    >
+                      <Text
+                        style={[
+                          styles.studioSizeBtnText,
+                          previewLabelSize === '50x25' && styles.studioSizeBtnTextActive,
+                        ]}
+                      >
+                        50 × 25 mm (Compact Tag)
+                      </Text>
+                    </TouchableOpacity>
+                  </View>
+
+                  {/* 3. SIZE VARIANT SELECTOR */}
+                  {selectedProduct.variants && selectedProduct.variants.length > 1 && (
+                    <View style={{ marginTop: 12 }}>
+                      <Text style={styles.studioSectionTitle}>Select Variant to Print</Text>
+                      <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 4 }}>
+                        {selectedProduct.variants.map((v, i) => {
+                          const isSelected = (previewVariantIndex === i);
+                          return (
+                            <TouchableOpacity
+                              key={v.id || i}
+                              style={[styles.variantSelectChip, isSelected && styles.variantSelectChipActive]}
+                              onPress={() => setPreviewVariantIndex(i)}
+                              activeOpacity={0.8}
+                            >
+                              <Text
+                                style={[
+                                  styles.variantSelectChipText,
+                                  isSelected && styles.variantSelectChipTextActive,
+                                ]}
+                              >
+                                {v.size} ({v.stock} Pcs)
+                              </Text>
+                            </TouchableOpacity>
+                          );
+                        })}
+                      </ScrollView>
+                    </View>
+                  )}
+
+                  {/* 4. COPIES SELECTOR STEPPER */}
+                  <View style={styles.copiesSectionRow}>
+                    <Text style={styles.studioSectionTitle}>Sticker Copies</Text>
+                    <View style={styles.copiesStepperBox}>
+                      <TouchableOpacity
+                        style={styles.copiesStepperBtn}
+                        onPress={() => setPreviewCopies((c) => Math.max(1, c - 1))}
+                        activeOpacity={0.7}
+                      >
+                        <Minus size={16} color="#0284c7" />
+                      </TouchableOpacity>
+                      <Text style={styles.copiesCountText}>{previewCopies}</Text>
+                      <TouchableOpacity
+                        style={styles.copiesStepperBtn}
+                        onPress={() => setPreviewCopies((c) => Math.min(100, c + 1))}
+                        activeOpacity={0.7}
+                      >
+                        <Plus size={16} color="#0284c7" />
+                      </TouchableOpacity>
+                    </View>
+                  </View>
+
+                  {/* 5. DEDICATED PRINT ACTIONS */}
+                  <View style={{ gap: 10, marginTop: 14 }}>
+                    {/* Primary Print Active Label */}
+                    <TouchableOpacity
+                      style={styles.studioPrintBtn}
+                      onPress={() =>
+                        handlePrintStudioLabel(
+                          selectedProduct.name,
+                          activeVariant,
+                          selectedProduct.price,
+                          previewCopies,
+                          previewLabelSize,
+                        )
+                      }
+                      disabled={printingKey === (activeVariant.id || activeVariant.barcode)}
+                      activeOpacity={0.85}
+                    >
+                      {printingKey === (activeVariant.id || activeVariant.barcode) ? (
+                        <ActivityIndicator size="small" color="#ffffff" />
+                      ) : (
+                        <>
+                          <Printer size={18} color="#ffffff" />
+                          <Text style={styles.studioPrintBtnText}>
+                            🖨️ Print Label ({previewCopies} {previewCopies === 1 ? 'Copy' : 'Copies'})
+                          </Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
+
+                    {/* Print All Variants if multiple */}
+                    {selectedProduct.variants && selectedProduct.variants.length > 1 && (
+                      <TouchableOpacity
+                        style={styles.studioPrintAllBtn}
+                        onPress={() => handlePrintAllVariants(selectedProduct)}
+                        disabled={printingKey === 'ALL'}
+                        activeOpacity={0.85}
+                      >
+                        {printingKey === 'ALL' ? (
                           <ActivityIndicator size="small" color="#0284c7" />
                         ) : (
                           <>
-                            <Printer size={14} color="#0284c7" />
-                            <Text style={styles.modalPrintVariantBtnText}>Print</Text>
+                            <Printer size={16} color="#0284c7" />
+                            <Text style={styles.studioPrintAllBtnText}>
+                              📑 Print All {selectedProduct.variants.length} Sizes
+                            </Text>
                           </>
                         )}
                       </TouchableOpacity>
-                    </View>
-                  ))
-                ) : (
-                  <View style={styles.modalInfoRow}>
-                    <Text style={styles.modalInfoLabel}>Barcode:</Text>
-                    <Text style={[styles.modalInfoVal, { fontFamily: 'monospace', color: '#0284c7' }]}>
-                      {selectedProduct.barcode}
-                    </Text>
+                    )}
+
+                    {/* Delete Product from Database */}
+                    <TouchableOpacity
+                      style={styles.modalDeleteBtn}
+                      onPress={() => handleDeleteProduct(selectedProduct)}
+                      disabled={deletingId === selectedProduct.id}
+                      activeOpacity={0.85}
+                    >
+                      {deletingId === selectedProduct.id ? (
+                        <ActivityIndicator size="small" color="#dc2626" />
+                      ) : (
+                        <>
+                          <Trash2 size={16} color="#dc2626" />
+                          <Text style={styles.modalDeleteBtnText}>Delete Product from Database</Text>
+                        </>
+                      )}
+                    </TouchableOpacity>
                   </View>
-                )}
-
-                {/* Print All Button */}
-                <TouchableOpacity
-                  style={styles.modalPrintBtn}
-                  onPress={() => {
-                    handlePrintAllVariants(selectedProduct);
-                    setSelectedProduct(null);
-                  }}
-                  activeOpacity={0.85}
-                >
-                  <Printer size={18} color="#ffffff" />
-                  <Text style={styles.modalPrintBtnText}>🖨️ Print All Size Barcode Labels</Text>
-                </TouchableOpacity>
-
-                {/* Delete Product from Database Button */}
-                <TouchableOpacity
-                  style={styles.modalDeleteBtn}
-                  onPress={() => handleDeleteProduct(selectedProduct)}
-                  disabled={deletingId === selectedProduct.id}
-                  activeOpacity={0.85}
-                >
-                  {deletingId === selectedProduct.id ? (
-                    <ActivityIndicator size="small" color="#dc2626" />
-                  ) : (
-                    <>
-                      <Trash2 size={16} color="#dc2626" />
-                      <Text style={styles.modalDeleteBtnText}>Delete Product from Database</Text>
-                    </>
-                  )}
-                </TouchableOpacity>
-              </ScrollView>
-            )}
+                </ScrollView>
+              );
+            })()}
           </View>
         </View>
       </Modal>
@@ -1818,5 +2034,287 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '700',
     color: '#475569',
+  },
+  scopeTabsContainer: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  scopeTabBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+  },
+  scopeTabBtnActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
+  },
+  scopeTabBtnText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+  scopeTabBtnTextActive: {
+    color: '#ffffff',
+  },
+  miniAuthorPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+    backgroundColor: '#e0f2fe',
+    paddingHorizontal: 5,
+    paddingVertical: 1,
+    borderRadius: 4,
+  },
+  miniAuthorText: {
+    fontSize: 9,
+    fontWeight: '700',
+    color: '#0369a1',
+  },
+  modalSub: {
+    fontSize: 12,
+    color: '#64748b',
+    marginTop: 1,
+  },
+  thermalStickerDemoCard: {
+    backgroundColor: '#ffffff',
+    borderColor: '#94a3b8',
+    borderWidth: 1.5,
+    borderStyle: 'dashed',
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  stickerHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f5f9',
+    paddingBottom: 6,
+    marginBottom: 8,
+  },
+  stickerStoreName: {
+    fontSize: 11,
+    fontWeight: '900',
+    color: '#0f172a',
+    letterSpacing: 0.8,
+  },
+  stickerDimensionBadge: {
+    backgroundColor: '#f1f5f9',
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  stickerDimensionBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#475569',
+  },
+  stickerProductName: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
+    lineHeight: 18,
+  },
+  stickerMetaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginTop: 4,
+    marginBottom: 10,
+  },
+  stickerColorText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#475569',
+  },
+  stickerDot: {
+    color: '#94a3b8',
+    fontSize: 12,
+  },
+  stickerSizeText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0284c7',
+  },
+  barcodeDemoContainer: {
+    backgroundColor: '#fafafa',
+    borderWidth: 1,
+    borderColor: '#e2e8f0',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 8,
+    alignItems: 'center',
+    marginVertical: 4,
+  },
+  barcodeLinesRow: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    height: 40,
+    gap: 1.5,
+    marginBottom: 6,
+  },
+  barcodeBar: {
+    height: '100%',
+    borderRadius: 0.5,
+  },
+  barcodeNumberText: {
+    fontFamily: 'monospace',
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#0f172a',
+    letterSpacing: 1.5,
+  },
+  stickerPriceRow: {
+    flexDirection: 'row',
+    alignItems: 'baseline',
+    justifyContent: 'space-between',
+    borderTopWidth: 1,
+    borderTopColor: '#f1f5f9',
+    paddingTop: 8,
+    marginTop: 8,
+  },
+  stickerPriceLabel: {
+    fontSize: 10,
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  stickerPriceValue: {
+    fontSize: 16,
+    fontWeight: '900',
+    color: '#0284c7',
+  },
+  studioSectionTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#334155',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+    marginBottom: 6,
+  },
+  studioSizeRow: {
+    flexDirection: 'row',
+    gap: 8,
+    marginBottom: 12,
+  },
+  studioSizeBtn: {
+    flex: 1,
+    paddingVertical: 9,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  studioSizeBtnActive: {
+    backgroundColor: '#e0f2fe',
+    borderColor: '#0284c7',
+  },
+  studioSizeBtnText: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  studioSizeBtnTextActive: {
+    color: '#0284c7',
+  },
+  variantSelectChip: {
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 8,
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    marginRight: 8,
+  },
+  variantSelectChipActive: {
+    backgroundColor: '#0284c7',
+    borderColor: '#0284c7',
+  },
+  variantSelectChipText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#475569',
+  },
+  variantSelectChipTextActive: {
+    color: '#ffffff',
+  },
+  copiesSectionRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: 12,
+    marginBottom: 6,
+  },
+  copiesStepperBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f8fafc',
+    borderWidth: 1,
+    borderColor: '#cbd5e1',
+    borderRadius: 8,
+    paddingHorizontal: 4,
+    paddingVertical: 2,
+    gap: 12,
+  },
+  copiesStepperBtn: {
+    padding: 6,
+  },
+  copiesCountText: {
+    fontSize: 14,
+    fontWeight: '800',
+    color: '#0f172a',
+    minWidth: 20,
+    textAlign: 'center',
+  },
+  studioPrintBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#0284c7',
+    borderRadius: 12,
+    paddingVertical: 14,
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.2,
+    shadowRadius: 6,
+    elevation: 3,
+  },
+  studioPrintBtnText: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#ffffff',
+  },
+  studioPrintAllBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    backgroundColor: '#f0f9ff',
+    borderWidth: 1,
+    borderColor: '#bae6fd',
+    borderRadius: 12,
+    paddingVertical: 12,
+  },
+  studioPrintAllBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#0284c7',
   },
 });
