@@ -119,6 +119,18 @@ describe('PosService returns', () => {
           provide: (await import('@database/prisma.service')).PrismaService,
           useValue: {},
         },
+        {
+          provide: (await import('@domains/telegram/telegram.service')).TelegramService,
+          useValue: {
+            sendOrderNotification: jest.fn().mockResolvedValue(undefined),
+            sendOrderStatusUpdate: jest.fn().mockResolvedValue(undefined),
+            sendPosSaleAlert: jest.fn().mockResolvedValue(undefined),
+            sendRefundNotification: jest.fn().mockResolvedValue(undefined),
+            sendDailySalesReport: jest.fn().mockResolvedValue(undefined),
+            sendLowStockAlert: jest.fn().mockResolvedValue(undefined),
+            sendShiftCloseAlert: jest.fn().mockResolvedValue(undefined),
+          },
+        },
       ],
     }).compile();
 

@@ -50,7 +50,6 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
   }, [clientId, scriptLoaded, onCredential]);
 
   const handleFallbackClick = () => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const gsi = (window as unknown as { google?: { accounts?: { id?: { prompt?: () => void } } } })?.google?.accounts?.id;
     if (clientId && gsi?.prompt) {
       gsi.prompt();

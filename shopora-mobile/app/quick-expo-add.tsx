@@ -107,11 +107,133 @@ export default function QuickExpoAddScreen() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const loadRecentProducts = useCallback(async () => {
     try {
+      let localItems: QuickProductRecord[] = [];
       const raw = await SecureStore.getItemAsync(STORAGE_KEY_RECENT_EXPO);
       if (raw) {
-        const parsed: QuickProductRecord[] = JSON.parse(raw);
-        setRecentProducts(parsed);
+        try {
+          localItems = JSON.parse(raw);
+        } catch {
+          // ignore parse error
+        }
       }
+
+      // Also fetch latest items from live backend catalog
+      let apiItems: QuickProductRecord[] = [];
+      try {
+        const liveProducts = await catalogService.listProducts({ limit: 20 });
+        if (Array.isArray(liveProducts)) {
+          interface LiveProductVariant {
+            id: string;
+            sku?: string;
+            barcode?: string;
+            title?: string;
+            availableQuantity?: number;
+            inventory?: Array<{ quantity: number }>;
+            attributeValues?: Array<{ attributeName?: string; attribute?: { slug?: string }; value?: string }>;
+          }
+          interface LiveProductItem {
+            id: string;
+            name: string;
+            basePrice: number;
+            salePrice?: number;
+            channel?: string;
+            primaryImageUrl?: string;
+            barcode?: string;
+            sku?: string;
+            createdAt?: string;
+            media?: Array<{ url: string; isPrimary?: boolean }>;
+            variants?: LiveProductVariant[];
+          }
+
+          const typedProducts = liveProducts as unknown as LiveProductItem[];
+          apiItems = typedProducts.map((p) => {
+            const primaryImg =
+              p.media?.find((m) => m.isPrimary)?.url ||
+              p.media?.[0]?.url ||
+              p.primaryImageUrl ||
+              '';
+            const allImgs = p.media
+              ? p.media.map((m) => m.url).filter(Boolean)
+              : primaryImg
+                ? [primaryImg]
+                : [];
+
+            const variants: VariantDetail[] = Array.isArray(p.variants)
+              ? p.variants.map((v) => {
+                  const sizeAttr = v.attributeValues?.find(
+                    (av) =>
+                      av.attributeName?.toLowerCase() === 'size' ||
+                      av.attribute?.slug === 'size',
+                  )?.value;
+                  const colorAttr = v.attributeValues?.find(
+                    (av) =>
+                      av.attributeName?.toLowerCase() === 'color' ||
+                      av.attribute?.slug === 'color',
+                  )?.value;
+                  const stockQty =
+                    v.availableQuantity ??
+                    (v.inventory?.reduce(
+                      (s, inv) => s + (inv.quantity || 0),
+                      0,
+                    ) ??
+                      1);
+                  return {
+                    id: v.id,
+                    size: sizeAttr || v.title?.split('/')?.[1]?.trim() || 'Free Size',
+                    color: colorAttr || v.title?.split('/')?.[0]?.trim() || 'Standard',
+                    stock: stockQty,
+                    barcode: v.barcode || v.sku || `BC-${p.id}`,
+                    sku: v.sku || `SKU-${p.id}`,
+                  };
+                })
+              : [];
+
+            const totalStock = variants.reduce((sum, v) => sum + v.stock, 0);
+            const sizes = Array.from(new Set(variants.map((v) => v.size)));
+
+            return {
+              id: p.id,
+              name: p.name,
+              price: p.salePrice || p.basePrice || 0,
+              color: variants[0]?.color || 'Standard',
+              sizes: sizes.length > 0 ? sizes : ['Free Size'],
+              totalStock: totalStock > 0 ? totalStock : 1,
+              barcode: p.barcode || p.sku || variants[0]?.barcode || `BC-${p.id}`,
+              sku: p.sku || variants[0]?.sku || `SKU-${p.id}`,
+              variants:
+                variants.length > 0
+                  ? variants
+                  : [
+                      {
+                        id: p.id,
+                        size: 'Free Size',
+                        color: 'Standard',
+                        stock: 1,
+                        barcode: p.barcode || p.sku || `BC-${p.id}`,
+                        sku: p.sku || `SKU-${p.id}`,
+                      },
+                    ],
+              images: allImgs,
+              createdAt: p.createdAt || new Date().toISOString(),
+              addedBy: p.channel || 'Catalog',
+            };
+          });
+        }
+      } catch (apiErr) {
+        console.warn('Could not fetch live catalog items for recent list:', apiErr);
+      }
+
+      // Merge & deduplicate by ID with local items taking precedence
+      const combinedMap = new Map<string, QuickProductRecord>();
+      localItems.forEach((item) => combinedMap.set(item.id, item));
+      apiItems.forEach((item) => {
+        if (!combinedMap.has(item.id)) {
+          combinedMap.set(item.id, item);
+        }
+      });
+
+      const merged = Array.from(combinedMap.values());
+      setRecentProducts(merged);
     } catch (e) {
       console.error('Failed to load recent expo products:', e);
     }
@@ -120,7 +242,6 @@ export default function QuickExpoAddScreen() {
   useEffect(() => {
     loadRecentProducts();
   }, [loadRecentProducts]);
-
   const saveToRecent = async (item: QuickProductRecord) => {
     try {
       const updated = [item, ...recentProducts.filter((p) => p.id !== item.id)].slice(0, 30);
@@ -332,7 +453,10 @@ export default function QuickExpoAddScreen() {
         ...(defaultCategoryId ? { categoryIds: [defaultCategoryId] } : {}),
       });
 
-      const productId = created?.id;
+      const productId =
+        created && typeof created === 'object' && 'id' in created
+          ? String((created as Record<string, unknown>).id)
+          : '';
       if (!productId) throw new Error('API did not return a product id.');
 
       // 3. Fast Parallel Upload Images & track media IDs
@@ -406,11 +530,22 @@ export default function QuickExpoAddScreen() {
       }
 
       // 5. Sync Color Group (binds color attribute option, variant IDs, and uploaded media IDs)
-      const colorAttr = attributes.find(
-        (a: any) => a.slug === 'color' || a.name?.toLowerCase() === 'color',
+      interface AttrOpt {
+        id: string;
+        value: string;
+        label?: string;
+      }
+      interface AttrDef {
+        slug?: string;
+        name?: string;
+        options?: AttrOpt[];
+      }
+      const typedAttributes = attributes as unknown as AttrDef[];
+      const colorAttr = typedAttributes.find(
+        (a) => a.slug === 'color' || a.name?.toLowerCase() === 'color',
       );
       const colorOption = colorAttr?.options?.find(
-        (o: any) =>
+        (o) =>
           o.value?.toLowerCase().trim() === activeColor.toLowerCase().trim() ||
           o.label?.toLowerCase().trim() === activeColor.toLowerCase().trim(),
       );
@@ -848,11 +983,13 @@ export default function QuickExpoAddScreen() {
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Clock size={18} color="#0f172a" />
               <Text style={styles.recentSectionTitle}>
-                Recently Added on this Device ({recentProducts.length})
+                Recently Added Products ({recentProducts.length})
               </Text>
             </View>
+            <TouchableOpacity onPress={loadRecentProducts} activeOpacity={0.7} style={{ padding: 4 }}>
+              <RefreshCw size={15} color="#0284c7" />
+            </TouchableOpacity>
           </View>
-
           {recentProducts.length === 0 ? (
             <View style={styles.emptyRecent}>
               <Package size={28} color="#94a3b8" />
@@ -1078,6 +1215,12 @@ const styles = StyleSheet.create({
     borderColor: '#e2e8f0',
   },
   cardHeader: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#0f172a',
+    marginBottom: 12,
+  },
+  cardTitle: {
     fontSize: 15,
     fontWeight: '700',
     color: '#0f172a',

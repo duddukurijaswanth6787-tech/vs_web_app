@@ -21,6 +21,7 @@
     "start:frontend": "cd frontend && npm run dev"
   },
   "dependencies": {
+    "@prisma/client": "^7.10.0",
     "tsconfig-paths": "^4.2.0"
   }
 }

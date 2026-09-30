@@ -648,6 +648,19 @@ export const catalogService = {
     return unwrap<unknown>(res);
   },
 
+  /** GET /products — list products with pagination and filter */
+  async listProducts(params?: { limit?: number; page?: number; search?: string; channel?: string }) {
+    const res = await posApiClient.get('/products', { params: { limit: 20, ...params } });
+    const payload = unwrap<any>(res);
+    return Array.isArray(payload) ? payload : (payload?.data ?? []);
+  },
+
+  /** GET /products/:id — get single product details with variants & media */
+  async getProduct(id: string) {
+    const res = await posApiClient.get(`/products/${id}`);
+    return unwrap<any>(res);
+  },
+
   /** DELETE /products/:id — deletes product, its variants, and media from database */
   async deleteProduct(id: string): Promise<void> {
     await posApiClient.delete(`/products/${id}`);

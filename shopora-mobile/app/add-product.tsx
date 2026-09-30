@@ -685,7 +685,10 @@ export default function AddProductScreen() {
         ...(sizeChartTemplateId ? { sizeChartTemplateId } : {}),
       });
 
-      const productId: string = created?.id;
+      const productId =
+        created && typeof created === 'object' && 'id' in created
+          ? String((created as Record<string, unknown>).id)
+          : '';
       if (!productId) throw new Error('The API did not return a product id.');
 
       // 2. POST /products/:id/attributes — dynamic registry values.

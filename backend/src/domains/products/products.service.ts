@@ -188,6 +188,7 @@ export class ProductsService {
         id: v.id,
         title: v.title ?? undefined,
         sku: v.sku,
+        barcode: v.barcode ?? v.sku ?? undefined,
         priceOverride:
           v.priceOverride !== null && v.priceOverride !== undefined
             ? Number(v.priceOverride)

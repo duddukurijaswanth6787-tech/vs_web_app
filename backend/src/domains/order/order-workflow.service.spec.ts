@@ -5,6 +5,7 @@ import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
 import { EmailService } from '@domains/email/email.service';
 import { OtpGatewayService } from '@domains/otp-gateway/otp-gateway.service';
+import { TelegramService } from '@domains/telegram/telegram.service';
 import { BusinessException } from '@common/exceptions';
 
 describe('OrderWorkflowService - atomic inventory deduction/reservation', () => {
@@ -66,6 +67,14 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
         {
           provide: OtpGatewayService,
           useValue: { sendOrderConfirmedSms: jest.fn() },
+        },
+        {
+          provide: TelegramService,
+          useValue: {
+            sendOrderNotification: jest.fn().mockResolvedValue(undefined),
+            sendOrderStatusUpdate: jest.fn().mockResolvedValue(undefined),
+            sendRefundNotification: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     }).compile();

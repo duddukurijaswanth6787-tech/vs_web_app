@@ -118,9 +118,21 @@ export class ProductsRepository {
         },
       },
       media: {
-        where: { deletedAt: null, status: 'ACTIVE' },
+        where: { deletedAt: null },
         orderBy: [{ isPrimary: 'desc' }, { displayOrder: 'asc' }],
         take: 8,
+      },
+      variants: {
+        where: { deletedAt: null },
+        include: {
+          inventory: true,
+          attributeValues: {
+            include: {
+              attribute: { select: { id: true, name: true, type: true } },
+            },
+          },
+        },
+        orderBy: { displayOrder: 'asc' },
       },
     };
 

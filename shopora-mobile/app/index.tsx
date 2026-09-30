@@ -134,7 +134,30 @@ export default function ShoporaHomeScreen() {
       </View>
 
       {/* 2. PRIMARY QUICK ACTIONS (Directly Under Stats) */}
-      <Text style={styles.sectionTitle}>Quick Actions</Text>
+      <Text style={styles.sectionTitle}>Primary POS &amp; Catalog Actions</Text>
+
+      {/* FEATURED HERO ACTION: ⚡ QUICK STORE & EXPO ADD */}
+      <TouchableOpacity
+        style={styles.heroActionCard}
+        onPress={() => router.push('/quick-expo-add')}
+        activeOpacity={0.88}
+      >
+        <View style={styles.heroActionIconBox}>
+          <Sparkles size={24} color="#ffffff" />
+        </View>
+        <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Text style={styles.heroActionTitle}>⚡ Quick Store &amp; Expo Add</Text>
+            <View style={styles.heroBadge}>
+              <Text style={styles.heroBadgeText}>FAST 1-SCREEN</Text>
+            </View>
+          </View>
+          <Text style={styles.heroActionSub}>
+            Take photo, set price, pick sizes &amp; instant print barcode stickers
+          </Text>
+        </View>
+        <ChevronRight size={20} color="#0284c7" />
+      </TouchableOpacity>
 
       <View style={styles.grid}>
         {/* 1. SALE PRODUCT (Primary Billing Action) */}
@@ -147,23 +170,10 @@ export default function ShoporaHomeScreen() {
             <ShoppingBag size={24} color="#0284c7" />
           </View>
           <Text style={styles.actionCardTitleLight}>Sale Product</Text>
-          <Text style={styles.actionCardSubLight}>Scan barcode & checkout</Text>
+          <Text style={styles.actionCardSubLight}>Scan barcode &amp; checkout</Text>
         </TouchableOpacity>
 
-        {/* 2. ⚡ QUICK STORE / EXPO ADD (Fast 1-Screen Creator) */}
-        <TouchableOpacity
-          style={[styles.actionCardWhite, { borderColor: '#bae6fd', backgroundColor: '#f0f9ff' }]}
-          onPress={() => router.push('/quick-expo-add')}
-          activeOpacity={0.85}
-        >
-          <View style={[styles.iconCircleDark, { backgroundColor: '#e0f2fe' }]}>
-            <Sparkles size={24} color="#0284c7" />
-          </View>
-          <Text style={[styles.actionCardTitleDark, { color: '#0284c7' }]}>⚡ Quick Store Add</Text>
-          <Text style={styles.actionCardSubDark}>1-Screen fast add & print</Text>
-        </TouchableOpacity>
-
-        {/* 3. + ADD PRODUCT (Full 8-Step Catalog Wizard) */}
+        {/* 2. + ADD PRODUCT (Full 8-Step Catalog Wizard) */}
         <TouchableOpacity
           style={styles.actionCardWhite}
           onPress={() => router.push('/add-product')}
@@ -172,8 +182,8 @@ export default function ShoporaHomeScreen() {
           <View style={[styles.iconCircleDark, { backgroundColor: '#f1f5f9' }]}>
             <PlusCircle size={24} color="#334155" />
           </View>
-          <Text style={styles.actionCardTitleDark}>+ Add Product</Text>
-          <Text style={styles.actionCardSubDark}>Multi-variant & specs</Text>
+          <Text style={styles.actionCardTitleDark}>+ Full Catalog</Text>
+          <Text style={styles.actionCardSubDark}>Multi-variant &amp; specs</Text>
         </TouchableOpacity>
 
         {/* 4. + ADD STOCK (Replenishment & Inbound Labels) */}
@@ -432,6 +442,58 @@ const styles = StyleSheet.create({
     letterSpacing: 0.5,
     marginBottom: 10,
     marginTop: 6,
+  },
+  heroActionCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#f0f9ff',
+    borderRadius: 20,
+    padding: 16,
+    borderWidth: 1.5,
+    borderColor: '#7dd3fc',
+    marginBottom: 16,
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.12,
+    shadowRadius: 8,
+    elevation: 3,
+    gap: 14,
+  },
+  heroActionIconBox: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#0284c7',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  heroActionTitle: {
+    fontSize: 15,
+    fontWeight: '800',
+    color: '#0369a1',
+  },
+  heroBadge: {
+    backgroundColor: '#bae6fd',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 6,
+  },
+  heroBadgeText: {
+    fontSize: 9,
+    fontWeight: '800',
+    color: '#0369a1',
+    letterSpacing: 0.5,
+  },
+  heroActionSub: {
+    fontSize: 12,
+    color: '#0284c7',
+    marginTop: 2,
+    lineHeight: 16,
   },
   grid: {
     flexDirection: 'row',

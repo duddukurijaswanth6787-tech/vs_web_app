@@ -47,18 +47,23 @@ export default function CustomerDetailPage() {
     Boolean(targetCustomerId && !customerLoading && !profileLoading)
   );
 
+  const ordersData = customerOrders?.data;
+  const profileId = profile?.id;
+  const customerEmail = customer?.email;
+  const customerPhone = customer?.phone;
+
   const filteredOrders = React.useMemo(() => {
-    if (!customerOrders?.data) return [];
+    if (!ordersData) return [];
     if (!customer && !profile) return [];
-    return customerOrders.data.filter((order) => {
-      if (profile?.id && order.customerId === profile.id) return true;
+    return ordersData.filter((order) => {
+      if (profileId && order.customerId === profileId) return true;
       if (order.customerId === id) return true;
-      if (customer?.email && order.customer?.user?.email === customer.email) return true;
-      if (customer?.phone && order.customer?.phone === customer.phone) return true;
-      if (customer?.phone && order.customer?.user?.phone === customer.phone) return true;
+      if (customerEmail && order.customer?.user?.email === customerEmail) return true;
+      if (customerPhone && order.customer?.phone === customerPhone) return true;
+      if (customerPhone && order.customer?.user?.phone === customerPhone) return true;
       return false;
     });
-  }, [customerOrders?.data, profile, customer, id]);
+  }, [ordersData, customer, profile, profileId, id, customerEmail, customerPhone]);
   const { data: addresses } = useCustomerAddresses(profile?.id || '');
   const { data: wishlist } = useCustomerWishlist(profile?.id || '');
   const { data: cart } = useCustomerCart(profile?.id || '');
