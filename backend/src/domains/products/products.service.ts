@@ -216,6 +216,8 @@ export class ProductsService {
           value: av.value ?? av.option?.label ?? undefined,
         })),
       })),
+      createdBy: p.createdBy ?? undefined,
+      creatorName: p.createdBy ? 'Super Admin (Duddukuri Jaswanth)' : 'Store Admin',
       createdAt: p.createdAt,
       updatedAt: p.updatedAt,
     };

@@ -733,6 +733,8 @@ export class ProductResponse {
     }>;
   }>;
 
+  @ApiPropertyOptional() createdBy?: string;
+  @ApiPropertyOptional() creatorName?: string;
   @ApiProperty() createdAt!: Date;
   @ApiProperty() updatedAt!: Date;
 }

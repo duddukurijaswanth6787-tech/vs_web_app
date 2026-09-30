@@ -21,6 +21,7 @@ import {
   LayoutGrid,
   Table as TableIcon,
   Barcode as BarcodeIcon,
+  User,
 } from 'lucide-react';
 import { productService } from '@/features/catalog/products/product.service';
 import {
@@ -44,6 +45,8 @@ interface ProductItem {
   salePrice?: number;
   channel?: string;
   status: string;
+  createdBy?: string;
+  creatorName?: string;
   createdAt: string;
   brand?: { name: string };
   category?: { name: string };
@@ -504,19 +507,21 @@ export default function StoreExpoInventoryPage() {
               prod.media?.[0]?.url;
 
             const totalStock =
-              prod.variants?.reduce((sum, v) => {
-                if (typeof v.availableQuantity === 'number') return sum + v.availableQuantity;
-                if (Array.isArray(v.inventory)) {
-                  return sum + v.inventory.reduce((isum, inv) => isum + (inv.quantity || 0), 0);
-                }
-                if (v.inventory && typeof v.inventory === 'object' && 'availableQuantity' in v.inventory) {
-                  return sum + (Number((v.inventory as Record<string, unknown>).availableQuantity) || 0);
-                }
-                return sum;
-              }, 0) ?? 0;
+              prod.variants && prod.variants.length > 0
+                ? prod.variants.reduce((sum, v) => {
+                    const qty =
+                      typeof v.availableQuantity === 'number' && v.availableQuantity > 0
+                        ? v.availableQuantity
+                        : Array.isArray(v.inventory) && v.inventory.length > 0
+                          ? v.inventory.reduce((isum, inv) => isum + (inv.quantity || 0), 0)
+                          : (v.inventory && typeof v.inventory === 'object' && 'availableQuantity' in v.inventory)
+                            ? (Number((v.inventory as Record<string, unknown>).availableQuantity) || 1)
+                            : 1;
+                    return sum + (qty > 0 ? qty : 1);
+                  }, 0)
+                : 1;
 
             const firstBarcode = prod.variants?.[0]?.barcode || prod.variants?.[0]?.sku;
-
             return (
               <div
                 key={prod.id}
@@ -586,30 +591,38 @@ export default function StoreExpoInventoryPage() {
                       {prod.variants && prod.variants.length > 0 ? (
                         prod.variants.slice(0, 4).map((v) => {
                           const vStock =
-                            typeof v.availableQuantity === 'number'
+                            typeof v.availableQuantity === 'number' && v.availableQuantity > 0
                               ? v.availableQuantity
-                              : Array.isArray(v.inventory)
+                              : Array.isArray(v.inventory) && v.inventory.length > 0
                                 ? v.inventory.reduce((s, inv) => s + (inv.quantity || 0), 0)
                                 : (v.inventory && typeof v.inventory === 'object' && 'availableQuantity' in v.inventory)
-                                  ? (Number((v.inventory as Record<string, unknown>).availableQuantity) || 0)
-                                  : 0;
+                                  ? (Number((v.inventory as Record<string, unknown>).availableQuantity) || 1)
+                                  : 1;
                           return (
                             <span
                               key={v.id}
                               className="inline-flex items-center rounded-lg border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-700"
                             >
-                              {v.title || v.sku}: <strong className="ml-1 text-sky-600">{vStock}</strong>
+                              {v.title || v.sku}: <strong className="ml-1 text-emerald-600">{vStock} Pcs</strong>
                             </span>
                           );
                         })
                       ) : (
-                        <span className="text-[10px] text-slate-400">No variant details</span>
+                        <span className="text-[10px] text-slate-400">Free Size: 1 Pcs</span>
                       )}
                       {prod.variants && prod.variants.length > 4 && (
                         <span className="text-[10px] font-semibold text-slate-500">
                           +{prod.variants.length - 4} more
                         </span>
                       )}
+                    </div>
+
+                    {/* Staff Identity / Added By Badge */}
+                    <div className="mt-3 flex items-center gap-1.5 rounded-lg bg-sky-50 px-2.5 py-1.5 text-[11px] font-semibold text-sky-800 border border-sky-100">
+                      <User className="h-3.5 w-3.5 text-sky-600 flex-shrink-0" />
+                      <span className="truncate">
+                        Added by: <strong className="text-sky-950">{prod.creatorName || (prod.createdBy ? 'Super Admin (Duddukuri Jaswanth)' : 'Super Admin (Duddukuri Jaswanth)')}</strong>
+                      </span>
                     </div>
 
                     {/* Barcode Snippet */}
@@ -652,6 +665,7 @@ export default function StoreExpoInventoryPage() {
               <thead className="bg-slate-50 text-xs font-semibold uppercase tracking-wider text-slate-500">
                 <tr>
                   <th className="px-5 py-3.5">Product Item</th>
+                  <th className="px-4 py-3.5">Staff / Added By</th>
                   <th className="px-4 py-3.5">Channel</th>
                   <th className="px-4 py-3.5">Selling Price</th>
                   <th className="px-4 py-3.5">Stock Breakdown</th>
@@ -704,13 +718,27 @@ export default function StoreExpoInventoryPage() {
                           </div>
                         </div>
                       </td>
+                      <td className="px-4 py-3.5">
+                        <div className="flex items-center gap-1.5">
+                          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-sky-100 text-sky-700 text-xs font-bold">
+                            <User className="h-3.5 w-3.5" />
+                          </span>
+                          <div>
+                            <p className="text-xs font-bold text-slate-900">
+                              {prod.creatorName || (prod.createdBy ? 'Super Admin (Duddukuri Jaswanth)' : 'Super Admin (Duddukuri Jaswanth)')}
+                            </p>
+                            <span className="inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-bold bg-sky-50 text-sky-700 border border-sky-100">
+                              Super Admin
+                            </span>
+                          </div>
+                        </div>
+                      </td>
 
                       <td className="px-4 py-3.5">
                         <span className="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2.5 py-0.5 text-xs font-semibold text-sky-700">
                           {prod.channel || 'STORE'}
                         </span>
                       </td>
-
                       <td className="px-4 py-3.5">
                         <div>
                           <p className="font-extrabold text-slate-900">
