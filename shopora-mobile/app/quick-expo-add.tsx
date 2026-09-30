@@ -1179,7 +1179,15 @@ export default function QuickExpoAddScreen() {
                   {/* 1. VISUAL THERMAL STICKER DEMO CONTAINER */}
                   <View style={styles.thermalStickerDemoCard}>
                     <View style={styles.stickerHeaderRow}>
-                      <Text style={styles.stickerStoreName}>❖ VASANTHI&apos;S SIGNATURE</Text>
+                      <View style={styles.stickerBrandLogoRow}>
+                        <View style={styles.stickerLogoBadge}>
+                          <Text style={styles.stickerLogoSymbol}>❖</Text>
+                        </View>
+                        <View>
+                          <Text style={styles.stickerStoreName}>VASANTHI&apos;S SIGNATURE</Text>
+                          <Text style={styles.stickerStoreTagline}>LUXURY COUTURE • HYDERABAD</Text>
+                        </View>
+                      </View>
                       <View style={styles.stickerDimensionBadge}>
                         <Text style={styles.stickerDimensionBadgeText}>
                           {previewLabelSize === '50x25' ? '50×25mm' : '75×50mm'}
@@ -2103,14 +2111,39 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     borderBottomWidth: 1,
     borderBottomColor: '#f1f5f9',
-    paddingBottom: 6,
+    paddingBottom: 8,
     marginBottom: 8,
+  },
+  stickerBrandLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stickerLogoBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 6,
+    backgroundColor: '#0284c7',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  stickerLogoSymbol: {
+    color: '#ffffff',
+    fontSize: 13,
+    fontWeight: '900',
   },
   stickerStoreName: {
     fontSize: 11,
     fontWeight: '900',
     color: '#0f172a',
-    letterSpacing: 0.8,
+    letterSpacing: 0.6,
+  },
+  stickerStoreTagline: {
+    fontSize: 7.5,
+    fontWeight: '700',
+    color: '#64748b',
+    letterSpacing: 0.3,
+    marginTop: -1,
   },
   stickerDimensionBadge: {
     backgroundColor: '#f1f5f9',

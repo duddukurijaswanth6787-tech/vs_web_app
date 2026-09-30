@@ -1044,14 +1044,20 @@ export default function StoreExpoInventoryPage() {
               const barcodeSvg = generateCode128SvgDataUrl(barcodeVal);
 
               return (
-                <div className="mb-4 rounded-xl border border-dashed border-slate-300 bg-slate-50 p-4 text-center text-slate-900 shadow-inner">
-                  <p className="text-[11px] font-black tracking-widest uppercase text-slate-900">
-                    VASANTHI&apos;S SIGNATURE
+                <div className="mb-4 rounded-xl border border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-sm">
+                  <div className="flex items-center justify-center gap-1.5 mb-1">
+                    <span className="flex h-5 w-5 items-center justify-center rounded-md bg-sky-600 text-white text-[10px] font-black">
+                      ❖
+                    </span>
+                    <span className="text-[11px] font-black tracking-widest uppercase text-slate-900">
+                      VASANTHI&apos;S SIGNATURE
+                    </span>
+                  </div>
+                  <p className="text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                    LUXURY COUTURE • HYDERABAD
                   </p>
                   <p className="mt-0.5 text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
                   {activeVar?.title && <p className="text-[10px] text-slate-600 font-medium">{activeVar.title}</p>}
-
-                  {/* Barcode Render */}
                   <div className="my-2 flex justify-center">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img src={barcodeSvg} alt={barcodeVal} className="h-12 max-w-full object-contain" />
