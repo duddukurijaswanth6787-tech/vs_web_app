@@ -638,6 +638,14 @@ export const adminNavigation: NavGroup[] = [
         implemented: true,
       },
       {
+        id: 'expo-storefront-lock',
+        title: 'Expo & Site Lock Mode',
+        href: '/admin/storefront/maintenance',
+        icon: Sparkles,
+        roles: ['super_admin', 'admin'],
+        implemented: true,
+      },
+      {
         id: 'session-settings',
         title: 'Login Sessions',
         href: '/admin/access/session-settings',
