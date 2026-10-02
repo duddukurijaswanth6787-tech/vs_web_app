@@ -140,6 +140,10 @@ export class StorefrontPublicService {
 
         return {
           ...settings,
+          maintenanceMode: settings?.maintenanceMode ?? false,
+          maintenance_mode: settings?.maintenanceMode ?? false,
+          storeDescription: settings?.storeDescription ?? null,
+          metaDescription: settings?.metaDescription ?? null,
           codEnabled,
           bannerAutoplayInterval: autoplayInterval,
           bannerAutoplayEnabled: autoplayEnabled,

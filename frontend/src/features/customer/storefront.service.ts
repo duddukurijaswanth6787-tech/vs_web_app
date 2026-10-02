@@ -52,7 +52,14 @@ export const customerStorefrontService = {
   getPublicSettings: async (): Promise<PublicSettingsDto> => {
     try {
       const res = await apiClient.get<StandardResponse<PublicSettingsDto>>('/settings/public');
-      return res.data.data!;
+      const data = res.data.data!;
+      return {
+        ...data,
+        maintenanceMode:
+          typeof data.maintenanceMode === 'boolean'
+            ? data.maintenanceMode
+            : (data as any).maintenance_mode === true || (data as any).maintenance_mode === 'true',
+      };
     } catch {
       return {
         bannerAutoplayInterval: 5,
