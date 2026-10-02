@@ -51,7 +51,11 @@ const toDateInputVal = (val?: string) => {
 
 const fromSettings = (s: WebsiteSettings): MaintenanceForm => ({
   maintenanceMode: s.maintenanceMode ?? false,
-  maintenanceMessage: s.maintenanceMessage || HANAMKONDA_MESSAGE,
+  maintenanceMessage:
+    s.storeDescription ||
+    s.metaDescription ||
+    (s as any).maintenanceMessage ||
+    HANAMKONDA_MESSAGE,
   maintenanceStartTime: toDateInputVal(s.maintenanceStartTime),
   maintenanceEndTime: toDateInputVal(s.maintenanceEndTime),
   whitelistedIps: s.whitelistedIps ?? '',
@@ -96,12 +100,23 @@ export default function ExpoMaintenanceAdminPage() {
     }
   };
 
+  const sanitizePayload = (formData: MaintenanceForm) => {
+    return {
+      maintenanceMode: formData.maintenanceMode,
+      storeDescription: formData.maintenanceMessage,
+      metaDescription: formData.maintenanceMessage,
+      supportPhone: formData.supportPhone || undefined,
+      whatsappNumber: formData.whatsappNumber || undefined,
+      supportEmail: formData.supportEmail || undefined,
+    };
+  };
+
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     setError(null);
     setSuccess(null);
     try {
-      await updateMut.mutateAsync(form);
+      await updateMut.mutateAsync(sanitizePayload(form));
       setSuccess(
         form.maintenanceMode
           ? 'Expo & Site Lock Mode is now ACTIVE! Customers will see the Expo announcement screen.'
@@ -118,7 +133,7 @@ export default function ExpoMaintenanceAdminPage() {
     const updated = { ...form, maintenanceMode: targetState };
     setForm(updated);
     try {
-      await updateMut.mutateAsync(updated);
+      await updateMut.mutateAsync(sanitizePayload(updated));
       setSuccess(
         targetState
           ? 'Expo & Site Lock Mode ACTIVATED immediately!'

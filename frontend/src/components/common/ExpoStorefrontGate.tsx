@@ -73,7 +73,13 @@ export function ExpoStorefrontGate({ children }: ExpoStorefrontGateProps) {
   }
 
   const storeName = settings?.storeName ? String(settings.storeName) : "Vasanthi's Signature";
-  const customMessage = settings?.maintenanceMessage ? String(settings.maintenanceMessage) : '';
+  const customMessage = settings?.storeDescription
+    ? String(settings.storeDescription)
+    : settings?.metaDescription
+    ? String(settings.metaDescription)
+    : (settings as any)?.maintenanceMessage
+    ? String((settings as any).maintenanceMessage)
+    : '';
   const phone = settings?.supportPhone
     ? String(settings.supportPhone)
     : settings?.whatsappNumber
