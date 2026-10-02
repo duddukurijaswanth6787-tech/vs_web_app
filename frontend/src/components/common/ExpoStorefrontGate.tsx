@@ -43,6 +43,13 @@ export function ExpoStorefrontGate({ children }: ExpoStorefrontGateProps) {
 
     // Direct master toggle
     if (settings.maintenanceMode) return true;
+    if ((settings as any).maintenance_mode === true || (settings as any).maintenance_mode === 'true') return true;
+
+    // Check announcement text indicator
+    const annText = String(settings.announcementBarText || settings.announcement_bar_text || '');
+    if (annText.includes('Expo') || annText.includes('paused') || annText.includes('హనుమకొండ')) {
+      return true;
+    }
 
     // Optional date-range based auto activation
     const startTimeStr = settings.maintenanceStartTime ? String(settings.maintenanceStartTime) : '';
