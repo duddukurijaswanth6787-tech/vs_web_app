@@ -49,9 +49,17 @@ export function ExpoStorefrontGate({ children }: ExpoStorefrontGateProps) {
     const endTimeStr = settings.maintenanceEndTime ? String(settings.maintenanceEndTime) : '';
     if (startTimeStr || endTimeStr) {
       const now = new Date().getTime();
-      const start = startTimeStr ? new Date(startTimeStr).getTime() : 0;
-      const end = endTimeStr ? new Date(endTimeStr).getTime() : Infinity;
-      if (now >= start && now <= end) {
+      let start = 0;
+      let end = Infinity;
+      if (startTimeStr) {
+        const fullStart = startTimeStr.length === 10 ? `${startTimeStr}T00:00:00` : startTimeStr;
+        start = new Date(fullStart).getTime();
+      }
+      if (endTimeStr) {
+        const fullEnd = endTimeStr.length === 10 ? `${endTimeStr}T23:59:59` : endTimeStr;
+        end = new Date(fullEnd).getTime();
+      }
+      if (!isNaN(start) && !isNaN(end) && now >= start && now <= end) {
         return true;
       }
     }

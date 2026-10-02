@@ -43,11 +43,17 @@ const formDefaults = {
 
 type MaintenanceForm = typeof formDefaults;
 
+const toDateInputVal = (val?: string) => {
+  if (!val) return '';
+  if (val.length >= 10 && val.includes('-')) return val.slice(0, 10);
+  return val;
+};
+
 const fromSettings = (s: WebsiteSettings): MaintenanceForm => ({
   maintenanceMode: s.maintenanceMode ?? false,
   maintenanceMessage: s.maintenanceMessage || HANAMKONDA_MESSAGE,
-  maintenanceStartTime: s.maintenanceStartTime ?? '',
-  maintenanceEndTime: s.maintenanceEndTime ?? '',
+  maintenanceStartTime: toDateInputVal(s.maintenanceStartTime),
+  maintenanceEndTime: toDateInputVal(s.maintenanceEndTime),
   whitelistedIps: s.whitelistedIps ?? '',
   supportPhone: s.supportPhone ?? '',
   whatsappNumber: s.whatsappNumber ?? '',
@@ -332,38 +338,54 @@ export default function ExpoMaintenanceAdminPage() {
 
             {/* Schedule (Optional Date Range) */}
             <div className="border-t border-neutral-100 pt-4 space-y-3">
-              <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Calendar className="w-3.5 h-3.5 text-neutral-500" />
-                Schedule Dates (Optional)
-              </h3>
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-bold text-neutral-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Calendar className="w-3.5 h-3.5 text-neutral-500" />
+                  Schedule Dates (Optional - Date Only)
+                </h3>
+                {(form.maintenanceStartTime || form.maintenanceEndTime) && (
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setForm((p) => ({ ...p, maintenanceStartTime: '', maintenanceEndTime: '' }))
+                    }
+                    className="text-[10px] font-bold text-rose-600 hover:text-rose-700 underline"
+                  >
+                    Clear Dates
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">
-                    Start Date / Time
+                    Start Date
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={form.maintenanceStartTime}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, maintenanceStartTime: e.target.value }))
                     }
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs font-sans"
                   />
                 </div>
                 <div>
                   <label className="block text-[10px] font-bold text-neutral-500 uppercase mb-1">
-                    End / Reopen Date & Time
+                    End / Reopen Date
                   </label>
                   <input
-                    type="datetime-local"
+                    type="date"
                     value={form.maintenanceEndTime}
                     onChange={(e) =>
                       setForm((p) => ({ ...p, maintenanceEndTime: e.target.value }))
                     }
-                    className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs"
+                    className="w-full bg-neutral-50 border border-neutral-200 rounded-lg px-3 py-2 text-xs font-sans"
                   />
                 </div>
               </div>
+              <p className="text-[10px] text-neutral-400">
+                Time is not required. You can pick only dates or simply use the master toggle above.
+              </p>
             </div>
 
             {/* Contact Information */}
