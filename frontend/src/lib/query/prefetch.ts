@@ -24,7 +24,7 @@ const keys = {
 // treating a dead SSR result as fresh, successful, empty data for the full
 // staleTime window (previously up to 30 minutes of a section looking empty).
 async function apiFetch<T>(path: string): Promise<T> {
-  const res = await fetch(`${API}${path}`, { cache: 'no-store' });
+  const res = await fetch(`${API}${path}`, { next: { revalidate: 30 } });
   if (!res.ok) {
     throw new Error(`${res.status} ${res.statusText} fetching ${API}${path}`);
   }

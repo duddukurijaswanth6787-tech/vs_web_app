@@ -12,6 +12,7 @@ import {
 } from '@shared/commerce/commerce.utils';
 import { AuditService } from '@domains/audit/audit.service';
 import { NotificationService } from '@domains/notification/notification.service';
+import { CacheService } from '@infrastructure/redis';
 import { PrismaService } from '@database/prisma.service';
 import { ProductsRepository } from './products.repository';
 import {
@@ -35,6 +36,7 @@ export class ProductsService {
     private readonly auditService: AuditService,
     private readonly loggerService: LoggerService,
     private readonly notificationService: NotificationService,
+    private readonly cacheService: CacheService,
   ) {}
 
   private toResponse(p: any): ProductResponse {
@@ -232,6 +234,17 @@ export class ProductsService {
   async findAll(query: ProductQueryDto, restrictToPublicChannels = false) {
     const page = query.page ?? 1;
     const limit = Math.min(query.limit ?? 20, 100);
+
+    const isCacheable = !query.search && page <= 3;
+    const cacheKey = isCacheable
+      ? `products:list:${JSON.stringify(query)}:${restrictToPublicChannels}`
+      : null;
+
+    if (cacheKey) {
+      const cached = await this.cacheService.get<any>(cacheKey);
+      if (cached) return cached;
+    }
+
     try {
       const result = await this.productsRepository.findAll({
         search: query.search,
@@ -257,10 +270,14 @@ export class ProductsService {
         sortBy: query.sortBy ?? 'createdAt',
         sortOrder: query.sortOrder ?? 'desc',
       });
-      return {
+      const response = {
         data: result.data.map((p: any) => this.toResponse(p)),
         meta: result.meta,
       };
+      if (cacheKey) {
+        await this.cacheService.set(cacheKey, response, 30);
+      }
+      return response;
     } catch {
       return {
         data: [],
@@ -558,6 +575,7 @@ export class ProductsService {
       message: `Product "${dto.name}" has been created`,
       data: { productId: product.id, name: dto.name, slug },
     });
+    await this.cacheService.delPattern('products:*');
     return this.findById(product.id);
   }
 
@@ -622,6 +640,7 @@ export class ProductsService {
       message: `Product "${product.name}" has been updated`,
       data: { productId: id, name: product.name },
     });
+    await this.cacheService.delPattern('products:*');
     return this.findById(id);
   }
 
@@ -670,6 +689,7 @@ export class ProductsService {
       { action: 'product_deleted', productId: id },
       'ProductsService',
     );
+    await this.cacheService.delPattern('products:*');
   }
 
   async restore(id: string, userId: string) {

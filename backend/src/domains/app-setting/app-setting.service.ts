@@ -113,35 +113,36 @@ export class AppSettingService {
   }
 
   async getPublicSettingsFallback() {
-    const [
-      autoplaySetting,
-      enabledSetting,
-      mobileAnnouncementSetting,
-      announcementTextSetting,
-      announcementEnabledSetting,
-      announcementLinkSetting,
-      announcementLinkTextSetting,
-      announcementBgColorSetting,
-      announcementTextColorSetting,
-      shippingFeeEnabledSetting,
-      shippingFlatFeeSetting,
-      shippingFreeThresholdEnabledSetting,
-      shippingFreeThresholdSetting,
-    ] = await Promise.all([
-      this.settingRepository.findByKey('banner_autoplay_interval'),
-      this.settingRepository.findByKey('banner_autoplay_enabled'),
-      this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
-      this.settingRepository.findByKey('announcement_bar_text'),
-      this.settingRepository.findByKey('announcement_bar_enabled'),
-      this.settingRepository.findByKey('announcement_bar_link'),
-      this.settingRepository.findByKey('announcement_bar_link_text'),
-      this.settingRepository.findByKey('announcement_bar_bg_color'),
-      this.settingRepository.findByKey('announcement_bar_text_color'),
-      this.settingRepository.findByKey('shipping_fee_enabled'),
-      this.settingRepository.findByKey('shipping_flat_fee'),
-      this.settingRepository.findByKey('shipping_free_threshold_enabled'),
-      this.settingRepository.findByKey('shipping_free_threshold'),
-    ]);
+    return this.cacheService.getOrSet('settings:public:computed', async () => {
+      const [
+        autoplaySetting,
+        enabledSetting,
+        mobileAnnouncementSetting,
+        announcementTextSetting,
+        announcementEnabledSetting,
+        announcementLinkSetting,
+        announcementLinkTextSetting,
+        announcementBgColorSetting,
+        announcementTextColorSetting,
+        shippingFeeEnabledSetting,
+        shippingFlatFeeSetting,
+        shippingFreeThresholdEnabledSetting,
+        shippingFreeThresholdSetting,
+      ] = await Promise.all([
+        this.settingRepository.findByKey('banner_autoplay_interval'),
+        this.settingRepository.findByKey('banner_autoplay_enabled'),
+        this.settingRepository.findByKey('announcement_bar_mobile_enabled'),
+        this.settingRepository.findByKey('announcement_bar_text'),
+        this.settingRepository.findByKey('announcement_bar_enabled'),
+        this.settingRepository.findByKey('announcement_bar_link'),
+        this.settingRepository.findByKey('announcement_bar_link_text'),
+        this.settingRepository.findByKey('announcement_bar_bg_color'),
+        this.settingRepository.findByKey('announcement_bar_text_color'),
+        this.settingRepository.findByKey('shipping_fee_enabled'),
+        this.settingRepository.findByKey('shipping_flat_fee'),
+        this.settingRepository.findByKey('shipping_free_threshold_enabled'),
+        this.settingRepository.findByKey('shipping_free_threshold'),
+      ]);
     const announcementText = announcementTextSetting
       ? announcementTextSetting.value
       : 'Festive Sale is Live! Get up to 30% OFF';
@@ -213,5 +214,6 @@ export class AppSettingService {
         : 'false',
       shipping_free_threshold: String(shippingFreeThreshold),
     };
+    }, 300);
   }
 }

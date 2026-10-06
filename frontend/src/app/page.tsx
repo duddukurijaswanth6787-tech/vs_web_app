@@ -7,6 +7,8 @@ import { mapProductToItem } from '@/features/customer/mappers';
 import { HomeClient } from '@/components/storefront/HomeClient';
 import type { ProductQueryDto } from '@/features/catalog/products/product.types';
 
+export const revalidate = 30;
+
 export default async function Home() {
   const queryClient = new QueryClient();
 

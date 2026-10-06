@@ -3,10 +3,10 @@
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      refetchOnWindowFocus: true,
-      refetchOnMount: 'always',
-      staleTime: 0, // Zero stale time ensures UI always receives live data instantly
-      gcTime: 5 * 60 * 1000,
+      refetchOnWindowFocus: false,
+      refetchOnMount: false,
+      staleTime: 60 * 1000, // 1 minute default cache prevents continuous refetch waterfalls
+      gcTime: 10 * 60 * 1000,
       retry: (failureCount, error: unknown) => {
         // Do not retry authorization or client validation/not found exceptions
         const status = (error as { response?: { status?: number } })?.response?.status;
