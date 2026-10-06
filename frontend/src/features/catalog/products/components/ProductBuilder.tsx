@@ -2052,9 +2052,9 @@ export default function ProductBuilder({
             }
             .sticker-card {
               width: 76mm;
-              height: 48mm;
-              max-height: 48mm;
-              padding: 1.5mm 3mm;
+              height: 45mm;
+              max-height: 45mm;
+              padding: 1mm 3mm;
               text-align: center;
               background: #ffffff;
               box-sizing: border-box;
@@ -2085,10 +2085,10 @@ export default function ProductBuilder({
               }
               .sticker-card {
                 width: 76mm !important;
-                height: 48mm !important;
-                max-height: 48mm !important;
+                height: 45mm !important;
+                max-height: 45mm !important;
                 margin: 0 !important;
-                padding: 1.5mm 3mm !important;
+                padding: 1mm 3mm !important;
                 border: none !important;
                 box-sizing: border-box !important;
                 page-break-after: always !important;
@@ -2106,15 +2106,15 @@ export default function ProductBuilder({
             }
             .header-diamond {
               color: #0284c7;
-              font-size: 11px;
+              font-size: 10px;
               font-weight: bold;
               line-height: 1;
             }
             .store-title {
               font-family: Georgia, serif;
-              font-size: 11px;
+              font-size: 10.5px;
               font-weight: 800;
-              letter-spacing: 1px;
+              letter-spacing: 0.8px;
               color: #111111;
               line-height: 1;
             }
@@ -2122,10 +2122,10 @@ export default function ProductBuilder({
               width: 100%;
               height: 1px;
               background: #e5e5e5;
-              margin: 0.8mm 0;
+              margin: 0.5mm 0;
             }
             .product-title {
-              font-size: 9.5px;
+              font-size: 9px;
               font-weight: 700;
               color: #1f2937;
               white-space: nowrap;
@@ -2139,21 +2139,21 @@ export default function ProductBuilder({
               background: #000000;
               color: #ffffff;
               border-radius: 9999px;
-              padding: 1px 12px;
+              padding: 1px 10px;
               font-family: monospace;
-              font-size: 9.5px;
+              font-size: 9px;
               font-weight: 800;
-              letter-spacing: 0.8px;
-              margin: 0.8mm 0;
-              line-height: 1.2;
+              letter-spacing: 0.6px;
+              margin: 0.5mm 0;
+              line-height: 1.1;
             }
             .code-container {
               display: flex;
               align-items: center;
               justify-content: center;
-              gap: 8px;
+              gap: 6px;
               width: 100%;
-              margin: 0.5mm 0;
+              margin: 0.3mm 0;
             }
             .barcode-box {
               flex: 1;
@@ -2162,32 +2162,32 @@ export default function ProductBuilder({
               align-items: center;
             }
             .barcode-box img {
-              height: 13mm;
+              height: 11.5mm;
               width: 100%;
-              max-width: 44mm;
+              max-width: 42mm;
               object-fit: contain;
               image-rendering: pixelated;
             }
             .barcode-num {
               font-family: monospace;
-              font-size: 9px;
+              font-size: 8.5px;
               font-weight: 700;
               color: #111111;
-              letter-spacing: 0.6px;
+              letter-spacing: 0.5px;
               margin-top: 1px;
               line-height: 1;
             }
             .dashed-line {
-              height: 13mm;
+              height: 11.5mm;
               border-right: 1px dashed #cccccc;
             }
             .qr-box img {
-              width: 12.5mm;
-              height: 12.5mm;
+              width: 11.5mm;
+              height: 11.5mm;
               object-fit: contain;
             }
             .price {
-              font-size: 16px;
+              font-size: 15px;
               font-weight: 900;
               color: #000000;
               line-height: 1;
