@@ -41,15 +41,13 @@ export function ExpoStorefrontGate({ children }: ExpoStorefrontGateProps) {
     if (isExcludedPath) return false;
     if (!settings) return false;
 
-    // Direct master toggle
-    if (settings.maintenanceMode) return true;
-    if ((settings as any).maintenance_mode === true || (settings as any).maintenance_mode === 'true') return true;
+    // Direct master toggle (explicit boolean check)
+    const isMaintenanceOn =
+      settings.maintenanceMode === true ||
+      (settings as any).maintenance_mode === true ||
+      (settings as any).maintenance_mode === 'true';
 
-    // Check announcement text indicator
-    const annText = String(settings.announcementBarText || settings.announcement_bar_text || '');
-    if (annText.includes('Expo') || annText.includes('paused') || annText.includes('హనుమకొండ')) {
-      return true;
-    }
+    if (isMaintenanceOn) return true;
 
     // Optional date-range based auto activation
     const startTimeStr = settings.maintenanceStartTime ? String(settings.maintenanceStartTime) : '';

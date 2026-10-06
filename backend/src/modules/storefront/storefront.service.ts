@@ -38,6 +38,18 @@ export class StorefrontService {
       where: { id: existing.id },
       data: dto,
     });
+
+    if (dto.maintenanceMode !== undefined) {
+      const modeStr = String(dto.maintenanceMode);
+      for (const key of ['maintenance_mode', 'storefront.maintenance_mode']) {
+        await this.prisma.appSetting.upsert({
+          where: { key },
+          update: { value: modeStr },
+          create: { key, value: modeStr },
+        });
+      }
+    }
+
     await this.auditService.log({
       userId,
       action: 'UPDATE',
@@ -48,6 +60,7 @@ export class StorefrontService {
       newValue: updated,
     });
     await this.cache.del('storefront:settings');
+    await this.cache.del('settings:public');
     return updated;
   }
 
