@@ -35,6 +35,7 @@ import { brandService } from '@/features/catalog/brands/brand.service';
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { inventoryService } from '@/features/inventory/inventory.service';
 import { generateCode128SvgDataUrl, generateQrCodeSvgDataUrl } from '@/utils/barcode-generator';
+import { getApiErrorMessage } from '@/utils/api-error';
 
 interface ProductItem {
   id: string;
