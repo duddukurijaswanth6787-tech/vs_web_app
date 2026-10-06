@@ -2032,7 +2032,7 @@ export default function ProductBuilder({
           <title>Print Barcode Stickers (3x2 Inch) - ${variant.sku}</title>
           <style>
             @page {
-              size: 76mm 50mm landscape;
+              size: 76mm 50mm;
               margin: 0mm;
             }
             * {
@@ -2052,9 +2052,9 @@ export default function ProductBuilder({
             }
             .sticker-card {
               width: 76mm;
-              height: 45mm;
-              max-height: 45mm;
-              padding: 1mm 3mm;
+              height: 48mm;
+              max-height: 48mm;
+              padding: 1mm 2.5mm;
               text-align: center;
               background: #ffffff;
               box-sizing: border-box;
@@ -2069,9 +2069,13 @@ export default function ProductBuilder({
               justify-content: space-between;
               border: none;
             }
+            .sticker-card:last-child {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
             @media print {
               @page {
-                size: 76mm 50mm landscape;
+                size: 76mm 50mm;
                 margin: 0mm;
               }
               html, body {
@@ -2085,10 +2089,10 @@ export default function ProductBuilder({
               }
               .sticker-card {
                 width: 76mm !important;
-                height: 45mm !important;
-                max-height: 45mm !important;
+                height: 48mm !important;
+                max-height: 48mm !important;
                 margin: 0 !important;
-                padding: 1mm 3mm !important;
+                padding: 1mm 2.5mm !important;
                 border: none !important;
                 box-sizing: border-box !important;
                 page-break-after: always !important;
@@ -2096,6 +2100,10 @@ export default function ProductBuilder({
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
                 overflow: hidden !important;
+              }
+              .sticker-card:last-child {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
               }
             }
             .header-row {
@@ -2106,13 +2114,13 @@ export default function ProductBuilder({
             }
             .header-diamond {
               color: #0284c7;
-              font-size: 10px;
+              font-size: 9.5px;
               font-weight: bold;
               line-height: 1;
             }
             .store-title {
               font-family: Georgia, serif;
-              font-size: 10.5px;
+              font-size: 9.5px;
               font-weight: 800;
               letter-spacing: 0.8px;
               color: #111111;
@@ -2122,10 +2130,10 @@ export default function ProductBuilder({
               width: 100%;
               height: 1px;
               background: #e5e5e5;
-              margin: 0.5mm 0;
+              margin: 0.3mm 0;
             }
             .product-title {
-              font-size: 9px;
+              font-size: 8.5px;
               font-weight: 700;
               color: #1f2937;
               white-space: nowrap;
@@ -2139,12 +2147,12 @@ export default function ProductBuilder({
               background: #000000;
               color: #ffffff;
               border-radius: 9999px;
-              padding: 1px 10px;
+              padding: 1px 8px;
               font-family: monospace;
-              font-size: 9px;
+              font-size: 8.5px;
               font-weight: 800;
               letter-spacing: 0.6px;
-              margin: 0.5mm 0;
+              margin: 0.3mm 0;
               line-height: 1.1;
             }
             .code-container {
@@ -2153,7 +2161,7 @@ export default function ProductBuilder({
               justify-content: center;
               gap: 6px;
               width: 100%;
-              margin: 0.3mm 0;
+              margin: 0.2mm 0;
             }
             .barcode-box {
               flex: 1;
@@ -2162,7 +2170,7 @@ export default function ProductBuilder({
               align-items: center;
             }
             .barcode-box img {
-              height: 11.5mm;
+              height: 10.5mm;
               width: 100%;
               max-width: 42mm;
               object-fit: contain;
@@ -2170,7 +2178,7 @@ export default function ProductBuilder({
             }
             .barcode-num {
               font-family: monospace;
-              font-size: 8.5px;
+              font-size: 8px;
               font-weight: 700;
               color: #111111;
               letter-spacing: 0.5px;
@@ -2178,16 +2186,16 @@ export default function ProductBuilder({
               line-height: 1;
             }
             .dashed-line {
-              height: 11.5mm;
+              height: 10.5mm;
               border-right: 1px dashed #cccccc;
             }
             .qr-box img {
-              width: 11.5mm;
-              height: 11.5mm;
+              width: 10.5mm;
+              height: 10.5mm;
               object-fit: contain;
             }
             .price {
-              font-size: 15px;
+              font-size: 14px;
               font-weight: 900;
               color: #000000;
               line-height: 1;
