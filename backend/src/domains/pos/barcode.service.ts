@@ -207,69 +207,75 @@ export class BarcodeService {
     if (spec.layout === 'branded') {
       return `
     .sticker-page {
-      padding: 2mm 4mm;
+      padding: 1.5mm 3mm;
       width: ${spec.contentWidthMm}mm;
       height: ${spec.contentHeightMm}mm;
+      max-height: ${spec.contentHeightMm}mm;
       box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: flex-start;
+      justify-content: space-between;
       text-align: center;
       background: #ffffff;
       color: #000000;
       font-family: 'Helvetica Neue', Arial, sans-serif;
       border-radius: 3mm;
-      border: 1.5px dashed #333333;
+      border: 1px dashed #cccccc;
+      page-break-after: always;
+      break-after: page;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      overflow: hidden;
       ${forPreview ? '' : border}
     }
-    .brand-mark { font-size: 10px; color: #0284c7; line-height: 1; }
+    .brand-mark { font-size: 9px; color: #0284c7; line-height: 1; }
     .store-name {
       font-family: Georgia, 'Times New Roman', serif;
-      font-size: 12px;
+      font-size: 11px;
       font-weight: 700;
       letter-spacing: 0.3px;
-      line-height: 1.2;
+      line-height: 1.1;
     }
-    .hr { width: 90%; height: 1px; background: #d4d4d4; margin: 1mm 0; flex-shrink: 0; }
+    .hr { width: 90%; height: 1px; background: #d4d4d4; margin: 0.8mm 0; flex-shrink: 0; }
     .product-title {
       font-size: 9px;
       font-weight: 600;
       color: #333333;
       white-space: nowrap;
       max-width: 100%;
-      line-height: 1.2;
+      line-height: 1.1;
     }
     .sku-pill {
       background: #111111;
       color: #ffffff;
       font-weight: 800;
-      font-size: 11px;
+      font-size: 9.5px;
       letter-spacing: 0.5px;
-      padding: 1mm 3mm;
+      padding: 0.8mm 2.5mm;
       border-radius: 1.5mm;
-      margin: 1mm 0;
-      line-height: 1.4;
+      margin: 0.6mm 0;
+      line-height: 1.2;
       flex-shrink: 0;
     }
     .code-row {
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 3mm;
+      gap: 2mm;
       width: 100%;
       flex-shrink: 0;
     }
     .barcode-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
-    .barcode-img { height: 16mm; max-width: 48mm; object-fit: contain; image-rendering: pixelated; }
-    .barcode-text { font-family: monospace; font-size: 8px; font-weight: 700; margin-top: 0.5mm; line-height: 1; }
-    .v-divider { width: 1px; height: 16mm; border-left: 1px dashed #cccccc; }
+    .barcode-img { height: 13mm; max-width: 44mm; object-fit: contain; image-rendering: pixelated; }
+    .barcode-text { font-family: monospace; font-size: 7.5px; font-weight: 700; margin-top: 0.3mm; line-height: 1; }
+    .v-divider { width: 1px; height: 13mm; border-left: 1px dashed #cccccc; }
     .qr-col { display: flex; align-items: center; }
-    .qr-img { width: 16mm; height: 16mm; object-fit: contain; image-rendering: pixelated; }
-    .price-row { font-size: 16px; font-weight: 900; line-height: 1.2; flex-shrink: 0; }
-    .sku-hsn-row { display: flex; gap: 3mm; align-items: center; justify-content: center; flex-wrap: wrap; }
-    .hsn-chip { font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 0.3px; padding: 1px 5px; border: 0.5px solid #333333; border-radius: 3px; }
-    .mrp-line { font-size: 8px; font-weight: 700; line-height: 1.1; margin-bottom: 1px; }
+    .qr-img { width: 13mm; height: 13mm; object-fit: contain; image-rendering: pixelated; }
+    .price-row { font-size: 15px; font-weight: 900; line-height: 1.1; flex-shrink: 0; }
+    .sku-hsn-row { display: flex; gap: 2mm; align-items: center; justify-content: center; flex-wrap: wrap; }
+    .hsn-chip { font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 0.3px; padding: 1px 4px; border: 0.5px solid #333333; border-radius: 3px; }
+    .mrp-line { font-size: 7.5px; font-weight: 700; line-height: 1; margin-bottom: 1px; }
     .mrp-note { font-weight: 400; font-style: italic; color: #444444; }
       `;
     }
