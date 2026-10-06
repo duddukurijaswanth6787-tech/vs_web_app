@@ -2032,8 +2032,8 @@ export default function ProductBuilder({
           <title>Print Barcode Stickers (3x2 Inch) - ${variant.sku}</title>
           <style>
             @page {
-              size: 76mm 50mm;
-              margin: 0;
+              size: 76mm 50mm landscape;
+              margin: 0mm;
             }
             * {
               box-sizing: border-box;
@@ -2042,15 +2042,18 @@ export default function ProductBuilder({
             }
             html, body {
               width: 76mm;
+              height: 50mm;
               margin: 0;
               padding: 0;
               background: #fff;
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
             }
             .sticker-card {
               width: 76mm;
-              height: 49.5mm;
-              max-height: 49.5mm;
+              height: 48mm;
+              max-height: 48mm;
               padding: 1.5mm 3mm;
               text-align: center;
               background: #ffffff;
@@ -2064,6 +2067,36 @@ export default function ProductBuilder({
               flex-direction: column;
               align-items: center;
               justify-content: space-between;
+              border: none;
+            }
+            @media print {
+              @page {
+                size: 76mm 50mm landscape;
+                margin: 0mm;
+              }
+              html, body {
+                width: 76mm !important;
+                height: 50mm !important;
+                max-width: 76mm !important;
+                max-height: 50mm !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                overflow: hidden !important;
+              }
+              .sticker-card {
+                width: 76mm !important;
+                height: 48mm !important;
+                max-height: 48mm !important;
+                margin: 0 !important;
+                padding: 1.5mm 3mm !important;
+                border: none !important;
+                box-sizing: border-box !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                overflow: hidden !important;
+              }
             }
             .header-row {
               display: flex;

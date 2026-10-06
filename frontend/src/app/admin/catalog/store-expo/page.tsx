@@ -244,19 +244,22 @@ export default function StoreExpoInventoryPage() {
       <head>
         <title>Print Expo Sticker - ${printProduct.name}</title>
         <style>
-          @page { size: ${is3x2 ? '76mm 50mm' : '50mm 25mm'}; margin: 0; }
+          @page { size: ${is3x2 ? '76mm 50mm landscape' : '50mm 25mm landscape'}; margin: 0mm; }
           * { box-sizing: border-box; margin: 0; padding: 0; }
           html, body {
             width: ${is3x2 ? '76mm' : '50mm'};
+            height: ${is3x2 ? '50mm' : '25mm'};
             margin: 0;
             padding: 0;
             background: #fff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
           }
           .sticker-card {
             width: ${is3x2 ? '76mm' : '50mm'};
-            height: ${is3x2 ? '49.5mm' : '24.5mm'};
-            max-height: ${is3x2 ? '49.5mm' : '24.5mm'};
+            height: ${is3x2 ? '48mm' : '24mm'};
+            max-height: ${is3x2 ? '48mm' : '24mm'};
             padding: 1.5mm 3mm;
             text-align: center;
             background: #ffffff;
@@ -270,6 +273,31 @@ export default function StoreExpoInventoryPage() {
             flex-direction: column;
             align-items: center;
             justify-content: space-between;
+            border: none;
+          }
+          @media print {
+            @page { size: ${is3x2 ? '76mm 50mm landscape' : '50mm 25mm landscape'}; margin: 0mm; }
+            html, body {
+              width: ${is3x2 ? '76mm' : '50mm'} !important;
+              height: ${is3x2 ? '50mm' : '25mm'} !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              overflow: hidden !important;
+            }
+            .sticker-card {
+              width: ${is3x2 ? '76mm' : '50mm'} !important;
+              height: ${is3x2 ? '48mm' : '24mm'} !important;
+              max-height: ${is3x2 ? '48mm' : '24mm'} !important;
+              border: none !important;
+              margin: 0 !important;
+              padding: 1.5mm 3mm !important;
+              box-sizing: border-box !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+            }
           }
           .header-row { display: flex; align-items: center; justify-content: center; gap: 4px; }
           .header-diamond { color: #0284c7; font-size: 11px; font-weight: bold; line-height: 1; }
