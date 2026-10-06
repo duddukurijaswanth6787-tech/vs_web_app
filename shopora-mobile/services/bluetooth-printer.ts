@@ -760,7 +760,7 @@ class BluetoothPrinterService {
             {
               text: `PRICE: Rs.${label.price.toFixed(2)}`,
               x: 140,
-              y: 255,
+              y: 220,
               fonttype: FONTTYPE.FONT_3,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,
@@ -770,7 +770,7 @@ class BluetoothPrinterService {
             {
               text: '(Incl. of all taxes)',
               x: 380,
-              y: 260,
+              y: 225,
               fonttype: FONTTYPE.FONT_1,
               rotation: TSC_ROTATION.ROTATION_0,
               xscal: 1,

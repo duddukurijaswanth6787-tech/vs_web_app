@@ -261,7 +261,7 @@ export default function StoreExpoInventoryPage() {
             width: ${is3x2 ? '76mm' : '50mm'};
             height: ${is3x2 ? '48mm' : '24mm'};
             max-height: ${is3x2 ? '48mm' : '24mm'};
-            padding: 1mm 2.5mm;
+            padding: ${is3x2 ? '2mm 3mm 6mm 3mm' : '1mm 2mm 3mm 2mm'};
             text-align: center;
             background: #ffffff;
             box-sizing: border-box;
@@ -273,7 +273,8 @@ export default function StoreExpoInventoryPage() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: 0.8mm;
             border: none;
           }
           .sticker-card:last-child {
@@ -295,13 +296,18 @@ export default function StoreExpoInventoryPage() {
               max-height: ${is3x2 ? '48mm' : '24mm'} !important;
               border: none !important;
               margin: 0 !important;
-              padding: 1mm 2.5mm !important;
+              padding: ${is3x2 ? '2mm 3mm 6mm 3mm' : '1mm 2mm 3mm 2mm'} !important;
               box-sizing: border-box !important;
               page-break-after: always !important;
               break-after: page !important;
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               overflow: hidden !important;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              gap: 0.8mm !important;
             }
             .sticker-card:last-child {
               page-break-after: avoid !important;
@@ -311,16 +317,16 @@ export default function StoreExpoInventoryPage() {
           .header-row { display: flex; align-items: center; justify-content: center; gap: 4px; }
           .header-diamond { color: #0284c7; font-size: 9.5px; font-weight: bold; line-height: 1; }
           .store-title { font-family: Georgia, serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px; color: #111111; line-height: 1; }
-          .divider { width: 100%; height: 1px; background: #e5e5e5; margin: 0.3mm 0; }
+          .divider { width: 100%; height: 1px; background: #e5e5e5; margin: 0.2mm 0; }
           .product-title { font-size: 8.5px; font-weight: 700; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
-          .sku-badge { display: inline-block; background: #000000; color: #ffffff; border-radius: 9999px; padding: 1px 8px; font-family: monospace; font-size: 8.5px; font-weight: 800; letter-spacing: 0.6px; margin: 0.3mm 0; line-height: 1.1; }
+          .sku-badge { display: inline-block; background: #000000; color: #ffffff; border-radius: 9999px; padding: 1px 8px; font-family: monospace; font-size: 8px; font-weight: 800; letter-spacing: 0.6px; margin: 0.2mm 0; line-height: 1.1; }
           .code-container { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0.2mm 0; }
           .barcode-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
           .barcode-box img { height: 10.5mm; width: 100%; max-width: 42mm; object-fit: contain; image-rendering: pixelated; }
           .barcode-num { font-family: monospace; font-size: 8px; font-weight: 700; color: #111111; letter-spacing: 0.5px; margin-top: 1px; line-height: 1; }
           .dashed-line { height: 10.5mm; border-right: 1px dashed #cccccc; }
           .qr-box img { width: 10.5mm; height: 10.5mm; object-fit: contain; }
-          .price { font-size: 14px; font-weight: 900; color: #000000; line-height: 1; }
+          .price { font-size: 15px; font-weight: 900; color: #000000; line-height: 1; margin-top: 0.5mm; }
         </style>
       </head>
       <body>

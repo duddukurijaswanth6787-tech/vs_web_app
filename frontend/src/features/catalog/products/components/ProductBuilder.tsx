@@ -2054,7 +2054,7 @@ export default function ProductBuilder({
               width: 76mm;
               height: 48mm;
               max-height: 48mm;
-              padding: 1mm 2.5mm;
+              padding: 2mm 3mm 6mm 3mm;
               text-align: center;
               background: #ffffff;
               box-sizing: border-box;
@@ -2066,7 +2066,8 @@ export default function ProductBuilder({
               display: flex;
               flex-direction: column;
               align-items: center;
-              justify-content: space-between;
+              justify-content: flex-start;
+              gap: 0.8mm;
               border: none;
             }
             .sticker-card:last-child {
@@ -2092,7 +2093,7 @@ export default function ProductBuilder({
                 height: 48mm !important;
                 max-height: 48mm !important;
                 margin: 0 !important;
-                padding: 1mm 2.5mm !important;
+                padding: 2mm 3mm 6mm 3mm !important;
                 border: none !important;
                 box-sizing: border-box !important;
                 page-break-after: always !important;
@@ -2100,6 +2101,11 @@ export default function ProductBuilder({
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
                 overflow: hidden !important;
+                display: flex !important;
+                flex-direction: column !important;
+                align-items: center !important;
+                justify-content: flex-start !important;
+                gap: 0.8mm !important;
               }
               .sticker-card:last-child {
                 page-break-after: avoid !important;
@@ -2130,7 +2136,7 @@ export default function ProductBuilder({
               width: 100%;
               height: 1px;
               background: #e5e5e5;
-              margin: 0.3mm 0;
+              margin: 0.2mm 0;
             }
             .product-title {
               font-size: 8.5px;
@@ -2149,10 +2155,10 @@ export default function ProductBuilder({
               border-radius: 9999px;
               padding: 1px 8px;
               font-family: monospace;
-              font-size: 8.5px;
+              font-size: 8px;
               font-weight: 800;
               letter-spacing: 0.6px;
-              margin: 0.3mm 0;
+              margin: 0.2mm 0;
               line-height: 1.1;
             }
             .code-container {
@@ -2195,10 +2201,11 @@ export default function ProductBuilder({
               object-fit: contain;
             }
             .price {
-              font-size: 14px;
+              font-size: 15px;
               font-weight: 900;
               color: #000000;
               line-height: 1;
+              margin-top: 0.5mm;
             }
           </style>
         </head>

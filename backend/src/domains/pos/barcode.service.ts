@@ -207,7 +207,7 @@ export class BarcodeService {
     if (spec.layout === 'branded') {
       return `
     .sticker-page {
-      padding: 1.5mm 3mm;
+      padding: 2mm 3mm 6mm 3mm;
       width: ${spec.contentWidthMm}mm;
       height: ${spec.contentHeightMm}mm;
       max-height: ${spec.contentHeightMm}mm;
@@ -215,7 +215,8 @@ export class BarcodeService {
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: space-between;
+      justify-content: flex-start;
+      gap: 0.8mm;
       text-align: center;
       background: #ffffff;
       color: #000000;
