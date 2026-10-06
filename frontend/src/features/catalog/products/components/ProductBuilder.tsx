@@ -1998,13 +1998,15 @@ export default function ProductBuilder({
     try {
       const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
       const barcodeCode = variant.barcode || variant.sku;
-      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 48, 2);
-      const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 120);
+      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 75, 2.6);
+      const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 140);
 
       const stickerCardsHtml = Array.from({ length: qty }).map(() => `
         <div class="sticker-card">
-          <div class="header-diamond">❖</div>
-          <div class="store-title">VASANTHI DESIGNERS</div>
+          <div class="header-row">
+            <span class="header-diamond">❖</span>
+            <span class="store-title">VASANTHI DESIGNERS</span>
+          </div>
           <div class="divider"></div>
           <div class="product-title">${productName} | ${variant.title}</div>
           <div class="sku-badge">${variant.sku}</div>
@@ -2012,7 +2014,6 @@ export default function ProductBuilder({
             <div class="barcode-box">
               <img src="${barcodeImgUrl}" alt="barcode" />
               <div class="barcode-num">${variant.barcode}</div>
-              <div class="sku-num">${variant.sku}</div>
             </div>
             <div class="dashed-line"></div>
             <div class="qr-box">
@@ -2028,105 +2029,124 @@ export default function ProductBuilder({
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Print Barcode Stickers - ${variant.sku}</title>
+          <title>Print Barcode Stickers (3x2 Inch) - ${variant.sku}</title>
           <style>
-            @page { size: auto; margin: 5mm; }
+            @page { size: 76mm 50mm; margin: 0; }
             body {
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
               margin: 0;
-              padding: 10px;
+              padding: 4px;
               background: #fff;
             }
             .grid {
               display: flex;
               flex-wrap: wrap;
-              gap: 15px;
+              gap: 10px;
               justify-content: flex-start;
             }
             .sticker-card {
-              width: 320px;
-              padding: 16px;
-              border: 2px dashed #737373;
-              border-radius: 20px;
+              width: 74mm;
+              min-height: 48mm;
+              padding: 2.5mm 3mm;
+              border: 1.5px dashed #525252;
+              border-radius: 4mm;
               text-align: center;
               background: #ffffff;
               box-sizing: border-box;
               page-break-inside: avoid;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
+              justify-content: space-between;
+            }
+            .header-row {
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              gap: 4px;
             }
             .header-diamond {
               color: #0284c7;
-              font-size: 14px;
+              font-size: 13px;
               font-weight: bold;
             }
             .store-title {
               font-family: Georgia, serif;
-              font-size: 15px;
+              font-size: 13px;
               font-weight: 800;
-              letter-spacing: 1.5px;
-              color: #171717;
-              margin-top: 2px;
+              letter-spacing: 1.2px;
+              color: #111111;
             }
             .divider {
+              width: 100%;
               height: 1px;
               background: #e5e5e5;
-              margin: 8px 0;
+              margin: 1.5mm 0;
             }
             .product-title {
-              font-size: 12px;
+              font-size: 11px;
               font-weight: 700;
-              color: #262626;
+              color: #1f2937;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
+              max-width: 100%;
             }
             .sku-badge {
               display: inline-block;
-              background: #09090b;
+              background: #000000;
               color: #ffffff;
               border-radius: 9999px;
-              padding: 4px 18px;
+              padding: 2px 14px;
               font-family: monospace;
-              font-size: 13px;
-              font-weight: 700;
+              font-size: 11px;
+              font-weight: 800;
               letter-spacing: 1px;
-              margin: 8px 0;
+              margin: 1.5mm 0;
             }
             .code-container {
               display: flex;
               align-items: center;
               justify-content: center;
-              gap: 10px;
-              margin: 4px 0;
+              gap: 8px;
+              width: 100%;
+              margin: 1mm 0;
+            }
+            .barcode-box {
+              flex: 1;
+              display: flex;
+              flex-direction: column;
+              align-items: center;
             }
             .barcode-box img {
-              height: 48px;
-              max-width: 140px;
+              height: 16mm;
+              width: 100%;
+              max-width: 48mm;
+              object-fit: contain;
+              image-rendering: pixelated;
             }
             .barcode-num {
               font-family: monospace;
               font-size: 10px;
-              font-weight: 600;
-              color: #404040;
-              margin-top: -2px;
-            }
-            .sku-num {
-              font-family: monospace;
-              font-size: 9px;
-              color: #737373;
+              font-weight: 700;
+              color: #111111;
+              letter-spacing: 0.8px;
+              margin-top: 1px;
             }
             .dashed-line {
-              height: 48px;
-              border-right: 1px dashed #d4d4d4;
+              height: 16mm;
+              border-right: 1px dashed #cccccc;
             }
             .qr-box img {
-              width: 48px;
-              height: 48px;
+              width: 15mm;
+              height: 15mm;
+              object-fit: contain;
             }
             .price {
-              font-size: 24px;
+              font-size: 20px;
               font-weight: 900;
               color: #000000;
-              margin-top: 2px;
+              line-height: 1;
             }
           </style>
         </head>
@@ -4289,14 +4309,14 @@ export default function ProductBuilder({
                 {issuedVariants.map((variant) => (
                   <div
                     key={variant.sku}
-                    className="bg-white rounded-3xl p-5 border-2 border-dashed border-neutral-300 shadow-md text-neutral-900 font-sans flex flex-col items-center text-center relative overflow-hidden"
+                    className="bg-white rounded-3xl p-5 border-2 border-dashed border-neutral-400 shadow-lg text-neutral-900 font-sans flex flex-col items-center text-center relative overflow-hidden transition-all hover:border-neutral-950"
                   >
                     {/* Header: Blue Diamond + VASANTHI DESIGNERS */}
-                    <div className="flex items-center justify-center gap-1 text-center">
-                      <span className="text-[#0284c7] font-bold text-xs">❖</span>
-                    </div>
-                    <div className="text-sm font-extrabold tracking-wider uppercase text-neutral-900 font-serif">
-                      VASANTHI DESIGNERS
+                    <div className="flex items-center justify-center gap-1.5 text-center">
+                      <span className="text-[#0284c7] font-black text-sm">❖</span>
+                      <span className="text-sm font-black tracking-widest uppercase text-neutral-950 font-serif">
+                        VASANTHI DESIGNERS
+                      </span>
                     </div>
                     <div className="w-full border-b border-neutral-200 my-2" />
 
@@ -4306,37 +4326,37 @@ export default function ProductBuilder({
                     </div>
 
                     {/* Black SKU Pill Badge */}
-                    <div className="my-2.5 bg-neutral-950 text-white rounded-full px-5 py-1 text-xs font-mono font-bold tracking-widest shadow-xs">
+                    <div className="my-2 bg-neutral-950 text-white rounded-full px-5 py-1 text-xs font-mono font-black tracking-widest shadow-xs">
                       {variant.sku}
                     </div>
 
-                    {/* Barcode + QR Code Side by Side */}
+                    {/* Barcode + QR Code - High Contrast 3x2 Inch Format */}
                     {variant.barcode || variant.sku ? (
-                      <div className="flex items-center justify-center gap-3 my-1 py-1 w-full">
-                        <div className="flex flex-col items-center">
+                      <div className="flex items-center justify-between gap-3 my-1.5 py-1 w-full bg-neutral-50/70 p-2 rounded-2xl border border-neutral-100">
+                        <div className="flex-1 flex flex-col items-center justify-center min-w-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={generateCode128SvgDataUrl(variant.barcode || variant.sku, 48, 2)}
+                            src={generateCode128SvgDataUrl(variant.barcode || variant.sku, 75, 2.6)}
                             alt={`Barcode ${variant.barcode || variant.sku}`}
-                            className="h-12 max-w-[140px] object-contain"
+                            className="h-16 w-full max-w-[220px] object-contain"
                           />
-                          <span className="text-[10px] font-mono text-neutral-700 tracking-wider font-semibold -mt-1">
+                          <span className="text-xs font-mono text-neutral-950 font-black tracking-widest mt-0.5">
                             {variant.barcode || variant.sku}
-                          </span>
-                          <span className="text-[9px] font-mono text-neutral-500 tracking-wider">
-                            {variant.sku}
                           </span>
                         </div>
 
-                        <div className="h-12 border-r border-dashed border-neutral-300 mx-1" />
+                        <div className="h-16 border-r border-dashed border-neutral-300 mx-0.5" />
 
-                        <div className="flex flex-col items-center">
+                        <div className="flex flex-col items-center justify-center shrink-0">
                           {/* eslint-disable-next-line @next/next/no-img-element */}
                           <img
-                            src={generateQrCodeSvgDataUrl(variant.barcode || variant.sku, 120)}
+                            src={generateQrCodeSvgDataUrl(variant.barcode || variant.sku, 140)}
                             alt={`QR ${variant.barcode || variant.sku}`}
-                            className="h-12 w-12 object-contain"
+                            className="h-14 w-14 object-contain"
                           />
+                          <span className="text-[8px] font-mono text-neutral-500 font-bold tracking-tight uppercase mt-0.5">
+                            Scan POS
+                          </span>
                         </div>
                       </div>
                     ) : (

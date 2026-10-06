@@ -19,9 +19,9 @@ import { bluetoothPrinterService } from '../services/bluetooth-printer';
 
 /** Physical label roll dimensions matching LABEL_SIZE_OPTIONS's displayed sizes, for the direct Bluetooth print path. */
 const LABEL_SIZE_MM: Record<LabelSize, { widthMm: number; heightMm: number }> = {
-  SMALL: { widthMm: 50, heightMm: 25 },
-  MEDIUM: { widthMm: 75, heightMm: 40 },
-  LARGE: { widthMm: 100, heightMm: 50 },
+  MEDIUM: { widthMm: 76, heightMm: 50 }, // Standard 3" x 2" (76 x 50mm)
+  LARGE: { widthMm: 100, heightMm: 50 }, // Large 4" x 2" (100 x 50mm)
+  SMALL: { widthMm: 50, heightMm: 25 },  // Compact 2" x 1" (50 x 25mm)
 };
 
 /**
@@ -39,7 +39,7 @@ export default function LabelPreviewScreen() {
 
   const [quantities, setQuantities] = useState<Record<string, string>>({});
   const [printingId, setPrintingId] = useState<string | null>(null);
-  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
+  const [labelSize, setLabelSize] = useState<LabelSize>('MEDIUM');
 
   if (!product) {
     return (
@@ -367,16 +367,16 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     marginVertical: 8,
   },
-  skuBadgeText: { color: '#ffffff', fontFamily: 'monospace', fontSize: 12, fontWeight: '700', letterSpacing: 1 },
-  codesRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 12, marginVertical: 6 },
-  barcodeCol: { alignItems: 'center' },
-  barcodeImage: { width: 140, height: 48, backgroundColor: '#ffffff' },
-  barcodeNumber: { fontSize: 10, fontFamily: 'monospace', fontWeight: '600', color: '#404040', marginTop: -2 },
-  skuSubText: { fontSize: 9, fontFamily: 'monospace', color: '#737373' },
-  dashedDivider: { height: 48, borderWidth: 0.5, borderStyle: 'dashed', borderColor: '#d4d4d4', marginHorizontal: 4 },
+  skuBadgeText: { color: '#ffffff', fontFamily: 'monospace', fontSize: 12, fontWeight: '800', letterSpacing: 1 },
+  codesRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginVertical: 8, width: '100%', paddingHorizontal: 6 },
+  barcodeCol: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  barcodeImage: { width: '100%', height: 65, backgroundColor: '#ffffff' },
+  barcodeNumber: { fontSize: 12, fontFamily: 'monospace', fontWeight: '800', color: '#171717', marginTop: 2, letterSpacing: 0.8 },
+  skuSubText: { fontSize: 10, fontFamily: 'monospace', color: '#525252', fontWeight: '600' },
+  dashedDivider: { height: 60, borderWidth: 0.5, borderStyle: 'dashed', borderColor: '#d4d4d4', marginHorizontal: 4 },
   qrCol: { alignItems: 'center', justifyContent: 'center' },
-  qrImage: { width: 48, height: 48 },
-  priceText: { fontSize: 24, fontWeight: '900', color: '#000000', marginVertical: 2 },
+  qrImage: { width: 56, height: 56 },
+  priceText: { fontSize: 26, fontWeight: '900', color: '#000000', marginVertical: 2 },
   stockRow: { marginTop: 4 },
   stockLabel: { fontSize: 11, color: '#6b7280' },
 

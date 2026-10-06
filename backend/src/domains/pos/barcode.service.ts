@@ -13,8 +13,8 @@ export class BarcodeService {
   async generateBarcodeBuffer(
     text: string,
     bcid = 'code128',
-    scale = 2,
-    height = 10,
+    scale = 3,
+    height = 18,
   ): Promise<Buffer> {
     try {
       const cleanBcid = (bcid || 'code128').toLowerCase();
@@ -26,13 +26,13 @@ export class BarcodeService {
       const options: Record<string, unknown> = {
         bcid: cleanBcid,
         text: String(text || 'SKU'),
-        scale: Number(scale) || 2,
+        scale: Number(scale) || 3,
       };
       if (!is2D) {
-        options.height = Number(height) || 10;
+        options.height = Number(height) || 18;
         options.includetext = true;
         options.textxalign = 'center';
-        options.textsize = 8;
+        options.textsize = 9;
       }
       const pngBuffer = await bwipjs.toBuffer(options as any);
       return pngBuffer;
@@ -50,8 +50,8 @@ export class BarcodeService {
   async generateBarcodeDataUrl(
     text: string,
     bcid = 'code128',
-    scale = 2,
-    height = 10,
+    scale = 3,
+    height = 18,
   ): Promise<string> {
     const buffer = await this.generateBarcodeBuffer(text, bcid, scale, height);
     return `data:image/png;base64,${buffer.toString('base64')}`;
@@ -61,17 +61,14 @@ export class BarcodeService {
     const buffer = await bwipjs.toBuffer({
       bcid: 'qrcode',
       text,
-      scale: 3,
+      scale: 4,
     });
     return `data:image/png;base64,${buffer.toString('base64')}`;
   }
 
   /**
-   * Physical dimensions and layout knobs per label size. SMALL matches the
-   * original 50x25mm garment-tag design exactly (no QR -- there isn't room
-   * for one to stay scannable). MEDIUM and LARGE add a QR code, which is
-   * generated from the same barcode value so it's a second, phone-scannable
-   * copy of the same code rather than new information.
+   * Physical dimensions and layout knobs per label size.
+   * MEDIUM is the primary 3x2 inch (76x50mm) label standard with high-visibility barcode.
    */
   private readonly LABEL_SPECS: Record<
     LabelSize,
@@ -87,24 +84,24 @@ export class BarcodeService {
     SMALL: {
       pageWidthMm: 50,
       pageHeightMm: 25,
-      contentWidthMm: 44,
-      contentHeightMm: 21,
+      contentWidthMm: 46,
+      contentHeightMm: 22,
       includeQr: false,
       layout: 'compact',
     },
     MEDIUM: {
-      pageWidthMm: 75,
-      pageHeightMm: 40,
-      contentWidthMm: 69,
-      contentHeightMm: 34,
+      pageWidthMm: 76,
+      pageHeightMm: 50,
+      contentWidthMm: 72,
+      contentHeightMm: 46,
       includeQr: true,
-      layout: 'compact',
+      layout: 'branded',
     },
     LARGE: {
       pageWidthMm: 100,
       pageHeightMm: 50,
       contentWidthMm: 94,
-      contentHeightMm: 44,
+      contentHeightMm: 46,
       includeQr: true,
       layout: 'branded',
     },
@@ -263,12 +260,12 @@ export class BarcodeService {
       width: 100%;
       flex-shrink: 0;
     }
-    .barcode-col { display: flex; flex-direction: column; align-items: center; }
-    .barcode-img { height: 11mm; object-fit: contain; }
-    .barcode-text { font-family: monospace; font-size: 7px; margin-top: 0.5mm; line-height: 1; }
-    .v-divider { width: 1px; height: 14mm; border-left: 1px dashed #cccccc; }
+    .barcode-col { display: flex; flex-direction: column; align-items: center; flex: 1; }
+    .barcode-img { height: 16mm; max-width: 48mm; object-fit: contain; image-rendering: pixelated; }
+    .barcode-text { font-family: monospace; font-size: 8px; font-weight: 700; margin-top: 0.5mm; line-height: 1; }
+    .v-divider { width: 1px; height: 16mm; border-left: 1px dashed #cccccc; }
     .qr-col { display: flex; align-items: center; }
-    .qr-img { width: 14mm; height: 14mm; object-fit: contain; }
+    .qr-img { width: 16mm; height: 16mm; object-fit: contain; image-rendering: pixelated; }
     .price-row { font-size: 16px; font-weight: 900; line-height: 1.2; flex-shrink: 0; }
     .sku-hsn-row { display: flex; gap: 3mm; align-items: center; justify-content: center; flex-wrap: wrap; }
     .hsn-chip { font-family: monospace; font-size: 7px; font-weight: 700; letter-spacing: 0.3px; padding: 1px 5px; border: 0.5px solid #333333; border-radius: 3px; }

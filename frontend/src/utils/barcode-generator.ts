@@ -22,7 +22,7 @@ const CODE128_PATTERNS = [
 const START_CODE_B = 104;
 const STOP_CODE = 106;
 
-export function generateCode128SvgDataUrl(text: string, height = 48, barWidth = 2): string {
+export function generateCode128SvgDataUrl(text: string, height = 70, barWidth = 2.4): string {
   const safeText = String(text || 'SKU').trim();
   const codes: number[] = [START_CODE_B];
   let checkSum = START_CODE_B;

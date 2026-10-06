@@ -4,9 +4,9 @@ export type PosPaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT';
 export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string; description: string }[] = [
-  { value: 'SMALL', title: 'Small', dimensions: '50 × 25mm', description: 'Compact garment tag — barcode + SKU + price only' },
-  { value: 'MEDIUM', title: 'Medium', dimensions: '75 × 40mm', description: 'Adds a scannable QR code alongside the barcode' },
-  { value: 'LARGE', title: 'Large', dimensions: '100 × 50mm', description: 'Full branded design — logo, SKU badge, barcode & QR' },
+  { value: 'MEDIUM', title: 'Standard (3×2")', dimensions: '76 × 50mm', description: 'Industry-standard 3x2" retail tag — extra-large barcode + QR code for instant scanning' },
+  { value: 'LARGE', title: 'Large (4×2")', dimensions: '100 × 50mm', description: 'Full branded designer tag — logo, SKU badge, wide barcode & QR' },
+  { value: 'SMALL', title: 'Compact (2×1")', dimensions: '50 × 25mm', description: 'Compact garment tag — barcode + SKU + price only' },
 ];
 
 export interface PosCartItem {

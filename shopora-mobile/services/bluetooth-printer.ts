@@ -851,10 +851,10 @@ class BluetoothPrinterService {
       const barcodeConfig = is3x2
         ? [
             {
-              x: 70,
-              y: 285,
+              x: 50,
+              y: 280,
               type: TSC_BARCODETYPE.CODE128,
-              height: 60,
+              height: 85,
               readable: READABLE.ENABLE,
               rotation: TSC_ROTATION.ROTATION_0,
               code: label.barcode || '890123456789',

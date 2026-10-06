@@ -34,8 +34,7 @@ import { variantService } from '@/features/catalog/variants/variant.service';
 import { brandService } from '@/features/catalog/brands/brand.service';
 import { categoryService } from '@/features/catalog/categories/category.service';
 import { inventoryService } from '@/features/inventory/inventory.service';
-import { getApiErrorMessage } from '@/utils/api-error';
-import { generateCode128SvgDataUrl } from '@/utils/barcode-generator';
+import { generateCode128SvgDataUrl, generateQrCodeSvgDataUrl } from '@/utils/barcode-generator';
 
 interface ProductItem {
   id: string;
@@ -206,7 +205,99 @@ export default function StoreExpoInventoryPage() {
   };
 
   const handlePrintStickers = () => {
-    window.print();
+    if (!printProduct) return;
+    const activeVar =
+      printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
+    const barcodeCode = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
+    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 75, 2.6);
+    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 140);
+    const is3x2 = stickerSize === '75x50';
+    const copies = Math.max(1, stickerCopies);
+
+    const stickerCardsHtml = Array.from({ length: copies }).map(() => `
+      <div class="sticker-card">
+        <div class="header-row">
+          <span class="header-diamond">❖</span>
+          <span class="store-title">VASANTHI DESIGNERS</span>
+        </div>
+        <div class="divider"></div>
+        <div class="product-title">${printProduct.name}${activeVar?.title ? ` | ${activeVar.title}` : ''}</div>
+        <div class="sku-badge">${activeVar?.sku || barcodeCode}</div>
+        <div class="code-container">
+          <div class="barcode-box">
+            <img src="${barcodeImgUrl}" alt="barcode" />
+            <div class="barcode-num">${barcodeCode}</div>
+          </div>
+          <div class="dashed-line"></div>
+          <div class="qr-box">
+            <img src="${qrImgUrl}" alt="qr" />
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="price">₹${(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}</div>
+      </div>
+    `).join('');
+
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Print Expo Sticker - ${printProduct.name}</title>
+        <style>
+          @page { size: ${is3x2 ? '76mm 50mm' : '50mm 25mm'}; margin: 0; }
+          body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 4px;
+            background: #fff;
+          }
+          .sticker-card {
+            width: ${is3x2 ? '74mm' : '48mm'};
+            min-height: ${is3x2 ? '48mm' : '23mm'};
+            padding: 2.5mm 3mm;
+            border: 1.5px dashed #525252;
+            border-radius: 4mm;
+            text-align: center;
+            background: #ffffff;
+            box-sizing: border-box;
+            page-break-inside: avoid;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+          }
+          .header-row { display: flex; align-items: center; justify-content: center; gap: 4px; }
+          .header-diamond { color: #0284c7; font-size: 13px; font-weight: bold; }
+          .store-title { font-family: Georgia, serif; font-size: 13px; font-weight: 800; letter-spacing: 1.2px; color: #111111; }
+          .divider { width: 100%; height: 1px; background: #e5e5e5; margin: 1.5mm 0; }
+          .product-title { font-size: 11px; font-weight: 700; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; }
+          .sku-badge { display: inline-block; background: #000000; color: #ffffff; border-radius: 9999px; padding: 2px 14px; font-family: monospace; font-size: 11px; font-weight: 800; letter-spacing: 1px; margin: 1.5mm 0; }
+          .code-container { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; margin: 1mm 0; }
+          .barcode-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
+          .barcode-box img { height: 16mm; width: 100%; max-width: 48mm; object-fit: contain; image-rendering: pixelated; }
+          .barcode-num { font-family: monospace; font-size: 10px; font-weight: 700; color: #111111; letter-spacing: 0.8px; margin-top: 1px; }
+          .dashed-line { height: 16mm; border-right: 1px dashed #cccccc; }
+          .qr-box img { width: 14mm; height: 14mm; object-fit: contain; }
+          .price { font-size: 19px; font-weight: 900; color: #000000; letter-spacing: -0.5px; }
+        </style>
+      </head>
+      <body>
+        ${stickerCardsHtml}
+        <script>
+          window.onload = function() {
+            window.print();
+            setTimeout(function() { window.close(); }, 500);
+          };
+        </script>
+      </body>
+      </html>
+    `;
+
+    const printWin = window.open('', '_blank', 'width=450,height=600');
+    if (printWin) {
+      printWin.document.write(html);
+      printWin.document.close();
+    }
   };
 
   const handleToggleSize = (sz: string) => {
@@ -1069,26 +1160,37 @@ export default function StoreExpoInventoryPage() {
               const activeVar =
                 printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
               const barcodeVal = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal);
+              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 75, 2.6);
+              const qrSvg = generateQrCodeSvgDataUrl(barcodeVal, 140);
 
               return (
-                <div className="mb-4 rounded-xl border border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-sm">
-                  <div className="flex items-center justify-center mb-1.5">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src="/brand/logo_thermal_bold.png"
-                      alt="Vasanthi's Signature"
-                      className="h-12 max-w-[180px] object-contain"
-                    />
+                <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-md">
+                  <div className="flex items-center justify-center gap-1 mb-1">
+                    <span className="text-sky-600 text-xs">❖</span>
+                    <span className="font-serif text-xs font-black tracking-widest text-slate-900">VASANTHI DESIGNERS</span>
                   </div>
-                  <p className="mt-0.5 text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
-                  {activeVar?.title && <p className="text-[10px] text-slate-600 font-medium">{activeVar.title}</p>}
-                  <div className="my-2 flex justify-center">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={barcodeSvg} alt={barcodeVal} className="h-12 max-w-full object-contain" />
+                  <div className="my-1.5 h-[1px] w-full bg-slate-100" />
+                  <p className="text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
+                  {activeVar?.title && <p className="text-[11px] text-slate-500 font-medium">{activeVar.title}</p>}
+                  <div className="my-1">
+                    <span className="inline-block rounded-full bg-slate-900 px-3 py-0.5 font-mono text-[10px] font-extrabold tracking-wider text-white">
+                      {activeVar?.sku || barcodeVal}
+                    </span>
                   </div>
-                  <p className="font-mono text-xs font-bold tracking-wider text-slate-900">{barcodeVal}</p>
-                  <p className="mt-1 text-sm font-black text-sky-700">
+                  <div className="my-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50/80 p-2 border border-slate-100">
+                    <div className="flex-1 flex flex-col items-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={barcodeSvg} alt={barcodeVal} className="h-14 w-full max-w-[200px] object-contain" />
+                      <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
+                    </div>
+                    <div className="h-14 w-[1px] border-r border-dashed border-slate-300" />
+                    <div className="flex items-center justify-center">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img src={qrSvg} alt="QR" className="h-12 w-12 object-contain" />
+                    </div>
+                  </div>
+                  <div className="my-1.5 h-[1px] w-full bg-slate-100" />
+                  <p className="text-base font-black text-slate-900">
                     ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
                   </p>
                 </div>

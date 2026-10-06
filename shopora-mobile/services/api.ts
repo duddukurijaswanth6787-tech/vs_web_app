@@ -1019,9 +1019,9 @@ export const inventoryService = {
 export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
 
 export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string }[] = [
-  { value: 'SMALL', title: 'Small', dimensions: '50 x 25mm' },
-  { value: 'MEDIUM', title: 'Medium', dimensions: '75 x 40mm' },
-  { value: 'LARGE', title: 'Large', dimensions: '100 x 50mm' },
+  { value: 'MEDIUM', title: 'Standard (3×2")', dimensions: '76 x 50mm' },
+  { value: 'LARGE', title: 'Large (4×2")', dimensions: '100 x 50mm' },
+  { value: 'SMALL', title: 'Compact (2×1")', dimensions: '50 x 25mm' },
 ];
 
 export const barcodeService = {
@@ -1032,8 +1032,8 @@ export const barcodeService = {
   imageUrl(code: string, opts?: { bcid?: string; scale?: number; height?: number }) {
     const params = new URLSearchParams({ code });
     if (opts?.bcid) params.set('bcid', opts.bcid);
-    if (opts?.scale != null) params.set('scale', String(opts.scale));
-    if (opts?.height != null) params.set('height', String(opts.height));
+    params.set('scale', String(opts?.scale ?? 4));
+    params.set('height', String(opts?.height ?? 22));
     return `${API_BASE_URL}/pos/barcodes/generate?${params.toString()}`;
   },
 
