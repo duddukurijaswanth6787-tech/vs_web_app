@@ -60,16 +60,16 @@ export default async function Home() {
       queryFn: () => customerStorefrontService.getPublicSettings(),
     }),
     queryClient.prefetchQuery({
-      queryKey: ['customer', 'products', { isNewArrival: true, limit: 12 }],
-      queryFn: () => fetchProducts({ isNewArrival: true, limit: 12 }),
+      queryKey: ['customer', 'products', { isNewArrival: true, limit: 20 }],
+      queryFn: () => fetchProducts({ isNewArrival: true, limit: 20 }),
     }),
     queryClient.prefetchQuery({
-      queryKey: ['customer', 'products', { isBestSeller: true, limit: 12 }],
-      queryFn: () => fetchProducts({ isBestSeller: true, limit: 12 }),
+      queryKey: ['customer', 'products', { isBestSeller: true, limit: 20 }],
+      queryFn: () => fetchProducts({ isBestSeller: true, limit: 20 }),
     }),
     queryClient.prefetchQuery({
-      queryKey: ['customer', 'products', { isFeatured: true, limit: 12 }],
-      queryFn: () => fetchProducts({ isFeatured: true, limit: 12 }),
+      queryKey: ['customer', 'products', { isFeatured: true, limit: 20 }],
+      queryFn: () => fetchProducts({ isFeatured: true, limit: 20 }),
     }),
   ]);
 

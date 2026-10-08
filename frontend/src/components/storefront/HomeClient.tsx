@@ -37,14 +37,14 @@ export function HomeClient() {
   const [showScrollTop, setShowScrollTop] = useState(false);
   const { data: newArrivals, isLoading: loadingNew } = useCustomerProducts({
     isNewArrival: true,
-    limit: 12,
+    limit: 20,
   });
   const { data: featured } = useCustomerProducts({
     isFeatured: true,
-    limit: 12,
+    limit: 20,
   });
   const { data: allProducts } = useCustomerProducts({
-    limit: 12,
+    limit: 20,
     sortBy: 'createdAt',
     sortOrder: 'desc',
   });
