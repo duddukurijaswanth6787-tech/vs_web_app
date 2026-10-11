@@ -531,7 +531,7 @@ export class TelegramService implements OnModuleInit {
     if (lower === '/myid' || lower === '/id') {
       await this.sendMessage(
         senderId,
-        `🆔 *Your Telegram User ID:* \`${senderId}\`\n\n_To get access to Vasanthi Designers store bot, share this ID with the Super Administrator._`,
+        `🆔 *Your Telegram User ID:* \`${senderId}\`\n\n_To get access to Vasanthi's Signature store bot, share this ID with the Super Administrator._`,
         'Markdown',
         { remove_keyboard: true },
       );
@@ -548,7 +548,7 @@ export class TelegramService implements OnModuleInit {
       );
       await this.sendMessage(
         senderId,
-        `⛔ *Access Denied*\n\nYour Telegram User ID (\`${senderId}\`) is not authorized to access Vasanthi Designers store management.\n\n_Share this ID with the Super Administrator to grant access._`,
+        `⛔ *Access Denied*\n\nYour Telegram User ID (\`${senderId}\`) is not authorized to access Vasanthi's Signature store management.\n\n_Share this ID with the Super Administrator to grant access._`,
         'Markdown',
         { remove_keyboard: true },
       );
@@ -577,12 +577,12 @@ export class TelegramService implements OnModuleInit {
         await this.updateSettings({ allowedChatIds: updatedList });
         await this.sendMessage(
           senderId,
-          `✅ *User Authorized Successfully!*\n━━━━━━━━━━━━━━━━━━━━\nTelegram User ID: \`${newId}\` has been granted access to Vasanthi Designers bot.\n\n_They can now use the bot and receive instant real-time alerts._`,
+          `✅ *User Authorized Successfully!*\n━━━━━━━━━━━━━━━━━━━━\nTelegram User ID: \`${newId}\` has been granted access to Vasanthi's Signature bot.\n\n_They can now use the bot and receive instant real-time alerts._`,
         );
         // Send a welcome message with keyboard to the newly authorized user
         await this.sendMessage(
           newId,
-          `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nYou have been granted administrator access to store management & real-time alerts.\n\n_Tap any quick menu button below to begin!_`,
+          `👑 *Welcome to Vasanthi's Signature Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nYou have been granted administrator access to store management & real-time alerts.\n\n_Tap any quick menu button below to begin!_`,
           'Markdown',
           MAIN_KEYBOARD_MARKUP,
         );
@@ -635,7 +635,7 @@ export class TelegramService implements OnModuleInit {
     if (lower === '/start' || lower === '/help') {
       await this.sendMessage(
         senderId,
-        `👑 *Welcome to Vasanthi Designers Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Tap any button below or ask in plain English:*\n• \`/today\` — Today's full business summary & revenue\n• \`/payments\` — Recent customer payments & sources\n• \`/orders\` — Recent store customer orders\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/stock\` — Low stock inventory alerts\n• \`/admins\` — Manage authorized bot users\n• \`/test\` — Ping test live bot connection\n\n💡 *Smart Actions:*\n• Type or paste any Order Number (e.g. \`ORD-ONL-20260923-0001\`)\n• Ask natural questions: _"give order full detail"_, _"today's sale"_, _"pos report"_\n• Add another admin user: \`/addadmin <User_ID>\`\n• Instant real-time alerts for online orders and POS sales ⚡`,
+        `👑 *Welcome to Vasanthi's Signature Store Bot!*\n━━━━━━━━━━━━━━━━━━━━\nHello *${message.from?.first_name || 'Admin'}*, you are connected to the live store management system.\n\n*Tap any button below or ask in plain English:*\n• \`/today\` — Today's full business summary & revenue\n• \`/payments\` — Recent customer payments & sources\n• \`/orders\` — Recent store customer orders\n• \`/pos\` — Today's in-store POS sales report\n• \`/online\` — Today's online store orders\n• \`/stock\` — Low stock inventory alerts\n• \`/admins\` — Manage authorized bot users\n• \`/test\` — Ping test live bot connection\n\n💡 *Smart Actions:*\n• Type or paste any Order Number (e.g. \`ORD-ONL-20260923-0001\`)\n• Ask natural questions: _"give order full detail"_, _"today's sale"_, _"pos report"_\n• Add another admin user: \`/addadmin <User_ID>\`\n• Instant real-time alerts for online orders and POS sales ⚡`,
       );
       return;
     }
@@ -1003,7 +1003,7 @@ export class TelegramService implements OnModuleInit {
 
     let text = `📦 *RECENT STORE ORDERS (${orders.length})*\n━━━━━━━━━━━━━━━━━━━━\n`;
     if (orders.length === 0) {
-      text += `_No orders found in the database yet._\n━━━━━━━━━━━━━━━━━━━━\n_Vasanthi Designers Orders._ ✨`;
+      text += `_No orders found in the database yet._\n━━━━━━━━━━━━━━━━━━━━\n_Vasanthi's Signature Orders._ ✨`;
     } else {
       orders.forEach((o, idx) => {
         const type = o.channel === 'POS_SHOPORA' ? '🏪 In-Store POS' : '🌐 Online Store';
@@ -1209,7 +1209,7 @@ export class TelegramService implements OnModuleInit {
       return { success: false, message: 'No allowed Chat IDs configured.' };
     }
 
-    const testMsg = `🚀 *VASANTHI DESIGNERS TELEGRAM AUTOMATION ACTIVE!*\n━━━━━━━━━━━━━━━━━━━━\n✅ Your Telegram Bot integration is working perfectly.\n⏰ *Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n_You will receive instant alerts for new online orders and POS sales._`;
+    const testMsg = `🚀 *VASANTHI'S SIGNATURE TELEGRAM AUTOMATION ACTIVE!*\n━━━━━━━━━━━━━━━━━━━━\n✅ Your Telegram Bot integration is working perfectly.\n⏰ *Time:* ${new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}\n\n_You will receive instant alerts for new online orders and POS sales._`;
 
     let sentCount = 0;
     for (const chatId of config.allowedChatIds) {
