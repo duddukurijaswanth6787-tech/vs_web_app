@@ -9,13 +9,14 @@ function getBackendOrigin(): string {
     return envUrl.replace(/\/api\/v1\/?$/, '');
   }
   if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://api.vasanthissignature.in';
-    }
-    return 'http://localhost:4000';
+    return '';
   }
-  return 'https://api.vasanthissignature.in';
+  return (
+    process.env.BACKEND_INTERNAL_URL?.replace(/\/api\/v1\/?$/, '') ||
+    (process.env.NODE_ENV === 'development'
+      ? 'http://127.0.0.1:4000'
+      : 'https://api.vasanthissignature.in')
+  );
 }
 
 export function resolveMediaUrl(url?: string | null): string {
@@ -28,9 +29,14 @@ export function resolveMediaUrl(url?: string | null): string {
 
   const backendOrigin = getBackendOrigin();
 
-  // Rewrite legacy railway domain to live api.vasanthissignature.in
+  // Rewrite legacy railway domain to live backend
   if (url.includes('vsss-production.up.railway.app')) {
     url = url.replace('https://vsss-production.up.railway.app', backendOrigin);
+  }
+
+  // In browser, rewrite direct backend API media URLs to same-origin relative paths to prevent Wi-Fi DNS errors
+  if (typeof window !== 'undefined' && url.includes('api.vasanthissignature.in/api/v1/')) {
+    url = url.replace('https://api.vasanthissignature.in/api/v1/', '/api/v1/');
   }
 
   // 2. Convert any dev/local backend origin (localhost:4000, 127.0.0.1:4000, 192.168.x.x:4000) to current environment's backend origin

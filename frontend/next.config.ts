@@ -118,13 +118,19 @@ const nextConfig: NextConfig = {
     ];
   },
   async rewrites() {
-    // Only used for local dev when NEXT_PUBLIC_API_BASE_URL is unset (see
-    // frontend/src/lib/api/client.ts). In UAT/production the API base URL is
-    // absolute (Railway URL), so this rewrite is never hit.
+    const backendUrl =
+      process.env.BACKEND_INTERNAL_URL ||
+      (process.env.NODE_ENV === 'development'
+        ? 'http://127.0.0.1:4000'
+        : 'https://api.vasanthissignature.in');
     return [
       {
         source: '/api/v1/:path*',
-        destination: `${process.env.BACKEND_INTERNAL_URL || 'http://127.0.0.1:4000'}/api/v1/:path*`,
+        destination: `${backendUrl}/api/v1/:path*`,
+      },
+      {
+        source: '/health',
+        destination: `${backendUrl}/health`,
       },
     ];
   },

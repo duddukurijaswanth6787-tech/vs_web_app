@@ -3,16 +3,19 @@ import { AuthTokens } from '@/types/auth.types';
 import { reportClientError } from '@/lib/error-reporter';
 
 export const getApiBaseUrl = () => {
-  const envUrl = process.env.NEXT_PUBLIC_API_BASE_URL;
-  if (envUrl) return envUrl;
   if (typeof window !== 'undefined') {
-    const hostname = window.location.hostname;
-    if (hostname !== 'localhost' && hostname !== '127.0.0.1') {
-      return 'https://api.vasanthissignature.in/api/v1';
-    }
+    // In the browser, always route through the same-origin Next.js reverse proxy (/api/v1).
+    // This completely bypasses residential/home Wi-Fi ISP DNS failures (e.g. JioFiber, Airtel)
+    // where home routers fail to resolve external Railway CNAMEs (*.up.railway.app),
+    // and eliminates cross-origin CORS latency.
     return '/api/v1';
   }
-  return 'https://api.vasanthissignature.in/api/v1';
+  return (
+    process.env.BACKEND_INTERNAL_URL ||
+    (process.env.NODE_ENV === 'production'
+      ? 'https://api.vasanthissignature.in/api/v1'
+      : (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://127.0.0.1:4000/api/v1'))
+  );
 };
 
 export const apiClient = axios.create({
