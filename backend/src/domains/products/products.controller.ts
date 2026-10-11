@@ -218,6 +218,24 @@ export class ProductsController {
     );
   }
 
+  // ─── Admin: Sold Out Toggle ────────────────────────────
+
+  @Post(':id/sold-out')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('products:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Toggle product sold out / out of stock status' })
+  async setSoldOut(
+    @Param('id') id: string,
+    @Body('isSoldOut') isSoldOut: boolean,
+    @CurrentUser() user: JwtPayload,
+  ) {
+    return ResponseBuilder.success(
+      await this.productsService.toggleSoldOut(id, Boolean(isSoldOut), user.sub),
+      isSoldOut ? 'Product marked as Sold Out' : 'Product marked as In Stock',
+    );
+  }
+
   // ─── Admin: Categories ─────────────────────────────────
 
   @Post(':id/categories')

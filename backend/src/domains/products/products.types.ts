@@ -185,6 +185,10 @@ export class CreateProductDto {
   @ApiPropertyOptional({ default: false })
   @IsOptional()
   @IsBoolean()
+  isSoldOut?: boolean;
+  @ApiPropertyOptional({ default: false })
+  @IsOptional()
+  @IsBoolean()
   isFestivePick?: boolean;
   @ApiPropertyOptional({ default: false })
   @IsOptional()
@@ -387,6 +391,7 @@ export class UpdateProductDto {
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isBestSeller?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isTrending?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isLimitedStock?: boolean;
+  @ApiPropertyOptional() @IsOptional() @IsBoolean() isSoldOut?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isFestivePick?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isExclusive?: boolean;
   @ApiPropertyOptional() @IsOptional() @IsBoolean() isOnlineOnly?: boolean;
@@ -520,6 +525,17 @@ export class ProductQueryDto {
   isPublished?: boolean;
   @ApiPropertyOptional()
   @IsOptional()
+  @Transform(({ value }) =>
+    value === 'true' || value === true || value === 1 || value === '1'
+      ? true
+      : value === 'false' || value === false || value === 0 || value === '0'
+        ? false
+        : undefined,
+  )
+  @IsBoolean()
+  isSoldOut?: boolean;
+  @ApiPropertyOptional()
+  @IsOptional()
   @Type(() => Number)
   @IsNumber()
   @Min(0)
@@ -651,6 +667,7 @@ export class ProductResponse {
   @ApiProperty() isBestSeller!: boolean;
   @ApiProperty() isTrending!: boolean;
   @ApiProperty() isLimitedStock!: boolean;
+  @ApiProperty() isSoldOut!: boolean;
   @ApiProperty() isFestivePick!: boolean;
   @ApiProperty() isExclusive!: boolean;
   @ApiProperty() isOnlineOnly!: boolean;

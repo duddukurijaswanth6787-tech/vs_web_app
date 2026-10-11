@@ -37,6 +37,8 @@ import {
   type ColorVariantGroup,
   type LivePreviewData,
 } from './LiveDesktopProductPreview';
+import ProductCopilotDrawer from './ProductCopilotDrawer';
+import type { ExtractedProductData } from '../product-copilot.service';
 import {
   Package,
   DollarSign,
@@ -251,6 +253,7 @@ export default function ProductBuilder({
   const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
   const [labelQtyBySku, setLabelQtyBySku] = useState<Record<string, number>>({});
   const [printingSku, setPrintingSku] = useState<string | null>(null);
+  const [isCopilotOpen, setIsCopilotOpen] = useState(false);
   const batchStickersMutation = useBatchStickers();
 
   // Load Brands
@@ -326,6 +329,7 @@ export default function ProductBuilder({
       isFeatured: initialData?.isFeatured ?? false,
       isTrending: initialData?.isTrending ?? false,
       isLimitedStock: initialData?.isLimitedStock ?? false,
+      isSoldOut: initialData?.isSoldOut ?? false,
       isFestivePick: initialData?.isFestivePick ?? false,
       isExclusive: initialData?.isExclusive ?? false,
       isOnlineOnly: initialData?.isOnlineOnly ?? false,
@@ -790,6 +794,99 @@ export default function ProductBuilder({
       });
     });
   }, [productId, fetchedVariantsData, inventoryMap]);
+
+  // AI Copilot 100% Parity Data Applicator
+  const handleCopilotApply = (data: ExtractedProductData, imageUrls: string[]) => {
+    methods.setValue('name', data.name, { shouldValidate: true });
+    methods.setValue('shortDescription', data.shortDescription);
+    methods.setValue('description', data.description);
+    methods.setValue('basePrice', data.basePrice, { shouldValidate: true });
+    if (data.salePrice) methods.setValue('salePrice', data.salePrice);
+    if (data.costPrice) methods.setValue('costPrice', data.costPrice);
+    methods.setValue('taxPercentage', data.taxPercentage);
+    methods.setValue('taxInclusive', data.taxInclusive);
+    methods.setValue('hsnCode', data.hsnCode);
+    methods.setValue('type', data.type);
+    methods.setValue('gender', data.gender);
+    methods.setValue('ageGroup', data.ageGroup);
+    methods.setValue('season', data.season);
+    methods.setValue('seoTitle', data.seoTitle);
+    methods.setValue('seoDescription', data.seoDescription);
+    methods.setValue('seoKeywords', data.seoKeywords);
+    methods.setValue('isNewArrival', data.isNewArrival);
+    methods.setValue('isFeatured', data.isFeatured);
+    methods.setValue('isBestSeller', data.isBestSeller);
+    methods.setValue('isTrending', data.isTrending);
+    methods.setValue('isExclusive', data.isExclusive);
+    methods.setValue('channel', data.channel);
+
+    if (data.tags && data.tags.length > 0) setTags(data.tags);
+    if (data.collections && data.collections.length > 0) setCollections(data.collections);
+    if (data.occasion) setOccasion(data.occasion);
+
+    // Auto-match category
+    if (data.suggestedCategory && categories.length > 0) {
+      const foundCat = categories.find((c: any) =>
+        c.name.toLowerCase().includes(data.suggestedCategory.toLowerCase()) ||
+        data.suggestedCategory.toLowerCase().includes(c.name.toLowerCase())
+      );
+      if (foundCat) {
+        setPrimaryCategoryId(foundCat.id);
+        if (data.suggestedSubCategory) {
+          const foundSub = categories.find((c: any) =>
+            c.parentId === foundCat.id && (
+              c.name.toLowerCase().includes(data.suggestedSubCategory.toLowerCase()) ||
+              data.suggestedSubCategory.toLowerCase().includes(c.name.toLowerCase())
+            )
+          );
+          if (foundSub) setSubCategoryId(foundSub.id);
+        }
+      }
+    }
+
+    // Set Dynamic Attributes
+    if (data.attributes) {
+      const newAttrMap: Record<string, string> = { ...attributeValues };
+      productAttributes.forEach((attr: any) => {
+        const key = attr.name.toLowerCase().trim();
+        for (const [k, v] of Object.entries(data.attributes)) {
+          if (v && (key.includes(k) || k.includes(key))) {
+            newAttrMap[attr.id] = v;
+          }
+        }
+      });
+      setAttributeValues(newAttrMap);
+    }
+
+    // Set Color Group & Images
+    if (imageUrls.length > 0 || data.colorName) {
+      const cName = data.colorName || 'Color 1';
+      const cHex = data.colorHex || '#1B4F72';
+      const colorCode = getColorCodeHelper(cName);
+      const newGroup: ColorVariantGroup = {
+        id: `col-${Date.now()}-${cName.toLowerCase().replace(/[^a-z0-9]/g, '')}`,
+        name: cName,
+        hex: cHex,
+        swatchImage: imageUrls[0],
+        images: imageUrls,
+        sizes: (data.sizes && data.sizes.length > 0)
+          ? data.sizes.map((s) => ({
+              size: s.size,
+              stock: s.stock || 10,
+              available: true,
+              sku: s.sku || `${colorCode}-${s.size}`,
+            }))
+          : STANDARD_SIZES.map((sz) => ({
+              size: sz,
+              stock: 10,
+              available: true,
+              sku: `${colorCode}-${sz}`,
+            })),
+      };
+      setColorGroups([newGroup]);
+      if (imageUrls[0]) setProductCardImageUrl(imageUrls[0]);
+    }
+  };
 
   // Auto-generate preview barcode stickers and QR codes from color groups and sizes
   const generateBarcodeVariants = useCallback(() => {
@@ -2304,6 +2401,15 @@ export default function ProductBuilder({
             )}
 
             <button
+              type="button"
+              onClick={() => setIsCopilotOpen(true)}
+              className="w-full sm:w-auto justify-center bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 min-h-[40px]"
+            >
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
+              <span>AI Product Copilot</span>
+            </button>
+
+            <button
               type="submit"
               disabled={isSubmitting}
               className="w-full sm:w-auto justify-center bg-[#0284c7] hover:bg-[#0B3B78] text-white text-xs font-bold uppercase tracking-wider px-5 py-2.5 rounded-xl shadow-md transition-all hover:scale-105 flex items-center gap-2 disabled:opacity-60 disabled:hover:scale-100 min-h-[40px]"
@@ -2611,6 +2717,34 @@ export default function ProductBuilder({
                           className="sr-only peer"
                         />
                         <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[#0284c7]"></div>
+                      </label>
+                    </div>
+                  </div>
+
+                  {/* Mark as Sold Out / Out of Stock Force Toggle */}
+                  <div className={`p-4 rounded-xl border transition-all ${methods.watch('isSoldOut') ? 'bg-rose-50/60 border-rose-300 shadow-xs ring-1 ring-rose-500/20' : 'bg-white/70 border-neutral-200'}`}>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex items-center gap-2">
+                          <AlertTriangle className="w-4 h-4 text-rose-600" />
+                          <span className="text-xs font-bold text-neutral-900">Mark as Sold Out (&quot;Out of Stock&quot;)</span>
+                          {methods.watch('isSoldOut') && (
+                            <span className="text-[9px] font-extrabold uppercase bg-rose-600 text-white px-1.5 py-0.5 rounded tracking-wide">
+                              Sold Out Active
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-neutral-500">
+                          Force this product to display as &quot;Out of Stock&quot; on the storefront, disable checkout, and activate the customer &quot;Notify Me&quot; enquiry button.
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer shrink-0">
+                        <input
+                          type="checkbox"
+                          {...methods.register('isSoldOut')}
+                          className="sr-only peer"
+                        />
+                        <div className="w-10 h-5 bg-neutral-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-rose-600"></div>
                       </label>
                     </div>
                   </div>
@@ -4472,6 +4606,14 @@ export default function ProductBuilder({
         <div className="pt-6">
           <LiveDesktopProductPreview data={deferredPreviewData} />
         </div>
+
+        {/* AI PRODUCT ONBOARDING COPILOT (AGENT 1 DRAWER) */}
+        <ProductCopilotDrawer
+          isOpen={isCopilotOpen}
+          onClose={() => setIsCopilotOpen(false)}
+          onApplyToForm={handleCopilotApply}
+          onDirectPublish={handleCopilotApply}
+        />
 
       </form>
     </FormProvider>

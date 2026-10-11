@@ -129,6 +129,11 @@ export const productService = {
     return response.data.data!;
   },
 
+  toggleSoldOut: async (id: string, isSoldOut: boolean): Promise<ProductResponse> => {
+    const response = await apiClient.post<StandardResponse<ProductResponse>>(`/products/${id}/sold-out`, { isSoldOut });
+    return response.data.data!;
+  },
+
   assignCategories: async (id: string, dto: AssignCategoriesDto): Promise<ProductResponse> => {
     const response = await apiClient.post<StandardResponse<ProductResponse>>(`/products/${id}/categories`, dto);
     return response.data.data!;

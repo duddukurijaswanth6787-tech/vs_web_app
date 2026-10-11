@@ -107,6 +107,18 @@ export function useFeatureProduct() {
   });
 }
 
+export function useToggleSoldOut() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, isSoldOut }: { id: string; isSoldOut: boolean }) =>
+      productService.toggleSoldOut(id, isSoldOut),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: productKeys.all });
+      queryClient.invalidateQueries({ queryKey: productKeys.detail(data.id) });
+    },
+  });
+}
+
 export function useCreateColorGroup() {
   const queryClient = useQueryClient();
   return useMutation({

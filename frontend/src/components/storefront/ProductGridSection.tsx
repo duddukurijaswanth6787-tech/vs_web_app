@@ -17,6 +17,7 @@ export interface ProductItem {
   image: string;
   isNew?: boolean;
   isBestSeller?: boolean;
+  isSoldOut?: boolean;
   slug?: string;
 }
 
@@ -49,6 +50,7 @@ function ProductCardItem({
   const origVal = Number(product.originalPrice ?? p.compareAtPrice ?? p.basePrice ?? 0);
   const brandName = String(product.brand || p.brandName || "VASANTHI'S SIGNATURE");
   const discountPct = origVal > priceVal ? Math.round(((origVal - priceVal) / origVal) * 100) : 0;
+  const isSoldOut = Boolean(p.isSoldOut ?? product.isSoldOut);
 
   return (
     <div className="w-full flex flex-col bg-white text-neutral-900 rounded-2xl border border-neutral-200 overflow-hidden shadow-2xs hover:shadow-lg transition-all duration-300 group">
@@ -62,15 +64,28 @@ function ProductCardItem({
           sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 20vw"
           unoptimized={isLocalOrPlaceholder(imageSrc)}
           onError={() => setImgError(true)}
-          className="object-cover group-hover:scale-108 transition-transform duration-500"
+          className={`object-cover group-hover:scale-108 transition-transform duration-500 ${isSoldOut ? 'grayscale-[35%]' : ''}`}
         />
-        <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
-          {product.isNew !== false && (
-            <span className="bg-neutral-900 text-white text-[8px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
-              NEW
+        {isSoldOut && (
+          <div className="absolute inset-0 bg-neutral-950/20 backdrop-blur-[0.5px] flex items-center justify-center z-10 pointer-events-none">
+            <span className="bg-neutral-900/90 text-white text-[9px] sm:text-[10px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest shadow-md border border-white/20">
+              OUT OF STOCK
             </span>
+          </div>
+        )}
+        <div className="absolute top-2 left-2 flex flex-col gap-1 z-20">
+          {isSoldOut ? (
+            <span className="bg-rose-600 text-white text-[8px] sm:text-[9px] font-black px-2 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
+              SOLD OUT
+            </span>
+          ) : (
+            product.isNew !== false && (
+              <span className="bg-neutral-900 text-white text-[8px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
+                NEW
+              </span>
+            )
           )}
-          {discountPct > 0 && (
+          {!isSoldOut && discountPct > 0 && (
             <span className="bg-sky-600 text-white text-[8px] sm:text-[9px] font-bold px-2 py-0.5 rounded-full shadow-2xs uppercase tracking-wider">
               -{discountPct}%
             </span>
@@ -117,10 +132,16 @@ function ProductCardItem({
             )}
           </div>
 
-          <div className="flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-700">
-            <span className="text-amber-400 text-xs">★</span>
-            <span>5.0</span>
-          </div>
+          {isSoldOut ? (
+            <span className="text-[10px] font-extrabold uppercase text-rose-600">
+              Sold Out
+            </span>
+          ) : (
+            <div className="flex items-center gap-0.5 text-[10px] sm:text-[11px] font-bold text-neutral-700">
+              <span className="text-amber-400 text-xs">★</span>
+              <span>5.0</span>
+            </div>
+          )}
         </div>
       </div>
     </div>

@@ -74,6 +74,7 @@ export class ProductsService {
       isBestSeller: p.isBestSeller,
       isTrending: p.isTrending ?? false,
       isLimitedStock: p.isLimitedStock ?? false,
+      isSoldOut: p.isSoldOut ?? false,
       isFestivePick: p.isFestivePick ?? false,
       isExclusive: p.isExclusive ?? false,
       isOnlineOnly: p.isOnlineOnly ?? false,
@@ -262,6 +263,7 @@ export class ProductsService {
         isNewArrival: query.isNewArrival,
         isBestSeller: query.isBestSeller,
         isPublished: query.isPublished,
+        isSoldOut: query.isSoldOut,
         minPrice: query.minPrice,
         maxPrice: query.maxPrice,
         categoryId: query.categoryId,
@@ -832,6 +834,30 @@ export class ProductsService {
     });
     this.loggerService.log(
       { action: 'product_unfeatured', productId: id },
+      'ProductsService',
+    );
+    return this.findById(id);
+  }
+
+  async toggleSoldOut(id: string, isSoldOut: boolean, userId: string) {
+    const product = await this.productsRepository.findById(id);
+    if (!product || product.deletedAt)
+      throw new ResourceNotFoundException('Product not found', 'PRODUCT_001');
+    await this.productsRepository.update(id, {
+      isSoldOut,
+      updatedBy: userId,
+    } as any);
+    await this.cacheService.delPattern('products:*');
+    await this.auditService.log({
+      action: isSoldOut ? 'PRODUCT_MARKED_SOLD_OUT' : 'PRODUCT_MARKED_IN_STOCK',
+      module: 'products',
+      resource: 'product',
+      resourceId: id,
+      userId,
+      newValue: { isSoldOut },
+    });
+    this.loggerService.log(
+      { action: 'product_sold_out_toggled', productId: id, isSoldOut },
       'ProductsService',
     );
     return this.findById(id);

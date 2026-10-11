@@ -97,6 +97,7 @@ export interface CreateProductDto {
   isBestSeller?: boolean;
   isTrending?: boolean;
   isLimitedStock?: boolean;
+  isSoldOut?: boolean;
   isFestivePick?: boolean;
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
@@ -138,6 +139,7 @@ export interface ProductQueryDto {
   isBestSeller?: boolean;
   isTrending?: boolean;
   isLimitedStock?: boolean;
+  isSoldOut?: boolean;
   isFestivePick?: boolean;
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
@@ -206,6 +208,7 @@ export interface ProductResponse {
   isBestSeller: boolean;
   isTrending?: boolean;
   isLimitedStock?: boolean;
+  isSoldOut?: boolean;
   isFestivePick?: boolean;
   isExclusive?: boolean;
   isOnlineOnly?: boolean;
@@ -337,6 +340,7 @@ export const productSchema = z.object({
   isBestSeller: z.boolean().default(false),
   isTrending: z.boolean().default(false),
   isLimitedStock: z.boolean().default(false),
+  isSoldOut: z.boolean().default(false),
   isFestivePick: z.boolean().default(false),
   isExclusive: z.boolean().default(false),
   isOnlineOnly: z.boolean().default(false),

@@ -453,6 +453,10 @@ export function ProductDetailClient() {
   }, [currentColorGroup, selectedSize]);
 
   const maxAllowedQty = useMemo(() => {
+    // 0) Admin override: if marked as Sold Out, immediately return 0
+    if (product?.isSoldOut) {
+      return 0;
+    }
     // 1) Read from size in color group if specified
     if (currentSizeObj && typeof currentSizeObj.stock === 'number') {
       return Math.max(0, currentSizeObj.stock);
@@ -485,6 +489,7 @@ export function ProductDetailClient() {
 
   // Dynamic stock indicator driven by real stock & admin setting
   const stockText = useMemo(() => {
+    if (product?.isSoldOut) return 'Out of Stock (Sold Out)';
     if (!selectedSize) return 'Select size to check availability';
     if (maxAllowedQty === 0) return 'Out of Stock';
 
@@ -994,6 +999,13 @@ export function ProductDetailClient() {
                     {product.name}
                   </h1>
 
+                  {product.isSoldOut && (
+                    <div className="inline-flex items-center gap-1.5 px-3 py-1 bg-rose-50 border border-rose-200 text-rose-700 text-xs font-black rounded-lg uppercase tracking-wider w-fit">
+                      <span className="w-2 h-2 rounded-full bg-rose-600 animate-pulse" />
+                      Currently Sold Out / Out of Stock
+                    </div>
+                  )}
+
                   {/* Rating & Reviews */}
                   <div className="flex items-center gap-2 pt-1">
                     <div className="flex items-center text-amber-400">
@@ -1214,7 +1226,7 @@ export function ProductDetailClient() {
                         const stock = typeof item === 'object' && item !== null && 'stock' in item ? Number(sizeObj.stock) : 10;
                         const available = typeof item === 'object' && item !== null && 'available' in item ? Boolean(sizeObj.available) : true;
                         const isSelected = selectedSize === sizeLabel;
-                        const isOutOfStock = stock <= 0 || !available;
+                        const isOutOfStock = Boolean(product?.isSoldOut) || stock <= 0 || !available;
 
                         return (
                           <button

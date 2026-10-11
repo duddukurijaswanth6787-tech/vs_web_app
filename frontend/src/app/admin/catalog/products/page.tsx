@@ -4,7 +4,7 @@ import React, { useState, useCallback } from 'react';
 import Image from 'next/image';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import { useProducts, useDeleteProduct, useRestoreProduct, productKeys } from '@/features/catalog/products/product.hooks';
+import { useProducts, useDeleteProduct, useRestoreProduct, useToggleSoldOut, productKeys } from '@/features/catalog/products/product.hooks';
 import { useCategories } from '@/features/catalog/categories/category.hooks';
 import { useBrands } from '@/features/catalog/brands/brand.hooks';
 import { ProductStatus } from '@/features/catalog/products/product.types';
@@ -82,6 +82,7 @@ export default function ProductsPage() {
   const { data: brandList } = useBrands({ limit: 100 });
   const deleteProductMut = useDeleteProduct();
   const restoreProductMut = useRestoreProduct();
+  const toggleSoldOutMut = useToggleSoldOut();
 
   const updateQuery = useCallback(
     (key: string, value: string) => {
@@ -239,6 +240,41 @@ export default function ProductsPage() {
           {p.isFeatured ? 'Yes' : 'No'}
         </span>
       ),
+    },
+    {
+      key: 'soldOut',
+      label: 'Stock Availability',
+      render: (p) => {
+        const isSold = Boolean(p.isSoldOut);
+        return (
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                await toggleSoldOutMut.mutateAsync({ id: p.id, isSoldOut: !isSold });
+                showFeedback(
+                  'success',
+                  !isSold
+                    ? `Product "${p.name}" marked as SOLD OUT.`
+                    : `Product "${p.name}" marked as IN STOCK.`,
+                );
+                refetch();
+              } catch (err) {
+                showFeedback('error', getApiErrorMessage(err, 'Failed to update stock status'));
+              }
+            }}
+            className={`text-[10px] px-2.5 py-1 rounded-lg font-extrabold uppercase border flex items-center gap-1.5 transition-all cursor-pointer ${
+              isSold
+                ? 'bg-rose-50 text-rose-700 border-rose-200 hover:bg-rose-100 shadow-2xs'
+                : 'bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100'
+            }`}
+            title="Click to toggle Sold Out status on storefront"
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isSold ? 'bg-rose-600 animate-pulse' : 'bg-emerald-600'}`} />
+            {isSold ? 'Sold Out' : 'In Stock'}
+          </button>
+        );
+      },
     },
     {
       key: 'actions',

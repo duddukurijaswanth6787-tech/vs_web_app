@@ -507,6 +507,7 @@ model Product {
   hsnCode                 String?
   sizeChartTemplateId     String?
   isLimitedStock          Boolean                  @default(false)
+  isSoldOut               Boolean                  @default(false)
   isFestivePick           Boolean                  @default(false)
   isExclusive             Boolean                  @default(false)
   isOnlineOnly            Boolean                  @default(false)

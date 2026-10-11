@@ -25,6 +25,7 @@ export class ProductsRepository {
     isNewArrival?: boolean;
     isBestSeller?: boolean;
     isPublished?: boolean;
+    isSoldOut?: boolean;
     minPrice?: number;
     maxPrice?: number;
     categoryId?: string;
@@ -49,6 +50,7 @@ export class ProductsRepository {
       isNewArrival,
       isBestSeller,
       isPublished,
+      isSoldOut,
       minPrice,
       maxPrice,
       categoryId,
@@ -98,6 +100,7 @@ export class ProductsRepository {
     if (isNewArrival !== undefined) where.isNewArrival = isNewArrival;
     if (isBestSeller !== undefined) where.isBestSeller = isBestSeller;
     if (isPublished !== undefined) where.isPublished = isPublished;
+    if (isSoldOut !== undefined) (where as any).isSoldOut = isSoldOut;
     if (minPrice !== undefined || maxPrice !== undefined) {
       where.basePrice = {};
       if (minPrice !== undefined) where.basePrice.gte = minPrice;
