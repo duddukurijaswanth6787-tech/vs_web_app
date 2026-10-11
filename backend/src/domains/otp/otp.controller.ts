@@ -1,13 +1,16 @@
 import {
   Controller,
   Post,
+  Get,
+  Query,
   Body,
   Req,
   Res,
   HttpCode,
   HttpStatus,
+  UseGuards,
 } from '@nestjs/common';
-import { ApiTags, ApiOperation } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiBearerAuth } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
 import { OtpService } from './otp.service';
 import {
@@ -15,6 +18,7 @@ import {
   VerifyOtpDto,
   OtpLoginDto,
   FirebasePhoneLoginDto,
+  OtpAdminLogsQueryDto,
 } from './otp.types';
 import { ResponseBuilder } from '@common/responses/response.builder';
 import { setRefreshTokenCookie } from '@domains/auth/auth-cookie.util';
@@ -23,6 +27,8 @@ import {
   ThrottleOtpVerify,
   ThrottleCredentials,
 } from '@common/security/throttle.decorators';
+import { JwtAuthGuard } from '@domains/auth/guards/jwt-auth.guard';
+import { RolesGuard, Roles } from '@domains/auth/guards/roles.guard';
 
 @ApiTags('OTP Auth')
 @Controller('auth/otp')
@@ -33,10 +39,24 @@ export class OtpController {
   @Post('send')
   @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Send OTP to phone number' })
-  async send(@Body() dto: SendOtpDto) {
+  async send(@Body() dto: SendOtpDto, @Req() req: Request) {
+    const ip = req.ip || (req.headers['x-forwarded-for'] as string)?.split(',')[0];
+    const userAgent = req.headers['user-agent'] as string;
     return ResponseBuilder.success(
-      await this.otpService.sendOtp(dto),
+      await this.otpService.sendOtp(dto, ip, userAgent),
       'OTP sent',
+    );
+  }
+
+  @Get('admin-logs')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin', 'staff')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get OTP challenges and lead drop-off logs for admin' })
+  async getAdminLogs(@Query() query: OtpAdminLogsQueryDto) {
+    return ResponseBuilder.success(
+      await this.otpService.getAdminOtpLogs(query),
+      'OTP logs fetched',
     );
   }
 

@@ -29,6 +29,21 @@ export class SendOtpDto {
   @IsOptional()
   @IsIn(['LOGIN', 'VERIFY_PHONE', 'REGISTER'])
   purpose?: string;
+
+  @ApiPropertyOptional({ example: 'Priya Sharma' })
+  @IsOptional()
+  @IsString()
+  name?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  ipAddress?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  userAgent?: string;
 }
 
 export class VerifyOtpDto {
@@ -111,4 +126,69 @@ export class SendOtpResponse {
   @ApiProperty() expiresInSeconds!: number;
   @ApiProperty() purpose!: string;
   @ApiPropertyOptional() devCode?: string;
+}
+
+export class OtpAdminLogsQueryDto {
+  @ApiPropertyOptional({ default: 1 })
+  @IsOptional()
+  page?: number;
+
+  @ApiPropertyOptional({ default: 20 })
+  @IsOptional()
+  limit?: number;
+
+  @ApiPropertyOptional({ description: 'Filter by phone or name' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: ['ALL', 'VERIFIED', 'PENDING', 'ABANDONED', 'FAILED'] })
+  @IsOptional()
+  @IsString()
+  status?: string;
+
+  @ApiPropertyOptional({ enum: ['ALL', 'LOGIN', 'REGISTER', 'VERIFY_PHONE'] })
+  @IsOptional()
+  @IsString()
+  purpose?: string;
+}
+
+export interface OtpAdminLogItem {
+  id: string;
+  phone: string;
+  name: string | null;
+  email: string | null;
+  purpose: string;
+  status: 'VERIFIED' | 'PENDING' | 'ABANDONED' | 'EXPIRED';
+  attempts: number;
+  maxAttempts: number;
+  ipAddress: string | null;
+  userAgent: string | null;
+  verifiedAt: Date | null;
+  expiresAt: Date;
+  createdAt: Date;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    email: string;
+    phone: string | null;
+  } | null;
+}
+
+export interface OtpAdminStatsResponse {
+  total: number;
+  verified: number;
+  abandoned: number;
+  pending: number;
+  conversionRate: number;
+}
+
+export interface OtpAdminLogsListResponse {
+  items: OtpAdminLogItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  stats: OtpAdminStatsResponse;
 }

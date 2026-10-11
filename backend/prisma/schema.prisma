@@ -2546,6 +2546,9 @@ model OtpChallenge {
   id          String    @id @default(uuid())
   phone       String
   email       String?
+  name        String?
+  ipAddress   String?
+  userAgent   String?
   codeHash    String
   purpose     String    @default("LOGIN")
   attempts    Int       @default(0)

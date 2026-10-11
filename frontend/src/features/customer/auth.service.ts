@@ -5,10 +5,10 @@ import { customerWishlistService } from './wishlist.service';
 import { customerCartService } from './cart.service';
 
 export const customerAuthService = {
-  sendOtp: async (phone: string, purpose: 'LOGIN' | 'REGISTER' | 'VERIFY_PHONE' = 'LOGIN') => {
+  sendOtp: async (phone: string, purpose: 'LOGIN' | 'REGISTER' | 'VERIFY_PHONE' = 'LOGIN', name?: string) => {
     const res = await apiClient.post<StandardResponse<{ phone: string; expiresInSeconds: number; purpose: string; devCode?: string }>>(
       '/auth/otp/send',
-      { phone, purpose },
+      { phone, purpose, name },
     );
     return res.data.data!;
   },

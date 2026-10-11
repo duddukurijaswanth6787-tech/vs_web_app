@@ -16,6 +16,9 @@ import {
   OtpLoginDto,
   FirebasePhoneLoginDto,
   SendOtpResponse,
+  OtpAdminLogsQueryDto,
+  OtpAdminLogsListResponse,
+  OtpAdminLogItem,
 } from './otp.types';
 import type { AuthTokensResponse } from '@domains/auth/auth.types';
 
@@ -46,7 +49,11 @@ export class OtpService {
     return String(crypto.randomInt(100000, 1000000));
   }
 
-  async sendOtp(dto: SendOtpDto): Promise<SendOtpResponse> {
+  async sendOtp(
+    dto: SendOtpDto,
+    ip?: string,
+    userAgent?: string,
+  ): Promise<SendOtpResponse> {
     const phone = this.normalizePhone(dto.phone);
     const purpose = dto.purpose ?? 'LOGIN';
     const code = this.generateCode();
@@ -59,6 +66,10 @@ export class OtpService {
     });
 
     const user = await this.authRepository.findByPhone(phone);
+    const resolvedName =
+      dto.name?.trim() ||
+      (user ? `${user.firstName} ${user.lastName || ''}`.trim() : null);
+
     await this.prisma.otpChallenge.create({
       data: {
         phone,
@@ -66,7 +77,10 @@ export class OtpService {
         purpose,
         expiresAt,
         userId: user?.id,
-      },
+        name: resolvedName,
+        ipAddress: dto.ipAddress || ip || null,
+        userAgent: dto.userAgent || userAgent || null,
+      } as any,
     });
 
     await this.otpGatewayService.sendOtp({
@@ -236,5 +250,109 @@ export class OtpService {
 
     if (!user) throw new AuthenticationException('Unable to login', 'OTP_004');
     return user;
+  }
+
+  async getAdminOtpLogs(query: OtpAdminLogsQueryDto): Promise<OtpAdminLogsListResponse> {
+    const page = Math.max(1, Number(query.page) || 1);
+    const limit = Math.min(100, Math.max(1, Number(query.limit) || 20));
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+    if (query.search?.trim()) {
+      const searchClean = query.search.trim();
+      where.OR = [
+        { phone: { contains: searchClean, mode: 'insensitive' } },
+        { name: { contains: searchClean, mode: 'insensitive' } },
+        { email: { contains: searchClean, mode: 'insensitive' } },
+        { user: { firstName: { contains: searchClean, mode: 'insensitive' } } },
+      ];
+    }
+
+    if (query.purpose && query.purpose !== 'ALL') {
+      where.purpose = query.purpose;
+    }
+
+    const now = new Date();
+    if (query.status === 'VERIFIED') {
+      where.verifiedAt = { not: null };
+    } else if (query.status === 'PENDING') {
+      where.verifiedAt = null;
+      where.expiresAt = { gt: now };
+    } else if (query.status === 'ABANDONED') {
+      where.verifiedAt = null;
+      where.expiresAt = { lte: now };
+    }
+
+    const [items, total, statsTotal, verifiedTotal, pendingTotal] = await Promise.all([
+      (this.prisma.otpChallenge as any).findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              phone: true,
+            },
+          },
+        },
+      }),
+      (this.prisma.otpChallenge as any).count({ where }),
+      (this.prisma.otpChallenge as any).count(),
+      (this.prisma.otpChallenge as any).count({ where: { verifiedAt: { not: null } } }),
+      (this.prisma.otpChallenge as any).count({ where: { verifiedAt: null, expiresAt: { gt: now } } }),
+    ]);
+
+    const abandonedTotal = Math.max(0, statsTotal - verifiedTotal - pendingTotal);
+    const conversionRate = statsTotal > 0 ? Math.round((verifiedTotal / statsTotal) * 100) : 0;
+
+    const mappedItems: OtpAdminLogItem[] = items.map((item: any) => {
+      let status: 'VERIFIED' | 'PENDING' | 'ABANDONED' | 'EXPIRED' = 'PENDING';
+      if (item.verifiedAt) {
+        status = 'VERIFIED';
+      } else if (item.expiresAt <= now) {
+        status = 'ABANDONED';
+      }
+
+      const displayName =
+        item.name ||
+        (item.user ? `${item.user.firstName} ${item.user.lastName || ''}`.trim() : null);
+
+      return {
+        id: item.id,
+        phone: item.phone,
+        name: displayName,
+        email: item.email || item.user?.email || null,
+        purpose: item.purpose,
+        status,
+        attempts: item.attempts,
+        maxAttempts: item.maxAttempts,
+        ipAddress: item.ipAddress,
+        userAgent: item.userAgent,
+        verifiedAt: item.verifiedAt,
+        expiresAt: item.expiresAt,
+        createdAt: item.createdAt,
+        user: item.user,
+      };
+    });
+
+    return {
+      items: mappedItems,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit) || 1,
+      stats: {
+        total: statsTotal,
+        verified: verifiedTotal,
+        abandoned: abandonedTotal,
+        pending: pendingTotal,
+        conversionRate,
+      },
+    };
   }
 }

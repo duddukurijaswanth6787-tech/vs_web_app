@@ -43,6 +43,46 @@ export interface OtpTemplateOptionDto {
   usesExpiry: boolean;
 }
 
+export interface OtpAdminLogItem {
+  id: string;
+  phone: string;
+  name: string | null;
+  email: string | null;
+  purpose: string;
+  status: 'VERIFIED' | 'PENDING' | 'ABANDONED' | 'EXPIRED';
+  attempts: number;
+  maxAttempts: number;
+  ipAddress: string | null;
+  userAgent: string | null;
+  verifiedAt: string | null;
+  expiresAt: string;
+  createdAt: string;
+  user: {
+    id: string;
+    firstName: string;
+    lastName: string | null;
+    email: string;
+    phone: string | null;
+  } | null;
+}
+
+export interface OtpAdminStats {
+  total: number;
+  verified: number;
+  abandoned: number;
+  pending: number;
+  conversionRate: number;
+}
+
+export interface OtpAdminLogsResponse {
+  items: OtpAdminLogItem[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+  stats: OtpAdminStats;
+}
+
 export interface SessionExpirySettingsDto {
   adminSessionHours: number;
   accessTokenMinutes: number;
@@ -122,6 +162,19 @@ export const adminOpsApi = {
 
   getOtpTemplates: async (): Promise<OtpTemplateOptionDto[]> => {
     const res = await apiClient.get<StandardResponse<OtpTemplateOptionDto[]>>('/admin/otp-gateway/templates');
+    return res.data.data!;
+  },
+
+  getOtpAdminLogs: async (params?: {
+    page?: number;
+    limit?: number;
+    search?: string;
+    status?: string;
+    purpose?: string;
+  }): Promise<OtpAdminLogsResponse> => {
+    const res = await apiClient.get<StandardResponse<OtpAdminLogsResponse>>('/auth/otp/admin-logs', {
+      params,
+    });
     return res.data.data!;
   },
 
