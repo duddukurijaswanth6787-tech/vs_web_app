@@ -27,12 +27,15 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
     };
   }, []);
 
+  const onCredentialRef = useRef(onCredential);
+  onCredentialRef.current = onCredential;
+
   useEffect(() => {
     if (!clientId || !scriptLoaded || !window.google || !containerRef.current) return;
     try {
       window.google.accounts.id.initialize({
         client_id: clientId,
-        callback: (response) => onCredential(response.credential),
+        callback: (response) => onCredentialRef.current(response.credential),
       });
       containerRef.current.innerHTML = '';
       window.google.accounts.id.renderButton(containerRef.current, {
@@ -47,7 +50,7 @@ export function GoogleSignInButton({ onCredential }: { onCredential: (credential
     } catch {
       setGisRendered(false);
     }
-  }, [clientId, scriptLoaded, onCredential]);
+  }, [clientId, scriptLoaded]);
 
   const handleFallbackClick = () => {
     const gsi = (window as unknown as { google?: { accounts?: { id?: { prompt?: () => void } } } })?.google?.accounts?.id;
