@@ -7,7 +7,6 @@ import { resolveSession } from '@/lib/api/client';
 import { queryKeys } from '@/lib/query/client';
 import { UserProfile } from '@/types/auth.types';
 import { customerCartService } from '@/features/customer/cart.service';
-import { clearGuestId } from '@/features/customer/guest';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -114,7 +113,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession('active');
       try {
         await customerCartService.merge();
-        clearGuestId();
       } catch {
         // guest merge is best-effort
       }
@@ -155,7 +153,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession('active');
       try {
         await customerCartService.merge();
-        clearGuestId();
       } catch {
         // ignore
       }

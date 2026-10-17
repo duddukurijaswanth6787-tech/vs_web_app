@@ -6,6 +6,7 @@ import { CreateSupportTicketDto } from '@/features/support/support.types';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { productService } from '@/features/catalog/products/product.service';
 import { customerCartService } from '@/features/customer/cart.service';
+import type { CartDto } from '@/features/customer/cart.service';
 import { customerWishlistService } from '@/features/customer/wishlist.service';
 import { customerMeService } from '@/features/customer/me.service';
 import { customerOrdersService } from '@/features/customer/orders.service';
@@ -215,20 +216,34 @@ export function useCustomerCart() {
 
 export function useCartMutations() {
   const queryClient = useQueryClient();
+  const onCartChanged = (cart: CartDto) => {
+    queryClient.setQueryData(customerKeys.cart(), cart);
+    return Promise.all([
+      queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
+      queryClient.invalidateQueries({ queryKey: ['customer', 'checkout-preview'] }),
+    ]);
+  };
   const addItem = useMutation({
     mutationFn: (dto: { productId: string; variantId?: string; quantity?: number }) => customerCartService.addItem(dto),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
+    onSuccess: onCartChanged,
+  });
+  const buyNow = useMutation({
+    mutationFn: (dto: { productId: string; variantId?: string; quantity?: number; mergeGuestCart?: boolean }) => {
+      const { mergeGuestCart, ...item } = dto;
+      return customerCartService.buyNow(item, mergeGuestCart);
+    },
+    onSuccess: onCartChanged,
   });
   const updateQuantity = useMutation({
     mutationFn: (dto: { itemId?: string; id?: string; quantity: number }) =>
       customerCartService.updateQuantity(dto.itemId || dto.id || '', dto.quantity),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
+    onSuccess: onCartChanged,
   });
   const removeItem = useMutation({
     mutationFn: (itemId: string) => customerCartService.removeItem(itemId),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: customerKeys.cart() }),
+    onSuccess: onCartChanged,
   });
-  return { addItem, updateQuantity, removeItem };
+  return { addItem, buyNow, updateQuantity, removeItem };
 }
 
 export function useCustomerWishlist(enabled = true) {

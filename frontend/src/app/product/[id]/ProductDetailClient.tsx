@@ -98,7 +98,9 @@ export function ProductDetailClient() {
   const { data: reviewsData } = useProductReviews(product?.id || '', !!product?.id);
   const reviews = reviewsData?.data || [];
   const reviewSummary = reviewsData?.summary || { averageRating: 0, totalReviews: 0 };
-  const { addItem } = useCartMutations();
+  const { addItem, buyNow } = useCartMutations();
+  const cartActionPendingRef = useRef(false);
+  const isCartActionPending = addItem.isPending || buyNow.isPending;
   const { add: addWishlist, remove: removeWishlist } = useWishlistMutations();
   const { data: wishlistData } = useCustomerWishlist(isAuthenticated);
   
@@ -584,7 +586,7 @@ export function ProductDetailClient() {
   };
 
   const handleAddToCart = async () => {
-    if (!product) return;
+    if (!product || cartActionPendingRef.current) return;
     setErr('');
     setMsg('');
     setStockWarning('');
@@ -602,6 +604,7 @@ export function ProductDetailClient() {
       return;
     }
 
+    cartActionPendingRef.current = true;
     try {
       await addItem.mutateAsync({ 
         productId: product.id, 
@@ -630,11 +633,13 @@ export function ProductDetailClient() {
       setTimeout(() => setMsg(''), 5000);
     } catch (e) {
       setErr(getApiErrorMessage(e, 'Could not add to cart'));
+    } finally {
+      cartActionPendingRef.current = false;
     }
   };
 
   const handleBuyNow = async () => {
-    if (!product) return;
+    if (!product || cartActionPendingRef.current) return;
     setErr('');
     setMsg('');
     setStockWarning('');
@@ -652,6 +657,7 @@ export function ProductDetailClient() {
       return;
     }
 
+    cartActionPendingRef.current = true;
     try {
       if (customTailoring) {
         try {
@@ -667,21 +673,11 @@ export function ProductDetailClient() {
           localStorage.setItem('vs_tailoring_specs', JSON.stringify(tailoringStore));
         } catch {}
       }
-      if (typeof window !== 'undefined') {
-        sessionStorage.setItem(
-          'vs_buy_now_item',
-          JSON.stringify({
-            productId: product.id,
-            variantId: matchingVariant?.id,
-            quantity: qty,
-            createdAt: Date.now(),
-          }),
-        );
-      }
-      await addItem.mutateAsync({ 
+      await buyNow.mutateAsync({
         productId: product.id, 
         variantId: matchingVariant?.id, 
-        quantity: qty 
+        quantity: qty,
+        mergeGuestCart: isAuthenticated,
       });
       if (!isAuthenticated) {
         router.push('/login?redirect=/checkout');
@@ -690,6 +686,8 @@ export function ProductDetailClient() {
       }
     } catch (e) {
       setErr(getApiErrorMessage(e, 'Could not proceed to checkout'));
+    } finally {
+      cartActionPendingRef.current = false;
     }
   };
 
@@ -1515,7 +1513,7 @@ export function ProductDetailClient() {
                     <div className="flex items-center gap-2.5 flex-1">
                       <button
                         type="button"
-                        disabled={addItem.isPending || maxAllowedQty === 0}
+                        disabled={isCartActionPending || maxAllowedQty === 0}
                         onClick={handleAddToCart}
                         className="flex-1 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-sky-900/10"
                       >
@@ -1525,12 +1523,12 @@ export function ProductDetailClient() {
 
                       <button
                         type="button"
-                        disabled={addItem.isPending || maxAllowedQty === 0}
+                        disabled={isCartActionPending || maxAllowedQty === 0}
                         onClick={handleBuyNow}
                         className="flex-1 bg-amber-500 hover:bg-amber-600 active:scale-98 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-neutral-950 text-xs font-extrabold tracking-wider py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-md shadow-amber-500/20 border border-amber-400/50"
                       >
                         <Zap className="w-4 h-4 fill-neutral-950" />
-                        {maxAllowedQty === 0 ? 'OUT OF STOCK' : addItem.isPending ? 'BUYING…' : 'BUY NOW'}
+                        {maxAllowedQty === 0 ? 'OUT OF STOCK' : buyNow.isPending ? 'BUYING…' : 'BUY NOW'}
                       </button>
                     </div>
                   </div>
@@ -2062,7 +2060,7 @@ export function ProductDetailClient() {
                   <>
                     <button
                       type="button"
-                      disabled={addItem.isPending}
+                      disabled={isCartActionPending}
                       onClick={handleAddToCart}
                       className="bg-[var(--brand-primary)] text-white font-bold text-xs px-3 py-2.5 rounded-xl hover:bg-[var(--brand-primary-dark)] flex items-center gap-1 shadow-2xs active:scale-98 transition-all"
                     >
@@ -2071,7 +2069,7 @@ export function ProductDetailClient() {
                     </button>
                     <button
                       type="button"
-                      disabled={addItem.isPending}
+                      disabled={isCartActionPending}
                       onClick={handleBuyNow}
                       className="bg-amber-500 text-neutral-950 font-bold text-xs px-3.5 py-2.5 rounded-xl hover:bg-amber-600 flex items-center gap-1 shadow-2xs active:scale-98 transition-all"
                     >

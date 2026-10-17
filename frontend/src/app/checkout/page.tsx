@@ -240,39 +240,20 @@ function CheckoutPageContent() {
     }
   }, [user]);
 
-  // Auto-merge cart and restore Buy Now intent on mount
+  // The product page has already added the selected Buy Now quantity.
+  // Never replay it here based on an empty or still-loading cart query.
   useEffect(() => {
-    if (isAuthenticated) {
-      customerCartService
-        .merge()
-        .then(() => {
-          qc.invalidateQueries({ queryKey: customerKeys.cart() });
-        })
-        .catch(() => {});
-
-      if (typeof window !== 'undefined') {
-        try {
-          const buyNowRaw = sessionStorage.getItem('vs_buy_now_item');
-          if (buyNowRaw) {
-            const buyNowItem = JSON.parse(buyNowRaw);
-            if (buyNowItem?.productId && (!cartData?.items || cartData.items.length === 0)) {
-              customerCartService
-                .addItem({
-                  productId: buyNowItem.productId,
-                  variantId: buyNowItem.variantId,
-                  quantity: buyNowItem.quantity || 1,
-                })
-                .then(() => {
-                  sessionStorage.removeItem('vs_buy_now_item');
-                  qc.invalidateQueries({ queryKey: customerKeys.cart() });
-                })
-                .catch(() => {});
-            }
-          }
-        } catch {}
-      }
-    }
-  }, [isAuthenticated, cartData?.items?.length, qc]);
+    if (!isAuthenticated) return;
+    let active = true;
+    try { sessionStorage.removeItem('vs_buy_now_item'); } catch {}
+    customerCartService.merge().then((cart) => {
+      if (!active) return;
+      if (cart) qc.setQueryData(customerKeys.cart(), cart);
+      qc.invalidateQueries({ queryKey: customerKeys.cart() });
+      qc.invalidateQueries({ queryKey: ['customer', 'checkout-preview'] });
+    });
+    return () => { active = false; };
+  }, [isAuthenticated, user?.id, qc]);
 
   // If user has no addresses once loading finishes, automatically show the address form
   useEffect(() => {

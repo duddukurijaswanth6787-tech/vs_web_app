@@ -49,6 +49,8 @@ function guestParams() {
   return guestId ? { guestId } : {};
 }
 
+let guestCartMerge: { guestId: string; promise: Promise<CartDto | null> } | null = null;
+
 export const customerCartService = {
   getCart: async (): Promise<CartDto> => {
     const res = await apiClient.get<StandardResponse<CartDto>>('/cart', {
@@ -71,6 +73,40 @@ export const customerCartService = {
       { params: guestParams() },
     );
     return res.data.data!;
+  },
+
+  // Buy Now describes the quantity selected on the product page. Reusing a
+  // line already in the bag must not add that quantity to it a second time.
+  buyNow: async (
+    dto: { productId: string; variantId?: string; quantity?: number },
+    mergeGuestCart = false,
+  ): Promise<CartDto> => {
+    if (mergeGuestCart) {
+      const guestId = getStoredGuestId();
+      const merged = await customerCartService.merge();
+      if (guestId && !merged && getStoredGuestId() === guestId) {
+        throw new Error('Could not transfer your bag. Please try again.');
+      }
+    }
+
+    let cart = await customerCartService.getCart();
+    const quantity = dto.quantity ?? 1;
+    const existing = cart.items?.find(
+      (item) => item.productId === dto.productId &&
+        (item.variantId || '') === (dto.variantId || ''),
+    );
+    if (!existing) return customerCartService.addItem({ ...dto, quantity });
+
+    if (existing.savedForLater) {
+      const res = await apiClient.post<StandardResponse<CartDto>>(
+        `/cart/items/${existing.id}/move-to-cart`,
+        {},
+        { params: guestParams() },
+      );
+      cart = res.data.data!;
+    }
+    if (existing.quantity === quantity) return cart;
+    return customerCartService.updateQuantity(existing.id, quantity);
   },
 
   updateQuantity: async (itemId: string, quantity: number) => {
@@ -96,17 +132,25 @@ export const customerCartService = {
     return res.data.data!;
   },
 
-  merge: async () => {
+  merge: (): Promise<CartDto | null> => {
     const guestId = getStoredGuestId();
-    if (!guestId) return null;
+    if (!guestId) return Promise.resolve(null);
+    // Login, AuthContext and checkout can all request a merge before the
+    // first request completes. They must share it rather than transfer the
+    // same guest quantities several times.
+    if (guestCartMerge?.guestId === guestId) return guestCartMerge.promise;
 
-    try {
-      const res = await apiClient.post<StandardResponse<CartDto>>('/cart/merge', { guestId });
-      clearGuestId();
-      return res.data.data!;
-    } catch {
-      clearGuestId();
-      return null;
-    }
+    const promise: Promise<CartDto | null> = apiClient
+      .post<StandardResponse<CartDto>>('/cart/merge', { guestId })
+      .then((res) => {
+        if (getStoredGuestId() === guestId) clearGuestId();
+        return res.data.data!;
+      })
+      .catch(() => null)
+      .finally(() => {
+        if (guestCartMerge?.promise === promise) guestCartMerge = null;
+      });
+    guestCartMerge = { guestId, promise };
+    return promise;
   },
 };
