@@ -209,12 +209,18 @@ export class ShippingService {
       );
     }
 
+    // Query the default registered warehouse (Manuguru)
+    const defaultWarehouse = await this.prisma.warehouse.findFirst({
+      where: { isDefault: true, deletedAt: null },
+    });
+
     const defaultSender = {
       name: "Vasanthi's Signature",
-      address:
-        'Plot 42, Road No 36, Jubilee Hills, Hyderabad, Telangana - 500033',
-      phone: '+91 98765 43210',
-      gstin: '36ABCDE1234F1Z5',
+      address: defaultWarehouse?.address
+        ? `${defaultWarehouse.address}, ${defaultWarehouse.city || 'Manuguru'}, ${defaultWarehouse.state || 'Telangana'} - ${defaultWarehouse.postalCode || '507117'}`
+        : 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Samithi singaram grama panchayati, Beside MORE super market, Manuguru, Telangana - 507117',
+      phone: defaultWarehouse?.phone || '+91 7659034198',
+      gstin: '37ABCFV8491M1ZA',
     };
 
     const labelOrders: ShippingLabelOrderData[] = orders.map((o) => {
