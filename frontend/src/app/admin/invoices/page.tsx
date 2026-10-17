@@ -470,7 +470,7 @@ export default function InvoicesPage() {
               Tax Invoices & Sales Billing
             </h1>
             <span className="px-2.5 py-0.5 text-xs font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center gap-1">
-              <Building2 className="w-3 h-3" /> GST Registered: 36AABCU9603R1ZM
+              <Building2 className="w-3 h-3" /> GST Registered: 37ABCFV8491M1ZA
             </span>
           </div>
           <p className="text-xs text-neutral-500 mt-1">

@@ -3085,33 +3085,40 @@ export default function ProductBuilder({
 
               {/* GST & Tax Configuration */}
               <div className="md:col-span-3 pt-3 border-t border-neutral-100 space-y-3">
-                <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">GST &amp; Tax Configuration</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {/* GST % */}
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold text-neutral-900 uppercase tracking-wider">GST &amp; Tax Configuration</h4>
+                  <span className="text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
+                    ✓ All Consumer Prices Include GST (MRP)
+                  </span>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* GST % Selection with Auto Guideline */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-neutral-800">GST %</label>
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-neutral-800">GST Slab (%)</label>
+                      <span className="text-[10px] text-neutral-500 font-medium">Standard Garment: 5% (&lt;₹1000), 12% (≥₹1000)</span>
+                    </div>
                     <select
                       {...methods.register('taxPercentage')}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
+                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-bold focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                     >
-                      {[0, 3, 5, 12, 18, 28].map((rate) => (
-                        <option key={rate} value={rate}>
-                          {rate}%
-                        </option>
-                      ))}
+                      <option value={5}>5% (Garments &amp; Apparel under ₹1,000)</option>
+                      <option value={12}>12% (Garments, Suits &amp; Lehengas ₹1,000 &amp; above) · Recommended</option>
+                      <option value={0}>0% (Exempted Fabric / Handloom)</option>
+                      <option value={18}>18% (Accessories / Luxury Couture)</option>
                     </select>
                   </div>
 
                   {/* HSN code */}
                   <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                      <label className="text-xs font-bold text-neutral-800">HSN Code (GST Classification)</label>
-                      <span className="text-[10px] text-neutral-400 font-medium">Optional (4 to 8 digits)</span>
+                      <label className="text-xs font-bold text-neutral-800">HSN Code</label>
+                      <span className="text-[10px] text-neutral-400 font-medium">Printed on GST Tax Invoices</span>
                     </div>
                     <input
                       type="text"
                       {...methods.register('hsnCode')}
-                      placeholder="e.g. 6204 (Suits/Dresses), 5007 (Silk Garments)"
+                      placeholder="6204 (Womenswear / Suits / Dresses)"
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3 text-xs text-neutral-900 font-medium focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#0284c7]/20"
                     />
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -3133,22 +3140,6 @@ export default function ProductBuilder({
                         </button>
                       ))}
                     </div>
-                    <p className="text-[10px] text-neutral-400">
-                      HSN is the 4–8 digit code printed on official GST tax invoices &amp; shipping manifests.
-                    </p>
-                  </div>
-
-                  {/* Tax inclusive */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-neutral-800">Tax Handling</label>
-                    <label className="flex items-center gap-3 cursor-pointer bg-neutral-50 border border-neutral-200 rounded-xl px-4 py-3">
-                      <input
-                        type="checkbox"
-                        {...methods.register('taxInclusive')}
-                        className="w-4 h-4 text-[#0284c7] rounded focus:ring-[#0284c7]"
-                      />
-                      <span className="text-xs font-bold text-neutral-800">Price includes GST</span>
-                    </label>
                   </div>
                 </div>
               </div>

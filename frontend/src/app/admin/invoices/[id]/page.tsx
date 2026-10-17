@@ -350,9 +350,9 @@ export default function InvoiceDetailPage() {
                 VASANTHI&apos;S SIGNATURE
               </h2>
               <p className="text-[10px] text-neutral-600">Women&apos;s Ethnic Wear & Designer Studio</p>
-              <p className="text-[9px] text-neutral-500">Plot 42, Road 36, Jubilee Hills, Hyderabad</p>
-              <p className="text-[9px] font-bold text-neutral-700">GSTIN: 36AABCU9603R1ZM</p>
-              <p className="text-[9px] text-neutral-500">Tel: +91 91234 56789</p>
+              <p className="text-[9px] text-neutral-500">VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar, Manuguru</p>
+              <p className="text-[9px] font-bold text-neutral-700">GSTIN: 37ABCFV8491M1ZA</p>
+              <p className="text-[9px] text-neutral-500">Tel: +91 7659034198</p>
             </div>
 
             <div className="border-t border-b border-dashed border-neutral-300 py-2 text-[10px] space-y-0.5">
