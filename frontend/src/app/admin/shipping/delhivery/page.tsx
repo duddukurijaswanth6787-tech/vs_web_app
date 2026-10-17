@@ -151,6 +151,20 @@ export default function DelhiveryShippingAdminPage() {
     toast('success', 'Copied to Clipboard', text);
   };
 
+  // Helper to safely sanitize pickup items from API or localStorage
+  const sanitizePickups = (items: any[]): ScheduledPickupItem[] => {
+    if (!Array.isArray(items)) return [];
+    return items.map((p) => ({
+      ...p,
+      pickupId: String(p.pickupId || ''),
+      status:
+        typeof p.status === 'string' && p.status
+          ? (p.status.toUpperCase() as any)
+          : 'SCHEDULED',
+      timeSlot: typeof p.timeSlot === 'string' ? p.timeSlot : 'Morning (10:00 AM - 01:00 PM)',
+    }));
+  };
+
   // 1. Fetch Scheduled Pickups from API + Persistent Storage
   const loadPickupRequests = async () => {
     setIsLoadingPickups(true);
@@ -158,9 +172,10 @@ export default function DelhiveryShippingAdminPage() {
       const res = await apiClient.get('/shipping/delhivery/pickup-requests');
       const data = res.data?.data || res.data;
       if (Array.isArray(data) && data.length > 0) {
-        setScheduledPickups(data);
+        const sanitized = sanitizePickups(data);
+        setScheduledPickups(sanitized);
         if (typeof window !== 'undefined') {
-          localStorage.setItem('vs_scheduled_pickups', JSON.stringify(data));
+          localStorage.setItem('vs_scheduled_pickups', JSON.stringify(sanitized));
         }
       } else if (typeof window !== 'undefined') {
         const cached = localStorage.getItem('vs_scheduled_pickups');
@@ -168,7 +183,7 @@ export default function DelhiveryShippingAdminPage() {
           try {
             const parsed = JSON.parse(cached);
             if (Array.isArray(parsed) && parsed.length > 0) {
-              setScheduledPickups(parsed);
+              setScheduledPickups(sanitizePickups(parsed));
             }
           } catch {}
         }
@@ -180,7 +195,7 @@ export default function DelhiveryShippingAdminPage() {
         if (cached) {
           try {
             const parsed = JSON.parse(cached);
-            if (Array.isArray(parsed)) setScheduledPickups(parsed);
+            if (Array.isArray(parsed)) setScheduledPickups(sanitizePickups(parsed));
           } catch {}
         }
       }
@@ -810,7 +825,7 @@ export default function DelhiveryShippingAdminPage() {
                                 : 'bg-amber-100 text-amber-800 border-amber-200'
                             }`}
                           >
-                            {pickup.status.replace(/_/g, ' ')}
+                            {String(pickup.status || 'SCHEDULED').replace(/_/g, ' ')}
                           </span>
                         </div>
                         <div className="text-2xs text-neutral-500 mt-1 flex items-center gap-1">
@@ -1116,7 +1131,7 @@ export default function DelhiveryShippingAdminPage() {
                               </span>
                             </div>
                             <div className="text-[10px] text-emerald-800 font-medium truncate">
-                              {linkedPickup.timeSlot.split(' ')[0]} ({linkedPickup.status.replace(/_/g, ' ')})
+                              {(linkedPickup.timeSlot ? String(linkedPickup.timeSlot).split(' ')[0] : 'Slot')} ({String(linkedPickup.status || 'SCHEDULED').replace(/_/g, ' ')})
                             </div>
                           </div>
                         ) : (

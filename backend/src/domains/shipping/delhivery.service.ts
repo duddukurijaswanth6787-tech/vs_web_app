@@ -391,7 +391,11 @@ export class DelhiveryService {
    * List all scheduled Delhivery driver pickups
    */
   async listPickupRequests() {
-    return DelhiveryService.PICKUP_REGISTRY;
+    return DelhiveryService.PICKUP_REGISTRY.map((p) => ({
+      ...p,
+      pickupId: String(p.pickupId),
+      status: typeof p.status === 'string' ? p.status : 'SCHEDULED',
+    }));
   }
 
   /**
@@ -429,8 +433,12 @@ export class DelhiveryService {
 
       if (res.ok) {
         const data = await res.json();
-        if (data.pickup_id || data.pr_id) pickupId = data.pickup_id || data.pr_id;
-        if (data.status) status = data.status;
+        if (data.pickup_id || data.pr_id) pickupId = String(data.pickup_id || data.pr_id);
+        if (typeof data.status === 'string') {
+          status = data.status.toUpperCase() as any;
+        } else if (data.status === true || res.ok) {
+          status = 'SCHEDULED';
+        }
       }
     } catch (err: any) {
       this.logger.warn(`Delhivery pickup request fallback: ${err.message}`);
@@ -498,7 +506,9 @@ export class DelhiveryService {
    * Cancel or remove a scheduled pickup request
    */
   async cancelPickupRequest(pickupId: string) {
-    const item = DelhiveryService.PICKUP_REGISTRY.find((p) => p.pickupId === pickupId);
+    const item = DelhiveryService.PICKUP_REGISTRY.find(
+      (p) => String(p.pickupId) === String(pickupId),
+    );
     if (item) {
       item.status = 'CANCELLED';
     }
