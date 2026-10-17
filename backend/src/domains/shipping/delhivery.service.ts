@@ -370,7 +370,7 @@ export class DelhiveryService {
     };
   }
 
-  private static readonly PICKUP_REGISTRY: Array<{
+  private static PICKUP_REGISTRY: Array<{
     pickupId: string;
     pickupLocation: string;
     pickupDate: string;

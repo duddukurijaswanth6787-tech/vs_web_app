@@ -429,19 +429,44 @@ export class ShippingService {
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f0; padding: ${isThermal ? '0' : '20px'}; color: #000; }
     
     @page {
-      size: ${isThermal ? '4in 6in' : 'A4 portrait'};
-      margin: ${isThermal ? '0' : '10mm'};
+      size: ${isThermal ? '100mm 150mm' : 'A4 portrait'};
+      margin: 0;
     }
 
     @media print {
-      body { background: #fff; padding: 0; }
+      html, body {
+        width: ${isThermal ? '100mm' : 'auto'} !important;
+        height: auto !important;
+        background: #fff !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+      }
       .no-print { display: none !important; }
+      .labels-wrapper {
+        display: block !important;
+        gap: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+      }
       .label-box {
-        page-break-after: always;
-        break-after: page;
+        width: ${isThermal ? '96mm' : '100%'} !important;
+        max-width: ${isThermal ? '96mm' : '100%'} !important;
+        max-height: ${isThermal ? '146mm' : 'none'} !important;
+        box-sizing: border-box !important;
+        page-break-after: ${labels.length > 1 ? 'always' : 'auto'} !important;
+        break-after: ${labels.length > 1 ? 'page' : 'auto'} !important;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
         box-shadow: none !important;
         border: 2px solid #000 !important;
-        margin: 0 auto !important;
+        margin: ${isThermal ? '2mm auto 0 auto' : '0 auto'} !important;
+        overflow: hidden !important;
+      }
+      .label-box:last-child {
+        page-break-after: auto !important;
+        break-after: auto !important;
       }
     }
 
@@ -476,18 +501,20 @@ export class ShippingService {
     }
 
     .label-box {
-      width: ${isThermal ? '3.85in' : '100%'};
+      width: ${isThermal ? '96mm' : '100%'};
       max-width: 500px;
-      min-height: ${isThermal ? '5.8in' : 'auto'};
+      box-sizing: border-box;
       background: #fff;
       border: 2px solid #000;
-      padding: 12px;
+      padding: ${isThermal ? '8px 10px' : '12px'};
       border-radius: 4px;
       display: flex;
       flex-direction: column;
-      justify-content: space-between;
+      justify-content: flex-start;
       font-size: 11px;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
 
     .label-header {
