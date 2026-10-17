@@ -2,6 +2,7 @@ import {
   Controller,
   Get,
   Patch,
+  Post,
   Param,
   Body,
   Query,
@@ -18,6 +19,7 @@ import {
 import { ResponseBuilder } from '@common/responses/response.builder';
 import { PrismaService } from '@database/prisma.service';
 import type { JwtPayload } from '@domains/auth/services/jwt.service';
+import { OrderTimeoutService } from './order-timeout.service';
 
 @ApiTags('Orders')
 @Controller('orders')
@@ -25,6 +27,7 @@ export class OrderController {
   constructor(
     private readonly orderService: OrderService,
     private readonly prisma: PrismaService,
+    private readonly orderTimeoutService: OrderTimeoutService,
   ) {}
 
   private async isAdmin(userId: string): Promise<boolean> {
@@ -130,5 +133,15 @@ export class OrderController {
       await this.orderService.assignCourier(id, dto, user.sub),
       'Courier partner assigned & shipment updated',
     );
+  }
+
+  @Post('sweep-expired')
+  @UseGuards(JwtAuthGuard, PermissionsGuard)
+  @Permissions('orders:update')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Manually trigger sweep of expired unpaid orders to restore stock' })
+  async sweepExpired(@Body() body: { timeoutMinutes?: number }) {
+    const res = await this.orderTimeoutService.sweepExpiredOrders(body?.timeoutMinutes);
+    return ResponseBuilder.success(res, `Sweep completed. Cancelled and restored ${res.sweptCount} expired orders.`);
   }
 }

@@ -2,6 +2,7 @@ import { Injectable, Logger, Inject, forwardRef } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@database/prisma.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
+import { BusinessException } from '@common/exceptions';
 
 export interface DelhiveryPincodeResponse {
   pincode: string;
@@ -246,6 +247,29 @@ export class DelhiveryService {
     dto: DelhiveryCreateShipmentDto,
   ): Promise<DelhiveryShipmentResult> {
     this.logger.log(`Creating Delhivery shipment for Order #${dto.orderId}`);
+
+    // Hard security check: Block dispatch if order is an unpaid online order
+    if (dto.orderId) {
+      const existingOrder = await this.prisma.order.findFirst({
+        where: {
+          OR: [{ id: dto.orderId }, { orderNumber: dto.orderId }],
+        },
+        include: { payments: true },
+      });
+
+      if (existingOrder) {
+        const isPos = existingOrder.channel?.toUpperCase().includes('POS');
+        if (!isPos && (existingOrder.paymentMethod as any) !== 'COD' && dto.paymentMode !== 'COD') {
+          const hasCaptured = existingOrder.payments.some((p) => p.status === 'CAPTURED');
+          if (!hasCaptured) {
+            throw new BusinessException(
+              `Dispatch blocked: Order #${existingOrder.orderNumber} is UNPAID (Online payment: PENDING). You cannot generate a Delhivery shipment or dispatch goods before receiving payment.`,
+              'DISPATCH_BLOCKED_UNPAID',
+            );
+          }
+        }
+      }
+    }
 
     let waybill = dto.waybill || `DEL${Date.now().toString().slice(-9)}`;
     let status = 'Manifested';

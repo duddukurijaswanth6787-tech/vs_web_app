@@ -311,8 +311,19 @@ export default function OrderDetailPage() {
 
   const isOnlineOrder = !isPosOrWalkIn;
 
+  const hasCapturedPayment = Boolean(payments?.some((p) => p.status === 'CAPTURED'));
+  const isPaymentPending =
+    isOnlineOrder &&
+    order.paymentMethod !== 'COD' &&
+    !hasCapturedPayment &&
+    (order.status === 'PENDING' || payments?.some((p) => p.status === 'PENDING') || !payments || payments.length === 0);
+
   // Determine allowed next status actions
   const getNextStatusActions = (currentStatus: string) => {
+    // If online payment is pending, block all forward fulfillment transitions until paid!
+    if (isPaymentPending) {
+      return [];
+    }
     if (isPosOrWalkIn && ['COMPLETED', 'DELIVERED'].includes(currentStatus.toUpperCase())) {
       return [];
     }
@@ -414,6 +425,60 @@ export default function OrderDetailPage() {
           )}
         </div>
       </div>
+
+      {/* ⚠️ Payment Pending & Dispatch Lock Warning Banner */}
+      {isPaymentPending && (
+        <div className="bg-red-50/90 border-2 border-red-500 rounded-2xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 text-red-950 shadow-sm animate-fadeIn">
+          <div className="flex items-start gap-3">
+            <div className="w-10 h-10 rounded-xl bg-red-600 text-white flex items-center justify-center font-bold text-lg shrink-0 mt-0.5 shadow-2xs">
+              ⚠️
+            </div>
+            <div>
+              <div className="flex flex-wrap items-center gap-2">
+                <h3 className="font-extrabold text-sm sm:text-base text-red-900 tracking-tight">
+                  PAYMENT PENDING · DISPATCH &amp; PICKUP LOCKED
+                </h3>
+                <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-red-600 text-white shadow-2xs">
+                  UNPAID (₹{Number(order.grandTotal).toLocaleString('en-IN')})
+                </span>
+              </div>
+              <p className="text-xs text-red-800 mt-1 leading-relaxed">
+                The customer initiated an online order via Razorpay, but payment has not been captured. <strong>Do NOT hand over packages to couriers or dispatch goods for unpaid orders.</strong>
+              </p>
+              <div className="flex flex-wrap items-center gap-3 mt-2 text-2xs text-red-700 font-medium">
+                <span className="flex items-center gap-1">
+                  ⏱️ <strong>Auto-Timeout:</strong> Unpaid orders automatically cancel and release reserved stock back into warehouse inventory after 15 minutes.
+                </span>
+                <span className="flex items-center gap-1">
+                  📦 <strong>Stock Status:</strong> {order.items?.reduce((s, i) => s + i.quantity, 0) || 0} unit(s) currently reserved.
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2 shrink-0 w-full md:w-auto">
+            {payments && payments.length > 0 && payments[0].id && (
+              <button
+                type="button"
+                onClick={() => handleSyncPaymentGateway(payments[0].id)}
+                disabled={syncingPaymentId === payments[0].id}
+                className="flex-1 md:flex-initial px-3.5 py-2.5 bg-white hover:bg-red-100 text-red-800 border border-red-300 rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${syncingPaymentId === payments[0].id ? 'animate-spin' : ''}`} />
+                Check Razorpay Status
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setIsCancelOpen(true)}
+              className="flex-1 md:flex-initial px-3.5 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer"
+            >
+              <Ban className="w-3.5 h-3.5" />
+              Cancel &amp; Release Stock
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Transition Message Input (If next actions are present) */}
       {nextActions.length > 0 && (
@@ -843,49 +908,60 @@ export default function OrderDetailPage() {
                       <Truck className="w-3.5 h-3.5 text-sky-600" /> 🔍 View Live Tracking in Console
                     </button>
                   )}
-                  <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
-                    <button
-                      type="button"
-                      onClick={handlePrintThermalLabel}
-                      className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
-                    >
-                      <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Barcode Label
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleOpenPickupModal}
-                      className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
-                    >
-                      <Calendar className="w-3.5 h-3.5" /> 🚀 Schedule Delhivery Driver Pickup
-                    </button>
-                    {pickupDetails && (
-                      <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-2xs text-emerald-950 space-y-1 animate-fadeIn">
-                        <div className="flex items-center justify-between font-bold text-emerald-800">
-                          <span>✅ Pickup Scheduled</span>
-                          <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300">
-                            Token: {pickupDetails.token}
-                          </span>
-                        </div>
-                        <p className="text-[11px] text-emerald-900">
-                          <strong>Date & Slot:</strong> {pickupDetails.date} ({pickupDetails.time})
-                        </p>
-                        <p className="text-[10px] text-emerald-700 truncate">
-                          <strong>Origin:</strong> {pickupDetails.location}
-                        </p>
-                      </div>
-                    )}
-                    {pickupStatus && !pickupDetails && (
-                      <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
-                        {pickupStatus}
+                  {isPaymentPending ? (
+                    <div className="p-3 bg-red-50 border border-red-200 rounded-xl text-center space-y-1 mt-2">
+                      <span className="text-xs font-bold text-red-800 flex items-center justify-center gap-1.5">
+                        🔒 Shipping Desk Locked
+                      </span>
+                      <p className="text-[11px] text-red-600 leading-snug">
+                        Online payment is PENDING. Barcode labels and driver pickup cannot be generated for unpaid orders.
                       </p>
-                    )}
-                    <Link
-                      href="/admin/shipping/delhivery"
-                      className="w-full text-center text-2xs font-semibold text-sky-700 hover:underline pt-1 block"
-                    >
-                      📦 Open Bulk Courier &amp; Labels Dispatch Desk →
-                    </Link>
-                  </div>
+                    </div>
+                  ) : (
+                    <div className="pt-2 border-t border-neutral-200 flex flex-col gap-2 mt-2">
+                      <button
+                        type="button"
+                        onClick={handlePrintThermalLabel}
+                        className="w-full bg-neutral-900 hover:bg-neutral-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
+                      >
+                        <Printer className="w-3.5 h-3.5" /> 🖨️ Print 4x6 Thermal Barcode Label
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleOpenPickupModal}
+                        className="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold py-2 px-3 rounded-lg text-2xs flex items-center justify-center gap-1.5 transition shadow-2xs cursor-pointer"
+                      >
+                        <Calendar className="w-3.5 h-3.5" /> 🚀 Schedule Delhivery Driver Pickup
+                      </button>
+                      {pickupDetails && (
+                        <div className="p-2.5 bg-emerald-50 border border-emerald-200 rounded-lg text-2xs text-emerald-950 space-y-1 animate-fadeIn">
+                          <div className="flex items-center justify-between font-bold text-emerald-800">
+                            <span>✅ Pickup Scheduled</span>
+                            <span className="font-mono bg-white px-1.5 py-0.5 rounded border border-emerald-300">
+                              Token: {pickupDetails.token}
+                            </span>
+                          </div>
+                          <p className="text-[11px] text-emerald-900">
+                            <strong>Date &amp; Slot:</strong> {pickupDetails.date} ({pickupDetails.time})
+                          </p>
+                          <p className="text-[10px] text-emerald-700 truncate">
+                            <strong>Origin:</strong> {pickupDetails.location}
+                          </p>
+                        </div>
+                      )}
+                      {pickupStatus && !pickupDetails && (
+                        <p className="text-2xs font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 rounded px-2 py-1 text-center">
+                          {pickupStatus}
+                        </p>
+                      )}
+                      <Link
+                        href="/admin/shipping/delhivery"
+                        className="w-full text-center text-2xs font-semibold text-sky-700 hover:underline pt-1 block"
+                      >
+                        📦 Open Bulk Courier &amp; Labels Dispatch Desk →
+                      </Link>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -1013,13 +1089,22 @@ export default function OrderDetailPage() {
                   />
                 </div>
 
-                <button
-                  disabled={assignCourierMut.isPending}
-                  onClick={handleAssignCourier}
-                  className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
-                >
-                  {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier & Mark Shipped
-                </button>
+                {isPaymentPending ? (
+                  <button
+                    disabled
+                    className="w-full bg-neutral-200 text-neutral-500 font-bold py-2.5 px-4 rounded-xl text-xs flex justify-center items-center gap-2 cursor-not-allowed"
+                  >
+                    🔒 Dispatch Locked: Payment Pending
+                  </button>
+                ) : (
+                  <button
+                    disabled={assignCourierMut.isPending}
+                    onClick={handleAssignCourier}
+                    className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
+                  >
+                    {assignCourierMut.isPending ? <ButtonLoader /> : <Truck className="w-3.5 h-3.5" />} Assign Courier &amp; Mark Shipped
+                  </button>
+                )}
               </div>
             </div>
           ) : (

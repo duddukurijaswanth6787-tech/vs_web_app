@@ -617,6 +617,19 @@ export class PaymentService {
             resourceId: payment.id,
             userId: 'SYSTEM',
           });
+
+          // Automatically release reserved stock and cancel order on payment failure
+          try {
+            await this.orderWorkflowService.releaseInventory(payment.orderId, 'SYSTEM');
+            await this.orderWorkflowService.transition(
+              payment.orderId,
+              'CANCELLED',
+              'SYSTEM',
+              `Payment failed on gateway (${paymentEntity.error_description || 'Transaction unsuccessful'}). Reserved stock released back to available inventory.`,
+            );
+          } catch (e: any) {
+            this.logger.error(`Error auto-cancelling order ${payment.orderId} on payment.failed: ${e?.message}`);
+          }
         }
       }
       return { status: 'processed' };

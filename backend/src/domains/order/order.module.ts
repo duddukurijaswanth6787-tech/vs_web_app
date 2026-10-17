@@ -12,6 +12,8 @@ import { OrderService } from './order.service';
 import { OrderRepository } from './order.repository';
 import { OrderWorkflowService } from './order-workflow.service';
 
+import { OrderTimeoutService } from './order-timeout.service';
+
 @Module({
   imports: [
     AuthModule,
@@ -23,7 +25,12 @@ import { OrderWorkflowService } from './order-workflow.service';
     TelegramModule,
   ],
   controllers: [OrderController, MeOrdersController],
-  providers: [OrderService, OrderRepository, OrderWorkflowService],
-  exports: [OrderWorkflowService],
+  providers: [
+    OrderService,
+    OrderRepository,
+    OrderWorkflowService,
+    OrderTimeoutService,
+  ],
+  exports: [OrderWorkflowService, OrderTimeoutService],
 })
 export class OrderModule {}

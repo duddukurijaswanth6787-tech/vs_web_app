@@ -1117,209 +1117,43 @@ function CheckoutPageContent() {
               </div>
 
               <div className="space-y-2.5">
-                {/* OPTION 1: UPI / QR Code (Recommended) */}
+                {/* UNIFIED ONLINE PAYMENT (UPI, Cards, Net Banking, Wallets) */}
                 <label
                   onClick={() => {
                     setSelectedPaymentInstrument('UPI');
                     setPaymentMethod('RAZORPAY');
                   }}
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedPaymentInstrument === 'UPI'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50/80'
-                  }`}
+                  className="flex items-start gap-3.5 p-4 sm:p-5 rounded-2xl border-2 border-[var(--brand-primary)] bg-sky-50/50 shadow-xs cursor-pointer transition-all"
                 >
                   <input
                     type="radio"
                     name="paymentInstrument"
-                    checked={selectedPaymentInstrument === 'UPI'}
-                    onChange={() => {
-                      setSelectedPaymentInstrument('UPI');
-                      setPaymentMethod('RAZORPAY');
-                    }}
-                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
+                    checked={true}
+                    readOnly
+                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4 cursor-pointer"
                   />
-                  <div className="flex-1 min-w-0 space-y-1">
+                  <div className="flex-1 min-w-0 space-y-2">
                     <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
+                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5 font-sans">
                         <Smartphone className="w-4 h-4 text-[var(--brand-primary)]" />
-                        UPI / QR (Google Pay, PhonePe, Paytm, BHIM)
+                        UPI &amp; Online Payment (Razorpay Secure)
                       </span>
                       <span className="text-[10px] font-bold bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-md shrink-0">
-                        ⚡ Fastest &amp; Recommended
+                        ⚡ Instant &amp; 100% Secure
                       </span>
                     </div>
-                    <p className="text-neutral-600 text-[11px] leading-relaxed">
-                      Pay instantly via Google Pay, PhonePe, Paytm, BHIM or scan QR code using any UPI app.
+                    <p className="text-neutral-600 text-xs leading-relaxed">
+                      Pay instantly via Google Pay, PhonePe, Paytm, any UPI App, Credit / Debit Cards, or Net Banking.
                     </p>
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-medium text-neutral-500">
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Google Pay</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">PhonePe</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Paytm</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">BHIM / Any UPI</span>
+                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-medium text-neutral-600">
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-800">Google Pay</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-800">PhonePe</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-800">Paytm / UPI</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-sky-700">Cards</span>
+                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Net Banking</span>
                     </div>
                   </div>
                 </label>
-
-                {/* OPTION 2: Credit / Debit Cards */}
-                <label
-                  onClick={() => {
-                    setSelectedPaymentInstrument('CARD');
-                    setPaymentMethod('RAZORPAY');
-                  }}
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedPaymentInstrument === 'CARD'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50/80'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentInstrument"
-                    checked={selectedPaymentInstrument === 'CARD'}
-                    onChange={() => {
-                      setSelectedPaymentInstrument('CARD');
-                      setPaymentMethod('RAZORPAY');
-                    }}
-                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
-                        <CreditCard className="w-4 h-4 text-[var(--brand-primary)]" />
-                        Credit / Debit Cards
-                      </span>
-                      <span className="text-[10px] font-semibold text-neutral-500">All Banks Supported</span>
-                    </div>
-                    <p className="text-neutral-600 text-[11px] leading-relaxed">
-                      Visa, MasterCard, RuPay, Maestro, Diners Club, American Express with 3D Secure OTP.
-                    </p>
-                    <div className="flex flex-wrap items-center gap-1.5 pt-1 text-[10px] font-medium text-neutral-500">
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-sky-700">VISA</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-red-600">Mastercard</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-emerald-700">RuPay</span>
-                      <span className="px-2 py-0.5 bg-white border border-neutral-200 rounded-md font-semibold text-neutral-700">Maestro</span>
-                    </div>
-                  </div>
-                </label>
-
-                {/* OPTION 3: Net Banking */}
-                <label
-                  onClick={() => {
-                    setSelectedPaymentInstrument('NETBANKING');
-                    setPaymentMethod('RAZORPAY');
-                  }}
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedPaymentInstrument === 'NETBANKING'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50/80'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentInstrument"
-                    checked={selectedPaymentInstrument === 'NETBANKING'}
-                    onChange={() => {
-                      setSelectedPaymentInstrument('NETBANKING');
-                      setPaymentMethod('RAZORPAY');
-                    }}
-                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
-                        <Building2 className="w-4 h-4 text-[var(--brand-primary)]" />
-                        Net Banking
-                      </span>
-                      <span className="text-[10px] font-semibold text-neutral-500">50+ Indian Banks</span>
-                    </div>
-                    <p className="text-neutral-600 text-[11px] leading-relaxed">
-                      SBI, HDFC Bank, ICICI Bank, Axis Bank, Kotak, Punjab National Bank and all other major banks.
-                    </p>
-                  </div>
-                </label>
-
-                {/* OPTION 4: Wallets */}
-                <label
-                  onClick={() => {
-                    setSelectedPaymentInstrument('WALLET');
-                    setPaymentMethod('RAZORPAY');
-                  }}
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border cursor-pointer transition-all ${
-                    selectedPaymentInstrument === 'WALLET'
-                      ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs'
-                      : 'border-neutral-200 hover:bg-neutral-50/80'
-                  }`}
-                >
-                  <input
-                    type="radio"
-                    name="paymentInstrument"
-                    checked={selectedPaymentInstrument === 'WALLET'}
-                    onChange={() => {
-                      setSelectedPaymentInstrument('WALLET');
-                      setPaymentMethod('RAZORPAY');
-                    }}
-                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
-                        <Wallet className="w-4 h-4 text-[var(--brand-primary)]" />
-                        Wallets &amp; Others
-                      </span>
-                    </div>
-                    <p className="text-neutral-600 text-[11px] leading-relaxed">
-                      Amazon Pay, Mobikwik, Airtel Money, Freecharge &amp; more.
-                    </p>
-                  </div>
-                </label>
-
-                {/* OPTION 5: Cash on Delivery (COD) - Disabled / Unavailable like Amazon */}
-                <div
-                  className={`flex items-start gap-3.5 p-3.5 sm:p-4 rounded-2xl border transition-all ${
-                    codEnabled
-                      ? selectedPaymentInstrument === 'COD'
-                        ? 'border-[var(--brand-primary)] bg-sky-50/50 shadow-xs cursor-pointer'
-                        : 'border-neutral-200 hover:bg-neutral-50/80 cursor-pointer'
-                      : 'border-neutral-200/60 bg-neutral-50/60 opacity-70 cursor-not-allowed'
-                  }`}
-                  onClick={() => {
-                    if (codEnabled) {
-                      setSelectedPaymentInstrument('COD');
-                      setPaymentMethod('COD');
-                    }
-                  }}
-                >
-                  <input
-                    type="radio"
-                    name="paymentInstrument"
-                    disabled={!codEnabled}
-                    checked={selectedPaymentInstrument === 'COD'}
-                    onChange={() => {
-                      if (codEnabled) {
-                        setSelectedPaymentInstrument('COD');
-                        setPaymentMethod('COD');
-                      }
-                    }}
-                    className="mt-1 accent-[var(--brand-primary)] w-4 h-4 disabled:cursor-not-allowed"
-                  />
-                  <div className="flex-1 min-w-0 space-y-1">
-                    <div className="flex flex-wrap items-center justify-between gap-1.5">
-                      <span className="font-bold text-neutral-900 text-xs sm:text-sm flex items-center gap-1.5">
-                        <Banknote className="w-4 h-4 text-neutral-500" />
-                        Cash on Delivery (COD)
-                      </span>
-                      <span className="text-[10px] font-bold bg-neutral-200 text-neutral-700 px-2 py-0.5 rounded-md">
-                        {codEnabled ? 'Available' : 'Unavailable (Prepaid Only)'}
-                      </span>
-                    </div>
-                    <p className="text-neutral-500 text-[11px] leading-relaxed">
-                      {codEnabled
-                        ? 'Pay in cash upon physical delivery at your doorstep.'
-                        : 'Cash on Delivery is not available for designer ethnic wear. Please choose any secure online payment option above.'}
-                    </p>
-                  </div>
-                </div>
               </div>
             </section>
           </div>

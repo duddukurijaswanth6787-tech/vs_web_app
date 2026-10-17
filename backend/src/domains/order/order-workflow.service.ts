@@ -172,6 +172,34 @@ export class OrderWorkflowService {
 
     this.validateTransition(order.status, nextStatus);
 
+    // Hard guard: Online orders cannot be confirmed, processed, or shipped if payment is unpaid
+    if (['CONFIRMED', 'PROCESSING', 'PACKING', 'READY_TO_SHIP', 'SHIPPED'].includes(nextStatus)) {
+      const isPos = order.channel?.toUpperCase().includes('POS');
+      if (!isPos && (order.paymentMethod as any) !== 'COD') {
+        const payments = await this.prisma.payment.findMany({
+          where: { orderId },
+        });
+        if (payments.length > 0) {
+          const hasCaptured = payments.some((p) => p.status === 'CAPTURED');
+          if (!hasCaptured) {
+            throw new BusinessException(
+              `Cannot transition order to ${nextStatus}: Online payment has not been captured/received (Payment status: PENDING). Dispatch is blocked.`,
+              'ORDER_PAYMENT_PENDING',
+            );
+          }
+        }
+      }
+    }
+
+    // Auto-release / auto-restore stock whenever an order is cancelled
+    if (nextStatus === 'CANCELLED') {
+      if (order.status === 'PENDING') {
+        await this.releaseInventory(orderId, userId);
+      } else {
+        await this.restoreInventory(orderId, userId);
+      }
+    }
+
     const [updated] = await this.prisma.$transaction([
       this.prisma.order.update({
         where: { id: orderId },
@@ -430,6 +458,19 @@ export class OrderWorkflowService {
           RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
         `;
         if (rows.length === 0) continue;
+
+        const current = rows[0];
+        const status = calculateStockStatus({
+          availableQuantity: current.availableQuantity,
+          reservedQuantity: current.reservedQuantity,
+          minimumStock: current.minimumStock,
+          reorderLevel: current.reorderLevel,
+          allowBackorder: current.allowBackorder,
+        });
+        await tx.inventory.update({
+          where: { id: current.id },
+          data: { stockStatus: status },
+        });
 
         await this.logMovement(tx, rows[0], {
           variantId: item.variantId,
@@ -759,6 +800,19 @@ export class OrderWorkflowService {
           RETURNING id, "availableQuantity", "reservedQuantity", "minimumStock", "reorderLevel", "allowBackorder"
         `;
         if (rows.length === 0) continue;
+
+        const current = rows[0];
+        const status = calculateStockStatus({
+          availableQuantity: current.availableQuantity,
+          reservedQuantity: current.reservedQuantity,
+          minimumStock: current.minimumStock,
+          reorderLevel: current.reorderLevel,
+          allowBackorder: current.allowBackorder,
+        });
+        await tx.inventory.update({
+          where: { id: current.id },
+          data: { stockStatus: status },
+        });
 
         await this.logMovement(tx, rows[0], {
           variantId: item.variantId,

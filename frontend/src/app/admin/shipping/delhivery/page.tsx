@@ -348,18 +348,32 @@ export default function DelhiveryShippingAdminPage() {
     setShowPickupModal(true);
   };
 
+  // Helper: check if order is an unpaid online order
+  const isOrderPaymentPending = (o: OrderResponse): boolean => {
+    const isPos = o.channel?.toUpperCase().includes('POS');
+    if (isPos || o.paymentMethod === 'COD') return false;
+    const hasCaptured = Boolean(o.payments?.some((p) => p.status === 'CAPTURED'));
+    return !hasCaptured && Boolean(o.status === 'PENDING' || o.payments?.some((p) => p.status === 'PENDING'));
+  };
+
   // Toggle selection
   const toggleSelectOrder = (id: string) => {
+    const order = todayOrders.find((o) => o.id === id);
+    if (order && isOrderPaymentPending(order)) {
+      toast('warning', 'Payment Pending · Locked', `Order #${order.orderNumber} online payment is PENDING. You cannot dispatch or print shipping labels for unpaid orders.`);
+      return;
+    }
     setSelectedOrderIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
     );
   };
 
   const selectAllOrders = () => {
-    if (selectedOrderIds.length === todayOrders.length) {
+    const eligibleOrders = todayOrders.filter((o) => !isOrderPaymentPending(o));
+    if (selectedOrderIds.length === eligibleOrders.length && eligibleOrders.length > 0) {
       setSelectedOrderIds([]);
     } else {
-      setSelectedOrderIds(todayOrders.map((o) => o.id));
+      setSelectedOrderIds(eligibleOrders.map((o) => o.id));
     }
   };
 
@@ -426,6 +440,10 @@ export default function DelhiveryShippingAdminPage() {
 
   // Dispatch single order from table
   const handleDispatchOrderDirect = async (order: OrderResponse) => {
+    if (isOrderPaymentPending(order)) {
+      toast('error', 'Cannot Dispatch Unpaid Order', `Order #${order.orderNumber} online payment is PENDING. Wait for payment or verify before dispatching.`);
+      return;
+    }
     setDispatchingOrderId(order.id);
     try {
       const generatedAwb = `DEL${Date.now().toString().slice(-9)}`;
@@ -1052,21 +1070,26 @@ export default function DelhiveryShippingAdminPage() {
                   const isSelected = selectedOrderIds.includes(order.id);
                   const hasAwb = !!order.waybillNumber;
                   const linkedPickup = getOrderPickup(order);
+                  const isPendingPay = isOrderPaymentPending(order);
 
                   return (
                     <tr
                       key={order.id}
                       className={`hover:bg-sky-50/40 transition-colors ${
-                        isSelected ? 'bg-sky-50/70' : ''
+                        isSelected ? 'bg-sky-50/70' : isPendingPay ? 'bg-red-50/20' : ''
                       }`}
                     >
                       {/* Checkbox */}
                       <td className="py-3 px-4 text-center">
                         <input
                           type="checkbox"
+                          disabled={isPendingPay}
                           checked={isSelected}
                           onChange={() => toggleSelectOrder(order.id)}
-                          className="rounded border-neutral-300 text-sky-600 focus:ring-sky-500"
+                          title={isPendingPay ? 'Payment pending - dispatch locked' : undefined}
+                          className={`rounded border-neutral-300 text-sky-600 focus:ring-sky-500 ${
+                            isPendingPay ? 'opacity-30 cursor-not-allowed' : ''
+                          }`}
                         />
                       </td>
 
@@ -1101,19 +1124,25 @@ export default function DelhiveryShippingAdminPage() {
                           ₹{Number(order.grandTotal).toLocaleString('en-IN')}
                         </div>
                         <div className="text-2xs mt-0.5">
-                          <span
-                            className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
-                              String(order.paymentMethod).toUpperCase() === 'CASH' ||
+                          {isPendingPay ? (
+                            <span className="font-extrabold px-1.5 py-0.5 rounded text-[10px] bg-red-100 text-red-900 border border-red-300 shadow-2xs">
+                              ⚠️ UNPAID (PENDING)
+                            </span>
+                          ) : (
+                            <span
+                              className={`font-bold px-1.5 py-0.5 rounded text-[10px] ${
+                                String(order.paymentMethod).toUpperCase() === 'CASH' ||
+                                String(order.paymentMethod).toUpperCase() === 'COD'
+                                  ? 'bg-amber-100 text-amber-900 border border-amber-200'
+                                  : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                              }`}
+                            >
+                              {String(order.paymentMethod).toUpperCase() === 'CASH' ||
                               String(order.paymentMethod).toUpperCase() === 'COD'
-                                ? 'bg-amber-100 text-amber-900 border border-amber-200'
-                                : 'bg-emerald-100 text-emerald-900 border border-emerald-200'
-                            }`}
-                          >
-                            {String(order.paymentMethod).toUpperCase() === 'CASH' ||
-                            String(order.paymentMethod).toUpperCase() === 'COD'
-                              ? 'COD'
-                              : 'PREPAID'}
-                          </span>
+                                ? 'COD'
+                                : 'PREPAID'}
+                            </span>
+                          )}
                         </div>
                       </td>
 
@@ -1209,6 +1238,14 @@ export default function DelhiveryShippingAdminPage() {
                                 <Printer className="w-3 h-3" /> 4x6 Label
                               </button>
                             </>
+                          ) : isPendingPay ? (
+                            <a
+                              href={`/admin/orders/${order.id}`}
+                              className="bg-red-50 hover:bg-red-100 text-red-800 border border-red-200 font-bold px-2.5 py-1.5 rounded-lg text-2xs transition flex items-center gap-1 shadow-2xs"
+                              title="Order is unpaid. View order details to verify payment."
+                            >
+                              🔒 Payment Pending
+                            </a>
                           ) : (
                             <button
                               type="button"
