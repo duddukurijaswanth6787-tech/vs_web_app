@@ -128,14 +128,14 @@ export default function InvoiceDetailPage() {
                 Women&apos;s Ethnic Wear & Designer Studio
               </p>
               <p className="text-2xs text-neutral-500 mt-1">
-                Plot No. 42, Road No. 36, Jubilee Hills
+                VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road
               </p>
               <p className="text-2xs text-neutral-500">
-                Hyderabad, Telangana - 500033, India
+                Samithi singaram grama panchayati, Beside MORE super market, Manuguru, Telangana - 507117
               </p>
               <div className="mt-2 text-2xs font-mono space-y-0.5">
-                <p className="font-bold text-neutral-800">GSTIN: 36AABCU9603R1ZM</p>
-                <p className="text-neutral-500">State: Telangana (Code: 36) · Email: care@vasanthissignature.in</p>
+                <p className="font-bold text-neutral-800">GSTIN: 37ABCFV8491M1ZA</p>
+                <p className="text-neutral-500">Phone: +91 7659034198 · Email: contact@vasanthissignature.in</p>
               </div>
             </div>
 
@@ -205,7 +205,7 @@ export default function InvoiceDetailPage() {
                 {shippingAddr.addressLine1 || 'Vasanthi’s Signature Flagship Boutique'}
               </span>
               <span className="text-neutral-600 block">
-                Jubilee Hills, Hyderabad, Telangana - 500033
+                VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar, Manuguru, Telangana - 507117
               </span>
               <span className="text-neutral-400 block text-2xs">
                 Place of Supply: Telangana (36)

@@ -8,14 +8,14 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 
 const STORES = [
   {
-    id: 'hyderabad-flagship',
-    name: "Vasanthi's Signature Flagship Boutique",
-    city: 'Hyderabad',
-    address: 'Road No. 36, Jubilee Hills, Hyderabad, Telangana 500033',
-    phone: '+91 40 2354 0000',
-    email: 'jubileehills@vasanthisignature.com',
-    hours: 'Mon - Sun: 10:30 AM - 8:30 PM',
-    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Road+No.+36+Jubilee+Hills+Hyderabad+Telangana+500033',
+    id: 'manuguru-flagship',
+    name: "Vasanthi's Signature Main Flagship",
+    city: 'Manuguru',
+    address: 'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Samithi singaram grama panchayati, Beside MORE super market, Manuguru, Telangana - 507117',
+    phone: '+91 7659034198',
+    email: 'contact@vasanthissignature.in',
+    hours: 'Mon - Sun: 10:00 AM - 9:00 PM',
+    mapUrl: 'https://www.google.com/maps/search/?api=1&query=Manuguru+Ashoknagar+Telangana+507117',
   },
   {
     id: 'vijayawada-boutique',

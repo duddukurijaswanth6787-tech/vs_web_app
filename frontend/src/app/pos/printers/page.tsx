@@ -175,8 +175,8 @@ export default function PrintersConfigPage() {
       <body>
         <div class="text-center font-bold" style="font-size: ${is80mm ? '16px' : '13px'};">VASANTHI'S SIGNATURE</div>
         <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">Women's Ethnic Wear & Designer Couture</div>
-        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">Plot 42, Jubilee Hills Rd No 36, Hyderabad - 500033</div>
-        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">GSTIN: 36AABCU9603R1ZM | Ph: +91 98765 43210</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar, Manuguru - 507117</div>
+        <div class="text-center" style="font-size: ${is80mm ? '10px' : '8.5px'};">GSTIN: 37ABCFV8491M1ZA | Ph: +91 7659034198</div>
         <div class="border-top"></div>
         <div class="flex-between" style="font-size: ${is80mm ? '10px' : '8.5px'};">
           <span>Invoice: ORD-POS-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-0001</span>
