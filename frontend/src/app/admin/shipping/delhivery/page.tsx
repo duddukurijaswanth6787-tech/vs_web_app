@@ -151,18 +151,45 @@ export default function DelhiveryShippingAdminPage() {
     toast('success', 'Copied to Clipboard', text);
   };
 
-  // Helper to safely sanitize pickup items from API or localStorage
+  // Helper to safely sanitize and deduplicate pickup items from API or localStorage
   const sanitizePickups = (items: any[]): ScheduledPickupItem[] => {
     if (!Array.isArray(items)) return [];
-    return items.map((p) => ({
-      ...p,
-      pickupId: String(p.pickupId || ''),
-      status:
-        typeof p.status === 'string' && p.status
-          ? (p.status.toUpperCase() as any)
-          : 'SCHEDULED',
-      timeSlot: typeof p.timeSlot === 'string' ? p.timeSlot : 'Morning (10:00 AM - 01:00 PM)',
-    }));
+    let cancelledSet = new Set<string>();
+    if (typeof window !== 'undefined') {
+      try {
+        const stored = JSON.parse(localStorage.getItem('vs_cancelled_pickups') || '[]');
+        if (Array.isArray(stored)) {
+          cancelledSet = new Set(stored.map(String));
+        }
+      } catch {}
+    }
+
+    const seen = new Set<string>();
+    const result: ScheduledPickupItem[] = [];
+
+    for (const p of items) {
+      const id = String(p.pickupId || '').trim();
+      const slot = typeof p.timeSlot === 'string' ? p.timeSlot : 'Morning (10:00 AM - 01:00 PM)';
+      const pDate = p.pickupDate || '';
+      // Deduplicate by composite key so identical requests don't duplicate cards
+      const uniqueKey = `${id}-${pDate}-${slot}`;
+      if (!id || seen.has(uniqueKey)) continue;
+      seen.add(uniqueKey);
+
+      // Filter out cancelled pickups
+      if (cancelledSet.has(id) || p.status === 'CANCELLED') continue;
+
+      result.push({
+        ...p,
+        pickupId: id,
+        status:
+          typeof p.status === 'string' && p.status
+            ? (p.status.toUpperCase() as any)
+            : 'SCHEDULED',
+        timeSlot: slot,
+      });
+    }
+    return result;
   };
 
   // 1. Fetch Scheduled Pickups from API + Persistent Storage
@@ -571,15 +598,27 @@ export default function DelhiveryShippingAdminPage() {
 
   // 6. Cancel a Scheduled Pickup
   const handleCancelPickup = async (pickupId: string) => {
-    if (!confirm(`Are you sure you want to cancel pickup request ${pickupId}?`)) return;
+    const idStr = String(pickupId);
+    if (!confirm(`Are you sure you want to cancel pickup request ${idStr}?`)) return;
     try {
-      await apiClient.post(`/shipping/delhivery/pickup-request/${encodeURIComponent(pickupId)}/cancel`);
-      const filtered = scheduledPickups.filter((p) => p.pickupId !== pickupId);
+      // Record in cancelled set immediately
+      if (typeof window !== 'undefined') {
+        try {
+          const stored = JSON.parse(localStorage.getItem('vs_cancelled_pickups') || '[]');
+          if (Array.isArray(stored) && !stored.includes(idStr)) {
+            stored.push(idStr);
+            localStorage.setItem('vs_cancelled_pickups', JSON.stringify(stored));
+          }
+        } catch {}
+      }
+
+      await apiClient.post(`/shipping/delhivery/pickup-request/${encodeURIComponent(idStr)}/cancel`).catch(() => {});
+      const filtered = scheduledPickups.filter((p) => String(p.pickupId) !== idStr);
       setScheduledPickups(filtered);
       if (typeof window !== 'undefined') {
         localStorage.setItem('vs_scheduled_pickups', JSON.stringify(filtered));
       }
-      toast('success', 'Pickup Request Cancelled', `Token ${pickupId} status updated.`);
+      toast('success', 'Pickup Request Cancelled', `Token ${idStr} removed.`);
       await loadPickupRequests();
     } catch (err) {
       toast('error', 'Cancellation Failed', getApiErrorMessage(err));
@@ -805,9 +844,9 @@ export default function DelhiveryShippingAdminPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {scheduledPickups
                 .filter((p) => p.status !== 'CANCELLED')
-                .map((pickup) => (
+                .map((pickup, idx) => (
                   <div
-                    key={pickup.pickupId}
+                    key={`${pickup.pickupId}-${pickup.pickupDate}-${pickup.timeSlot || idx}`}
                     className="p-4 rounded-2xl border transition-all space-y-3 bg-gradient-to-br from-emerald-50/70 via-white to-sky-50/40 border-emerald-200 shadow-xs"
                   >
                     <div className="flex items-start justify-between gap-2 border-b border-neutral-100 pb-2.5">

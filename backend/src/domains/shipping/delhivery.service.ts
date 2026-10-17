@@ -391,11 +391,20 @@ export class DelhiveryService {
    * List all scheduled Delhivery driver pickups
    */
   async listPickupRequests() {
-    return DelhiveryService.PICKUP_REGISTRY.map((p) => ({
-      ...p,
-      pickupId: String(p.pickupId),
-      status: typeof p.status === 'string' ? p.status : 'SCHEDULED',
-    }));
+    const seen = new Set<string>();
+    const unique = [];
+    for (const p of DelhiveryService.PICKUP_REGISTRY) {
+      const id = String(p.pickupId);
+      const composite = `${id}-${p.pickupDate || ''}-${p.timeSlot || ''}`;
+      if (seen.has(composite) || p.status === 'CANCELLED') continue;
+      seen.add(composite);
+      unique.push({
+        ...p,
+        pickupId: id,
+        status: typeof p.status === 'string' ? p.status : 'SCHEDULED',
+      });
+    }
+    return unique;
   }
 
   /**
@@ -487,6 +496,12 @@ export class DelhiveryService {
       createdAt: new Date().toISOString(),
     };
 
+    // Deduplicate: replace existing pickup with matching pickupId or date+slot
+    DelhiveryService.PICKUP_REGISTRY = DelhiveryService.PICKUP_REGISTRY.filter(
+      (p) =>
+        String(p.pickupId) !== String(pickupId) &&
+        !(p.pickupDate === dto.pickupDate && p.timeSlot === timeSlot),
+    );
     DelhiveryService.PICKUP_REGISTRY.unshift(newPickup);
 
     return {
@@ -506,13 +521,11 @@ export class DelhiveryService {
    * Cancel or remove a scheduled pickup request
    */
   async cancelPickupRequest(pickupId: string) {
-    const item = DelhiveryService.PICKUP_REGISTRY.find(
-      (p) => String(p.pickupId) === String(pickupId),
+    const idStr = String(pickupId);
+    DelhiveryService.PICKUP_REGISTRY = DelhiveryService.PICKUP_REGISTRY.filter(
+      (p) => String(p.pickupId) !== idStr,
     );
-    if (item) {
-      item.status = 'CANCELLED';
-    }
-    return { success: true, pickupId, status: 'CANCELLED' };
+    return { success: true, pickupId: idStr, status: 'CANCELLED' };
   }
 
   /**
