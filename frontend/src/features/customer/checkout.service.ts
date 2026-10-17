@@ -53,6 +53,7 @@ export const customerCheckoutService = {
   },
 
   placeOrder: async (dto: {
+    checkoutAttemptId?: string;
     addressId: string;
     shippingMethod?: string;
     notes?: string;

@@ -8,12 +8,13 @@ import { OfferService } from '@domains/offer/offer.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { PaymentService } from '@domains/payment/payment.service';
 import { PrismaService } from '@database/prisma.service';
+import { randomBytes, createHash } from 'crypto';
+import { getOrderState } from '@domains/order/order-state';
 import {
   CheckoutPreviewDto,
   CheckoutItemResponse,
   CheckoutSummaryResponse,
   PlaceOrderDto,
-  PlaceOrderPaymentResponse,
 } from './checkout.types';
 
 interface DiscountItem {
@@ -44,7 +45,7 @@ export class CheckoutService {
     private readonly offerService: OfferService,
     private readonly workflow: OrderWorkflowService,
     private readonly paymentService: PaymentService,
-    private readonly configService: ConfigService,
+    _configService: ConfigService,
   ) {}
 
   /**
@@ -196,6 +197,9 @@ export class CheckoutService {
         id: true,
         name: true,
         status: true,
+        basePrice: true,
+        salePrice: true,
+        sku: true,
         taxPercentage: true,
         taxInclusive: true,
         brandId: true,
@@ -230,7 +234,26 @@ export class CheckoutService {
         }
       }
 
-      const unitPrice = Number(item.unitPrice);
+      const variant = item.variantId
+        ? await this.prisma.productVariant.findUnique({
+            where: { id: item.variantId },
+          })
+        : null;
+      if (
+        item.variantId &&
+        (!variant || variant.deletedAt || variant.productId !== item.productId)
+      ) {
+        throw new BusinessException(
+          'This product option is no longer available.',
+          'CHECKOUT_VARIANT',
+        );
+      }
+      const unitPrice = Number(
+        variant?.salePriceOverride ??
+          variant?.priceOverride ??
+          product.salePrice ??
+          product.basePrice,
+      );
       const totalPrice = unitPrice * item.quantity;
       const taxPercentage =
         product.taxPercentage !== null && product.taxPercentage !== undefined
@@ -278,6 +301,11 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
+    if (!activeItems.length)
+      throw new BusinessException(
+        'Your bag has no items ready to checkout.',
+        'CHECKOUT_006',
+      );
     const { items, brandByProduct, productMap } =
       await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
@@ -342,6 +370,35 @@ export class CheckoutService {
   }
 
   async placeOrder(userId: string, dto: PlaceOrderDto) {
+    const paymentMethod = dto.paymentMethod ?? 'COD';
+    if (dto.checkoutAttemptId) {
+      const existing = await this.prisma.order.findUnique({
+        where: {
+          orderNumber: this.attemptOrderNumber(userId, dto.checkoutAttemptId),
+        },
+      });
+      if (existing)
+        return this.orderPaymentResponse(userId, existing, paymentMethod);
+    }
+    if (paymentMethod === 'COD') {
+      const enabled = await this.prisma.appSetting.findFirst({
+        where: {
+          key: {
+            in: ['cod_enabled', 'payment_cod_enabled', 'payment.cod_enabled'],
+          },
+        },
+      });
+      if (enabled?.value !== 'true')
+        throw new BusinessException(
+          'Cash on delivery is not available. Please select online payment.',
+          'CHECKOUT_COD_DISABLED',
+        );
+    } else if (!(await this.paymentService.gatewayAvailable())) {
+      throw new BusinessException(
+        'Online payment is temporarily unavailable. Please try later.',
+        'PAYMENT_GATEWAY_UNAVAILABLE',
+      );
+    }
     const { profile, address } = await this.validateAddress(
       dto.addressId,
       userId,
@@ -351,6 +408,11 @@ export class CheckoutService {
       throw new BusinessException('Cart is empty', 'CHECKOUT_006');
 
     const activeItems = cart.items.filter((i) => !i.savedForLater);
+    if (!activeItems.length)
+      throw new BusinessException(
+        'Your bag has no items ready to checkout.',
+        'CHECKOUT_006',
+      );
     const { items, brandByProduct, productMap } =
       await this.buildItems(activeItems);
     const method = dto.shippingMethod ?? 'STANDARD';
@@ -402,14 +464,44 @@ export class CheckoutService {
     const grandTotal =
       Math.round((payableItemsTotal + shippingCharge) * 100) / 100;
 
-    const orderNumber = await this.workflow.generateOrderNumber();
+    if (grandTotal <= 0)
+      throw new BusinessException(
+        'The payable order total must be greater than zero.',
+        'CHECKOUT_TOTAL',
+      );
+    const orderNumber = dto.checkoutAttemptId
+      ? this.attemptOrderNumber(userId, dto.checkoutAttemptId)
+      : await this.workflow.generateOrderNumber();
 
     const order = await this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "shopping_carts" WHERE id = ${cart.id} FOR UPDATE`;
+      const replay = await tx.order.findUnique({ where: { orderNumber } });
+      if (replay) return replay;
+      const lockedItems = await tx.$queryRaw<
+        { id: string; quantity: number; savedForLater: boolean }[]
+      >`SELECT id, quantity, "savedForLater" FROM "shopping_cart_items" WHERE "cartId" = ${cart.id} FOR UPDATE`;
+      if (
+        activeItems.some(
+          (item) =>
+            !lockedItems.some(
+              (row) =>
+                row.id === item.id &&
+                row.quantity === item.quantity &&
+                !row.savedForLater,
+            ),
+        )
+      ) {
+        throw new BusinessException(
+          'Your bag changed. Review the updated quantity before placing the order.',
+          'CHECKOUT_CART_CHANGED',
+        );
+      }
       const createdOrder = await tx.order.create({
         data: {
           orderNumber,
           customerId: profile.id,
           status: 'PENDING',
+          createdBy: userId,
           subtotal: Math.round(subtotal * 100) / 100,
           discountTotal: Math.round(discountTotal * 100) / 100,
           taxTotal: Math.round(taxTotal * 100) / 100,
@@ -443,7 +535,14 @@ export class CheckoutService {
                 ? { variant: { connect: { id: i.variantId } } }
                 : {}),
               productName: i.productName,
-              sku: 'SKU',
+              sku: productMap.get(i.productId)?.sku || 'SKU',
+              variantTitle: i.variantName,
+              discountAmount:
+                subtotal > 0
+                  ? Math.round(
+                      ((effectiveDiscount * i.totalPrice) / subtotal) * 100,
+                    ) / 100
+                  : 0,
               quantity: i.quantity,
               unitPrice: i.unitPrice,
               totalPrice: i.totalPrice,
@@ -454,6 +553,21 @@ export class CheckoutService {
         include: { items: true },
       });
 
+      if (paymentMethod === 'COD')
+        await tx.payment.create({
+          data: {
+            orderId: createdOrder.id,
+            paymentNumber: `COD-${randomBytes(8).toString('hex')}`,
+            method: 'COD',
+            provider: 'MANUAL',
+            amount: grandTotal,
+            currency: 'INR',
+            status: 'PENDING',
+            createdBy: userId,
+          },
+        });
+      await this.workflow.reserveInventoryTx(tx, createdOrder.id, userId);
+
       await tx.orderTimeline.create({
         data: {
           orderId: createdOrder.id,
@@ -461,6 +575,11 @@ export class CheckoutService {
           message: 'Order placed',
           createdBy: userId,
         },
+      });
+
+      // Claim these exact lines in the same transaction as the order and reservation.
+      await tx.shoppingCartItem.deleteMany({
+        where: { cartId: cart.id, id: { in: activeItems.map((i) => i.id) } },
       });
 
       return createdOrder;
@@ -486,73 +605,116 @@ export class CheckoutService {
         .catch(() => {});
     }
 
-    // reserveInventory is atomic and all-or-nothing: it throws if any item
-    // is short (e.g. a concurrent order for the same variant claimed the
-    // last unit first). The order row above already committed as PENDING,
-    // so compensate by cancelling it instead of leaving an unreservable
-    // order stuck at PENDING forever, and leave the cart untouched so the
-    // customer can retry.
+    let response;
     try {
-      await this.workflow.reserveInventory(order.id, userId);
+      if (dto.couponCode && (couponDiscount > 0 || freeShipping))
+        await this.couponService.applyCoupon(userId, {
+          code: dto.couponCode,
+          orderId: order.id,
+          orderAmount: subtotal,
+          items: discountItems,
+        });
+      if (paymentMethod === 'COD') {
+        const confirmed = await this.workflow.transition(
+          order.id,
+          'CONFIRMED',
+          userId,
+          'Cash on delivery order confirmed',
+        );
+        response = { ...order, ...confirmed };
+      } else {
+        response = await this.orderPaymentResponse(
+          userId,
+          order,
+          paymentMethod,
+        );
+      }
     } catch (err) {
       await this.workflow.transition(
         order.id,
         'CANCELLED',
         userId,
-        'Auto-cancelled: insufficient stock at checkout',
+        'Checkout could not initialize payment. Bag retained.',
       );
+      await this.prisma.$transaction(async (tx) => {
+        await tx.$queryRaw`SELECT id FROM "shopping_carts" WHERE id = ${cart.id} FOR UPDATE`;
+        for (const item of activeItems) {
+          const existing = await tx.shoppingCartItem.findFirst({
+            where: {
+              cartId: cart.id,
+              productId: item.productId,
+              variantId: item.variantId ?? null,
+            },
+          });
+          if (!existing)
+            await tx.shoppingCartItem.create({
+              data: {
+                cartId: cart.id,
+                productId: item.productId,
+                variantId: item.variantId,
+                quantity: item.quantity,
+                unitPrice: item.unitPrice,
+                totalPrice: item.totalPrice,
+              },
+            });
+        }
+      });
       throw err;
     }
-    await this.cartService.clearCart(userId, undefined);
+    await this.auditService
+      .log({
+        action: 'ORDER_CREATED',
+        module: 'checkout',
+        resource: 'order',
+        resourceId: order.id,
+        userId,
+        newValue: { orderNumber, grandTotal: order.grandTotal },
+      })
+      .catch(() => {});
+    return response;
+  }
 
-    if (dto.couponCode && (couponDiscount > 0 || freeShipping)) {
-      await this.couponService.applyCoupon(userId, {
-        code: dto.couponCode,
-        orderId: order.id,
-        orderAmount: subtotal,
-        items: discountItems,
-      });
-    }
+  private attemptOrderNumber(userId: string, attemptId: string) {
+    return `ORD-ONL-${createHash('sha256')
+      .update(userId + ':' + attemptId)
+      .digest('hex')
+      .slice(0, 16)
+      .toUpperCase()}`;
+  }
 
-    await this.auditService.log({
-      action: 'ORDER_CREATED',
-      module: 'checkout',
-      resource: 'order',
-      resourceId: order.id,
-      userId,
-      newValue: { orderNumber, grandTotal: order.grandTotal },
+  private async orderPaymentResponse(
+    userId: string,
+    order: any,
+    _method: string,
+  ) {
+    if (order.status === 'CANCELLED')
+      throw new BusinessException(
+        'This checkout has expired or was cancelled. Please return to your bag.',
+        'CHECKOUT_EXPIRED',
+      );
+    const payments = await this.prisma.payment.findMany({
+      where: { orderId: order.id },
     });
-
-    const paymentMethod = dto.paymentMethod ?? 'COD';
-
-    if (paymentMethod === 'RAZORPAY') {
-      // Payment isn't confirmed yet -- the customer still has to complete
-      // the Razorpay checkout the frontend opens with this response. The
-      // order-confirmed email/SMS fire from PaymentService instead, once
-      // the payment actually captures, so a customer who abandons payment
-      // never gets a "your order is confirmed" message for an unpaid order.
-      const payment = await this.paymentService.create(userId, {
-        orderId: order.id,
-        method: 'RAZORPAY',
-        provider: 'razorpay',
-        amount: Number(order.grandTotal),
-        currency: order.currency,
-      });
-      const paymentInfo: PlaceOrderPaymentResponse = {
+    if (payments.some((p) => p.method === 'COD') || order.status !== 'PENDING')
+      return order;
+    const amount = getOrderState({ ...order, payments }).amountDue;
+    if (amount <= 0) return order;
+    const payment = await this.paymentService.create(userId, {
+      orderId: order.id,
+      method: 'RAZORPAY',
+      provider: 'razorpay',
+      amount,
+      currency: order.currency,
+    });
+    return {
+      ...order,
+      payment: {
         paymentId: payment.id,
-        providerOrderId: payment.providerOrderId ?? '',
+        providerOrderId: payment.providerOrderId,
         amount: payment.amount,
         currency: payment.currency,
-        razorpayKeyId:
-          this.configService.get<string>('app.razorpay.keyId') || '',
-      };
-      return { ...order, payment: paymentInfo };
-    }
-
-    // COD has no gateway step to wait for -- the order is confirmed
-    // immediately, same as before.
-    await this.workflow.notifyOrderConfirmed(order.id);
-
-    return order;
+        razorpayKeyId: payment.razorpayKeyId,
+      },
+    };
   }
 }

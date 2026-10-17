@@ -6,6 +6,7 @@ import { LoggerService } from '@common/logger/logger.service';
 import { NotificationService } from '@domains/notification/notification.service';
 import { PrismaService } from '@database/prisma.service';
 import { CreateProductDto } from './products.types';
+import { CacheService } from '@infrastructure/redis/cache.service';
 
 describe('ProductsService', () => {
   let service: ProductsService;
@@ -16,6 +17,7 @@ describe('ProductsService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ProductsService,
+        { provide: CacheService, useValue: { get: jest.fn(), set: jest.fn(), delPattern: jest.fn().mockResolvedValue(undefined) } },
         {
           provide: ProductsRepository,
           useValue: {

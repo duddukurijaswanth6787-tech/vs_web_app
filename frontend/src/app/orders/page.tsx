@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import { getOrderPresentation } from '@/features/orders/order-state';
 import Link from 'next/link';
 import Image from 'next/image';
 import {
@@ -59,7 +60,7 @@ export default function OrdersPage() {
       if (!matchesSearch) return false;
 
       if (activeTab === 'ACTIVE') {
-        return ['PENDING', 'CONFIRMED', 'PROCESSING', 'SHIPPED', 'OUT_FOR_DELIVERY', 'IN_TRANSIT'].includes(
+        return ['PENDING', 'CONFIRMED', 'PROCESSING', 'PACKING', 'READY_TO_SHIP', 'SHIPPED', 'OUT_FOR_DELIVERY', 'IN_TRANSIT'].includes(
           statusUpper
         );
       }
@@ -212,6 +213,7 @@ export default function OrdersPage() {
         {/* Orders List Cards (Luxury Amazon/Flipkart mobile design) */}
         <div className="space-y-4">
           {filteredOrders.map((order: OrderDto) => {
+            const paymentState = getOrderPresentation({ ...order, grandTotal: Number(order.grandTotal ?? order.totalAmount) });
             const statusUpper = String(order.status || '').toUpperCase();
             const isDelivered = statusUpper === 'DELIVERED' || statusUpper === 'COMPLETED';
             const isCancelled = statusUpper.includes('CANCEL');
@@ -225,6 +227,11 @@ export default function OrdersPage() {
                 key={order.id || order.orderNumber}
                 className="bg-white border border-neutral-200/90 rounded-3xl p-4 sm:p-6 shadow-xs hover:shadow-md transition-shadow space-y-4"
               >
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+                  <span className="text-neutral-600">Payment: <strong className="font-medium text-neutral-900">{paymentState.paymentLabel}</strong></span>
+                  {paymentState.canRetry && <Link href={`/orders/confirmed/${order.orderNumber}`} className="rounded-lg bg-[var(--brand-primary)] px-3 py-2 font-semibold text-white">Complete payment</Link>}
+                  {Number(order.refundDue || 0) > 0 && <span className="text-amber-800">Refund awaiting action</span>}
+                </div>
                 {/* Card Header: Order #, Date, Status */}
                 <div className="flex flex-wrap items-center justify-between gap-2 border-b border-neutral-100 pb-3">
                   <div className="space-y-0.5">

@@ -12,6 +12,7 @@ import {
   ReturnItemResponse,
 } from './return-request.types';
 import { PrismaService } from '@database/prisma.service';
+import { OrderLifecycleService } from '@domains/order/order-lifecycle.service';
 
 @Injectable()
 export class ReturnRequestService {
@@ -122,14 +123,25 @@ export class ReturnRequestService {
         }));
 
     const orderItemMap = new Map(order.items.map((i) => [i.id, i]));
+    const seenItems = new Set<string>();
     for (const item of itemsToProcess) {
+      if (seenItems.has(item.orderItemId))
+        throw new BusinessException(
+          'Select each returned item only once.',
+          'RETURN_004',
+        );
+      seenItems.add(item.orderItemId);
       const orderItem = orderItemMap.get(item.orderItemId);
       if (!orderItem)
         throw new BusinessException(
           `Order item ${item.orderItemId} not found`,
           'RETURN_003',
         );
-      if (item.quantity > orderItem.quantity)
+      if (
+        !Number.isSafeInteger(item.quantity) ||
+        item.quantity < 1 ||
+        item.quantity > orderItem.quantity
+      )
         throw new BusinessException(
           'Return quantity exceeds order item quantity',
           'RETURN_004',
@@ -137,19 +149,60 @@ export class ReturnRequestService {
     }
 
     const returnNumber = await this.returnRepo.generateReturnNumber();
-    const ret = await this.returnRepo.create({
-      order: { connect: { id: dto.orderId } },
-      returnNumber,
-      reason: dto.reason,
-      refundPreference: dto.refundPreference,
-      createdBy: userId,
-      items: {
-        create: itemsToProcess.map((i) => ({
-          orderItem: { connect: { id: i.orderItemId } },
-          quantity: i.quantity,
-          reason: i.reason,
-        })),
-      },
+    const lifecycle = new OrderLifecycleService(this.prisma);
+    const ret = await this.prisma.$transaction(async (tx) => {
+      const currentOrder = await lifecycle.lockedOrder(tx, dto.orderId);
+      if (!this.workflow.canReturn(currentOrder.status))
+        throw new BusinessException(
+          'A return is already active or this order cannot be returned.',
+          'RETURN_002',
+        );
+      const previousItems = await tx.returnItem.findMany({
+        where: {
+          returnRequest: {
+            orderId: dto.orderId,
+            status: { notIn: ['REJECTED', 'CANCELLED'] },
+          },
+        },
+      });
+      for (const item of itemsToProcess) {
+        const alreadyReturned = previousItems
+          .filter((i) => i.orderItemId === item.orderItemId)
+          .reduce((sum, i) => sum + i.quantity, 0);
+        const original = currentOrder.items.find(
+          (i) => i.id === item.orderItemId,
+        );
+        if (!original || alreadyReturned + item.quantity > original.quantity)
+          throw new BusinessException(
+            'Return quantity exceeds the remaining purchased quantity.',
+            'RETURN_004',
+          );
+      }
+      const created = await tx.returnRequest.create({
+        data: {
+          order: { connect: { id: dto.orderId } },
+          returnNumber,
+          reason: dto.reason,
+          refundPreference: dto.refundPreference,
+          createdBy: userId,
+          items: {
+            create: itemsToProcess.map((i) => ({
+              orderItem: { connect: { id: i.orderItemId } },
+              quantity: i.quantity,
+              reason: i.reason,
+            })),
+          },
+        },
+        include: { items: true },
+      });
+      await lifecycle.transitionTx(
+        tx,
+        dto.orderId,
+        'RETURN_REQUESTED',
+        userId,
+        `Return requested: ${returnNumber}`,
+      );
+      return created;
     });
 
     // ponytail: store images on return items if provided
@@ -164,29 +217,26 @@ export class ReturnRequestService {
       }
     }
 
-    await this.workflow.transition(
-      dto.orderId,
-      'RETURN_REQUESTED',
-      userId,
-      `Return requested: ${returnNumber}`,
-    );
+    await this.auditService
+      .log({
+        action: 'RETURN_REQUESTED',
+        module: 'returns',
+        resource: 'return_request',
+        resourceId: ret.id,
+        userId,
+        newValue: { orderId: dto.orderId, returnNumber },
+      })
+      .catch(() => {});
 
-    await this.auditService.log({
-      action: 'RETURN_REQUESTED',
-      module: 'returns',
-      resource: 'return_request',
-      resourceId: ret.id,
-      userId,
-      newValue: { orderId: dto.orderId, returnNumber },
-    });
-
-    await this.notificationService.create({
-      userId,
-      type: 'ORDER_RETURNED',
-      title: 'Return Requested',
-      message: `Return ${returnNumber} has been submitted`,
-      data: { returnId: ret.id, returnNumber },
-    });
+    await this.notificationService
+      .create({
+        userId,
+        type: 'ORDER_RETURNED',
+        title: 'Return Requested',
+        message: `Return ${returnNumber} has been submitted`,
+        data: { returnId: ret.id, returnNumber },
+      })
+      .catch(() => {});
 
     return this.toResponse(ret);
   }
@@ -195,6 +245,7 @@ export class ReturnRequestService {
     const ret = await this.returnRepo.findById(id);
     if (!ret)
       throw new BusinessException('Return request not found', 'RETURN_001');
+    if (ret.status === dto.status) return this.toResponse(ret);
 
     const validTransitions: Record<string, string[]> = {
       REQUESTED: ['APPROVED', 'REJECTED'],
@@ -212,28 +263,104 @@ export class ReturnRequestService {
         'RETURN_005',
       );
 
-    const updated = await this.returnRepo.update(id, {
-      status: dto.status,
-      adminNotes: dto.adminNotes,
-      updatedBy: userId,
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const lifecycle = new OrderLifecycleService(this.prisma);
+      await lifecycle.lockedOrder(tx, ret.orderId);
+      const current = await tx.returnRequest.findUniqueOrThrow({
+        where: { id },
+        include: { items: { include: { orderItem: true } } },
+      });
+      if (current.status === dto.status) return current;
+      if (!(validTransitions[current.status] ?? []).includes(dto.status))
+        throw new BusinessException(
+          'Return changed. Refresh before continuing.',
+          'RETURN_005',
+        );
+      if (dto.status === 'REFUND_COMPLETED') {
+        const refunds = await tx.refund.findMany({
+          where: { orderId: ret.orderId, status: 'COMPLETED' },
+        });
+        const prior = await tx.returnItem.findMany({
+          where: {
+            returnRequest: {
+              orderId: ret.orderId,
+              status: 'REFUND_COMPLETED',
+              id: { not: id },
+            },
+          },
+          include: { orderItem: true },
+        });
+        const refundRequired = [...prior, ...current.items].reduce(
+          (sum, item) =>
+            sum +
+            (Math.max(
+              0,
+              Number(item.orderItem.totalPrice) -
+                Number(item.orderItem.discountAmount),
+            ) *
+              item.quantity) /
+              item.orderItem.quantity,
+          0,
+        );
+        const refunded = refunds.reduce(
+          (sum, refund) => sum + Number(refund.amount),
+          0,
+        );
+        if (Math.round(refunded * 100) < Math.round(refundRequired * 100))
+          throw new BusinessException(
+            'Complete the refund for all returned items before closing this return.',
+            'RETURN_REFUND_PENDING',
+          );
+        await this.workflow.restockReturnedItems(tx, {
+          orderId: ret.orderId,
+          orderNumber: ret.returnNumber,
+          items: current.items.map((i) => ({
+            variantId: i.orderItem.variantId,
+            quantity: i.quantity,
+          })),
+          userId,
+        });
+        await lifecycle.transitionTx(
+          tx,
+          ret.orderId,
+          'RETURN_COMPLETED',
+          userId,
+          'Returned items received and refund completed',
+        );
+      } else if (dto.status === 'APPROVED')
+        await lifecycle.transitionTx(
+          tx,
+          ret.orderId,
+          'RETURN_APPROVED',
+          userId,
+          'Return approved',
+        );
+      else if (dto.status === 'REJECTED')
+        await lifecycle.transitionTx(
+          tx,
+          ret.orderId,
+          'RETURN_REJECTED',
+          userId,
+          'Return declined',
+        );
+      else if (dto.status === 'CANCELLED')
+        await lifecycle.transitionTx(
+          tx,
+          ret.orderId,
+          'RETURN_REJECTED',
+          userId,
+          'Return cancelled',
+        );
+      return tx.returnRequest.update({
+        where: { id },
+        data: {
+          status: dto.status,
+          adminNotes: dto.adminNotes,
+          updatedBy: userId,
+        },
+        include: { items: true },
+      });
     });
-
-    if (dto.status === 'REFUND_COMPLETED') {
-      await this.workflow.restoreInventory(ret.orderId, userId);
-      await this.workflow.transition(
-        ret.orderId,
-        'RETURN_COMPLETED',
-        userId,
-        'Return completed',
-      );
-    } else if (dto.status === 'APPROVED') {
-      await this.workflow.transition(
-        ret.orderId,
-        'RETURN_APPROVED',
-        userId,
-        'Return approved',
-      );
-    }
 
     // ponytail: timeline + notification for every status change
     await this.prisma.orderTimeline.create({

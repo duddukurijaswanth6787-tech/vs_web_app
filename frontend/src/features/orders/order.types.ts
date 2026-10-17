@@ -39,6 +39,14 @@ export interface OrderResponse {
   orderNumber: string;
   customerId: string;
   status: string;
+  paymentStatus?: string;
+  paidAmount?: number;
+  refundedAmount?: number;
+  amountDue?: number;
+  refundDue?: number;
+  canFulfill?: boolean;
+  canRetryPayment?: boolean;
+  allowedTransitions?: string[];
   subtotal: number;
   discountTotal: number;
   taxTotal: number;
@@ -94,6 +102,7 @@ export interface AssignCourierDto {
 }
 
 export interface OrderQueryDto {
+  view?: string;
   search?: string;
   channel?: string;
   status?: string;

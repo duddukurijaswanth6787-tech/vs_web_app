@@ -6,11 +6,6 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { OrderWorkflowService } from './order-workflow.service';
-import { Prisma } from '@prisma/client';
-
-type OrderWithRelations = Prisma.OrderGetPayload<{
-  include: { payments: true; items: true };
-}>;
 
 @Injectable()
 export class OrderTimeoutService implements OnModuleInit, OnModuleDestroy {
@@ -32,14 +27,20 @@ export class OrderTimeoutService implements OnModuleInit, OnModuleDestroy {
     // Initial check on startup (delayed 5s to allow DB connection to stabilize)
     setTimeout(() => {
       this.sweepExpiredOrders().catch((err) =>
-        this.logger.error(`Initial order sweep failed: ${err.message}`, err.stack),
+        this.logger.error(
+          `Initial order sweep failed: ${err.message}`,
+          err.stack,
+        ),
       );
     }, 5000);
 
     // Recurring check every 60 seconds
     this.timer = setInterval(() => {
       this.sweepExpiredOrders().catch((err) =>
-        this.logger.error(`Periodic order sweep failed: ${err.message}`, err.stack),
+        this.logger.error(
+          `Periodic order sweep failed: ${err.message}`,
+          err.stack,
+        ),
       );
     }, 60 * 1000);
   }
@@ -62,103 +63,30 @@ export class OrderTimeoutService implements OnModuleInit, OnModuleDestroy {
   }> {
     const cutoff = new Date(Date.now() - timeoutMinutes * 60 * 1000);
 
-    // Find all online orders created before the cutoff that are still PENDING and uncaptured
-    const expiredOrders: OrderWithRelations[] = await this.prisma.order.findMany({
+    const expiredOrders = await this.prisma.order.findMany({
       where: {
         status: 'PENDING',
-        createdAt: { lte: cutoff },
         channel: 'ONLINE_STORE',
+        createdAt: { lte: cutoff },
         payments: {
-          some: {
-            status: 'PENDING',
-          },
           none: {
-            status: 'CAPTURED',
+            OR: [
+              { status: { in: ['CAPTURED', 'COMPLETED'] } },
+              { method: 'COD' },
+            ],
           },
         },
       },
-      include: {
-        payments: true,
-        items: true,
-      },
+      select: { id: true, orderNumber: true },
     });
-
-    // Also find any PENDING orders whose payment is explicitly marked FAILED
-    const failedPaymentOrders: OrderWithRelations[] = await this.prisma.order.findMany({
-      where: {
-        status: 'PENDING',
-        payments: {
-          some: { status: 'FAILED' },
-          none: { status: 'CAPTURED' },
-        },
-      },
-      include: {
-        payments: true,
-        items: true,
-      },
-    });
-
-    // Merge and deduplicate
-    const orderMap = new Map<string, OrderWithRelations>();
-    for (const o of [...expiredOrders, ...failedPaymentOrders]) {
-      orderMap.set(o.id, o);
-    }
-
     const cancelledOrderNumbers: string[] = [];
-
-    for (const order of orderMap.values()) {
+    for (const order of expiredOrders) {
       try {
-        this.logger.warn(
-          `[OrderTimeoutService] Auto-cancelling expired order ${order.orderNumber} (created ${order.createdAt.toISOString()}) -- releasing reserved stock.`,
-        );
-
-        // 1. Release reserved stock back to available inventory
-        await this.workflow.releaseInventory(order.id, 'SYSTEM');
-
-        // 2. Mark order as CANCELLED
-        await this.prisma.order.update({
-          where: { id: order.id },
-          data: {
-            status: 'CANCELLED',
-            cancelReason: `Online payment timed out (${timeoutMinutes} minutes window elapsed). Reserved stock automatically restored to available inventory.`,
-            updatedBy: 'SYSTEM',
-          },
-        });
-
-        // 3. Mark any PENDING payment records as FAILED
-        for (const p of order.payments) {
-          if (p.status === 'PENDING') {
-            await this.prisma.payment.update({
-              where: { id: p.id },
-              data: {
-                status: 'FAILED',
-                metadata: {
-                  ...(typeof p.metadata === 'object' && p.metadata !== null
-                    ? (p.metadata as object)
-                    : {}),
-                  timeoutReason: `Customer payment window expired after ${timeoutMinutes} minutes`,
-                  timedOutAt: new Date().toISOString(),
-                },
-              },
-            });
-          }
-        }
-
-        // 4. Log order timeline
-        await this.prisma.orderTimeline.create({
-          data: {
-            orderId: order.id,
-            status: 'CANCELLED',
-            message: `Order auto-cancelled: Online payment timed out (${timeoutMinutes}m). Reserved inventory automatically released back to stock.`,
-            createdBy: 'SYSTEM',
-          },
-        });
-
-        cancelledOrderNumbers.push(order.orderNumber);
+        if (await this.workflow.expireOrder(order.id, cutoff))
+          cancelledOrderNumbers.push(order.orderNumber);
       } catch (err: any) {
         this.logger.error(
-          `Failed to auto-cancel expired order ${order.orderNumber}: ${err.message}`,
-          err.stack,
+          'Failed to expire order ' + order.orderNumber + ': ' + err.message,
         );
       }
     }

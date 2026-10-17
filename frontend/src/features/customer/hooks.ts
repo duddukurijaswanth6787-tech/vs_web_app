@@ -306,6 +306,7 @@ export function useCustomerOrder(orderNumber: string, enabled = true) {
     queryKey: [...customerKeys.orders(), orderNumber],
     queryFn: () => customerOrdersService.getByNumber(orderNumber),
     enabled,
+    refetchInterval: (query) => query.state.data?.status === 'PENDING' ? 5000 : false,
   });
 }
 
@@ -449,6 +450,7 @@ export function usePlaceOrder() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (dto: {
+      checkoutAttemptId?: string;
       addressId: string;
       shippingMethod?: string;
       notes?: string;

@@ -3,6 +3,7 @@ import { BusinessException } from '@common/exceptions';
 import { OrderRepository } from './order.repository';
 import { OrderWorkflowService } from './order-workflow.service';
 import { OrderQueryDto, OrderResponse } from './order.types';
+import { getOrderState } from './order-state';
 
 @Injectable()
 export class OrderService {
@@ -21,6 +22,7 @@ export class OrderService {
       orderNumber: o.orderNumber,
       customerId: o.customerId,
       status: o.status,
+      ...getOrderState(o),
       subtotal: Number(o.subtotal),
       discountTotal: Number(o.discountTotal),
       taxTotal: Number(o.taxTotal),
@@ -36,7 +38,6 @@ export class OrderService {
       ...(includeAdminFields
         ? {
             channel: o.channel,
-            paymentMethod: o.paymentMethod ?? undefined,
             terminalId: o.terminalId ?? undefined,
           }
         : {}),
@@ -118,6 +119,7 @@ export class OrderService {
     const result = await this.orderRepository.findAll({
       search: query.search,
       channel: query.channel,
+      view: query.view,
       status: query.status,
       customerId: query.customerId,
       startDate: query.startDate,
@@ -172,33 +174,6 @@ export class OrderService {
 
     await this.workflow.transition(id, status, userId, message);
 
-    if (status === 'CONFIRMED') {
-      // deductInventory is atomic and all-or-nothing; a variant's stock
-      // could in principle have moved since the checkout-time reservation
-      // (e.g. it was manually adjusted down in the meantime). If it throws,
-      // the transition to CONFIRMED already committed above, so compensate
-      // by cancelling the order rather than leaving it CONFIRMED with no
-      // stock actually deducted.
-      try {
-        await this.workflow.deductInventory(id, userId);
-      } catch (err) {
-        await this.workflow.transition(
-          id,
-          'CANCELLED',
-          userId,
-          'Auto-cancelled: insufficient stock at confirmation',
-        );
-        throw err;
-      }
-    } else if (status === 'CANCELLED') {
-      if (order.status === 'PENDING') {
-        await this.workflow.releaseInventory(id, userId);
-      } else {
-        // For CONFIRMED, PROCESSING, PACKING, etc. where stock was deducted, restock back to inventory
-        await this.workflow.restoreInventory(id, userId);
-      }
-    }
-
     return this.findById(id);
   }
 
@@ -215,32 +190,12 @@ export class OrderService {
     const order = await this.orderRepository.findById(id);
     if (!order) throw new BusinessException('Order not found', 'ORDER_001');
 
-    const waybill =
-      dto.waybillNumber ||
-      (dto.courierPartner === 'Delhivery'
-        ? `DEL${Date.now().toString().slice(-9)}`
-        : undefined);
-
-    const trackingLink =
-      dto.trackingUrl ||
-      (dto.courierPartner === 'Delhivery' && waybill
-        ? `https://track.delhivery.com/api/v1/packages/json/?waybill=${waybill}`
-        : undefined);
-
-    const updated = await this.orderRepository.update(id, {
-      courierPartner: dto.courierPartner,
-      waybillNumber: waybill,
-      trackingUrl: trackingLink,
-      status: 'SHIPPED',
+    const waybill = dto.waybillNumber?.trim();
+    if (!waybill) throw new BusinessException('Enter the actual waybill issued by the courier.', 'ORDER_WAYBILL_REQUIRED');
+    await this.workflow.transition(id, 'SHIPPED', userId, dto.message || 'Handed to courier', {
+      courierPartner: dto.courierPartner, waybillNumber: waybill, trackingUrl: dto.trackingUrl,
     });
-
-    await this.orderRepository.createTimeline(
-      id,
-      'SHIPPED',
-      dto.message ||
-        `Courier Partner Assigned: ${dto.courierPartner}${waybill ? ` (AWB: ${waybill})` : ''}`,
-      userId,
-    );
+    const updated = await this.orderRepository.findById(id);
 
     return this.toResponse(updated, true, true);
   }

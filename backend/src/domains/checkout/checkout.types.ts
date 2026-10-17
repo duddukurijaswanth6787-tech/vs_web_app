@@ -39,6 +39,7 @@ export class CheckoutSummaryResponse {
 }
 
 export class PlaceOrderDto {
+  @ApiPropertyOptional() @IsOptional() @IsUUID() checkoutAttemptId?: string;
   @ApiProperty() @IsUUID() addressId!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() shippingMethod?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() notes?: string;

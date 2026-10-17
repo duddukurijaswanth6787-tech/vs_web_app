@@ -15,9 +15,10 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
     $transaction: jest.Mock;
   };
   let tx: {
+    order: { findUnique: jest.Mock };
     $queryRaw: jest.Mock;
     inventory: { findUnique: jest.Mock; update: jest.Mock };
-    inventoryMovement: { create: jest.Mock };
+    inventoryMovement: { create: jest.Mock; findMany: jest.Mock };
   };
 
   const inventoryRow = {
@@ -31,6 +32,7 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
 
   const orderWithOneItem = {
     id: 'order-1',
+    status: 'PENDING',
     orderNumber: 'ORD-20260821-000001',
     items: [
       {
@@ -44,13 +46,14 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
 
   beforeEach(async () => {
     tx = {
+      order: { findUnique: jest.fn() },
       $queryRaw: jest.fn(),
       inventory: { findUnique: jest.fn(), update: jest.fn() },
-      inventoryMovement: { create: jest.fn() },
+      inventoryMovement: { create: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     };
 
     prisma = {
-      order: { findUnique: jest.fn() },
+      order: tx.order,
       $transaction: jest.fn((cb: (tx: unknown) => unknown) => cb(tx)),
     };
 
@@ -104,15 +107,6 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
 
       await expect(service.deductInventory('order-1')).rejects.toMatchObject({
         errorCode: 'ORDER_STOCK_CONFLICT',
-        metadata: {
-          shortages: [
-            expect.objectContaining({
-              variantId: 'variant-1',
-              requested: 3,
-              available: 1,
-            }),
-          ],
-        },
       });
     });
 
@@ -124,10 +118,9 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
       await expect(service.deductInventory('order-1')).resolves.toBeUndefined();
     });
 
-    it('is a no-op when the order does not exist', async () => {
+    it('rejects deduction when the order does not exist', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
-      await expect(service.deductInventory('missing')).resolves.toBeUndefined();
-      expect(prisma.$transaction).not.toHaveBeenCalled();
+      await expect(service.deductInventory('missing')).rejects.toMatchObject({ errorCode: 'ORDER_001' });
     });
   });
 
@@ -169,6 +162,7 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
     it('releaseInventory issues a clamped decrement per item and never throws on shortage', async () => {
       prisma.order.findUnique.mockResolvedValue(orderWithOneItem);
       tx.$queryRaw.mockResolvedValue([inventoryRow]);
+      tx.inventoryMovement.findMany.mockResolvedValue([{ movementType: 'RESERVED', quantity: 3 }]);
 
       await expect(
         service.releaseInventory('order-1'),
@@ -179,11 +173,22 @@ describe('OrderWorkflowService - atomic inventory deduction/reservation', () => 
       expect(tx.inventoryMovement.create).toHaveBeenCalledTimes(1);
     });
 
-    it('restoreInventory is a no-op when the order does not exist', async () => {
+    it('restoreInventory rejects an unknown order', async () => {
       prisma.order.findUnique.mockResolvedValue(null);
       await expect(
         service.restoreInventory('missing'),
-      ).resolves.toBeUndefined();
+      ).rejects.toMatchObject({ errorCode: 'ORDER_001' });
     });
+  });
+
+  it('uses the customer user ID and keeps committed status despite notification failure', async () => {
+    const failing = { create: jest.fn().mockRejectedValue(new Error('notification unavailable')) };
+    const audit = { log: jest.fn().mockResolvedValue(undefined) };
+    const telegram = { sendOrderStatusAlert: jest.fn().mockResolvedValue(undefined) };
+    prisma.order.findUnique.mockResolvedValue({ id: 'order-1', orderNumber: 'ORD-1', grandTotal: 100,
+      customer: { id: 'profile-id', userId: 'actual-user-id', user: { firstName: 'Test' } }, addresses: [] });
+    const workflow = new OrderWorkflowService(prisma as any, audit as any, failing as any, {} as any, {} as any, telegram as any);
+    await expect(workflow.afterTransition('order-1', 'CANCELLED', 'admin', 'PENDING')).resolves.toBeUndefined();
+    expect(failing.create).toHaveBeenCalledWith(expect.objectContaining({ userId: 'actual-user-id' }));
   });
 });

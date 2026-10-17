@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import Script from 'next/script';
@@ -52,7 +52,7 @@ import { getApiErrorMessage } from '@/utils/api-error';
 import { paymentService } from '@/features/payments/payment.service';
 import { StorefrontFooter } from '@/components/layout/StorefrontFooter';
 import { withVariant, isLocalOrPlaceholder } from '@/lib/media-url';
-import type { OrderPlacePaymentDto } from '@/features/customer/checkout.service';
+import type { OrderPlacePaymentDto, OrderPlaceResultDto } from '@/features/customer/checkout.service';
 
 const DELIVERY_SLOTS = [
   { id: 'MORNING', title: 'Morning', time: '9:00 AM – 1:00 PM' },
@@ -82,6 +82,10 @@ function CheckoutPageContent() {
   const isCodFeatureOn = useFeatureEnabled('cod');
   const codEnabled = Boolean(publicSettings?.codEnabled ?? isCodFeatureOn);
   const placeOrder = usePlaceOrder();
+  const checkoutAttemptRef = useRef<string | null>(null);
+  const placingRef = useRef(false);
+  const [pendingOrder, setPendingOrder] = useState<OrderPlaceResultDto | null>(null);
+  const [gatewayReady, setGatewayReady] = useState(false);
 
   // Profile / Account Dropdown State
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -461,7 +465,7 @@ function CheckoutPageContent() {
         ondismiss: () => {
           if (!isPaymentDone) {
             setIsVerifyingPayment(false);
-            setOrderError('Payment was not completed. You can try again or select another payment option.');
+            setOrderError('Payment was not completed. Retry payment for this existing order, or check its status below.');
           }
         },
       },
@@ -475,7 +479,7 @@ function CheckoutPageContent() {
             razorpaySignature: response.razorpay_signature,
           });
         } catch (err: unknown) {
-          console.error('Payment verification note:', err);
+          setOrderError(getApiErrorMessage(err, 'Payment confirmation is still pending. Check the order status before paying again.'));
         } finally {
           if (typeof window !== 'undefined') localStorage.removeItem(COUPON_STORAGE_KEY);
           await qc.invalidateQueries({ queryKey: customerKeys.cart() });
@@ -490,14 +494,30 @@ function CheckoutPageContent() {
   };
 
   const onPlaceOrder = async () => {
+    if (placingRef.current) return;
+    if (pendingOrder?.payment) {
+      openRazorpayModal(pendingOrder.payment, pendingOrder.orderNumber);
+      return;
+    }
     if (!activeAddressId) {
       setOrderError('Please select or add a delivery address to complete your order.');
       return;
     }
 
     setOrderError('');
+    if (!preview.data || preview.isFetching || preview.isError) {
+      setOrderError('Please wait for your order total to be checked, or retry the order summary.');
+      return;
+    }
+    if (paymentMethod === 'RAZORPAY' && !gatewayReady) {
+      setOrderError('The payment gateway is loading. Please try again shortly.');
+      return;
+    }
+    placingRef.current = true;
+    checkoutAttemptRef.current ??= crypto.randomUUID();
     try {
       const order = await placeOrder.mutateAsync({
+        checkoutAttemptId: checkoutAttemptRef.current,
         addressId: activeAddressId,
         paymentMethod,
         couponCode: couponCode || undefined,
@@ -507,6 +527,7 @@ function CheckoutPageContent() {
       });
 
       if (paymentMethod === 'RAZORPAY' && order.payment) {
+        setPendingOrder(order);
         openRazorpayModal(order.payment, order.orderNumber);
         return;
       }
@@ -517,7 +538,11 @@ function CheckoutPageContent() {
       await qc.invalidateQueries({ queryKey: customerKeys.orders() });
       window.location.assign(`/orders/confirmed/${order.orderNumber}`);
     } catch (err: unknown) {
+      const code = (err as { response?: { data?: { code?: string } } })?.response?.data?.code;
+      if (code !== undefined && code !== 'TIMEOUT') checkoutAttemptRef.current = null;
       setOrderError(getApiErrorMessage(err, 'Failed to place order. Please check address and try again.'));
+    } finally {
+      placingRef.current = false;
     }
   };
 
@@ -525,7 +550,7 @@ function CheckoutPageContent() {
 
   return (
     <div className="min-h-screen bg-[#faf9f8] flex flex-col font-sans antialiased text-neutral-900 pb-16">
-      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
+      <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="afterInteractive" onLoad={() => setGatewayReady(true)} onReady={() => setGatewayReady(true)} />
 
       {/* TOP HEADER WITH BRAND LOGO & MULTI-STEP PROGRESS BAR */}
       <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-neutral-200/80 px-4 sm:px-8 py-3.5 shadow-2xs">
@@ -1255,6 +1280,16 @@ function CheckoutPageContent() {
               </div>
 
               {/* DETAILED PRICE BREAKDOWN */}
+              {pendingOrder && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm space-y-2">
+                <p className="font-semibold">Order {pendingOrder.orderNumber} is awaiting payment</p>
+                <p>Your bag has been saved in this order. Retry payment for it instead of creating another order.</p>
+                <button type="button" onClick={onPlaceOrder} className="rounded-lg bg-[var(--brand-primary)] px-4 py-2 font-semibold text-white">Retry this payment</button>
+                <Link href={`/orders/confirmed/${pendingOrder.orderNumber}`} className="block underline">Check order and payment status</Link>
+              </div>}
+              {preview.isError && !pendingOrder && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-3 text-sm">
+                <p>{getApiErrorMessage(preview.error, 'We could not check the order total.')}</p>
+                <button type="button" onClick={() => preview.refetch()} className="mt-2 font-semibold underline">Retry order summary</button>
+              </div>}
               {cartItems.length > 0 ? (
                 <div className="space-y-2.5 pt-3 border-t border-neutral-100 text-xs text-neutral-600">
                   <div className="flex justify-between">
@@ -1327,7 +1362,7 @@ function CheckoutPageContent() {
                   ) : (
                     <button
                       onClick={onPlaceOrder}
-                      disabled={isBusy || !activeAddressId}
+                      disabled={isBusy || !activeAddressId || preview.isFetching || !preview.data || preview.isError || (paymentMethod === 'RAZORPAY' && !gatewayReady)}
                       className="w-full mt-3 bg-[var(--brand-primary)] hover:bg-[var(--brand-primary-dark)] text-white py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all shadow-md cursor-pointer disabled:opacity-60"
                     >
                       <Lock className="w-4 h-4" />

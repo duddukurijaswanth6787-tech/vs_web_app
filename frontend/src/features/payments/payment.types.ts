@@ -18,6 +18,7 @@ export interface PaymentResponse {
   currency: string;
   transactionId?: string;
   providerOrderId?: string;
+  razorpayKeyId?: string;
   providerPaymentId?: string;
   metadata?: any;
   transactions?: PaymentTransactionResponse[];

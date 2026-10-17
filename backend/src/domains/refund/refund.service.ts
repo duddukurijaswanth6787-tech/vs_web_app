@@ -58,6 +58,7 @@ export class RefundService {
   async findById(id: string) {
     const refund = await this.refundRepository.findById(id);
     if (!refund) throw new BusinessException('Refund not found', 'REFUND_001');
+
     return this.toResponse(refund);
   }
 
@@ -70,6 +71,16 @@ export class RefundService {
     const payment = await this.refundRepository.findPaymentById(dto.paymentId);
     if (!payment)
       throw new BusinessException('Payment not found', 'REFUND_002');
+    if (
+      payment.orderId !== dto.orderId ||
+      !['CAPTURED', 'COMPLETED'].includes(payment.status) ||
+      dto.amount <= 0
+    ) {
+      throw new BusinessException(
+        'Select a received payment belonging to this order and a positive refund amount.',
+        'REFUND_INVALID_PAYMENT',
+      );
+    }
     if (Number(payment.amount) < dto.amount) {
       throw new BusinessException(
         'Refund amount exceeds payment amount',
@@ -102,54 +113,90 @@ export class RefundService {
   async updateStatus(id: string, dto: UpdateRefundDto, userId: string) {
     if (!dto.status)
       throw new BusinessException('Status is required', 'REFUND_004');
+    const requestedStatus = dto.status;
 
-    const refund = await this.refundRepository.findById(id);
-    if (!refund) throw new BusinessException('Refund not found', 'REFUND_001');
+    const updated = await this.refundRepository.processStatus(
+      id,
+      async (refund, tx) => {
+        if (
+          refund.status === dto.status ||
+          (dto.status === RefundStatus.APPROVED &&
+            refund.status === RefundStatus.COMPLETED &&
+            refund.transactionId)
+        )
+          return refund;
 
-    const allowed = VALID_TRANSITIONS[refund.status];
-    if (!allowed?.includes(dto.status)) {
-      throw new BusinessException(
-        `Cannot transition from ${refund.status} to ${dto.status}`,
-        'REFUND_005',
-      );
-    }
+        const allowed = VALID_TRANSITIONS[refund.status];
+        if (!allowed?.includes(requestedStatus)) {
+          throw new BusinessException(
+            `Cannot transition from ${refund.status} to ${dto.status}`,
+            'REFUND_005',
+          );
+        }
 
-    let transactionId = dto.transactionId;
-    let finalStatus: string = dto.status;
+        const payment = await tx.payment.findUniqueOrThrow({
+          where: { id: refund.paymentId },
+        });
+        let transactionId = refund.transactionId || dto.transactionId;
+        let finalStatus: string = dto.status!;
 
-    // Approving a refund actually moves the money -- calls Razorpay's
-    // refund API right here rather than just recording a status change, so
-    // "approved" and "money sent" can't drift apart. If Razorpay confirms
-    // the refund instantly it's marked COMPLETED immediately; otherwise it
-    // stays APPROVED until the refund.processed webhook (handled in
-    // PaymentService.handleWebhook) or a manual admin completion.
-    if (dto.status === RefundStatus.APPROVED) {
-      const result = await this.paymentService.refundPayment(
-        refund.paymentId,
-        Number(refund.amount),
-      );
-      transactionId = result.razorpayRefundId;
-      finalStatus =
-        result.status === 'processed'
-          ? RefundStatus.COMPLETED
-          : RefundStatus.APPROVED;
-    }
+        // Approving a refund actually moves the money -- calls Razorpay's
+        // refund API right here rather than just recording a status change, so
+        // "approved" and "money sent" can't drift apart. If Razorpay confirms
+        // the refund instantly it's marked COMPLETED immediately; otherwise it
+        // stays APPROVED until the refund.processed webhook (handled in
+        // PaymentService.handleWebhook) or a manual admin completion.
+        if (
+          dto.status === RefundStatus.APPROVED &&
+          payment.provider === 'razorpay'
+        ) {
+          const result = await this.paymentService.refundPayment(
+            refund.paymentId,
+            Number(refund.amount),
+            refund.id,
+          );
+          transactionId = result.razorpayRefundId;
+          finalStatus =
+            result.status === 'processed'
+              ? RefundStatus.COMPLETED
+              : RefundStatus.APPROVED;
+        }
+        if (dto.status === RefundStatus.COMPLETED) {
+          if (!transactionId?.trim())
+            throw new BusinessException(
+              'Record the refund transaction reference before completing it.',
+              'REFUND_REFERENCE_REQUIRED',
+            );
+          if (payment.provider === 'razorpay')
+            await this.paymentService.confirmRefund(
+              refund.paymentId,
+              transactionId,
+              Number(refund.amount),
+            );
+        }
 
-    const updated = await this.refundRepository.update(id, {
-      status: finalStatus,
-      adminNotes: dto.adminNotes,
-      transactionId,
-      updatedBy: userId,
-    });
+        return tx.refund.update({
+          where: { id },
+          data: {
+            status: finalStatus,
+            adminNotes: dto.adminNotes,
+            transactionId,
+            updatedBy: userId,
+          },
+        });
+      },
+    );
 
-    if (finalStatus === RefundStatus.COMPLETED) {
-      await this.auditService.log({
-        action: 'REFUND_COMPLETED',
-        module: 'refund',
-        resource: 'Refund',
-        resourceId: id,
-        userId,
-      });
+    if (updated.status === RefundStatus.COMPLETED) {
+      await this.auditService
+        .log({
+          action: 'REFUND_COMPLETED',
+          module: 'refund',
+          resource: 'Refund',
+          resourceId: id,
+          userId,
+        })
+        .catch(() => {});
     }
 
     return this.toResponse(updated);

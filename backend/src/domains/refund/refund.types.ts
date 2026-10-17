@@ -21,7 +21,7 @@ export enum RefundStatus {
 export class CreateRefundDto {
   @ApiProperty() @IsUUID() paymentId!: string;
   @ApiProperty() @IsUUID() orderId!: string;
-  @ApiProperty() @IsNumber() @Type(() => Number) amount!: number;
+  @ApiProperty() @IsNumber() @Min(0.01) @Type(() => Number) amount!: number;
   @ApiProperty() @IsString() reason!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() method?: string;
 }

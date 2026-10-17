@@ -287,6 +287,8 @@ export class CouponService {
           dto.code.trim().toUpperCase(),
           tx,
         );
+        const existing = await tx.couponUsage.findFirst({ where: { orderId: dto.orderId, customerId: userId, coupon: { code: dto.code.trim().toUpperCase() } }, include: { coupon: true } });
+        if (existing) return { coupon: existing.coupon, discountAmount: Number(existing.discountAmount), freeShipping: existing.coupon.type === CouponType.FREE_SHIPPING };
         const checked = await this.checkCoupon(
           userId,
           dto.code,

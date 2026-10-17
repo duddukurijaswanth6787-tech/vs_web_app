@@ -8,6 +8,7 @@ export class OrderRepository {
 
   async findAll(params: {
     search?: string;
+    view?: string;
     channel?: string;
     status?: string;
     customerId?: string;
@@ -20,6 +21,7 @@ export class OrderRepository {
   }) {
     const {
       search,
+      view,
       channel,
       status,
       customerId,
@@ -79,6 +81,12 @@ export class OrderRepository {
       conditions.push({ status });
     }
 
+    if (view === 'awaiting_payment') conditions.push({ status: 'PENDING', channel: 'ONLINE_STORE', payments: { none: { method: 'COD' } } });
+    if (view === 'to_fulfill') conditions.push({ status: { in: ['CONFIRMED', 'PROCESSING', 'PACKING', 'READY_TO_SHIP'] }, channel: 'ONLINE_STORE' });
+    if (view === 'in_transit') conditions.push({ status: { in: ['SHIPPED', 'OUT_FOR_DELIVERY'] } });
+    if (view === 'completed') conditions.push({ status: { in: ['DELIVERED', 'RETURN_COMPLETED'] } });
+    if (view === 'cancelled') conditions.push({ status: 'CANCELLED' });
+
     if (customerId) {
       conditions.push({
         OR: [
@@ -119,6 +127,7 @@ export class OrderRepository {
             },
           },
           items: true,
+          refunds: true,
           addresses: true,
           payments: {
             orderBy: { createdAt: 'desc' },
@@ -159,6 +168,7 @@ export class OrderRepository {
           },
         },
         items: true,
+        refunds: true,
         addresses: true,
         payments: { orderBy: { createdAt: 'desc' } },
         timeline: { orderBy: { createdAt: 'desc' } },
@@ -185,6 +195,7 @@ export class OrderRepository {
           },
         },
         items: true,
+        refunds: true,
         addresses: true,
         payments: { orderBy: { createdAt: 'desc' } },
         timeline: { orderBy: { createdAt: 'desc' } },

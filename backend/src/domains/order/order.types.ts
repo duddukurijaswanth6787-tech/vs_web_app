@@ -6,10 +6,14 @@ import {
   Min,
   Max,
   IsDateString,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class OrderQueryDto {
+  @ApiPropertyOptional({ enum: ['awaiting_payment', 'to_fulfill', 'in_transit', 'completed', 'cancelled'] })
+  @IsOptional() @IsIn(['awaiting_payment', 'to_fulfill', 'in_transit', 'completed', 'cancelled'])
+  view?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() search?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() channel?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() status?: string;
@@ -93,6 +97,14 @@ export class OrderResponse {
   @ApiProperty() orderNumber!: string;
   @ApiProperty() customerId!: string;
   @ApiProperty() status!: string;
+  @ApiProperty() paymentStatus!: string;
+  @ApiProperty() paidAmount!: number;
+  @ApiProperty() refundedAmount!: number;
+  @ApiProperty() amountDue!: number;
+  @ApiProperty() refundDue!: number;
+  @ApiProperty() canFulfill!: boolean;
+  @ApiProperty() canRetryPayment!: boolean;
+  @ApiProperty({ type: [String] }) allowedTransitions!: string[];
   @ApiProperty() subtotal!: number;
   @ApiProperty() discountTotal!: number;
   @ApiProperty() taxTotal!: number;

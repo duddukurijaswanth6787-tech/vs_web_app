@@ -17,6 +17,14 @@ export interface OrderDto {
   id: string;
   orderNumber: string;
   status: string;
+  paymentStatus?: string;
+  paymentMethod?: string;
+  paidAmount?: number;
+  refundedAmount?: number;
+  amountDue?: number;
+  refundDue?: number;
+  canRetryPayment?: boolean;
+  payments?: { status: string; amount: number; method: string }[];
   totalAmount: number;
   subtotal: number;
   shippingFee?: number;

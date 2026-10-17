@@ -41,26 +41,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   //
   // 'unknown' until that resolves, so the app shows its loading state instead
   // of briefly deciding the visitor is signed out.
-  // Read cached user synchronously if available for 0ms instantaneous load
-  const getCachedUser = (): UserProfile | null => {
-    if (typeof window === 'undefined') return null;
-    try {
-      const stored = localStorage.getItem('vd_cached_user') || sessionStorage.getItem('vd_cached_user');
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  };
-
-  const initialCachedUser = getCachedUser();
-
-  const [session, setSession] = useState<'unknown' | 'none' | 'active'>(() => {
-    if (typeof window !== 'undefined') {
-      const token = localStorage.getItem('vd_access_token') || sessionStorage.getItem('vd_access_token');
-      if (token) return 'active';
-    }
-    return 'unknown';
-  });
+  // Match the server's first render, then resolve the real session after hydration.
+  const [session, setSession] = useState<'unknown' | 'none' | 'active'>('unknown');
 
   useEffect(() => {
     let cancelled = false;
@@ -101,7 +83,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       return profile;
     },
-    initialData: initialCachedUser || undefined,
     enabled: session === 'active',
     retry: false,
     staleTime: 5 * 60 * 1000,

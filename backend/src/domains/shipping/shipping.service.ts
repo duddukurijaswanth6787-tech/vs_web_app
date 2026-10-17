@@ -250,14 +250,8 @@ export class ShippingService {
         paymentMethodStr.toUpperCase() === 'PAY_ON_DELIVERY';
 
       const totalAmount = Number(o.grandTotal);
-      const waybillNumber =
-        o.waybillNumber ||
-        `DEL${
-          o.orderNumber
-            .replace(/[^0-9]/g, '')
-            .slice(-9)
-            .padStart(9, '1') || Date.now().toString().slice(-9)
-        }`;
+      if (!o.waybillNumber) throw new BusinessException(`Record the real courier waybill for ${o.orderNumber} before printing a shipping label.`, 'SHIPPING_WAYBILL_REQUIRED');
+      const waybillNumber = o.waybillNumber;
 
       const courierPartner = o.courierPartner || 'Delhivery Surface / Express';
 

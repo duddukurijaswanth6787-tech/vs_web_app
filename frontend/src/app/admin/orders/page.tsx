@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { getOrderPresentation } from '@/features/orders/order-state';
 import { useOrderList } from '@/features/orders/order.hooks';
 import type { OrderResponse } from '@/features/orders/order.types';
 import { OrderStatusBadge, ChannelBadge } from '@/components/feedback/StatusBadges';
@@ -39,6 +40,7 @@ export default function OrdersPage() {
   const search = searchParams.get('search') || '';
   const channel = searchParams.get('channel') || '';
   const status = searchParams.get('status') || '';
+  const view = searchParams.get('view') || '';
   const startDate = searchParams.get('startDate') || '';
   const endDate = searchParams.get('endDate') || '';
 
@@ -69,6 +71,7 @@ export default function OrdersPage() {
     search: search || undefined,
     channel: channel || undefined,
     status: status || undefined,
+    view: view || undefined,
     startDate: startDate || undefined,
     endDate: endDate || undefined,
     sortBy: 'createdAt',
@@ -304,7 +307,7 @@ export default function OrdersPage() {
           shippingTotal: Number(o.shippingTotal || 0).toFixed(2),
           grandTotal: Number(o.grandTotal || 0).toFixed(2),
           currency: o.currency || 'INR',
-          paymentStatus: o.paymentStatus || 'COMPLETED',
+          paymentStatus: o.paymentStatus || getOrderPresentation(o).paymentLabel,
           paymentMethod: o.paymentMethod || (o.channel === 'POS_SHOPORA' ? 'Store Counter / UPI' : 'Razorpay Gateway'),
           orderStatus: o.status,
           waybillNumber: o.waybillNumber || o.shippingProviderOrderId || '—',
@@ -631,7 +634,8 @@ export default function OrdersPage() {
     { key: 'subtotal', label: 'Subtotal', render: (o) => <span className="font-mono font-semibold block text-right">{formatMoney(o.subtotal, o.currency)}</span> },
     { key: 'discountTotal', label: 'Discount', render: (o) => <span className="font-mono text-red-500 block text-right">{Number(o.discountTotal) > 0 ? `-${formatMoney(o.discountTotal, o.currency)}` : '—'}</span> },
     { key: 'grandTotal', label: 'Total', render: (o) => <span className="font-mono font-bold text-neutral-950 block text-right">{formatMoney(o.grandTotal, o.currency)}</span> },
-    { key: 'status', label: 'Status', render: (o) => <OrderStatusBadge status={o.status} /> },
+    { key: 'paymentStatus', label: 'Payment', render: (o) => <div className="text-xs"><p className="font-semibold">{getOrderPresentation(o).paymentLabel}</p>{Number(o.refundDue || 0) > 0 && <p className="text-amber-700">Refund due {formatMoney(o.refundDue || 0)}</p>}</div> },
+    { key: 'status', label: 'Fulfillment', render: (o) => <OrderStatusBadge status={o.status} /> },
     {
       key: 'actions',
       label: 'Actions',
@@ -675,6 +679,9 @@ export default function OrdersPage() {
         </div>
       </div>
 
+      <nav aria-label="Order workflow views" className="flex gap-2 overflow-x-auto pb-1">
+        {[['', 'All orders'], ['awaiting_payment', 'Awaiting payment'], ['to_fulfill', 'To fulfill'], ['in_transit', 'In transit'], ['completed', 'Completed'], ['cancelled', 'Cancelled']].map(([key, label]) => <button key={key} type="button" onClick={() => updateQuery('view', key)} aria-pressed={view === key} className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-medium ${view === key ? 'border-neutral-900 bg-neutral-900 text-white' : 'border-neutral-200 bg-white text-neutral-700'}`}>{label}</button>)}
+      </nav>
       {/* Date & Channel Preset Toolbar */}
       <div className="bg-white p-4 rounded-2xl border border-neutral-200 shadow-sm space-y-3">
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 border-b border-neutral-100 pb-3">

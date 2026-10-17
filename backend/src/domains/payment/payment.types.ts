@@ -14,7 +14,7 @@ export class CreatePaymentDto {
   @ApiProperty() @IsUUID() orderId!: string;
   @ApiProperty() @IsString() method!: string;
   @ApiProperty() @IsString() provider!: string;
-  @ApiProperty() @IsNumber() @Type(() => Number) amount!: number;
+  @ApiProperty() @IsNumber() @Min(0.01) @Type(() => Number) amount!: number;
   @ApiPropertyOptional({ default: 'INR' })
   @IsOptional()
   @IsString()

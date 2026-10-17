@@ -9,6 +9,7 @@ import {
   CancellationResponse,
 } from './cancellation.types';
 import { PrismaService } from '@database/prisma.service';
+import { OrderLifecycleService } from '@domains/order/order-lifecycle.service';
 
 @Injectable()
 export class CancellationService {
@@ -54,39 +55,48 @@ export class CancellationService {
     if (existing)
       throw new BusinessException('Cancellation already exists', 'CANCEL_003');
 
-    const cancel = await this.cancelRepo.create({
-      order: { connect: { id: dto.orderId } },
-      reason: dto.reason,
-      createdBy: userId,
+    const cancel = await this.prisma.$transaction(async (tx) => {
+      const lifecycle = new OrderLifecycleService(this.prisma);
+      const current = await lifecycle.lockedOrder(tx, dto.orderId);
+      const existingRequest = await tx.cancellationRequest.findFirst({
+        where: { orderId: dto.orderId },
+      });
+      if (existingRequest) return existingRequest;
+      if (!this.workflow.canCancel(current.status))
+        throw new BusinessException(
+          'Cannot cancel order in current status',
+          'CANCEL_002',
+        );
+      const created = await tx.cancellationRequest.create({
+        data: { orderId: dto.orderId, reason: dto.reason, createdBy: userId },
+      });
+      await tx.order.update({
+        where: { id: dto.orderId },
+        data: { cancelReason: dto.reason },
+      });
+      await lifecycle.transitionTx(
+        tx,
+        dto.orderId,
+        'CANCELLED',
+        userId,
+        `Cancelled: ${dto.reason}`,
+      );
+      return created;
     });
+    await this.workflow
+      .afterTransition(dto.orderId, 'CANCELLED', userId, order.status)
+      .catch(() => {});
 
-    const previousStatus = order.status;
-    await this.prisma.order.update({
-      where: { id: dto.orderId },
-      data: { cancelReason: dto.reason },
-    });
-
-    await this.workflow.transition(
-      dto.orderId,
-      'CANCELLED',
-      userId,
-      `Cancelled: ${dto.reason}`,
-    );
-
-    if (previousStatus === 'PENDING') {
-      await this.workflow.releaseInventory(dto.orderId, userId);
-    } else {
-      await this.workflow.restoreInventory(dto.orderId, userId);
-    }
-
-    await this.auditService.log({
-      action: 'ORDER_CANCELLED',
-      module: 'cancellations',
-      resource: 'cancellation_request',
-      resourceId: cancel.id,
-      userId,
-      newValue: { orderId: dto.orderId },
-    });
+    await this.auditService
+      .log({
+        action: 'ORDER_CANCELLED',
+        module: 'cancellations',
+        resource: 'cancellation_request',
+        resourceId: cancel.id,
+        userId,
+        newValue: { orderId: dto.orderId },
+      })
+      .catch(() => {});
 
     return this.toResponse(cancel);
   }

@@ -15,6 +15,8 @@ import {
   UpdateRazorpayConfigDto,
 } from './payment.types';
 import Razorpay from 'razorpay';
+import { getOrderState } from '@domains/order/order-state';
+import { OrderLifecycleService } from '@domains/order/order-lifecycle.service';
 import * as crypto from 'crypto';
 
 const VALID_TRANSITIONS: Record<string, string[]> = {
@@ -41,7 +43,7 @@ export class PaymentService {
     private readonly configService: ConfigService,
     private readonly prisma: PrismaService,
     private readonly settingRepository: AppSettingRepository,
-    private readonly notificationService: NotificationService,
+    _notificationService: NotificationService,
   ) {}
 
   /**
@@ -151,6 +153,8 @@ export class PaymentService {
     return enabled && !!keyId && !!keySecret;
   }
 
+  gatewayAvailable() { return this.isRazorpayEnabled(); }
+
   private async getRazorpayClient(): Promise<Razorpay> {
     const [keyId, keySecret] = await Promise.all([
       this.getEffectiveKeyId(),
@@ -208,6 +212,7 @@ export class PaymentService {
     const payment = await this.paymentRepository.findById(id);
     if (!payment)
       throw new BusinessException('Payment not found', 'PAYMENT_001');
+
     return this.toResponse(payment, true);
   }
 
@@ -216,211 +221,79 @@ export class PaymentService {
     return payments.map((p) => this.toResponse(p, true));
   }
 
-  async create(userId: string, dto: CreatePaymentDto) {
-    const paymentNumber = await this.paymentRepository.generatePaymentNumber();
-
-    // Check if order exists
-    const order = await this.prisma.order.findUnique({
-      where: { id: dto.orderId },
-    });
-    if (!order) {
-      throw new BusinessException('Order not found', 'ORDER_001');
-    }
-
-    let providerOrderId = `rzp_mock_${paymentNumber}`;
-
-    if (await this.isRazorpayEnabled()) {
-      try {
-        const razorpay = await this.getRazorpayClient();
-        const razorpayOrder = await razorpay.orders.create({
-          amount: Math.round(dto.amount * 100), // in paise
-          currency: dto.currency || 'INR',
-          receipt: paymentNumber,
-        });
-        providerOrderId = razorpayOrder.id;
-      } catch (err: any) {
-        throw new BusinessException(
-          `Razorpay order creation failed: ${err.message || err}`,
-          'PAYMENT_006',
-        );
-      }
-    }
-
-    const payment = await this.paymentRepository.create({
-      order: { connect: { id: dto.orderId } },
-      paymentNumber,
-      method: dto.method,
-      provider: dto.provider,
-      amount: dto.amount,
-      currency: dto.currency ?? 'INR',
-      providerOrderId,
-      createdBy: userId,
-    });
-
-    await this.auditService.log({
-      action: 'PAYMENT_CREATED',
-      module: 'payment',
-      resource: 'Payment',
-      resourceId: payment.id,
-      userId,
-    });
-
-    return this.toResponse(payment, true);
+  private async ownedOrder(orderId: string, userId: string) {
+    const order = await this.prisma.order.findUnique({ where: { id: orderId }, include: { customer: true, payments: true, refunds: true } });
+    if (!order || order.deletedAt || order.customer.userId !== userId) throw new BusinessException('Order not found', 'ORDER_001');
+    return order;
   }
 
-  async verifyPayment(
-    id: string,
-    razorpayPaymentId: string,
-    razorpaySignature: string,
-    userId: string,
-  ) {
-    const payment = await this.paymentRepository.findById(id);
-    if (!payment) {
-      throw new BusinessException('Payment not found', 'PAYMENT_001');
+  private validateProviderPayment(payment: any, entity: any) {
+    if (entity.order_id !== payment.providerOrderId || Number(entity.amount) !== Math.round(Number(payment.amount) * 100) || entity.currency !== payment.currency) {
+      throw new BusinessException('Gateway payment does not match this order amount and currency.', 'PAYMENT_AMOUNT_MISMATCH');
     }
-    if (payment.status === 'CAPTURED') {
-      return this.toResponse(payment, true);
-    }
+  }
 
-    const orderId = payment.providerOrderId;
-    if (!orderId) {
-      throw new BusinessException(
-        'No provider order ID found on payment record',
-        'PAYMENT_004',
-      );
-    }
-
-    if (await this.isRazorpayEnabled()) {
-      const keySecret = await this.getEffectiveKeySecret();
-      const text = `${orderId}|${razorpayPaymentId}`;
-      const generated = crypto
-        .createHmac('sha256', keySecret)
-        .update(text)
-        .digest('hex');
-
-      const genBuf = Buffer.from(generated);
-      const sigBuf = Buffer.from(razorpaySignature);
-      const isValid =
-        genBuf.length === sigBuf.length &&
-        crypto.timingSafeEqual(genBuf, sigBuf);
-
-      if (!isValid) {
-        await this.paymentRepository.update(id, {
-          status: 'FAILED',
-          providerPaymentId: razorpayPaymentId,
-          metadata: {
-            razorpayPaymentId,
-            razorpaySignature,
-            error: 'Signature mismatch',
-          },
-        });
-        await this.paymentRepository.createTransaction({
-          payment: { connect: { id } },
-          type: 'FAILED',
-          status: 'FAILED',
-          amount: payment.amount,
-          providerRefId: razorpayPaymentId,
-        });
-        throw new BusinessException(
-          'Payment signature verification failed',
-          'PAYMENT_005',
-        );
+  async create(userId: string, dto: CreatePaymentDto) {
+    await this.ownedOrder(dto.orderId, userId);
+    if (!(await this.isRazorpayEnabled())) throw new BusinessException('Online payment is temporarily unavailable. Please try later.', 'PAYMENT_GATEWAY_UNAVAILABLE');
+    const keyId = await this.getEffectiveKeyId();
+    // Holding the order lock keeps concurrent retry calls from creating two gateway orders.
+    const payment = await this.prisma.$transaction(async (tx) => {
+      const order = await new OrderLifecycleService(this.prisma).lockedOrder(tx, dto.orderId);
+      if (order.status !== 'PENDING' || !getOrderState(order).canRetryPayment) throw new BusinessException('This order is not awaiting online payment.', 'PAYMENT_ORDER_STATE');
+      const amount = getOrderState(order).amountDue;
+      if (Math.round(dto.amount * 100) !== Math.round(amount * 100) || (dto.currency && dto.currency !== order.currency)) {
+        throw new BusinessException('Payment amount must match the outstanding order total.', 'PAYMENT_AMOUNT_MISMATCH');
       }
+      const existing = order.payments.find((p) => ['PENDING', 'AUTHORIZED', 'FAILED'].includes(p.status) && p.providerOrderId && !p.providerOrderId.startsWith('rzp_mock_') && Number(p.amount) === amount);
+      if (existing) return existing;
+      const paymentNumber = await this.paymentRepository.generatePaymentNumber();
+      let providerOrderId: string;
+      try {
+        const gateway = await this.getRazorpayClient();
+        const provider = await gateway.orders.create({ amount: Math.round(amount * 100), currency: order.currency, receipt: paymentNumber });
+        providerOrderId = provider.id;
+      } catch { throw new BusinessException('Could not open online payment. Please retry this order.', 'PAYMENT_006'); }
+      return tx.payment.create({ data: { orderId: order.id, paymentNumber, method: 'RAZORPAY', provider: 'razorpay',
+        amount, currency: order.currency, providerOrderId, createdBy: userId } });
+    }, { timeout: 20000 });
+    return { ...this.toResponse(payment, true), razorpayKeyId: keyId };
+  }
+
+  async verifyPayment(id: string, razorpayPaymentId: string, razorpaySignature: string, userId: string) {
+    const payment = await this.paymentRepository.findById(id);
+    if (!payment) throw new BusinessException('Payment not found', 'PAYMENT_001');
+    await this.ownedOrder(payment.orderId, userId);
+    if (!(await this.isRazorpayEnabled())) throw new BusinessException('Online payment verification is unavailable.', 'PAYMENT_GATEWAY_UNAVAILABLE');
+    if (!payment.providerOrderId) throw new BusinessException('Payment is not connected to a gateway order.', 'PAYMENT_004');
+    const secret = await this.getEffectiveKeySecret();
+    const generated = crypto.createHmac('sha256', secret).update(payment.providerOrderId + '|' + razorpayPaymentId).digest('hex');
+    const expected = Buffer.from(generated), received = Buffer.from(razorpaySignature);
+    if (expected.length !== received.length || !crypto.timingSafeEqual(expected, received)) throw new BusinessException('Payment signature verification failed.', 'PAYMENT_005');
+    const gateway = await this.getRazorpayClient();
+    const entity = await gateway.payments.fetch(razorpayPaymentId);
+    this.validateProviderPayment(payment, entity);
+    if (entity.status !== 'captured') {
+      if (entity.status === 'authorized') {
+        await this.prisma.payment.updateMany({ where: { id, status: { notIn: ['CAPTURED', 'REFUNDED'] } }, data: { status: 'AUTHORIZED', providerPaymentId: razorpayPaymentId } });
+        return this.toResponse(await this.paymentRepository.findById(id), true);
+      }
+      throw new BusinessException('The gateway has not received this payment. Please check the order before paying again.', 'PAYMENT_NOT_CAPTURED');
     }
-
-    const capturedCount = await this.paymentRepository.markCapturedIfNotAlready(
-      id,
-      {
-        status: 'CAPTURED',
-        providerPaymentId: razorpayPaymentId,
-        metadata: { razorpayPaymentId, razorpaySignature },
-      },
-    );
-    if (capturedCount === 0) {
-      // Lost the race to a concurrent verify/webhook call that captured
-      // this payment first -- it already ran the confirm/deduct/notify
-      // flow below, so just return the current state instead of doing it
-      // all again.
-      const current = await this.paymentRepository.findById(id);
-      return this.toResponse(current, true);
-    }
-    const updated = await this.paymentRepository.findById(id);
-
-    await this.paymentRepository.createTransaction({
-      payment: { connect: { id } },
-      type: 'CAPTURED',
-      status: 'SUCCESS',
-      amount: payment.amount,
-      providerRefId: razorpayPaymentId,
-    });
-
-    // transition order
-    await this.orderWorkflowService.transition(
-      payment.orderId,
-      'CONFIRMED',
-      userId,
-      'Payment verified successfully',
-    );
-
-    // Deduct stock. deductInventory is atomic and all-or-nothing; if it
-    // throws (stock ran out between reservation and this payment capture),
-    // the money has already been captured above, so this is a genuine
-    // oversold-and-paid conflict. We cancel the order so stock isn't left
-    // negative and the conflict is visible in the order timeline, but a
-    // refund is NOT triggered automatically here -- that's a business
-    // decision (refund vs. backorder vs. manual substitution) outside what
-    // this fix covers, so it's surfaced via the thrown error / audit log for
-    // a human to action rather than silently resolved.
-    try {
-      await this.orderWorkflowService.deductInventory(payment.orderId, userId);
-    } catch (err) {
-      this.notificationService
-        .notifyAdmins(
-          'OUT_OF_STOCK',
-          `🚨 URGENT: Oversold Stock on Paid Order #${payment.paymentNumber}`,
-          `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
-          {
-            orderId: payment.orderId,
-            paymentNumber: payment.paymentNumber,
-            amount: Number(payment.amount),
-            providerPaymentId: razorpayPaymentId,
-            event: 'CONCURRENT_OVERSOLD_CONFLICT',
-          },
-        )
-        .catch(() => {});
-
-      await this.orderWorkflowService.transition(
-        payment.orderId,
-        'CANCELLED',
-        userId,
-        'Auto-cancelled: insufficient stock after payment capture -- refund or restock required',
-      );
-      throw err;
-    }
-
-    await this.orderWorkflowService.notifyOrderConfirmed(payment.orderId);
-
-    await this.auditService.log({
-      action: 'PAYMENT_CAPTURED',
-      module: 'payment',
-      resource: 'Payment',
-      resourceId: id,
-      userId,
-    });
-
-    return this.toResponse(updated, true);
+    await this.orderWorkflowService.capturePayment(id, razorpayPaymentId, userId, entity as any);
+    return this.toResponse(await this.paymentRepository.findById(id), true);
   }
 
   /**
    * Actually moves money back to the customer via Razorpay's refund API,
    * rather than just bookkeeping a status change. Called by RefundService
-   * when an admin approves a refund. Mirrors isRazorpayEnabled()'s mock
-   * fallback used elsewhere in this service, so dev/unconfigured
-   * environments behave the same way payment capture already does.
+   * when an admin approves a refund. The refund record is the stable
+   * idempotency key, so repeated approval cannot transfer money twice.
    */
   async refundPayment(
     paymentId: string,
     amount: number,
+    refundId?: string,
   ): Promise<{
     razorpayRefundId: string;
     status: 'pending' | 'processed' | 'failed';
@@ -436,18 +309,17 @@ export class PaymentService {
       );
     }
 
-    if (!(await this.isRazorpayEnabled())) {
-      return {
-        razorpayRefundId: `rfnd_mock_${Date.now()}`,
-        status: 'processed',
-      };
-    }
+    if (!(await this.isRazorpayEnabled())) throw new BusinessException('Refund gateway unavailable.', 'PAYMENT_GATEWAY_UNAVAILABLE');
 
     try {
-      const razorpay = await this.getRazorpayClient();
-      const refund = await razorpay.payments.refund(payment.providerPaymentId, {
-        amount: Math.round(amount * 100),
+      const [keyId, secret] = await Promise.all([this.getEffectiveKeyId(), this.getEffectiveKeySecret()]);
+      const response = await fetch(`https://api.razorpay.com/v1/payments/${encodeURIComponent(payment.providerPaymentId)}/refund`, {
+        method: 'POST', headers: { Authorization: 'Basic ' + Buffer.from(keyId + ':' + secret).toString('base64'),
+          'Content-Type': 'application/json', 'X-Refund-Idempotency': refundId || paymentId + '-' + Math.round(amount * 100) },
+        body: JSON.stringify({ amount: Math.round(amount * 100), speed: 'normal', receipt: refundId }), signal: AbortSignal.timeout(15000),
       });
+      if (!response.ok) throw new Error('Gateway did not accept this refund. Check its status before retrying.');
+      const refund = await response.json() as { id: string; status: 'pending' | 'processed' | 'failed' };
       return { razorpayRefundId: refund.id, status: refund.status };
     } catch (err: any) {
       throw new BusinessException(
@@ -458,7 +330,7 @@ export class PaymentService {
   }
 
   async handleWebhook(rawBody: string, signature: string) {
-    if (await this.isRazorpayEnabled()) {
+    {
       const webhookSecret = await this.getEffectiveWebhookSecret();
       // Fail closed: an unconfigured secret must reject the webhook, not
       // skip verification. The previous `&& webhookSecret` guard let anyone
@@ -495,143 +367,20 @@ export class PaymentService {
     const payload = event.payload;
 
     if (event.event === 'payment.captured') {
-      const paymentEntity = payload.payment.entity;
-      const providerOrderId = paymentEntity.order_id;
-      const providerPaymentId = paymentEntity.id;
-
-      const payments = await this.prisma.payment.findMany({
-        where: { providerOrderId },
-      });
-      if (payments.length === 0) {
-        return { status: 'ignored', reason: 'Order not found' };
-      }
-
-      const payment = payments[0];
-
-      // Guarded UPDATE ... WHERE status <> 'CAPTURED': Razorpay can and
-      // does redeliver the same webhook event, and this can race a
-      // concurrent verifyPayment call for the same payment. Only the
-      // first to reach the row wins; the loser gets 0 rows affected here
-      // instead of re-running the confirm/deduct/notify flow a second time.
-      const capturedCount =
-        await this.paymentRepository.markCapturedIfNotAlready(payment.id, {
-          status: 'CAPTURED',
-          providerPaymentId,
-          metadata: paymentEntity,
-        });
-      if (capturedCount === 0) {
-        return { status: 'ignored', reason: 'Already captured' };
-      }
-
-      await this.paymentRepository.createTransaction({
-        payment: { connect: { id: payment.id } },
-        type: 'CAPTURED',
-        status: 'SUCCESS',
-        amount: payment.amount,
-        providerRefId: providerPaymentId,
-      });
-
-      await this.orderWorkflowService.transition(
-        payment.orderId,
-        'CONFIRMED',
-        payment.createdBy || 'SYSTEM',
-        'Payment captured via webhook',
-      );
-
-      // Same atomic-deduct-then-compensate handling as the direct verify
-      // path above: capture already happened, so a shortage here is a
-      // genuine oversold-and-paid conflict that needs a human to resolve
-      // the refund, not something this fix silently papers over.
-      try {
-        await this.orderWorkflowService.deductInventory(
-          payment.orderId,
-          payment.createdBy || 'SYSTEM',
-        );
-      } catch (err) {
-        this.notificationService
-          .notifyAdmins(
-            'OUT_OF_STOCK',
-            `🚨 URGENT: Oversold Stock on Webhook Paid Order #${payment.paymentNumber}`,
-            `Online payment of ₹${Number(payment.amount).toLocaleString('en-IN')} was captured via webhook, but inventory ran out concurrently. Please fulfill or refund order #${payment.paymentNumber}.`,
-            {
-              orderId: payment.orderId,
-              paymentNumber: payment.paymentNumber,
-              amount: Number(payment.amount),
-              providerPaymentId,
-              event: 'CONCURRENT_OVERSOLD_CONFLICT',
-            },
-          )
-          .catch(() => {});
-
-        await this.orderWorkflowService.transition(
-          payment.orderId,
-          'CANCELLED',
-          payment.createdBy || 'SYSTEM',
-          'Auto-cancelled: insufficient stock after payment capture -- refund or restock required',
-        );
-        throw err;
-      }
-
-      await this.orderWorkflowService.notifyOrderConfirmed(payment.orderId);
-
-      await this.auditService.log({
-        action: 'PAYMENT_CAPTURED_WEBHOOK',
-        module: 'payment',
-        resource: 'Payment',
-        resourceId: payment.id,
-        userId: 'SYSTEM',
-      });
-
+      const entity = payload.payment.entity;
+      const payment = await this.prisma.payment.findFirst({ where: { providerOrderId: entity.order_id } });
+      if (!payment) return { status: 'ignored', reason: 'Order not found' };
+      this.validateProviderPayment(payment, entity);
+      if (entity.status !== 'captured') throw new BusinessException('Capture event has not captured a payment.', 'PAYMENT_NOT_CAPTURED');
+      await this.orderWorkflowService.capturePayment(payment.id, entity.id, payment.createdBy || 'SYSTEM', entity);
       return { status: 'processed' };
     }
-
     if (event.event === 'payment.failed') {
-      const paymentEntity = payload.payment.entity;
-      const providerOrderId = paymentEntity.order_id;
-      const providerPaymentId = paymentEntity.id;
-
-      const payments = await this.prisma.payment.findMany({
-        where: { providerOrderId },
-      });
-      if (payments.length > 0) {
-        const payment = payments[0];
-        if (payment.status === 'PENDING') {
-          await this.paymentRepository.update(payment.id, {
-            status: 'FAILED',
-            providerPaymentId,
-            metadata: paymentEntity,
-          });
-
-          await this.paymentRepository.createTransaction({
-            payment: { connect: { id: payment.id } },
-            type: 'FAILED',
-            status: 'FAILED',
-            amount: payment.amount,
-            providerRefId: providerPaymentId,
-          });
-
-          await this.auditService.log({
-            action: 'PAYMENT_FAILED_WEBHOOK',
-            module: 'payment',
-            resource: 'Payment',
-            resourceId: payment.id,
-            userId: 'SYSTEM',
-          });
-
-          // Automatically release reserved stock and cancel order on payment failure
-          try {
-            await this.orderWorkflowService.releaseInventory(payment.orderId, 'SYSTEM');
-            await this.orderWorkflowService.transition(
-              payment.orderId,
-              'CANCELLED',
-              'SYSTEM',
-              `Payment failed on gateway (${paymentEntity.error_description || 'Transaction unsuccessful'}). Reserved stock released back to available inventory.`,
-            );
-          } catch (e: any) {
-            this.logger.error(`Error auto-cancelling order ${payment.orderId} on payment.failed: ${e?.message}`);
-          }
-        }
-      }
+      const entity = payload.payment.entity;
+      // A failed attempt may be retried on the same provider order. Keep the
+      // reservation until expiry, and never overwrite an already captured payment.
+      await this.prisma.payment.updateMany({ where: { providerOrderId: entity.order_id, status: { in: ['PENDING', 'FAILED'] } },
+        data: { status: 'FAILED', providerPaymentId: entity.id, metadata: entity } });
       return { status: 'processed' };
     }
 
@@ -668,10 +417,23 @@ export class PaymentService {
     return { status: 'ignored', event: event.event };
   }
 
+  async confirmRefund(paymentId: string, providerRefundId: string, amount: number) {
+    const payment = await this.paymentRepository.findById(paymentId);
+    if (!payment?.providerPaymentId || !(await this.isRazorpayEnabled())) throw new BusinessException('Refund verification is unavailable.', 'REFUND_VERIFY_UNAVAILABLE');
+    const gateway = await this.getRazorpayClient();
+    const refund = await gateway.refunds.fetch(providerRefundId);
+    if (refund.payment_id !== payment.providerPaymentId || Number(refund.amount) !== Math.round(amount * 100) || refund.status !== 'processed') {
+      throw new BusinessException('The gateway has not completed this refund.', 'REFUND_NOT_COMPLETED');
+    }
+  }
+
   async updateStatus(id: string, status: string, userId: string) {
     const payment = await this.paymentRepository.findById(id);
     if (!payment)
       throw new BusinessException('Payment not found', 'PAYMENT_001');
+    if (['CAPTURED', 'REFUNDED'].includes(status) && payment.provider === 'razorpay') {
+      throw new BusinessException('Use gateway sync for payment receipt and Refunds for returning money.', 'PAYMENT_GATEWAY_ACTION');
+    }
 
     const allowed = VALID_TRANSITIONS[payment.status];
     if (!allowed?.includes(status)) {
@@ -801,14 +563,6 @@ export class PaymentService {
       };
     }
 
-    if (payment.status === 'CAPTURED') {
-      return {
-        payment: this.toResponse(payment, true),
-        synced: true,
-        message: 'Payment is already captured and confirmed',
-      };
-    }
-
     const razorpay = await this.getRazorpayClient();
     try {
       const rzpOrder: any = await razorpay.orders.fetch(payment.providerOrderId);
@@ -820,57 +574,11 @@ export class PaymentService {
         (it: any) => it.status === 'captured',
       );
 
-      if (capturedItem || rzpOrder.status === 'paid') {
-        const paymentId = capturedItem?.id || `pay_${payment.paymentNumber}`;
-        const metadata = capturedItem
-          ? {
-              method: capturedItem.method,
-              vpa: capturedItem.vpa,
-              contact: capturedItem.contact,
-              email: capturedItem.email,
-              rrn: capturedItem.acquirer_data?.rrn,
-              razorpayOrderId: payment.providerOrderId,
-              razorpayPaymentId: capturedItem.id,
-            }
-          : undefined;
-
-        await this.paymentRepository.markCapturedIfNotAlready(id, {
-          status: 'CAPTURED',
-          providerPaymentId: paymentId,
-          metadata,
-        });
-
-        await this.paymentRepository.createTransaction({
-          payment: { connect: { id } },
-          type: 'CAPTURED',
-          status: 'SUCCESS',
-          amount: payment.amount,
-          providerRefId: paymentId,
-        });
-
-        await this.orderWorkflowService.transition(
-          payment.orderId,
-          'CONFIRMED',
-          userId,
-          'Payment captured via live Razorpay gateway sync',
-        );
-
-        try {
-          await this.orderWorkflowService.deductInventory(
-            payment.orderId,
-            userId,
-          );
-        } catch {
-          // ignore duplicate deduction
-        }
-
+      if (capturedItem) {
+        this.validateProviderPayment(payment, capturedItem);
+        await this.orderWorkflowService.capturePayment(id, capturedItem.id, userId, capturedItem);
         const updated = await this.paymentRepository.findById(id);
-        return {
-          payment: this.toResponse(updated, true),
-          synced: true,
-          status: 'CAPTURED',
-          message: 'Payment successfully verified & captured with Razorpay!',
-        };
+        return { payment: this.toResponse(updated, true), synced: true, status: 'CAPTURED', message: 'Gateway payment received and order reconciled.' };
       }
 
       return {

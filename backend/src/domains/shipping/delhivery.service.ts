@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '@database/prisma.service';
 import { OrderWorkflowService } from '@domains/order/order-workflow.service';
 import { BusinessException } from '@common/exceptions';
+import { getOrderState } from '@domains/order/order-state';
 
 export interface DelhiveryPincodeResponse {
   pincode: string;
@@ -230,17 +231,7 @@ export class DelhiveryService {
       // Timeout or API unreachable - instant fallback
     }
 
-    const fallbackResult: DelhiveryPincodeResponse = {
-      pincode: cleanPin,
-      isServiceable: true,
-      prepaidAvailable: true,
-      codAvailable: true,
-      city: quick.city,
-      state: quick.state,
-      remarks: 'Delivery in 3–5 business days',
-    };
-    DelhiveryService.PIN_CACHE.set(cleanPin, fallbackResult);
-    return fallbackResult;
+    throw new BusinessException('Courier serviceability is unavailable. Confirm the destination with the courier.', 'SHIPPING_SERVICEABILITY_UNAVAILABLE');
   }
 
   async createShipment(
@@ -257,21 +248,13 @@ export class DelhiveryService {
         include: { payments: true },
       });
 
-      if (existingOrder) {
-        const isPos = existingOrder.channel?.toUpperCase().includes('POS');
-        if (!isPos && (existingOrder.paymentMethod as any) !== 'COD' && dto.paymentMode !== 'COD') {
-          const hasCaptured = existingOrder.payments.some((p) => p.status === 'CAPTURED');
-          if (!hasCaptured) {
-            throw new BusinessException(
-              `Dispatch blocked: Order #${existingOrder.orderNumber} is UNPAID (Online payment: PENDING). You cannot generate a Delhivery shipment or dispatch goods before receiving payment.`,
-              'DISPATCH_BLOCKED_UNPAID',
-            );
-          }
-        }
-      }
+      if (!existingOrder) throw new BusinessException('Order not found', 'ORDER_001');
+      const state = getOrderState(existingOrder);
+      if (!state.canFulfill || existingOrder.status !== 'READY_TO_SHIP') throw new BusinessException('Payment and packing must be complete before courier booking.', 'DISPATCH_BLOCKED_UNPAID');
+      if ((dto.paymentMode === 'COD') !== (state.paymentMethod === 'COD')) throw new BusinessException('Courier payment mode must match the order.', 'SHIPPING_PAYMENT_MODE');
     }
 
-    let waybill = dto.waybill || `DEL${Date.now().toString().slice(-9)}`;
+    let waybill = '';
     let status = 'Manifested';
 
     try {
@@ -329,19 +312,21 @@ export class DelhiveryService {
           'Content-Type': 'application/x-www-form-urlencoded',
         },
         body: postData,
+        signal: AbortSignal.timeout(15000),
       });
 
       if (res.ok) {
         const data = await res.json();
         const pkg = data.packages?.[0];
-        if (pkg?.waybill) {
+        if (pkg?.waybill && !['Fail', 'Failed', 'Error'].includes(pkg.status)) {
           waybill = pkg.waybill;
           status = pkg.status || 'Ready For Pickup';
         }
       }
     } catch (err: any) {
-      this.logger.warn(`Delhivery CMU shipment creation fallback: ${err.message}`);
+      this.logger.warn('Delhivery shipment booking did not complete');
     }
+    if (!waybill) throw new BusinessException('The courier did not confirm a shipment. Check the courier portal before retrying.', 'SHIPPING_BOOKING_FAILED');
 
     return {
       success: true,
@@ -387,10 +372,8 @@ export class DelhiveryService {
 
     return {
       waybill,
-      status: 'In Transit',
-      statusLocation: 'Delhivery Sorting Hub',
+      status: 'Tracking unavailable',
       statusDateTime: new Date().toISOString(),
-      expectedDeliveryDate: new Date(Date.now() + 3 * 86400000).toISOString(),
     };
   }
 
@@ -446,7 +429,7 @@ export class DelhiveryService {
     this.logger.log(
       `Requesting Delhivery courier pickup at ${dto.pickupLocation} for ${dto.expectedPackageCount} packages`,
     );
-    let pickupId = `PU-${Math.floor(100000 + Math.random() * 900000)}`;
+    let pickupId = '';
     let status: 'SCHEDULED' | 'DRIVER_ASSIGNED' = 'SCHEDULED';
 
     try {
@@ -457,11 +440,12 @@ export class DelhiveryService {
           Authorization: `Token ${this.apiToken}`,
         },
         body: JSON.stringify({
-          pickup_location: 'Manuguru Main Warehouse',
+          pickup_location: dto.pickupLocation,
           pickup_date: dto.pickupDate,
           pickup_time: dto.pickupTime || '16:00:00',
           expected_package_count: dto.expectedPackageCount,
         }),
+        signal: AbortSignal.timeout(15000),
       });
 
       if (res.ok) {
@@ -474,8 +458,9 @@ export class DelhiveryService {
         }
       }
     } catch (err: any) {
-      this.logger.warn(`Delhivery pickup request fallback: ${err.message}`);
+      this.logger.warn('Delhivery pickup request did not complete');
     }
+    if (!pickupId) throw new BusinessException('The courier did not confirm a pickup. Check the courier portal before retrying.', 'SHIPPING_PICKUP_FAILED');
 
     const timeSlot =
       dto.pickupTime === '11:00:00' || dto.pickupTime === '10:00:00'

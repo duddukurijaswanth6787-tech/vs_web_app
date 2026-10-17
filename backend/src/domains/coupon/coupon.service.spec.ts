@@ -18,7 +18,7 @@ describe('CouponService - usage limit race guard', () => {
     value: 100,
   };
 
-  function makeService(usageCount: number) {
+  function makeService(usageCount: number, existingUsage: unknown = null) {
     const repo = {
       findByCode: jest.fn().mockResolvedValue(baseCoupon),
       lockCouponByCode: jest.fn().mockResolvedValue(undefined),
@@ -27,7 +27,7 @@ describe('CouponService - usage limit race guard', () => {
       update: jest.fn().mockResolvedValue({}),
     } as unknown as CouponRepository;
     const audit = { log: jest.fn() } as any;
-    const prisma = { $transaction: jest.fn((cb: any) => cb({})) } as any;
+    const prisma = { $transaction: jest.fn((cb: any) => cb({ couponUsage: { findFirst: jest.fn().mockResolvedValue(existingUsage) } })) } as any;
     const service = new CouponService(repo, audit, prisma);
     return { service, repo };
   }
@@ -67,5 +67,11 @@ describe('CouponService - usage limit race guard', () => {
       { usedCount: { increment: 1 } },
       expect.anything(),
     );
+  });
+  it('does not record a second redemption when checkout is retried', async () => {
+    const { service, repo } = makeService(1, { coupon: baseCoupon, discountAmount: 100 });
+    expect((await service.applyCoupon('user-1', { code: 'SAVE10', orderId: 'order-1', orderAmount: 500 })).discountAmount).toBe(100);
+    expect(repo.createUsage).not.toHaveBeenCalled();
+    expect(repo.update).not.toHaveBeenCalled();
   });
 });

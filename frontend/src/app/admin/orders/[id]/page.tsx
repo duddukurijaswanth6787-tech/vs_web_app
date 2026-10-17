@@ -39,7 +39,8 @@ import CreateCancellationDialog from '@/features/cancellations/components/Create
 import CreateReturnDialog from '@/features/returns/components/CreateReturnDialog';
 import ProductDetailModal from '@/features/catalog/products/components/ProductDetailModal';
 import { useWarehouseList } from '@/features/warehouse/warehouse.hooks';
-import { categorizeApiError } from '@/lib/api-error-handler';
+import { getApiErrorMessage } from '@/utils/api-error';
+import { getOrderPresentation } from '@/features/orders/order-state';
 import { apiClient } from '@/lib/api/client';
 
 export default function OrderDetailPage() {
@@ -50,6 +51,7 @@ export default function OrderDetailPage() {
   const [isCancelOpen, setIsCancelOpen] = useState(false);
   const [isReturnOpen, setIsReturnOpen] = useState(false);
   const [transitionMsg, setTransitionMsg] = useState('');
+  const [actionError, setActionError] = useState('');
   const [selectedProductModal, setSelectedProductModal] = useState<{
     productId: string;
     productName: string;
@@ -101,7 +103,6 @@ export default function OrderDetailPage() {
   const [courierPartner, setCourierPartner] = useState('Delhivery');
   const [waybillNumber, setWaybillNumber] = useState('');
   const [trackingUrl, setTrackingUrl] = useState('');
-  const [serviceSpeed, setServiceSpeed] = useState('Air Express (1-2 Days)');
   const [pickupWarehouse, setPickupWarehouse] = useState("Manuguru Main Warehouse (Manuguru - 507117)");
 
   // Sync default pickup warehouse from DB if available
@@ -141,12 +142,9 @@ export default function OrderDetailPage() {
         .catch(() => {
           setPincodeServiceability({
             pincode: pin,
-            isServiceable: true,
-            prepaidAvailable: true,
-            codAvailable: true,
             city: shippingAddress.city,
             state: shippingAddress.state,
-            remarks: 'Serviceable via Delhivery Express',
+            remarks: 'Serviceability could not be checked. Confirm with the courier before booking.',
           });
         })
         .finally(() => setIsCheckingPincode(false));
@@ -155,9 +153,10 @@ export default function OrderDetailPage() {
 
   const handleAssignCourier = async () => {
     try {
-      const generatedAwb = waybillNumber || (courierPartner === 'Delhivery' ? `DEL${Date.now().toString().slice(-9)}` : `AWB${Date.now().toString().slice(-8)}`);
-      const link = trackingUrl || (courierPartner === 'Delhivery' ? `https://www.delhivery.com/tracking?awb=${generatedAwb}` : undefined);
-      
+      setActionError('');
+      if (!waybillNumber.trim()) throw new Error('Enter the waybill provided by the courier before dispatching.');
+      const generatedAwb = waybillNumber.trim();
+      const link = trackingUrl.trim() || undefined;
       await assignCourierMut.mutateAsync({
         id,
         dto: {
@@ -169,7 +168,7 @@ export default function OrderDetailPage() {
       });
       refetchOrder();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      setActionError(getApiErrorMessage(err, 'The action could not be completed. Please check the order and retry.'));
     }
   };
   // In-App Live Tracking State
@@ -188,7 +187,7 @@ export default function OrderDetailPage() {
       const res = await apiClient.get(`/shipping/delhivery/track/${encodeURIComponent(awb.trim())}`);
       setLiveTrackingData(res.data?.data || res.data);
     } catch (err) {
-      setLiveTrackingError(categorizeApiError(err).message || 'Failed to fetch live tracking');
+      setLiveTrackingError(getApiErrorMessage(err, 'Failed to fetch live tracking'));
     } finally {
       setLiveTrackingLoading(false);
     }
@@ -218,7 +217,7 @@ export default function OrderDetailPage() {
     setIsPickupPending(true);
     try {
       const res = await apiClient.post('/shipping/delhivery/pickup-request', {
-        pickupLocation: pickupWarehouse || 'MNG-01',
+        pickupLocation: pickupWarehouse.split('(')[0].trim(),
         pickupDate: pickupDate || new Date().toISOString().split('T')[0],
         pickupTime: pickupTimeSlot || '10:00:00',
         expectedPackageCount: Number(pickupPackageCount) || 1,
@@ -270,7 +269,7 @@ export default function OrderDetailPage() {
       setTransitionMsg('');
       refetchOrder();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      setActionError(getApiErrorMessage(err, 'The action could not be completed. Please check the order and retry.'));
     }
   };
 
@@ -282,7 +281,7 @@ export default function OrderDetailPage() {
       });
       refetchInvoices();
     } catch (err) {
-      console.error(categorizeApiError(err));
+      setActionError(getApiErrorMessage(err, 'The action could not be completed. Please check the order and retry.'));
     }
   };
 
@@ -311,13 +310,8 @@ export default function OrderDetailPage() {
 
   const isOnlineOrder = !isPosOrWalkIn;
 
-  const hasCapturedPayment = Boolean(payments?.some((p) => p.status === 'CAPTURED'));
-  const isPaymentPending =
-    isOnlineOrder &&
-    order.paymentMethod !== 'COD' &&
-    !hasCapturedPayment &&
-    (order.status === 'PENDING' || payments?.some((p) => p.status === 'PENDING') || !payments || payments.length === 0);
-
+  const orderState = getOrderPresentation(order);
+  const isPaymentPending = isOnlineOrder && !(order.canFulfill ?? (orderState.paid || orderState.cod));
   // Determine allowed next status actions
   const getNextStatusActions = (currentStatus: string) => {
     // If online payment is pending, block all forward fulfillment transitions until paid!
@@ -337,7 +331,7 @@ export default function OrderDetailPage() {
       case 'PACKING':
         return [{ label: 'Mark Ready to Ship', status: 'READY_TO_SHIP', color: 'bg-violet-600 hover:bg-violet-700' }];
       case 'READY_TO_SHIP':
-        return [{ label: 'Mark Shipped', status: 'SHIPPED', color: 'bg-cyan-600 hover:bg-cyan-700' }];
+        return order.waybillNumber ? [{ label: 'Confirm courier handover', status: 'SHIPPED', color: 'bg-cyan-600 hover:bg-cyan-700' }] : [];
       case 'SHIPPED':
         return [{ label: 'Out for Delivery', status: 'OUT_FOR_DELIVERY', color: 'bg-teal-600 hover:bg-teal-700' }];
       case 'OUT_FOR_DELIVERY':
@@ -347,7 +341,7 @@ export default function OrderDetailPage() {
     }
   };
 
-  const nextActions = getNextStatusActions(order.status);
+  const nextActions = getNextStatusActions(order.status).filter((action) => !order.allowedTransitions || order.allowedTransitions.includes(action.status));
   const showCancelButton = ['PENDING', 'CONFIRMED', 'PROCESSING'].includes(order.status.toUpperCase());
   const showReturnButton = order.status.toUpperCase() === 'DELIVERED';
 
@@ -356,6 +350,13 @@ export default function OrderDetailPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      {actionError && <div role="alert" className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{actionError}</div>}
+      <section aria-label="Order work summary" className="grid gap-3 sm:grid-cols-3">
+        <div className="rounded-xl border border-neutral-200 bg-white p-4"><p className="text-xs text-neutral-500">Payment</p><p className="mt-1 font-semibold">{orderState.paymentLabel}</p><p className="mt-1 text-sm text-neutral-600">Received {formatMoney(order.paidAmount || 0)}</p></div>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4"><p className="text-xs text-neutral-500">Fulfillment</p><p className="mt-1 font-semibold">{order.status.replaceAll('_', ' ')}</p><p className="mt-1 text-sm text-neutral-600">{order.canFulfill ? 'Payment check passed' : 'Review payment before fulfillment'}</p></div>
+        <div className="rounded-xl border border-neutral-200 bg-white p-4"><p className="text-xs text-neutral-500">Refunds</p><p className="mt-1 font-semibold">{Number(order.refundDue || 0) > 0 ? 'Refund action required' : 'No refund due'}</p><p className="mt-1 text-sm text-neutral-600">{Number(order.refundDue || 0) > 0 ? formatMoney(order.refundDue || 0) + ' awaiting refund' : formatMoney(order.refundedAmount || 0) + ' refunded'}</p></div>
+      </section>
+      {Number(order.refundDue || 0) > 0 && <div className="rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-900">This cancelled order has received payment. <Link href="/admin/refunds" className="font-semibold underline">Review the refund</Link> before closing it.</div>}
       {/* Top Header Panel */}
       <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-2xl border border-neutral-200 shadow-sm">
         <div className="flex items-start sm:items-center gap-3 min-w-0">
@@ -842,7 +843,7 @@ export default function OrderDetailPage() {
                   </h3>
                 </div>
                 <span className="text-2xs font-bold bg-sky-50 text-sky-800 border border-sky-200 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3" /> Delhivery Approved
+                  <ShieldCheck className="w-3 h-3" /> Courier handover
                 </span>
               </div>
 
@@ -862,7 +863,7 @@ export default function OrderDetailPage() {
                     </span>
                   ) : (
                     <span className="text-2xs font-bold text-amber-700 bg-amber-100 px-1.5 py-0.5 rounded">
-                      Standard Postal
+                      {pincodeServiceability?.isServiceable === false ? 'Not serviceable' : 'Check with courier'}
                     </span>
                   )}
                 </div>
@@ -876,9 +877,9 @@ export default function OrderDetailPage() {
                 </div>
 
                 <div className="flex items-center gap-2 text-[10px] text-sky-900 font-medium pt-1 border-t border-sky-200/50">
-                  <span>Prepaid Delivery: <strong>{pincodeServiceability?.prepaidAvailable !== false ? '✅ Active' : '❌'}</strong></span>
+                  <span>Prepaid Delivery: <strong>{pincodeServiceability?.prepaidAvailable === true ? 'Available' : pincodeServiceability?.prepaidAvailable === false ? 'Unavailable' : 'Unconfirmed'}</strong></span>
                   <span>·</span>
-                  <span>COD: <strong>{pincodeServiceability?.codAvailable !== false ? '✅ Active' : '❌'}</strong></span>
+                  <span>COD: <strong>{pincodeServiceability?.codAvailable === true ? 'Available' : pincodeServiceability?.codAvailable === false ? 'Unavailable' : 'Unconfirmed'}</strong></span>
                 </div>
               </div>
 
@@ -1003,17 +1004,11 @@ export default function OrderDetailPage() {
                     <select
                       value={courierPartner}
                       onChange={(e) => {
-                        const partner = e.target.value;
-                        setCourierPartner(partner);
-                        if (partner === 'Delhivery' && !waybillNumber) {
-                          const autoAwb = `DEL${Date.now().toString().slice(-9)}`;
-                          setWaybillNumber(autoAwb);
-                          setTrackingUrl(`https://www.delhivery.com/tracking?awb=${autoAwb}`);
-                        }
+                        setCourierPartner(e.target.value);
                       }}
                       className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                     >
-                      <option value="Delhivery">🚚 Delhivery (Approved Primary Partner)</option>
+                      <option value="Delhivery">🚚 Delhivery</option>
                       <option value="DTDC">📦 DTDC Courier & Cargo</option>
                       <option value="Professional Courier">🏎️ Professional Courier</option>
                       <option value="FedEx">✈️ FedEx Express</option>
@@ -1021,20 +1016,6 @@ export default function OrderDetailPage() {
                     </select>
                   </div>
 
-                  <div>
-                    <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider block mb-1">
-                      Delivery Speed
-                    </label>
-                    <select
-                      value={serviceSpeed}
-                      onChange={(e) => setServiceSpeed(e.target.value)}
-                      className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-semibold text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
-                    >
-                      <option value="Air Express (1-2 Days)">✈️ Air Express (1-2 Days)</option>
-                      <option value="Surface Cargo (3-5 Days)">🚛 Surface Standard (3-5 Days)</option>
-                      <option value="Same Day City Dispatch">⚡ Same Day City Dispatch</option>
-                    </select>
-                  </div>
                 </div>
 
                 <div>
@@ -1042,24 +1023,7 @@ export default function OrderDetailPage() {
                     <label className="text-[10px] text-neutral-400 font-bold uppercase tracking-wider">
                       Waybill / AWB Tracking ID
                     </label>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const autoAwb =
-                          courierPartner === 'Delhivery'
-                            ? `DEL${Date.now().toString().slice(-9)}`
-                            : `${courierPartner.slice(0, 3).toUpperCase()}${Date.now().toString().slice(-8)}`;
-                        setWaybillNumber(autoAwb);
-                        setTrackingUrl(
-                          courierPartner === 'Delhivery'
-                            ? `https://www.delhivery.com/tracking?awb=${autoAwb}`
-                            : `https://track.${courierPartner.toLowerCase()}.com/tracking?awb=${autoAwb}`,
-                        );
-                      }}
-                      className="text-2xs font-bold text-sky-700 hover:text-sky-900 underline cursor-pointer flex items-center gap-1"
-                    >
-                      <Sparkles className="w-3 h-3" /> Auto-Generate AWB
-                    </button>
+<span className="text-xs text-neutral-500">Issued by the carrier</span>
                   </div>
                   <input
                     type="text"
@@ -1071,7 +1035,7 @@ export default function OrderDetailPage() {
                         setTrackingUrl(`https://www.delhivery.com/tracking?awb=${val}`);
                       }
                     }}
-                    placeholder="Click Auto-Generate or enter AWB"
+                    placeholder="Enter the actual courier waybill"
                     className="w-full bg-neutral-50 border border-neutral-200 rounded-xl px-3 py-2 text-xs font-mono text-neutral-900 focus:outline-none focus:ring-2 focus:ring-sky-500"
                   />
                 </div>
@@ -1098,7 +1062,7 @@ export default function OrderDetailPage() {
                   </button>
                 ) : (
                   <button
-                    disabled={assignCourierMut.isPending}
+                    disabled={assignCourierMut.isPending || !waybillNumber.trim() || order.status !== 'READY_TO_SHIP'}
                     onClick={handleAssignCourier}
                     className="w-full bg-sky-600 hover:bg-sky-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition shadow-sm flex justify-center items-center gap-2 disabled:opacity-50 cursor-pointer"
                   >

@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { Prisma } from '@prisma/client';
+import type { Refund } from '@prisma/client';
+import { randomBytes } from 'crypto';
+import { BusinessException } from '@common/exceptions';
 
 @Injectable()
 export class RefundRepository {
@@ -52,11 +55,44 @@ export class RefundRepository {
   }
 
   async create(data: Prisma.RefundCreateInput) {
-    return this.prisma.refund.create({ data });
+    const paymentId = data.payment.connect!.id!;
+    return this.prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT id FROM "payments" WHERE id = ${paymentId} FOR UPDATE`;
+      const payment = await tx.payment.findUniqueOrThrow({
+        where: { id: paymentId },
+        include: { refunds: true },
+      });
+      const allocated = payment.refunds
+        .filter((r) => r.status !== 'REJECTED')
+        .reduce((sum, r) => sum + Number(r.amount), 0);
+      if (allocated + Number(data.amount) > Number(payment.amount) + 0.001)
+        throw new BusinessException(
+          'The remaining payment balance is less than this refund.',
+          'REFUND_003',
+        );
+      return tx.refund.create({ data });
+    });
   }
 
   async update(id: string, data: Prisma.RefundUpdateInput) {
     return this.prisma.refund.update({ where: { id }, data });
+  }
+
+  async processStatus(
+    id: string,
+    action: (refund: Refund, tx: Prisma.TransactionClient) => Promise<Refund>,
+  ) {
+    return this.prisma.$transaction(
+      async (tx) => {
+        const initial = await tx.refund.findUnique({ where: { id } });
+        if (!initial)
+          throw new BusinessException('Refund not found', 'REFUND_001');
+        await tx.$queryRaw`SELECT id FROM "payments" WHERE id = ${initial.paymentId} FOR UPDATE`;
+        const current = await tx.refund.findUniqueOrThrow({ where: { id } });
+        return action(current, tx);
+      },
+      { timeout: 20000 },
+    );
   }
 
   async findPaymentById(paymentId: string) {
@@ -65,20 +101,6 @@ export class RefundRepository {
 
   async generateRefundNumber(): Promise<string> {
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
-    const prefix = `REF-${dateStr}-`;
-
-    const lastRefund = await this.prisma.refund.findFirst({
-      where: { refundNumber: { startsWith: prefix } },
-      orderBy: { refundNumber: 'desc' },
-      select: { refundNumber: true },
-    });
-
-    let seq = 1;
-    if (lastRefund) {
-      const lastSeq = parseInt(lastRefund.refundNumber.slice(-6), 10);
-      if (!isNaN(lastSeq)) seq = lastSeq + 1;
-    }
-
-    return `${prefix}${String(seq).padStart(6, '0')}`;
+    return `REF-${dateStr}-${randomBytes(6).toString('hex').toUpperCase()}`;
   }
 }

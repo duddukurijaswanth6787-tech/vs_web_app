@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '@database/prisma.service';
 import { Prisma } from '@prisma/client';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class PaymentRepository {
@@ -91,7 +92,6 @@ export class PaymentRepository {
   }
 
   async generatePaymentNumber(): Promise<string> {
-    const count = await this.prisma.payment.count();
-    return `PAY${String(count + 1).padStart(8, '0')}`;
+    return `PAY-${Date.now().toString(36).toUpperCase()}-${randomBytes(6).toString('hex').toUpperCase()}`;
   }
 }

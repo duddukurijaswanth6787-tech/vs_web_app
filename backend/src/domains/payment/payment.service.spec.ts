@@ -1,292 +1,288 @@
-import { Test, TestingModule } from '@nestjs/testing';
 import { PaymentService } from './payment.service';
-import { PaymentRepository } from './payment.repository';
-import { AuditService } from '@domains/audit/audit.service';
-import { OrderWorkflowService } from '@domains/order/order-workflow.service';
-import { ConfigService } from '@nestjs/config';
-import { PrismaService } from '@database/prisma.service';
-import { AppSettingRepository } from '@domains/app-setting/app-setting.repository';
-import { NotificationService } from '@domains/notification/notification.service';
-import * as crypto from 'crypto';
+import { createHmac } from 'crypto';
 
-describe('PaymentService', () => {
-  let service: PaymentService;
-  let repository: PaymentRepository;
-  let orderWorkflow: OrderWorkflowService;
-  let config: ConfigService;
-  let prisma: PrismaService;
-
-  const mockPayment = {
-    id: 'pay-uuid-111',
-    orderId: 'order-uuid-222',
-    paymentNumber: 'PAY00000001',
-    method: 'upi',
-    provider: 'razorpay',
-    status: 'PENDING',
-    amount: 1500.0,
-    currency: 'INR',
-    providerOrderId: 'order_mock_999',
-    createdBy: 'user-123',
-    createdAt: new Date(),
-  };
-
-  const mockRepository = {
-    generatePaymentNumber: jest.fn().mockResolvedValue('PAY00000001'),
-    create: jest.fn().mockImplementation((data) =>
-      Promise.resolve({
-        ...mockPayment,
-        providerOrderId: data.providerOrderId || mockPayment.providerOrderId,
-        status: data.status || mockPayment.status,
+describe('PaymentService order payment contract', () => {
+  let service: PaymentService,
+    payment: any,
+    order: any,
+    db: any,
+    workflow: any,
+    gateway: any,
+    settings: any;
+  beforeEach(() => {
+    payment = {
+      id: 'payment',
+      orderId: 'order',
+      paymentNumber: 'PAY-test',
+      method: 'RAZORPAY',
+      provider: 'razorpay',
+      status: 'PENDING',
+      amount: 1500,
+      currency: 'INR',
+      providerOrderId: 'order_gateway',
+      createdBy: 'customer',
+      createdAt: new Date(),
+    };
+    order = {
+      id: 'order',
+      status: 'PENDING',
+      grandTotal: 1500,
+      currency: 'INR',
+      customer: { userId: 'customer' },
+      payments: [],
+      refunds: [],
+    };
+    db = {
+      $queryRaw: jest.fn(),
+      order: { findUnique: jest.fn(async () => order) },
+      payment: {
+        create: jest.fn(async (args) => ({ ...payment, ...args.data })),
+        findFirst: jest.fn(async () => payment),
+        updateMany: jest.fn().mockResolvedValue({ count: 1 }),
+      },
+    };
+    db.$transaction = jest.fn((cb) => cb(db));
+    const repo = {
+      findById: jest.fn(async () => payment),
+      generatePaymentNumber: jest.fn().mockResolvedValue('PAY-test'),
+    };
+    workflow = {
+      capturePayment: jest.fn(async () => {
+        payment.status = 'CAPTURED';
+        return payment;
       }),
-    ),
-    findById: jest.fn().mockImplementation((id) => {
-      if (id === mockPayment.id) return Promise.resolve(mockPayment);
-      return Promise.resolve(null);
-    }),
-    update: jest.fn().mockImplementation((_id, data) =>
-      Promise.resolve({
-        ...mockPayment,
-        ...data,
-      }),
-    ),
-    markCapturedIfNotAlready: jest.fn().mockResolvedValue(1),
-    createTransaction: jest.fn().mockResolvedValue({ id: 'tx-uuid' }),
-  };
-
-  const mockAudit = {
-    log: jest.fn().mockResolvedValue(null),
-  };
-
-  const mockOrderWorkflow = {
-    transition: jest
-      .fn()
-      .mockResolvedValue({ id: 'order-uuid-222', status: 'CONFIRMED' }),
-    deductInventory: jest.fn().mockResolvedValue(null),
-    notifyOrderConfirmed: jest.fn().mockResolvedValue(undefined),
-  };
-
-  const mockConfig = {
-    get: jest.fn().mockImplementation((key, defaultValue) => {
-      if (key === 'razorpay.enabled' || key === 'app.razorpay.enabled')
-        return true;
-      if (key === 'razorpay.keyId' || key === 'app.razorpay.keyId')
-        return 'rzp_key_test_123';
-      if (key === 'razorpay.keySecret' || key === 'app.razorpay.keySecret')
-        return 'testsecret12345';
-      if (
-        key === 'razorpay.webhookSecret' ||
-        key === 'app.razorpay.webhookSecret'
-      )
-        return 'webhooksecret12345';
-      return defaultValue;
-    }),
-  };
-
-  const mockPrisma = {
-    order: {
-      findUnique: jest
-        .fn()
-        .mockResolvedValue({ id: 'order-uuid-222', totalAmount: 1500.0 }),
-    },
-    payment: {
-      findMany: jest.fn().mockResolvedValue([mockPayment]),
-    },
-  };
-
-  // No DB-stored overrides in these tests -- every credential comes from
-  // mockConfig's env-var-shaped values, matching the pre-admin-panel setup.
-  const mockSettingRepository = {
-    getByKey: jest.fn().mockResolvedValue(null),
-    findByKey: jest.fn().mockResolvedValue(null),
-    create: jest.fn(),
-    update: jest.fn(),
-  };
-
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [
-        PaymentService,
-        { provide: PaymentRepository, useValue: mockRepository },
-        { provide: AuditService, useValue: mockAudit },
-        { provide: OrderWorkflowService, useValue: mockOrderWorkflow },
-        { provide: ConfigService, useValue: mockConfig },
-        { provide: PrismaService, useValue: mockPrisma },
-        { provide: AppSettingRepository, useValue: mockSettingRepository },
-        {
-          provide: NotificationService,
-          useValue: { notifyAdmins: jest.fn().mockResolvedValue(true) },
-        },
-      ],
-    }).compile();
-
-    service = module.get<PaymentService>(PaymentService);
-    repository = module.get<PaymentRepository>(PaymentRepository);
-    orderWorkflow = module.get<OrderWorkflowService>(OrderWorkflowService);
-    config = module.get<ConfigService>(ConfigService);
-    prisma = module.get<PrismaService>(PrismaService);
-
-    // Mock the Razorpay SDK client the service builds per-call.
-    jest.spyOn(service as any, 'getRazorpayClient').mockResolvedValue({
+    };
+    settings = {
+      getByKey: jest.fn(async (key) =>
+        key === 'razorpay.key_id'
+          ? 'rzp_public'
+          : key === 'razorpay.webhook_secret'
+            ? 'webhook-secret'
+            : 'key-secret',
+      ),
+    };
+    service = new PaymentService(
+      repo as any,
+      { log: jest.fn().mockResolvedValue(undefined) } as any,
+      workflow,
+      { get: jest.fn((_key, fallback) => fallback) } as any,
+      db,
+      settings,
+      {} as any,
+    );
+    gateway = {
       orders: {
-        create: jest.fn().mockResolvedValue({ id: 'order_mock_999' }),
+        create: jest.fn().mockResolvedValue({ id: 'order_gateway' }),
+        fetch: jest.fn().mockResolvedValue({ status: 'paid' }),
+        fetchPayments: jest.fn().mockResolvedValue({ items: [] }),
       },
       payments: {
-        refund: jest
+        fetch: jest
           .fn()
-          .mockResolvedValue({ id: 'rfnd_mock_999', status: 'processed' }),
+          .mockResolvedValue({
+            id: 'pay_gateway',
+            order_id: 'order_gateway',
+            amount: 150000,
+            currency: 'INR',
+            status: 'captured',
+          }),
       },
-    });
-
-    jest.clearAllMocks();
-    void repository;
-    void config;
-    void prisma;
-    void orderWorkflow;
+    };
+    jest.spyOn(service as any, 'getRazorpayClient').mockResolvedValue(gateway);
   });
-
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
-
-  describe('create', () => {
-    it('should create a payment with a mock providerOrderId when Razorpay API is skipped or simulated', async () => {
-      const result = await service.create('user-123', {
-        orderId: 'order-uuid-222',
-        method: 'upi',
+  const signature = () =>
+    createHmac('sha256', 'key-secret')
+      .update('order_gateway|pay_gateway')
+      .digest('hex');
+  function webhook(event: string, entity: any) {
+    const body = JSON.stringify({ event, payload: { payment: { entity } } });
+    return [
+      body,
+      createHmac('sha256', 'webhook-secret').update(body).digest('hex'),
+    ] as const;
+  }
+  it('creates the server total with the matching public key', async () => {
+    expect(
+      await service.create('customer', {
+        orderId: 'order',
+        method: 'RAZORPAY',
         provider: 'razorpay',
-        amount: 1500.0,
-      });
-
-      expect(result).toBeDefined();
-      expect(result.status).toBe('PENDING');
-      expect(mockRepository.create).toHaveBeenCalled();
+        amount: 1500,
+      }),
+    ).toMatchObject({
+      amount: 1500,
+      providerOrderId: 'order_gateway',
+      razorpayKeyId: 'rzp_public',
+    });
+    expect(gateway.orders.create).toHaveBeenCalledWith({
+      amount: 150000,
+      currency: 'INR',
+      receipt: 'PAY-test',
     });
   });
-
-  describe('verifyPayment', () => {
-    it('should successfully verify valid signatures and transition order and deduct stock', async () => {
-      const text = 'order_mock_999|pay_payment_id_999';
-      const keySecret = 'testsecret12345';
-      const validSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(text)
-        .digest('hex');
-
-      const verified = await service.verifyPayment(
-        mockPayment.id,
-        'pay_payment_id_999',
-        validSignature,
-        'user-123',
-      );
-
-      expect(verified).toBeDefined();
-      expect(mockRepository.markCapturedIfNotAlready).toHaveBeenCalledWith(
-        mockPayment.id,
+  it('rejects underpayment before contacting the gateway', async () => {
+    await expect(
+      service.create('customer', {
+        orderId: 'order',
+        method: 'RAZORPAY',
+        provider: 'razorpay',
+        amount: 1,
+      }),
+    ).rejects.toMatchObject({ errorCode: 'PAYMENT_AMOUNT_MISMATCH' });
+    expect(gateway.orders.create).not.toHaveBeenCalled();
+  });
+  it('checks ownership even for an already captured payment', async () => {
+    await expect(
+      service.create('intruder', {
+        orderId: 'order',
+        method: 'RAZORPAY',
+        provider: 'razorpay',
+        amount: 1500,
+      }),
+    ).rejects.toMatchObject({ errorCode: 'ORDER_001' });
+    payment.status = 'CAPTURED';
+    await expect(
+      service.verifyPayment('payment', 'pay_gateway', signature(), 'intruder'),
+    ).rejects.toMatchObject({ errorCode: 'ORDER_001' });
+    expect(workflow.capturePayment).not.toHaveBeenCalled();
+  });
+  it('fails closed without gateway credentials', async () => {
+    settings.getByKey.mockResolvedValue('');
+    await expect(
+      service.create('customer', {
+        orderId: 'order',
+        method: 'RAZORPAY',
+        provider: 'razorpay',
+        amount: 1500,
+      }),
+    ).rejects.toMatchObject({ errorCode: 'PAYMENT_GATEWAY_UNAVAILABLE' });
+    expect(db.payment.create).not.toHaveBeenCalled();
+  });
+  it('reuses the existing gateway order on retry', async () => {
+    order.payments = [payment];
+    await service.create('customer', {
+      orderId: 'order',
+      method: 'RAZORPAY',
+      provider: 'razorpay',
+      amount: 1500,
+    });
+    expect(gateway.orders.create).not.toHaveBeenCalled();
+  });
+  it('verifies provider capture before the atomic workflow', async () => {
+    expect(
+      (
+        await service.verifyPayment(
+          'payment',
+          'pay_gateway',
+          signature(),
+          'customer',
+        )
+      ).status,
+    ).toBe('CAPTURED');
+    expect(workflow.capturePayment).toHaveBeenCalledWith(
+      'payment',
+      'pay_gateway',
+      'customer',
+      expect.objectContaining({ status: 'captured' }),
+    );
+  });
+  it('rejects invalid signatures', async () => {
+    await expect(
+      service.verifyPayment('payment', 'pay_gateway', 'bad', 'customer'),
+    ).rejects.toMatchObject({ errorCode: 'PAYMENT_005' });
+    expect(workflow.capturePayment).not.toHaveBeenCalled();
+  });
+  it('keeps authorized payments awaiting capture', async () => {
+    gateway.payments.fetch.mockResolvedValue({
+      order_id: 'order_gateway',
+      amount: 150000,
+      currency: 'INR',
+      status: 'authorized',
+    });
+    await service.verifyPayment(
+      'payment',
+      'pay_gateway',
+      signature(),
+      'customer',
+    );
+    expect(db.payment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ status: 'AUTHORIZED' }),
+      }),
+    );
+    expect(workflow.capturePayment).not.toHaveBeenCalled();
+  });
+  it('rejects a signed callback with the wrong amount', async () => {
+    gateway.payments.fetch.mockResolvedValue({
+      order_id: 'order_gateway',
+      amount: 100,
+      currency: 'INR',
+      status: 'captured',
+    });
+    await expect(
+      service.verifyPayment('payment', 'pay_gateway', signature(), 'customer'),
+    ).rejects.toMatchObject({ errorCode: 'PAYMENT_AMOUNT_MISMATCH' });
+  });
+  it('uses the atomic capture workflow for webhooks too', async () => {
+    const [body, sig] = webhook('payment.captured', {
+      id: 'pay_gateway',
+      order_id: 'order_gateway',
+      amount: 150000,
+      currency: 'INR',
+      status: 'captured',
+    });
+    expect(await service.handleWebhook(body, sig)).toEqual({
+      status: 'processed',
+    });
+    expect(workflow.capturePayment).toHaveBeenCalledTimes(1);
+  });
+  it('protects captured payments from late failure events', async () => {
+    const [body, sig] = webhook('payment.failed', {
+      id: 'failed-attempt',
+      order_id: 'order_gateway',
+    });
+    await service.handleWebhook(body, sig);
+    expect(db.payment.updateMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: {
+          providerOrderId: 'order_gateway',
+          status: { in: ['PENDING', 'FAILED'] },
+        },
+      }),
+    );
+  });
+  it('rejects unconfigured webhook signatures', async () => {
+    settings.getByKey.mockResolvedValue('');
+    await expect(service.handleWebhook('{}', '')).rejects.toMatchObject({
+      errorCode: 'PAYMENT_WEBHOOK_002',
+    });
+  });
+  it('does not invent capture from a paid gateway order without a captured transaction', async () => {
+    expect((await service.syncGatewayStatus('payment', 'admin')).status).toBe(
+      'PENDING',
+    );
+    expect(workflow.capturePayment).not.toHaveBeenCalled();
+  });
+  it('sends a stable refund idempotency key', async () => {
+    payment.providerPaymentId = 'pay_gateway';
+    const mock = jest
+      .spyOn(global, 'fetch')
+      .mockResolvedValue({
+        ok: true,
+        json: async () => ({ id: 'refund_gateway', status: 'processed' }),
+      } as any);
+    try {
+      await service.refundPayment('payment', 100, 'refund-record-id');
+      expect(mock).toHaveBeenCalledWith(
+        expect.any(String),
         expect.objectContaining({
-          status: 'CAPTURED',
+          headers: expect.objectContaining({
+            'X-Refund-Idempotency': 'refund-record-id',
+          }),
         }),
       );
-      expect(orderWorkflow.transition).toHaveBeenCalledWith(
-        'order-uuid-222',
-        'CONFIRMED',
-        'user-123',
-        'Payment verified successfully',
-      );
-      expect(orderWorkflow.deductInventory).toHaveBeenCalledWith(
-        'order-uuid-222',
-        'user-123',
-      );
-    });
-
-    it('skips the confirm/deduct/notify flow when a concurrent call already captured this payment', async () => {
-      const text = 'order_mock_999|pay_payment_id_999';
-      const keySecret = 'testsecret12345';
-      const validSignature = crypto
-        .createHmac('sha256', keySecret)
-        .update(text)
-        .digest('hex');
-
-      mockRepository.markCapturedIfNotAlready.mockResolvedValueOnce(0);
-
-      const verified = await service.verifyPayment(
-        mockPayment.id,
-        'pay_payment_id_999',
-        validSignature,
-        'user-123',
-      );
-
-      expect(verified).toBeDefined();
-      expect(mockRepository.createTransaction).not.toHaveBeenCalled();
-      expect(orderWorkflow.transition).not.toHaveBeenCalled();
-      expect(orderWorkflow.deductInventory).not.toHaveBeenCalled();
-    });
-  });
-
-  describe('handleWebhook', () => {
-    it('should capture payment and confirm order on payment.captured webhook event', async () => {
-      const payload = {
-        event: 'payment.captured',
-        payload: {
-          payment: {
-            entity: {
-              id: 'pay_payment_id_999',
-              order_id: 'order_mock_999',
-              amount: 150000,
-            },
-          },
-        },
-      };
-
-      const rawBody = JSON.stringify(payload);
-      const webhookSecret = 'webhooksecret12345';
-      const validSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(rawBody)
-        .digest('hex');
-
-      const result = await service.handleWebhook(rawBody, validSignature);
-      expect(result.status).toBe('processed');
-      expect(orderWorkflow.transition).toHaveBeenCalledWith(
-        'order-uuid-222',
-        'CONFIRMED',
-        'user-123',
-        'Payment captured via webhook',
-      );
-      expect(orderWorkflow.deductInventory).toHaveBeenCalledWith(
-        'order-uuid-222',
-        'user-123',
-      );
-    });
-
-    it('should ignore duplicate webhooks for already captured payments', async () => {
-      const capturedPayment = { ...mockPayment, status: 'CAPTURED' };
-      jest
-        .spyOn(prisma.payment, 'findMany')
-        .mockResolvedValueOnce([capturedPayment] as any);
-      mockRepository.markCapturedIfNotAlready.mockResolvedValueOnce(0);
-
-      const payload = {
-        event: 'payment.captured',
-        payload: {
-          payment: {
-            entity: {
-              id: 'pay_payment_id_999',
-              order_id: 'order_mock_999',
-            },
-          },
-        },
-      };
-
-      const rawBody = JSON.stringify(payload);
-      const webhookSecret = 'webhooksecret12345';
-      const validSignature = crypto
-        .createHmac('sha256', webhookSecret)
-        .update(rawBody)
-        .digest('hex');
-
-      const result = await service.handleWebhook(rawBody, validSignature);
-      expect(result.status).toBe('ignored');
-      expect(result.reason).toBe('Already captured');
-    });
+    } finally {
+      mock.mockRestore();
+    }
   });
 });
