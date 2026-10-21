@@ -265,8 +265,8 @@ export class ShippingService {
 
       const totalWeightGrams = 500 * Math.max(1, o.items.length);
       const barcodeSvg = generateCode128Svg(waybillNumber, {
-        height: 42,
-        barWidth: 1.8,
+        height: 46,
+        barWidth: 1.9,
         includeText: true,
       });
 
@@ -397,10 +397,10 @@ export class ShippingService {
                 .map(
                   (it) => `
                 <tr>
-                  <td class="font-mono text-xs">${it.sku}</td>
-                  <td>${it.name}${it.variant ? ` (${it.variant})` : ''}</td>
-                  <td style="text-align: center;">${it.quantity}</td>
-                  <td style="text-align: right;">₹${it.price.toLocaleString('en-IN')}</td>
+                  <td class="font-mono sku-cell">${it.sku}</td>
+                  <td><strong>${it.name}</strong>${it.variant ? ` (${it.variant})` : ''}</td>
+                  <td style="text-align: center; font-weight: 900;">${it.quantity}</td>
+                  <td style="text-align: right; font-weight: 900;">₹${it.price.toLocaleString('en-IN')}</td>
                 </tr>
               `,
                 )
@@ -426,7 +426,13 @@ export class ShippingService {
   <title>Shipping Labels (${labels.length} Orders) - Vasanthi's Signature</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f0f0; padding: ${isThermal ? '0' : '20px'}; color: #000; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background: #f0f0f0;
+      padding: ${isThermal ? '0' : '20px'};
+      color: #000000;
+      -webkit-font-smoothing: antialiased;
+    }
     
     @page {
       size: ${isThermal ? '100mm 150mm' : 'A4 portrait'};
@@ -453,15 +459,15 @@ export class ShippingService {
       .label-box {
         width: ${isThermal ? '96mm' : '100%'} !important;
         max-width: ${isThermal ? '96mm' : '100%'} !important;
-        max-height: ${isThermal ? '146mm' : 'none'} !important;
         box-sizing: border-box !important;
         page-break-after: ${labels.length > 1 ? 'always' : 'auto'} !important;
         break-after: ${labels.length > 1 ? 'page' : 'auto'} !important;
         page-break-inside: avoid !important;
         break-inside: avoid !important;
         box-shadow: none !important;
-        border: 2px solid #000 !important;
-        margin: ${isThermal ? '2mm auto 0 auto' : '0 auto'} !important;
+        border: 2px solid #000000 !important;
+        margin: ${isThermal ? '1.5mm auto 0 auto' : '0 auto'} !important;
+        padding: ${isThermal ? '6px 8px 5px 8px' : '10px'} !important;
         overflow: hidden !important;
       }
       .label-box:last-child {
@@ -482,12 +488,12 @@ export class ShippingService {
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
     }
     .btn {
-      background: #111;
+      background: #000000;
       color: #fff;
       border: none;
       padding: 8px 16px;
       border-radius: 6px;
-      font-weight: bold;
+      font-weight: 800;
       cursor: pointer;
       font-size: 13px;
     }
@@ -504,14 +510,15 @@ export class ShippingService {
       width: ${isThermal ? '96mm' : '100%'};
       max-width: 500px;
       box-sizing: border-box;
-      background: #fff;
-      border: 2px solid #000;
-      padding: ${isThermal ? '8px 10px' : '12px'};
-      border-radius: 4px;
+      background: #ffffff;
+      border: 2px solid #000000;
+      padding: ${isThermal ? '6px 8px 5px 8px' : '12px'};
+      border-radius: 0px;
       display: flex;
       flex-direction: column;
       justify-content: flex-start;
       font-size: 11px;
+      color: #000000;
       box-shadow: 0 2px 8px rgba(0,0,0,0.08);
       page-break-inside: avoid;
       break-inside: avoid;
@@ -521,101 +528,116 @@ export class ShippingService {
       display: flex;
       justify-content: space-between;
       align-items: flex-start;
-      border-bottom: 2px solid #000;
-      padding-bottom: 6px;
+      border-bottom: 2px solid #000000;
+      padding-bottom: 4px;
     }
-    .brand-title { font-size: 14px; font-weight: 900; letter-spacing: 0.5px; }
-    .brand-sub { font-size: 10px; color: #444; font-weight: 600; margin-top: 2px; }
+    .brand-title { font-size: 14.5px; font-weight: 900; letter-spacing: 0.5px; color: #000000; }
+    .brand-sub { font-size: 10.5px; color: #000000; font-weight: 800; margin-top: 2px; text-transform: uppercase; }
     .routing-box { text-align: right; }
-    .routing-city { font-size: 16px; font-weight: 900; }
-    .routing-pin { font-size: 14px; font-family: monospace; font-weight: bold; }
+    .routing-city { font-size: 16px; font-weight: 900; color: #000000; letter-spacing: 0.5px; }
+    .routing-pin { font-size: 14.5px; font-family: monospace; font-weight: 900; color: #000000; letter-spacing: 1px; }
 
     .barcode-container {
-      margin: 8px 0;
+      margin: 6px 0 5px 0;
       text-align: center;
-      border-bottom: 1px dashed #000;
-      padding-bottom: 6px;
+      border-bottom: 1.5px solid #000000;
+      padding-bottom: 5px;
     }
 
     .meta-row {
       display: flex;
       justify-content: space-between;
-      font-size: 10px;
-      padding: 4px 0;
-      border-bottom: 1px solid #000;
+      font-size: 10.5px;
+      padding: 3.5px 0;
+      border-bottom: 1.5px solid #000000;
+      color: #000000;
     }
     .meta-col { display: flex; flex-direction: column; }
-    .lbl-dim { color: #555; font-size: 9px; }
-    .lbl-val { font-weight: bold; }
+    .lbl-dim { color: #000000; font-size: 9.5px; font-weight: 800; text-transform: uppercase; }
+    .lbl-val { font-weight: 900; font-size: 11px; color: #000000; margin-top: 1px; }
     .font-mono { font-family: monospace; }
     .text-right { text-align: right; }
 
     .payment-banner {
-      font-size: 11px;
+      font-size: 11.5px;
       font-weight: 900;
       text-align: center;
-      padding: 6px;
-      margin: 6px 0;
-      border: 2px solid #000;
+      padding: 4px;
+      margin: 5px 0;
+      border: 2px solid #000000;
       letter-spacing: 0.5px;
+      color: #000000;
     }
-    .payment-banner.cod { background: #000; color: #fff; }
-    .payment-banner.prepaid { background: #eee; color: #000; }
+    .payment-banner.cod { background: #000000; color: #ffffff; }
+    .payment-banner.prepaid { background: #ffffff; color: #000000; }
 
     .address-section {
-      border: 1px solid #000;
-      margin-bottom: 6px;
+      border: 1.5px solid #000000;
+      margin-bottom: 5px;
+      background: #ffffff;
     }
     .deliver-to {
-      padding: 6px 8px;
-      border-bottom: 1px dashed #000;
+      padding: 5px 7px;
+      border-bottom: 1.5px dashed #000000;
     }
     .return-to {
-      padding: 6px 8px;
-      background: #fafafa;
+      padding: 4px 7px;
+      background: #ffffff;
     }
     .section-badge {
-      font-size: 8.5px;
+      font-size: 9px;
       font-weight: 900;
-      color: #555;
+      color: #000000;
       margin-bottom: 2px;
       letter-spacing: 0.5px;
     }
-    .cust-name { font-size: 12px; font-weight: bold; }
-    .cust-address { font-size: 10.5px; line-height: 1.35; margin-top: 2px; }
-    .cust-phone { font-size: 10.5px; margin-top: 3px; }
-    .sender-name { font-size: 10.5px; font-weight: bold; }
-    .sender-address { font-size: 9.5px; color: #333; line-height: 1.25; }
-    .sender-meta { font-size: 9px; color: #555; margin-top: 2px; }
+    .cust-name { font-size: 13.5px; font-weight: 900; color: #000000; }
+    .cust-address { font-size: 11px; font-weight: 700; line-height: 1.35; margin-top: 2px; color: #000000; }
+    .cust-phone { font-size: 11.5px; font-weight: 900; margin-top: 2.5px; color: #000000; }
+    .sender-name { font-size: 11px; font-weight: 900; color: #000000; }
+    .sender-address { font-size: 10px; font-weight: 700; color: #000000; line-height: 1.25; }
+    .sender-meta { font-size: 9.5px; font-weight: 800; color: #000000; margin-top: 2px; }
 
     .items-table-container {
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .items-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: 9.5px;
+      font-size: 10px;
+      color: #000000;
     }
     .items-table th {
-      background: #eee;
-      border-top: 1px solid #000;
-      border-bottom: 1px solid #000;
+      background: #ffffff;
+      border-top: 1.5px solid #000000;
+      border-bottom: 1.5px solid #000000;
       padding: 3px 4px;
       text-align: left;
+      font-size: 10px;
+      font-weight: 900;
+      color: #000000;
     }
     .items-table td {
       padding: 3px 4px;
-      border-bottom: 1px solid #eee;
+      border-bottom: 1px solid #000000;
+      color: #000000;
+      font-weight: 700;
+    }
+    .items-table td.sku-cell {
+      font-family: monospace;
+      font-weight: 900;
+      font-size: 10.5px;
     }
 
     .label-footer {
       display: flex;
       justify-content: space-between;
-      font-size: 8px;
-      color: #555;
-      border-top: 1px solid #000;
-      padding-top: 4px;
-      font-weight: bold;
+      font-size: 8.5px;
+      color: #000000;
+      border-top: 1.5px solid #000000;
+      padding: 3px 2px 1px 2px;
+      font-weight: 900;
+      letter-spacing: 0.5px;
     }
   </style>
 </head>

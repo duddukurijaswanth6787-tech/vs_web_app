@@ -172,7 +172,7 @@ export function generateCode128Svg(
   }
 
   const textElement = includeText
-    ? `<text x="${svgWidth / 2}" y="${height + 14}" font-family="monospace" font-size="11" font-weight="bold" text-anchor="middle" fill="#000000" letter-spacing="1">${cleanText}</text>`
+    ? `<text x="${svgWidth / 2}" y="${height + 15}" font-family="monospace" font-size="13" font-weight="900" text-anchor="middle" fill="#000000" letter-spacing="2">${cleanText}</text>`
     : '';
 
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${svgWidth} ${svgHeight}" width="${svgWidth}" height="${svgHeight}" style="display:block;margin:0 auto;max-width:100%;">${svgPaths}${textElement}</svg>`;
