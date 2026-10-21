@@ -251,7 +251,7 @@ export default function StoreExpoInventoryPage() {
       <div class="sticker-card">
         <div class="header-row">
           <span class="header-diamond">❖</span>
-          <span class="store-title">VASANTHI DESIGNERS</span>
+          <span class="store-title">VASANTHI'S SIGNATURE</span>
         </div>
         <div class="divider"></div>
         <div class="product-title">${printProduct.name}${activeVar?.title ? ` | ${activeVar.title}` : ''}</div>
@@ -1348,7 +1348,7 @@ export default function StoreExpoInventoryPage() {
                 <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-sm">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="text-sky-600 text-xs">❖</span>
-                    <span className="font-serif text-xs font-black tracking-widest text-slate-900">VASANTHI DESIGNERS</span>
+                    <span className="font-serif text-xs font-black tracking-widest text-slate-900">VASANTHI&apos;S SIGNATURE</span>
                   </div>
                   <div className="my-1.5 h-[1px] w-full bg-slate-100" />
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>

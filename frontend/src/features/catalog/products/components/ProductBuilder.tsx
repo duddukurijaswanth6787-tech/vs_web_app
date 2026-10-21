@@ -2102,7 +2102,7 @@ export default function ProductBuilder({
         <div class="sticker-card">
           <div class="header-row">
             <span class="header-diamond">❖</span>
-            <span class="store-title">VASANTHI DESIGNERS</span>
+            <span class="store-title">VASANTHI'S SIGNATURE</span>
           </div>
           <div class="divider"></div>
           <div class="product-title">${productName} | ${variant.title}</div>
@@ -4497,7 +4497,7 @@ export default function ProductBuilder({
                     <div className="flex items-center justify-center gap-1.5 text-center">
                       <span className="text-[#0284c7] font-black text-sm">❖</span>
                       <span className="text-sm font-black tracking-widest uppercase text-neutral-950 font-serif">
-                        VASANTHI DESIGNERS
+                        VASANTHI&apos;S SIGNATURE
                       </span>
                     </div>
                     <div className="w-full border-b border-neutral-200 my-2" />

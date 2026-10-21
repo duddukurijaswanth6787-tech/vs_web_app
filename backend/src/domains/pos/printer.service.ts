@@ -587,7 +587,7 @@ export class PrinterService {
    * a batch on a new printer/size.
    */
   buildTsplStickerLabel(dto: GenerateBatchStickersDto): string {
-    const store = dto.storeName || 'VASANTHI DESIGNERS';
+    const store = dto.storeName || "VASANTHI'S SIGNATURE";
     const title = dto.variantTitle
       ? `${dto.productName} (${dto.variantTitle})`
       : dto.productName;

@@ -165,7 +165,7 @@ export default function LabelPreviewScreen() {
           {/* Header: Blue Diamond + VASANTHI DESIGNERS */}
           <View style={styles.stickerHeaderRow}>
             <Text style={styles.headerDiamond}>❖</Text>
-            <Text style={styles.stickerBrand}>{(product.brandName || 'VASANTHI DESIGNERS').toUpperCase()}</Text>
+            <Text style={styles.stickerBrand}>{(product.brandName || "VASANTHI'S SIGNATURE").toUpperCase()}</Text>
           </View>
           <View style={styles.divider} />
 

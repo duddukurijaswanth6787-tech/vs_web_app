@@ -112,7 +112,7 @@ export default function AddStockPage() {
                 mrp: selectedVariant.mrp,
                 hsnCode: selectedVariant.hsnCode,
                 quantity: quantityReceived,
-                storeName: 'VASANTHI DESIGNERS',
+                storeName: "VASANTHI'S SIGNATURE",
                 labelSize,
               },
               {

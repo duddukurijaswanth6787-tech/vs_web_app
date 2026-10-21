@@ -122,7 +122,7 @@ export class BarcodeService {
     barcodeDataUrl: string,
     qrDataUrl: string | null,
   ): string {
-    const store = params.storeName || 'VASANTHI DESIGNERS';
+    const store = params.storeName || "VASANTHI'S SIGNATURE";
     const variantStr = params.variantTitle ? ` | ${params.variantTitle}` : '';
     const spec = this.LABEL_SPECS[labelSize];
     // Truncated in JS rather than via CSS text-overflow: ellipsis -- headless
