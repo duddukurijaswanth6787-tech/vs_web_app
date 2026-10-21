@@ -241,8 +241,8 @@ export default function StoreExpoInventoryPage() {
     const activeVar =
       printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
     const barcodeCode = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 70, 2.4);
-    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 130);
+    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 65, 2.2);
+    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 100);
     const copies = Math.max(1, stickerCopies);
 
     const stickerCardsHtml = Array.from({ length: copies })
@@ -282,7 +282,7 @@ export default function StoreExpoInventoryPage() {
         <title>Print Label - ${printProduct.name}</title>
         <style>
           @page {
-            size: 75mm 50mm;
+            size: 50mm 25mm;
             margin: 0mm !important;
           }
           * {
@@ -291,9 +291,9 @@ export default function StoreExpoInventoryPage() {
             padding: 0;
           }
           html, body {
-            width: 75mm !important;
-            height: 50mm !important;
-            max-height: 50mm !important;
+            width: 50mm !important;
+            height: 25mm !important;
+            max-height: 25mm !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff;
@@ -303,10 +303,10 @@ export default function StoreExpoInventoryPage() {
             overflow: hidden !important;
           }
           .sticker-card {
-            width: 75mm !important;
-            height: 48mm !important;
-            max-height: 48mm !important;
-            padding: 1.8mm 3mm 2mm 3mm !important;
+            width: 50mm !important;
+            height: 23.5mm !important;
+            max-height: 23.5mm !important;
+            padding: 0.8mm 2mm 1mm 2mm !important;
             text-align: center;
             background: #ffffff;
             box-sizing: border-box !important;
@@ -328,22 +328,22 @@ export default function StoreExpoInventoryPage() {
           }
           @media print {
             @page {
-              size: 75mm 50mm;
+              size: 50mm 25mm;
               margin: 0mm !important;
             }
             html, body {
-              width: 75mm !important;
-              height: 50mm !important;
-              max-height: 50mm !important;
+              width: 50mm !important;
+              height: 25mm !important;
+              max-height: 25mm !important;
               margin: 0 !important;
               padding: 0 !important;
               overflow: hidden !important;
             }
             .sticker-card {
-              width: 75mm !important;
-              height: 48mm !important;
-              max-height: 48mm !important;
-              padding: 1.8mm 3mm 2mm 3mm !important;
+              width: 50mm !important;
+              height: 23.5mm !important;
+              max-height: 23.5mm !important;
+              padding: 0.8mm 2mm 1mm 2mm !important;
               border: none !important;
               margin: 0 auto !important;
               box-sizing: border-box !important;
@@ -366,19 +366,19 @@ export default function StoreExpoInventoryPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 4px;
+            gap: 2.5px;
           }
           .header-diamond {
             color: #0284c7;
-            font-size: 9px;
+            font-size: 7px;
             font-weight: bold;
             line-height: 1;
           }
           .store-title {
             font-family: Georgia, serif;
-            font-size: 9.5px;
+            font-size: 7.5px;
             font-weight: 800;
-            letter-spacing: 0.8px;
+            letter-spacing: 0.5px;
             color: #111111;
             line-height: 1;
           }
@@ -386,73 +386,73 @@ export default function StoreExpoInventoryPage() {
             width: 100%;
             height: 1px;
             background: #e5e5e5;
-            margin: 0.2mm 0;
+            margin: 0.15mm 0;
           }
           .product-title {
-            font-size: 8px;
+            font-size: 6.5px;
             font-weight: 700;
             color: #1f2937;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
-            line-height: 1.1;
+            line-height: 1;
           }
           .sku-badge {
             display: inline-block;
             background: #000000;
             color: #ffffff;
             border-radius: 9999px;
-            padding: 1px 8px;
+            padding: 0.5px 5px;
             font-family: monospace;
-            font-size: 7.5px;
+            font-size: 6.5px;
             font-weight: 800;
-            letter-spacing: 0.5px;
-            line-height: 1.1;
+            letter-spacing: 0.4px;
+            line-height: 1;
           }
           .code-container {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 2.5mm;
+            gap: 2mm;
             width: 100%;
-            max-width: 65mm;
-            margin: 0.2mm auto;
+            max-width: 44mm;
+            margin: 0.1mm auto;
           }
           .barcode-box {
             flex: 1;
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 44mm;
+            max-width: 29mm;
           }
           .barcode-box img {
-            height: 11.5mm;
+            height: 6.5mm;
             width: 100%;
-            max-width: 44mm;
+            max-width: 29mm;
             object-fit: contain;
             image-rendering: pixelated;
           }
           .barcode-num {
             font-family: monospace;
-            font-size: 7.5px;
+            font-size: 6px;
             font-weight: 700;
             color: #111111;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.3px;
             margin-top: 0.5px;
             line-height: 1;
           }
           .dashed-line {
-            height: 11.5mm;
+            height: 7mm;
             border-right: 1px dashed #cccccc;
           }
           .qr-box img {
-            width: 11.5mm;
-            height: 11.5mm;
+            width: 7mm;
+            height: 7mm;
             object-fit: contain;
           }
           .price {
-            font-size: 13.5px;
+            font-size: 10.5px;
             font-weight: 900;
             color: #000000;
             line-height: 1;
@@ -1321,18 +1321,18 @@ export default function StoreExpoInventoryPage() {
               </div>
             )}
 
-            {/* Single Standard 75 x 50 mm Option */}
+            {/* Single Standard Option - Fits 1 Sticker */}
             <div className="mb-4">
               <label className="mb-1.5 block text-xs font-semibold text-slate-700">Label Dimensions</label>
               <div className="flex items-center justify-between rounded-xl border-2 border-sky-600 bg-sky-50/70 p-3 text-sky-950">
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white text-xs font-bold shadow-xs">✓</span>
                   <div>
-                    <div className="text-xs font-extrabold text-sky-950">75 × 50 mm (Standard)</div>
-                    <div className="text-[11px] text-sky-700 font-medium">Standard Retail Thermal Label (3&quot; × 2&quot;)</div>
+                    <div className="text-xs font-extrabold text-sky-950">Standard Thermal Tag (Single Sticker Fit)</div>
+                    <div className="text-[11px] text-sky-700 font-medium">Calibrated for Munbyn / ITPP130 to print on exactly 1 sticker</div>
                   </div>
                 </div>
-                <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-bold text-sky-700 shadow-xs">Active</span>
+                <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-bold text-sky-700 shadow-xs">1 Sticker</span>
               </div>
             </div>
 
