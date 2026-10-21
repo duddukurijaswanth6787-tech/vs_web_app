@@ -276,8 +276,7 @@ export class DelhiveryService {
             return_pin: '507117',
             return_city: 'Manuguru',
             return_phone: '7659034198',
-            return_add:
-              'VASANTHI CREATIONS PVT LTD 2-1-156/3 Ashoknagar main road, Beside MORE super market',
+            return_add: '2-1-156/3 Ashoknagar, Beside MORE Market',
             return_state: 'Telangana',
             return_country: 'India',
             products_desc: 'Apparel / Garment',
