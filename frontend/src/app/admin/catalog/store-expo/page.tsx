@@ -242,7 +242,6 @@ export default function StoreExpoInventoryPage() {
       printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
     const barcodeCode = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
     const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 65, 2.2);
-    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 100);
     const copies = Math.max(1, stickerCopies);
 
     const stickerCardsHtml = Array.from({ length: copies })
@@ -257,18 +256,11 @@ export default function StoreExpoInventoryPage() {
         <div class="product-title">${printProduct.name}${activeVar?.title ? ` | ${activeVar.title}` : ''}</div>
         <div class="sku-badge">${activeVar?.sku || barcodeCode}</div>
 
-        <div class="code-container">
-          <div class="barcode-box">
-            <img src="${barcodeImgUrl}" alt="barcode" />
-            <div class="barcode-num">${barcodeCode}</div>
-          </div>
-          <div class="dashed-line"></div>
-          <div class="qr-box">
-            <img src="${qrImgUrl}" alt="qr" />
-          </div>
+        <div class="barcode-box">
+          <img src="${barcodeImgUrl}" alt="barcode" />
+          <div class="barcode-num">${barcodeCode}</div>
         </div>
 
-        <div class="divider"></div>
         <div class="price">₹${(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}</div>
       </div>
     `,
@@ -304,9 +296,9 @@ export default function StoreExpoInventoryPage() {
           }
           .sticker-card {
             width: 50mm !important;
-            height: 23.5mm !important;
-            max-height: 23.5mm !important;
-            padding: 0.8mm 2mm 1mm 2mm !important;
+            height: 24mm !important;
+            max-height: 24mm !important;
+            padding: 0.8mm 1.5mm !important;
             text-align: center;
             background: #ffffff;
             box-sizing: border-box !important;
@@ -318,7 +310,7 @@ export default function StoreExpoInventoryPage() {
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            justify-content: space-between !important;
+            justify-content: flex-start !important;
             border: none !important;
             margin: 0 auto !important;
           }
@@ -341,9 +333,9 @@ export default function StoreExpoInventoryPage() {
             }
             .sticker-card {
               width: 50mm !important;
-              height: 23.5mm !important;
-              max-height: 23.5mm !important;
-              padding: 0.8mm 2mm 1mm 2mm !important;
+              height: 24mm !important;
+              max-height: 24mm !important;
+              padding: 0.8mm 1.5mm !important;
               border: none !important;
               margin: 0 auto !important;
               box-sizing: border-box !important;
@@ -355,7 +347,7 @@ export default function StoreExpoInventoryPage() {
               display: flex !important;
               flex-direction: column !important;
               align-items: center !important;
-              justify-content: space-between !important;
+              justify-content: flex-start !important;
             }
             .sticker-card:last-child {
               page-break-after: avoid !important;
@@ -366,7 +358,8 @@ export default function StoreExpoInventoryPage() {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 2.5px;
+            gap: 2px;
+            line-height: 1;
           }
           .header-diamond {
             color: #0284c7;
@@ -376,27 +369,29 @@ export default function StoreExpoInventoryPage() {
           }
           .store-title {
             font-family: Georgia, serif;
-            font-size: 7.5px;
+            font-size: 7px;
             font-weight: 800;
             letter-spacing: 0.5px;
             color: #111111;
             line-height: 1;
+            text-transform: uppercase;
           }
           .divider {
             width: 100%;
-            height: 1px;
+            height: 0.5px;
             background: #e5e5e5;
-            margin: 0.15mm 0;
+            margin: 0.5mm 0 0.4mm 0;
           }
           .product-title {
-            font-size: 6.5px;
+            font-size: 6px;
             font-weight: 700;
             color: #1f2937;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 100%;
-            line-height: 1;
+            max-width: 46mm;
+            line-height: 1.1;
+            margin-bottom: 0.5mm;
           }
           .sku-badge {
             display: inline-block;
@@ -405,57 +400,45 @@ export default function StoreExpoInventoryPage() {
             border-radius: 9999px;
             padding: 0.5px 5px;
             font-family: monospace;
-            font-size: 6.5px;
+            font-size: 6px;
             font-weight: 800;
             letter-spacing: 0.4px;
             line-height: 1;
-          }
-          .code-container {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 2mm;
-            width: 100%;
-            max-width: 44mm;
-            margin: 0.1mm auto;
+            margin-bottom: 0.5mm;
           }
           .barcode-box {
-            flex: 1;
+            width: 100%;
+            max-width: 44mm;
             display: flex;
             flex-direction: column;
             align-items: center;
-            max-width: 29mm;
+            justify-content: center;
+            margin: 0 auto;
           }
           .barcode-box img {
-            height: 6.5mm;
+            height: 7mm;
             width: 100%;
-            max-width: 29mm;
+            max-width: 42mm;
             object-fit: contain;
             image-rendering: pixelated;
+            display: block;
           }
           .barcode-num {
             font-family: monospace;
             font-size: 6px;
             font-weight: 700;
             color: #111111;
-            letter-spacing: 0.3px;
-            margin-top: 0.5px;
+            letter-spacing: 0.5px;
             line-height: 1;
-          }
-          .dashed-line {
-            height: 7mm;
-            border-right: 1px dashed #cccccc;
-          }
-          .qr-box img {
-            width: 7mm;
-            height: 7mm;
-            object-fit: contain;
+            margin-top: 0.3mm;
           }
           .price {
-            font-size: 10.5px;
+            font-size: 9.5px;
             font-weight: 900;
             color: #000000;
             line-height: 1;
+            margin-top: 0.6mm;
+            letter-spacing: -0.2px;
           }
         </style>
       </head>
@@ -1328,8 +1311,8 @@ export default function StoreExpoInventoryPage() {
                 <div className="flex items-center gap-2.5">
                   <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white text-xs font-bold shadow-xs">✓</span>
                   <div>
-                    <div className="text-xs font-extrabold text-sky-950">Standard Thermal Tag (Single Sticker Fit)</div>
-                    <div className="text-[11px] text-sky-700 font-medium">Calibrated for Munbyn / ITPP130 to print on exactly 1 sticker</div>
+                    <div className="text-xs font-extrabold text-sky-950">Standard Garment Tag (50 × 25 mm / 2&quot; - 2.5&quot;)</div>
+                    <div className="text-[11px] text-sky-700 font-medium">Calibrated for apparel tags &amp; stickers — prints cleanly on 1 label</div>
                   </div>
                 </div>
                 <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-bold text-sky-700 shadow-xs">1 Sticker</span>
@@ -1341,39 +1324,30 @@ export default function StoreExpoInventoryPage() {
               const activeVar =
                 printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
               const barcodeVal = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 75, 2.6);
-              const qrSvg = generateQrCodeSvgDataUrl(barcodeVal, 140);
+              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 65, 2.2);
 
               return (
-                <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-sm">
+                <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3 text-center text-slate-900 shadow-sm max-w-[280px] mx-auto">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="text-sky-600 text-xs">❖</span>
-                    <span className="font-serif text-xs font-black tracking-widest text-slate-900">VASANTHI&apos;S SIGNATURE</span>
+                    <span className="font-serif text-[11px] font-black tracking-widest text-slate-900">VASANTHI&apos;S SIGNATURE</span>
                   </div>
                   <div className="my-1.5 h-[1px] w-full bg-slate-100" />
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
-                  {activeVar?.title && <p className="text-[11px] text-slate-500 font-medium">{activeVar.title}</p>}
+                  {activeVar?.title && <p className="text-[10px] text-slate-500 font-medium">{activeVar.title}</p>}
                   <div className="my-1.5">
                     <span className="inline-block rounded-full bg-slate-900 px-3 py-0.5 font-mono text-[10px] font-extrabold tracking-wider text-white">
                       {activeVar?.sku || barcodeVal}
                     </span>
                   </div>
-                  <div className="my-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50 p-2.5 border border-slate-100">
-                    <div className="flex-1 flex flex-col items-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={barcodeSvg} alt={barcodeVal} className="h-12 w-full max-w-[170px] object-contain" />
-                      <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
-                    </div>
-                    <div className="h-12 w-[1px] border-r border-dashed border-slate-300" />
-                    <div className="flex items-center justify-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qrSvg} alt="QR" className="h-11 w-11 object-contain" />
-                    </div>
+                  <div className="my-2 flex flex-col items-center justify-center rounded-xl bg-slate-50 p-2.5 border border-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={barcodeSvg} alt={barcodeVal} className="h-10 w-full max-w-[200px] object-contain" />
+                    <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
+                    <p className="mt-1.5 text-base font-black text-slate-900">
+                      ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
+                    </p>
                   </div>
-                  <div className="my-1.5 h-[1px] w-full bg-slate-100" />
-                  <p className="text-base font-black text-slate-900">
-                    ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
-                  </p>
                 </div>
               );
             })()}

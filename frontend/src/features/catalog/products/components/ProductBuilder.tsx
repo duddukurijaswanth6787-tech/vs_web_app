@@ -2095,8 +2095,7 @@ export default function ProductBuilder({
     try {
       const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
       const barcodeCode = variant.barcode || variant.sku;
-      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 75, 2.6);
-      const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 140);
+      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 65, 2.2);
 
       const stickerCardsHtml = Array.from({ length: qty }).map(() => `
         <div class="sticker-card">
@@ -2107,17 +2106,10 @@ export default function ProductBuilder({
           <div class="divider"></div>
           <div class="product-title">${productName} | ${variant.title}</div>
           <div class="sku-badge">${variant.sku}</div>
-          <div class="code-container">
-            <div class="barcode-box">
-              <img src="${barcodeImgUrl}" alt="barcode" />
-              <div class="barcode-num">${variant.barcode}</div>
-            </div>
-            <div class="dashed-line"></div>
-            <div class="qr-box">
-              <img src="${qrImgUrl}" alt="qr" />
-            </div>
+          <div class="barcode-box">
+            <img src="${barcodeImgUrl}" alt="barcode" />
+            <div class="barcode-num">${variant.barcode}</div>
           </div>
-          <div class="divider"></div>
           <div class="price">₹${variant.price}</div>
         </div>
       `).join('');
@@ -2126,11 +2118,11 @@ export default function ProductBuilder({
         <!DOCTYPE html>
         <html>
         <head>
-          <title>Print Barcode Stickers (3x2 Inch) - ${variant.sku}</title>
+          <title>Print Barcode Stickers - ${variant.sku}</title>
           <style>
             @page {
-              size: 76mm 50mm;
-              margin: 0mm;
+              size: 50mm 25mm;
+              margin: 0mm !important;
             }
             * {
               box-sizing: border-box;
@@ -2138,34 +2130,36 @@ export default function ProductBuilder({
               padding: 0;
             }
             html, body {
-              width: 76mm;
-              height: 50mm;
-              margin: 0;
-              padding: 0;
-              background: #fff;
+              width: 50mm !important;
+              height: 25mm !important;
+              max-height: 25mm !important;
+              margin: 0 !important;
+              padding: 0 !important;
+              background: #ffffff;
               font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
+              overflow: hidden !important;
             }
             .sticker-card {
-              width: 76mm;
-              height: 48mm;
-              max-height: 48mm;
-              padding: 2mm 3mm 6mm 3mm;
+              width: 50mm !important;
+              height: 24mm !important;
+              max-height: 24mm !important;
+              padding: 0.8mm 1.5mm !important;
               text-align: center;
               background: #ffffff;
-              box-sizing: border-box;
+              box-sizing: border-box !important;
               page-break-after: always;
               break-after: page;
-              page-break-inside: avoid;
-              break-inside: avoid;
-              overflow: hidden;
-              display: flex;
-              flex-direction: column;
-              align-items: center;
-              justify-content: flex-start;
-              gap: 0.8mm;
-              border: none;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+              display: flex !important;
+              flex-direction: column !important;
+              align-items: center !important;
+              justify-content: flex-start !important;
+              border: none !important;
+              margin: 0 auto !important;
             }
             .sticker-card:last-child {
               page-break-after: avoid !important;
@@ -2173,25 +2167,24 @@ export default function ProductBuilder({
             }
             @media print {
               @page {
-                size: 76mm 50mm;
-                margin: 0mm;
+                size: 50mm 25mm;
+                margin: 0mm !important;
               }
               html, body {
-                width: 76mm !important;
-                height: 50mm !important;
-                max-width: 76mm !important;
-                max-height: 50mm !important;
+                width: 50mm !important;
+                height: 25mm !important;
+                max-height: 25mm !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
               }
               .sticker-card {
-                width: 76mm !important;
-                height: 48mm !important;
-                max-height: 48mm !important;
-                margin: 0 !important;
-                padding: 2mm 3mm 6mm 3mm !important;
+                width: 50mm !important;
+                height: 24mm !important;
+                max-height: 24mm !important;
+                padding: 0.8mm 1.5mm !important;
                 border: none !important;
+                margin: 0 auto !important;
                 box-sizing: border-box !important;
                 page-break-after: always !important;
                 break-after: page !important;
@@ -2202,7 +2195,6 @@ export default function ProductBuilder({
                 flex-direction: column !important;
                 align-items: center !important;
                 justify-content: flex-start !important;
-                gap: 0.8mm !important;
               }
               .sticker-card:last-child {
                 page-break-after: avoid !important;
@@ -2213,96 +2205,87 @@ export default function ProductBuilder({
               display: flex;
               align-items: center;
               justify-content: center;
-              gap: 4px;
+              gap: 2px;
+              line-height: 1;
             }
             .header-diamond {
               color: #0284c7;
-              font-size: 9.5px;
+              font-size: 7px;
               font-weight: bold;
               line-height: 1;
             }
             .store-title {
               font-family: Georgia, serif;
-              font-size: 9.5px;
+              font-size: 7px;
               font-weight: 800;
-              letter-spacing: 0.8px;
+              letter-spacing: 0.5px;
               color: #111111;
               line-height: 1;
+              text-transform: uppercase;
             }
             .divider {
               width: 100%;
-              height: 1px;
+              height: 0.5px;
               background: #e5e5e5;
-              margin: 0.2mm 0;
+              margin: 0.5mm 0 0.4mm 0;
             }
             .product-title {
-              font-size: 8.5px;
+              font-size: 6px;
               font-weight: 700;
               color: #1f2937;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              max-width: 100%;
+              max-width: 46mm;
               line-height: 1.1;
+              margin-bottom: 0.5mm;
             }
             .sku-badge {
               display: inline-block;
               background: #000000;
               color: #ffffff;
               border-radius: 9999px;
-              padding: 1px 8px;
+              padding: 0.5px 5px;
               font-family: monospace;
-              font-size: 8px;
+              font-size: 6px;
               font-weight: 800;
-              letter-spacing: 0.6px;
-              margin: 0.2mm 0;
-              line-height: 1.1;
-            }
-            .code-container {
-              display: flex;
-              align-items: center;
-              justify-content: center;
-              gap: 6px;
-              width: 100%;
-              margin: 0.2mm 0;
+              letter-spacing: 0.4px;
+              line-height: 1;
+              margin-bottom: 0.5mm;
             }
             .barcode-box {
-              flex: 1;
+              width: 100%;
+              max-width: 44mm;
               display: flex;
               flex-direction: column;
               align-items: center;
+              justify-content: center;
+              margin: 0 auto;
             }
             .barcode-box img {
-              height: 10.5mm;
+              height: 7mm;
               width: 100%;
               max-width: 42mm;
               object-fit: contain;
               image-rendering: pixelated;
+              display: block;
             }
             .barcode-num {
               font-family: monospace;
-              font-size: 8px;
+              font-size: 6px;
               font-weight: 700;
               color: #111111;
               letter-spacing: 0.5px;
-              margin-top: 1px;
               line-height: 1;
-            }
-            .dashed-line {
-              height: 10.5mm;
-              border-right: 1px dashed #cccccc;
-            }
-            .qr-box img {
-              width: 10.5mm;
-              height: 10.5mm;
-              object-fit: contain;
+              margin-top: 0.3mm;
             }
             .price {
-              font-size: 15px;
+              font-size: 9.5px;
               font-weight: 900;
               color: #000000;
               line-height: 1;
-              margin-top: 0.5mm;
+              margin-top: 0.6mm;
+              letter-spacing: -0.2px;
             }
           </style>
         </head>
@@ -4512,44 +4495,25 @@ export default function ProductBuilder({
                       {variant.sku}
                     </div>
 
-                    {/* Barcode + QR Code - High Contrast 3x2 Inch Format */}
+                    {/* Barcode - Centered & Wide, No QR Code */}
                     {variant.barcode || variant.sku ? (
-                      <div className="flex items-center justify-between gap-3 my-1.5 py-1 w-full bg-neutral-50/70 p-2 rounded-2xl border border-neutral-100">
-                        <div className="flex-1 flex flex-col items-center justify-center min-w-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={generateCode128SvgDataUrl(variant.barcode || variant.sku, 75, 2.6)}
-                            alt={`Barcode ${variant.barcode || variant.sku}`}
-                            className="h-16 w-full max-w-[220px] object-contain"
-                          />
-                          <span className="text-xs font-mono text-neutral-950 font-black tracking-widest mt-0.5">
-                            {variant.barcode || variant.sku}
-                          </span>
-                        </div>
-
-                        <div className="h-16 border-r border-dashed border-neutral-300 mx-0.5" />
-
-                        <div className="flex flex-col items-center justify-center shrink-0">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img
-                            src={generateQrCodeSvgDataUrl(variant.barcode || variant.sku, 140)}
-                            alt={`QR ${variant.barcode || variant.sku}`}
-                            className="h-14 w-14 object-contain"
-                          />
-                          <span className="text-[8px] font-mono text-neutral-500 font-bold tracking-tight uppercase mt-0.5">
-                            Scan POS
-                          </span>
+                      <div className="flex flex-col items-center justify-center my-1.5 py-2 w-full bg-neutral-50/70 p-2.5 rounded-2xl border border-neutral-100">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={generateCode128SvgDataUrl(variant.barcode || variant.sku, 65, 2.2)}
+                          alt={`Barcode ${variant.barcode || variant.sku}`}
+                          className="h-12 w-full max-w-[210px] object-contain"
+                        />
+                        <span className="text-xs font-mono text-neutral-950 font-black tracking-widest mt-1">
+                          {variant.barcode || variant.sku}
+                        </span>
+                        <div className="text-xl font-black text-black font-sans tracking-tight mt-1.5">
+                          ₹{variant.price}
                         </div>
                       </div>
                     ) : (
                       <div className="text-xs text-neutral-400 my-4">Generating barcode...</div>
                     )}
-
-                    {/* Bottom Line Divider & Bold Price */}
-                    <div className="w-full border-b border-neutral-200 my-2" />
-                    <div className="text-2xl font-black text-black font-sans tracking-tight">
-                      ₹{variant.price}
-                    </div>
 
                     {/* Print Controls at bottom */}
                     <div className="flex items-center gap-2 mt-4 w-full pt-3 border-t border-neutral-100">
