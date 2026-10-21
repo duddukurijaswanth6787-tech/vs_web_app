@@ -316,12 +316,22 @@ export default function DelhiveryShippingAdminPage() {
 
   // Open pickup modal pre-populated for specific orders
   const openPickupModalForOrders = (orders?: OrderResponse[]) => {
+    if (orders && orders.length === 1 && !orders[0].waybillNumber) {
+      toast('warning', 'AWB Not Assigned Yet', 'Please click "Dispatch Delhivery" first to generate the AWB Waybill before scheduling driver pickup.');
+      return;
+    }
+
     const list =
       orders && orders.length > 0
         ? orders
         : selectedOrderIds.length > 0
-        ? todayOrders.filter((o) => selectedOrderIds.includes(o.id))
-        : todayOrders;
+        ? todayOrders.filter((o) => selectedOrderIds.includes(o.id) && Boolean(o.waybillNumber))
+        : todayOrders.filter((o) => Boolean(o.waybillNumber));
+
+    if (list.length === 0) {
+      toast('warning', 'No Orders Ready for Pickup', 'Please generate Delhivery AWB for at least one order by clicking "Dispatch Delhivery" before scheduling driver pickup.');
+      return;
+    }
 
     const targetOrderNumbers = list.map((o) => o.orderNumber);
 
@@ -446,17 +456,11 @@ export default function DelhiveryShippingAdminPage() {
     }
     setDispatchingOrderId(order.id);
     try {
-      const generatedAwb = `DEL${Date.now().toString().slice(-9)}`;
-      const trackingLink = `https://www.delhivery.com/tracking?awb=${generatedAwb}`;
+      const res = await apiClient.post(`/shipping/delhivery/dispatch/${order.id}`);
+      const data = res.data?.data || res.data;
+      const awb = data.waybill || order.waybillNumber || 'Assigned';
 
-      await orderService.assignCourier(order.id, {
-        courierPartner: 'Delhivery',
-        waybillNumber: generatedAwb,
-        trackingUrl: trackingLink,
-        message: `Dispatched via Delhivery Express from Main Warehouse`,
-      });
-
-      toast('success', `Order #${order.orderNumber} Dispatched`, `AWB Assigned: ${generatedAwb}`);
+      toast('success', `Delhivery AWB Assigned!`, `Order #${order.orderNumber} Live Waybill: ${awb}`);
       await loadTodayOrders();
     } catch (err) {
       toast('error', 'Dispatch Failed', getApiErrorMessage(err));
@@ -561,11 +565,12 @@ export default function DelhiveryShippingAdminPage() {
     e.preventDefault();
     setIsSchedulingPickup(true);
     try {
-      const selectedWh = warehouses.find((w: any) => w.code === pickupLocationSelection || w.id === pickupLocationSelection) || warehouses[0];
+      const selectedWh = warehouses.find((w: any) => w.code === pickupLocationSelection || w.id === pickupLocationSelection || w.name === pickupLocationSelection) || warehouses[0];
       const locDisplayName = selectedWh ? `${selectedWh.name} (${selectedWh.city || 'Manuguru'} - ${selectedWh.postalCode || '507117'})` : 'Manuguru Main Warehouse (Manuguru - 507117)';
+      const pickupLocationName = selectedWh?.name || 'Manuguru Main Warehouse';
 
       const res = await apiClient.post('/shipping/delhivery/pickup-request', {
-        pickupLocation: pickupLocationSelection,
+        pickupLocation: pickupLocationName,
         pickupDate,
         pickupTime: pickupTimeSlot,
         expectedPackageCount: expectedPackages,
@@ -1202,14 +1207,22 @@ export default function DelhiveryShippingAdminPage() {
                               {(linkedPickup.timeSlot ? String(linkedPickup.timeSlot).split(' ')[0] : 'Slot')} ({String(linkedPickup.status || 'SCHEDULED').replace(/_/g, ' ')})
                             </div>
                           </div>
-                        ) : (
+                        ) : hasAwb ? (
                           <button
                             type="button"
                             onClick={() => openPickupModalForOrders([order])}
-                            className="text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-lg transition"
+                            className="text-2xs font-semibold text-emerald-700 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 px-2 py-1 rounded-lg transition flex items-center gap-1"
                           >
+                            <Calendar className="w-3 h-3 text-emerald-600" />
                             + Schedule Pickup
                           </button>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-semibold text-neutral-400 bg-neutral-100 border border-neutral-200 px-2 py-1 rounded-lg select-none"
+                            title="Click 'Dispatch Delhivery' to generate AWB before scheduling driver pickup"
+                          >
+                            🔒 Assign AWB First
+                          </span>
                         )}
                       </td>
 

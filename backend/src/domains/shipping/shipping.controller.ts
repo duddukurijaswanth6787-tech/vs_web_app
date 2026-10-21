@@ -129,6 +129,20 @@ export class ShippingController {
     );
   }
 
+  @Post('delhivery/dispatch/:orderId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Dispatch an order with Delhivery live courier API and generate AWB',
+  })
+  async dispatchWithDelhivery(@Param('orderId') orderId: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.dispatchOrderWithDelhivery(orderId),
+      'Order dispatched with Delhivery successfully',
+    );
+  }
+
   @Get('delhivery/pickup-requests')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('super_admin', 'admin')
