@@ -22,6 +22,7 @@ import {
   Table as TableIcon,
   Barcode as BarcodeIcon,
   User,
+  Trash2,
 } from 'lucide-react';
 import { productService } from '@/features/catalog/products/product.service';
 import {
@@ -89,10 +90,15 @@ export default function StoreExpoInventoryPage() {
   const [printProduct, setPrintProduct] = useState<ProductItem | null>(null);
   const [stickerCopies, setStickerCopies] = useState<number>(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [stickerSize, setStickerSize] = useState<'75x50' | '50x25'>('75x50');
+  const [stickerSize, setStickerSize] = useState<'50x30' | '50x25' | '50x50' | '75x50'>('50x30');
+  const [includeQrCode, setIncludeQrCode] = useState<boolean>(false);
 
   // Product Details Modal
   const [viewProduct, setViewProduct] = useState<ProductItem | null>(null);
+
+  // Delete Confirmation State
+  const [productToDelete, setProductToDelete] = useState<ProductItem | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Quick Expo Add Modal State
   const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
@@ -200,8 +206,35 @@ export default function StoreExpoInventoryPage() {
   const handleOpenPrintModal = (prod: ProductItem) => {
     setPrintProduct(prod);
     setStickerCopies(1);
+    setStickerSize('50x30');
+    setIncludeQrCode(false);
     if (prod.variants && prod.variants.length > 0) {
       setSelectedVariantId(prod.variants[0].id);
+    }
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!productToDelete) return;
+    setIsDeleting(true);
+    try {
+      await productService.delete(productToDelete.id);
+      setProducts((prev) => prev.filter((p) => p.id !== productToDelete.id));
+      setQuickFeedback({
+        type: 'success',
+        message: `Product "${productToDelete.name}" was successfully deleted from the database.`,
+      });
+      setProductToDelete(null);
+      if (viewProduct?.id === productToDelete.id) {
+        setViewProduct(null);
+      }
+      await fetchProducts();
+    } catch (err) {
+      setQuickFeedback({
+        type: 'error',
+        message: getApiErrorMessage(err, 'Failed to delete product from database'),
+      });
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -210,12 +243,24 @@ export default function StoreExpoInventoryPage() {
     const activeVar =
       printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
     const barcodeCode = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 75, 2.6);
-    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 140);
-    const is3x2 = stickerSize === '75x50';
+    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 70, 2.4);
+    const qrImgUrl = generateQrCodeSvgDataUrl(barcodeCode, 120);
     const copies = Math.max(1, stickerCopies);
 
-    const stickerCardsHtml = Array.from({ length: copies }).map(() => `
+    const sizeMap: Record<
+      '50x30' | '50x25' | '50x50' | '75x50',
+      { width: number; height: number; barcodeW: number; barcodeH: number; fontScale: number }
+    > = {
+      '50x30': { width: 50, height: 30, barcodeW: 42, barcodeH: 9.5, fontScale: 1 },
+      '50x25': { width: 50, height: 25, barcodeW: 40, barcodeH: 7.5, fontScale: 0.9 },
+      '50x50': { width: 50, height: 50, barcodeW: 44, barcodeH: 14, fontScale: 1.1 },
+      '75x50': { width: 75, height: 50, barcodeW: 52, barcodeH: 14, fontScale: 1.15 },
+    };
+    const cfg = sizeMap[stickerSize] || sizeMap['50x30'];
+
+    const stickerCardsHtml = Array.from({ length: copies })
+      .map(
+        () => `
       <div class="sticker-card">
         <div class="header-row">
           <span class="header-diamond">❖</span>
@@ -224,44 +269,68 @@ export default function StoreExpoInventoryPage() {
         <div class="divider"></div>
         <div class="product-title">${printProduct.name}${activeVar?.title ? ` | ${activeVar.title}` : ''}</div>
         <div class="sku-badge">${activeVar?.sku || barcodeCode}</div>
-        <div class="code-container">
-          <div class="barcode-box">
+
+        ${
+          includeQrCode
+            ? `
+          <div class="code-container">
+            <div class="barcode-box">
+              <img src="${barcodeImgUrl}" alt="barcode" />
+              <div class="barcode-num">${barcodeCode}</div>
+            </div>
+            <div class="dashed-line"></div>
+            <div class="qr-box">
+              <img src="${qrImgUrl}" alt="qr" />
+            </div>
+          </div>
+        `
+            : `
+          <div class="barcode-full-box">
             <img src="${barcodeImgUrl}" alt="barcode" />
             <div class="barcode-num">${barcodeCode}</div>
           </div>
-          <div class="dashed-line"></div>
-          <div class="qr-box">
-            <img src="${qrImgUrl}" alt="qr" />
-          </div>
-        </div>
+        `
+        }
+
         <div class="divider"></div>
         <div class="price">₹${(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}</div>
       </div>
-    `).join('');
+    `,
+      )
+      .join('');
 
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Print Expo Sticker - ${printProduct.name}</title>
+        <title>Print Label - ${printProduct.name}</title>
         <style>
-          @page { size: ${is3x2 ? '76mm 50mm' : '50mm 25mm'}; margin: 0mm; }
-          * { box-sizing: border-box; margin: 0; padding: 0; }
-          html, body {
-            width: ${is3x2 ? '76mm' : '50mm'};
-            height: ${is3x2 ? '50mm' : '25mm'};
+          @page {
+            size: ${cfg.width}mm ${cfg.height}mm;
+            margin: 0mm !important;
+          }
+          * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            background: #fff;
+          }
+          html, body {
+            width: ${cfg.width}mm;
+            height: ${cfg.height}mm;
+            max-height: ${cfg.height}mm;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: #ffffff;
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+            overflow: hidden !important;
           }
           .sticker-card {
-            width: ${is3x2 ? '76mm' : '50mm'};
-            height: ${is3x2 ? '48mm' : '24mm'};
-            max-height: ${is3x2 ? '48mm' : '24mm'};
-            padding: ${is3x2 ? '2mm 3mm 6mm 3mm' : '1mm 2mm 3mm 2mm'};
+            width: ${cfg.width}mm;
+            height: ${cfg.height - 0.8}mm;
+            max-height: ${cfg.height - 0.8}mm;
+            padding: 1.2mm 2mm;
             text-align: center;
             background: #ffffff;
             box-sizing: border-box;
@@ -273,8 +342,7 @@ export default function StoreExpoInventoryPage() {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: flex-start;
-            gap: 0.8mm;
+            justify-content: space-between;
             border: none;
           }
           .sticker-card:last-child {
@@ -282,21 +350,25 @@ export default function StoreExpoInventoryPage() {
             break-after: avoid !important;
           }
           @media print {
-            @page { size: ${is3x2 ? '76mm 50mm' : '50mm 25mm'}; margin: 0mm; }
+            @page {
+              size: ${cfg.width}mm ${cfg.height}mm;
+              margin: 0mm !important;
+            }
             html, body {
-              width: ${is3x2 ? '76mm' : '50mm'} !important;
-              height: ${is3x2 ? '50mm' : '25mm'} !important;
+              width: ${cfg.width}mm !important;
+              height: ${cfg.height}mm !important;
+              max-height: ${cfg.height}mm !important;
               margin: 0 !important;
               padding: 0 !important;
               overflow: hidden !important;
             }
             .sticker-card {
-              width: ${is3x2 ? '76mm' : '50mm'} !important;
-              height: ${is3x2 ? '48mm' : '24mm'} !important;
-              max-height: ${is3x2 ? '48mm' : '24mm'} !important;
+              width: ${cfg.width}mm !important;
+              height: ${cfg.height - 0.8}mm !important;
+              max-height: ${cfg.height - 0.8}mm !important;
+              padding: 1.2mm 2mm !important;
               border: none !important;
               margin: 0 !important;
-              padding: ${is3x2 ? '2mm 3mm 6mm 3mm' : '1mm 2mm 3mm 2mm'} !important;
               box-sizing: border-box !important;
               page-break-after: always !important;
               break-after: page !important;
@@ -306,27 +378,122 @@ export default function StoreExpoInventoryPage() {
               display: flex !important;
               flex-direction: column !important;
               align-items: center !important;
-              justify-content: flex-start !important;
-              gap: 0.8mm !important;
+              justify-content: space-between !important;
             }
             .sticker-card:last-child {
               page-break-after: avoid !important;
               break-after: avoid !important;
             }
           }
-          .header-row { display: flex; align-items: center; justify-content: center; gap: 4px; }
-          .header-diamond { color: #0284c7; font-size: 9.5px; font-weight: bold; line-height: 1; }
-          .store-title { font-family: Georgia, serif; font-size: 9.5px; font-weight: 800; letter-spacing: 0.8px; color: #111111; line-height: 1; }
-          .divider { width: 100%; height: 1px; background: #e5e5e5; margin: 0.2mm 0; }
-          .product-title { font-size: 8.5px; font-weight: 700; color: #1f2937; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; line-height: 1.1; }
-          .sku-badge { display: inline-block; background: #000000; color: #ffffff; border-radius: 9999px; padding: 1px 8px; font-family: monospace; font-size: 8px; font-weight: 800; letter-spacing: 0.6px; margin: 0.2mm 0; line-height: 1.1; }
-          .code-container { display: flex; align-items: center; justify-content: center; gap: 6px; width: 100%; margin: 0.2mm 0; }
-          .barcode-box { flex: 1; display: flex; flex-direction: column; align-items: center; }
-          .barcode-box img { height: 10.5mm; width: 100%; max-width: 42mm; object-fit: contain; image-rendering: pixelated; }
-          .barcode-num { font-family: monospace; font-size: 8px; font-weight: 700; color: #111111; letter-spacing: 0.5px; margin-top: 1px; line-height: 1; }
-          .dashed-line { height: 10.5mm; border-right: 1px dashed #cccccc; }
-          .qr-box img { width: 10.5mm; height: 10.5mm; object-fit: contain; }
-          .price { font-size: 15px; font-weight: 900; color: #000000; line-height: 1; margin-top: 0.5mm; }
+          .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 3px;
+          }
+          .header-diamond {
+            color: #0284c7;
+            font-size: ${8 * cfg.fontScale}px;
+            font-weight: bold;
+            line-height: 1;
+          }
+          .store-title {
+            font-family: Georgia, serif;
+            font-size: ${8.5 * cfg.fontScale}px;
+            font-weight: 800;
+            letter-spacing: 0.6px;
+            color: #111111;
+            line-height: 1;
+          }
+          .divider {
+            width: 100%;
+            height: 1px;
+            background: #e5e5e5;
+            margin: 0.2mm 0;
+          }
+          .product-title {
+            font-size: ${7.5 * cfg.fontScale}px;
+            font-weight: 700;
+            color: #1f2937;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
+            line-height: 1.1;
+          }
+          .sku-badge {
+            display: inline-block;
+            background: #000000;
+            color: #ffffff;
+            border-radius: 9999px;
+            padding: 1px 6px;
+            font-family: monospace;
+            font-size: ${7 * cfg.fontScale}px;
+            font-weight: 800;
+            letter-spacing: 0.5px;
+            line-height: 1.1;
+          }
+          .barcode-full-box {
+            width: 100%;
+            max-width: ${cfg.barcodeW}mm;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0.2mm 0;
+          }
+          .barcode-full-box img {
+            height: ${cfg.barcodeH}mm;
+            width: 100%;
+            max-width: ${cfg.barcodeW}mm;
+            object-fit: contain;
+            image-rendering: pixelated;
+          }
+          .code-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 2mm;
+            width: 100%;
+            max-width: ${cfg.width - 4}mm;
+            margin: 0.2mm 0;
+          }
+          .barcode-box {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: ${cfg.width > 60 ? '44mm' : '28mm'};
+          }
+          .barcode-box img {
+            height: ${cfg.barcodeH}mm;
+            width: 100%;
+            object-fit: contain;
+            image-rendering: pixelated;
+          }
+          .barcode-num {
+            font-family: monospace;
+            font-size: ${7 * cfg.fontScale}px;
+            font-weight: 700;
+            color: #111111;
+            letter-spacing: 0.4px;
+            margin-top: 0.5px;
+            line-height: 1;
+          }
+          .dashed-line {
+            height: ${cfg.barcodeH}mm;
+            border-right: 1px dashed #cccccc;
+          }
+          .qr-box img {
+            width: ${cfg.barcodeH}mm;
+            height: ${cfg.barcodeH}mm;
+            object-fit: contain;
+          }
+          .price {
+            font-size: ${12 * cfg.fontScale}px;
+            font-weight: 900;
+            color: #000000;
+            line-height: 1;
+          }
         </style>
       </head>
       <body>
@@ -334,7 +501,7 @@ export default function StoreExpoInventoryPage() {
         <script>
           window.onload = function() {
             window.print();
-            setTimeout(function() { window.close(); }, 500);
+            setTimeout(function() { window.close(); }, 600);
           };
         </script>
       </body>
@@ -347,6 +514,7 @@ export default function StoreExpoInventoryPage() {
       printWin.document.close();
     }
   };
+
 
   const handleToggleSize = (sz: string) => {
     if (quickSizes.includes(sz)) {
@@ -791,6 +959,14 @@ export default function StoreExpoInventoryPage() {
                     <Printer className="h-3.5 w-3.5" />
                     Print Sticker
                   </button>
+
+                  <button
+                    onClick={() => setProductToDelete(prod)}
+                    title="Delete product from database"
+                    className="inline-flex items-center justify-center rounded-xl border border-rose-200 bg-white p-2 text-rose-600 transition hover:bg-rose-50 hover:border-rose-300"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             );
@@ -935,9 +1111,17 @@ export default function StoreExpoInventoryPage() {
                           <button
                             onClick={() => handleOpenPrintModal(prod)}
                             className="inline-flex items-center gap-1.5 rounded-lg bg-sky-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-sky-500"
+                            title="Print Label"
                           >
                             <Printer className="h-3.5 w-3.5" />
                             Print
+                          </button>
+                          <button
+                            onClick={() => setProductToDelete(prod)}
+                            className="rounded-lg border border-rose-200 bg-white p-2 text-rose-600 hover:bg-rose-50 hover:border-rose-300"
+                            title="Delete Product from Database"
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </button>
                         </div>
                       </td>
@@ -1176,29 +1360,84 @@ export default function StoreExpoInventoryPage() {
 
             {/* Sticker Size Options */}
             <div className="mb-4">
-              <label className="mb-1 block text-xs font-semibold text-slate-700">Label Dimensions</label>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Label Dimensions (Roll Size)</label>
               <div className="grid grid-cols-2 gap-2">
                 <button
                   type="button"
-                  onClick={() => setStickerSize('75x50')}
-                  className={`rounded-xl p-2 text-xs font-bold transition ${
-                    stickerSize === '75x50'
-                      ? 'border border-sky-500 bg-sky-50 text-sky-700'
-                      : 'border border-slate-200 bg-slate-50 text-slate-600'
+                  onClick={() => setStickerSize('50x30')}
+                  className={`rounded-xl p-2.5 text-xs font-bold transition text-left ${
+                    stickerSize === '50x30'
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800 shadow-xs'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  75 × 50 mm (Standard)
+                  <div>50 × 30 mm</div>
+                  <div className="text-[10px] font-normal text-slate-500">Standard 2&quot; × 1.2&quot; Roll</div>
                 </button>
                 <button
                   type="button"
                   onClick={() => setStickerSize('50x25')}
-                  className={`rounded-xl p-2 text-xs font-bold transition ${
+                  className={`rounded-xl p-2.5 text-xs font-bold transition text-left ${
                     stickerSize === '50x25'
-                      ? 'border border-sky-500 bg-sky-50 text-sky-700'
-                      : 'border border-slate-200 bg-slate-50 text-slate-600'
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800 shadow-xs'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
                   }`}
                 >
-                  50 × 25 mm (Compact)
+                  <div>50 × 25 mm</div>
+                  <div className="text-[10px] font-normal text-slate-500">Compact 2&quot; × 1&quot; Tag</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStickerSize('50x50')}
+                  className={`rounded-xl p-2.5 text-xs font-bold transition text-left ${
+                    stickerSize === '50x50'
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800 shadow-xs'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div>50 × 50 mm</div>
+                  <div className="text-[10px] font-normal text-slate-500">Square 2&quot; × 2&quot; Roll</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setStickerSize('75x50')}
+                  className={`rounded-xl p-2.5 text-xs font-bold transition text-left ${
+                    stickerSize === '75x50'
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800 shadow-xs'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  <div>75 × 50 mm</div>
+                  <div className="text-[10px] font-normal text-slate-500">Wide 3&quot; × 2&quot; Shipping</div>
+                </button>
+              </div>
+            </div>
+
+            {/* Layout Code Toggle */}
+            <div className="mb-4">
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Code Format</label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIncludeQrCode(false)}
+                  className={`rounded-xl p-2 text-xs font-bold transition ${
+                    !includeQrCode
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Barcode Only (Recommended)
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIncludeQrCode(true)}
+                  className={`rounded-xl p-2 text-xs font-bold transition ${
+                    includeQrCode
+                      ? 'border-2 border-sky-600 bg-sky-50 text-sky-800'
+                      : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100'
+                  }`}
+                >
+                  Barcode + QR Code
                 </button>
               </div>
             </div>
@@ -1208,16 +1447,16 @@ export default function StoreExpoInventoryPage() {
               const activeVar =
                 printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
               const barcodeVal = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 75, 2.6);
-              const qrSvg = generateQrCodeSvgDataUrl(barcodeVal, 140);
+              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 70, 2.4);
+              const qrSvg = generateQrCodeSvgDataUrl(barcodeVal, 120);
 
               return (
-                <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-4 text-center text-slate-900 shadow-md">
+                <div className="mb-3 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3.5 text-center text-slate-900 shadow-sm max-w-sm mx-auto">
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="text-sky-600 text-xs">❖</span>
                     <span className="font-serif text-xs font-black tracking-widest text-slate-900">VASANTHI DESIGNERS</span>
                   </div>
-                  <div className="my-1.5 h-[1px] w-full bg-slate-100" />
+                  <div className="my-1 h-[1px] w-full bg-slate-100" />
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
                   {activeVar?.title && <p className="text-[11px] text-slate-500 font-medium">{activeVar.title}</p>}
                   <div className="my-1">
@@ -1225,25 +1464,47 @@ export default function StoreExpoInventoryPage() {
                       {activeVar?.sku || barcodeVal}
                     </span>
                   </div>
-                  <div className="my-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50/80 p-2 border border-slate-100">
-                    <div className="flex-1 flex flex-col items-center">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={barcodeSvg} alt={barcodeVal} className="h-14 w-full max-w-[200px] object-contain" />
-                      <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
+
+                  {includeQrCode ? (
+                    <div className="my-2 flex items-center justify-center gap-2 rounded-xl bg-slate-50 p-2 border border-slate-100">
+                      <div className="flex-1 flex flex-col items-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={barcodeSvg} alt={barcodeVal} className="h-10 w-full max-w-[140px] object-contain" />
+                        <span className="mt-0.5 font-mono text-[10px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
+                      </div>
+                      <div className="h-10 w-[1px] border-r border-dashed border-slate-300" />
+                      <div className="flex items-center justify-center">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img src={qrSvg} alt="QR" className="h-10 w-10 object-contain" />
+                      </div>
                     </div>
-                    <div className="h-14 w-[1px] border-r border-dashed border-slate-300" />
-                    <div className="flex items-center justify-center">
+                  ) : (
+                    <div className="my-2 flex flex-col items-center justify-center rounded-xl bg-slate-50 p-2 border border-slate-100">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={qrSvg} alt="QR" className="h-12 w-12 object-contain" />
+                      <img src={barcodeSvg} alt={barcodeVal} className="h-10 w-full max-w-[200px] object-contain" />
+                      <span className="mt-0.5 font-mono text-[10px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
                     </div>
-                  </div>
-                  <div className="my-1.5 h-[1px] w-full bg-slate-100" />
+                  )}
+
+                  <div className="my-1 h-[1px] w-full bg-slate-100" />
                   <p className="text-base font-black text-slate-900">
                     ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
                   </p>
                 </div>
               );
             })()}
+
+            {/* Thermal Printer Settings Advice */}
+            <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50/70 p-2.5 text-xs text-sky-950 flex items-start gap-2">
+              <span className="text-sm">💡</span>
+              <div>
+                <p className="font-bold text-[11px] text-sky-900">1-Sticker Printing Tip for Munbyn / ITPP130:</p>
+                <p className="text-[11px] text-sky-700 leading-relaxed">
+                  In Chrome&apos;s print preview, click <strong>&quot;More settings&quot;</strong> and select <strong>Margins: None</strong>.
+                </p>
+              </div>
+            </div>
+
 
             {/* Sticker Copies */}
             <div className="mb-5 flex items-center justify-between">
@@ -1382,6 +1643,89 @@ export default function StoreExpoInventoryPage() {
               >
                 <Printer className="h-3.5 w-3.5" />
                 Print Sticker
+              </button>
+              <button
+                onClick={() => {
+                  const p = viewProduct;
+                  setProductToDelete(p);
+                }}
+                className="inline-flex items-center justify-center gap-1.5 rounded-xl border border-rose-200 bg-rose-50 px-4 py-2.5 text-xs font-bold text-rose-700 hover:bg-rose-100 transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 7. DELETE CONFIRMATION MODAL */}
+      {productToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 p-4 backdrop-blur-sm">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-2xl border border-slate-200">
+            <div className="flex items-center gap-3">
+              <div className="flex h-12 w-12 flex-shrink-0 items-center justify-center rounded-2xl bg-rose-100 text-rose-600">
+                <Trash2 className="h-6 w-6" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">Delete Product from Database?</h3>
+                <p className="text-xs text-slate-500">This action will permanently remove the item and stock.</p>
+              </div>
+            </div>
+
+            <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3.5 text-xs text-slate-700 space-y-1.5">
+              <div className="flex justify-between">
+                <span className="font-medium text-slate-500">Product Name:</span>
+                <span className="font-bold text-slate-900 truncate max-w-[220px]">{productToDelete.name}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium text-slate-500">Price:</span>
+                <span className="font-bold text-slate-900">
+                  ₹{(productToDelete.salePrice || productToDelete.basePrice || 0).toLocaleString('en-IN')}
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="font-medium text-slate-500">Channel:</span>
+                <span className="font-semibold text-slate-700">{productToDelete.channel || 'STORE_EXPO'}</span>
+              </div>
+              {productToDelete.variants && productToDelete.variants.length > 0 && (
+                <div className="flex justify-between">
+                  <span className="font-medium text-slate-500">Variants:</span>
+                  <span className="font-semibold text-slate-700">{productToDelete.variants.length} variant(s)</span>
+                </div>
+              )}
+            </div>
+
+            <p className="mt-3 text-xs text-rose-600 font-medium">
+              ⚠️ Warning: Deleting will remove this product from the database, inventory counts, and POS barcode searches.
+            </p>
+
+            <div className="mt-6 flex items-center justify-end gap-3">
+              <button
+                type="button"
+                onClick={() => setProductToDelete(null)}
+                disabled={isDeleting}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="inline-flex items-center gap-1.5 rounded-xl bg-rose-600 px-4 py-2 text-xs font-bold text-white shadow-xs hover:bg-rose-500 disabled:opacity-50"
+              >
+                {isDeleting ? (
+                  <>
+                    <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                    Deleting...
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="h-3.5 w-3.5" />
+                    Yes, Delete
+                  </>
+                )}
               </button>
             </div>
           </div>
