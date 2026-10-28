@@ -78,6 +78,180 @@ const PRESET_COLORS = [
 
 const PRESET_SIZES = ['Free Size', 'XS', 'S', 'M', 'L', 'XL', 'XXL', '3XL'];
 
+export type StickerDimension = '3-up-3x2' | '3-up-50' | '3-up-25' | '3x1.6' | '3x2' | '2x1';
+
+export interface StickerSizeConfig {
+  id: StickerDimension;
+  title: string;
+  badge: string;
+  description: string;
+  columns: number;
+  pageWidth: string;
+  pageHeight: string;
+  cardWidth: string;
+  cardHeight: string;
+  padding: string;
+  brandFont: string;
+  diamondSize: string;
+  titleFont: string;
+  variantFont: string;
+  skuFont: string;
+  skuPadding: string;
+  barcodeHeight: string;
+  barcodeMaxW: string;
+  barcodeNumFont: string;
+  priceFont: string;
+  svgHeight: number;
+  svgBarWidth: number;
+}
+
+export const STICKER_SIZES: StickerSizeConfig[] = [
+  {
+    id: '3-up-3x2',
+    title: '3" × 2" Roll (3-Across) — 76 × 50 mm (25 × 50 mm each)',
+    badge: '⭐ 3" × 2" (3-Across)',
+    description: 'Exact 3" × 2" (76×50mm) roll with 3 stickers across (~25×50mm each) — prints all 3 across simultaneously with zero blank waste',
+    columns: 3,
+    pageWidth: '76mm',
+    pageHeight: '50mm',
+    cardWidth: '24mm',
+    cardHeight: '48mm',
+    padding: '0.8mm 1mm',
+    brandFont: '6.5px',
+    diamondSize: '6px',
+    titleFont: '7px',
+    variantFont: '6px',
+    skuFont: '6px',
+    skuPadding: '0.4px 4px',
+    barcodeHeight: '10mm',
+    barcodeMaxW: '22mm',
+    barcodeNumFont: '6.5px',
+    priceFont: '11.5px',
+    svgHeight: 60,
+    svgBarWidth: 1.5,
+  },
+  {
+    id: '3-up-50',
+    title: '4" × 2" Roll (3-Across) — 105 × 50 mm (35 × 50 mm each)',
+    badge: '4" × 2" (3-Across)',
+    description: '3 stickers across on wider 4" (105mm) roll — fills all 3 stickers across, zero blank waste',
+    columns: 3,
+    pageWidth: '105mm',
+    pageHeight: '50mm',
+    cardWidth: '33mm',
+    cardHeight: '48mm',
+    padding: '1mm 1.5mm',
+    brandFont: '7.5px',
+    diamondSize: '7px',
+    titleFont: '8px',
+    variantFont: '7px',
+    skuFont: '7px',
+    skuPadding: '0.5px 5px',
+    barcodeHeight: '11mm',
+    barcodeMaxW: '31mm',
+    barcodeNumFont: '7.5px',
+    priceFont: '13px',
+    svgHeight: 70,
+    svgBarWidth: 1.8,
+  },
+  {
+    id: '3-up-25',
+    title: '3-Across Roll (3-Up) — 35 × 25 mm (105mm total)',
+    badge: '3-Across Compact',
+    description: '3 compact stickers in 1 row (105×25mm) — barcode & price across all 3 stickers',
+    columns: 3,
+    pageWidth: '105mm',
+    pageHeight: '25mm',
+    cardWidth: '33mm',
+    cardHeight: '24mm',
+    padding: '0.6mm 1mm',
+    brandFont: '6.5px',
+    diamondSize: '6px',
+    titleFont: '6.5px',
+    variantFont: '5.5px',
+    skuFont: '6px',
+    skuPadding: '0.3px 4px',
+    barcodeHeight: '6.5mm',
+    barcodeMaxW: '31mm',
+    barcodeNumFont: '6px',
+    priceFont: '9.5px',
+    svgHeight: 55,
+    svgBarWidth: 1.6,
+  },
+  {
+    id: '3x2',
+    title: '3" × 2" (76 × 50 mm) — Single 1-Up',
+    badge: 'Single 3×2"',
+    description: 'Full-size 3×2" single retail tag for 1-up single sticker rolls',
+    columns: 1,
+    pageWidth: '76mm',
+    pageHeight: '50mm',
+    cardWidth: '76mm',
+    cardHeight: '49mm',
+    padding: '1.8mm 3mm',
+    brandFont: '11.5px',
+    diamondSize: '10px',
+    titleFont: '10.5px',
+    variantFont: '8.5px',
+    skuFont: '9px',
+    skuPadding: '1.5px 10px',
+    barcodeHeight: '14mm',
+    barcodeMaxW: '68mm',
+    barcodeNumFont: '9.5px',
+    priceFont: '16.5px',
+    svgHeight: 80,
+    svgBarWidth: 2.3,
+  },
+  {
+    id: '3x1.6',
+    title: '3" × 1.6" (76 × 40 mm) — Single 1-Up',
+    badge: 'Single 1-Up',
+    description: 'Calibrated for 3" single thermal roll — prints full width edge-to-edge on 1 sticker',
+    columns: 1,
+    pageWidth: '76mm',
+    pageHeight: '40mm',
+    cardWidth: '76mm',
+    cardHeight: '39mm',
+    padding: '1.2mm 2.5mm',
+    brandFont: '10.5px',
+    diamondSize: '9px',
+    titleFont: '9.5px',
+    variantFont: '8px',
+    skuFont: '8px',
+    skuPadding: '1px 8px',
+    barcodeHeight: '11.5mm',
+    barcodeMaxW: '68mm',
+    barcodeNumFont: '8.5px',
+    priceFont: '14.5px',
+    svgHeight: 70,
+    svgBarWidth: 2.2,
+  },
+  {
+    id: '2x1',
+    title: '2" × 1" (50 × 25 mm) — Single 1-Up',
+    badge: 'Single 2×1"',
+    description: 'Compact 50×25mm tag for smaller labels & narrow tags on 1-up rolls',
+    columns: 1,
+    pageWidth: '50mm',
+    pageHeight: '25mm',
+    cardWidth: '50mm',
+    cardHeight: '24mm',
+    padding: '0.8mm 1.5mm',
+    brandFont: '7px',
+    diamondSize: '7px',
+    titleFont: '6px',
+    variantFont: '5.5px',
+    skuFont: '6px',
+    skuPadding: '0.5px 5px',
+    barcodeHeight: '7mm',
+    barcodeMaxW: '42mm',
+    barcodeNumFont: '6px',
+    priceFont: '9.5px',
+    svgHeight: 65,
+    svgBarWidth: 2.2,
+  },
+];
+
 export default function StoreExpoInventoryPage() {
   const [products, setProducts] = useState<ProductItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,7 +264,8 @@ export default function StoreExpoInventoryPage() {
   const [printProduct, setPrintProduct] = useState<ProductItem | null>(null);
   const [stickerCopies, setStickerCopies] = useState<number>(1);
   const [selectedVariantId, setSelectedVariantId] = useState<string>('');
-  const [stickerSize, setStickerSize] = useState<'75x50'>('75x50');
+  const [stickerSize, setStickerSize] = useState<StickerDimension>('3-up-3x2');
+  const [fillFullRow, setFillFullRow] = useState<boolean>(true);
 
   // Product Details Modal
   const [viewProduct, setViewProduct] = useState<ProductItem | null>(null);
@@ -205,7 +380,7 @@ export default function StoreExpoInventoryPage() {
   const handleOpenPrintModal = (prod: ProductItem) => {
     setPrintProduct(prod);
     setStickerCopies(1);
-    setStickerSize('75x50');
+    setStickerSize('3x1.6');
     if (prod.variants && prod.variants.length > 0) {
       setSelectedVariantId(prod.variants[0].id);
     }
@@ -241,19 +416,20 @@ export default function StoreExpoInventoryPage() {
     const activeVar =
       printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
     const barcodeCode = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 65, 2.2);
     const copies = Math.max(1, stickerCopies);
 
-    const stickerCardsHtml = Array.from({ length: copies })
-      .map(
-        () => `
+    const cfg = STICKER_SIZES.find((s) => s.id === stickerSize) || STICKER_SIZES[0];
+    const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, cfg.svgHeight, cfg.svgBarWidth);
+
+    const singleCardHtml = `
       <div class="sticker-card">
         <div class="header-row">
           <span class="header-diamond">❖</span>
           <span class="store-title">VASANTHI'S SIGNATURE</span>
         </div>
         <div class="divider"></div>
-        <div class="product-title">${printProduct.name}${activeVar?.title ? ` | ${activeVar.title}` : ''}</div>
+        <div class="product-title">${printProduct.name}</div>
+        ${activeVar?.title ? `<div class="variant-title">${activeVar.title}</div>` : ''}
         <div class="sku-badge">${activeVar?.sku || barcodeCode}</div>
 
         <div class="barcode-box">
@@ -263,29 +439,58 @@ export default function StoreExpoInventoryPage() {
 
         <div class="price">₹${(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}</div>
       </div>
-    `,
-      )
-      .join('');
+    `;
+
+    let contentHtml = '';
+    if (cfg.columns === 3) {
+      // For 3-across rolls, 1 row = 3 horizontal stickers.
+      // If fillFullRow is checked: each "copy" is 1 full row (3 printed stickers).
+      // If unchecked: copies is the exact count of stickers, padded with transparent cards to maintain alignment.
+      const totalCards = fillFullRow ? copies * 3 : copies;
+      const totalRows = Math.ceil(totalCards / 3);
+      const rowsHtml: string[] = [];
+
+      for (let r = 0; r < totalRows; r++) {
+        const rowCards: string[] = [];
+        for (let c = 0; c < 3; c++) {
+          const cardIdx = r * 3 + c;
+          if (cardIdx < totalCards) {
+            rowCards.push(singleCardHtml);
+          } else {
+            rowCards.push('<div class="sticker-card" style="visibility: hidden; opacity: 0;"></div>');
+          }
+        }
+        rowsHtml.push(`
+          <div class="sticker-row">
+            ${rowCards.join('')}
+          </div>
+        `);
+      }
+      contentHtml = rowsHtml.join('');
+    } else {
+      contentHtml = Array.from({ length: copies }).map(() => singleCardHtml).join('');
+    }
 
     const html = `
       <!DOCTYPE html>
       <html>
       <head>
+        <meta charset="utf-8" />
         <title>Print Label - ${printProduct.name}</title>
         <style>
           @page {
-            size: 50mm 25mm;
+            size: ${cfg.pageWidth} ${cfg.pageHeight};
             margin: 0mm !important;
           }
           * {
-            box-sizing: border-box;
+            box-sizing: border-box !important;
             margin: 0;
             padding: 0;
           }
           html, body {
-            width: 50mm !important;
-            height: 25mm !important;
-            max-height: 25mm !important;
+            width: ${cfg.pageWidth} !important;
+            height: ${cfg.pageHeight} !important;
+            max-height: ${cfg.pageHeight} !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff;
@@ -294,84 +499,127 @@ export default function StoreExpoInventoryPage() {
             print-color-adjust: exact;
             overflow: hidden !important;
           }
+          .sticker-row {
+            width: ${cfg.pageWidth} !important;
+            height: ${cfg.pageHeight} !important;
+            max-height: ${cfg.pageHeight} !important;
+            display: flex !important;
+            flex-direction: row !important;
+            justify-content: space-between !important;
+            align-items: center !important;
+            page-break-after: always !important;
+            break-after: page !important;
+            page-break-inside: avoid !important;
+            break-inside: avoid !important;
+            overflow: hidden !important;
+            box-sizing: border-box !important;
+            padding: 0 1.5mm !important;
+          }
+          .sticker-row:last-child {
+            page-break-after: avoid !important;
+            break-after: avoid !important;
+          }
           .sticker-card {
-            width: 50mm !important;
-            height: 24mm !important;
-            max-height: 24mm !important;
-            padding: 0.8mm 1.5mm !important;
+            width: ${cfg.cardWidth} !important;
+            height: ${cfg.cardHeight} !important;
+            max-height: ${cfg.cardHeight} !important;
+            padding: ${cfg.padding} !important;
             text-align: center;
             background: #ffffff;
             box-sizing: border-box !important;
-            page-break-after: always;
-            break-after: page;
+            ${cfg.columns === 1 ? 'page-break-after: always; break-after: page;' : 'page-break-after: auto; break-after: auto;'}
             page-break-inside: avoid !important;
             break-inside: avoid !important;
             overflow: hidden !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
-            justify-content: flex-start !important;
+            justify-content: space-between !important;
             border: none !important;
             margin: 0 auto !important;
           }
+          ${cfg.columns === 1 ? `
           .sticker-card:last-child {
             page-break-after: avoid !important;
             break-after: avoid !important;
           }
+          ` : ''}
           @media print {
             @page {
-              size: 50mm 25mm;
+              size: ${cfg.pageWidth} ${cfg.pageHeight};
               margin: 0mm !important;
             }
             html, body {
-              width: 50mm !important;
-              height: 25mm !important;
-              max-height: 25mm !important;
+              width: ${cfg.pageWidth} !important;
+              height: ${cfg.pageHeight} !important;
+              max-height: ${cfg.pageHeight} !important;
               margin: 0 !important;
               padding: 0 !important;
               overflow: hidden !important;
             }
+            .sticker-row {
+              width: ${cfg.pageWidth} !important;
+              height: ${cfg.pageHeight} !important;
+              max-height: ${cfg.pageHeight} !important;
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              padding: 0 1.5mm !important;
+            }
+            .sticker-row:last-child {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
             .sticker-card {
-              width: 50mm !important;
-              height: 24mm !important;
-              max-height: 24mm !important;
-              padding: 0.8mm 1.5mm !important;
+              width: ${cfg.cardWidth} !important;
+              height: ${cfg.cardHeight} !important;
+              max-height: ${cfg.cardHeight} !important;
+              padding: ${cfg.padding} !important;
               border: none !important;
               margin: 0 auto !important;
               box-sizing: border-box !important;
-              page-break-after: always !important;
-              break-after: page !important;
+              ${cfg.columns === 1 ? 'page-break-after: always !important; break-after: page !important;' : 'page-break-after: auto !important; break-after: auto !important;'}
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               overflow: hidden !important;
               display: flex !important;
               flex-direction: column !important;
               align-items: center !important;
-              justify-content: flex-start !important;
+              justify-content: space-between !important;
             }
+            ${cfg.columns === 1 ? `
             .sticker-card:last-child {
               page-break-after: avoid !important;
               break-after: avoid !important;
             }
+            ` : ''}
           }
           .header-row {
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 2px;
+            gap: 3px;
             line-height: 1;
+            width: 100%;
           }
           .header-diamond {
             color: #0284c7;
-            font-size: 7px;
+            font-size: ${cfg.diamondSize};
             font-weight: bold;
             line-height: 1;
           }
           .store-title {
             font-family: Georgia, serif;
-            font-size: 7px;
+            font-size: ${cfg.brandFont};
             font-weight: 800;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
             color: #111111;
             line-height: 1;
             text-transform: uppercase;
@@ -380,35 +628,45 @@ export default function StoreExpoInventoryPage() {
             width: 100%;
             height: 0.5px;
             background: #e5e5e5;
-            margin: 0.5mm 0 0.4mm 0;
+            margin: 0.3mm 0;
           }
           .product-title {
-            font-size: 6px;
+            font-size: ${cfg.titleFont};
             font-weight: 700;
             color: #1f2937;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
-            max-width: 46mm;
+            max-width: 95%;
+            line-height: 1.15;
+          }
+          .variant-title {
+            font-size: ${cfg.variantFont};
+            font-weight: 600;
+            color: #64748b;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 95%;
             line-height: 1.1;
-            margin-bottom: 0.5mm;
+            margin-top: 0.2mm;
           }
           .sku-badge {
             display: inline-block;
             background: #000000;
             color: #ffffff;
             border-radius: 9999px;
-            padding: 0.5px 5px;
+            padding: ${cfg.skuPadding};
             font-family: monospace;
-            font-size: 6px;
+            font-size: ${cfg.skuFont};
             font-weight: 800;
-            letter-spacing: 0.4px;
+            letter-spacing: 0.5px;
             line-height: 1;
-            margin-bottom: 0.5mm;
+            margin: 0.3mm 0;
           }
           .barcode-box {
             width: 100%;
-            max-width: 44mm;
+            max-width: ${cfg.barcodeMaxW};
             display: flex;
             flex-direction: column;
             align-items: center;
@@ -416,34 +674,33 @@ export default function StoreExpoInventoryPage() {
             margin: 0 auto;
           }
           .barcode-box img {
-            height: 7mm;
+            height: ${cfg.barcodeHeight};
             width: 100%;
-            max-width: 42mm;
-            object-fit: contain;
+            max-width: ${cfg.barcodeMaxW};
+            object-fit: fill;
             image-rendering: pixelated;
             display: block;
           }
           .barcode-num {
             font-family: monospace;
-            font-size: 6px;
+            font-size: ${cfg.barcodeNumFont};
             font-weight: 700;
             color: #111111;
-            letter-spacing: 0.5px;
+            letter-spacing: 1px;
             line-height: 1;
             margin-top: 0.3mm;
           }
           .price {
-            font-size: 9.5px;
+            font-size: ${cfg.priceFont};
             font-weight: 900;
             color: #000000;
             line-height: 1;
-            margin-top: 0.6mm;
             letter-spacing: -0.2px;
           }
         </style>
       </head>
       <body>
-        ${stickerCardsHtml}
+        ${contentHtml}
         <script>
           window.onload = function() {
             window.print();
@@ -454,7 +711,7 @@ export default function StoreExpoInventoryPage() {
       </html>
     `;
 
-    const printWin = window.open('', '_blank', 'width=450,height=600');
+    const printWin = window.open('', '_blank', 'width=500,height=650');
     if (printWin) {
       printWin.document.write(html);
       printWin.document.close();
@@ -1304,18 +1561,52 @@ export default function StoreExpoInventoryPage() {
               </div>
             )}
 
-            {/* Single Standard Option - Fits 1 Sticker */}
+            {/* Label Dimensions Selector */}
             <div className="mb-4">
-              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Label Dimensions</label>
-              <div className="flex items-center justify-between rounded-xl border-2 border-sky-600 bg-sky-50/70 p-3 text-sky-950">
-                <div className="flex items-center gap-2.5">
-                  <span className="flex h-7 w-7 items-center justify-center rounded-lg bg-sky-600 text-white text-xs font-bold shadow-xs">✓</span>
-                  <div>
-                    <div className="text-xs font-extrabold text-sky-950">Standard Garment Tag (50 × 25 mm / 2&quot; - 2.5&quot;)</div>
-                    <div className="text-[11px] text-sky-700 font-medium">Calibrated for apparel tags &amp; stickers — prints cleanly on 1 label</div>
-                  </div>
-                </div>
-                <span className="rounded-full border border-sky-200 bg-white px-2.5 py-1 text-[11px] font-bold text-sky-700 shadow-xs">1 Sticker</span>
+              <label className="mb-1.5 block text-xs font-semibold text-slate-700">Select Label Dimensions</label>
+              <div className="grid grid-cols-1 gap-2">
+                {STICKER_SIZES.map((opt) => {
+                  const isSelected = stickerSize === opt.id;
+                  return (
+                    <button
+                      key={opt.id}
+                      type="button"
+                      onClick={() => setStickerSize(opt.id)}
+                      className={`flex items-center justify-between rounded-xl border-2 p-2.5 text-left transition-all ${
+                        isSelected
+                          ? 'border-sky-600 bg-sky-50/80 text-sky-950 shadow-xs ring-1 ring-sky-600/20'
+                          : 'border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`flex h-6 w-6 items-center justify-center rounded-lg text-xs font-bold transition-all ${
+                            isSelected
+                              ? 'bg-sky-600 text-white shadow-xs'
+                              : 'border border-slate-300 bg-slate-100 text-transparent'
+                          }`}
+                        >
+                          ✓
+                        </span>
+                        <div>
+                          <div className="text-xs font-bold">{opt.title}</div>
+                          <div className={`text-[10px] ${isSelected ? 'text-sky-700' : 'text-slate-500'}`}>
+                            {opt.description}
+                          </div>
+                        </div>
+                      </div>
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-bold ${
+                          isSelected
+                            ? 'bg-sky-600 text-white'
+                            : 'border border-slate-200 bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {opt.badge}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
@@ -1324,13 +1615,82 @@ export default function StoreExpoInventoryPage() {
               const activeVar =
                 printProduct.variants?.find((v) => v.id === selectedVariantId) || printProduct.variants?.[0];
               const barcodeVal = activeVar?.barcode || activeVar?.sku || `BC-${printProduct.id}`;
-              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, 65, 2.2);
+              const cfg = STICKER_SIZES.find((s) => s.id === stickerSize) || STICKER_SIZES[0];
+              const barcodeSvg = generateCode128SvgDataUrl(barcodeVal, cfg.svgHeight, cfg.svgBarWidth);
+
+              const renderMiniCard = (key: number) => (
+                <div
+                  key={key}
+                  className="flex-1 min-w-0 rounded-xl border border-slate-200 bg-white p-2 text-center text-slate-900 shadow-2xs flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-center gap-0.5 mb-0.5">
+                      <span className="text-sky-600 text-[9px]">❖</span>
+                      <span className="font-serif text-[8px] font-black tracking-wider text-slate-900 truncate">
+                        VASANTHI
+                      </span>
+                    </div>
+                    <div className="my-0.5 h-[0.5px] w-full bg-slate-100" />
+                    <p className="text-[9px] font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
+                    {activeVar?.title && <p className="text-[8px] text-slate-500 font-medium truncate">{activeVar.title}</p>}
+                    <div className="my-0.5">
+                      <span className="inline-block rounded-full bg-slate-900 px-1.5 py-0.2 font-mono text-[8px] font-extrabold text-white">
+                        {activeVar?.sku || barcodeVal}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="my-1 flex flex-col items-center justify-center rounded-lg bg-slate-50 p-1 border border-slate-100">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={barcodeSvg}
+                      alt={barcodeVal}
+                      className="h-8 w-full object-contain max-w-[90px]"
+                    />
+                    <span className="mt-0.5 font-mono text-[8px] font-bold text-slate-900 truncate max-w-full">
+                      {barcodeVal}
+                    </span>
+                    <p className="mt-0.5 text-xs font-black text-slate-900">
+                      ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                </div>
+              );
+
+              if (cfg.columns === 3) {
+                return (
+                  <div className="mb-4 rounded-2xl border-2 border-dashed border-sky-300 bg-sky-50/40 p-2.5">
+                    <div className="flex items-center justify-between mb-1.5 px-1">
+                      <span className="text-[11px] font-bold text-sky-900">
+                        Preview: 1 Full Row (3 Horizontal Stickers)
+                      </span>
+                      <span className="rounded-full bg-sky-100 px-2 py-0.5 text-[9px] font-bold text-sky-800">
+                        105 × {cfg.pageHeight}
+                      </span>
+                    </div>
+                    <div className="flex items-stretch gap-1.5">
+                      {renderMiniCard(1)}
+                      {renderMiniCard(2)}
+                      {renderMiniCard(3)}
+                    </div>
+                  </div>
+                );
+              }
 
               return (
-                <div className="mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3 text-center text-slate-900 shadow-sm max-w-[280px] mx-auto">
+                <div
+                  className={`mb-4 rounded-2xl border-2 border-dashed border-slate-300 bg-white p-3 text-center text-slate-900 shadow-sm mx-auto transition-all ${
+                    stickerSize === '2x1'
+                      ? 'max-w-[260px]'
+                      : stickerSize === '3x2'
+                        ? 'max-w-[340px]'
+                        : 'max-w-[340px]'
+                  }`}
+                >
                   <div className="flex items-center justify-center gap-1 mb-1">
                     <span className="text-sky-600 text-xs">❖</span>
-                    <span className="font-serif text-[11px] font-black tracking-widest text-slate-900">VASANTHI&apos;S SIGNATURE</span>
+                    <span className="font-serif text-[11px] font-black tracking-widest text-slate-900">
+                      VASANTHI&apos;S SIGNATURE
+                    </span>
                   </div>
                   <div className="my-1.5 h-[1px] w-full bg-slate-100" />
                   <p className="text-xs font-bold text-slate-800 line-clamp-1">{printProduct.name}</p>
@@ -1342,8 +1702,20 @@ export default function StoreExpoInventoryPage() {
                   </div>
                   <div className="my-2 flex flex-col items-center justify-center rounded-xl bg-slate-50 p-2.5 border border-slate-100">
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={barcodeSvg} alt={barcodeVal} className="h-10 w-full max-w-[200px] object-contain" />
-                    <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">{barcodeVal}</span>
+                    <img
+                      src={barcodeSvg}
+                      alt={barcodeVal}
+                      className={`w-full object-contain ${
+                        stickerSize === '3x2'
+                          ? 'h-14 max-w-[270px]'
+                          : stickerSize === '3x1.6'
+                            ? 'h-12 max-w-[270px]'
+                            : 'h-9 max-w-[190px]'
+                      }`}
+                    />
+                    <span className="mt-1 font-mono text-[11px] font-bold tracking-wider text-slate-900">
+                      {barcodeVal}
+                    </span>
                     <p className="mt-1.5 text-base font-black text-slate-900">
                       ₹{(printProduct.salePrice || printProduct.basePrice || 0).toLocaleString('en-IN')}
                     </p>
@@ -1352,21 +1724,49 @@ export default function StoreExpoInventoryPage() {
               );
             })()}
 
+            {/* 3-Across Fill Toggle */}
+            {STICKER_SIZES.find((s) => s.id === stickerSize)?.columns === 3 && (
+              <label className="mb-4 flex items-center justify-between rounded-xl border border-sky-200 bg-sky-50/80 p-3 cursor-pointer">
+                <div className="pr-2">
+                  <div className="text-xs font-bold text-sky-950">Fill Entire Row (Print All 3 Across)</div>
+                  <div className="text-[11px] text-sky-700">
+                    Eliminates blank stickers by printing product tags on all 3 horizontal stickers.
+                  </div>
+                </div>
+                <input
+                  type="checkbox"
+                  checked={fillFullRow}
+                  onChange={(e) => setFillFullRow(e.target.checked)}
+                  className="h-4 w-4 rounded border-sky-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                />
+              </label>
+            )}
+
             {/* Thermal Printer Settings Tip */}
             <div className="mb-4 rounded-xl border border-sky-100 bg-sky-50/70 p-2.5 text-xs text-sky-950 flex items-start gap-2">
               <span className="text-sm">💡</span>
               <div>
-                <p className="font-bold text-[11px] text-sky-900">Printer Tip:</p>
+                <p className="font-bold text-[11px] text-sky-900">Browser Print Settings for Thermal Rolls:</p>
                 <p className="text-[11px] text-sky-700 leading-relaxed">
-                  In Chrome&apos;s print preview, set <strong>Margins: None</strong> so it prints cleanly on 1 sticker.
+                  Set <strong>Margins: None</strong> and select <strong>Paper size: 105mm × 50mm</strong> (or 4&quot; × 2&quot;) so all 3 horizontal stickers align perfectly.
                 </p>
               </div>
             </div>
 
-
             {/* Sticker Copies */}
             <div className="mb-5 flex items-center justify-between">
-              <label className="text-xs font-semibold text-slate-700">Sticker Copies</label>
+              <div>
+                <label className="text-xs font-semibold text-slate-700 block">
+                  {STICKER_SIZES.find((s) => s.id === stickerSize)?.columns === 3 && fillFullRow
+                    ? 'Rows to Print'
+                    : 'Sticker Copies'}
+                </label>
+                {STICKER_SIZES.find((s) => s.id === stickerSize)?.columns === 3 && fillFullRow && (
+                  <span className="text-[10px] text-sky-700 font-medium">
+                    ({stickerCopies} row{stickerCopies > 1 ? 's' : ''} = {stickerCopies * 3} stickers printed)
+                  </span>
+                )}
+              </div>
               <div className="flex items-center gap-2">
                 <button
                   type="button"

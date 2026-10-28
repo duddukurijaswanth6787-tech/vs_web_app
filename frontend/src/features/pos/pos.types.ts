@@ -1,12 +1,14 @@
 export type PosPaymentMethod = 'CASH' | 'UPI' | 'CARD' | 'CREDIT' | 'SPLIT';
 
-/** SMALL 50x25mm (barcode only), MEDIUM 75x40mm (adds a QR), LARGE 100x50mm (full branded design with QR). */
-export type LabelSize = 'SMALL' | 'MEDIUM' | 'LARGE';
+/** THREE_UP 3"x2" (76x50mm, 3 across), THREE_UP_WIDE 4"x2" (105x50mm, 3 across), MEDIUM 76x50mm, LARGE 100x50mm, SMALL 50x25mm. */
+export type LabelSize = 'THREE_UP' | 'THREE_UP_WIDE' | 'MEDIUM' | 'LARGE' | 'SMALL';
 
-export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string; description: string }[] = [
-  { value: 'MEDIUM', title: 'Standard (3×2")', dimensions: '76 × 50mm', description: 'Industry-standard 3x2" retail tag — extra-large barcode + QR code for instant scanning' },
-  { value: 'LARGE', title: 'Large (4×2")', dimensions: '100 × 50mm', description: 'Full branded designer tag — logo, SKU badge, wide barcode & QR' },
-  { value: 'SMALL', title: 'Compact (2×1")', dimensions: '50 × 25mm', description: 'Compact garment tag — barcode + SKU + price only' },
+export const LABEL_SIZE_OPTIONS: { value: LabelSize; title: string; dimensions: string; description: string; columns: number }[] = [
+  { value: 'THREE_UP', title: '3" × 2" (3-Across)', dimensions: '76 × 50mm (25×50mm each)', description: 'Exact 3" × 2" roll with 3 stickers across — prints on all 3 horizontal stickers simultaneously with zero blank waste', columns: 3 },
+  { value: 'THREE_UP_WIDE', title: '4" × 2" (3-Across)', dimensions: '105 × 50mm (35×50mm each)', description: '4" × 2" roll with 3 stickers across (35×50mm each)', columns: 3 },
+  { value: 'MEDIUM', title: 'Standard (3×2" Single)', dimensions: '76 × 50mm (1-Up)', description: 'Single 3x2" retail tag for 1-up single rolls', columns: 1 },
+  { value: 'LARGE', title: 'Large (4×2" Single)', dimensions: '100 × 50mm (1-Up)', description: 'Single 4x2" designer tag for 1-up rolls', columns: 1 },
+  { value: 'SMALL', title: 'Compact (2×1" Single)', dimensions: '50 × 25mm (1-Up)', description: 'Single 50×25mm tag for 1-up rolls', columns: 1 },
 ];
 
 export interface PosCartItem {

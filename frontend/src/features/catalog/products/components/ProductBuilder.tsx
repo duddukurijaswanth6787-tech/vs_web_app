@@ -250,7 +250,7 @@ export default function ProductBuilder({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [saveMessage, setSaveMessage] = useState<string | null>(null);
   const [issuedVariants, setIssuedVariants] = useState<IssuedVariant[]>([]);
-  const [labelSize, setLabelSize] = useState<LabelSize>('SMALL');
+  const [labelSize, setLabelSize] = useState<LabelSize>('THREE_UP');
   const [labelQtyBySku, setLabelQtyBySku] = useState<Record<string, number>>({});
   const [printingSku, setPrintingSku] = useState<string | null>(null);
   const [isCopilotOpen, setIsCopilotOpen] = useState(false);
@@ -2095,9 +2095,126 @@ export default function ProductBuilder({
     try {
       const qty = Math.max(1, labelQtyBySku[variant.sku] || 1);
       const barcodeCode = variant.barcode || variant.sku;
-      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, 65, 2.2);
 
-      const stickerCardsHtml = Array.from({ length: qty }).map(() => `
+      const sizeConfig = {
+        THREE_UP: {
+          columns: 3,
+          pageWidth: '76mm',
+          pageHeight: '50mm',
+          cardWidth: '24mm',
+          cardHeight: '48mm',
+          padding: '0.8mm 1mm',
+          brandFont: '6.5px',
+          diamondSize: '6px',
+          titleFont: '7px',
+          skuFont: '6px',
+          skuPadding: '0.4px 4px',
+          barcodeHeight: '10mm',
+          barcodeMaxW: '22mm',
+          barcodeNumFont: '6.5px',
+          priceFont: '11.5px',
+          svgHeight: 60,
+          svgBarWidth: 1.5,
+        },
+        THREE_UP_WIDE: {
+          columns: 3,
+          pageWidth: '105mm',
+          pageHeight: '50mm',
+          cardWidth: '33mm',
+          cardHeight: '48mm',
+          padding: '1mm 1.5mm',
+          brandFont: '7.5px',
+          diamondSize: '7px',
+          titleFont: '8px',
+          skuFont: '7px',
+          skuPadding: '0.5px 5px',
+          barcodeHeight: '11mm',
+          barcodeMaxW: '31mm',
+          barcodeNumFont: '7.5px',
+          priceFont: '13px',
+          svgHeight: 70,
+          svgBarWidth: 1.8,
+        },
+        MEDIUM: {
+          columns: 1,
+          pageWidth: '76mm',
+          pageHeight: '50mm',
+          cardWidth: '76mm',
+          cardHeight: '49mm',
+          padding: '1.8mm 3mm',
+          brandFont: '11.5px',
+          diamondSize: '10px',
+          titleFont: '10.5px',
+          skuFont: '9px',
+          skuPadding: '1.5px 10px',
+          barcodeHeight: '14mm',
+          barcodeMaxW: '68mm',
+          barcodeNumFont: '9.5px',
+          priceFont: '16.5px',
+          svgHeight: 80,
+          svgBarWidth: 2.3,
+        },
+        LARGE: {
+          columns: 1,
+          pageWidth: '100mm',
+          pageHeight: '50mm',
+          cardWidth: '100mm',
+          cardHeight: '49mm',
+          padding: '2mm 4mm',
+          brandFont: '12px',
+          diamondSize: '11px',
+          titleFont: '11px',
+          skuFont: '9.5px',
+          skuPadding: '2px 12px',
+          barcodeHeight: '15mm',
+          barcodeMaxW: '88mm',
+          barcodeNumFont: '10px',
+          priceFont: '18px',
+          svgHeight: 85,
+          svgBarWidth: 2.5,
+        },
+        SMALL: {
+          columns: 1,
+          pageWidth: '50mm',
+          pageHeight: '25mm',
+          cardWidth: '50mm',
+          cardHeight: '24mm',
+          padding: '0.8mm 1.5mm',
+          brandFont: '7px',
+          diamondSize: '7px',
+          titleFont: '6px',
+          skuFont: '6px',
+          skuPadding: '0.5px 5px',
+          barcodeHeight: '7mm',
+          barcodeMaxW: '42mm',
+          barcodeNumFont: '6px',
+          priceFont: '9.5px',
+          svgHeight: 65,
+          svgBarWidth: 2.2,
+        },
+      }[labelSize] || {
+        columns: 3,
+        pageWidth: '76mm',
+        pageHeight: '50mm',
+        cardWidth: '24mm',
+        cardHeight: '48mm',
+        padding: '0.8mm 1mm',
+        brandFont: '6.5px',
+        diamondSize: '6px',
+        titleFont: '7px',
+        skuFont: '6px',
+        skuPadding: '0.4px 4px',
+        barcodeHeight: '10mm',
+        barcodeMaxW: '22mm',
+        barcodeNumFont: '6.5px',
+        priceFont: '11.5px',
+        svgHeight: 60,
+        svgBarWidth: 1.5,
+      };
+
+      const barcodeImgUrl = generateCode128SvgDataUrl(barcodeCode, sizeConfig.svgHeight, sizeConfig.svgBarWidth);
+
+      const singleCardHtml = `
         <div class="sticker-card">
           <div class="header-row">
             <span class="header-diamond">❖</span>
@@ -2112,27 +2229,48 @@ export default function ProductBuilder({
           </div>
           <div class="price">₹${variant.price}</div>
         </div>
-      `).join('');
+      `;
+
+      let contentHtml = '';
+      if (sizeConfig.columns === 3) {
+        // In 3-across rolls, 1 row = 3 horizontal stickers.
+        // We print across all 3 stickers in each row so zero stickers are wasted.
+        const totalRows = qty;
+        const rowsHtml: string[] = [];
+        for (let r = 0; r < totalRows; r++) {
+          rowsHtml.push(`
+            <div class="sticker-row">
+              ${singleCardHtml}
+              ${singleCardHtml}
+              ${singleCardHtml}
+            </div>
+          `);
+        }
+        contentHtml = rowsHtml.join('');
+      } else {
+        contentHtml = Array.from({ length: qty }).map(() => singleCardHtml).join('');
+      }
 
       const html = `
         <!DOCTYPE html>
         <html>
         <head>
+          <meta charset="utf-8" />
           <title>Print Barcode Stickers - ${variant.sku}</title>
           <style>
             @page {
-              size: 50mm 25mm;
+              size: ${sizeConfig.pageWidth} ${sizeConfig.pageHeight};
               margin: 0mm !important;
             }
             * {
-              box-sizing: border-box;
+              box-sizing: border-box !important;
               margin: 0;
               padding: 0;
             }
             html, body {
-              width: 50mm !important;
-              height: 25mm !important;
-              max-height: 25mm !important;
+              width: ${sizeConfig.pageWidth} !important;
+              height: ${sizeConfig.pageHeight} !important;
+              max-height: ${sizeConfig.pageHeight} !important;
               margin: 0 !important;
               padding: 0 !important;
               background: #ffffff;
@@ -2141,84 +2279,127 @@ export default function ProductBuilder({
               print-color-adjust: exact;
               overflow: hidden !important;
             }
+            .sticker-row {
+              width: ${sizeConfig.pageWidth} !important;
+              height: ${sizeConfig.pageHeight} !important;
+              max-height: ${sizeConfig.pageHeight} !important;
+              display: flex !important;
+              flex-direction: row !important;
+              justify-content: space-between !important;
+              align-items: center !important;
+              page-break-after: always !important;
+              break-after: page !important;
+              page-break-inside: avoid !important;
+              break-inside: avoid !important;
+              overflow: hidden !important;
+              box-sizing: border-box !important;
+              padding: 0 1.5mm !important;
+            }
+            .sticker-row:last-child {
+              page-break-after: avoid !important;
+              break-after: avoid !important;
+            }
             .sticker-card {
-              width: 50mm !important;
-              height: 24mm !important;
-              max-height: 24mm !important;
-              padding: 0.8mm 1.5mm !important;
+              width: ${sizeConfig.cardWidth} !important;
+              height: ${sizeConfig.cardHeight} !important;
+              max-height: ${sizeConfig.cardHeight} !important;
+              padding: ${sizeConfig.padding} !important;
               text-align: center;
               background: #ffffff;
               box-sizing: border-box !important;
-              page-break-after: always;
-              break-after: page;
+              ${sizeConfig.columns === 1 ? 'page-break-after: always; break-after: page;' : 'page-break-after: auto; break-after: auto;'}
               page-break-inside: avoid !important;
               break-inside: avoid !important;
               overflow: hidden !important;
               display: flex !important;
               flex-direction: column !important;
               align-items: center !important;
-              justify-content: flex-start !important;
+              justify-content: space-between !important;
               border: none !important;
               margin: 0 auto !important;
             }
+            ${sizeConfig.columns === 1 ? `
             .sticker-card:last-child {
               page-break-after: avoid !important;
               break-after: avoid !important;
             }
+            ` : ''}
             @media print {
               @page {
-                size: 50mm 25mm;
+                size: ${sizeConfig.pageWidth} ${sizeConfig.pageHeight};
                 margin: 0mm !important;
               }
               html, body {
-                width: 50mm !important;
-                height: 25mm !important;
-                max-height: 25mm !important;
+                width: ${sizeConfig.pageWidth} !important;
+                height: ${sizeConfig.pageHeight} !important;
+                max-height: ${sizeConfig.pageHeight} !important;
                 margin: 0 !important;
                 padding: 0 !important;
                 overflow: hidden !important;
               }
+              .sticker-row {
+                width: ${sizeConfig.pageWidth} !important;
+                height: ${sizeConfig.pageHeight} !important;
+                max-height: ${sizeConfig.pageHeight} !important;
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: space-between !important;
+                align-items: center !important;
+                page-break-after: always !important;
+                break-after: page !important;
+                page-break-inside: avoid !important;
+                break-inside: avoid !important;
+                overflow: hidden !important;
+                box-sizing: border-box !important;
+                padding: 0 1.5mm !important;
+              }
+              .sticker-row:last-child {
+                page-break-after: avoid !important;
+                break-after: avoid !important;
+              }
               .sticker-card {
-                width: 50mm !important;
-                height: 24mm !important;
-                max-height: 24mm !important;
-                padding: 0.8mm 1.5mm !important;
+                width: ${sizeConfig.cardWidth} !important;
+                height: ${sizeConfig.cardHeight} !important;
+                max-height: ${sizeConfig.cardHeight} !important;
+                padding: ${sizeConfig.padding} !important;
                 border: none !important;
                 margin: 0 auto !important;
                 box-sizing: border-box !important;
-                page-break-after: always !important;
-                break-after: page !important;
+                ${sizeConfig.columns === 1 ? 'page-break-after: always !important; break-after: page !important;' : 'page-break-after: auto !important; break-after: auto !important;'}
                 page-break-inside: avoid !important;
                 break-inside: avoid !important;
                 overflow: hidden !important;
                 display: flex !important;
                 flex-direction: column !important;
                 align-items: center !important;
-                justify-content: flex-start !important;
+                justify-content: space-between !important;
               }
+              ${sizeConfig.columns === 1 ? `
               .sticker-card:last-child {
                 page-break-after: avoid !important;
                 break-after: avoid !important;
               }
+              ` : ''}
             }
             .header-row {
               display: flex;
               align-items: center;
               justify-content: center;
-              gap: 2px;
+              gap: 3px;
               line-height: 1;
+              width: 100%;
             }
             .header-diamond {
               color: #0284c7;
-              font-size: 7px;
+              font-size: ${sizeConfig.diamondSize};
               font-weight: bold;
               line-height: 1;
             }
             .store-title {
               font-family: Georgia, serif;
-              font-size: 7px;
+              font-size: ${sizeConfig.brandFont};
               font-weight: 800;
-              letter-spacing: 0.5px;
+              letter-spacing: 0.8px;
               color: #111111;
               line-height: 1;
               text-transform: uppercase;
@@ -2227,35 +2408,34 @@ export default function ProductBuilder({
               width: 100%;
               height: 0.5px;
               background: #e5e5e5;
-              margin: 0.5mm 0 0.4mm 0;
+              margin: 0.3mm 0;
             }
             .product-title {
-              font-size: 6px;
+              font-size: ${sizeConfig.titleFont};
               font-weight: 700;
               color: #1f2937;
               white-space: nowrap;
               overflow: hidden;
               text-overflow: ellipsis;
-              max-width: 46mm;
-              line-height: 1.1;
-              margin-bottom: 0.5mm;
+              max-width: 95%;
+              line-height: 1.15;
             }
             .sku-badge {
               display: inline-block;
               background: #000000;
               color: #ffffff;
               border-radius: 9999px;
-              padding: 0.5px 5px;
+              padding: ${sizeConfig.skuPadding};
               font-family: monospace;
-              font-size: 6px;
+              font-size: ${sizeConfig.skuFont};
               font-weight: 800;
-              letter-spacing: 0.4px;
+              letter-spacing: 0.5px;
               line-height: 1;
-              margin-bottom: 0.5mm;
+              margin: 0.3mm 0;
             }
             .barcode-box {
               width: 100%;
-              max-width: 44mm;
+              max-width: ${sizeConfig.barcodeMaxW};
               display: flex;
               flex-direction: column;
               align-items: center;
@@ -2263,34 +2443,33 @@ export default function ProductBuilder({
               margin: 0 auto;
             }
             .barcode-box img {
-              height: 7mm;
+              height: ${sizeConfig.barcodeHeight};
               width: 100%;
-              max-width: 42mm;
-              object-fit: contain;
+              max-width: ${sizeConfig.barcodeMaxW};
+              object-fit: fill;
               image-rendering: pixelated;
               display: block;
             }
             .barcode-num {
               font-family: monospace;
-              font-size: 6px;
+              font-size: ${sizeConfig.barcodeNumFont};
               font-weight: 700;
               color: #111111;
-              letter-spacing: 0.5px;
+              letter-spacing: 1px;
               line-height: 1;
               margin-top: 0.3mm;
             }
             .price {
-              font-size: 9.5px;
+              font-size: ${sizeConfig.priceFont};
               font-weight: 900;
               color: #000000;
               line-height: 1;
-              margin-top: 0.6mm;
               letter-spacing: -0.2px;
             }
           </style>
         </head>
         <body>
-          ${stickerCardsHtml}
+          ${contentHtml}
         </body>
         </html>
       `;
