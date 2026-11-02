@@ -299,7 +299,18 @@ export class OrderLifecycleService {
         'ORDER_WAYBILL_REQUIRED',
       );
     }
-    if (nextStatus === 'CONFIRMED') await this.deductTx(tx, orderId, userId);
+    const DEDUCTION_STATUSES = [
+      'CONFIRMED',
+      'PROCESSING',
+      'PACKING',
+      'READY_TO_SHIP',
+      'SHIPPED',
+      'OUT_FOR_DELIVERY',
+      'DELIVERED',
+    ];
+    if (DEDUCTION_STATUSES.includes(nextStatus)) {
+      await this.deductTx(tx, orderId, userId);
+    }
     if (nextStatus === 'CANCELLED') await this.restoreTx(tx, orderId, userId);
     const updated = await tx.order.update({
       where: { id: orderId },

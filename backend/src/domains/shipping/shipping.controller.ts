@@ -186,6 +186,36 @@ export class ShippingController {
     );
   }
 
+  @Post('delhivery/pickup-request/:id/complete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('super_admin', 'admin')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Mark Delhivery courier pickup completed and transition orders to SHIPPED' })
+  async completePickup(@Param('id') id: string) {
+    return ResponseBuilder.success(
+      await this.delhiveryService.completePickupRequest(id),
+      'Pickup marked completed and orders updated',
+    );
+  }
+
+  @Post('delhivery/sync-all')
+  @ApiOperation({ summary: 'Coordinate with Delhivery tracking API to update all active shipments and deduct stock' })
+  async syncAllActiveShipments() {
+    return ResponseBuilder.success(
+      await this.delhiveryService.syncActiveShipments(),
+      'Delhivery tracking sync executed successfully',
+    );
+  }
+
+  @Get('delhivery/sync-all')
+  @ApiOperation({ summary: 'Coordinate with Delhivery tracking API to update all active shipments and deduct stock' })
+  async syncAllActiveShipmentsGet() {
+    return ResponseBuilder.success(
+      await this.delhiveryService.syncActiveShipments(),
+      'Delhivery tracking sync executed successfully',
+    );
+  }
+
   @Get('methods')
   @ApiOperation({ summary: 'List all shipping methods' })
   async getMethods() {

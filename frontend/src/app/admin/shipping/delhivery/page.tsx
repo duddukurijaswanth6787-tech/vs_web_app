@@ -136,6 +136,45 @@ export default function DelhiveryShippingAdminPage() {
 
   // End of Day Manifest State
   const [isGeneratingManifest, setIsGeneratingManifest] = useState(false);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+  const [completingPickupId, setCompletingPickupId] = useState<string | null>(null);
+
+  const handleSyncAllShipments = async () => {
+    setIsSyncingAll(true);
+    try {
+      const res = await apiClient.post('/shipping/delhivery/sync-all');
+      const data = res.data?.data || res.data;
+      toast(
+        'success',
+        'Delhivery Sync Completed',
+        `Checked ${data?.totalChecked ?? 0} shipments. ${data?.updatedCount ?? 0} updated (${data?.deliveredCount ?? 0} delivered, ${data?.shippedCount ?? 0} picked up). Stock updated automatically.`,
+      );
+      loadTodayOrders();
+      loadPickupRequests();
+    } catch (err) {
+      toast('error', 'Tracking Sync Failed', getApiErrorMessage(err));
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
+
+  const handleCompletePickup = async (pickupId: string) => {
+    setCompletingPickupId(pickupId);
+    try {
+      await apiClient.post(`/shipping/delhivery/pickup-request/${encodeURIComponent(pickupId)}/complete`);
+      toast(
+        'success',
+        'Pickup Completed',
+        'Delhivery driver picked up parcel(s). Status updated to SHIPPED and stock deducted automatically!',
+      );
+      loadPickupRequests();
+      loadTodayOrders();
+    } catch (err) {
+      toast('error', 'Failed to complete pickup', getApiErrorMessage(err));
+    } finally {
+      setCompletingPickupId(null);
+    }
+  };
   const [manifestData, setManifestData] = useState<any | null>(null);
 
   // Today's Orders & Dispatch Queue State
@@ -755,6 +794,18 @@ export default function DelhiveryShippingAdminPage() {
             <span>Schedule Driver Pickup</span>
           </button>
 
+          {/* Sync Live Delhivery Tracking & Stock */}
+          <button
+            type="button"
+            onClick={handleSyncAllShipments}
+            disabled={isSyncingAll}
+            className="bg-sky-600 hover:bg-sky-700 disabled:opacity-50 text-white font-bold px-3.5 py-2 rounded-xl text-xs transition flex items-center gap-1.5 shadow-xs cursor-pointer"
+            title="Coordinates with Delhivery tracking API (auto-runs every 5 hours). Updates delivery and reduces stock automatically."
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isSyncingAll ? 'animate-spin' : ''}`} />
+            <span>{isSyncingAll ? 'Syncing...' : 'Sync Live Delhivery'}</span>
+          </button>
+
           {/* Daily Handover Manifest */}
           <button
             type="button"
@@ -896,14 +947,28 @@ export default function DelhiveryShippingAdminPage() {
                         </div>
                       </div>
 
-                      <button
-                        type="button"
-                        onClick={() => handleCancelPickup(pickup.pickupId)}
-                        className="text-neutral-400 hover:text-red-600 p-1 rounded-lg transition"
-                        title="Cancel Pickup Request"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1.5">
+                        {pickup.status !== 'COMPLETED' && (
+                          <button
+                            type="button"
+                            onClick={() => handleCompletePickup(pickup.pickupId)}
+                            disabled={completingPickupId === pickup.pickupId}
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-2xs px-2.5 py-1 rounded-lg transition flex items-center gap-1 shadow-2xs cursor-pointer"
+                            title="Confirm driver picked up packages and deduct stock"
+                          >
+                            <CheckCircle2 className="w-3 h-3" />
+                            <span>{completingPickupId === pickup.pickupId ? 'Updating...' : 'Mark Picked Up'}</span>
+                          </button>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => handleCancelPickup(pickup.pickupId)}
+                          className="text-neutral-400 hover:text-red-600 p-1 rounded-lg transition"
+                          title="Cancel Pickup Request"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
 
                     {/* Slot & Warehouse Details */}
