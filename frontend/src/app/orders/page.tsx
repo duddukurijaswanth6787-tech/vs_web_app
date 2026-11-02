@@ -341,14 +341,6 @@ export default function OrdersPage() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    {returnsEnabled && isDelivered && (
-                      <Link
-                        href={`/orders/return/${order.orderNumber}`}
-                        className="inline-flex items-center gap-1 px-3 py-1.5 text-neutral-600 hover:text-neutral-900 text-xs font-medium"
-                      >
-                        <RotateCcw className="w-3.5 h-3.5" /> Return
-                      </Link>
-                    )}
                     {isDelivered && (
                       <Link
                         href={`/orders/review/${order.orderNumber}`}

@@ -411,8 +411,8 @@ export const LiveDesktopProductPreview = React.memo(function LiveDesktopProductP
                     <p className="text-[10px] font-bold text-neutral-800">Free Shipping</p>
                   </div>
                   <div className="p-2.5 bg-neutral-50 rounded-xl space-y-1">
-                    <RotateCcw className="w-4 h-4 text-[#0284c7] mx-auto" />
-                    <p className="text-[10px] font-bold text-neutral-800">10 Days Return</p>
+                    <Truck className="w-4 h-4 text-[#0284c7] mx-auto" />
+                    <p className="text-[10px] font-bold text-neutral-800">Express Dispatch</p>
                   </div>
                   <div className="p-2.5 bg-neutral-50 rounded-xl space-y-1">
                     <ShieldCheck className="w-4 h-4 text-[#0284c7] mx-auto" />

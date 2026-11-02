@@ -12,7 +12,6 @@ import {
   PackageCheck,
   FileText,
   XCircle,
-  RotateCcw,
   Star,
   AlertCircle,
   CheckCircle2,
@@ -179,15 +178,6 @@ export default function OrderDetailsPage() {
             >
               <XCircle className="w-4 h-4" /> Cancel Order
             </button>
-          )}
-
-          {isDelivered && (
-            <Link
-              href={`/orders/return?orderId=${encodeURIComponent(order.orderNumber)}`}
-              className="px-3 py-2.5 bg-sky-50 text-[var(--brand-primary)] border border-sky-200 rounded-xl font-bold hover:bg-sky-100 transition-colors flex items-center gap-1"
-            >
-              <RotateCcw className="w-4 h-4" /> Return / Exchange
-            </Link>
           )}
         </div>
 

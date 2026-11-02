@@ -427,7 +427,7 @@ function AccountSidebar({ onLogout }: { onLogout: () => void }) {
           <Link href="/orders" className="flex items-center justify-between px-4 py-3.5 hover:bg-sky-50/30 transition-colors">
             <span className="flex items-center gap-3 text-xs font-semibold text-neutral-800">
               <Package className="w-4 h-4 text-[var(--brand-primary)]" />
-              <span>My Orders &amp; Returns</span>
+              <span>My Orders</span>
             </span>
             <ChevronRight className="w-4 h-4 text-neutral-400" />
           </Link>

@@ -83,7 +83,6 @@ export function StorefrontFooter() {
                 <li><Link href="/contact" className="hover:text-[var(--footer-link-hover)] transition-colors">Contact Us</Link></li>
                 <li><Link href="/pricing" className="hover:text-[var(--footer-link-hover)] transition-colors">Pricing</Link></li>
                 <li><Link href="/track-order" className="hover:text-[var(--footer-link-hover)] transition-colors">Track Order</Link></li>
-                {returnsEnabled && <li><Link href="/returns" className="hover:text-[var(--footer-link-hover)] transition-colors">My Returns</Link></li>}
                 <li><Link href="/cancellation-refund-policy" className="hover:text-[var(--footer-link-hover)] transition-colors">Cancellation & Refund Policy</Link></li>
                 <li><Link href="/shipping" className="hover:text-[var(--footer-link-hover)] transition-colors">Shipping Info</Link></li>
                 <li><Link href="/faqs" className="hover:text-[var(--footer-link-hover)] transition-colors">FAQs & Size Guide</Link></li>

@@ -12,13 +12,6 @@ export function BenefitsStrip() {
       title: 'Free Shipping',
       description: 'On orders above ₹999',
     },
-    ...(returnsEnabled
-      ? [{
-          icon: RotateCcw,
-          title: 'Easy Returns',
-          description: '10 days return policy',
-        }]
-      : []),
     {
       icon: ShieldCheck,
       title: 'Secure Payment',
