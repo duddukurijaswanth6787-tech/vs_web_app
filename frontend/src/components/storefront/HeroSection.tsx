@@ -112,33 +112,72 @@ export function HeroSection() {
   const showCta = main.ctaEnabled !== false && Boolean(main.buttonText);
   const hasTextOverlay = hasTitle || hasSubtitle || showCta;
 
+  const hasMobileImage = Boolean(main.mobileImageUrl);
+  const isExternalLink = main.linkUrl?.startsWith('http://') || main.linkUrl?.startsWith('https://');
+
+  const bannerImagesContent = (
+    <>
+      {/* Mobile Banner Image (Shown on <640px) */}
+      <div className="block sm:hidden w-full h-full relative">
+        <Image
+          src={withVariant(main.mobileImageUrl || main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
+          alt={main.title || 'Hero Banner'}
+          fill
+          priority
+          sizes="100vw"
+          unoptimized={isLocalOrPlaceholder(main.mobileImageUrl || main.imageUrl)}
+          className="object-cover object-center group-hover:scale-102 transition-transform duration-700"
+        />
+      </div>
+
+      {/* Desktop Banner Image (Shown on >=640px) */}
+      <div className="hidden sm:block w-full h-full relative">
+        <Image
+          src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
+          alt={main.title || 'Hero Banner'}
+          fill
+          priority
+          sizes="100vw"
+          unoptimized={isLocalOrPlaceholder(main.imageUrl)}
+          className="object-cover object-center group-hover:scale-102 transition-transform duration-700"
+        />
+      </div>
+
+      {/* Scrim overlay ONLY when text is actually present */}
+      {hasTextOverlay && (
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 from-0% via-black/20 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-white/95 sm:via-white/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
+      )}
+    </>
+  );
+
   return (
-    <section className="w-full px-3 sm:px-8 lg:px-12 xl:px-16 py-3 sm:py-6 bg-[var(--hero-bg)] text-[var(--hero-text)]">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
-        
-        {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
-        <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-sky-100/80 bg-[#EAF4FF]">
-          
+    <section className="w-full px-2 sm:px-6 lg:px-8 py-2 sm:py-4">
+      <div className="w-full max-w-[1920px] mx-auto">
+        <div
+          className={`relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-xs sm:shadow-sm bg-[#EAF4FF] group ${
+            hasMobileImage ? 'aspect-[16/10] sm:aspect-[12/5]' : 'aspect-[12/5]'
+          }`}
+        >
           {/* Background Image & Clickable Redirect Link */}
-          <Link
-            href={main.linkUrl || '/categories'}
-            className="absolute inset-0 z-10 block"
-            aria-label={main.title || 'Featured Banner'}
-          >
-            <Image
-              src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
-              alt={main.title || 'Hero Banner'}
-              fill
-              priority
-              sizes="(max-width: 640px) 100vw, (max-width: 1024px) 100vw, 66vw"
-              unoptimized={isLocalOrPlaceholder(main.imageUrl)}
-              className="object-cover object-center group-hover:scale-103 transition-transform duration-700"
-            />
-            {/* Scrim overlay ONLY when text is actually present */}
-            {hasTextOverlay && (
-              <div className="absolute inset-0 bg-gradient-to-t from-[#EAF4FF] from-0% via-[#EAF4FF]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#EAF4FF]/95 sm:via-[#EAF4FF]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
-            )}
-          </Link>
+          {isExternalLink ? (
+            <a
+              href={main.linkUrl}
+              className="absolute inset-0 z-10 block"
+              aria-label={main.title || 'Featured Banner'}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {bannerImagesContent}
+            </a>
+          ) : (
+            <Link
+              href={main.linkUrl || '/categories'}
+              className="absolute inset-0 z-10 block"
+              aria-label={main.title || 'Featured Banner'}
+            >
+              {bannerImagesContent}
+            </Link>
+          )}
 
           {/* Slider Arrow Controls */}
           {banners.length > 1 && (
@@ -162,9 +201,9 @@ export function HeroSection() {
             </>
           )}
 
-          {/* Hero Content Overlay (Bottom-Left Aligned) - Only rendered if Title, Subtitle, or CTA is present */}
+          {/* Hero Content Overlay - Only rendered if Title, Subtitle, or CTA is present */}
           {hasTextOverlay && (
-            <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-0.5 sm:space-y-3.5 pb-1 sm:pb-0 pointer-events-none">
+            <div className="absolute bottom-4 sm:bottom-12 left-4 sm:left-12 z-20 text-left max-w-full sm:max-w-lg space-y-0.5 sm:space-y-3.5 pb-1 sm:pb-0 pointer-events-none">
               {hasTitle && (
                 <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.15] tracking-tight line-clamp-3">
                   {main.title}
@@ -211,81 +250,7 @@ export function HeroSection() {
               ))}
             </div>
           )}
-
         </div>
-
-
-        {/* RIGHT COLUMN: Two Promo Cards Stacked Vertically (Desktop Only, Span 4) */}
-        <div className="hidden lg:flex lg:flex-col lg:col-span-4 gap-6 justify-between">
-          
-          {/* Top Promo Card: Festive Collection */}
-          <div className="flex-1 bg-[#F3F8FF] rounded-3xl p-5 sm:p-6 border border-[#DCEBFA] shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
-            <div className="space-y-2 max-w-[62%] z-10">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#1769D2] bg-[#EAF4FF] px-2.5 py-0.5 rounded-md">
-                FOR YOUR SPECIAL DAY
-              </span>
-              <h3 className="text-lg sm:text-xl font-bold font-serif text-neutral-900 leading-tight">
-                Festive Collection
-              </h3>
-              <p className="text-[11px] text-neutral-600 font-medium line-clamp-2 leading-relaxed">
-                Brighten every celebration with luxurious ethnic suits.
-              </p>
-              <Link
-                href="/categories/festive"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#1769D2] hover:underline pt-1"
-              >
-                <span>Explore Now</span>
-                <span>→</span>
-              </Link>
-            </div>
-
-            <div className="w-24 h-32 sm:w-28 sm:h-36 relative shrink-0 rounded-2xl overflow-hidden shadow-xs border border-white">
-              <Image
-                src={withVariant(PLACEHOLDER_IMAGE, 'medium')}
-                alt="Festive Collection"
-                fill
-                sizes="120px"
-                unoptimized={isLocalOrPlaceholder(PLACEHOLDER_IMAGE)}
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-
-          {/* Bottom Promo Card: Wedding Collection */}
-          <div className="flex-1 bg-[#F3F8FF] rounded-3xl p-5 sm:p-6 border border-[#DCEBFA] shadow-2xs flex items-center justify-between relative overflow-hidden group hover:shadow-md transition-all">
-            <div className="space-y-2 max-w-[62%] z-10">
-              <span className="text-[9px] font-bold uppercase tracking-widest text-[#1769D2] bg-[#EAF4FF] px-2.5 py-0.5 rounded-md">
-                FOR YOUR SPECIAL DAY
-              </span>
-              <h3 className="text-lg sm:text-xl font-bold font-serif text-neutral-900 leading-tight">
-                Wedding Collection
-              </h3>
-              <p className="text-[11px] text-neutral-600 font-medium line-clamp-2 leading-relaxed">
-                Elegant lehengas, gowns & designer outfits for unforgettable moments.
-              </p>
-              <Link
-                href="/categories/wedding"
-                className="inline-flex items-center gap-1 text-xs font-bold text-[#1769D2] hover:underline pt-1"
-              >
-                <span>Explore Now</span>
-                <span>→</span>
-              </Link>
-            </div>
-
-            <div className="w-24 h-32 sm:w-28 sm:h-36 relative shrink-0 rounded-2xl overflow-hidden shadow-xs border border-white">
-              <Image
-                src={withVariant(PLACEHOLDER_IMAGE, 'medium')}
-                alt="Wedding Collection"
-                fill
-                sizes="120px"
-                unoptimized={isLocalOrPlaceholder(PLACEHOLDER_IMAGE)}
-                className="object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-            </div>
-          </div>
-
-        </div>
-
       </div>
     </section>
   );
