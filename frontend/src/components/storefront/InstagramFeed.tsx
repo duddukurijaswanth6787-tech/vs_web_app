@@ -61,7 +61,7 @@ function ReelCard({
       onClick={onSelect}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
-      className="group relative aspect-3/4 rounded-2xl overflow-hidden bg-neutral-900 shadow-sm border border-neutral-200/60 w-[140px] sm:w-auto shrink-0 snap-start text-left cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md"
+      className="group relative aspect-[9/16] rounded-2xl sm:rounded-3xl overflow-hidden bg-neutral-900 shadow-sm border border-neutral-200/60 w-[185px] sm:w-[220px] md:w-auto shrink-0 snap-start text-left cursor-pointer transition-all hover:-translate-y-1 hover:shadow-md"
     >
       {isVideo && (!hasStaticImage || imgError) ? (
         <video
@@ -79,7 +79,7 @@ function ReelCard({
           alt={reel.title}
           fill
           loading={index < 3 ? 'eager' : 'lazy'}
-          sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 16vw"
+          sizes="(max-width: 640px) 60vw, (max-width: 1024px) 33vw, 20vw"
           unoptimized={isLocalOrPlaceholder(posterSrc)}
           onError={() => setImgError(true)}
           className="object-cover group-hover:scale-110 transition-transform duration-500"
@@ -237,7 +237,7 @@ export function InstagramFeed() {
       </div>
 
       {/* Responsive Grid / Horizontal Scroll for Published Reels */}
-      <div className="flex overflow-x-auto gap-3 pb-3 pt-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 lg:gap-4">
+      <div className="flex overflow-x-auto gap-3.5 sm:gap-4 pb-3 pt-1 scrollbar-none snap-x snap-mandatory sm:grid sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-6">
         {activeReels.map((reel, index) => (
           <ReelCard
             key={reel.id}
