@@ -21,12 +21,12 @@ import DataTable from '@/components/tables/DataTable';
 import type { Column } from '@/components/tables/DataTable';
 
 const bannerSchema = z.object({
-  title: z.string().min(2, 'Title is too short').max(100),
-  description: z.string().max(200).optional(),
-  imageUrl: z.string().url('Must be valid image URL'),
-  mobileImageUrl: z.string().url('Must be valid image URL').optional().or(z.literal('')),
-  linkUrl: z.string().url('Must be valid destination URL').optional().or(z.literal('')),
-  placement: z.string().min(2, 'Placement key is required'),
+  title: z.string().max(100).optional().or(z.literal('')),
+  description: z.string().max(300).optional().or(z.literal('')),
+  imageUrl: z.string().min(1, 'Please select or upload a desktop banner image'),
+  mobileImageUrl: z.string().optional().or(z.literal('')),
+  linkUrl: z.string().optional().or(z.literal('')),
+  placement: z.string().min(1, 'Placement key is required'),
   displayOrder: z.number().int().min(0),
   isActive: z.boolean(),
   ctaEnabled: z.boolean(),
@@ -287,6 +287,8 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
     },
   });
 
+  const watchedTitle = useWatch({ control, name: 'title' });
+  const watchedDescription = useWatch({ control, name: 'description' });
   const watchedImageUrl = useWatch({ control, name: 'imageUrl' });
   const watchedMobileImageUrl = useWatch({ control, name: 'mobileImageUrl' });
   const watchedPlacement = useWatch({ control, name: 'placement' });
@@ -332,8 +334,10 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
     try {
       const payload = {
         ...values,
-        linkUrl: values.linkUrl || undefined,
-        mobileImageUrl: values.mobileImageUrl || undefined,
+        title: values.title?.trim() || '',
+        description: values.description?.trim() || undefined,
+        linkUrl: values.linkUrl?.trim() || undefined,
+        mobileImageUrl: values.mobileImageUrl?.trim() || undefined,
         startDate: values.startDate ? new Date(values.startDate).toISOString() : undefined,
         endDate: values.endDate ? new Date(values.endDate).toISOString() : undefined,
       };
@@ -352,8 +356,47 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
         </div>
         {error && <div className="mt-4 rounded-lg bg-red-50 border border-red-100 p-2.5 text-2xs text-red-650 font-semibold">{error}</div>}
         <form onSubmit={handleSubmit(onSubmit)} className="mt-4 space-y-4 text-xs">
-          <div><label className="block text-[10px] font-bold text-neutral-500 uppercase">Title</label><input type="text" {...register('title')} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5" />{errors.title && <p className="text-[9px] text-red-650 mt-1">{errors.title.message}</p>}</div>
-          <div><label className="block text-[10px] font-bold text-neutral-500 uppercase">Description</label><input type="text" {...register('description')} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5" /></div>
+          {/* Banner Text Overlay (Title & Description) - 100% Optional */}
+          <div className="space-y-2.5 border border-neutral-200/80 rounded-xl p-3 bg-neutral-50/50">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold text-neutral-700 uppercase">Text Overlay (Title & Description)</span>
+              <span className="text-[9px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded font-semibold border border-emerald-100">Optional</span>
+            </div>
+            <p className="text-[10px] text-neutral-500">
+              💡 For pre-designed banners (with text already in the image), leave Title and Description blank. The banner will render clean with zero text and full click-redirect.
+            </p>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase">Title (Optional)</label>
+                {watchedTitle && (
+                  <button type="button" onClick={() => setValue('title', '', { shouldValidate: true })} className="text-[9px] text-red-500 hover:underline">Clear</button>
+                )}
+              </div>
+              <input
+                type="text"
+                {...register('title')}
+                placeholder="Leave blank for clean image without text"
+                className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              />
+              {errors.title && <p className="text-[9px] text-red-650 mt-1">{errors.title.message}</p>}
+            </div>
+
+            <div>
+              <div className="flex items-center justify-between">
+                <label className="block text-[10px] font-bold text-neutral-500 uppercase">Description (Optional)</label>
+                {watchedDescription && (
+                  <button type="button" onClick={() => setValue('description', '', { shouldValidate: true })} className="text-[9px] text-red-500 hover:underline">Clear</button>
+                )}
+              </div>
+              <input
+                type="text"
+                {...register('description')}
+                placeholder="Leave blank for clean image without text"
+                className="mt-1 w-full bg-white border border-neutral-200 rounded-lg px-2.5 py-1.5 text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+              />
+            </div>
+          </div>
 
           {/* 1. Desktop View Banner Image */}
           <div className="space-y-1.5 border border-neutral-200/80 rounded-xl p-3 bg-neutral-50/50">
@@ -406,7 +449,19 @@ function BannerDialog({ banner, onClose, onSuccess }: { banner: BannerResponse |
             <input type="hidden" {...register('mobileImageUrl')} />
           </div>
 
-          <div><label className="block text-[10px] font-bold text-neutral-500 uppercase">Link URL</label><input type="text" {...register('linkUrl')} placeholder="https://store.com/collections/dresses" className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 font-mono" />{errors.linkUrl && <p className="text-[9px] text-red-650 mt-1">{errors.linkUrl.message}</p>}</div>
+          <div>
+            <div className="flex items-center justify-between">
+              <label className="block text-[10px] font-bold text-neutral-500 uppercase">Link URL (Redirect on Click)</label>
+              <span className="text-[9px] text-neutral-400 font-normal">Optional</span>
+            </div>
+            <input
+              type="text"
+              {...register('linkUrl')}
+              placeholder="https://www.vsboutique.shop or /categories/dresses"
+              className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5 font-mono text-xs text-neutral-900 focus:outline-none focus:ring-1 focus:ring-neutral-900"
+            />
+            {errors.linkUrl && <p className="text-[9px] text-red-650 mt-1">{errors.linkUrl.message}</p>}
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div><label className="block text-[10px] font-bold text-neutral-500 uppercase">Placement</label><select {...register('placement')} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2 py-1.5"><option value="HOMEPAGE_HERO">HOMEPAGE HERO</option><option value="PROMO_BANNER">PROMO BANNER</option><option value="CATALOG_TOP">CATALOG TOP</option></select></div>
             <div><label className="block text-[10px] font-bold text-neutral-500 uppercase">Display Order</label><input type="number" {...register('displayOrder', { valueAsNumber: true })} className="mt-1 w-full bg-neutral-50 border border-neutral-200 rounded-lg px-2.5 py-1.5" /></div>

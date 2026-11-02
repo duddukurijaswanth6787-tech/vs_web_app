@@ -6,18 +6,17 @@ import {
   IsInt,
   Min,
   Max,
-  IsUrl,
   IsDateString,
   IsEnum,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class CreateBannerDto {
-  @ApiProperty() @IsString() title!: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() title?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
   @ApiProperty() @IsString() imageUrl!: string;
   @ApiPropertyOptional() @IsOptional() @IsString() mobileImageUrl?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUrl() linkUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() linkUrl?: string;
   @ApiProperty() @IsString() placement!: string;
   @ApiPropertyOptional({ default: 0 })
   @IsOptional()
@@ -49,7 +48,7 @@ export class UpdateBannerDto {
   @ApiPropertyOptional() @IsOptional() @IsString() description?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() imageUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() mobileImageUrl?: string;
-  @ApiPropertyOptional() @IsOptional() @IsUrl() linkUrl?: string;
+  @ApiPropertyOptional() @IsOptional() @IsString() linkUrl?: string;
   @ApiPropertyOptional() @IsOptional() @IsString() placement?: string;
   @ApiPropertyOptional()
   @IsOptional()

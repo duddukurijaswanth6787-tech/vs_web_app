@@ -98,6 +98,20 @@ export function HeroSection() {
   const prev = () => setIndex((i) => (banners.length ? (i - 1 + banners.length) % banners.length : 0));
   const next = () => setIndex((i) => (banners.length ? (i + 1) % banners.length : 0));
 
+  const isDefaultSlide = banners === DEFAULT_SLIDES || (banners.length === 2 && banners[0].id === 's1');
+  const rawTitle = main.title?.trim() || '';
+  const rawSubtitle = main.subtitle?.trim() || '';
+
+  // Only consider text valid if explicitly provided, or if using fallback default slides
+  const hasTitle = isDefaultSlide
+    ? Boolean(rawTitle && !rawTitle.includes('COLLECTION'))
+    : Boolean(rawTitle.length > 0);
+  const hasSubtitle = isDefaultSlide
+    ? Boolean(rawSubtitle.length > 0)
+    : Boolean(rawSubtitle.length > 0);
+  const showCta = main.ctaEnabled !== false && Boolean(main.buttonText);
+  const hasTextOverlay = hasTitle || hasSubtitle || showCta;
+
   return (
     <section className="w-full px-3 sm:px-8 lg:px-12 xl:px-16 py-3 sm:py-6 bg-[var(--hero-bg)] text-[var(--hero-text)]">
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch">
@@ -105,8 +119,12 @@ export function HeroSection() {
         {/* LEFT COLUMN: Large Hero Slider (Span 8) */}
         <div className="lg:col-span-8 relative rounded-2xl sm:rounded-3xl overflow-hidden min-h-[300px] sm:min-h-[520px] flex items-end p-4 sm:p-12 group shadow-xs sm:shadow-sm border border-sky-100/80 bg-[#EAF4FF]">
           
-          {/* Background Image & Gradient Overlay */}
-          <Link href={main.linkUrl || '/categories'} className="absolute inset-0 z-0 block">
+          {/* Background Image & Clickable Redirect Link */}
+          <Link
+            href={main.linkUrl || '/categories'}
+            className="absolute inset-0 z-10 block"
+            aria-label={main.title || 'Featured Banner'}
+          >
             <Image
               src={withVariant(main.imageUrl || PLACEHOLDER_IMAGE, 'large')}
               alt={main.title || 'Hero Banner'}
@@ -116,10 +134,10 @@ export function HeroSection() {
               unoptimized={isLocalOrPlaceholder(main.imageUrl)}
               className="object-cover object-center group-hover:scale-103 transition-transform duration-700"
             />
-            {/* Mobile: a thin, steep scrim right behind the text block so the
-                photo stays clear through the rest of the banner, instead of
-                a heavy tint washing out the whole lower half of the image. */}
-            <div className="absolute inset-0 bg-gradient-to-t from-[#EAF4FF] from-0% via-[#EAF4FF]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#EAF4FF]/95 sm:via-[#EAF4FF]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
+            {/* Scrim overlay ONLY when text is actually present */}
+            {hasTextOverlay && (
+              <div className="absolute inset-0 bg-gradient-to-t from-[#EAF4FF] from-0% via-[#EAF4FF]/40 via-35% to-transparent to-60% sm:bg-gradient-to-r sm:from-[#EAF4FF]/95 sm:via-[#EAF4FF]/70 sm:to-transparent sm:from-0% sm:via-50% sm:to-100% z-10" />
+            )}
           </Link>
 
           {/* Slider Arrow Controls */}
@@ -144,34 +162,38 @@ export function HeroSection() {
             </>
           )}
 
-          {/* Hero Content Overlay (Bottom-Left Aligned) */}
-          <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-0.5 sm:space-y-3.5 pb-1 sm:pb-0">
+          {/* Hero Content Overlay (Bottom-Left Aligned) - Only rendered if Title, Subtitle, or CTA is present */}
+          {hasTextOverlay && (
+            <div className="relative z-20 text-left max-w-full sm:max-w-lg space-y-0.5 sm:space-y-3.5 pb-1 sm:pb-0 pointer-events-none">
+              {hasTitle && (
+                <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.15] tracking-tight line-clamp-3">
+                  {main.title}
+                </h1>
+              )}
 
-            {/* Main Headline */}
-            <h1 className="text-[26px] sm:text-4xl lg:text-5xl font-black font-serif text-neutral-900 leading-[1.15] tracking-tight line-clamp-3">
-              {main.title && !main.title.includes('COLLECTION') ? main.title : 'FRESH STYLES — TIMELESS YOU'}
-            </h1>
+              {hasSubtitle && (
+                <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-snug line-clamp-2 max-w-[90%] sm:max-w-md">
+                  {main.subtitle}
+                </p>
+              )}
 
-            <p className="text-xs sm:text-sm text-neutral-600 font-medium leading-snug line-clamp-2 max-w-[90%] sm:max-w-md">
-              {main.subtitle || 'Discover designer lehengas, kurtis, and Anarkali suits crafted for timeless sophistication.'}
-            </p>
-
-            {/* Primary CTA Button (Small sleek on mobile, bottom left) */}
-            {main.ctaEnabled !== false && (
-              <div className="pt-0.5 sm:pt-2 flex justify-start">
-                <Link
-                  href={main.linkUrl || '/categories'}
-                  className={
-                    main.ctaStyle === 'transparent'
-                      ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#1769D2] text-[#1769D2] hover:bg-[#1769D2] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
-                      : 'inline-flex items-center justify-center bg-[#1769D2] hover:bg-[var(--brand-primary-dark)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
-                  }
-                >
-                  {main.buttonText || 'SHOP NOW'}
-                </Link>
-              </div>
-            )}
-          </div>
+              {/* Primary CTA Button */}
+              {showCta && (
+                <div className="pt-0.5 sm:pt-2 flex justify-start pointer-events-auto">
+                  <Link
+                    href={main.linkUrl || '/categories'}
+                    className={
+                      main.ctaStyle === 'transparent'
+                        ? 'inline-flex items-center justify-center bg-transparent border-2 border-[#1769D2] text-[#1769D2] hover:bg-[#1769D2] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2 sm:px-7 sm:py-2.5 rounded-lg sm:rounded-xl transition-all hover:scale-105'
+                        : 'inline-flex items-center justify-center bg-[#1769D2] hover:bg-[var(--brand-primary-dark)] text-white text-xs sm:text-sm font-bold uppercase tracking-wider px-5 py-2.5 sm:px-7 sm:py-3 rounded-lg sm:rounded-xl shadow-xs transition-all hover:scale-105'
+                    }
+                  >
+                    {main.buttonText || 'SHOP NOW'}
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Dot Pagination Indicators */}
           {banners.length > 1 && (
