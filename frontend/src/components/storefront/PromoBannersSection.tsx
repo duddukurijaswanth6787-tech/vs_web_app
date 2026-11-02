@@ -45,7 +45,7 @@ export function PromoBannersSection() {
   }
 
   return (
-    <section className="w-full max-w-[1440px] mx-auto py-4 sm:py-4 lg:hidden">
+    <section className="w-full max-w-[1440px] mx-auto py-1 sm:py-3 lg:hidden">
       <div className="flex overflow-x-auto gap-3.5 px-4 sm:px-6 pb-2.5 pt-1 scrollbar-none snap-x snap-mandatory">
         {categories.map((cat) => (
           <div

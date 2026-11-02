@@ -49,9 +49,9 @@ export function CategoryCircles() {
   }
 
   return (
-    <section className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-4 sm:py-6 bg-[var(--category-bg)] text-[var(--category-text)]">
+    <section className="w-full px-3 sm:px-8 lg:px-12 xl:px-16 py-2 sm:py-6 bg-[var(--category-bg)] text-[var(--category-text)]">
       {/* Section Header */}
-      <div className="flex items-center justify-between gap-4 mb-3 sm:mb-6">
+      <div className="flex items-center justify-between gap-4 mb-2 sm:mb-4">
         <div>
           <h2 className="text-lg sm:text-2xl font-bold font-serif text-neutral-900 tracking-tight">
             Shop by Category
@@ -77,7 +77,7 @@ export function CategoryCircles() {
           ))}
         </div>
       ) : (
-        <div className="flex items-start gap-4 sm:gap-6 overflow-x-auto pb-3 pt-1 scrollbar-none snap-x snap-mandatory">
+        <div className="flex items-start gap-3 sm:gap-6 overflow-x-auto pb-1.5 pt-0.5 scrollbar-none snap-x snap-mandatory">
           {categories.map((cat, idx) => {
             const hasFailed = failedImages[cat.id];
             const src = (cat.imageUrl && !hasFailed) ? withVariant(cat.imageUrl, 'thumb') : '';

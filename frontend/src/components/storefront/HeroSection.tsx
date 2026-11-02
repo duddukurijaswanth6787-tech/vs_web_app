@@ -151,7 +151,7 @@ export function HeroSection() {
   );
 
   return (
-    <section className="w-full px-2 sm:px-6 lg:px-8 py-2 sm:py-4">
+    <section className="w-full px-2 sm:px-6 lg:px-8 py-1 sm:py-3">
       <div className="w-full max-w-[1920px] mx-auto">
         <div
           className={`relative w-full overflow-hidden rounded-2xl sm:rounded-3xl shadow-xs sm:shadow-sm bg-[#EAF4FF] group ${

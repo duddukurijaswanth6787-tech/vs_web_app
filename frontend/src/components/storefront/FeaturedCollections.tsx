@@ -70,7 +70,7 @@ export function FeaturedCollections() {
   }
 
   return (
-    <section className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-4 sm:py-8">
+    <section className="w-full px-3 sm:px-8 lg:px-12 xl:px-16 py-2 sm:py-6">
       {/* Header (Hidden on Mobile, Visible on Desktop/Tablet) */}
       <div className="hidden sm:flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
         <div className="space-y-1">
