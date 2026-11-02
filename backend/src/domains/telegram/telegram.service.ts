@@ -10,7 +10,7 @@ import {
 } from './telegram.types';
 
 const SETTING_KEY_TELEGRAM_CONFIG = 'telegram_automation_config';
-const DEFAULT_BOT_TOKEN = '8825015214:AAFaPKBzkr7LXkJsWnLkaPKLcRHafdEQiVk';
+const DEFAULT_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN || '';
 const DEFAULT_ALLOWED_CHAT_IDS = ['2091440465', '1999814667'];
 
 export const MAIN_KEYBOARD_MARKUP = {
@@ -181,8 +181,7 @@ export class TelegramService implements OnModuleInit {
       },
       update: {
         value: JSON.stringify(updated),
-        updatedAt: new Date(),
-      },
+              },
     });
 
     this.cachedConfig = updated;

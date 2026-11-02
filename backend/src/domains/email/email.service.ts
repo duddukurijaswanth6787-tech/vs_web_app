@@ -13,7 +13,7 @@ import {
 const STORE_NAME = "Vasanthi's Signature";
 const STORE_ADDRESS =
   'Road No. 12, Banjara Hills, Hyderabad - 500034, Telangana, India';
-const STORE_PHONE = '+91 98765 43210';
+const STORE_PHONE = '+91 99127 99122';
 const DEFAULT_FROM = 'orders@vasanthissignature.in';
 
 @Injectable()

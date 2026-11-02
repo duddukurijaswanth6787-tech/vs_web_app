@@ -132,7 +132,7 @@ export function StorefrontFooter() {
           <div className="flex items-center gap-1.5 justify-center">
             <Headphones className="w-3 h-3 text-sky-400" />
             <span className="font-bold text-[var(--footer-heading)] uppercase tracking-wide text-[9px]">24/7 SUPPORT</span>
-            <span className="font-bold text-amber-300">+91 98765 43210</span>
+            <a href="tel:+919912799122" className="font-bold text-amber-300 hover:underline">+91 99127 99122</a>
           </div>
 
         </div>

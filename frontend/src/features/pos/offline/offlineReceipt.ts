@@ -12,7 +12,7 @@ export function generateOfflineReceiptHtml(sale: PendingSale): string {
   const storeName = "VASANTHI'S SIGNATURE";
   const storeTagline = 'Haute Couture & Boutique';
   const address = 'Road No. 12, Banjara Hills, Hyderabad - 500034';
-  const phone = '+91 98765 43210';
+  const phone = '+91 99127 99122';
   const cashier = sale.receipt.cashierName || 'Counter 1';
   const dateStr = new Date(sale.createdAt).toLocaleString('en-IN', {
     timeZone: 'Asia/Kolkata',
