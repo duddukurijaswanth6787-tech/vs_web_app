@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { History, Trash2 } from 'lucide-react';
@@ -10,10 +10,34 @@ import { useAuth } from '@/hooks/useAuth';
 
 export function RecentlyViewedCarousel() {
   const { isAuthenticated } = useAuth();
-  const { data: items = [], isLoading } = useRecentlyViewed(10, isAuthenticated);
+  const { data: serverItems = [], isLoading } = useRecentlyViewed(10, isAuthenticated);
   const clearMutation = useClearRecentlyViewed();
+  const [localItems, setLocalItems] = useState<any[]>([]);
 
-  if (!isAuthenticated || (!isLoading && items.length === 0)) {
+  useEffect(() => {
+    if (!isAuthenticated && typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('vs_recently_viewed');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (Array.isArray(parsed)) setLocalItems(parsed);
+        }
+      } catch {}
+    }
+  }, [isAuthenticated]);
+
+  const items = isAuthenticated ? serverItems : localItems;
+
+  const handleClear = () => {
+    if (isAuthenticated) {
+      clearMutation.mutate();
+    } else if (typeof window !== 'undefined') {
+      localStorage.removeItem('vs_recently_viewed');
+      setLocalItems([]);
+    }
+  };
+
+  if (!isLoading && items.length === 0) {
     return null;
   }
 
@@ -28,7 +52,7 @@ export function RecentlyViewedCarousel() {
         </div>
         <button
           type="button"
-          onClick={() => clearMutation.mutate()}
+          onClick={handleClear}
           disabled={clearMutation.isPending}
           className="text-xs font-bold text-neutral-500 hover:text-sky-700 flex items-center gap-1 cursor-pointer transition-colors"
         >

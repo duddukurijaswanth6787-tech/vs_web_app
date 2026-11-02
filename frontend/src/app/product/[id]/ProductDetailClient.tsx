@@ -77,8 +77,30 @@ export function ProductDetailClient() {
   const trackMutation = useTrackRecentlyViewed();
 
   React.useEffect(() => {
-    if (product?.id && isAuthenticated) {
-      trackMutation.mutate(product.id);
+    if (product?.id) {
+      if (isAuthenticated) {
+        trackMutation.mutate(product.id);
+      }
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('vs_recently_viewed');
+          const list = raw ? JSON.parse(raw) : [];
+          const filtered = list.filter((item: any) => item.product?.id !== product.id);
+          filtered.unshift({
+            id: product.id,
+            product: {
+              id: product.id,
+              name: product.name,
+              slug: product.slug,
+              basePrice: product.basePrice,
+              salePrice: product.salePrice,
+              primaryImageUrl: product.primaryImageUrl,
+            },
+            viewedAt: new Date().toISOString(),
+          });
+          localStorage.setItem('vs_recently_viewed', JSON.stringify(filtered.slice(0, 10)));
+        } catch {}
+      }
     }
   }, [product?.id, isAuthenticated]);
 

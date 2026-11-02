@@ -8,7 +8,8 @@ import { MobileBottomNav } from '@/components/layout/MobileBottomNav';
 // 11 Sections
 import { HeroSection } from '@/components/storefront/HeroSection'; // Section 02
 import { CategoryCircles } from '@/components/storefront/CategoryCircles'; // Section 03
-import { PromoBannersSection } from '@/components/storefront/PromoBannersSection'; // Section 03.5: Mobile Promo Banners
+import { PromoBannersSection } from '@/components/storefront/PromoBannersSection'; // Section 06.5: Mobile Promo Banners
+import { RecentlyViewedCarousel } from '@/components/storefront/RecentlyViewedCarousel'; // Section 06.8: Desktop Recent Activity
 import { ProductGridSection } from '@/components/storefront/ProductGridSection'; // Section 04: New Arrivals
 import { FeaturedCollections } from '@/components/storefront/FeaturedCollections'; // Section 06
 import { TestimonialsSection } from '@/components/storefront/TestimonialsSection'; // Section 07
@@ -119,9 +120,6 @@ export function HomeClient() {
         {/* 03 CATEGORY SECTION */}
         {isSectionEnabled('categories') && <CategoryCircles />}
 
-        {/* 03.5 PROMO BANNERS (Mobile Side-Scrolling) */}
-        <PromoBannersSection />
-
         {/* 04 NEW ARRIVALS */}
         {isSectionEnabled('new_arrivals') && (
           <ProductGridSection
@@ -141,6 +139,16 @@ export function HomeClient() {
 
         {/* 06 TESTIMONIALS */}
         {isSectionEnabled('customer_reviews') && <TestimonialsSection />}
+
+        {/* 06.5 PROMO BANNERS (Mobile Category Cards - placed above Reels for Phone View) */}
+        <div className="block lg:hidden">
+          <PromoBannersSection />
+        </div>
+
+        {/* 06.8 RECENT ACTIVITY / RECENTLY VIEWED (Desktop View only - placed above Reels) */}
+        <div className="hidden lg:block">
+          <RecentlyViewedCarousel />
+        </div>
 
         {/* 07 INSTAGRAM FEED (REELS) */}
         <InstagramFeed />
