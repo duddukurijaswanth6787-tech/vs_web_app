@@ -185,7 +185,7 @@ export function ProductGridSection({
   };
 
   return (
-    <section ref={sectionRef} className="w-full max-w-[1440px] mx-auto px-4 sm:px-8 lg:px-12 py-4 sm:py-8">
+    <section ref={sectionRef} className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-4 sm:py-8">
       {/* Header */}
       <div className="flex items-center justify-between mb-3 sm:mb-6">
         <div>

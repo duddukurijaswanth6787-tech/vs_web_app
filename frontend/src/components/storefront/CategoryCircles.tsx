@@ -49,7 +49,7 @@ export function CategoryCircles() {
   }
 
   return (
-    <section className="max-w-[1440px] mx-auto px-4 sm:px-6 lg:px-8 py-4 sm:py-6 bg-[var(--category-bg)] text-[var(--category-text)]">
+    <section className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-4 sm:py-6 bg-[var(--category-bg)] text-[var(--category-text)]">
       {/* Section Header */}
       <div className="flex items-center justify-between gap-4 mb-3 sm:mb-6">
         <div>

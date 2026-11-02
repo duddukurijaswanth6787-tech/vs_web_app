@@ -34,7 +34,7 @@ export function StorefrontFooter() {
 
       {/* 2. Main Footer Content (Tight Vertical Spacing on Mobile) */}
       <div className="bg-[color-mix(in_oklab,var(--footer-bg)_62%,black)] text-sky-100/90 pt-5 sm:pt-12 pb-20 lg:pb-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-[1440px] mx-auto space-y-4">
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 space-y-4">
           {/* Top Row: Brand & Social Icons */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5">
             <div>
@@ -117,7 +117,7 @@ export function StorefrontFooter() {
 
       {/* 3. Secure Payments & Support Bar */}
       <div className="bg-[color-mix(in_oklab,var(--footer-bg)_40%,black)] border-t border-sky-950/60 py-2.5 px-4 sm:px-6 lg:px-8 text-[var(--footer-text)]/80 text-[10px]">
-        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <div className="flex items-center gap-2 justify-center">
             <Lock className="w-3 h-3 text-sky-400" />
             <span className="font-bold text-[var(--footer-heading)] uppercase tracking-wide text-[9px]">SECURE PAYMENTS</span>
@@ -140,7 +140,7 @@ export function StorefrontFooter() {
 
       {/* 4. Bottom Legal Bar */}
       <div className="bg-[color-mix(in_oklab,var(--footer-bg)_25%,black)] border-t border-sky-950/80 py-2.5 px-4 sm:px-6 lg:px-8 text-sky-300/60 text-[10px]">
-        <div className="max-w-[1440px] mx-auto flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
+        <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 flex flex-col sm:flex-row items-center justify-between gap-1.5 text-center sm:text-left">
           <span>© 2026 Vasanthi&apos;s Signature. All rights reserved.</span>
 
           <div className="flex items-center gap-2.5 justify-center text-[9px]">

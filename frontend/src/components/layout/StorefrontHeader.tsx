@@ -126,7 +126,7 @@ export function StorefrontHeader() {
       )}
 
       {/* Top Header Row */}
-      <div className="max-w-[1440px] mx-auto px-3 sm:px-8 lg:px-12 py-1 sm:py-3.5">
+      <div className="w-full px-4 sm:px-8 lg:px-12 xl:px-16 py-1 sm:py-3.5">
         <div className="flex items-center justify-between gap-2 sm:gap-4">
 
           {/* Left: Mobile Menu Trigger & Desktop Logo */}
